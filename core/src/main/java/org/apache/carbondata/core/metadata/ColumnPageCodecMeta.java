@@ -18,12 +18,14 @@
 package org.apache.carbondata.core.metadata;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * It holds metadata for one column page
@@ -35,6 +37,10 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
   private DataType srcDataType;
 
   private DataType targetDataType;
+
+  private int scale;
+
+  private int precision;
 
   public static final char BYTE_VALUE_MEASURE = 'c';
   public static final char SHORT_VALUE_MEASURE = 'j';
@@ -171,17 +177,22 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
         buffer.putDouble((Double) 0d); // unique value is obsoleted, maintain for compatibility
         break;
       case DECIMAL:
-        buffer = ByteBuffer.allocate(
-            (CarbonCommonConstants.LONG_SIZE_IN_BYTE * 3) + (CarbonCommonConstants
-                .INT_SIZE_IN_BYTE * 3)
-                + 3);
+        byte[] maxAsBytes = getMaxAsBytes();
+        byte[] minAsBytes = getMinAsBytes();
+        byte[] unique = DataTypeUtil.bigDecimalToByte(BigDecimal.ZERO);
+        buffer = ByteBuffer.allocate(maxAsBytes.length + minAsBytes.length + unique.length
+            + 3 * CarbonCommonConstants.SHORT_SIZE_IN_BYTE
+            + CarbonCommonConstants.INT_SIZE_IN_BYTE * 3 + 3);
         buffer.putChar(getSrcDataTypeInChar());
-        buffer.putLong((Long) getMaxValue());
-        buffer.putLong((Long) getMinValue());
-        buffer.putLong((Long) 0L); // unique value is obsoleted, maintain for compatibility
+        buffer.putShort((short) maxAsBytes.length);
+        buffer.put(maxAsBytes);
+        buffer.putShort((short)minAsBytes.length);
+        buffer.put(minAsBytes);
+        // unique value is obsoleted, maintain for compatibility
+        buffer.putShort((short) unique.length);
+        buffer.put(unique);
         buffer.putInt(getScale());
         buffer.putInt(getPrecision());
-
         break;
     }
     buffer.putInt(getDecimal());
@@ -201,9 +212,13 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
         buffer.getDouble(); // for non exist value which is obsoleted, it is backward compatibility;
         break;
       case BIG_DECIMAL_MEASURE:
-        this.setMaxValue(buffer.getLong());
-        this.setMinValue(buffer.getLong());
-        buffer.getLong();
+        byte[] max = new byte[buffer.getShort()];
+        buffer.get(max);
+        this.setMaxValue(DataTypeUtil.byteToBigDecimal(max));
+        byte[] min = new byte[buffer.getShort()];
+        buffer.get(min);
+        this.setMinValue(DataTypeUtil.byteToBigDecimal(min));
+        buffer.get(new byte[buffer.getShort()]);
         this.setScale(buffer.getInt());
         this.setPrecision(buffer.getInt());
         break;
@@ -274,6 +289,7 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
         b.flip();
         return b.array();
       case DECIMAL:
+        return DataTypeUtil.bigDecimalToByte((BigDecimal)value);
       case BYTE_ARRAY:
         return new byte[8];
       default:
@@ -281,4 +297,19 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
     }
   }
 
+  public int getScale() {
+    return scale;
+  }
+
+  public void setScale(int scale) {
+    this.scale = scale;
+  }
+
+  public int getPrecision() {
+    return precision;
+  }
+
+  public void setPrecision(int precision) {
+    this.precision = precision;
+  }
 }

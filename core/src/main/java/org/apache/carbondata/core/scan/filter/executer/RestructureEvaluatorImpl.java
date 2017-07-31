@@ -28,6 +28,9 @@ import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.comparator.Comparator;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
 /**
  * Abstract class for restructure
@@ -93,14 +96,17 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
     boolean isDefaultValuePresentInFilterValues = false;
     ColumnFilterInfo filterValues = measureColumnResolvedFilterInfo.getFilterValues();
     CarbonMeasure measure = measureColumnResolvedFilterInfo.getMeasure();
-    byte[] defaultValue = measure.getDefaultValue();
-    if (null == defaultValue) {
+    SerializableComparator comparator =
+        Comparator.getComparatorByDataTypeForMeasure(measure.getDataType());
+    Object defaultValue = null;
+    if (null != measure.getDefaultValue()) {
       // default value for case where user gives is Null condition
-      defaultValue = new byte[0];
+      defaultValue = DataTypeUtil
+          .getMeasureObjectFromDataType(measure.getDefaultValue(), measure.getDataType());
     }
-    List<byte[]> measureFilterValuesList = filterValues.getMeasuresFilterValuesList();
-    for (byte[] filterValue : measureFilterValuesList) {
-      int compare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(defaultValue, filterValue);
+    List<Object> measureFilterValuesList = filterValues.getMeasuresFilterValuesList();
+    for (Object filterValue : measureFilterValuesList) {
+      int compare = comparator.compare(defaultValue, filterValue);
       if (compare == 0) {
         isDefaultValuePresentInFilterValues = true;
         break;
@@ -108,4 +114,5 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
     }
     return isDefaultValuePresentInFilterValues;
   }
+
 }

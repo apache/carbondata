@@ -54,7 +54,7 @@ public abstract class EncodingStrategy {
   /**
    * create codec based on the page data type and statistics contained by ValueEncoderMeta
    */
-  public ColumnPageCodec newCodec(ValueEncoderMeta meta, int scale, int precision) {
+  public ColumnPageCodec newCodec(ValueEncoderMeta meta) {
     if (meta instanceof ColumnPageCodecMeta) {
       ColumnPageCodecMeta codecMeta = (ColumnPageCodecMeta) meta;
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(codecMeta);

@@ -17,10 +17,7 @@
 package org.apache.carbondata.core.scan.filter.executer;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 import java.util.BitSet;
-import java.util.Comparator;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
@@ -29,7 +26,6 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
-import org.apache.carbondata.core.scan.filter.partition.PartitionFilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -37,6 +33,8 @@ import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.comparator.Comparator;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
 public class IncludeFilterExecuterImpl implements FilterExecuter {
 
@@ -47,6 +45,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   protected SegmentProperties segmentProperties;
   protected boolean isDimensionPresentInCurrentBlock = false;
   protected boolean isMeasurePresentInCurrentBlock = false;
+  protected SerializableComparator comparator;
   /**
    * is dimension column data is natural sorted
    */
@@ -57,7 +56,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       boolean isMeasure) {
 
     this.segmentProperties = segmentProperties;
-    if (isMeasure == false) {
+    if (!isMeasure) {
       this.dimColumnEvaluatorInfo = dimColumnEvaluatorInfo;
       dimColumnExecuterInfo = new DimColumnExecuterFilterInfo();
       FilterUtil
@@ -71,6 +70,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     } else {
       this.msrColumnEvaluatorInfo = msrColumnEvaluatorInfo;
       msrColumnExecutorInfo = new MeasureColumnExecuterFilterInfo();
+      comparator =
+          Comparator.getComparatorByDataTypeForMeasure(getMeasureDataType(msrColumnEvaluatorInfo));
       FilterUtil
           .prepareKeysFromSurrogates(msrColumnEvaluatorInfo.getFilterValues(), segmentProperties,
               null, null, msrColumnEvaluatorInfo.getMeasure(), msrColumnExecutorInfo);
@@ -160,25 +161,24 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     // Get the measure values from the chunk. compare sequentially with the
     // the filter values. The one that matches sets it Bitset.
     BitSet bitSet = new BitSet(rowsInPage);
-    byte[][] filterValues = msrColumnExecutorInfo.getFilterKeys();
+    Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
 
-    Comparator comparator = PartitionFilterUtil.getComparatorByDataTypeForMeasure(msrType);
+    SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
     for (int i = 0; i < filterValues.length; i++) {
-      if (filterValues[i].length == 0) {
+      if (filterValues[i] == null) {
         BitSet nullBitSet = measureColumnDataChunk.getNullValueIndexHolder().getBitSet();
         for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
           bitSet.set(j);
         }
         continue;
       }
-      Object filter = DataTypeUtil.getMeasureObjectFromDataType(filterValues[i], msrType);
       for (int startIndex = 0; startIndex < rowsInPage; startIndex++) {
         // Check if filterValue[i] matches with measure Values.
         Object msrValue = DataTypeUtil
             .getMeasureObjectBasedOnDataType(measureColumnDataChunk.getColumnPage(), startIndex,
                 msrType, msrColumnEvaluatorInfo.getMeasure());
 
-        if (comparator.compare(msrValue, filter) == 0) {
+        if (comparator.compare(msrValue, filterValues[i]) == 0) {
           // This is a match.
           bitSet.set(startIndex);
         }
@@ -274,7 +274,6 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
           isScanRequired(blkMaxVal[blockIndex], blkMinVal[blockIndex], filterValues);
 
     } else if (isMeasurePresentInCurrentBlock) {
-      filterValues = msrColumnExecutorInfo.getFilterKeys();
       columnIndex = msrColumnEvaluatorInfo.getColumnIndex();
       // blockIndex =
       // segmentProperties.getDimensionOrdinalToBlockMapping().get(columnIndex) + segmentProperties
@@ -282,7 +281,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       blockIndex =
           segmentProperties.getMeasuresOrdinalToBlockMapping().get(columnIndex) + segmentProperties
               .getLastDimensionColOrdinal();
-      isScanRequired = isScanRequired(blkMaxVal[blockIndex], blkMinVal[blockIndex], filterValues,
+      isScanRequired = isScanRequired(blkMaxVal[blockIndex], blkMinVal[blockIndex],
+          msrColumnExecutorInfo.getFilterKeys(),
           msrColumnEvaluatorInfo.getType());
     }
 
@@ -314,40 +314,18 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     return isScanRequired;
   }
 
-  private boolean isScanRequired(byte[] maxValue, byte[] minValue, byte[][] filterValue,
+  private boolean isScanRequired(byte[] maxValue, byte[] minValue, Object[] filterValue,
       DataType dataType) {
+    Object maxObject = DataTypeUtil.getMeasureObjectFromDataType(maxValue, dataType);
+    Object minObject = DataTypeUtil.getMeasureObjectFromDataType(minValue, dataType);
     for (int i = 0; i < filterValue.length; i++) {
-      if (filterValue[i].length == 0 || maxValue.length == 0 || minValue.length == 0) {
-        return isScanRequired(maxValue, minValue, filterValue);
-      } else {
-        switch (dataType) {
-          case DOUBLE:
-            double maxValueDouble = ByteBuffer.wrap(maxValue).getDouble();
-            double minValueDouble = ByteBuffer.wrap(minValue).getDouble();
-            double filterValueDouble = ByteBuffer.wrap(filterValue[i]).getDouble();
-            if (filterValueDouble <= maxValueDouble && filterValueDouble >= minValueDouble) {
-              return true;
-            }
-            break;
-          case INT:
-          case SHORT:
-          case LONG:
-            long maxValueLong = ByteBuffer.wrap(maxValue).getLong();
-            long minValueLong = ByteBuffer.wrap(minValue).getLong();
-            long filterValueLong = ByteBuffer.wrap(filterValue[i]).getLong();
-            if (filterValueLong <= maxValueLong && filterValueLong >= minValueLong) {
-              return true;
-            }
-            break;
-          case DECIMAL:
-            BigDecimal maxDecimal = DataTypeUtil.byteToBigDecimal(maxValue);
-            BigDecimal minDecimal = DataTypeUtil.byteToBigDecimal(minValue);
-            BigDecimal filterDecimal = DataTypeUtil.byteToBigDecimal(filterValue[i]);
-            if (filterDecimal.compareTo(maxDecimal) <= 0
-                && filterDecimal.compareTo(minDecimal) >= 0) {
-              return true;
-            }
-        }
+      // TODO handle min and max for null values.
+      if (filterValue[i] == null) {
+        return true;
+      }
+      if (comparator.compare(filterValue[i], maxObject) <= 0
+          && comparator.compare(filterValue[i], minObject) >= 0) {
+        return true;
       }
     }
     return false;

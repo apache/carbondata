@@ -121,10 +121,15 @@ public final class DataTypeUtil {
   }
 
   public static Object getMeasureObjectFromDataType(byte[] data, DataType dataType) {
+    if (data == null || data.length == 0) {
+      return null;
+    }
     ByteBuffer bb = ByteBuffer.wrap(data);
     switch (dataType) {
       case SHORT:
+        return (short)bb.getLong();
       case INT:
+        return (int)bb.getLong();
       case LONG:
         return bb.getLong();
       case DECIMAL:
@@ -134,113 +139,13 @@ public final class DataTypeUtil {
     }
   }
 
-  /**
-   * This method will convert a given ByteArray to its specific type
-   *
-   * @param msrValue
-   * @param dataType
-   * @param carbonMeasure
-   * @return
-   */
-  //  public static byte[] getMeasureByteArrayBasedOnDataType(String msrValue, DataType dataType,
-  //      CarbonMeasure carbonMeasure) {
-  //    switch (dataType) {
-  //      case DECIMAL:
-  //        BigDecimal bigDecimal =
-  //            new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
-  //       return ByteUtil.toBytes(normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision()));
-  //      case SHORT:
-  //        return ByteUtil.toBytes((Short.parseShort(msrValue)));
-  //      case INT:
-  //        return ByteUtil.toBytes(Integer.parseInt(msrValue));
-  //      case LONG:
-  //        return ByteUtil.toBytes(Long.valueOf(msrValue));
-  //      default:
-  //        Double parsedValue = Double.valueOf(msrValue);
-  //        if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
-  //          return null;
-  //        }
-  //        return ByteUtil.toBytes(parsedValue);
-  //    }
-  //  }
-  public static byte[] getMeasureByteArrayBasedOnDataTypes(String msrValue, DataType dataType,
-      CarbonMeasure carbonMeasure) {
-    ByteBuffer b;
-    switch (dataType) {
-      case BYTE:
-      case SHORT:
-      case INT:
-      case LONG:
-        b = ByteBuffer.allocate(8);
-        b.putLong(Long.valueOf(msrValue));
-        b.flip();
-        return b.array();
-      case DOUBLE:
-        b = ByteBuffer.allocate(8);
-        b.putDouble(Double.valueOf(msrValue));
-        b.flip();
-        return b.array();
-      case DECIMAL:
-        BigDecimal bigDecimal =
-            new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
-        return DataTypeUtil
-            .bigDecimalToByte(normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision()));
-      default:
-        throw new IllegalArgumentException("Invalid data type: " + dataType);
-    }
-  }
-
-  /**
-   * This method will convert a given ByteArray to its specific type
-   *
-   * @param msrValue
-   * @param dataType
-   * @param carbonMeasure
-   * @return
-   */
-  public static byte[] getMeasureByteArrayBasedOnDataType(ColumnPage measurePage, int index,
-      DataType dataType, CarbonMeasure carbonMeasure) {
-    switch (dataType) {
-      case DECIMAL:
-        BigDecimal bigDecimal = new BigDecimal(measurePage.getDouble(index))
-            .setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
-        return ByteUtil.toBytes(normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision()));
-      case SHORT:
-        return ByteUtil.toBytes(measurePage.getShort(index));
-      case INT:
-        return ByteUtil.toBytes(measurePage.getInt(index));
-      case LONG:
-        return ByteUtil.toBytes(measurePage.getLong(index));
-      default:
-        Double parsedValue = Double.valueOf(measurePage.getDouble(index));
-        if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
-          return null;
-        }
-        return ByteUtil.toBytes(parsedValue);
-    }
-  }
-
   public static Object getMeasureObjectBasedOnDataType(ColumnPage measurePage, int index,
       DataType dataType, CarbonMeasure carbonMeasure) {
-    //    switch (dataType) {
-    //      case DECIMAL:
-    //        BigDecimal bigDecimal = new BigDecimal(measurePage.getDouble(index))
-    //            .setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
-    //        return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
-    //      case SHORT:
-    //      case INT:
-    //      case LONG:
-    //        return measurePage.getLong(index);
-    //      default:
-    //        Double parsedValue = Double.valueOf(measurePage.getDouble(index));
-    //        if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
-    //          return null;
-    //        }
-    //        return parsedValue;
-    //    }
     switch (dataType) {
       case SHORT:
+        return (short)measurePage.getLong(index);
       case INT:
+        return (int)measurePage.getLong(index);
       case LONG:
         return measurePage.getLong(index);
       case DECIMAL:
@@ -249,7 +154,6 @@ public final class DataTypeUtil {
           bigDecimalMsrValue =
               bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
         }
-        //return org.apache.spark.sql.types.Decimal.apply(bigDecimalMsrValue);
         return normalizeDecimalValue(bigDecimalMsrValue, carbonMeasure.getPrecision());
       default:
         return measurePage.getDouble(index);
@@ -379,6 +283,19 @@ public final class DataTypeUtil {
    * @return actual data after conversion
    */
   public static Object getDataBasedOnDataType(String data, DataType actualDataType) {
+    return getDataBasedOnDataType(data, actualDataType, getDataTypeConverter());
+  }
+
+  /**
+   * Below method will be used to convert the data passed to its actual data
+   * type
+   *
+   * @param data           data
+   * @param actualDataType actual data type
+   * @return actual data after conversion
+   */
+  public static Object getDataBasedOnDataType(String data, DataType actualDataType,
+      DataTypeConverter converter) {
     if (null == data || CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
       return null;
     }
@@ -435,15 +352,14 @@ public final class DataTypeUtil {
           if (data.isEmpty()) {
             return null;
           }
-          return getDataTypeConverter().convertToDecimal(data);
+          return converter.convertToDecimal(data);
         default:
-          return getDataTypeConverter().convertFromStringToUTF8String(data);
+          return converter.convertFromStringToUTF8String(data);
       }
     } catch (NumberFormatException ex) {
       LOGGER.error("Problem while converting data type" + data);
       return null;
     }
-
   }
 
   public static byte[] getBytesBasedOnDataTypeForNoDictionaryColumn(String dimensionValue,

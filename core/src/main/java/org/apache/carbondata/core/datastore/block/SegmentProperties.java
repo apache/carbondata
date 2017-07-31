@@ -657,6 +657,26 @@ public class SegmentProperties {
     return dimensionValueSize;
   }
 
+  public int[] getColumnsValueSize() {
+    int[] dimensionValueSize =
+        new int[eachDimColumnValueSize.length + eachComplexDimColumnValueSize.length + measures
+            .size()];
+    System
+        .arraycopy(eachDimColumnValueSize, 0, dimensionValueSize, 0, eachDimColumnValueSize.length);
+    System.arraycopy(eachComplexDimColumnValueSize, 0, dimensionValueSize,
+        eachDimColumnValueSize.length, eachComplexDimColumnValueSize.length);
+    int k = eachDimColumnValueSize.length + eachComplexDimColumnValueSize.length;
+    for (int i = 0; i < measures.size(); i++) {
+      DataType dataType = measures.get(i).getDataType();
+      if (dataType.equals(DataType.DECIMAL)) {
+        dimensionValueSize[k++] = -1;
+      } else {
+        dimensionValueSize[k++] = 8;
+      }
+    }
+    return dimensionValueSize;
+  }
+
   /**
    * @return the dimensionKeyGenerator
    */

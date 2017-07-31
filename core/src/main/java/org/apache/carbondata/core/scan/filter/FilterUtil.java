@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -92,7 +91,10 @@ import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.comparator.Comparator;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
 public final class FilterUtil {
   private static final LogService LOGGER =
@@ -420,7 +422,7 @@ public final class FilterUtil {
       throw new FilterUnsupportedException("Unsupported Filter condition: " + result, ex);
     }
 
-    Comparator<byte[]> filterNoDictValueComaparator = new Comparator<byte[]>() {
+    java.util.Comparator<byte[]> filterNoDictValueComaparator = new java.util.Comparator<byte[]>() {
 
       @Override public int compare(byte[] filterMember1, byte[] filterMember2) {
         // TODO Auto-generated method stub
@@ -450,36 +452,27 @@ public final class FilterUtil {
   public static ColumnFilterInfo getMeasureValKeyMemberForFilter(
       List<String> evaluateResultListFinal, boolean isIncludeFilter, DataType dataType,
       CarbonMeasure carbonMeasure) throws FilterUnsupportedException {
-    List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
+    List<Object> filterValuesList = new ArrayList<>(20);
     String result = null;
     try {
       int length = evaluateResultListFinal.size();
       for (int i = 0; i < length; i++) {
         result = evaluateResultListFinal.get(i);
         if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(result)) {
-          filterValuesList.add(new byte[0]);
+          filterValuesList.add(null);
           continue;
         }
-        // TODO have to understand what method to be used for measures.
-        // filterValuesList
-        //  .add(DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(result, dataType));
 
         filterValuesList
-            .add(DataTypeUtil.getMeasureByteArrayBasedOnDataTypes(result, dataType, carbonMeasure));
+            .add(DataTypeUtil.getMeasureValueBasedOnDataType(result, dataType, carbonMeasure));
 
       }
     } catch (Throwable ex) {
       throw new FilterUnsupportedException("Unsupported Filter condition: " + result, ex);
     }
 
-    Comparator<byte[]> filterMeasureComaparator = new Comparator<byte[]>() {
-
-      @Override public int compare(byte[] filterMember1, byte[] filterMember2) {
-        // TODO Auto-generated method stub
-        return ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterMember1, filterMember2);
-      }
-
-    };
+    SerializableComparator filterMeasureComaparator =
+        Comparator.getComparatorByDataTypeForMeasure(dataType);
     Collections.sort(filterValuesList, filterMeasureComaparator);
     ColumnFilterInfo columnFilterInfo = null;
     if (filterValuesList.size() > 0) {
@@ -614,7 +607,7 @@ public final class FilterUtil {
 
   private static void sortFilterModelMembers(final ColumnExpression columnExpression,
       List<String> evaluateResultListFinal) {
-    Comparator<String> filterActualValueComaparator = new Comparator<String>() {
+    java.util.Comparator<String> filterActualValueComaparator = new java.util.Comparator<String>() {
 
       @Override public int compare(String filterMember1, String filterMember2) {
         return compareFilterMembersBasedOnActualDataType(filterMember1, filterMember2,
@@ -735,12 +728,7 @@ public final class FilterUtil {
    * @return
    */
   public static byte[][] getKeyArray(ColumnFilterInfo columnFilterInfo,
-      CarbonDimension carbonDimension, CarbonMeasure carbonMeasure,
-      SegmentProperties segmentProperties) {
-    if (null != carbonMeasure) {
-      return columnFilterInfo.getMeasuresFilterValuesList()
-          .toArray((new byte[columnFilterInfo.getMeasuresFilterValuesList().size()][]));
-    }
+      CarbonDimension carbonDimension, SegmentProperties segmentProperties) {
     if (!carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
       return columnFilterInfo.getNoDictionaryFilterValuesList()
           .toArray((new byte[columnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
@@ -1149,13 +1137,24 @@ public final class FilterUtil {
       DimColumnExecuterFilterInfo dimColumnExecuterInfo, CarbonMeasure measures,
       MeasureColumnExecuterFilterInfo msrColumnExecuterInfo) {
     if (null != measures) {
-      byte[][] keysBasedOnFilter = getKeyArray(filterValues, null, measures, segmentProperties);
+      DataTypeConverterImpl converter = new DataTypeConverterImpl();
+      Object[] keysBasedOnFilter = filterValues.getMeasuresFilterValuesList()
+          .toArray((new Object[filterValues.getMeasuresFilterValuesList().size()]));
+      for (int i = 0; i < keysBasedOnFilter.length; i++) {
+        if (keysBasedOnFilter[i] != null) {
+          keysBasedOnFilter[i] = DataTypeUtil
+              .getDataBasedOnDataType(keysBasedOnFilter[i].toString(), measures.getDataType(),
+                  converter);
+        }
+      }
       msrColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
     } else {
-      byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, null, segmentProperties);
+      byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, segmentProperties);
       dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
     }
   }
+
+
 
   /**
    * method will create a default end key in case of no end key is been derived using existing

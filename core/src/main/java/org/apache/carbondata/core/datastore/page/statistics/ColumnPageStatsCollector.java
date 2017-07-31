@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.datastore.page.statistics;
 
+import java.math.BigDecimal;
+
 public interface ColumnPageStatsCollector {
   void updateNull(int rowId);
   void update(byte value);
@@ -24,6 +26,7 @@ public interface ColumnPageStatsCollector {
   void update(int value);
   void update(long value);
   void update(double value);
+  void update(BigDecimal value);
   void update(byte[] value);
 
   /**

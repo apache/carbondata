@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page.statistics;
 
+import java.math.BigDecimal;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -60,6 +61,11 @@ public class VarLengthPageStatsCollector implements ColumnPageStatsCollector {
 
   @Override
   public void update(double value) {
+
+  }
+
+  @Override
+  public void update(BigDecimal value) {
 
   }
 

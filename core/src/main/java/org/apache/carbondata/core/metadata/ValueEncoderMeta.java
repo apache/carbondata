@@ -49,10 +49,6 @@ public class ValueEncoderMeta implements Serializable {
 
   private byte dataTypeSelected;
 
-  private int scale;
-
-  private int precision;
-
   public Object getMaxValue() {
     return maxValue;
   }
@@ -112,21 +108,5 @@ public class ValueEncoderMeta implements Serializable {
 
   public void setDataTypeSelected(byte dataTypeSelected) {
     this.dataTypeSelected = dataTypeSelected;
-  }
-
-  public int getScale() {
-    return scale;
-  }
-
-  public void setScale(int scale) {
-    this.scale = scale;
-  }
-
-  public int getPrecision() {
-    return precision;
-  }
-
-  public void setPrecision(int precision) {
-    this.precision = precision;
   }
 }

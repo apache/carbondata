@@ -17,10 +17,7 @@
 package org.apache.carbondata.core.scan.filter.executer;
 
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 import java.util.BitSet;
-import java.util.Comparator;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -39,7 +36,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
-import org.apache.carbondata.core.scan.filter.partition.PartitionFilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -47,9 +43,13 @@ import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.comparator.Comparator;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
 public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilterExecuterImpl {
   protected byte[][] filterRangeValues;
+  protected Object[] msrFilterRangeValues;
+  protected SerializableComparator comparator;
 
   /**
    * flag to check whether default values is present in the filter value list
@@ -60,13 +60,18 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, byte[][] filterRangeValues,
-      SegmentProperties segmentProperties) {
+      Object[] msrFilterRangeValues, SegmentProperties segmentProperties) {
     super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties,
         null);
     lastDimensionColOrdinal = segmentProperties.getLastDimensionColOrdinal();
     this.filterRangeValues = filterRangeValues;
+    this.msrFilterRangeValues = msrFilterRangeValues;
+    if (isMeasurePresentInCurrentBlock[0]) {
+      CarbonMeasure measure = this.msrColEvalutorInfoList.get(0).getMeasure();
+      comparator = Comparator.getComparatorByDataTypeForMeasure(measure.getDataType());
+    }
     ifDefaultValueMatchesFilter();
-    if (isDimensionPresentInCurrentBlock[0] == true) {
+    if (isDimensionPresentInCurrentBlock[0]) {
       isNaturalSorted = dimColEvaluatorInfoList.get(0).getDimension().isUseInvertedIndex()
           && dimColEvaluatorInfoList.get(0).getDimension().isSortColumn();
     }
@@ -93,9 +98,9 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       CarbonMeasure measure = this.msrColEvalutorInfoList.get(0).getMeasure();
       byte[] defaultValue = measure.getDefaultValue();
       if (null != defaultValue) {
-        for (int k = 0; k < filterRangeValues.length; k++) {
-          int maxCompare =
-              ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterRangeValues[k], defaultValue);
+        for (int k = 0; k < msrFilterRangeValues.length; k++) {
+          int maxCompare = comparator.compare(msrFilterRangeValues[k],
+              DataTypeUtil.getMeasureObjectFromDataType(defaultValue, measure.getDataType()));
           if (maxCompare >= 0) {
             isDefaultValuePresentInFilter = true;
             break;
@@ -113,7 +118,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       if (isMeasurePresentInCurrentBlock[0]) {
         minValue = blockMinValue[measureBlocksIndex[0] + lastDimensionColOrdinal];
         isScanRequired =
-            isScanRequired(minValue, filterRangeValues, msrColEvalutorInfoList.get(0).getType());
+            isScanRequired(minValue, msrFilterRangeValues, msrColEvalutorInfoList.get(0).getType());
       } else {
         minValue = blockMinValue[dimensionBlocksIndex[0]];
         isScanRequired = isScanRequired(minValue, filterRangeValues);
@@ -144,35 +149,17 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     return isScanRequired;
   }
 
-  private boolean isScanRequired(byte[] minValue, byte[][] filterValue,
+  private boolean isScanRequired(byte[] minValue, Object[] filterValue,
       DataType dataType) {
+    Object value =
+        DataTypeUtil.getMeasureObjectFromDataType(minValue, dataType);
     for (int i = 0; i < filterValue.length; i++) {
-      if (filterValue[i].length == 0 || minValue.length == 0) {
-        return isScanRequired(minValue, filterValue);
+      // TODO handle min and max for null values.
+      if (filterValue[i] == null) {
+        return true;
       }
-      switch (dataType) {
-        case DOUBLE:
-          double minValueDouble = ByteBuffer.wrap(minValue).getDouble();
-          double filterValueDouble = ByteBuffer.wrap(filterValue[i]).getDouble();
-          if (filterValueDouble >= minValueDouble) {
-            return true;
-          }
-          break;
-        case INT:
-        case SHORT:
-        case LONG:
-          long minValueLong = ByteBuffer.wrap(minValue).getLong();
-          long filterValueLong = ByteBuffer.wrap(filterValue[i]).getLong();
-          if (filterValueLong >= minValueLong) {
-            return true;
-          }
-          break;
-        case DECIMAL:
-          BigDecimal minDecimal = DataTypeUtil.byteToBigDecimal(minValue);
-          BigDecimal filterDecimal = DataTypeUtil.byteToBigDecimal(filterValue[i]);
-          if (filterDecimal.compareTo(minDecimal) >= 0) {
-            return true;
-          }
+      if (comparator.compare(filterValue[i], value) >= 0) {
+        return true;
       }
     }
     return false;
@@ -222,7 +209,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMinValues() != null) {
-          if (isScanRequired(rawColumnChunk.getMinValues()[i], this.filterRangeValues,
+          if (isScanRequired(rawColumnChunk.getMinValues()[i], this.msrFilterRangeValues,
               msrColEvalutorInfoList.get(0).getType())) {
             BitSet bitSet =
                 getFilteredIndexesForMeasures(rawColumnChunk.convertToMeasureColDataChunk(i),
@@ -244,24 +231,23 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
   private BitSet getFilteredIndexesForMeasures(MeasureColumnDataChunk measureColumnDataChunk,
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
-    byte[][] filterValues = this.filterRangeValues;
+    Object[] filterValues = this.msrFilterRangeValues;
     DataType msrType = msrColEvalutorInfoList.get(0).getType();
-    Comparator comparator = PartitionFilterUtil.getComparatorByDataTypeForMeasure(msrType);
+    SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
     for (int i = 0; i < filterValues.length; i++) {
-      if (filterValues[i].length == 0) {
+      if (filterValues[i] == null) {
         BitSet nullBitSet = measureColumnDataChunk.getNullValueIndexHolder().getBitSet();
         for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
           bitSet.set(j);
         }
         continue;
       }
-      Object filter = DataTypeUtil.getMeasureObjectFromDataType(filterValues[i], msrType);
       for (int startIndex = 0; startIndex < numerOfRows; startIndex++) {
         Object msrValue = DataTypeUtil
             .getMeasureObjectBasedOnDataType(measureColumnDataChunk.getColumnPage(), startIndex,
                 msrType, msrColEvalutorInfoList.get(0).getMeasure());
 
-        if (comparator.compare(msrValue, filter) <= 0) {
+        if (comparator.compare(msrValue, filterValues[i]) <= 0) {
           // This is a match.
           bitSet.set(startIndex);
         }

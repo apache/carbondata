@@ -32,6 +32,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   private int minInt, maxInt;
   private long minLong, maxLong;
   private double minDouble, maxDouble;
+  private BigDecimal minDecimal, maxDecimal;
   private int scale, precision;
 
   // scale of the double value
@@ -39,6 +40,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   // The index of the rowId whose value is null, will be set to 1
   private BitSet nullBitSet;
+
+  private boolean isFirst = true;
+  private BigDecimal zeroDecimal;
 
   // this is for encode flow
   public static PrimitivePageStatsCollector newInstance(DataType dataType, int pageSize, int
@@ -78,8 +82,8 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         instance.decimal = meta.getDecimal();
         break;
       case DECIMAL:
-        instance.minLong = (long) meta.getMinValue();
-        instance.maxLong = (long) meta.getMaxValue();
+        instance.minDecimal = (BigDecimal) meta.getMinValue();
+        instance.maxDecimal = (BigDecimal) meta.getMaxValue();
         instance.decimal = meta.getDecimal();
         instance.scale = meta.getScale();
         instance.precision = meta.getPrecision();
@@ -90,7 +94,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   public static PrimitivePageStatsCollector newInstance(ValueEncoderMeta meta) {
     PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(meta.getType(), 0, meta.getScale(), meta.getPrecision());
+        new PrimitivePageStatsCollector(meta.getType(), 0, -1, -1);
     // set min max from meta
     switch (meta.getType()) {
       case BYTE:
@@ -115,11 +119,11 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         instance.decimal = meta.getDecimal();
         break;
       case DECIMAL:
-        instance.minDouble = (double) meta.getMinValue();
-        instance.maxDouble = (double) meta.getMaxValue();
+        instance.minDecimal = (BigDecimal) meta.getMinValue();
+        instance.maxDecimal = (BigDecimal) meta.getMaxValue();
         instance.decimal = meta.getDecimal();
-        instance.scale = meta.getScale();
-        instance.precision = meta.getPrecision();
+        instance.scale = -1;
+        instance.precision = -1;
         break;
     }
     return instance;
@@ -151,8 +155,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         decimal = 0;
         break;
       case DECIMAL:
-        minLong = Long.MAX_VALUE;
-        maxLong = Long.MIN_VALUE;
+        this.zeroDecimal = BigDecimal.ZERO;
         decimal = scale;
         this.scale = scale;
         this.precision = precision;
@@ -178,6 +181,16 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         break;
       case DOUBLE:
         update(0d);
+        break;
+      case DECIMAL:
+        if (isFirst) {
+          maxDecimal = zeroDecimal;
+          minDecimal = zeroDecimal;
+          isFirst = false;
+        } else {
+          maxDecimal = (maxDecimal.compareTo(zeroDecimal) > 0) ? maxDecimal : zeroDecimal;
+          minDecimal = (minDecimal.compareTo(zeroDecimal) < 0) ? minDecimal : zeroDecimal;
+        }
         break;
     }
   }
@@ -239,6 +252,18 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   }
 
   @Override
+  public void update(BigDecimal decimalValue) {
+    if (isFirst) {
+      maxDecimal = decimalValue;
+      minDecimal = decimalValue;
+      isFirst = false;
+    } else {
+      maxDecimal = (decimalValue.compareTo(maxDecimal) > 0) ? decimalValue : maxDecimal;
+      minDecimal = (decimalValue.compareTo(maxDecimal) < 0) ? decimalValue : minDecimal;
+    }
+  }
+
+  @Override
   public void update(byte[] value) {
   }
 
@@ -278,7 +303,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       case DOUBLE:
         return minDouble;
       case DECIMAL:
-        return minLong;
+        return minDecimal;
     }
     return null;
   }
@@ -297,7 +322,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       case DOUBLE:
         return maxDouble;
       case DECIMAL:
-        return maxLong;
+        return maxDecimal;
     }
     return null;
   }
