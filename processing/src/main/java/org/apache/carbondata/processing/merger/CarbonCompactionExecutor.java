@@ -98,8 +98,7 @@ public class CarbonCompactionExecutor {
   public List<RawResultIterator> processTableBlocks() throws QueryExecutionException, IOException {
     List<RawResultIterator> resultList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    List<TableBlockInfo> list = null;
-    queryModel = prepareQueryModel(list);
+    queryModel = prepareQueryModel();
     // iterate each seg ID
     for (Map.Entry<String, TaskBlockInfo> taskMap : segmentMapping.entrySet()) {
       String segmentId = taskMap.getKey();
@@ -108,6 +107,7 @@ public class CarbonCompactionExecutor {
       // for each segment get taskblock info
       TaskBlockInfo taskBlockInfo = taskMap.getValue();
       Set<String> taskBlockListMapping = taskBlockInfo.getTaskSet();
+      List<TableBlockInfo> list;
       for (String task : taskBlockListMapping) {
         list = taskBlockInfo.getTableBlockInfoList(task);
         Collections.sort(list);
@@ -196,12 +196,11 @@ public class CarbonCompactionExecutor {
   /**
    * Preparing of the query model.
    *
-   * @param blockList
    * @return
    */
-  private QueryModel prepareQueryModel(List<TableBlockInfo> blockList) {
+  private QueryModel prepareQueryModel() {
     QueryModel model = new QueryModel();
-    model.setTableBlockInfos(blockList);
+    model.setTableBlockInfos(null);
     model.setForcedDetailRawQuery(true);
     model.setFilterExpressionResolverTree(null);
     model.setConverter(DataTypeUtil.getDataTypeConverter());

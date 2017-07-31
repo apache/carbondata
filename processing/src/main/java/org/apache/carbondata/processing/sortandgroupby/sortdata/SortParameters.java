@@ -246,7 +246,7 @@ public class SortParameters implements Serializable {
     isSortFileCompressionEnabled = sortFileCompressionEnabled;
   }
 
-  public boolean isPrefetch() {
+  public boolean isPreFetch() {
     return prefetch;
   }
 
@@ -294,7 +294,7 @@ public class SortParameters implements Serializable {
     this.noDictionaryCount = noDictionaryCount;
   }
 
-  public String getPartitionID() {
+  public String getPartitionId() {
     return partitionID;
   }
 

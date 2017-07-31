@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -347,7 +348,7 @@ public final class CarbonDataProcessorUtil {
     // file header should contain all columns of carbon table.
     // So csvColumns should contain all elements of columnIterator.
     while (columnIterator.hasNext()) {
-      if (!csvColumns.contains(columnIterator.next().toLowerCase())) {
+      if (!csvColumns.contains(columnIterator.next().toLowerCase(Locale.getDefault()))) {
         return false;
       }
     }
@@ -420,8 +421,8 @@ public final class CarbonDataProcessorUtil {
       String[] dateformats = dataFormatString.split(CarbonCommonConstants.COMMA);
       for (String dateFormat : dateformats) {
         String[] dateFormatSplits = dateFormat.split(":", 2);
-        dateformatsHashMap
-            .put(dateFormatSplits[0].toLowerCase().trim(), dateFormatSplits[1].trim());
+        dateformatsHashMap.put(dateFormatSplits[0].toLowerCase(Locale.getDefault()).trim(),
+            dateFormatSplits[1].trim());
       }
     }
     return dateformatsHashMap;
@@ -468,23 +469,16 @@ public final class CarbonDataProcessorUtil {
    */
   public static SortScopeOptions.SortScope getSortScope(CarbonDataLoadConfiguration configuration) {
     SortScopeOptions.SortScope sortScope;
-    try {
-      // first check whether user input it from ddl, otherwise get from carbon properties
-      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE) == null) {
-        sortScope = SortScopeOptions.getSortScope(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-                CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT));
-      } else {
-        sortScope = SortScopeOptions.getSortScope(
-            configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
-                .toString());
-      }
-      LOGGER.warn("sort scope is set to " + sortScope);
-    } catch (Exception e) {
-      sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
-      LOGGER.warn("Exception occured while resolving sort scope. " +
-          "sort scope is set to " + sortScope);
+    // first check whether user input it from ddl, otherwise get from carbon properties
+    if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE) == null) {
+      sortScope = SortScopeOptions.getSortScope(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+              CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT));
+    } else {
+      sortScope = SortScopeOptions.getSortScope(
+          configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE).toString());
     }
+    LOGGER.warn("sort scope is set to " + sortScope);
     return sortScope;
   }
 
@@ -528,7 +522,7 @@ public final class CarbonDataProcessorUtil {
                 .toString());
       }
       LOGGER.warn("batch sort size is set to " + batchSortSizeInMb);
-    } catch (Exception e) {
+    } catch (NumberFormatException e) {
       batchSortSizeInMb = 0;
       LOGGER.warn("Exception occured while resolving batch sort size. " +
           "batch sort size is set to " + batchSortSizeInMb);
@@ -555,7 +549,7 @@ public final class CarbonDataProcessorUtil {
           configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
             .toString());
       }
-    } catch (Exception e) {
+    } catch (NumberFormatException e) {
       numPartitions = 0;
     }
     return numPartitions;

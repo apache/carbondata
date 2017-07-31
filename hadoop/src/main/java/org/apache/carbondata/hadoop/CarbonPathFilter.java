@@ -26,16 +26,6 @@ import org.apache.hadoop.fs.PathFilter;
  */
 public class CarbonPathFilter implements PathFilter {
 
-  // update extension which should be picked
-  private final String validUpdateTimestamp;
-
-  /**
-   * @param validUpdateTimestamp update extension which should be picked
-   */
-  public CarbonPathFilter(String validUpdateTimestamp) {
-    this.validUpdateTimestamp = validUpdateTimestamp;
-  }
-
   @Override public boolean accept(Path path) {
     return CarbonTablePath.isCarbonDataFile(path.getName());
   }

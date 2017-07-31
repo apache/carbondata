@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.processing.newflow.sort;
 
+import java.util.Locale;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -29,7 +31,7 @@ public class SortScopeOptions {
     if (sortScope == null) {
       sortScope = CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT;
     }
-    switch (sortScope.toUpperCase()) {
+    switch (sortScope.toUpperCase(Locale.getDefault())) {
       case "BATCH_SORT":
         return SortScope.BATCH_SORT;
       case "LOCAL_SORT":

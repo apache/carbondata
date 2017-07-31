@@ -266,9 +266,10 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
         return false;
       }
       if (value == null) {
-        value = new StringArrayWritable();
+        value = new StringArrayWritable(columns);
+      } else {
+        value.set(columns);
       }
-      value.set(columns);
       return true;
     }
 

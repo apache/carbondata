@@ -137,130 +137,123 @@ public class DriverQueryStatisticsRecorderImpl implements QueryStatisticsRecorde
     long driver_part_time_tmp2 = 0L;
     long load_blocks_time_tmp = 0L;
     String splitChar = " ";
-    try {
-      // get statistic time from the QueryStatistic
-      for (QueryStatistic statistic : statisticsList) {
-        switch (statistic.getMessage()) {
-          case QueryStatisticsConstants.SQL_PARSE:
-            sql_parse_time += statistic.getTimeTaken() + splitChar;
-            driver_part_time_tmp += statistic.getTimeTaken();
-            break;
-          case QueryStatisticsConstants.LOAD_META:
-            load_meta_time += statistic.getTimeTaken() + splitChar;
-            driver_part_time_tmp += statistic.getTimeTaken();
-            break;
-          case QueryStatisticsConstants.LOAD_BLOCKS_DRIVER:
-            // multi segments will generate multi load_blocks_time
-            load_blocks_time_tmp += statistic.getTimeTaken();
-            driver_part_time_tmp += statistic.getTimeTaken();
-            driver_part_time_tmp2 += statistic.getTimeTaken();
-            break;
-          case QueryStatisticsConstants.BLOCK_ALLOCATION:
-            block_allocation_time += statistic.getTimeTaken() + splitChar;
-            driver_part_time_tmp += statistic.getTimeTaken();
-            driver_part_time_tmp2 += statistic.getTimeTaken();
-            break;
-          case QueryStatisticsConstants.BLOCK_IDENTIFICATION:
-            block_identification_time += statistic.getTimeTaken() + splitChar;
-            driver_part_time_tmp += statistic.getTimeTaken();
-            driver_part_time_tmp2 += statistic.getTimeTaken();
-            break;
-          default:
-            break;
-        }
+    // get statistic time from the QueryStatistic
+    for (QueryStatistic statistic : statisticsList) {
+      switch (statistic.getMessage()) {
+        case QueryStatisticsConstants.SQL_PARSE:
+          sql_parse_time += statistic.getTimeTaken() + splitChar;
+          driver_part_time_tmp += statistic.getTimeTaken();
+          break;
+        case QueryStatisticsConstants.LOAD_META:
+          load_meta_time += statistic.getTimeTaken() + splitChar;
+          driver_part_time_tmp += statistic.getTimeTaken();
+          break;
+        case QueryStatisticsConstants.LOAD_BLOCKS_DRIVER:
+          // multi segments will generate multi load_blocks_time
+          load_blocks_time_tmp += statistic.getTimeTaken();
+          driver_part_time_tmp += statistic.getTimeTaken();
+          driver_part_time_tmp2 += statistic.getTimeTaken();
+          break;
+        case QueryStatisticsConstants.BLOCK_ALLOCATION:
+          block_allocation_time += statistic.getTimeTaken() + splitChar;
+          driver_part_time_tmp += statistic.getTimeTaken();
+          driver_part_time_tmp2 += statistic.getTimeTaken();
+          break;
+        case QueryStatisticsConstants.BLOCK_IDENTIFICATION:
+          block_identification_time += statistic.getTimeTaken() + splitChar;
+          driver_part_time_tmp += statistic.getTimeTaken();
+          driver_part_time_tmp2 += statistic.getTimeTaken();
+          break;
+        default:
+          break;
       }
-      load_blocks_time = load_blocks_time_tmp + splitChar;
-      String driver_part_time = driver_part_time_tmp + splitChar;
-      // structure the query statistics info table
-      StringBuilder tableInfo = new StringBuilder();
-      int len1 = 8;
-      int len2 = 20;
-      int len3 = 21;
-      int len4 = 24;
-      String line = "+" + printLine("-", len1) + "+" + printLine("-", len2) + "+" +
-          printLine("-", len3) + "+" + printLine("-", len4) + "+";
-      String line2 = "|" + printLine(" ", len1) + "+" + printLine("-", len2) + "+" +
-          printLine(" ", len3) + "+" + printLine("-", len4) + "+";
-      // table header
-      tableInfo.append(line).append("\n");
-      tableInfo.append("|" + printLine(" ", (len1 - "Module".length())) + "Module" + "|" +
-          printLine(" ", (len2 - "Operation Step".length())) + "Operation Step" + "|" +
-          printLine(" ", (len3 - "Total Query Cost".length())) + "Total Query Cost" + "|" +
-          printLine(" ", (len4 - "Query Cost".length())) + "Query Cost" + "|" + "\n");
-      tableInfo.append(line).append("\n");
-      // print sql_parse_t,load_meta_t,block_allocation_t,block_identification_t
-      if (!StringUtils.isEmpty(sql_parse_time) &&
-          !StringUtils.isEmpty(load_meta_time) &&
-          !StringUtils.isEmpty(block_allocation_time) &&
-          !StringUtils.isEmpty(block_identification_time)) {
-        tableInfo.append("|" + printLine(" ", len1) + "|" +
-            printLine(" ", (len2 - "SQL parse".length())) + "SQL parse" + "|" +
-            printLine(" ", len3) + "|" +
-            printLine(" ", (len4 - sql_parse_time.length())) + sql_parse_time + "|" + "\n");
-        tableInfo.append(line2).append("\n");
-        tableInfo.append("|" + printLine(" ", (len1 - "Driver".length())) + "Driver" + "|" +
-            printLine(" ", (len2 - "Load meta data".length())) + "Load meta data" + "|" +
-            printLine(" ", (len3 - driver_part_time.length())) + driver_part_time + "|" +
-            printLine(" ", (len4 - load_meta_time.length())) +
-            load_meta_time + "|" + "\n");
-        tableInfo.append(line2).append("\n");
-        tableInfo.append("|" + printLine(" ", (len1 - "Part".length())) + "Part" + "|" +
-                printLine(" ", (len2 - "Load blocks driver".length())) +
-                "Load blocks driver" + "|" +
-                printLine(" ", len3) + "|" +
-                printLine(" ", (len4 - load_blocks_time.length())) +
-                load_blocks_time + "|" + "\n");
-        tableInfo.append(line2).append("\n");
-        tableInfo.append("|" + printLine(" ", len1) + "|" +
-            printLine(" ", (len2 - "Block allocation".length())) + "Block allocation" + "|" +
-            printLine(" ", len3) + "|" +
-            printLine(" ", (len4 - block_allocation_time.length())) +
-            block_allocation_time + "|" + "\n");
-        tableInfo.append(line2).append("\n");
-        tableInfo.append("|" +
-            printLine(" ", len1) + "|" +
-            printLine(" ", (len2 - "Block identification".length())) +
-            "Block identification" + "|" +
-            printLine(" ", len3) + "|" +
-            printLine(" ", (len4 - block_identification_time.length())) +
-            block_identification_time + "|" + "\n");
-        tableInfo.append(line).append("\n");
-
-        // show query statistic as "query id" + "table"
-        return "Print query statistic for query id: " + queryId + "\n" + tableInfo.toString();
-      } else if (!StringUtils.isEmpty(block_allocation_time) &&
-          !StringUtils.isEmpty(block_identification_time)) {
-        // when we can't get sql parse time, we only print the last two
-        driver_part_time = driver_part_time_tmp2 + splitChar;
-        tableInfo.append("|" + printLine(" ", (len1 - "Driver".length())) + "Driver" + "|" +
-                printLine(" ", (len2 - "Load blocks driver".length())) +
-                "Load blocks driver" + "|" +
-                printLine(" ", len3) + "|" +
-                printLine(" ", (len4 - load_blocks_time.length())) +
-                load_blocks_time + "|" + "\n");
-        tableInfo.append(line2).append("\n");
-        tableInfo.append("|" + printLine(" ", (len1 - "Part".length())) + "Part" + "|" +
-            printLine(" ", (len2 - "Block allocation".length())) + "Block allocation" + "|" +
-            printLine(" ", (len3 - driver_part_time.length())) + driver_part_time + "|" +
-            printLine(" ", (len4 - block_allocation_time.length())) +
-            block_allocation_time + "|" + "\n");
-        tableInfo.append(line2).append("\n");
-        tableInfo.append("|" +
-            printLine(" ", len1) + "|" +
-            printLine(" ", (len2 - "Block identification".length())) +
-            "Block identification" + "|" +
-            printLine(" ", len3) + "|" +
-            printLine(" ", (len4 - block_identification_time.length())) +
-            block_identification_time + "|" + "\n");
-        tableInfo.append(line).append("\n");
-
-        // show query statistic as "query id" + "table"
-        return "Print query statistic for query id: " + queryId + "\n" + tableInfo.toString();
-      }
-
-      return null;
-    } catch (Exception ex) {
-      return "Put statistics into table failed, catch exception: " + ex.getMessage();
     }
+    load_blocks_time = load_blocks_time_tmp + splitChar;
+    String driver_part_time = driver_part_time_tmp + splitChar;
+    // structure the query statistics info table
+    StringBuilder tableInfo = new StringBuilder();
+    int len1 = 8;
+    int len2 = 20;
+    int len3 = 21;
+    int len4 = 24;
+    String line =
+        "+" + printLine("-", len1) + "+" + printLine("-", len2) + "+" +
+            printLine("-", len3) + "+" + printLine("-", len4) + "+";
+    String line2 =
+        "|" + printLine(" ", len1) + "+" + printLine("-", len2) + "+" +
+            printLine(" ", len3) + "+" + printLine("-", len4) + "+";
+    // table header
+    tableInfo.append(line).append("\n");
+    tableInfo.append(
+        "|" + printLine(" ", (len1 - "Module".length())) + "Module" + "|" + printLine(" ",
+            (len2 - "Operation Step".length())) + "Operation Step" + "|" + printLine(" ",
+            (len3 - "Total Query Cost".length())) + "Total Query Cost" + "|" + printLine(" ",
+            (len4 - "Query Cost".length())) + "Query Cost" + "|" + "\n");
+    tableInfo.append(line).append("\n");
+    // print sql_parse_t,load_meta_t,block_allocation_t,block_identification_t
+    if (!StringUtils.isEmpty(sql_parse_time) && !StringUtils.isEmpty(load_meta_time) && !StringUtils
+        .isEmpty(block_allocation_time) && !StringUtils.isEmpty(block_identification_time)) {
+      tableInfo.append(
+          "|" + printLine(" ", len1) + "|" + printLine(" ", (len2 - "SQL parse".length()))
+              + "SQL parse" + "|" + printLine(" ", len3) + "|" + printLine(" ",
+              (len4 - sql_parse_time.length())) + sql_parse_time + "|" + "\n");
+      tableInfo.append(line2).append("\n");
+      tableInfo.append(
+          "|" + printLine(" ", (len1 - "Driver".length())) + "Driver" + "|" + printLine(" ",
+              (len2 - "Load meta data".length())) + "Load meta data" + "|" + printLine(" ",
+              (len3 - driver_part_time.length())) + driver_part_time + "|" + printLine(" ",
+              (len4 - load_meta_time.length())) + load_meta_time + "|" + "\n");
+      tableInfo.append(line2).append("\n");
+      tableInfo.append(
+          "|" + printLine(" ", (len1 - "Part".length())) + "Part" + "|" + printLine(" ",
+              (len2 - "Load blocks driver".length())) + "Load blocks driver" + "|"
+              + printLine(" ", len3) + "|" +
+              printLine(" ", (len4 - load_blocks_time.length())) + load_blocks_time
+              + "|" + "\n");
+      tableInfo.append(line2).append("\n");
+      tableInfo.append(
+          "|" + printLine(" ", len1) + "|" +
+              printLine(" ", (len2 - "Block allocation".length())) +
+              "Block allocation" + "|" + printLine(" ", len3) + "|" +
+              printLine(" ", (len4 - block_allocation_time.length())) +
+              block_allocation_time + "|" + "\n");
+      tableInfo.append(line2).append("\n");
+      tableInfo.append("|" + printLine(" ", len1) + "|" + printLine(" ",
+          (len2 - "Block identification".length())) + "Block identification" +
+          "|" + printLine(" ", len3) + "|" +
+          printLine(" ", (len4 - block_identification_time.length())) +
+          block_identification_time + "|" + "\n");
+      tableInfo.append(line).append("\n");
+
+      // show query statistic as "query id" + "table"
+      return "Print query statistic for query id: " + queryId + "\n" + tableInfo.toString();
+    } else if (!StringUtils.isEmpty(block_allocation_time) && !StringUtils
+        .isEmpty(block_identification_time)) {
+      // when we can't get sql parse time, we only print the last two
+      driver_part_time = driver_part_time_tmp2 + splitChar;
+      tableInfo.append(
+          "|" + printLine(" ", (len1 - "Driver".length())) + "Driver" + "|" + printLine(" ",
+              (len2 - "Load blocks driver".length())) + "Load blocks driver" +
+              "|" + printLine(" ", len3) + "|" +
+              printLine(" ", (len4 - load_blocks_time.length())) + load_blocks_time +
+              "|" + "\n");
+      tableInfo.append(line2).append("\n");
+      tableInfo.append(
+          "|" + printLine(" ", (len1 - "Part".length())) + "Part" + "|" + printLine(" ",
+              (len2 - "Block allocation".length())) + "Block allocation" + "|" + printLine(" ",
+              (len3 - driver_part_time.length())) + driver_part_time + "|" + printLine(" ",
+              (len4 - block_allocation_time.length())) + block_allocation_time + "|" + "\n");
+      tableInfo.append(line2).append("\n");
+      tableInfo.append("|" + printLine(" ", len1) + "|" + printLine(" ",
+          (len2 - "Block identification".length())) + "Block identification" + "|" +
+          printLine(" ", len3) + "|" +
+          printLine(" ", (len4 - block_identification_time.length()))
+          + block_identification_time + "|" + "\n");
+      tableInfo.append(line).append("\n");
+
+      // show query statistic as "query id" + "table"
+      return "Print query statistic for query id: " + queryId + "\n" + tableInfo.toString();
+    }
+    return null;
   }
 }

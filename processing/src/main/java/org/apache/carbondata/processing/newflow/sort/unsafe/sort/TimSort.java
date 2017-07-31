@@ -798,7 +798,7 @@ public class TimSort<K, Buffer> {
             break outer;
           }
           minGallop--;
-        } while (count1 >= MIN_GALLOP | count2 >= MIN_GALLOP);
+        } while (count1 >= MIN_GALLOP || count2 >= MIN_GALLOP);
         if (minGallop < 0) {
           minGallop = 0;
         }
@@ -927,7 +927,7 @@ public class TimSort<K, Buffer> {
             break outer;
           }
           minGallop--;
-        } while (count1 >= MIN_GALLOP | count2 >= MIN_GALLOP);
+        } while (count1 >= MIN_GALLOP || count2 >= MIN_GALLOP);
         if (minGallop < 0) {
           minGallop = 0;
         }

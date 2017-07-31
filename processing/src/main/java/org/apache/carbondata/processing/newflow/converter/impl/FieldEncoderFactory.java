@@ -37,7 +37,7 @@ import org.apache.carbondata.processing.newflow.converter.FieldConverter;
 
 public class FieldEncoderFactory {
 
-  private static FieldEncoderFactory instance;
+  private static volatile FieldEncoderFactory instance;
 
   private FieldEncoderFactory() {
 

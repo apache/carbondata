@@ -18,6 +18,8 @@
 package org.apache.carbondata.core.util;
 
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -54,7 +56,12 @@ public final class ObjectSizeCalculator {
       if (methodAccessible) {
         if (null == estimateMethod) {
           estimateMethod = Class.forName(className).getMethod("estimate", Object.class);
-          estimateMethod.setAccessible(true);
+          AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override public Void run() {
+              estimateMethod.setAccessible(true);
+              return null;
+            }
+          });
         }
         return (Long) estimateMethod.invoke(null, anObject);
       } else {

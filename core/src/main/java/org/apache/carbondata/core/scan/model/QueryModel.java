@@ -94,7 +94,7 @@ public class QueryModel implements Serializable {
    */
   private CarbonTable table;
 
-  private QueryStatisticsRecorder statisticsRecorder;
+  private transient QueryStatisticsRecorder statisticsRecorder;
 
   private boolean vectorReader;
 

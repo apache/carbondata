@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.constants.LoggerAction;
@@ -130,7 +131,8 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     if (null != bad_records_action) {
       LoggerAction loggerAction = null;
       try {
-        loggerAction = LoggerAction.valueOf(bad_records_action.toString().toUpperCase());
+        loggerAction =
+            LoggerAction.valueOf(bad_records_action.toString().toUpperCase(Locale.getDefault()));
       } catch (IllegalArgumentException e) {
         loggerAction = LoggerAction.FORCE;
       }
@@ -149,6 +151,8 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
         case FAIL:
           isDataLoadFail = true;
           break;
+        default:
+          throw new RuntimeException("Invalid bad records logger option: " + loggerAction);
       }
     }
     CarbonTableIdentifier identifier =

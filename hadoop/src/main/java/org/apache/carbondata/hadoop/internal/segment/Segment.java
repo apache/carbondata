@@ -18,14 +18,10 @@
 package org.apache.carbondata.hadoop.internal.segment;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 
@@ -53,25 +49,6 @@ public abstract class Segment {
 
   public String getPath() {
     return path;
-  }
-
-  /**
-   * return all InputSplit of this segment, each file is a InputSplit
-   * @param job job context
-   * @return all InputSplit
-   * @throws IOException
-   */
-  public List<InputSplit> getAllSplits(JobContext job) throws IOException {
-    List<InputSplit> result = new ArrayList<>();
-    Path p = new Path(path);
-    FileSystem fs = p.getFileSystem(job.getConfiguration());
-
-    //TODO: filter out the hidden files
-    FileStatus[] files = fs.globStatus(p);
-    for (FileStatus file: files) {
-      // make split and add to result
-    }
-    return result;
   }
 
   /**
