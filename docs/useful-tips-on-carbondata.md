@@ -25,7 +25,6 @@ The following sections will elaborate on the above topics :
 * [Configuration for Optimizing Data Loading performance for Massive Data](#configuration-for-optimizing-data-loading-performance-for-massive-data)
 * [Optimizing Mass Data Loading](#configurations-for-optimizing-carbondata-performance)
 
-
 ## Suggestions to Create CarbonData Table
 
 Recently CarbonData was used to analyze performance of Telecommunication field.
