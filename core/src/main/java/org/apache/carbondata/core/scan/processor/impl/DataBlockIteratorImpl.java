@@ -25,6 +25,7 @@ import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.processor.AbstractDataBlockIterator;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.COLUMNAR_DATA_READ_BATCH_SIZE;
 
 /**
  * Below class will be used to process the block for detail query
@@ -47,9 +48,10 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
    */
   public List<Object[]> next() {
     List<Object[]> collectedResult = null;
+    batchSize = Integer.parseInt(COLUMNAR_DATA_READ_BATCH_SIZE);
     if (updateScanner()) {
       collectedResult = this.scannerResultAggregator.collectData(scannedResult, batchSize);
-      while (collectedResult.size() < batchSize && updateScanner()) {
+      while (collectedResult.get(0).length < batchSize && updateScanner()) {
         List<Object[]> data = this.scannerResultAggregator
             .collectData(scannedResult, batchSize - collectedResult.size());
         collectedResult.addAll(data);
@@ -64,6 +66,18 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
     if (updateScanner()) {
       this.scannerResultAggregator.collectVectorBatch(scannedResult, columnarBatch);
     }
+  }
+
+  @Override public List<Object[]>  processNextColumnBatch() {
+    List<Object[]> collectedResult ;
+    batchSize = Integer.parseInt(COLUMNAR_DATA_READ_BATCH_SIZE);
+    if (updateScanner()) {
+      collectedResult = this.scannerResultAggregator.collectData(scannedResult, batchSize);
+    } else {
+      collectedResult = new ArrayList<>();
+    }
+    return collectedResult;
+
   }
 
 }

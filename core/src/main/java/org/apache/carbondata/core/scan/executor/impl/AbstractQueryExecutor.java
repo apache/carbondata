@@ -390,6 +390,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setEachColumnValueSize(segmentProperties.getEachDimColumnValueSize());
     blockExecutionInfo.setComplexColumnParentBlockIndexes(
         getComplexDimensionParentBlockIndexes(currentBlockQueryDimensions));
+    blockExecutionInfo.setColumnCollector(queryModel.isColumnCollector());
     blockExecutionInfo.setVectorBatchCollector(queryModel.isVectorReader());
     try {
       // to set column group and its key structure info which will be used

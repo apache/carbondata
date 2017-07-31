@@ -132,7 +132,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
         return false;
       }
     } catch (Exception ex) {
-      throw new RuntimeException(ex);
+      throw new RuntimeException(ex.getMessage());
     }
   }
 
@@ -211,6 +211,8 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
   }
 
   public abstract void processNextBatch(CarbonColumnarBatch columnarBatch);
+
+  public abstract List<Object[]>  processNextColumnBatch();
 
   /**
    * Close the resources
