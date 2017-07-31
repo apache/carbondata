@@ -24,7 +24,7 @@ The following sections will elaborate on the above topics :
 * [Suggestions to create CarbonData Table](#suggestions-to-create-carbondata-table)
 * [Configuration for Optimizing Data Loading performance for Massive Data](#configuration-for-optimizing-data-loading-performance-for-massive-data)
 * [Optimizing Mass Data Loading](#configurations-for-optimizing-carbondata-performance)
-
+* [Provide Dynamic Configuration to Carbondata](#provide-dynamic-configuration-to-carbondata)
 
 ## Suggestions to Create CarbonData Table
 
@@ -234,3 +234,77 @@ scenarios. After the completion of POC, some of the configurations impacting the
 | carbon.use.multiple.temp.dir | spark/carbonlib/carbon.properties | Data loading | Whether to use multiple YARN local directories during table data loading for disk load balance | After enabling 'carbon.use.local.dir', if this is set to true, CarbonData will use all YARN local directories during data load for disk load balance, that will improve the data load performance. Please enable this property when you encounter disk hotspot problem during data loading. |
 
 Note: If your CarbonData instance is provided only for query, you may specify the property 'spark.speculation=true' which is in conf directory of spark.
+
+## Provide Dynamic Configuration to CarbonData
+
+**SET/RESET** commands are used to add, update, display, or reset the carbondata properties dynamically without restarting the driver.
+
+**Syntax**
+
+* **Add or Update :** This command adds or updates the value of parameter_name.
+
+```
+SET parameter_name=parameter_value
+```
+
+* Display Property Value: This command displays the value of the specified parameter_name.
+
+```
+SET parameter_name
+```
+
+* Display Session Parameters: This command displays all the supported session parameters.
+
+```
+SET
+```
+
+* Display Session Parameters along with usage details: This command displays all the supported session parameters along with their usage details.
+
+```
+SET -v
+```
+
+* Reset: This command clears all the session parameters.
+
+```
+RESET
+```
+
+ **Parameter Description:**
+
+
+| Parameter       | Description                                                                            |
+|-----------------|----------------------------------------------------------------------------------------|
+| parameter_name  | Name of the property whose value needs to be dynamically added, updated, or displayed. |
+| parameter_value | New value of the parameter_name to be set.                                             |
+
+**Examples:**
+
+* Add or Update:
+
+```
+SET enable.unsafe.sort =true
+```
+
+* Display Property Value:
+
+```
+SET enable.unsafe.sort
+```
+
+* Reset:
+
+```
+RESET
+```
+
+**System Response:**
+
+* Success will be recorded in the driver log.
+
+* Failure will be displayed in the UI.
+
+NOTE:
+
+To get details about properties which can be set or clear dynamically using SET and RESET command refer [Configuration Paramters](configuration-parameters.md)
