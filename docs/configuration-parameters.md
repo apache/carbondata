@@ -65,7 +65,7 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.enable.vector.reader | true | This parameter increases the performance of select queries as it fetch columnar batch of size 4*1024 rows instead of fetching data row by row. | |
 | sort.inmemory.size.inmb | 1024 MB | Memory size in MB available for in-memory sort. | |
 | carbon.load.sort.scope | LOCAL_SORT | This property can have four possible values BATCH_SORT, LOCAL_SORT, GLOBAL_SORT and NO_SORT. If set to BATCH_SORT, the sorting scope is smaller and more index tree will be created,thus loading is faster but query maybe slower. If set to LOCAL_SORT, the sorting scope is bigger and one index tree per data node will be created, thus loading is slower but query is faster. If set to GLOBAL_SORT, the sorting scope is bigger and one index tree per task will be created, thus loading is slower but query is faster. If set to NO_SORT data will be loaded in unsorted manner. | |
-| carbon.load.batch.sort.size.inmb | 0.45 * sort.inmemory.size.inmb | Specifies the size of data to be considered for batch sorting during data load. Recommended value is less than 45% of the total sort data (sort.inmemory.size.inmb), otherwise it may start spilling the intermediate temp data to disk, so it may slow down the loading process. | |
+| carbon.load.batch.sort.size.inmb | 0 | Size of batch data to keep in memory, as a thumb rule it supposed to be less than 45% of sort.inmemory.size.inmb otherwise it may spill intermediate data to disk | |
 
 
 
