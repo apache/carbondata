@@ -85,7 +85,7 @@ class CarbonSessionCatalog(
     rtnRelation foreach {
       case LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
         toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
-      case _ => 
+      case _ =>
     }
 
     if (toRefreshRelation) {
