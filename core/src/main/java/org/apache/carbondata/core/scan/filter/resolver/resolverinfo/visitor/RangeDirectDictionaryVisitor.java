@@ -45,11 +45,10 @@ public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor {
   public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     DimColumnFilterInfo resolvedFilterObject;
-    List<ExpressionResult> listOfExpressionResults;
     List<String> evaluateResultListFinal = new ArrayList<String>();
     try {
-      listOfExpressionResults = ((RangeExpression) metadata.getExpression()).getLiterals();
-
+      List<ExpressionResult> listOfExpressionResults = ((RangeExpression) metadata.getExpression())
+          .getLiterals();
       for (ExpressionResult result : listOfExpressionResults) {
         if (result.getString() == null) {
           evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);

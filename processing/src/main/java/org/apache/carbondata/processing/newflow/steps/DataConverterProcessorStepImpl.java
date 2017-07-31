@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.constants.LoggerAction;
@@ -124,32 +125,32 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     boolean badRecordsLoggerEnable = Boolean.parseBoolean(
         configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ENABLE)
             .toString());
-    Object bad_records_action =
+    String bad_records_action =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ACTION)
             .toString();
-    if (null != bad_records_action) {
-      LoggerAction loggerAction = null;
-      try {
-        loggerAction = LoggerAction.valueOf(bad_records_action.toString().toUpperCase());
-      } catch (IllegalArgumentException e) {
-        loggerAction = LoggerAction.FORCE;
-      }
-      switch (loggerAction) {
-        case FORCE:
-          badRecordConvertNullDisable = false;
-          break;
-        case REDIRECT:
-          badRecordsLogRedirect = true;
-          badRecordConvertNullDisable = true;
-          break;
-        case IGNORE:
-          badRecordsLogRedirect = false;
-          badRecordConvertNullDisable = true;
-          break;
-        case FAIL:
-          isDataLoadFail = true;
-          break;
-      }
+    LoggerAction loggerAction;
+    try {
+      loggerAction = LoggerAction.valueOf(bad_records_action.toUpperCase(Locale.getDefault()));
+    } catch (IllegalArgumentException e) {
+      loggerAction = LoggerAction.FORCE;
+    }
+    switch (loggerAction) {
+      case FORCE:
+        badRecordConvertNullDisable = false;
+        break;
+      case REDIRECT:
+        badRecordsLogRedirect = true;
+        badRecordConvertNullDisable = true;
+        break;
+      case IGNORE:
+        badRecordsLogRedirect = false;
+        badRecordConvertNullDisable = true;
+        break;
+      case FAIL:
+        isDataLoadFail = true;
+        break;
+      default:
+        throw new RuntimeException("Invalid bad records logger option: " + loggerAction);
     }
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();

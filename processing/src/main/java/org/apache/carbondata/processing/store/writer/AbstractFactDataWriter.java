@@ -469,9 +469,9 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
         .getCarbonIndexFileName(dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
             dataWriterVo.getBucketNumber(), dataWriterVo.getTaskExtension(),
             "" + dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
-    CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
+    CarbonIndexFileWriter writer = new CarbonIndexFileWriter(fileName);
     // open file
-    writer.openThriftWriter(fileName);
+    writer.openThriftWriter();
     // write the header first
     writer.writeThrift(indexHeader);
     // write the indexes

@@ -28,10 +28,11 @@ import org.apache.hadoop.io.Writable;
  * A String sequence that is usable as a key or value.
  */
 public class StringArrayWritable implements Writable {
+
   private String[] values;
 
-  public String[] toStrings() {
-    return values;
+  public StringArrayWritable(String[] values) {
+    this.values = values;
   }
 
   public void set(String[] values) {

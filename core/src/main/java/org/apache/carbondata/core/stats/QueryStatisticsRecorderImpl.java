@@ -78,9 +78,7 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
    */
   public void logStatisticsAsTableExecutor() {
     String tableInfo = collectExecutorStatistics();
-    if (null != tableInfo) {
-      LOGGER.statistic(tableInfo);
-    }
+    LOGGER.statistic(tableInfo);
   }
 
   /**
@@ -99,91 +97,87 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
     long total_pages = 0;
     long readTime = 0;
     long scannedPages = 0;
-    try {
-      for (QueryStatistic statistic : queryStatistics) {
-        if (statistic.getMessage() != null) {
-          switch (statistic.getMessage()) {
-            case QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR:
-              load_blocks_time += statistic.getTimeTaken();
-              break;
-            case QueryStatisticsConstants.SCAN_BLOCKlET_TIME:
-              scan_blocks_time += statistic.getCount();
-              break;
-            case QueryStatisticsConstants.SCAN_BLOCKS_NUM:
-              scan_blocks_num += statistic.getCount();
-              break;
-            case QueryStatisticsConstants.LOAD_DICTIONARY:
-              load_dictionary_time += statistic.getTimeTaken();
-              break;
-            case QueryStatisticsConstants.RESULT_SIZE:
-              result_size += statistic.getCount();
-              break;
-            case QueryStatisticsConstants.EXECUTOR_PART:
-              total_executor_time += statistic.getTimeTaken();
-              break;
-            case QueryStatisticsConstants.TOTAL_BLOCKLET_NUM:
-              total_blocklet = statistic.getCount();
-              break;
-            case QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM:
-              valid_scan_blocklet = statistic.getCount();
-              break;
-            case QueryStatisticsConstants.VALID_PAGE_SCANNED:
-              valid_pages_blocklet = statistic.getCount();
-              break;
-            case QueryStatisticsConstants.TOTAL_PAGE_SCANNED:
-              total_pages = statistic.getCount();
-              break;
-            case QueryStatisticsConstants.READ_BLOCKlET_TIME:
-              readTime = statistic.getCount();
-              break;
-            case QueryStatisticsConstants.PAGE_SCANNED:
-              scannedPages = statistic.getCount();
-              break;
-            default:
-              break;
-          }
+    for (QueryStatistic statistic : queryStatistics) {
+      if (statistic.getMessage() != null) {
+        switch (statistic.getMessage()) {
+          case QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR:
+            load_blocks_time += statistic.getTimeTaken();
+            break;
+          case QueryStatisticsConstants.SCAN_BLOCKlET_TIME:
+            scan_blocks_time += statistic.getCount();
+            break;
+          case QueryStatisticsConstants.SCAN_BLOCKS_NUM:
+            scan_blocks_num += statistic.getCount();
+            break;
+          case QueryStatisticsConstants.LOAD_DICTIONARY:
+            load_dictionary_time += statistic.getTimeTaken();
+            break;
+          case QueryStatisticsConstants.RESULT_SIZE:
+            result_size += statistic.getCount();
+            break;
+          case QueryStatisticsConstants.EXECUTOR_PART:
+            total_executor_time += statistic.getTimeTaken();
+            break;
+          case QueryStatisticsConstants.TOTAL_BLOCKLET_NUM:
+            total_blocklet = statistic.getCount();
+            break;
+          case QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM:
+            valid_scan_blocklet = statistic.getCount();
+            break;
+          case QueryStatisticsConstants.VALID_PAGE_SCANNED:
+            valid_pages_blocklet = statistic.getCount();
+            break;
+          case QueryStatisticsConstants.TOTAL_PAGE_SCANNED:
+            total_pages = statistic.getCount();
+            break;
+          case QueryStatisticsConstants.READ_BLOCKlET_TIME:
+            readTime = statistic.getCount();
+            break;
+          case QueryStatisticsConstants.PAGE_SCANNED:
+            scannedPages = statistic.getCount();
+            break;
+          default:
+            break;
         }
       }
-      String headers =
-          "task_id,load_blocks_time,load_dictionary_time,carbon_scan_time,carbon_IO_time, "
-              + "total_executor_time,scan_blocks_num,total_blocklets,"
-              + "valid_blocklets,total_pages,scanned_pages,valid_pages,result_size";
-      List<String> values = new ArrayList<String>();
-      values.add(queryIWthTask);
-      values.add(load_blocks_time + "ms");
-      values.add(load_dictionary_time + "ms");
-      values.add(scan_blocks_time + "ms");
-      values.add(readTime + "ms");
-      values.add(total_executor_time + "ms");
-      values.add(String.valueOf(scan_blocks_num));
-      values.add(String.valueOf(total_blocklet));
-      values.add(String.valueOf(valid_scan_blocklet));
-      values.add(String.valueOf(total_pages));
-      values.add(String.valueOf(scannedPages));
-      values.add(String.valueOf(valid_pages_blocklet));
-      values.add(String.valueOf(result_size));
-      StringBuilder tableInfo = new StringBuilder();
-      String[] columns = headers.split(",");
-      String line = "";
-      String hearLine = "";
-      String valueLine = "";
-      for (int i = 0; i < columns.length; i++) {
-        int len = Math.max(columns[i].length(), values.get(i).length());
-        line += "+" + printLine("-", len);
-        hearLine += "|" + printLine(" ", len - columns[i].length()) + columns[i];
-        valueLine += "|" + printLine(" ", len - values.get(i).length()) + values.get(i);
-      }
-      // struct table info
-      tableInfo.append(line).append("+").append("\n");
-      tableInfo.append(hearLine).append("|").append("\n");
-      tableInfo.append(line).append("+").append("\n");
-      tableInfo.append(valueLine).append("|").append("\n");
-      tableInfo.append(line).append("+").append("\n");
-      return "Print query statistic for each task id:" + "\n" + tableInfo.toString();
-    } catch (Exception ex) {
-      LOGGER.error(ex);
-      return "Put statistics into table failed, catch exception: " + ex.getMessage();
     }
+    String headers =
+        "task_id,load_blocks_time,load_dictionary_time,carbon_scan_time,carbon_IO_time, "
+            + "total_executor_time,scan_blocks_num,total_blocklets,"
+            + "valid_blocklets,total_pages,scanned_pages,valid_pages,result_size";
+    List<String> values = new ArrayList<String>();
+    values.add(queryIWthTask);
+    values.add(load_blocks_time + "ms");
+    values.add(load_dictionary_time + "ms");
+    values.add(scan_blocks_time + "ms");
+    values.add(readTime + "ms");
+    values.add(total_executor_time + "ms");
+    values.add(String.valueOf(scan_blocks_num));
+    values.add(String.valueOf(total_blocklet));
+    values.add(String.valueOf(valid_scan_blocklet));
+    values.add(String.valueOf(total_pages));
+    values.add(String.valueOf(scannedPages));
+    values.add(String.valueOf(valid_pages_blocklet));
+    values.add(String.valueOf(result_size));
+    StringBuilder tableInfo = new StringBuilder();
+    String[] columns = headers.split(",");
+    String line = "";
+    String hearLine = "";
+    String valueLine = "";
+    for (int i = 0; i < columns.length; i++) {
+      int len = Math.max(columns[i].length(), values.get(i).length());
+      line += "+" + printLine("-", len);
+      hearLine += "|" + printLine(" ", len - columns[i].length()) + columns[i];
+      valueLine += "|" + printLine(" ", len - values.get(i).length()) + values.get(i);
+    }
+    // struct table info
+    tableInfo.append(line).append("+").append("\n");
+    tableInfo.append(hearLine).append("|").append("\n");
+    tableInfo.append(line).append("+").append("\n");
+    tableInfo.append(valueLine).append("|").append("\n");
+    tableInfo.append(line).append("+").append("\n");
+    return "Print query statistic for each task id:" + "\n" + tableInfo.toString();
+
   }
 
   public void recordStatisticsForDriver(QueryStatistic statistic, String queryId) {

@@ -74,38 +74,40 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
         }
       });
 
-      int backupFiles = files.length - 1;
+      if (files != null) {
+        int backupFiles = files.length - 1;
 
-      if (backupFiles <= maxBackupIndex) {
-        return;
-      }
+        if (backupFiles <= maxBackupIndex) {
+          return;
+        }
 
-      // Sort the file based on its name.
-      TreeMap<String, File> sortedMap = new TreeMap<String, File>();
-      for (File file1 : files) {
-        sortedMap.put(file1.getName(), file1);
-      }
+        // Sort the file based on its name.
+        TreeMap<String, File> sortedMap = new TreeMap<String, File>();
+        for (File file1 : files) {
+          sortedMap.put(file1.getName(), file1);
+        }
 
-      // Remove the first log file from map. it will be <startName>.log
-      // itself which will be backed up in rollover
-      sortedMap.remove(sortedMap.firstKey());
+        // Remove the first log file from map. it will be <startName>.log
+        // itself which will be backed up in rollover
+        sortedMap.remove(sortedMap.firstKey());
 
-      Iterator<Entry<String, File>> it = sortedMap.entrySet().iterator();
-      Entry<String, File> temp = null;
+        Iterator<Entry<String, File>> it = sortedMap.entrySet().iterator();
+        Entry<String, File> temp = null;
 
-      // After clean up the files should be maxBackupIndex -1 number of
-      // files. Because one more backup file
-      // will be created after this method call is over
-      while (it.hasNext() && backupFiles > maxBackupIndex) {
-        temp = it.next();
-        File deleteFile = temp.getValue();
-        // Delete the file
-        // After deletion of log file it
-        // will print the log message in ReportService.log
-        if (deleteFile.delete()) {
-          backupFiles--;
-        } else {
-          LogLog.error("Couldn't delete file :: " + deleteFile.getPath());
+        // After clean up the files should be maxBackupIndex -1 number of
+        // files. Because one more backup file
+        // will be created after this method call is over
+        while (it.hasNext() && backupFiles > maxBackupIndex) {
+          temp = it.next();
+          File deleteFile = temp.getValue();
+          // Delete the file
+          // After deletion of log file it
+          // will print the log message in ReportService.log
+          if (deleteFile.delete()) {
+            backupFiles--;
+          } else {
+            LogLog.error("Couldn't delete file :: " + deleteFile.getPath());
+          }
         }
       }
     }

@@ -142,7 +142,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       }
       throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage(), e);
     }
-    return null;
+    return new Iterator[0];
   }
 
   private void doExecute(Iterator<CarbonRowBatch> iterator, int partitionId, int iteratorIndex) {

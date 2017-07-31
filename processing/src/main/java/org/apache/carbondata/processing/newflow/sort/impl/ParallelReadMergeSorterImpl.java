@@ -71,7 +71,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
     String[] storeLocations =
         CarbonDataProcessorUtil.getLocalDataFolderLocation(
             sortParameters.getDatabaseName(), sortParameters.getTableName(),
-            String.valueOf(sortParameters.getTaskNo()), sortParameters.getPartitionID(),
+            String.valueOf(sortParameters.getTaskNo()), sortParameters.getPartitionId(),
             sortParameters.getSegmentId() + "", false);
     // Set the data file location
     String[] dataFolderLocations = CarbonDataProcessorUtil.arrayAppend(storeLocations,
@@ -170,9 +170,9 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
       // check any more rows are present
       LOGGER.info("Record Processed For table: " + parameters.getTableName());
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordSortRowsStepTotalTime(parameters.getPartitionID(), System.currentTimeMillis());
+          .recordSortRowsStepTotalTime(parameters.getPartitionId(), System.currentTimeMillis());
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordDictionaryValuesTotalTime(parameters.getPartitionID(),
+          .recordDictionaryValuesTotalTime(parameters.getPartitionId(),
               System.currentTimeMillis());
       return false;
     } catch (CarbonSortKeyAndGroupByException e) {

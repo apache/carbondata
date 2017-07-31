@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.cache.dictionary;
 
 import java.nio.charset.Charset;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -300,9 +301,9 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
         default:
           return -1;
       }
-    } catch (Exception e) {
+    } catch (NumberFormatException | ParseException e) {
       //In all data types excluding String data type the null member will be the highest
-      //while doing search in dictioary when the member comparison happens with filter member
+      //while doing search in dictionary when the member comparison happens with filter member
       //which is also null member, since the parsing fails in other data type except string
       //explicit comparison is required, is both are null member then system has to return 0.
       if (memberVal.equals(dictionaryVal)) {

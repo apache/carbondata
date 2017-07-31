@@ -52,7 +52,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
       CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL");
+        .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
       sql("create table data_pm(name String, dob long, weight int) " +
           "STORED BY 'org.apache.carbondata.format'")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
@@ -223,8 +223,6 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
           "'bucketcolumns'='name', 'tableName'='data_tbm')")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
       sql(s"""LOAD DATA LOCAL INPATH '$testData' INTO table data_tbm""")
-
-
     } catch {
       case x: Throwable => {
         assert(x.getMessage.contains("Data load failed due to bad record"))

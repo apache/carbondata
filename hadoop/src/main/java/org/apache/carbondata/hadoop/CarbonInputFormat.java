@@ -434,14 +434,13 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     List<InputSplit> result = new LinkedList<InputSplit>();
     FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
     UpdateVO invalidBlockVOForSegmentId = null;
-    Boolean  isIUDTable = false;
 
     AbsoluteTableIdentifier absoluteTableIdentifier =
             getOrCreateCarbonTable(job.getConfiguration()).getAbsoluteTableIdentifier();
     SegmentUpdateStatusManager updateStatusManager =
             new SegmentUpdateStatusManager(absoluteTableIdentifier);
 
-    isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
+    boolean isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
     //for each segment fetch blocks matching filter in Driver BTree
     for (String segmentNo : getSegmentsToAccess(job)) {
@@ -911,17 +910,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @return the PathFilter for Fact Files.
    */
   private PathFilter getDataFileFilter() {
-    return new CarbonPathFilter(getUpdateExtension());
-  }
-
-  /**
-   * required to be moved to core
-   *
-   * @return updateExtension
-   */
-  private String getUpdateExtension() {
-    // TODO: required to modify when supporting update, mostly will be update timestamp
-    return "update";
+    return new CarbonPathFilter();
   }
 
   /**

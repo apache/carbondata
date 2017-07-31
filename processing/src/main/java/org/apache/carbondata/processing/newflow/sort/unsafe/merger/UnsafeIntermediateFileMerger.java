@@ -144,7 +144,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException
    */
   private void initialize() throws CarbonSortKeyAndGroupByException {
-    if (!mergerParameters.isSortFileCompressionEnabled() && !mergerParameters.isPrefetch()) {
+    if (!mergerParameters.isSortFileCompressionEnabled() && !mergerParameters.isPreFetch()) {
       try {
         this.stream = new DataOutputStream(
             new BufferedOutputStream(new FileOutputStream(outPutFile),

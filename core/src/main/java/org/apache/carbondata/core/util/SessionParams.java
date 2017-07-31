@@ -19,6 +19,7 @@ package org.apache.carbondata.core.util;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.apache.carbondata.common.constants.LoggerAction;
@@ -94,8 +95,9 @@ public class SessionParams implements Serializable {
         break;
       case CARBON_OPTIONS_BAD_RECORDS_ACTION:
         try {
-          LoggerAction.valueOf(value.toUpperCase());
+          LoggerAction.valueOf(value.toUpperCase(Locale.getDefault()));
           isValid = true;
+
         } catch (IllegalArgumentException iae) {
           throw new InvalidConfigurationException(
               "The key " + key + " can have only either FORCE or IGNORE or REDIRECT.");

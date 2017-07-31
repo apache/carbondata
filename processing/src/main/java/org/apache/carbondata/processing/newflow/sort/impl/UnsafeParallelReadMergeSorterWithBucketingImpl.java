@@ -158,9 +158,9 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl implements Sorter {
       // check any more rows are present
       LOGGER.info("Record Processed For table: " + parameters.getTableName());
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordSortRowsStepTotalTime(parameters.getPartitionID(), System.currentTimeMillis());
+          .recordSortRowsStepTotalTime(parameters.getPartitionId(), System.currentTimeMillis());
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordDictionaryValuesTotalTime(parameters.getPartitionID(), System.currentTimeMillis());
+          .recordDictionaryValuesTotalTime(parameters.getPartitionId(), System.currentTimeMillis());
       return false;
     } catch (Exception e) {
       throw new CarbonDataLoadingException(e);
@@ -170,7 +170,7 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl implements Sorter {
   private void setTempLocation(SortParameters parameters) {
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(parameters.getDatabaseName(), parameters.getTableName(),
-            parameters.getTaskNo(), parameters.getPartitionID(), parameters.getSegmentId(), false);
+            parameters.getTaskNo(), parameters.getPartitionId(), parameters.getSegmentId(), false);
     String[] tmpLoc = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     parameters.setTempFileLocation(tmpLoc);

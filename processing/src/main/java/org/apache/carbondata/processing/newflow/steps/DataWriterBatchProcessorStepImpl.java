@@ -99,7 +99,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
       LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterBatchProcessorStepImpl");
       throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
     }
-    return null;
+    return new Iterator[0];
   }
 
   @Override protected String getStepName() {
