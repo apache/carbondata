@@ -36,7 +36,7 @@ abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
 
   val carbonSessionInfo: CarbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
 
-  val addedProperty = CarbonProperties.getInstance().getAddedProperty
+//  val addedProperty = CarbonProperties.getInstance().getAddedProperty
 
   /** Construct an RDD with just a one-to-one dependency on one parent */
   def this(@transient oneParent: RDD[_]) =
@@ -50,7 +50,7 @@ abstract class CarbonRDD[T: ClassTag](@transient sc: SparkContext,
     val carbonTaskInfo = new CarbonTaskInfo
     carbonTaskInfo.setTaskId(System.nanoTime)
     ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo)
-    addedProperty.asScala.map(f => CarbonProperties.getInstance().addProperty(f._1, f._2))
+//    addedProperty.asScala.map(f => CarbonProperties.getInstance().addProperty(f._1, f._2))
     internalCompute(split, context)
   }
 }

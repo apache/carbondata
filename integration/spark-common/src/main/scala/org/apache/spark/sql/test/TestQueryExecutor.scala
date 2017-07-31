@@ -139,7 +139,7 @@ object TestQueryExecutor {
     .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
     .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords")
     .addProperty(CarbonCommonConstants.DICTIONARY_SERVER_PORT,
-      (CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT.toInt + Random.nextInt(100))+"")
+      (CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT.toInt + Random.nextInt(100)) + "")
     .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "1024")
       .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE, "1024")
 
