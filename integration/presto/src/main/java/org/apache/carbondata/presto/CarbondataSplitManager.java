@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -79,6 +81,8 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
 
   private final String connectorId;
   private final CarbonTableReader carbonTableReader;
+  private static final LogService logger =
+      LogServiceFactory.getLogService(CarbondataSplitManager.class.getName());
 
   @Inject
   public CarbondataSplitManager(CarbondataConnectorId connectorId, CarbonTableReader reader) {
@@ -109,12 +113,12 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
       }
       return new FixedSplitSource(cSplits.build());
     } catch (Exception ex) {
-      System.out.println(ex.toString());
+      logger.error(ex.toString());
     }
     return null;
   }
 
-  public List<CarbondataColumnConstraint> getColumnConstraints(
+  private List<CarbondataColumnConstraint> getColumnConstraints(
       TupleDomain<ColumnHandle> constraint) {
     ImmutableList.Builder<CarbondataColumnConstraint> constraintBuilder = ImmutableList.builder();
     for (TupleDomain.ColumnDomain<ColumnHandle> columnDomain : constraint.getColumnDomains()
