@@ -22,7 +22,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -35,9 +34,11 @@ import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
-import org.apache.commons.lang3.ArrayUtils;
-
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.COLUMNAR_DATA_READ_BATCH_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.FILE_SEPARATOR;
+
+import org.apache.commons.lang3.ArrayUtils;
 
 /**
  * It is not a collector it is just a scanned result holder.
@@ -47,14 +48,11 @@ public class ColumnBasedResultCollector extends AbstractScannedResultCollector {
   protected QueryDimension[] queryDimensions;
 
   protected QueryMeasure[] queryMeasures;
-
-  private DirectDictionaryGenerator[] directDictionaryGenerators;
-
   /**
    * query order
    */
   protected int[] order;
-
+  private DirectDictionaryGenerator[] directDictionaryGenerators;
   private int[] actualIndexInSurrogateKey;
 
   private boolean[] dictionaryEncodingArray;
@@ -142,8 +140,8 @@ public class ColumnBasedResultCollector extends AbstractScannedResultCollector {
       columnarData = new ArrayList<>(Arrays.asList(matrix));
     }
 
-    if(noOfColumns == 0){
-      matrix=new Object[1][rowCounter];
+    if (noOfColumns == 0) {
+      matrix = new Object[1][rowCounter];
       columnarData = new ArrayList<>(Arrays.asList(matrix));
     }
 
@@ -155,12 +153,10 @@ public class ColumnBasedResultCollector extends AbstractScannedResultCollector {
       Map<Integer, GenericQueryType> comlexDimensionInfoMap, Object[] row, int i) {
     if (!dictionaryEncodingArray[i]) {
       if (implictColumnArray[i]) {
-        if (CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID
-            .equals(queryDimensions[i].getDimension().getColName())) {
+        if (CARBON_IMPLICIT_COLUMN_TUPLEID.equals(queryDimensions[i].getDimension().getColName())) {
           row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
-              scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
-                  .getCurrentPageCounter() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
-                  .getCurrentRowId(), DataType.STRING);
+              scannedResult.getBlockletId() + FILE_SEPARATOR + scannedResult.getCurrentPageCounter()
+                  + FILE_SEPARATOR + scannedResult.getCurrentRowId(), DataType.STRING);
         } else {
           row[order[i]] =
               DataTypeUtil.getDataBasedOnDataType(scannedResult.getBlockletId(), DataType.STRING);

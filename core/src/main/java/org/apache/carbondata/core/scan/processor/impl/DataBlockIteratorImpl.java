@@ -51,7 +51,7 @@ public class DataBlockIteratorImpl extends AbstractDataBlockIterator {
     batchSize = Integer.parseInt(COLUMNAR_DATA_READ_BATCH_SIZE);
     if (updateScanner()) {
       collectedResult = this.scannerResultAggregator.collectData(scannedResult, batchSize);
-      while (collectedResult.get(0).length < batchSize && updateScanner()) {
+      while (collectedResult.size() < batchSize && updateScanner())  {
         List<Object[]> data = this.scannerResultAggregator
             .collectData(scannedResult, batchSize - collectedResult.size());
         collectedResult.addAll(data);

@@ -26,8 +26,8 @@ import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.scan.executor.PrestoQueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
+import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -91,7 +91,7 @@ class CarbondataRecordSet implements RecordSet {
     queryModel.setColumnCollector(true);
     queryModel.setTableBlockInfos(tableBlockInfoList);
 
-    queryExecutor = PrestoQueryExecutorFactory.getQueryExecutor();
+    queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
 
     CarbonProperties.getInstance().addProperty("carbon.detail.batch.size", "4096");
 

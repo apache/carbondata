@@ -51,7 +51,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
   /**
    * iterator which will be used to iterate over data blocks
    */
-  protected CarbonIterator<DataRefNode> dataBlockIterator;
+  private CarbonIterator<DataRefNode> dataBlockIterator;
 
   /**
    * result collector which will be used to aggregate the scanned result
@@ -62,7 +62,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
    * processor which will be used to process the block processing can be
    * filter processing or non filter processing
    */
-  protected BlockletScanner blockletScanner;
+  private BlockletScanner blockletScanner;
 
   /**
    * batch size of result
@@ -132,7 +132,7 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
         return false;
       }
     } catch (Exception ex) {
-      throw new RuntimeException(ex.getMessage());
+      throw new RuntimeException(ex);
     }
   }
 

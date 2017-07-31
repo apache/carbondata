@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.scan.executor;
 
+import org.apache.carbondata.core.scan.executor.impl.ColumnDetailQueryExecutor;
 import org.apache.carbondata.core.scan.executor.impl.DetailQueryExecutor;
 import org.apache.carbondata.core.scan.executor.impl.VectorDetailQueryExecutor;
 import org.apache.carbondata.core.scan.model.QueryModel;
@@ -29,6 +30,9 @@ public class QueryExecutorFactory {
   public static QueryExecutor getQueryExecutor(QueryModel queryModel) {
     if (queryModel.isVectorReader()) {
       return new VectorDetailQueryExecutor();
+    }
+    if (queryModel.isColumnCollector()) {
+      return new ColumnDetailQueryExecutor();
     } else {
       return new DetailQueryExecutor();
     }
