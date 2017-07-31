@@ -232,17 +232,9 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     assert (encoder_meta.size() > 0);
     byte[] encodedMeta = encoder_meta.get(0).array();
 
-    int scale = -1;
-    int precision = -1;
-    if (encoder_meta.size() > 1) {
-      ByteBuffer decimalInfo = encoder_meta.get(1);
-      scale = decimalInfo.getInt();
-      precision = decimalInfo.getInt();
-    }
-
     ColumnPageCodecMeta meta = new ColumnPageCodecMeta();
     meta.deserialize(encodedMeta);
-    ColumnPageCodec codec = strategy.newCodec(meta, scale, precision);
+    ColumnPageCodec codec = strategy.newCodec(meta);
     byte[] rawData = measureRawColumnChunk.getRawData().array();
     return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);
   }

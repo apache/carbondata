@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -1739,6 +1740,13 @@ public final class CarbonUtil {
   public static boolean isValidBadStorePath(String badRecordsLocation) {
     return !(null == badRecordsLocation || badRecordsLocation.length() == 0);
   }
+
+  public static void updateBitSetForNull(BitSet nullBitSet, BitSet filterBitSet) {
+    for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
+      filterBitSet.flip(j);
+    }
+  }
+
 
   public static String convertToMultiGsonStrings(TableInfo tableInfo, String seperator,
       String quote, String prefix) {

@@ -27,8 +27,9 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
-import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
+import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 
@@ -44,10 +45,10 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
    * @throws FilterUnsupportedException,if exception occurs while evaluating
    *                                       filter models.
    */
-  public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
+  public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
-    DimColumnFilterInfo resolvedFilterObject = null;
-
+    ColumnFilterInfo resolvedFilterObject = null;
+    DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
     List<String> evaluateResultListFinal;
     try {
       evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
@@ -65,10 +66,10 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
           .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
       Collections.sort(resolvedFilterObject.getFilterList());
     }
-    visitableObj.setFilterValues(resolvedFilterObject);
+    resolveDimension.setFilterValues(resolvedFilterObject);
   }
 
-  protected DimColumnFilterInfo getDirectDictionaryValKeyMemberForFilter(
+  protected ColumnFilterInfo getDirectDictionaryValKeyMemberForFilter(
       ColumnExpression columnExpression, List<String> evaluateResultListFinal,
       boolean isIncludeFilter, DataType dataType) {
     List<Integer> surrogates = new ArrayList<Integer>(20);
@@ -79,9 +80,9 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
         dataType);
 
     Collections.sort(surrogates);
-    DimColumnFilterInfo columnFilterInfo = null;
+    ColumnFilterInfo columnFilterInfo = null;
     if (surrogates.size() > 0) {
-      columnFilterInfo = new DimColumnFilterInfo();
+      columnFilterInfo = new ColumnFilterInfo();
       columnFilterInfo.setIncludeFilter(isIncludeFilter);
       columnFilterInfo.setFilterList(surrogates);
     }

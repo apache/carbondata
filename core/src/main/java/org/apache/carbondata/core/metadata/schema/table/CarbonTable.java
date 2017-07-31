@@ -124,6 +124,8 @@ public class CarbonTable implements Serializable {
    */
   private int numberOfNoDictSortColumns;
 
+  private int lastDimensionColumnOrdinal;
+
   private CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -256,6 +258,7 @@ public class CarbonTable implements Serializable {
                  columnSchema.getSchemaOrdinal()));
       }
     }
+    lastDimensionColumnOrdinal = dimensionOrdinal;
     fillVisibleDimensions(tableSchema.getTableName());
     fillVisibleMeasures(tableSchema.getTableName());
     addImplicitDimension(dimensionOrdinal, implicitDimensions);

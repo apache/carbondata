@@ -27,6 +27,7 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 
 public class LogicalFilterResolverImpl implements FilterResolverIntf {
   /**
@@ -84,6 +85,9 @@ public class LogicalFilterResolverImpl implements FilterResolverIntf {
     return null;
   }
 
+  @Override public MeasureColumnResolvedFilterInfo getMsrColResolvedFilterInfo() {
+    return null;
+  }
   @Override public void getStartKey(SegmentProperties segmentProperties, long[] startKey,
       SortedMap<Integer, byte[]> setOfStartKeyByteArray, List<long[]> startKeyList) {
 

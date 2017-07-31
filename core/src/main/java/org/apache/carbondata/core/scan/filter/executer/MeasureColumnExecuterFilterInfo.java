@@ -14,23 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.carbondata.core.scan.filter.executer;
 
-package org.apache.carbondata.core.datastore.page.statistics;
+public class MeasureColumnExecuterFilterInfo {
 
-import java.math.BigDecimal;
+  Object[] filterKeys;
 
-public interface ColumnPageStatsCollector {
-  void updateNull(int rowId);
-  void update(byte value);
-  void update(short value);
-  void update(int value);
-  void update(long value);
-  void update(double value);
-  void update(BigDecimal value);
-  void update(byte[] value);
+  public void setFilterKeys(Object[] filterKeys) {
+    this.filterKeys = filterKeys;
+  }
 
-  /**
-   * return the collected statistics
-   */
-  Object getPageStats();
+  public Object[] getFilterKeys() {
+    return filterKeys;
+  }
 }

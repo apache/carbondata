@@ -19,6 +19,6 @@ package org.apache.carbondata.core.util.comparator;
 
 import java.io.Serializable;
 
-public interface SerializableComparator extends Serializable {
+public interface SerializableComparator extends java.util.Comparator, Serializable {
   int compare(Object key1, Object key2);
 }

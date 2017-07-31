@@ -26,8 +26,9 @@ import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.expression.logical.RangeExpression;
-import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
+import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor
@@ -43,9 +44,10 @@ public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor
    * filter models.
    * @throws FilterUnsupportedException
    */
-  public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
+  public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
-    DimColumnFilterInfo resolvedFilterObject = null;
+    DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
+    ColumnFilterInfo resolvedFilterObject = null;
     List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
     List<String> evaluateResultListFinal = new ArrayList<String>();
     try {
@@ -74,6 +76,6 @@ public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor
           .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
       Collections.sort(resolvedFilterObject.getFilterList());
     }
-    visitableObj.setFilterValues(resolvedFilterObject);
+    resolveDimension.setFilterValues(resolvedFilterObject);
   }
 }

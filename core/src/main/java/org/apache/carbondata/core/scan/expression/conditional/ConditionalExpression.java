@@ -28,7 +28,7 @@ public interface ConditionalExpression {
   // traversing the tree
   List<ColumnExpression> getColumnList();
 
-  boolean isSingleDimension();
+  boolean isSingleColumn();
 
   List<ExpressionResult> getLiterals();
 

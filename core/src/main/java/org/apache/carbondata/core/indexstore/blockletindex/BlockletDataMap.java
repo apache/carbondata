@@ -118,7 +118,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private void loadToUnsafe(DataFileFooter fileFooter, SegmentProperties segmentProperties,
       String filePath) {
-    int[] minMaxLen = segmentProperties.getEachDimColumnValueSize();
+    int[] minMaxLen = segmentProperties.getColumnsValueSize();
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     DataMapSchema[] schema = unsafeMemoryDMStore.getSchema();
     for (int index = 0; index < blockletList.size(); index++) {
@@ -182,7 +182,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
     // Index key
     indexSchemas.add(new DataMapSchema.VariableDataMapSchema(DataType.BYTE_ARRAY));
-    int[] minMaxLen = segmentProperties.getEachDimColumnValueSize();
+    int[] minMaxLen = segmentProperties.getColumnsValueSize();
     // do it 2 times, one for min and one for max.
     for (int k = 0; k < 2; k++) {
       DataMapSchema[] mapSchemas = new DataMapSchema[minMaxLen.length];
@@ -229,7 +229,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
     }
     List<Blocklet> blocklets = new ArrayList<>();
     Comparator<DataMapRow> comparator =
-        new BlockletDMComparator(segmentProperties.getEachDimColumnValueSize(),
+        new BlockletDMComparator(segmentProperties.getColumnsValueSize(),
             segmentProperties.getNumberOfSortColumns(),
             segmentProperties.getNumberOfNoDictSortColumns());
     List<IndexKey> listOfStartEndKeys = new ArrayList<IndexKey>(2);

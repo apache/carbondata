@@ -15,22 +15,8 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.statistics;
+package org.apache.carbondata.core.scan.filter.resolver.resolverinfo;
 
-import java.math.BigDecimal;
 
-public interface ColumnPageStatsCollector {
-  void updateNull(int rowId);
-  void update(byte value);
-  void update(short value);
-  void update(int value);
-  void update(long value);
-  void update(double value);
-  void update(BigDecimal value);
-  void update(byte[] value);
-
-  /**
-   * return the collected statistics
-   */
-  Object getPageStats();
+public class ColumnResolvedFilterInfo {
 }

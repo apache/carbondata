@@ -23,9 +23,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
-import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
+import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
@@ -42,9 +43,10 @@ public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
    * @throws FilterUnsupportedException,if exception occurs while evaluating
    * filter models.
    */
-  public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
+  public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
-    DimColumnFilterInfo resolvedFilterObject = null;
+    DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
+    ColumnFilterInfo resolvedFilterObject = null;
     List<String> evaluateResultListFinal = null;
     try {
       // handling for is null case scenarios
@@ -69,6 +71,6 @@ public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
     resolvedFilterObject = FilterUtil
         .getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter(),
             metadata.getColumnExpression().getDataType());
-    visitableObj.setFilterValues(resolvedFilterObject);
+    resolveDimension.setFilterValues(resolvedFilterObject);
   }
 }

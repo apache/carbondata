@@ -326,7 +326,7 @@ public abstract class ColumnPage {
         break;
       case DECIMAL:
         putDecimal(rowId, (BigDecimal) value);
-        statsCollector.update(((BigDecimal) value).unscaledValue().longValue());
+        statsCollector.update((BigDecimal) value);
         break;
       case BYTE_ARRAY:
         putBytes(rowId, (byte[]) value);
