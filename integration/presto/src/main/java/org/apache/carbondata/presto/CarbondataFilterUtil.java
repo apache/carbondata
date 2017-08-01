@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
@@ -79,18 +78,16 @@ public class CarbondataFilterUtil {
    * Convert presto-TupleDomain predication into Carbon scan express condition
    *
    * @param originalConstraint presto-TupleDomain
-   * @param carbonTable
    * @return
    */
-  public static Expression parseFilterExpression(TupleDomain<ColumnHandle> originalConstraint,
-      CarbonTable carbonTable) {
+  static Expression parseFilterExpression(TupleDomain<ColumnHandle> originalConstraint) {
     ImmutableList.Builder<Expression> filters = ImmutableList.builder();
 
-    Domain domain = null;
+    Domain domain;
 
     for (ColumnHandle c : originalConstraint.getDomains().get().keySet()) {
 
-      // Build ColumnExpresstion for Expresstion(Carbondata)
+      // Build ColumnExpression for Expression(Carbondata)
       CarbondataColumnHandle cdch = (CarbondataColumnHandle) c;
       Type type = cdch.getColumnType();
 
@@ -99,12 +96,6 @@ public class CarbondataFilterUtil {
 
       domain = originalConstraint.getDomains().get().get(c);
       checkArgument(domain.getType().isOrderable(), "Domain type must be orderable");
-
-      if (domain.getValues().isNone()) {
-      }
-
-      if (domain.getValues().isAll()) {
-      }
 
       List<Object> singleValues = new ArrayList<>();
       List<Expression> disjuncts = new ArrayList<>();
@@ -177,7 +168,7 @@ public class CarbondataFilterUtil {
         }).collect(Collectors.toList());
         candidates = new ListExpression(exs);
 
-        if (candidates != null) filters.add(new InExpression(colExpression, candidates));
+        filters.add(new InExpression(colExpression, candidates));
       } else if (disjuncts.size() > 0) {
         if (disjuncts.size() > 1) {
           Expression finalFilters = new OrExpression(disjuncts.get(0), disjuncts.get(1));
@@ -206,18 +197,18 @@ public class CarbondataFilterUtil {
 
   private static Object ConvertDataByType(Object rawdata, Type type) {
     if (type.equals(IntegerType.INTEGER)) return new Integer((rawdata.toString()));
-    else if (type.equals(BigintType.BIGINT)) return (Long) rawdata;
+    else if (type.equals(BigintType.BIGINT)) return rawdata;
     else if (type.equals(VarcharType.VARCHAR)) return ((Slice) rawdata).toStringUtf8();
-    else if (type.equals(BooleanType.BOOLEAN)) return (Boolean) (rawdata);
+    else if (type.equals(BooleanType.BOOLEAN)) return rawdata;
 
     return rawdata;
   }
 
-   static Expression getFilters(Integer key) {
+  static Expression getFilters(Integer key) {
     return filterMap.get(key);
   }
 
-   static void setFilter(Integer tableId, Expression filter) {
+  static void setFilter(Integer tableId, Expression filter) {
     filterMap.put(tableId, filter);
   }
 }
