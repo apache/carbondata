@@ -48,8 +48,7 @@ public class UnsafeMemoryDMStore {
 
   private int rowCount;
 
-  private final long taskId = null != ThreadLocalTaskInfo.getCarbonTaskInfo() ?
-      ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId() : System.nanoTime();
+  private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
   public UnsafeMemoryDMStore(DataMapSchema[] schema) throws MemoryException {
     this.schema = schema;

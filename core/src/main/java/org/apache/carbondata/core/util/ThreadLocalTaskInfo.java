@@ -28,6 +28,11 @@ public class ThreadLocalTaskInfo {
   }
 
   public static CarbonTaskInfo getCarbonTaskInfo() {
+    if (null == threadLocal.get()) {
+      CarbonTaskInfo carbonTaskInfo = new CarbonTaskInfo();
+      carbonTaskInfo.setTaskId(System.nanoTime());
+      ThreadLocalTaskInfo.setCarbonTaskInfo(carbonTaskInfo);
+    }
     return threadLocal.get();
   }
 }
