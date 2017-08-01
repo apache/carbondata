@@ -107,7 +107,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
         }
       }
       return bitSetGroup;
-    } else if (isMeasurePresentInCurrentBlock == true) {
+    } else if (isMeasurePresentInCurrentBlock) {
       int blockIndex = segmentProperties.getMeasuresOrdinalToBlockMapping()
           .get(msrColumnEvaluatorInfo.getColumnIndex());
       if (null == blockChunkHolder.getMeasureRawDataChunk()[blockIndex]) {
@@ -164,23 +164,25 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
 
     SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
+    BitSet nullBitSet = measureColumnDataChunk.getNullValueIndexHolder().getBitSet();
     for (int i = 0; i < filterValues.length; i++) {
       if (filterValues[i] == null) {
-        BitSet nullBitSet = measureColumnDataChunk.getNullValueIndexHolder().getBitSet();
         for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
           bitSet.set(j);
         }
         continue;
       }
       for (int startIndex = 0; startIndex < rowsInPage; startIndex++) {
-        // Check if filterValue[i] matches with measure Values.
-        Object msrValue = DataTypeUtil
-            .getMeasureObjectBasedOnDataType(measureColumnDataChunk.getColumnPage(), startIndex,
-                msrType, msrColumnEvaluatorInfo.getMeasure());
+        if (!nullBitSet.get(startIndex)) {
+          // Check if filterValue[i] matches with measure Values.
+          Object msrValue = DataTypeUtil
+              .getMeasureObjectBasedOnDataType(measureColumnDataChunk.getColumnPage(), startIndex,
+                  msrType, msrColumnEvaluatorInfo.getMeasure());
 
-        if (comparator.compare(msrValue, filterValues[i]) == 0) {
-          // This is a match.
-          bitSet.set(startIndex);
+          if (comparator.compare(msrValue, filterValues[i]) == 0) {
+            // This is a match.
+            bitSet.set(startIndex);
+          }
         }
       }
     }
@@ -266,7 +268,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     int blockIndex = 0;
     boolean isScanRequired = false;
 
-    if (isDimensionPresentInCurrentBlock == true) {
+    if (isDimensionPresentInCurrentBlock) {
       filterValues = dimColumnExecuterInfo.getFilterKeys();
       columnIndex = dimColumnEvaluatorInfo.getColumnIndex();
       blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping().get(columnIndex);
@@ -275,9 +277,6 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
 
     } else if (isMeasurePresentInCurrentBlock) {
       columnIndex = msrColumnEvaluatorInfo.getColumnIndex();
-      // blockIndex =
-      // segmentProperties.getDimensionOrdinalToBlockMapping().get(columnIndex) + segmentProperties
-      //         .getLastDimensionColOrdinal();
       blockIndex =
           segmentProperties.getMeasuresOrdinalToBlockMapping().get(columnIndex) + segmentProperties
               .getLastDimensionColOrdinal();
