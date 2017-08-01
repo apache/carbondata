@@ -53,7 +53,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo, SegmentProperties segmentProperties,
       boolean isMeasure) {
     this.segmentProperties = segmentProperties;
-    if (isMeasure == false) {
+    if (!isMeasure) {
       this.dimColEvaluatorInfo = dimColEvaluatorInfo;
       dimColumnExecuterInfo = new DimColumnExecuterFilterInfo();
 
@@ -75,7 +75,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {
-    if (isDimensionPresentInCurrentBlock == true) {
+    if (isDimensionPresentInCurrentBlock) {
       int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
           .get(dimColEvaluatorInfo.getColumnIndex());
       if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
@@ -94,7 +94,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       }
 
       return bitSetGroup;
-    } else if (isMeasurePresentInCurrentBlock == true) {
+    } else if (isMeasurePresentInCurrentBlock) {
       int blockIndex = segmentProperties.getMeasuresOrdinalToBlockMapping()
           .get(msrColumnEvaluatorInfo.getColumnIndex());
       if (null == blockChunkHolder.getMeasureRawDataChunk()[blockIndex]) {
@@ -143,22 +143,24 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
     SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
     for (int i = 0; i < filterValues.length; i++) {
+      BitSet nullBitSet = measureColumnDataChunk.getNullValueIndexHolder().getBitSet();
       if (filterValues[i] == null) {
-        BitSet nullBitSet = measureColumnDataChunk.getNullValueIndexHolder().getBitSet();
         for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
           bitSet.flip(j);
         }
         continue;
       }
       for (int startIndex = 0; startIndex < numerOfRows; startIndex++) {
-        // Check if filterValue[i] matches with measure Values.
-        Object msrValue = DataTypeUtil
-            .getMeasureObjectBasedOnDataType(measureColumnDataChunk.getColumnPage(), startIndex,
-                msrType, msrColumnEvaluatorInfo.getMeasure());
+        if (!nullBitSet.get(startIndex)) {
+          // Check if filterValue[i] matches with measure Values.
+          Object msrValue = DataTypeUtil
+              .getMeasureObjectBasedOnDataType(measureColumnDataChunk.getColumnPage(), startIndex,
+                  msrType, msrColumnEvaluatorInfo.getMeasure());
 
-        if (comparator.compare(msrValue, filterValues[i]) == 0) {
-          // This is a match.
-          bitSet.flip(startIndex);
+          if (comparator.compare(msrValue, filterValues[i]) == 0) {
+            // This is a match.
+            bitSet.flip(startIndex);
+          }
         }
       }
     }
