@@ -222,7 +222,10 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
             int compare = comparator.compare(msrFilterRangeValues[0], DataTypeUtil
                 .getMeasureObjectFromDataType(rawColumnChunk.getMinValues()[i],
                     msrColEvalutorInfoList.get(0).getType()));
-            if (compare <= 0) {
+            MeasureColumnDataChunk measureColumnDataChunk =
+                rawColumnChunk.convertToMeasureColDataChunk(i);
+            if (compare <= 0 &&
+                measureColumnDataChunk.getNullValueIndexHolder().getBitSet().isEmpty()) {
               BitSet bitSet = new BitSet(rawColumnChunk.getRowCount()[i]);
               bitSet.flip(0, rawColumnChunk.getRowCount()[i]);
               bitSetGroup.setBitSet(bitSet, i);
@@ -251,27 +254,27 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     Object[] filterValues = this.msrFilterRangeValues;
     DataType msrType = msrColEvalutorInfoList.get(0).getType();
     SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
+    BitSet nullBitSet = measureColumnDataChunk.getNullValueIndexHolder().getBitSet();
     for (int i = 0; i < filterValues.length; i++) {
       if (filterValues[i] == null) {
-        BitSet nullBitSet = measureColumnDataChunk.getNullValueIndexHolder().getBitSet();
         for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
           bitSet.set(j);
         }
         continue;
       }
       for (int startIndex = 0; startIndex < numerOfRows; startIndex++) {
-        Object msrValue = DataTypeUtil
-            .getMeasureObjectBasedOnDataType(measureColumnDataChunk.getColumnPage(), startIndex,
-                msrType, msrColEvalutorInfoList.get(0).getMeasure());
+        if (!nullBitSet.get(startIndex)) {
+          Object msrValue = DataTypeUtil
+              .getMeasureObjectBasedOnDataType(measureColumnDataChunk.getColumnPage(), startIndex,
+                  msrType, msrColEvalutorInfoList.get(0).getMeasure());
 
-        if (comparator.compare(msrValue, filterValues[i]) >= 0) {
-          // This is a match.
-          bitSet.set(startIndex);
+          if (comparator.compare(msrValue, filterValues[i]) >= 0) {
+            // This is a match.
+            bitSet.set(startIndex);
+          }
         }
       }
     }
-    CarbonUtil
-        .updateBitSetForNull(measureColumnDataChunk.getNullValueIndexHolder().getBitSet(), bitSet);
     return bitSet;
   }
 

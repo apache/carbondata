@@ -259,7 +259,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       isFirst = false;
     } else {
       maxDecimal = (decimalValue.compareTo(maxDecimal) > 0) ? decimalValue : maxDecimal;
-      minDecimal = (decimalValue.compareTo(maxDecimal) < 0) ? decimalValue : minDecimal;
+      minDecimal = (decimalValue.compareTo(minDecimal) < 0) ? decimalValue : minDecimal;
     }
   }
 
