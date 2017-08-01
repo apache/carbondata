@@ -513,13 +513,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperTableInfo.setStorePath(storePath);
     wrapperTableInfo.setFactTable(
         fromExternalToWrapperTableSchema(externalTableInfo.getFact_table(), tableName));
-    List<TableSchema> aggTablesList = new ArrayList<TableSchema>();
-    int index = 0;
-    for (org.apache.carbondata.format.TableSchema aggTable : externalTableInfo
-        .getAggregate_table_list()) {
-      aggTablesList.add(fromExternalToWrapperTableSchema(aggTable, "agg_table_" + index));
-      index++;
-    }
     return wrapperTableInfo;
   }
 
