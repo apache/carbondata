@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.command
 import java.io.File
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
@@ -41,7 +42,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
-import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
@@ -767,27 +768,26 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
-    val carbonLock = CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier.getDatabaseName,
-        carbonTableIdentifier.getTableName + CarbonCommonConstants.UNDERSCORE +
-        LockUsage.DROP_TABLE_LOCK)
-    val storePath = CarbonEnv.get.carbonMetastore.storePath
-    var isLocked = false
+    val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.DROP_TABLE_LOCK)
+    val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
+    val catalog = CarbonEnv.get.carbonMetastore
+    val storePath = catalog.storePath
     try {
-      isLocked = carbonLock.lockWithRetries()
-      if (isLocked) {
-        logInfo("Successfully able to get the lock for drop.")
-      }
-      else {
-        LOGGER.audit(s"Dropping table $dbName.$tableName failed as the Table is locked")
-        sys.error("Table is locked for deletion. Please try after some time")
+      locksToBeAcquired foreach {
+        lock => carbonLocks += CarbonLockUtil.getLockObject(carbonTableIdentifier, lock)
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
       CarbonEnv.get.carbonMetastore.dropTable(storePath, identifier)(sqlContext)
       LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
+    } catch {
+      case ex: Exception =>
+        LOGGER.error(ex, s"Dropping table $dbName.$tableName failed")
+        sys.error(s"Dropping table $dbName.$tableName failed: ${ex.getMessage}")
     } finally {
-      if (carbonLock != null && isLocked) {
-        if (carbonLock.unlock()) {
-          logInfo("Table MetaData Unlocked Successfully after dropping the table")
+      if (carbonLocks.nonEmpty) {
+        val unlocked = carbonLocks.forall(_.unlock())
+        if (unlocked) {
+          logInfo("Table MetaData Unlocked Successfully")
           // deleting any remaining files.
           val metadataFilePath = CarbonStorePath
             .getCarbonTablePath(storePath, carbonTableIdentifier).getMetadataDirectoryPath
