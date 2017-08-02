@@ -800,9 +800,16 @@ case class LoadTable(
   }
 }
 
+/**
+ *
+ * @param databaseNameOp
+ * @param tableName
+ * @param forceTableClean
+ */
 case class CleanFiles(
     databaseNameOp: Option[String],
-    tableName: String, forceTableClean: Boolean = false)
+    tableName: Option[String],
+    forceTableClean: Boolean = false)
   extends RunnableCommand with DataProcessCommand {
 
   def run(sparkSession: SparkSession): Seq[Row] = {
@@ -810,27 +817,45 @@ case class CleanFiles(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    if (forceTableClean) {
-      CarbonStore.cleanFiles(
-        getDB.getDatabaseName(databaseNameOp, sparkSession),
-        tableName,
-        CarbonEnv.getInstance(sparkSession).storePath,
-        null,
-        forceTableClean)
+    if (tableName.isDefined) {
+      Checker.validateTableExists(databaseNameOp, tableName.get, sparkSession)
+      if (forceTableClean) {
+        deleteAllData(sparkSession, databaseNameOp, tableName.get)
+      } else {
+        cleanGarbageData(sparkSession, databaseNameOp, tableName.get)
+      }
     } else {
-      val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      val relation = catalog
-        .lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation]
-      val carbonTable = relation.tableMeta.carbonTable
-      CarbonStore.cleanFiles(
-        getDB.getDatabaseName(databaseNameOp, sparkSession),
-        tableName,
-        relation.asInstanceOf[CarbonRelation].tableMeta.storePath,
-        carbonTable,
-        forceTableClean)
+      cleanGarbageDataInAllTables(sparkSession)
     }
     Seq.empty
+  }
+
+  private def deleteAllData(sparkSession: SparkSession,
+      databaseNameOp: Option[String], tableName: String): Unit = {
+    CarbonStore.cleanFiles(
+      getDB.getDatabaseName(databaseNameOp, sparkSession),
+      tableName,
+      CarbonEnv.getInstance(sparkSession).storePath,
+      null,
+      forceTableClean = true)
+  }
+
+  private def cleanGarbageData(sparkSession: SparkSession,
+      databaseNameOp: Option[String], tableName: String): Unit = {
+    val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val relation = catalog
+      .lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation]
+    val carbonTable = relation.tableMeta.carbonTable
+    CarbonStore.cleanFiles(
+      getDB.getDatabaseName(databaseNameOp, sparkSession),
+      tableName,
+      relation.asInstanceOf[CarbonRelation].tableMeta.storePath,
+      carbonTable,
+      forceTableClean)
+  }
+
+  private def cleanGarbageDataInAllTables(sparkSession: SparkSession): Unit = {
+
   }
 }
 
