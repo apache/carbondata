@@ -82,7 +82,11 @@ class CarbonSessionCatalog(
       alias: Option[String]): LogicalPlan = {
     val rtnRelation = super.lookupRelation(name, alias)
     var toRefreshRelation = false
-    rtnRelation foreach {
+    rtnRelation match {
+      case SubqueryAlias(_,
+          LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _),
+          _) =>
+        toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)  
       case LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
         toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
       case _ =>
