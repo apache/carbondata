@@ -28,6 +28,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -95,19 +96,19 @@ class CarbonScanPartitionRDD(
     val parallelism = sparkContext.defaultParallelism
     val jobConf = new JobConf(new Configuration)
     val job = new Job(jobConf)
-    val format = CarbonInputFormatUtil.createCarbonInputFormat(identifier,
+    val format = CarbonInputFormatUtil.createCarbonTableInputFormat(identifier,
       partitionIds.toList.asJava, job)
     job.getConfiguration.set("query.id", queryId)
 
     val splits = format.getSplitsOfOneSegment(job, segmentId,
-      oldPartitionIdList.map(_.asInstanceOf[Integer]).asJava)
+      oldPartitionIdList.map(_.asInstanceOf[Integer]).asJava, partitionInfo)
     var partition_num = 0
     val result = new ArrayList[Partition](parallelism)
     val blockList = splits.asScala
       .filter(_.asInstanceOf[CarbonInputSplit].getBucketId.toInt == bucketId)
       .map(_.asInstanceOf[Distributable])
-    val activeNodes = DistributionUtil.ensureExecutorsAndGetNodeList(blockList, sparkContext)
     if (!blockList.isEmpty) {
+      val activeNodes = DistributionUtil.ensureExecutorsAndGetNodeList(blockList, sparkContext)
       val nodeBlockMapping = CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1,
         parallelism, activeNodes.toList.asJava)
       nodeBlockMapping.asScala.foreach { case (node, blockList) =>
@@ -152,7 +153,7 @@ class CarbonScanPartitionRDD(
             }
         }
         val segmentProperties = PartitionUtils.getSegmentProperties(identifier, segmentId,
-          partitionIds.toList, oldPartitionIdList)
+          partitionIds.toList, oldPartitionIdList, partitionInfo)
         val partColIdx = getPartitionColumnIndex(partitionColumnName, segmentProperties)
         indexInitialise()
         for (iterator <- result.asScala) {
@@ -168,14 +169,6 @@ class CarbonScanPartitionRDD(
           LOGGER.error(e)
           throw e
       } finally {
-        try {
-          val isAltPartitionFlow = true
-          CarbonLoaderUtil
-            .deleteLocalDataLoadFolderLocation(carbonLoadModel, false, isAltPartitionFlow)
-        } catch {
-          case e: Exception =>
-            LOGGER.error(e)
-        }
         if (null != exec) {
           exec.finish
         }
@@ -198,7 +191,8 @@ class CarbonScanPartitionRDD(
       if (encodings.contains(Encoding.DIRECT_DICTIONARY)) {
         val directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
           .getDirectDictionaryGenerator(partitionDataType)
-        val surrogateValue = (keyArray(partColIdx) / factor).toInt
+        val dictionaryIndex = dictionaryIndexGroup.indexOf(partColIdx)
+        val surrogateValue = (keyArray(dictionaryIndex) / factor).toInt
         partitionValue = directDictionaryGenerator.getValueFromSurrogate(surrogateValue)
       } else if (!encodings.contains(Encoding.DICTIONARY)) {
         // no dictionary
@@ -206,6 +200,9 @@ class CarbonScanPartitionRDD(
         val index = noDictionaryIndexGroup.indexOf(partColIdx)
         partitionValue = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(byteArray(index)
           , partitionDataType)
+        if (partitionValue.isInstanceOf[UTF8String]) {
+          partitionValue = partitionValue.toString
+        }
       } else {  // normal dictionary
         val dict = CarbonLoaderUtil.getDictionary(carbonTableIdentifier,
           dimension.getColumnIdentifier, storePath, partitionDataType)

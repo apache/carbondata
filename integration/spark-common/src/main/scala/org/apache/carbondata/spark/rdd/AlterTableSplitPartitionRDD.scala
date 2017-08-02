@@ -44,7 +44,6 @@ class AlterTableSplitPartitionRDD[K, V](
     carbonLoadModel: CarbonLoadModel,
     identifier: AbsoluteTableIdentifier,
     storePath: String,
-    partitionInfo: PartitionInfo,
     oldPartitionIdList: List[Int],
     prev: RDD[Array[AnyRef]]) extends RDD[(K, V)](prev) {
 
@@ -56,6 +55,7 @@ class AlterTableSplitPartitionRDD[K, V](
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val databaseName = carbonTable.getDatabaseName
     val factTableName = carbonTable.getFactTableName
+    val partitionInfo = carbonTable.getPartitionInfo(factTableName)
 
     override protected def getPartitions: Array[Partition] = firstParent[Array[AnyRef]].partitions
 
@@ -64,14 +64,13 @@ class AlterTableSplitPartitionRDD[K, V](
         val rows = firstParent[Array[AnyRef]].iterator(split, context).toList.asJava
         val iter = new Iterator[(K, V)] {
             val partitionId = partitionInfo.getPartitionId(split.index)
-            val loadStartTime = CarbonUpdateUtil.readCurrentTime
-            carbonLoadModel.setFactTimeStamp(loadStartTime)
             carbonLoadModel.setTaskNo(String.valueOf(partitionId))
             carbonLoadModel.setSegmentId(segmentId)
             carbonLoadModel.setPartitionId("0")
             val tempLocationKey = CarbonDataProcessorUtil
               .getTempStoreLocationKey(carbonLoadModel.getDatabaseName,
                   carbonLoadModel.getTableName,
+                  segmentId,
                   carbonLoadModel.getTaskNo,
                   false,
                   true)
@@ -109,16 +108,25 @@ class AlterTableSplitPartitionRDD[K, V](
                 LOGGER.info("After repartition this split, NO target rows to write back.")
                 true
             } else {
-                val segmentProperties = PartitionUtils.getSegmentProperties(identifier, segmentId,
-                    partitionIds.toList, oldPartitionIdList)
-                val processor = new RowResultSpliterProcessor(
-                    carbonTable,
-                    carbonLoadModel,
-                    segmentProperties,
-                    tempStoreLoc,
-                    bucketId
-                )
-                processor.execute(rows)
+                try {
+                    val segmentProperties = PartitionUtils.getSegmentProperties(identifier,
+                        segmentId, partitionIds.toList, oldPartitionIdList, partitionInfo)
+                    val processor = new RowResultSpliterProcessor(
+                        carbonTable,
+                        carbonLoadModel,
+                        segmentProperties,
+                        tempStoreLoc,
+                        bucketId
+                    )
+                    processor.execute(rows)
+                } catch {
+                    case e: Exception =>
+                        sys.error(s"Exception when executing Row result processor ${e.getMessage}")
+                } finally {
+                    CarbonLoaderUtil
+                      .deleteLocalDataLoadFolderLocation(carbonLoadModel, false, true)
+                }
+
             }
 
             val splitResult = segmentId

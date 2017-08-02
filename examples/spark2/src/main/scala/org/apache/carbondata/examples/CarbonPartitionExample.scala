@@ -194,11 +194,11 @@ object CarbonPartitionExample {
 
     // show partitions
     try {
-      spark.sql("""SHOW PARTITIONS t0""").show(100, false)
+      spark.sql("""SHOW PARTITIONS t1""").show(100, false)
     } catch {
       case ex: AnalysisException => LOGGER.error(ex.getMessage())
     }
-    spark.sql("""SHOW PARTITIONS t1""").show(100, false)
+    spark.sql("""SHOW PARTITIONS t0""").show(100, false)
     spark.sql("""SHOW PARTITIONS t3""").show(100, false)
     spark.sql("""SHOW PARTITIONS t5""").show(100, false)
     spark.sql("""SHOW PARTITIONS t7""").show(100, false)

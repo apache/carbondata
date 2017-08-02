@@ -252,27 +252,27 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     assert(list_info.get(2).get(0) == "Europe")
     assert(list_info.get(3).get(0) == "OutSpace")
     assert(list_info.get(4).get(0) == "Hi")
-    validateDataFiles("default_list_table_area", "0", Seq(0, 1, 2, 3, 4))
-    checkAnswer(sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin"),
-      sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area"))
+    validateDataFiles("default_list_table_area", "0", Seq(1, 2, 4))
+    checkAnswer(sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area"),
+      sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin"))
 
-    checkAnswer(sql(s"select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area < 'abc1' "),
-      sql(s"select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area < 'abc1' "))
+    checkAnswer(sql(s"select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area < 'OutSpace' "),
+      sql(s"select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area < 'OutSpace' "))
 
-    val result_origin2 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area <= 'abc1' ")
-    val result_after2 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area <= 'abc1' ")
+    val result_origin2 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area <= 'OutSpace' ")
+    val result_after2 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area <= 'OutSpace' ")
     checkAnswer(result_origin2, result_after2)
 
-    val result_origin3 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area = 'abc1' ")
-    val result_after3 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area = 'abc1' ")
+    val result_origin3 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area = 'OutSpace' ")
+    val result_after3 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area = 'OutSpace' ")
     checkAnswer(result_origin3, result_after3)
 
-    val result_origin4 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area > 'abc1' ")
-    val result_after4 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area > 'abc1' ")
+    val result_origin4 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area > 'OutSpace' ")
+    val result_after4 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area > 'OutSpace' ")
     checkAnswer(result_origin4, result_after4)
 
-    val result_origin5 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area >= 'abc1' ")
-    val result_after5 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area >= 'abc1' ")
+    val result_origin5 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area >= 'OutSpace' ")
+    val result_after5 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area >= 'OutSpace' ")
     checkAnswer(result_origin5, result_after5)
 
     sql("""ALTER TABLE list_table_area ADD PARTITION ('One', '(Two, Three)', 'Four')""".stripMargin)
@@ -289,9 +289,9 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     assert(new_list_info.get(6).get(0) == "Two")
     assert(new_list_info.get(6).get(1) == "Three")
     assert(new_list_info.get(7).get(0) == "Four")
-    validateDataFiles("default_list_table_area", "0", Seq(0, 1, 2, 3, 4))
-    checkAnswer(sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin"),
-      sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area"""))
+    validateDataFiles("default_list_table_area", "0", Seq(1, 2, 4))
+    checkAnswer(sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area"),
+      sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin"""))
   }
 
   test("Alter table add partition: Range Partition") {
@@ -309,28 +309,28 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     assert(range_info.get(3) == "2017/01/01")
     assert(range_info.get(4) == "2018/01/01")
     validateDataFiles("default_range_table_logdate", "0", Seq(1, 2, 3, 4, 5))
-    val result_origin = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin""")
-    val result_after = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate""")
+    val result_origin = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate""")
+    val result_after = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin""")
     checkAnswer(result_origin, result_after)
 
-    val result_origin1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin where logdate < cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate where logdate < cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate where logdate < cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin where logdate < cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin1, result_after1)
 
-    val result_origin2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin where logdate <= cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate where logdate <= cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate where logdate <= cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin where logdate <= cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin2, result_after2)
 
-    val result_origin3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin where logdate = cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate where logdate = cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate where logdate = cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin where logdate = cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin3, result_after3)
 
-    val result_origin4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin where logdate >= cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate where logdate >= cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate where logdate >= cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin where logdate >= cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin4, result_after4)
 
-    val result_origin5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin where logdate > cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate where logdate > cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate where logdate > cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin where logdate > cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin5, result_after5)
   }
 
@@ -352,29 +352,29 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     assert(list_info.get(5).get(0) == "Good")
     assert(list_info.get(5).get(1) == "NotGood")
     assert(list_info.get(6).get(0) == "Korea")
-    validateDataFiles("default_list_table_country", "0", Seq(0, 1, 2, 3, 6, 7, 8))
-    val result_origin = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin""")
-    val result_after = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country""")
+    validateDataFiles("default_list_table_country", "0", Seq(1, 2, 3, 8))
+    val result_origin = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country""")
+    val result_after = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin""")
     checkAnswer(result_origin, result_after)
 
-    val result_origin1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country < 'NotGood' """)
-    val result_after1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country < 'NotGood' """)
+    val result_origin1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country < 'NotGood' """)
+    val result_after1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country < 'NotGood' """)
     checkAnswer(result_origin1, result_after1)
 
-    val result_origin2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country <= 'NotGood' """)
-    val result_after2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country <= 'NotGood' """)
+    val result_origin2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country <= 'NotGood' """)
+    val result_after2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country <= 'NotGood' """)
     checkAnswer(result_origin2, result_after2)
 
-    val result_origin3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country = 'NotGood' """)
-    val result_after3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country = 'NotGood' """)
+    val result_origin3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country = 'NotGood' """)
+    val result_after3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country = 'NotGood' """)
     checkAnswer(result_origin3, result_after3)
 
-    val result_origin4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country >= 'NotGood' """)
-    val result_after4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country >= 'NotGood' """)
+    val result_origin4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country >= 'NotGood' """)
+    val result_after4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country >= 'NotGood' """)
     checkAnswer(result_origin4, result_after4)
 
-    val result_origin5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country > 'NotGood' """)
-    val result_after5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country > 'NotGood' """)
+    val result_origin5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country > 'NotGood' """)
+    val result_after5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country > 'NotGood' """)
     checkAnswer(result_origin5, result_after5)
   }
 
@@ -393,28 +393,28 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     assert(rangeInfo.get(3) == "2017/01/01")
     assert(rangeInfo.get(4) == "2018/01/01")
     validateDataFiles("default_range_table_logdate_split", "0", Seq(1, 2, 3, 5, 6))
-    val result_origin = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split_origin""")
-    val result_after = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split""")
+    val result_origin = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split""")
+    val result_after = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split_origin""")
     checkAnswer(result_origin, result_after)
 
-    val result_origin1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split_origin where logdate < cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split where logdate < cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split where logdate < cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split_origin where logdate < cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin1, result_after1)
 
-    val result_origin2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split_origin where logdate <= cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split where logdate <= cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split where logdate <= cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split_origin where logdate <= cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin2, result_after2)
 
-    val result_origin3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split_origin where logdate = cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split where logdate = cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split where logdate = cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split_origin where logdate = cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin3, result_after3)
 
-    val result_origin4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split_origin where logdate >= cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split where logdate >= cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split where logdate >= cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split_origin where logdate >= cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin4, result_after4)
 
-    val result_origin5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split_origin where logdate > cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split where logdate > cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split where logdate > cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_split_origin where logdate > cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin5, result_after5)
   }
 
@@ -433,28 +433,28 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     assert(rangeInfo.get(3) == "2017/01/01")
     assert(rangeInfo.get(4) == "2018/01/01")
     validateDataFiles("default_range_table_bucket", "0", Seq(1, 2, 3, 5, 6))
-    val result_origin = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket_origin""")
-    val result_after = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket""")
+    val result_origin = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket""")
+    val result_after = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket_origin""")
     checkAnswer(result_origin, result_after)
 
-    val result_origin1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket_origin where logdate < cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket where logdate < cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket where logdate < cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket_origin where logdate < cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin1, result_after1)
 
-    val result_origin2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket_origin where logdate <= cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket where logdate <= cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket where logdate <= cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket_origin where logdate <= cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin2, result_after2)
 
-    val result_origin3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket_origin where logdate = cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket where logdate = cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket where logdate = cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket_origin where logdate = cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin3, result_after3)
 
-    val result_origin4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket_origin where logdate >= cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket where logdate >= cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket where logdate >= cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket_origin where logdate >= cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin4, result_after4)
 
-    val result_origin5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket_origin where logdate > cast('2017/01/12 00:00:00' as timestamp) """)
-    val result_after5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket where logdate > cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_origin5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket where logdate > cast('2017/01/12 00:00:00' as timestamp) """)
+    val result_after5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_bucket_origin where logdate > cast('2017/01/12 00:00:00' as timestamp) """)
     checkAnswer(result_origin5, result_after5)
   }
 

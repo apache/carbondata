@@ -131,7 +131,6 @@ case class SplitPartitionCallableModel(storePath: String,
     segmentId: String,
     partitionId: String,
     oldPartitionIdList: List[Int],
-    carbonTable: CarbonTable,
     sqlContext: SQLContext)
 
 case class DataTypeInfo(dataType: String, precision: Int = 0, scale: Int = 0)

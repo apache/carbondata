@@ -302,7 +302,6 @@ object DataManagementFunc {
       segmentId,
       partitionId,
       oldPartitionIdList,
-      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
       sqlContext)
 
     val future: Future[Void] = executor.submit(new SplitPartitionCallable(splitModel))

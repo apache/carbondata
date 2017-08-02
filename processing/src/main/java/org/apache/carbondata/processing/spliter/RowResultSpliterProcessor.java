@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.processing.spliter;
 
-import java.io.File;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -32,6 +31,7 @@ import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class RowResultSpliterProcessor {
 
@@ -43,10 +43,8 @@ public class RowResultSpliterProcessor {
 
 
   public RowResultSpliterProcessor(CarbonTable carbonTable, CarbonLoadModel loadModel,
-      SegmentProperties segProp, String tempStoreLocation, Integer bucketId) {
-    if (!new File(tempStoreLocation).mkdirs()) {
-      LOGGER.error("Error while new File(tempStoreLocation).mkdirs() ");
-    }
+      SegmentProperties segProp, String[] tempStoreLocation, Integer bucketId) {
+    CarbonDataProcessorUtil.createLocations(tempStoreLocation);
     this.segmentProperties = segProp;
     String tableName = carbonTable.getFactTableName();
     CarbonFactDataHandlerModel carbonFactDataHandlerModel =

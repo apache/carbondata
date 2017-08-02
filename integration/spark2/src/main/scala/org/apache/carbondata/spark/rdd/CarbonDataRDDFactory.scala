@@ -47,6 +47,7 @@ import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnarFormatVersion}
 import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -372,13 +373,20 @@ object CarbonDataRDDFactory {
       partitionId: String,
       oldPartitionIdList: List[Int]) extends Thread {
       override def run(): Unit = {
+        var triggeredSplitPartitionStatus = false
+        var exception: Exception = null
         try {
           DataManagementFunc.executePartitionSplit(sqlContext,
             carbonLoadModel, executor, storePath, segmentId, partitionId,
             oldPartitionIdList)
+          triggeredSplitPartitionStatus = true
         } catch {
           case e: Exception =>
             LOGGER.error(s"Exception in partition split thread: ${ e.getMessage } }")
+          exception = e
+        }
+        if (triggeredSplitPartitionStatus == false) {
+          throw new Exception("Exception in split partition " + exception.getMessage)
         }
       }
   }
@@ -399,18 +407,19 @@ object CarbonDataRDDFactory {
       val validSegments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala
       val threadArray: Array[SplitThread] = new Array[SplitThread](validSegments.size)
       var i = 0
-      for (segmentId: String <- validSegments) {
+      validSegments.foreach { segmentId =>
         threadArray(i) = SplitThread(sqlContext, carbonLoadModel, executor, storePath,
           segmentId, partitionId, oldPartitionIdList)
         threadArray(i).start()
         i += 1
       }
-      for (thread <- threadArray) {
-        thread.join()
+      threadArray.foreach {
+        thread => thread.join()
       }
     } catch {
       case e: Exception =>
         LOGGER.error(s"Exception when split partition: ${ e.getMessage }")
+      throw e
     } finally {
       executor.shutdown()
       try {

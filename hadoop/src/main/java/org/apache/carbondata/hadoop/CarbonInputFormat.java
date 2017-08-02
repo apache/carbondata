@@ -107,7 +107,6 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   // comma separated list of input files
   public static final String INPUT_FILES =
       "mapreduce.input.carboninputformat.files";
-  public static final String ALTER_PARTITION_ID = "mapreduce.input.carboninputformat.partitionid";
   private static final Log LOG = LogFactory.getLog(CarbonInputFormat.class);
   private static final String FILTER_PREDICATE =
       "mapreduce.input.carboninputformat.filter.predicate";
@@ -370,7 +369,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
       // do block filtering and get split
       List<InputSplit> splits = getSplits(job, filterInterface, matchedPartitions, cacheClient,
-          partitionInfo, null);
+          partitionInfo);
       // pass the invalid segment to task side in order to remove index entry in task side
       if (invalidSegments.size() > 0) {
         for (InputSplit split : splits) {
@@ -429,8 +428,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    * @throws IOException
    */
   private List<InputSplit> getSplits(JobContext job, FilterResolverIntf filterResolver,
-      BitSet matchedPartitions, CacheClient cacheClient, PartitionInfo partitionInfo,
-      List<Integer> oldPartitionIdList)
+      BitSet matchedPartitions, CacheClient cacheClient, PartitionInfo partitionInfo)
       throws IOException {
 
     List<InputSplit> result = new LinkedList<InputSplit>();
@@ -445,11 +443,11 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
-    // for each segment fetch blocks matching filter in Driver BTree
+    //for each segment fetch blocks matching filter in Driver BTree
     for (String segmentNo : getSegmentsToAccess(job)) {
       List<DataRefNode> dataRefNodes = getDataBlocksOfSegment(job, filterExpressionProcessor,
           absoluteTableIdentifier, filterResolver, matchedPartitions, segmentNo,
-          cacheClient, updateStatusManager, partitionInfo, oldPartitionIdList);
+          cacheClient, updateStatusManager, partitionInfo);
       // Get the UpdateVO for those tables on which IUD operations being performed.
       if (isIUDTable) {
         invalidBlockVOForSegmentId =
@@ -490,8 +488,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       FilterExpressionProcessor filterExpressionProcessor,
       AbsoluteTableIdentifier absoluteTableIdentifier, FilterResolverIntf resolver,
       BitSet matchedPartitions, String segmentId, CacheClient cacheClient,
-      SegmentUpdateStatusManager updateStatusManager, PartitionInfo partitionInfo,
-      List<Integer> oldPartitionIdList)
+      SegmentUpdateStatusManager updateStatusManager, PartitionInfo partitionInfo)
       throws IOException {
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
     try {
@@ -510,17 +507,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         for (Map.Entry<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> entry :
             segmentIndexMap.entrySet()) {
           SegmentTaskIndexStore.TaskBucketHolder taskHolder = entry.getKey();
-          int partitionId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskHolder.taskNo);
-
-          // OldPartitionIdList is only used in alter table partition command because it change
-          // partition info first and then read data.
-          // For other normal query should use newest partitionIdList
+          int taskId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskHolder.taskNo);
           if (partitionInfo != null) {
-            if (oldPartitionIdList != null) {
-              partitionIndex = oldPartitionIdList.indexOf(partitionId);
-            } else {
-              partitionIndex = partitionIdList.indexOf(partitionId);
-            }
+            partitionIndex = partitionIdList.indexOf(taskId);
           }
           // matchedPartitions variable will be null in two cases as follows
           // 1. the table is not a partition table
