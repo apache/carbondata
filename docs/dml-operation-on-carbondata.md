@@ -182,7 +182,7 @@ options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
 
     * The maximum number of characters per column is 100000. If there are more than 100000 characters in a column, data loading will fail.
 
-### Example
+### Example:
 
 ```
 LOAD DATA INPATH 'filepath.csv'
@@ -193,7 +193,14 @@ OPTIONS('BAD_RECORDS_LOGGER_ENABLE'='true',
 'IS_EMPTY_DATA_BAD_RECORD'='false');
 ```
 
-To get details about bad record management options refer to [Configuration Paramters](configuration-parameters.md)
+ **Bad Records Management Options:**
+
+ | Options                   | Default Value | Description                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+ |---------------------------|---------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+ | BAD_RECORDS_LOGGER_ENABLE | false         | Whether to create logs with details about bad records.                                                                                                                                                                                                                                                                                                                                                                                                   |
+ | BAD_RECORDS_ACTION        | FAIL          | Following are the four types of action for bad records:  FORCE: Auto-corrects the data by storing the bad records as NULL.  REDIRECT: Bad records are written to the raw CSV instead of being loaded.  IGNORE: Bad records are neither loaded nor written to the raw CSV.  FAIL: Data loading fails if any bad records are found.  NOTE: In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails. |
+ | IS_EMPTY_DATA_BAD_RECORD  | false         | If false, then empty ("" or '' or ,,) data will not be considered as bad record and vice versa.                                                                                                                                                                                                                                                                                                                                                          |
+ | BAD_RECORD_PATH           | -             | Specifies the HDFS path where bad records are stored. By default the value is Null. This path must to be configured by the user if bad record logger is enabled or bad record action redirect.                                                                                                                                                                                                                                                           |
 
 ## INSERT DATA INTO A CARBONDATA TABLE
 
