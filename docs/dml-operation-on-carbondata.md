@@ -149,7 +149,7 @@ You can use the following options to load data:
    
    * If this option is set to TRUE, then high.cardinality.identify.enable property will be disabled during data load.
    
-### Example:
+  ### Example:
 
 ```
 LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
