@@ -801,10 +801,11 @@ case class LoadTable(
 }
 
 /**
- *
- * @param databaseNameOp
- * @param tableName
- * @param forceTableClean
+ * Clean data in table.
+ * If table name is specified and forceTableClean is false, it will clean garbage
+ * segment (MARKED_FOR_DELETE state)
+ * If table name is specifed and forceTableClean is true, it will delete all data in the table
+ * If table name is not provided, it will clean garbage segment in all tables.
  */
 case class CleanFiles(
     databaseNameOp: Option[String],
