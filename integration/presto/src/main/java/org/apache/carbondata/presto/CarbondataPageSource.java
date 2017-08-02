@@ -66,7 +66,7 @@ class CarbondataPageSource implements ConnectorPageSource {
   private final char[] buffer = new char[100];
   private boolean closed;
   private CarbonIterator<BatchResult> columnCursor;
-  private PrestoDictionaryDecodeReadSupport<Object[]> readSupport;
+  private CarbonDictionaryDecodeReadSupport<Object[]> readSupport;
 
   CarbondataPageSource(RecordSet recordSet) {
     this(requireNonNull(recordSet, "recordSet is null").getColumnTypes(), recordSet.cursor());
@@ -224,7 +224,7 @@ class CarbondataPageSource implements ConnectorPageSource {
   }
 
   private long getLong(Object obj, Type actual) {
-    Long timeStr = 0L;
+    Long timeStr;
     if (obj instanceof Integer) {
       timeStr = ((Integer) obj).longValue();
     } else if (obj instanceof Long) {

@@ -53,7 +53,7 @@ class CarbondataRecordSet implements RecordSet {
   private List<CarbondataColumnHandle> columns;
   private QueryExecutor queryExecutor;
 
-  private PrestoDictionaryDecodeReadSupport readSupport;
+  private CarbonDictionaryDecodeReadSupport readSupport;
 
   CarbondataRecordSet(CarbonTable carbonTable, ConnectorSession session, ConnectorSplit split,
       List<CarbondataColumnHandle> columns, QueryModel queryModel) {
@@ -63,7 +63,7 @@ class CarbondataRecordSet implements RecordSet {
     this.rebuildConstraints = this.split.getRebuildConstraints();
     this.queryModel = queryModel;
     this.columns = columns;
-    this.readSupport = new PrestoDictionaryDecodeReadSupport<>();
+    this.readSupport = new CarbonDictionaryDecodeReadSupport<>();
   }
 
   //todo support later

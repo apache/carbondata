@@ -28,7 +28,7 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 /**
  * This is the class to decode dictionary encoded column data back to its original value.
  */
-class PrestoDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
+class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
   private var dictionaries: Array[Dictionary] = _
   private var dataTypes: Array[DataType] = _
 
