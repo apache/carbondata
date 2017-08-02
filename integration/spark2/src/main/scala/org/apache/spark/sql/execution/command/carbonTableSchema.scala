@@ -537,10 +537,6 @@ case class LoadTable(
       val complex_delimeter_level2 = optionsFinal("complex_delimiter_level_2")
       val all_dictionary_path = optionsFinal("all_dictionary_path")
       val column_dict = optionsFinal("columndict")
-      if (sort_scope.equals("GLOBAL_SORT") &&
-          single_pass.equals("TRUE")) {
-        sys.error("Global_Sort can't be used with single_pass flow")
-      }
       ValidateUtil.validateDateFormat(dateFormat, table, tableName)
       ValidateUtil.validateSortScope(table, sort_scope)
 
