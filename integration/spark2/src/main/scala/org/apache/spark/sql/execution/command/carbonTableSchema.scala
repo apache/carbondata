@@ -855,7 +855,9 @@ case class CleanFiles(
   }
 
   private def cleanGarbageDataInAllTables(sparkSession: SparkSession): Unit = {
-
+    CommonUtil.cleanInProgressSegments(
+      CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
+      sparkSession.sparkContext)
   }
 }
 
