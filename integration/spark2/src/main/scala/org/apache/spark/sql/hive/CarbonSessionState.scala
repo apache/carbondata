@@ -86,7 +86,7 @@ class CarbonSessionCatalog(
       case SubqueryAlias(_,
           LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _),
           _) =>
-        toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)  
+        toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
       case LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
         toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
       case _ =>
