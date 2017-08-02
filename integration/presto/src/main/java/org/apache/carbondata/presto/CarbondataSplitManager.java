@@ -17,11 +17,11 @@
 
 package org.apache.carbondata.presto;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -182,7 +182,7 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
         } else {
           List<Expression> rangeConjuncts = new ArrayList<>();
           if (!range.getLow().isLowerUnbounded()) {
-            Object value = ConvertDataByType(range.getLow().getValue(), type);
+            Object value = CarbondataType.getDataByType(range.getLow().getValue(), type);
             switch (range.getLow().getBound()) {
               case ABOVE:
                 if (type == TimestampType.TIMESTAMP) {
@@ -206,7 +206,7 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
             }
           }
           if (!range.getHigh().isUpperUnbounded()) {
-            Object value = ConvertDataByType(range.getHigh().getValue(), type);
+            Object value = CarbondataType.getDataByType(range.getHigh().getValue(), type);
             switch (range.getHigh().getBound()) {
               case ABOVE:
                 throw new IllegalArgumentException("High marker should never use ABOVE bound");
@@ -239,7 +239,7 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
       } else if (singleValues.size() > 1) {
         ListExpression candidates = null;
         List<Expression> exs = singleValues.stream().map((a) -> {
-          return new LiteralExpression(ConvertDataByType(a, type), coltype);
+          return new LiteralExpression(CarbondataType.getDataByType(a, type), coltype);
         }).collect(Collectors.toList());
         candidates = new ListExpression(exs);
 
@@ -292,12 +292,4 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
     else return DataType.STRING;
   }
 
-  public Object ConvertDataByType(Object rawdata, Type type) {
-    if (type.equals(IntegerType.INTEGER)) return new Integer((rawdata.toString()));
-    else if (type.equals(BigintType.BIGINT)) return (Long) rawdata;
-    else if (type.equals(VarcharType.VARCHAR)) return ((Slice) rawdata).toStringUtf8();
-    else if (type.equals(BooleanType.BOOLEAN)) return (Boolean) (rawdata);
-
-    return rawdata;
-  }
 }
