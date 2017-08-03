@@ -313,11 +313,13 @@ public final class CarbonLoaderUtil {
           }
           if (insertOverwrite) {
             for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
-              entry.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
-              // For insert overwrite, we will delete the old segment folder immediately
-              // So collect the old segments here
-              String path = carbonTablePath.getCarbonDataDirectoryPath("0", entry.getLoadName());
-              staleFolders.add(FileFactory.getCarbonFile(path));
+              if (!entry.equals(LoadStatusType.INSERT_OVERWRITE)) {
+                entry.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
+                // For insert overwrite, we will delete the old segment folder immediately
+                // So collect the old segments here
+                String path = carbonTablePath.getCarbonDataDirectoryPath("0", entry.getLoadName());
+                staleFolders.add(FileFactory.getCarbonFile(path));
+              }
             }
           }
           listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);

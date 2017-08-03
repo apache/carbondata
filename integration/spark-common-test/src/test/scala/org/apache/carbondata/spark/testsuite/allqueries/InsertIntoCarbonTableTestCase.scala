@@ -16,10 +16,15 @@
  */
 package org.apache.carbondata.spark.testsuite.allqueries
 
+import java.io.File
+
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.datastore.impl.FileFactory
 
 class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
@@ -252,6 +257,9 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert overwrite table CarbonOverwrite select * from THive")
     sql("insert overwrite table HiveOverwrite select * from THive")
     checkAnswer(sql("select count(*) from CarbonOverwrite"), sql("select count(*) from HiveOverwrite"))
+    val folder = new File(s"$storeLocation/default/CarbonOverwrite/Fact/part0/")
+    assert(folder.isDirectory)
+    assert(folder.list().length == 1)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timeStampPropOrig)
   }
 
