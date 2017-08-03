@@ -355,7 +355,6 @@ object CarbonDataRDDFactory {
       dataFrame: Option[DataFrame] = None,
       updateModel: Option[UpdateTableModel] = None): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val isAgg = false
     // for handling of the segment Merging.
     def handleSegmentMerging(): Unit = {
       LOGGER.info(s"compaction need status is" +
@@ -907,25 +906,23 @@ object CarbonDataRDDFactory {
           throw new Exception("No Data to load")
         }
         val metadataDetails = status(0)._2._1
-        if (!isAgg) {
-          writeDictionary(carbonLoadModel, result, false)
-          CarbonLoaderUtil
-            .populateNewLoadMetaEntry(metadataDetails,
-              loadStatus,
-              carbonLoadModel.getFactTimeStamp,
-              true)
-          val status = CarbonLoaderUtil.recordLoadMetadata(metadataDetails,
-            carbonLoadModel, false, overwriteTable)
-          if (!status) {
-            val errorMessage = "Dataload failed due to failure in table status updation."
-            LOGGER.audit("Data load is failed for " +
-                s"${ carbonLoadModel.getDatabaseName }.${
-                  carbonLoadModel
-                      .getTableName
-                }")
-            LOGGER.error("Dataload failed due to failure in table status updation.")
-            throw new Exception(errorMessage)
-          }
+        writeDictionary(carbonLoadModel, result, false)
+        CarbonLoaderUtil
+          .populateNewLoadMetaEntry(metadataDetails,
+            loadStatus,
+            carbonLoadModel.getFactTimeStamp,
+            true)
+        val status = CarbonLoaderUtil.recordLoadMetadata(metadataDetails,
+          carbonLoadModel, false, overwriteTable)
+        if (!status) {
+          val errorMessage = "Dataload failed due to failure in table status updation."
+          LOGGER.audit("Data load is failed for " +
+              s"${ carbonLoadModel.getDatabaseName }.${
+                carbonLoadModel
+                    .getTableName
+              }")
+          LOGGER.error("Dataload failed due to failure in table status updation.")
+          throw new Exception(errorMessage)
         } else if (!carbonLoadModel.isRetentionRequest) {
           // TODO : Handle it
           LOGGER.info("********Database updated**********")
