@@ -313,7 +313,7 @@ public final class CarbonLoaderUtil {
           }
           if (insertOverwrite) {
             for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
-              if (!entry.equals(LoadStatusType.INSERT_OVERWRITE)) {
+              if (!entry.getLoadStatus().equals(LoadStatusType.INSERT_OVERWRITE.getMessage())) {
                 entry.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
                 // For insert overwrite, we will delete the old segment folder immediately
                 // So collect the old segments here
