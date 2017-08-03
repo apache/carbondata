@@ -270,6 +270,9 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists HiveDest")
     sql("drop table if exists CarbonOverwrite")
     sql("drop table if exists HiveOverwrite")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timeStampPropOrig)
+    if (timeStampPropOrig != null) {
+      CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timeStampPropOrig)
+    }
   }
 }
