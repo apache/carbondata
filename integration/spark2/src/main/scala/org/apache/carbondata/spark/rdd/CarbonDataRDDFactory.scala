@@ -912,15 +912,12 @@ object CarbonDataRDDFactory {
             loadStatus,
             carbonLoadModel.getFactTimeStamp,
             true)
-        val status = CarbonLoaderUtil.recordLoadMetadata(metadataDetails,
+        val success = CarbonLoaderUtil.recordLoadMetadata(metadataDetails,
           carbonLoadModel, false, overwriteTable)
-        if (!status) {
+        if (!success) {
           val errorMessage = "Dataload failed due to failure in table status updation."
           LOGGER.audit("Data load is failed for " +
-              s"${ carbonLoadModel.getDatabaseName }.${
-                carbonLoadModel
-                    .getTableName
-              }")
+              s"${ carbonLoadModel.getDatabaseName }.${carbonLoadModel.getTableName}")
           LOGGER.error("Dataload failed due to failure in table status updation.")
           throw new Exception(errorMessage)
         } else if (!carbonLoadModel.isRetentionRequest) {

@@ -259,7 +259,7 @@ public final class CarbonLoaderUtil {
    */
   public static boolean recordLoadMetadata(LoadMetadataDetails newMetaEntry,
       CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
-      throws IOException {
+      throws IOException, InterruptedException {
     boolean status = false;
     String metaDataFilepath =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getMetaDataFilepath();
@@ -280,6 +280,7 @@ public final class CarbonLoaderUtil {
             SegmentStatusManager.readLoadMetadata(metaDataFilepath);
         List<LoadMetadataDetails> listOfLoadFolderDetails =
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+        List<CarbonFile> staleFolders = new ArrayList<>();
         Collections.addAll(listOfLoadFolderDetails, listOfLoadFolderDetailsArray);
         // create a new segment Id if load has just begun else add the already generated Id
         if (loadStartEntry) {
@@ -313,17 +314,25 @@ public final class CarbonLoaderUtil {
           if (insertOverwrite) {
             for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
               entry.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
+              // For insert overwrite, we will delete the old segment folder immediately
+              // So collect the old segments here
+              String path = carbonTablePath.getCarbonDataDirectoryPath("0", entry.getLoadName());
+              staleFolders.add(FileFactory.getCarbonFile(path));
             }
           }
           listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);
         }
         SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
             .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
+        // Delete all old stale segment folders
+        for (CarbonFile staleFolder : staleFolders) {
+          CarbonUtil.deleteFoldersAndFiles(staleFolder);
+        }
         status = true;
       } else {
         LOGGER.error("Not able to acquire the lock for Table status updation for table " + loadModel
             .getDatabaseName() + "." + loadModel.getTableName());
-      }
+      };
     } finally {
       if (carbonLock.unlock()) {
         LOGGER.info(

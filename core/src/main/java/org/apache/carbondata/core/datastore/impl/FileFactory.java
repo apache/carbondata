@@ -87,6 +87,10 @@ public final class FileFactory {
     return FileType.LOCAL;
   }
 
+  public static CarbonFile getCarbonFile(String path) {
+    return getCarbonFile(path, getFileType(path));
+  }
+
   public static CarbonFile getCarbonFile(String path, FileType fileType) {
     switch (fileType) {
       case LOCAL:

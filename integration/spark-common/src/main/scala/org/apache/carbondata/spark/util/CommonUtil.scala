@@ -36,6 +36,7 @@ import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.row.LoadStatusType
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
@@ -713,16 +714,20 @@ object CommonUtil {
                         SegmentStatusManager.readLoadMetadata(
                           carbonTablePath.getMetadataDirectoryPath)
                       var loadInprogressExist = false
+                      val staleFolders: Seq[CarbonFile] = Seq()
                       listOfLoadFolderDetailsArray.foreach { load =>
                         if (load.getLoadStatus.equals(LoadStatusType.IN_PROGRESS.getMessage) ||
                             load.getLoadStatus.equals(LoadStatusType.INSERT_OVERWRITE.getMessage)) {
                           load.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE)
+                          staleFolders :+ FileFactory.getCarbonFile(
+                            carbonTablePath.getCarbonDataDirectoryPath("0", load.getLoadName))
                           loadInprogressExist = true
                         }
                       }
                       if (loadInprogressExist) {
                         SegmentStatusManager
                           .writeLoadDetailsIntoFile(tableStatusFile, listOfLoadFolderDetailsArray)
+                        staleFolders.foreach(CarbonUtil.deleteFoldersAndFiles(_))
                       }
                     }
                   } finally {
