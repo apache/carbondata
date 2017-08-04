@@ -106,22 +106,12 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       throws CarbonDataWriterException {
     // condition for writting all the pages
     if (!encodedTablePage.isLastPage()) {
-      boolean isAdded = false;
       // check if size more than blocklet size then write the page to file
       if (dataWriterHolder.getSize() + encodedTablePage.getEncodedSize() >= blockletSize) {
-        // if one page size is more than blocklet size
-        if (dataWriterHolder.getEncodedTablePages().size() == 0) {
-          isAdded = true;
-          dataWriterHolder.addPage(encodedTablePage);
-        }
-
         LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getNumberOfPagesAdded()
             + " :Rows Added: " + dataWriterHolder.getTotalRows());
         // write the data
         writeBlockletToFile();
-      }
-      if (!isAdded) {
-        dataWriterHolder.addPage(encodedTablePage);
       }
     } else {
       //for last blocklet check if the last page will exceed the blocklet size then write
