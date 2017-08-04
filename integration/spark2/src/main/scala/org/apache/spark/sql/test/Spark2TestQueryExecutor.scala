@@ -53,10 +53,11 @@ object Spark2TestQueryExecutor {
   val conf = new SparkConf()
   if (!TestQueryExecutor.masterUrl.startsWith("local")) {
     conf.setJars(TestQueryExecutor.jars).
-      set("spark.driver.memory", "4g").
-      set("spark.executor.memory", "8g").
-      set("spark.executor.cores", "4").
-      set("spark.cores.max", "8")
+      set("spark.driver.memory", "6g").
+      set("spark.executor.memory", "4g").
+      set("spark.executor.cores", "2").
+      set("spark.executor.instances", "2").
+      set("spark.cores.max", "4")
     FileFactory.getConfiguration.
       set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
   }
