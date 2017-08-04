@@ -166,13 +166,13 @@ You can use the following options to load data:
 
 - **SORT_SCOPE:** This property can have four possible values :
 
-    * BATCH_SORT : The sorting scope is smaller and more index tree will be created,thus loading is faster but query maybe slower.
+    * BATCH_SORT : The sorting scope is smaller and more index tree will be created,thus loading is faster but query maybe slower. BATCH_SORT is based on memory size and carbon will create one index tree for each batch.
 
-    * LOCAL_SORT : The sorting scope is bigger and one index tree per data node will be created, thus loading is slower but query is faster.
+    * LOCAL_SORT : The sorting scope is bigger and one index tree will be created for whole cluster, thus loading is slower but query is faster.
 
     * GLOBAL_SORT : The sorting scope is bigger and one index tree per task will be created, thus loading is slower but query is faster.
 
-    * NO_SORT     : Feasible if we want to load our data in unsorted manner.
+    * NO_SORT     : Data will be loaded in unsorted manner.
 
     For BATCH_SORT:
 
