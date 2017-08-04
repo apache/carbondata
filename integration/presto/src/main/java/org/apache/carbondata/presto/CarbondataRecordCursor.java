@@ -17,29 +17,23 @@
 
 package org.apache.carbondata.presto;
 
-import com.facebook.presto.spi.RecordCursor;
-import com.facebook.presto.spi.type.DecimalType;
-import com.facebook.presto.spi.type.Decimals;
-import com.facebook.presto.spi.type.TimestampType;
-import com.facebook.presto.spi.type.Type;
-import com.facebook.presto.spi.block.Block;
-import com.facebook.presto.spi.block.BlockBuilder;
-import com.facebook.presto.spi.block.BlockBuilderStatus;
-
-import com.google.common.base.Strings;
-import io.airlift.log.Logger;
-import io.airlift.slice.Slice;
-import io.airlift.slice.Slices;
-import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
-
-
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
+
+import com.facebook.presto.spi.RecordCursor;
+import com.facebook.presto.spi.type.DecimalType;
+import com.facebook.presto.spi.type.Decimals;
+import com.facebook.presto.spi.type.TimestampType;
+import com.facebook.presto.spi.type.Type;
+import com.google.common.base.Strings;
+import io.airlift.log.Logger;
+import io.airlift.slice.Slice;
 
 import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
 import static com.facebook.presto.spi.type.Decimals.isShortDecimal;
@@ -49,6 +43,7 @@ import static com.facebook.presto.spi.type.VarcharType.VARCHAR;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static io.airlift.slice.Slices.utf8Slice;
+import static org.apache.carbondata.presto.CarbondataUtil.shortDecimalPartitionKey;
 
 public class CarbondataRecordCursor implements RecordCursor {
 
@@ -103,11 +98,9 @@ public class CarbondataRecordCursor implements RecordCursor {
     if (rowCursor.hasNext()) {
       Object[] columns = readSupport.readRow(rowCursor.next());
       fields = new ArrayList<String>();
-      if(columns != null && columns.length > 0)
-      {
-        for(Object value : columns){
-          if(value != null )
-          {
+      if (columns != null && columns.length > 0) {
+        for (Object value : columns) {
+          if (value != null) {
             fields.add(value.toString());
           } else {
             fields.add(null);
@@ -128,8 +121,11 @@ public class CarbondataRecordCursor implements RecordCursor {
   @Override public long getLong(int field) {
     String timeStr = getFieldValue(field);
     Type actual = getType(field);
-    if(actual instanceof TimestampType){
-      return new Timestamp(Long.parseLong(timeStr)).getTime()/1000;
+    if (actual instanceof TimestampType) {
+      return new Timestamp(Long.parseLong(timeStr)).getTime() / 1000;
+    } else if (isShortDecimal(actual)) {
+      return shortDecimalPartitionKey(getFieldValue(field), (DecimalType) actual,
+          columnHandles.get(field).getColumnName());
     }
     //suppose the
     return Math.round(Double.parseDouble(getFieldValue(field)));
@@ -145,8 +141,9 @@ public class CarbondataRecordCursor implements RecordCursor {
     if (decimalType instanceof DecimalType) {
       DecimalType actual = (DecimalType) decimalType;
       CarbondataColumnHandle carbondataColumnHandle = columnHandles.get(field);
-      if(carbondataColumnHandle.getPrecision() > 0 ) {
-        checkFieldType(field, DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(), carbondataColumnHandle.getScale()));
+      if (carbondataColumnHandle.getPrecision() > 0) {
+        checkFieldType(field, DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
+            carbondataColumnHandle.getScale()));
       } else {
         checkFieldType(field, DecimalType.createDecimalType());
       }
