@@ -17,11 +17,11 @@
 
 package org.apache.carbondata.presto;
 
-import javax.inject.Inject;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import javax.inject.Inject;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -36,6 +36,7 @@ import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
 import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
+import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.presto.impl.CarbonLocalInputSplit;
@@ -133,7 +134,8 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
 
   /**
    * Convert presto-TupleDomain predication into Carbon scan express condition
-   * @param originalConstraint  presto-TupleDomain
+   *
+   * @param originalConstraint presto-TupleDomain
    * @param carbonTable
    * @return
    */
@@ -175,56 +177,69 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
       List<Object> singleValues = new ArrayList<>();
 
       List<Expression> disjuncts = new ArrayList<>();
-
-      for (Range range : domain.getValues().getRanges().getOrderedRanges()) {
-        if (range.isSingleValue()) {
-          singleValues.add(range.getLow().getValue());
-        } else {
-          List<Expression> rangeConjuncts = new ArrayList<>();
-          if (!range.getLow().isLowerUnbounded()) {
-            Object value = ConvertDataByType(range.getLow().getValue(), type);
-            switch (range.getLow().getBound()) {
-              case ABOVE:
-                if (type == TimestampType.TIMESTAMP) {
-                  //todo not now
-                } else {
-                  GreaterThanExpression greater = new GreaterThanExpression(colExpression,
-                      new LiteralExpression(value, coltype));
-                  rangeConjuncts.add(greater);
-                }
-                break;
-              case EXACTLY:
-                GreaterThanEqualToExpression greater =
-                    new GreaterThanEqualToExpression(colExpression,
+      if (domain.getValues().getRanges().getOrderedRanges().size() == 0 && domain.isNullAllowed()) {
+        //support isNull Clause
+        EqualToExpression isNull =
+            new EqualToExpression(colExpression, new LiteralExpression(null, coltype), true);
+        disjuncts.add(isNull);
+      } else {
+        for (Range range : domain.getValues().getRanges().getOrderedRanges()) {
+          if (range.isSingleValue()) {
+            singleValues.add(range.getLow().getValue());
+          } else {
+            List<Expression> rangeConjuncts = new ArrayList<>();
+            if (range.getLow().isLowerUnbounded() && range.getHigh()
+                .isUpperUnbounded()) {//support isNotNull Clause
+              NotEqualsExpression isNotNull =
+                  new NotEqualsExpression(colExpression, new LiteralExpression(null, coltype),
+                      true);
+              rangeConjuncts.add(isNotNull);
+            }
+            if (!range.getLow().isLowerUnbounded()) {
+              Object value = ConvertDataByType(range.getLow().getValue(), type);
+              switch (range.getLow().getBound()) {
+                case ABOVE:
+                  if (type == TimestampType.TIMESTAMP) {
+                    //todo not now
+                  } else {
+                    GreaterThanExpression greater = new GreaterThanExpression(colExpression,
                         new LiteralExpression(value, coltype));
-                rangeConjuncts.add(greater);
-                break;
-              case BELOW:
-                throw new IllegalArgumentException("Low marker should never use BELOW bound");
-              default:
-                throw new AssertionError("Unhandled bound: " + range.getLow().getBound());
+                    rangeConjuncts.add(greater);
+                  }
+                  break;
+                case EXACTLY:
+                  GreaterThanEqualToExpression greater =
+                      new GreaterThanEqualToExpression(colExpression,
+                          new LiteralExpression(value, coltype));
+                  rangeConjuncts.add(greater);
+                  break;
+                case BELOW:
+                  throw new IllegalArgumentException("Low marker should never use BELOW bound");
+                default:
+                  throw new AssertionError("Unhandled bound: " + range.getLow().getBound());
+              }
             }
-          }
-          if (!range.getHigh().isUpperUnbounded()) {
-            Object value = ConvertDataByType(range.getHigh().getValue(), type);
-            switch (range.getHigh().getBound()) {
-              case ABOVE:
-                throw new IllegalArgumentException("High marker should never use ABOVE bound");
-              case EXACTLY:
-                LessThanEqualToExpression less = new LessThanEqualToExpression(colExpression,
-                    new LiteralExpression(value, coltype));
-                rangeConjuncts.add(less);
-                break;
-              case BELOW:
-                LessThanExpression less2 =
-                    new LessThanExpression(colExpression, new LiteralExpression(value, coltype));
-                rangeConjuncts.add(less2);
-                break;
-              default:
-                throw new AssertionError("Unhandled bound: " + range.getHigh().getBound());
+            if (!range.getHigh().isUpperUnbounded()) {
+              Object value = ConvertDataByType(range.getHigh().getValue(), type);
+              switch (range.getHigh().getBound()) {
+                case ABOVE:
+                  throw new IllegalArgumentException("High marker should never use ABOVE bound");
+                case EXACTLY:
+                  LessThanEqualToExpression less = new LessThanEqualToExpression(colExpression,
+                      new LiteralExpression(value, coltype));
+                  rangeConjuncts.add(less);
+                  break;
+                case BELOW:
+                  LessThanExpression less2 =
+                      new LessThanExpression(colExpression, new LiteralExpression(value, coltype));
+                  rangeConjuncts.add(less2);
+                  break;
+                default:
+                  throw new AssertionError("Unhandled bound: " + range.getHigh().getBound());
+              }
             }
+            disjuncts.addAll(rangeConjuncts);
           }
-          disjuncts.addAll(rangeConjuncts);
         }
       }
 
