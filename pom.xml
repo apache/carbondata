@@ -102,8 +102,6 @@
     <module>integration/spark-common</module>
     <module>integration/spark-common-test</module>
     <module>assembly</module>
-    <module>examples/flink</module>
-
   </modules>
 
   <properties>
@@ -344,9 +342,9 @@
       <!-- This profile only should be used for release prepare to cover all the modules -->
       <id>build-all</id>
       <properties>
-        <spark.version>1.6.2</spark.version>
-        <scala.binary.version>2.10</scala.binary.version>
-        <scala.version>2.10.4</scala.version>
+        <spark.version>2.1.0</spark.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.11.8</scala.version>
         <maven.test.skip>true</maven.test.skip>
       </properties>
       <modules>
@@ -357,6 +355,7 @@
         <module>examples/spark2</module>
         <module>integration/hive</module>
         <module>integration/presto</module>
+        <module>examples/flink</module>
       </modules>
     </profile>
     <profile>
@@ -382,6 +381,7 @@
       <modules>
         <module>integration/spark</module>
         <module>examples/spark</module>
+        <module>examples/flink</module>
       </modules>
     </profile>
     <profile>
@@ -394,6 +394,7 @@
       <modules>
         <module>integration/spark</module>
         <module>examples/spark</module>
+        <module>examples/flink</module>
       </modules>
     </profile>
     <profile>
