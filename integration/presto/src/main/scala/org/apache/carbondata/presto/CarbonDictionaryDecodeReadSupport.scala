@@ -22,13 +22,13 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 
 /**
  * This is the class to decode dictionary encoded column data back to its original value.
  */
-class PrestoDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
+class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
   private var dictionaries: Array[Dictionary] = _
   private var dataTypes: Array[DataType] = _
 
@@ -73,7 +73,11 @@ class PrestoDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
 
   def convertColumn(data: Array[AnyRef], columnNo: Int): T = {
     val convertedData = if (Option(dictionaries(columnNo)).isDefined) {
-      data.map { value => dictionaries(columnNo).getDictionaryValueForKey(value.asInstanceOf[Int]) }
+      data.map { value =>
+        DataTypeUtil
+          .getDataBasedOnDataType(dictionaries(columnNo)
+            .getDictionaryValueForKey(value.asInstanceOf[Int]), DataType.STRING)
+      }
     } else {
       data
     }

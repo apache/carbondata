@@ -24,7 +24,7 @@ import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.scan.result.BatchResult;
-import org.apache.carbondata.presto.PrestoDictionaryDecodeReadSupport;
+import org.apache.carbondata.presto.CarbonDictionaryDecodeReadSupport;
 
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.type.DecimalType;
@@ -54,13 +54,13 @@ class CarbondataRecordCursor implements RecordCursor {
 
   private CarbonIterator<BatchResult> columnCursor;
 
-  private PrestoDictionaryDecodeReadSupport<Object[]> readSupport;
+  private CarbonDictionaryDecodeReadSupport<Object[]> readSupport;
 
   private long totalBytes;
   private long nanoStart;
   private long nanoEnd;
 
-  CarbondataRecordCursor(PrestoDictionaryDecodeReadSupport<Object[]> readSupport,
+  CarbondataRecordCursor(CarbonDictionaryDecodeReadSupport<Object[]> readSupport,
       CarbonIterator<BatchResult> carbonIterator, List<CarbondataColumnHandle> columnHandles,
       CarbondataSplit split) {
     this.columnCursor = carbonIterator;
@@ -185,7 +185,7 @@ class CarbondataRecordCursor implements RecordCursor {
     return columnCursor;
   }
 
-  PrestoDictionaryDecodeReadSupport<Object[]> getReadSupport() {
+  CarbonDictionaryDecodeReadSupport<Object[]> getReadSupport() {
     return readSupport;
   }
 
