@@ -158,8 +158,10 @@ public class RowConverterImpl implements RowConverter {
       if (!logHolder.isLogged() && logHolder.isBadRecordNotAdded()) {
         badRecordLogger.addBadRecordsToBuilder(copy.getData(), logHolder.getReason());
         if (badRecordLogger.isDataLoadFail()) {
-          String error = "Data load failed due to bad record: " + logHolder.getReason() +
-              "Please enable bad record logger to know the detail reason.";
+          String error = "Data load failed due to bad record: " + logHolder.getReason();
+          if (!badRecordLogger.isBadRecordLoggerEnable()) {
+            error += "Please enable bad record logger to know the detail reason.";
+          }
           throw new BadRecordFoundException(error);
         }
         logHolder.clear();
