@@ -19,6 +19,8 @@ package org.apache.carbondata.core.util;
 
 import java.io.Serializable;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+
 public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
 
   private static final long serialVersionUID = -1718154403432354200L;
@@ -29,7 +31,7 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
   }
 
   public Object convertFromByteToUTF8String(Object data) {
-    return data.toString();
+    return new String((byte[]) data, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
   }
 
   public byte[] convertFromStringToByte(Object data) {
