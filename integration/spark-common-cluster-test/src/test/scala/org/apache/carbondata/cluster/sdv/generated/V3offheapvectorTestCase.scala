@@ -289,6 +289,7 @@ class V3offheapvectorTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check impact on load and query reading when larger value (1 lakh length) present in the column
   ignore("PTS_TOR-Productize-New-Features-V3_01_Stress_01_008", Include) {
+    sql(s"""drop table if exists t_carbn1c""").collect
      sql(s"""create table t_carbn1c (name string) stored by 'carbondata' TBLPROPERTIES('table_blocksize'='128','include_dictionary'='name')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/1lakh.csv' into table t_carbn1c OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='name')""").collect
     checkAnswer(s"""select count(*) from t_carbn1c""",

@@ -376,7 +376,7 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //CMBC_Query_10
-  test("CMBC_Query_10", Include) {
+  ignore("CMBC_Query_10", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, SUM(incomeOneyear) AS Sum_incomeOneyear, SUM(numberoftransactions) AS Sum_numberoftransactions FROM (select * from cmb) SUB_QRY WHERE SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank","Real-Estate Bank") GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""",
       s"""SELECT SubsidaryBank, SUM(incomeOneyear) AS Sum_incomeOneyear, SUM(numberoftransactions) AS Sum_numberoftransactions FROM (select * from cmb_hive) SUB_QRY WHERE SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank","Real-Estate Bank") GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""", "QueriesNormalTestCase_CMBC_Query_10")

@@ -229,6 +229,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
     prop.addProperty("enable.unsafe.sort", "true")
     prop.addProperty("offheap.sort.chunk.size.inmb", "128")
     prop.addProperty("sort.inmemory.size.inmb", "2048")
+    sql(s"""use default""").collect
   }
 
   override def afterAll: Unit = {
@@ -236,6 +237,7 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
     prop.addProperty("enable.unsafe.sort", p1)
     prop.addProperty("offheap.sort.chunk.size.inmb", p2)
     prop.addProperty("sort.inmemory.size.inmb", p3)
+    sql(s"""use default""").collect
   }
 
 }

@@ -17,9 +17,7 @@
 
 package org.apache.spark.sql.common.util
 
-import java.io.{FileInputStream, ObjectInputStream, ObjectOutputStream}
-import java.math
-import java.math.RoundingMode
+import java.io.{ObjectInputStream, ObjectOutputStream}
 import java.util.{Locale, TimeZone}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -40,8 +38,6 @@ class QueryTest extends PlanTest with Suite {
 
   val DOLLAR = "$"
 
-  // Timezone is fixed to America/Los_Angeles for those timezone sensitive tests (timestamp_*)
-  TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"))
   // Add Locale setting
   Locale.setDefault(Locale.US)
 
@@ -159,6 +155,15 @@ object QueryTest {
         Row.fromSeq(s.toSeq.map {
           case d: java.math.BigDecimal => BigDecimal(d)
           case b: Array[Byte] => b.toSeq
+          case d : Double =>
+            if (!d.isInfinite && !d.isNaN) {
+              var bd = BigDecimal(d)
+              bd = bd.setScale(5, BigDecimal.RoundingMode.UP)
+              bd.doubleValue()
+            }
+            else {
+              d
+            }
           case o => o
         })
       }

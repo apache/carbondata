@@ -299,26 +299,6 @@ class DataLoadingV3TestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-
-  //Check impact on load and query reading when larger value (1 lakh length) present in the column
-  ignore("PTS_TOR-Productize-New-Features-V3_01_Stress_01_001", Include) {
-     sql(s"""create table t_carbn1c (name string) stored by 'carbondata' TBLPROPERTIES('table_blocksize'='128','include_dictionary'='name')""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/1lakh.csv' into table t_carbn1c OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='name')""").collect
-    checkAnswer(s"""select count(*) from t_carbn1c""",
-      Seq(Row(1)), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Stress_01_001")
-
-  }
-
-
-  //Check impact on load and query reading when larger value (1 lakh length) present in the column when the column is measure
-  ignore("PTS_TOR-Productize-New-Features-V3_01_Stress_01_007", Include) {
-
-    checkAnswer(s"""select substring(name,1,10) from t_carbn1c""",
-      Seq(Row("hellohowar")), "DataLoadingV3TestCase_PTS_TOR-Productize-New-Features-V3_01_Stress_01_007")
-
-  }
-
-
   //Check vertical compaction on V3 format, for minor compaction 1st level
   test("PTS_TOR-Productize-New-Features-V3_01_Compaction_01_001", Include) {
      sql(s"""CREATE TABLE 3lakh_uniqdata3 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128','include_dictionary'='BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,CUST_ID')""").collect

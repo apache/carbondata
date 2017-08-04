@@ -30,94 +30,36 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
-
-
-
-
-  //UNIQDATA_CreateTable
-  test("UNIQDATA_CreateTable", Include) {
+  override def beforeAll() {
     sql(s"""drop table if exists uniqdata""").collect
     sql(s"""drop table if exists uniqdata_hive""").collect
+    sql(s"""drop table if exists Carbon_automation""").collect
+    sql(s"""drop table if exists Carbon_automation1""").collect
+    sql(s"""drop table if exists Carbon_automation_hive""").collect
 
     sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
-
     sql(s"""CREATE TABLE uniqdata_hive (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 
-
-  }
-
-
-  //UNIQDATA_DataLoad1
-  test("UNIQDATA_DataLoad1", Include) {
-
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata_hive """).collect
-
-
-  }
-
-
-  //UNIQDATA_DataLoad2
-  test("UNIQDATA_DataLoad2", Include) {
-
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/3000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-
-  }
-
-
-  //UNIQDATA_DataLoad3
-  test("UNIQDATA_DataLoad3", Include) {
-
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/4000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/4000_UniqData.csv' into table uniqdata_hive """).collect
-
-
-  }
-
-
-  //UNIQDATA_DataLoad4
-  test("UNIQDATA_DataLoad4", Include) {
-
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/5000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-  }
-
-
-  //UNIQDATA_DataLoad5
-  test("UNIQDATA_DataLoad5", Include) {
-
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/6000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/6000_UniqData.csv' into table uniqdata_hive """).collect
-
-
-  }
-
-
-  //UNIQDATA_DataLoad6
-  test("UNIQDATA_DataLoad6", Include) {
-
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata_hive """).collect
-
-
-  }
-
-
-  //UNIQDATA_DataLoad7
-  test("UNIQDATA_DataLoad7", Include) {
-
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/3000_1_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/3000_1_UniqData.csv' into table uniqdata_hive """).collect
-  }
 
-  test("UNIQDATA_DeleteLoad1_3", Include) {
+    sql(s"""create table Carbon_automation1 (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointDescription string,gamePointId double,contractNumber double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId,Latest_YEAR,Latest_MONTH,Latest_DAY')""").collect
+    sql(s"""create table Carbon_automation (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointDescription string,gamePointId double,contractNumber double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId,Latest_YEAR,Latest_MONTH,Latest_DAY')""").collect
+
+    sql(s"""create table Carbon_automation_hive (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, contractNumber double,ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointId double,gamePointDescription string)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/VmaLL100' INTO TABLE Carbon_automation1 OPTIONS('DELIMITER'=',','QUOTECHAR'='"','FILEHEADER'='imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')""").collect
     sql(s"""delete from table uniqdata where segment.id in (1,3)""").collect
   }
-
 
   //UNIQDATA_DEFAULT_TC001
   test("UNIQDATA_DEFAULT_TC001", Include) {
@@ -1213,7 +1155,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   ignore("UNIQDATA_DEFAULT_TC126", Include) {
 
     checkAnswer(s"""select avg(Double_COLUMN1) a  from UNIQDATA""",
-      Seq(Row(1.1234567489797018E10d)), "QueriesBasicTestCase_UNIQDATA_DEFAULT_TC126")
+      s"""select avg(Double_COLUMN1) a from uniqdata_hive""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_TC126")
   }
 
 
@@ -1792,7 +1734,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_TC194
-  ignore("UNIQDATA_DEFAULT_TC194", Include) {
+  test("UNIQDATA_DEFAULT_TC194", Include) {
 
     checkAnswer(s"""select DOB from UNIQDATA where DOB >'1970-06-19 01:00:03' order by DOB""",
       s"""select DOB from UNIQDATA_hive where DOB >'1970-06-19 01:00:03' order by DOB""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_TC194")
@@ -2736,7 +2678,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_TC327
-  ignore("UNIQDATA_DEFAULT_TC327", Include) {
+  test("UNIQDATA_DEFAULT_TC327", Include) {
 
     checkAnswer(s"""select DOB from UNIQDATA where DOB NOT LIKE '2015-10-07 01:00:03'""",
       s"""select DOB from UNIQDATA_hive where DOB NOT LIKE '2015-10-07 01:00:03'""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_TC327")
@@ -2826,7 +2768,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_TC340
-  ignore("UNIQDATA_DEFAULT_TC340", Include) {
+  test("UNIQDATA_DEFAULT_TC340", Include) {
 
     checkAnswer(s"""select  b.BIGINT_COLUMN1,b.DECIMAL_COLUMN1,b.Double_COLUMN1,b.DOB,b.CUST_ID,b.CUST_NAME from UNIQDATA a join UNIQDATA b on a.DOB=b.DOB and a.DOB NOT LIKE '2015-10-07 01:00:03'""",
       s"""select  b.BIGINT_COLUMN1,b.DECIMAL_COLUMN1,b.Double_COLUMN1,b.DOB,b.CUST_ID,b.CUST_NAME from UNIQDATA_hive a join UNIQDATA_hive b on a.DOB=b.DOB and a.DOB NOT LIKE '2015-10-07 01:00:03'""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_TC340")
@@ -2835,7 +2777,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_TC341
-  ignore("UNIQDATA_DEFAULT_TC341", Include) {
+  test("UNIQDATA_DEFAULT_TC341", Include) {
 
     checkAnswer(s"""select  b.BIGINT_COLUMN1,b.DECIMAL_COLUMN1,b.Double_COLUMN1,b.DOB,b.CUST_ID,b.CUST_NAME from UNIQDATA a join UNIQDATA b on a.CUST_ID=b.CUST_ID and a.DOB NOT LIKE '2015-10-07 01:00:03'""",
       s"""select  b.BIGINT_COLUMN1,b.DECIMAL_COLUMN1,b.Double_COLUMN1,b.DOB,b.CUST_ID,b.CUST_NAME from UNIQDATA_hive a join UNIQDATA_hive b on a.CUST_ID=b.CUST_ID and a.DOB NOT LIKE '2015-10-07 01:00:03'""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_TC341")
@@ -2844,7 +2786,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_TC342
-  ignore("UNIQDATA_DEFAULT_TC342", Include) {
+  test("UNIQDATA_DEFAULT_TC342", Include) {
 
     checkAnswer(s"""select  b.BIGINT_COLUMN1,b.DECIMAL_COLUMN1,b.Double_COLUMN1,b.DOB,b.CUST_ID,b.CUST_NAME from UNIQDATA a join UNIQDATA b on a.CUST_NAME=b.CUST_NAME and a.DOB NOT LIKE '2015-10-07 01:00:03'""",
       s"""select  b.BIGINT_COLUMN1,b.DECIMAL_COLUMN1,b.Double_COLUMN1,b.DOB,b.CUST_ID,b.CUST_NAME from UNIQDATA_hive a join UNIQDATA_hive b on a.CUST_NAME=b.CUST_NAME and a.DOB NOT LIKE '2015-10-07 01:00:03'""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_TC342")
@@ -3283,7 +3225,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_MultiBitSet_TC_004
-  ignore("UNIQDATA_DEFAULT_MultiBitSet_TC_004", Include) {
+  test("UNIQDATA_DEFAULT_MultiBitSet_TC_004", Include) {
 
     checkAnswer(s"""select DOB,DOJ,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2 from uniqdata where DECIMAL_COLUMN1>=12345678901.1234 and DECIMAL_COLUMN1<=12345679301.12344 and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976 and Double_COLUMN1<=1.12345674897976E10 and Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<= -4.8E-4 and dob>='1970-01-02 01:00:03' and dob<= '1971-02-05 01:00:03' and doj>='1970-01-02 02:00:03' and doj<='1971-02-05 02:00:03' order by DOB,DOJ,DECIMAL_COLUMN1,DECIMAL_COLUMN2""",
       s"""select DOB,DOJ,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2 from uniqdata_hive where DECIMAL_COLUMN1>=12345678901.1234 and DECIMAL_COLUMN1<=12345679301.12344 and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976 and Double_COLUMN1<=1.12345674897976E10 and Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<= -4.8E-4 and dob>='1970-01-02 01:00:03' and dob<= '1971-02-05 01:00:03' and doj>='1970-01-02 02:00:03' and doj<='1971-02-05 02:00:03' order by DOB,DOJ,DECIMAL_COLUMN1,DECIMAL_COLUMN2""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_004")
@@ -3301,10 +3243,10 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_MultiBitSet_TC_006
-  ignore("UNIQDATA_DEFAULT_MultiBitSet_TC_006", Include) {
+  test("UNIQDATA_DEFAULT_MultiBitSet_TC_006", Include) {
 
-    checkAnswer(s"""select DECIMAL_COLUMN1,Double_COLUMN1,distinct(dob) from uniqdata where  DECIMAL_COLUMN1<DECIMAL_COLUMN2 and Double_COLUMN1>Double_COLUMN2  and day(dob)=day(doj) order by DECIMAL_COLUMN1,Double_COLUMN1""",
-      s"""select DECIMAL_COLUMN1,Double_COLUMN1,distinct(dob) from uniqdata_hive where  DECIMAL_COLUMN1<DECIMAL_COLUMN2 and Double_COLUMN1>Double_COLUMN2  and day(dob)=day(doj) order by DECIMAL_COLUMN1,Double_COLUMN1""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_006")
+    checkAnswer(s"""select distinct dob,DECIMAL_COLUMN1,Double_COLUMN1 from uniqdata where  DECIMAL_COLUMN1<DECIMAL_COLUMN2 and Double_COLUMN1>Double_COLUMN2  and day(dob)=day(doj) order by DECIMAL_COLUMN1,Double_COLUMN1""",
+      s"""select distinct dob,DECIMAL_COLUMN1,Double_COLUMN1 from uniqdata_hive where  DECIMAL_COLUMN1<DECIMAL_COLUMN2 and Double_COLUMN1>Double_COLUMN2  and day(dob)=day(doj) order by DECIMAL_COLUMN1,Double_COLUMN1""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_006")
 
   }
 
@@ -3357,7 +3299,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_MultiBitSet_TC_012
-  ignore("UNIQDATA_DEFAULT_MultiBitSet_TC_012", Include) {
+  test("UNIQDATA_DEFAULT_MultiBitSet_TC_012", Include) {
 
     checkAnswer(s"""select dob,DECIMAL_COLUMN1,Double_COLUMN1 from uniqdata where doj>='1968-02-26 02:00:03' and doj<='1973-02-26 02:00:03' and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976  and
   Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<=-3457489.7976 order by dob,DECIMAL_COLUMN1,Double_COLUMN1""",
@@ -3397,7 +3339,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_MultiBitSet_TC_017
-  ignore("UNIQDATA_DEFAULT_MultiBitSet_TC_017", Include) {
+  test("UNIQDATA_DEFAULT_MultiBitSet_TC_017", Include) {
 
     checkAnswer(s"""select avg(cust_id),avg(integer_column1),avg(BIGINT_COLUMN1),avg(BIGINT_COLUMN2),avg(DECIMAL_COLUMN1),avg(Double_COLUMN1),avg(Double_COLUMN2),count(cust_id),count(integer_column1),count(ACTIVE_EMUI_VERSION),count(CUST_NAME),count(CUST_NAME),count(DOB),count(doj),count(BIGINT_COLUMN2),count(DECIMAL_COLUMN1),count(Double_COLUMN1),count(Double_COLUMN2),avg(DECIMAL_COLUMN2),sum(cust_id),sum(integer_column1),sum(BIGINT_COLUMN1),sum(BIGINT_COLUMN2),sum(DECIMAL_COLUMN1),sum(Double_COLUMN1),sum(DECIMAL_COLUMN2),min(cust_id),min(integer_column1),min(ACTIVE_EMUI_VERSION),min(CUST_NAME),min(CUST_NAME),min(DOB),min(doj),min(BIGINT_COLUMN2),min(DECIMAL_COLUMN1),min(Double_COLUMN1),min(Double_COLUMN2),max(cust_id),max(integer_column1),max(ACTIVE_EMUI_VERSION),max(CUST_NAME),max(CUST_NAME),max(DOB),max(doj),max(BIGINT_COLUMN2),max(DECIMAL_COLUMN1),max(Double_COLUMN1),max(Double_COLUMN2)from uniqdata where cust_id between 9000 and 9100 and dob between '1970-01-01 01:00:03' and '1972-09-27 02:00:03' and ACTIVE_EMUI_VERSION rlike 'ACTIVE' and cust_name like 'CUST%' and doj>='1968-02-26 02:00:03' and doj<='1972-09-27 02:00:03' and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976  and
   Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<=-3457489.7976""",
@@ -3419,7 +3361,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_MultiBitSet_TC_020
-  ignore("UNIQDATA_DEFAULT_MultiBitSet_TC_020", Include) {
+  test("UNIQDATA_DEFAULT_MultiBitSet_TC_020", Include) {
 
     checkAnswer(s"""select (avg(DECIMAL_COLUMN1)),(avg(CUST_ID)),(avg(BIGINT_COLUMN1)), (avg(Double_COLUMN1)) from uniqdata  where cust_id between 9000 and  9100 and dob between '1970-01-01 01:00:03' and '1975-06-23 01:00:03' and ACTIVE_EMUI_VERSION rlike 'ACTIVE' and cust_name like 'CUST%' and doj>='1968-02-26 02:00:03' and doj<='1973-02-26 02:00:03' and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976  and Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<=-3457489.7976
   """,
@@ -3430,7 +3372,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_MultiBitSet_TC_021
-  ignore("UNIQDATA_DEFAULT_MultiBitSet_TC_021", Include) {
+  test("UNIQDATA_DEFAULT_MultiBitSet_TC_021", Include) {
 
     checkAnswer(s"""select (sum(DECIMAL_COLUMN2)),(sum(integer_column1)),(sum(BIGINT_COLUMN2)),(sum(Double_COLUMN2)) from uniqdata  where cust_id between 9000 and  9100 and dob between '1970-01-01 01:00:03' and '1975-06-23 01:00:03' and ACTIVE_EMUI_VERSION rlike 'ACTIVE' and cust_name like 'CUST%' and doj>='1968-02-26 02:00:03' and doj<='1973-02-26 02:00:03' and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976  and Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<=-3457489.7976""",
       s"""select (sum(DECIMAL_COLUMN2)),(sum(integer_column1)),(sum(BIGINT_COLUMN2)),(sum(Double_COLUMN2)) from uniqdata_hive  where cust_id between 9000 and  9100 and dob between '1970-01-01 01:00:03' and '1975-06-23 01:00:03' and ACTIVE_EMUI_VERSION rlike 'ACTIVE' and cust_name like 'CUST%' and doj>='1968-02-26 02:00:03' and doj<='1973-02-26 02:00:03' and DECIMAL_COLUMN2>=22348957.1234 and Double_COLUMN1>=11267489.7976  and Double_COLUMN2>=-1123224567489.7976 and Double_COLUMN2<=-3457489.7976""", "QueriesBasicTestCase_UNIQDATA_DEFAULT_MultiBitSet_TC_021")
@@ -3439,7 +3381,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_MultiBitSet_TC_022
-  ignore("UNIQDATA_DEFAULT_MultiBitSet_TC_022", Include) {
+  test("UNIQDATA_DEFAULT_MultiBitSet_TC_022", Include) {
 
     checkAnswer(s"""select distinct(count(Double_COLUMN2)),(count(integer_column1)),(count(BIGINT_COLUMN2)),(count(DECIMAL_COLUMN2)),count(ACTIVE_EMUI_VERSION),count(dob) from uniqdata where doj>='1970-01-07 02:00:03'
   and doj<='1970-03-22 02:00:03' and  BIGINT_COLUMN2 between -223372036853 and -223372036773   and Double_COLUMN2 in (-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567489.7976 ) """,
@@ -3461,7 +3403,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_MultiBitSet_TC_025
-  ignore("UNIQDATA_DEFAULT_MultiBitSet_TC_025", Include) {
+  test("UNIQDATA_DEFAULT_MultiBitSet_TC_025", Include) {
 
     checkAnswer(s"""select avg(CUST_ID),sum(integer_column1),count(integer_column1),max(CUST_NAME),min(dob),avg(BIGINT_COLUMN2),sum(DECIMAL_COLUMN2),count(Double_COLUMN2),dob,ACTIVE_EMUI_VERSION from uniqdata where cust_id between 9006 and 9080 and cust_name not rlike 'ACTIVE' and cust_name like 'CUST%' and doj>='1970-01-07 02:00:03'
   and doj<='1970-03-22 02:00:03' and  BIGINT_COLUMN2 between -223372036853 and -223372036773   and Double_COLUMN2 in (-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567490,-11234567489.7976 ) group by CUST_ID,dob,ACTIVE_EMUI_VERSION order by CUST_ID,dob,ACTIVE_EMUI_VERSION""",
@@ -3564,7 +3506,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //UNIQDATA_DEFAULT_MultiBitSet_TC_038
-  ignore("UNIQDATA_DEFAULT_MultiBitSet_TC_038", Include) {
+  test("UNIQDATA_DEFAULT_MultiBitSet_TC_038", Include) {
 
     checkAnswer(s"""select CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1 from uniqdata where  ACTIVE_EMUI_VERSION rlike 'ACTIVE' and dob between '1970-10-15 01:00:03' and '1971-04-29 01:00:03' and doj between '1970-10-15 02:00:03' and '1971-04-29 02:00:03' and cust_name like 'CUST%' order by CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB
   """,
@@ -5287,18 +5229,6 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
-
-  //TC_000_
-  test("TC_000_", Include) {
-    sql(s"""drop table if exists Carbon_automation""").collect
-    sql(s"""drop table if exists Carbon_automation_hive""").collect
-
-    sql(s"""create table Carbon_automation (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointDescription string,gamePointId double,contractNumber double,imei_count int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId,Latest_YEAR,Latest_MONTH,Latest_DAY')""").collect
-
-    sql(s"""create table Carbon_automation_hive (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, contractNumber double,ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointId double,gamePointDescription string,imei_count int)  ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
-  }
-
-
   //TC_000_1
   test("TC_000_1", Include) {
 
@@ -5308,21 +5238,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //TC_0000
-  test("TC_0000", Include) {
-    sql(s"""drop table if exists Carbon_automation1""").collect
 
-    sql(s"""create table Carbon_automation1 (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY int, Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointDescription string,gamePointId double,contractNumber double) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId,Latest_YEAR,Latest_MONTH,Latest_DAY')""").collect
-
-  }
-
-
-  //TC_00001
-  test("TC_00001", Include) {
-
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/VmaLL100' INTO TABLE Carbon_automation1 OPTIONS('DELIMITER'=',','QUOTECHAR'='"','FILEHEADER'='imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')""").collect
-
-  }
 
 
   //create_table_blocksize_18
@@ -5630,7 +5546,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //SparkSQL_Compatibility_04
-  ignore("SparkSQL_Compatibility_04", Include) {
+  test("SparkSQL_Compatibility_04", Include) {
 
     sql(s"""SELECT Carbon_automation.* FROM Carbon_automation UNION SELECT * FROM Carbon_automation1""").collect
 
@@ -5654,7 +5570,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //SparkSQL_Compatibility_07
-  ignore("SparkSQL_Compatibility_07", Include) {
+  test("SparkSQL_Compatibility_07", Include) {
 
     sql(s"""SELECT Carbon_automation.* FROM Carbon_automation INTERSECT SELECT * FROM Carbon_automation1""").collect
 
@@ -5678,7 +5594,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //SparkSQL_Compatibility_10
-  ignore("SparkSQL_Compatibility_10", Include) {
+  test("SparkSQL_Compatibility_10", Include) {
 
     sql(s"""SELECT Carbon_automation.* FROM Carbon_automation EXCEPT SELECT * FROM Carbon_automation1""").collect
 
@@ -7756,7 +7672,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_297
-  ignore("TC_297", Include) {
+  test("TC_297", Include) {
 
     checkAnswer(s"""select  Latest_DAY,Latest_HOUR,count(distinct AMSize) as AMSize_number,sum(gamePointId+contractNumber) as total from Carbon_automation group by Latest_DAY,Latest_HOUR""",
       s"""select  Latest_DAY,Latest_HOUR,count(distinct AMSize) as AMSize_number,sum(gamePointId+contractNumber) as total from Carbon_automation_hive group by Latest_DAY,Latest_HOUR""", "QueriesBasicTestCase_TC_297")
@@ -7765,7 +7681,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_298
-  ignore("TC_298", Include) {
+  test("TC_298", Include) {
 
     checkAnswer(s"""select Latest_DAY,Latest_HOUR,count(distinct AMSize) as AMSize_number,sum(gamePointId+contractNumber) as total from Carbon_automation where Latest_HOUR between 12 and 15 group by Latest_DAY,Latest_HOUR order by total desc""",
       s"""select Latest_DAY,Latest_HOUR,count(distinct AMSize) as AMSize_number,sum(gamePointId+contractNumber) as total from Carbon_automation_hive where Latest_HOUR between 12 and 15 group by Latest_DAY,Latest_HOUR order by total desc""", "QueriesBasicTestCase_TC_298")
@@ -7890,7 +7806,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_312
-  ignore("TC_312", Include) {
+  test("TC_312", Include) {
 
     checkAnswer(s"""select ActiveOperatorId, sum(imeiupdown) as total, count(distinct AMSize) as AMSize_count from (select AMSize, t1.gamePointId+t1.contractNumber as imeiupdown, if((t1.gamePointId+t1.contractNumber)>100, '>50', if((t1.gamePointId+t1.contractNumber)>100,'50~10',if((t1.gamePointId+t1.contractNumber)>100, '10~1','<1'))) as ActiveOperatorId from Carbon_automation t1) t2 group by ActiveOperatorId""",
       s"""select ActiveOperatorId, sum(imeiupdown) as total, count(distinct AMSize) as AMSize_count from (select AMSize, t1.gamePointId+t1.contractNumber as imeiupdown, if((t1.gamePointId+t1.contractNumber)>100, '>50', if((t1.gamePointId+t1.contractNumber)>100,'50~10',if((t1.gamePointId+t1.contractNumber)>100, '10~1','<1'))) as ActiveOperatorId from Carbon_automation_hive t1) t2 group by ActiveOperatorId""", "QueriesBasicTestCase_TC_312")
@@ -9068,7 +8984,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_444
-  ignore("TC_444", Include) {
+  test("TC_444", Include) {
 
     checkAnswer(s"""select variance(AMSize), var_pop(channelsid)  from carbon_automation where channelsid>2""",
       s"""select variance(AMSize), var_pop(channelsid)  from carbon_automation_hive where channelsid>2""", "QueriesBasicTestCase_TC_444")
@@ -9101,7 +9017,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_448
-  ignore("TC_448", Include) {
+  test("TC_448", Include) {
 
     checkAnswer(s"""select var_samp(Latest_YEAR) from carbon_automation""",
       s"""select var_samp(Latest_YEAR) from carbon_automation_hive""", "QueriesBasicTestCase_TC_448")
@@ -9183,7 +9099,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_459
-  ignore("TC_459", Include) {
+  test("TC_459", Include) {
 
     checkAnswer(s"""select stddev_samp(Latest_MONTH)from carbon_automation""",
       s"""select stddev_samp(Latest_MONTH)from carbon_automation_hive""", "QueriesBasicTestCase_TC_459")
@@ -9200,7 +9116,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_461
-  ignore("TC_461", Include) {
+  test("TC_461", Include) {
 
     checkAnswer(s"""select covar_pop(gamePointId, Latest_MONTH) from carbon_automation""",
       s"""select covar_pop(gamePointId, Latest_MONTH) from carbon_automation_hive""", "QueriesBasicTestCase_TC_461")
@@ -9217,7 +9133,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_463
-  ignore("TC_463", Include) {
+  test("TC_463", Include) {
 
     checkAnswer(s"""select covar_pop(gamePointId, Latest_DAY) from carbon_automation""",
       s"""select covar_pop(gamePointId, Latest_DAY) from carbon_automation_hive""", "QueriesBasicTestCase_TC_463")
@@ -9234,7 +9150,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_465
-  ignore("TC_465", Include) {
+  test("TC_465", Include) {
 
     checkAnswer(s"""select covar_samp(gamePointId, Latest_MONTH) from carbon_automation""",
       s"""select covar_samp(gamePointId, Latest_MONTH) from carbon_automation_hive""", "QueriesBasicTestCase_TC_465")
@@ -9251,7 +9167,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_467
-  ignore("TC_467", Include) {
+  test("TC_467", Include) {
 
     checkAnswer(s"""select covar_samp(gamePointId, Latest_DAY) from carbon_automation""",
       s"""select covar_samp(gamePointId, Latest_DAY) from carbon_automation_hive""", "QueriesBasicTestCase_TC_467")
@@ -9260,7 +9176,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_468
-  ignore("TC_468", Include) {
+  test("TC_468", Include) {
 
     checkAnswer(s"""select covar_samp(gamePointId, Latest_YEAR) from carbon_automation""",
       s"""select covar_samp(gamePointId, Latest_YEAR) from carbon_automation_hive""", "QueriesBasicTestCase_TC_468")
@@ -9285,7 +9201,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_471
-  ignore("TC_471", Include) {
+  test("TC_471", Include) {
 
     checkAnswer(s"""select corr(Latest_MONTH, gamePointId) from carbon_automation""",
       s"""select corr(Latest_MONTH, gamePointId) from carbon_automation_hive""", "QueriesBasicTestCase_TC_471")
@@ -9486,7 +9402,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_495
-  ignore("TC_495", Include) {
+  test("TC_495", Include) {
 
     checkAnswer(s"""select var_samp(Latest_YEAR) from carbon_automation""",
       s"""select var_samp(Latest_YEAR) from carbon_automation_hive""", "QueriesBasicTestCase_TC_495")
@@ -9495,7 +9411,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_496
-  ignore("TC_496", Include) {
+  test("TC_496", Include) {
 
     checkAnswer(s"""select stddev_pop(deviceInformationId)from carbon_automation""",
       s"""select stddev_pop(deviceInformationId)from carbon_automation_hive""", "QueriesBasicTestCase_TC_496")
@@ -9504,7 +9420,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_497
-  ignore("TC_497", Include) {
+  test("TC_497", Include) {
 
     checkAnswer(s"""select stddev_samp(deviceInformationId)from carbon_automation""",
       s"""select stddev_samp(deviceInformationId)from carbon_automation_hive""", "QueriesBasicTestCase_TC_497")
@@ -10563,7 +10479,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_628
-  ignore("TC_628", Include) {
+  test("TC_628", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId, SUM(Carbon_automation.deviceInformationId) AS Sum_deviceInformationId FROM ( SELECT AMSize, gamePointId,ActiveCountry,deviceInformationId, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId, SUM(Carbon_automation_hive.deviceInformationId) AS Sum_deviceInformationId FROM ( SELECT AMSize, gamePointId,ActiveCountry,deviceInformationId, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_628")
@@ -10572,7 +10488,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_629
-  ignore("TC_629", Include) {
+  test("TC_629", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId, SUM(Carbon_automation.deviceInformationId) AS Sum_deviceInformationId FROM ( SELECT AMSize,deviceInformationId, gamePointId, ActiveCountry, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId, SUM(Carbon_automation_hive.deviceInformationId) AS Sum_deviceInformationId FROM ( SELECT AMSize,deviceInformationId, gamePointId, ActiveCountry, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_629")
@@ -10581,7 +10497,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_630
-  ignore("TC_630", Include) {
+  test("TC_630", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId, COUNT(Carbon_automation.deviceInformationId) AS Count_deviceInformationId FROM ( SELECT AMSize, ActiveCountry,gamePointId, Activecity,deviceInformationId FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId, COUNT(Carbon_automation_hive.deviceInformationId) AS Count_deviceInformationId FROM ( SELECT AMSize, ActiveCountry,gamePointId, Activecity,deviceInformationId FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_630")
@@ -10590,7 +10506,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_631
-  ignore("TC_631", Include) {
+  test("TC_631", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId, COUNT(DISTINCT Carbon_automation.deviceInformationId) AS LONG_COL_0 FROM ( SELECT AMSize, ActiveCountry,gamePointId,deviceInformationId, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId, COUNT(DISTINCT Carbon_automation_hive.deviceInformationId) AS LONG_COL_0 FROM ( SELECT AMSize, ActiveCountry,gamePointId,deviceInformationId, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_631")
@@ -10608,7 +10524,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_633
-  ignore("TC_633", Include) {
+  test("TC_633", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId, MAX(Carbon_automation.deviceInformationId) AS Max_deviceInformationId FROM ( SELECT AMSize,gamePointId,deviceInformationId, ActiveCountry, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId, MAX(Carbon_automation_hive.deviceInformationId) AS Max_deviceInformationId FROM ( SELECT AMSize,gamePointId,deviceInformationId, ActiveCountry, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_633")
@@ -10617,7 +10533,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_634
-  ignore("TC_634", Include) {
+  test("TC_634", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, MIN(Carbon_automation.deviceInformationId) AS Min_deviceInformationId, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize,deviceInformationId,gamePointId, ActiveCountry, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, MIN(Carbon_automation_hive.deviceInformationId) AS Min_deviceInformationId, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize,deviceInformationId,gamePointId, ActiveCountry, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_634")
@@ -10644,7 +10560,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_637
-  ignore("TC_637", Include) {
+  test("TC_637", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(Carbon_automation.deviceInformationId) AS Sum_deviceInformationId, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize,gamePointId, deviceInformationId,ActiveCountry, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(Carbon_automation_hive.deviceInformationId) AS Sum_deviceInformationId, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize,gamePointId, deviceInformationId,ActiveCountry, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_637")
@@ -10760,7 +10676,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_650
-  ignore("TC_650", Include) {
+  test("TC_650", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(distinct Carbon_automation.deviceInformationId) AS Sum_distinct_deviceInformationId, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize,gamePointId, deviceInformationId,ActiveCountry, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation Right Join ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(distinct Carbon_automation_hive.deviceInformationId) AS Sum_distinct_deviceInformationId, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize,gamePointId, deviceInformationId,ActiveCountry, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive Right Join ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_650")
@@ -10895,7 +10811,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_678
-  ignore("TC_678", Include) {
+  test("TC_678", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId, SUM(Carbon_automation.deviceInformationId) AS Sum_deviceInformationId FROM ( SELECT AMSize, gamePointId,ActiveCountry,deviceInformationId, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId, SUM(Carbon_automation_hive.deviceInformationId) AS Sum_deviceInformationId FROM ( SELECT AMSize, gamePointId,ActiveCountry,deviceInformationId, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_678")
@@ -10904,7 +10820,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_679
-  ignore("TC_679", Include) {
+  test("TC_679", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId, SUM(Carbon_automation.deviceInformationId) AS Sum_deviceInformationId FROM ( SELECT AMSize,deviceInformationId, gamePointId, ActiveCountry, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId, SUM(Carbon_automation_hive.deviceInformationId) AS Sum_deviceInformationId FROM ( SELECT AMSize,deviceInformationId, gamePointId, ActiveCountry, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_679")
@@ -10913,7 +10829,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_680
-  ignore("TC_680", Include) {
+  test("TC_680", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId, COUNT(Carbon_automation.deviceInformationId) AS Count_deviceInformationId FROM ( SELECT AMSize, ActiveCountry,gamePointId, Activecity,deviceInformationId FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId, COUNT(Carbon_automation_hive.deviceInformationId) AS Count_deviceInformationId FROM ( SELECT AMSize, ActiveCountry,gamePointId, Activecity,deviceInformationId FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_680")
@@ -10940,7 +10856,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_683
-  ignore("TC_683", Include) {
+  test("TC_683", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId, MAX(Carbon_automation.deviceInformationId) AS Max_deviceInformationId FROM ( SELECT AMSize,gamePointId,deviceInformationId, ActiveCountry, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId, MAX(Carbon_automation_hive.deviceInformationId) AS Max_deviceInformationId FROM ( SELECT AMSize,gamePointId,deviceInformationId, ActiveCountry, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_683")
@@ -10949,7 +10865,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_684
-  ignore("TC_684", Include) {
+  test("TC_684", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, MIN(Carbon_automation.deviceInformationId) AS Min_deviceInformationId, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize,deviceInformationId,gamePointId, ActiveCountry, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, MIN(Carbon_automation_hive.deviceInformationId) AS Min_deviceInformationId, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize,deviceInformationId,gamePointId, ActiveCountry, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_684")
@@ -10976,7 +10892,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_687
-  ignore("TC_687", Include) {
+  test("TC_687", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(Carbon_automation.deviceInformationId) AS Sum_deviceInformationId, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize,gamePointId, deviceInformationId,ActiveCountry, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(Carbon_automation_hive.deviceInformationId) AS Sum_deviceInformationId, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize,gamePointId, deviceInformationId,ActiveCountry, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_687")
@@ -10985,7 +10901,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_688
-  ignore("TC_688", Include) {
+  test("TC_688", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.AMSize AS AMSize, Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, SUM(Carbon_automation.deviceInformationId) AS Sum_deviceInformationId, AVG(Carbon_automation.gamePointId) AS Avg_gamePointId FROM ( SELECT AMSize,gamePointId ,deviceInformationId, ActiveCountry, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.AMSize, Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.AMSize ASC, Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.AMSize AS AMSize, Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, SUM(Carbon_automation_hive.deviceInformationId) AS Sum_deviceInformationId, AVG(Carbon_automation_hive.gamePointId) AS Avg_gamePointId FROM ( SELECT AMSize,gamePointId ,deviceInformationId, ActiveCountry, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.AMSize, Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.AMSize ASC, Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_688")
@@ -11066,7 +10982,7 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //TC_697
-  ignore("TC_697", Include) {
+  test("TC_697", Include) {
 
     checkAnswer(s"""SELECT Carbon_automation.ActiveCountry AS ActiveCountry, Carbon_automation.Activecity AS Activecity, COUNT(DISTINCT Carbon_automation.AMSize) AS DistinctCount_AMSize, SUM(Carbon_automation.deviceInformationId) AS Sum_deviceInformationId, SUM(Carbon_automation.gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize,deviceInformationId, gamePointId,ActiveCountry, Activecity FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation) SUB_QRY ) Carbon_automation1 ON Carbon_automation.AMSize = Carbon_automation1.AMSize GROUP BY Carbon_automation.ActiveCountry, Carbon_automation.Activecity ORDER BY Carbon_automation.ActiveCountry ASC, Carbon_automation.Activecity ASC""",
       s"""SELECT Carbon_automation_hive.ActiveCountry AS ActiveCountry, Carbon_automation_hive.Activecity AS Activecity, COUNT(DISTINCT Carbon_automation_hive.AMSize) AS DistinctCount_AMSize, SUM(Carbon_automation_hive.deviceInformationId) AS Sum_deviceInformationId, SUM(Carbon_automation_hive.gamePointId) AS Sum_gamePointId FROM ( SELECT AMSize,deviceInformationId, gamePointId,ActiveCountry, Activecity FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from Carbon_automation_hive) SUB_QRY ) Carbon_automation_hive1 ON Carbon_automation_hive.AMSize = Carbon_automation_hive1.AMSize GROUP BY Carbon_automation_hive.ActiveCountry, Carbon_automation_hive.Activecity ORDER BY Carbon_automation_hive.ActiveCountry ASC, Carbon_automation_hive.Activecity ASC""", "QueriesBasicTestCase_TC_697")

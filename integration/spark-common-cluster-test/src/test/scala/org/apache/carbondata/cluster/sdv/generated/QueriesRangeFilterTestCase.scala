@@ -29,7 +29,7 @@ class QueriesRangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
          
 
 //Range_Filter_01_1
-test("Range_Filter_01_1", Include) {
+override def beforeAll() {
   sql("drop table if exists NO_DICTIONARY_CARBON_8")
   sql("drop table if exists NO_DICTIONARY_CARBON_8_hive")
   sql("drop table if exists NO_DICTIONARY_CARBON_6")
@@ -479,7 +479,7 @@ test("Range_Filter_43", Include) {
        
 
 //Range_Filter_44
-ignore("Range_Filter_44", Include) {
+test("Range_Filter_44", Include) {
   
   checkAnswer(s"""select doj from directDictionaryTable where doj > '2016-03-14 15:00:09'""",
     s"""select doj from directDictionaryTable_hive where doj > '2016-03-14 15:00:09'""", "QueriesRangeFilterTestCase_Range_Filter_44")
@@ -488,7 +488,7 @@ ignore("Range_Filter_44", Include) {
        
 
 //Range_Filter_45
-  ignore("Range_Filter_45", Include) {
+  test("Range_Filter_45", Include) {
   
   checkAnswer(s"""select doj from directDictionaryTable where doj > '2016-03-14 15:00:09' or doj > '2016-03-14 15:00:15'""",
     s"""select doj from directDictionaryTable_hive where doj > '2016-03-14 15:00:09' or doj > '2016-03-14 15:00:15'""", "QueriesRangeFilterTestCase_Range_Filter_45")
@@ -497,7 +497,7 @@ ignore("Range_Filter_44", Include) {
        
 
 //Range_Filter_46
-  ignore("Range_Filter_46", Include) {
+  test("Range_Filter_46", Include) {
   
   checkAnswer(s"""select doj from directDictionaryTable where doj > '2016-03-14 15:00:09' or doj > '2016-03-14 15:00:15' and doj < '2016-03-14 15:00:13'""",
     s"""select doj from directDictionaryTable_hive where doj > '2016-03-14 15:00:09' or doj > '2016-03-14 15:00:15' and doj < '2016-03-14 15:00:13'""", "QueriesRangeFilterTestCase_Range_Filter_46")
