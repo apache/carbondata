@@ -25,6 +25,7 @@ import org.apache.hadoop.io.IOUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.locks.HdfsFileLock
 import org.apache.carbondata.core.util.CarbonUtil
 
 /**
@@ -46,19 +47,48 @@ object ResourceRegisterAndCopier {
     if (!file.exists()) {
       sys.error(s"""Provided path $hdfsPath does not exist""")
     }
-    val resources = readDataFiles(dataFilesPath)
-    resources.foreach { file =>
-      val hdfsDataPath = hdfsPath + "/" + file
-      val rsFile = FileFactory.getCarbonFile(hdfsDataPath, fileType)
-      if (!rsFile.exists()) {
-        val target = resourcePath + "/" + file
-        new File(resourcePath + "/" + file.substring(0, file.lastIndexOf("/"))).mkdirs()
-        downloadFile(link, file, target)
-        // copy it
-        copyLocalFile(hdfsDataPath, target)
-        new File(target).delete()
+    val lock = new HdfsFileLock("", "resource.lock")
+    var bool = false
+    try {
+      bool = lockWithRetries(lock)
+      if (bool) {
+        val resources = readDataFiles(dataFilesPath)
+        resources.foreach { file =>
+          val hdfsDataPath = hdfsPath + "/" + file
+          val rsFile = FileFactory.getCarbonFile(hdfsDataPath, fileType)
+          if (!rsFile.exists()) {
+            val target = resourcePath + "/" + file
+            new File(resourcePath + "/" + file.substring(0, file.lastIndexOf("/"))).mkdirs()
+            downloadFile(link, file, target)
+            // copy it
+            copyLocalFile(hdfsDataPath, target)
+            new File(target).delete()
+          }
+        }
+      }
+    } finally {
+      if (bool) {
+        lock.unlock()
       }
     }
+  }
+
+  def lockWithRetries(lock: HdfsFileLock): Boolean = {
+    try {
+      var i = 0
+      while (i < 10) {
+        if (lock.lock()) {
+          return true
+        } else {
+          Thread.sleep(30 * 1000L)
+        }
+        i += 1
+      }
+    } catch {
+      case e: InterruptedException =>
+        return false
+    }
+    false
   }
 
   def readDataFiles(dataFilesPath: String): Seq[String] = {
