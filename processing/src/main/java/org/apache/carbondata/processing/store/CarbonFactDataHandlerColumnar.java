@@ -87,7 +87,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * blocklet size (for V1 and V2) or page size (for V3). A Producer thread will start to process
    * once this size of input is reached
    */
-  private int blockletSize;
+  private int pageSizeThreshold;
   /**
    * keyGenerator
    */
@@ -120,7 +120,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   /**
    * a private class that will hold the data for blocklets
    */
-  private BlockletDataHolder blockletDataHolder;
+  private TablePageList tablePageList;
   /**
    * number of cores configured
    */
@@ -254,10 +254,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     consumerExecutorService = Executors.newFixedThreadPool(1);
     consumerExecutorServiceTaskList = new ArrayList<>(1);
     semaphore = new Semaphore(numberOfCores);
-    blockletDataHolder = new BlockletDataHolder();
+    tablePageList = new TablePageList();
 
     // Start the consumer which will take each blocklet/page in order and write to a file
-    Consumer consumer = new Consumer(blockletDataHolder);
+    Consumer consumer = new Consumer(tablePageList);
     consumerExecutorServiceTaskList.add(consumerExecutorService.submit(consumer));
   }
 
@@ -314,20 +314,20 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.entryCount++;
     // if entry count reaches to leaf node size then we are ready to write
     // this to leaf node file and update the intermediate files
-    if (this.entryCount == this.blockletSize) {
+    if (this.entryCount == this.pageSizeThreshold) {
       try {
         semaphore.acquire();
 
         producerExecutorServiceTaskList.add(
             producerExecutorService.submit(
-                new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, false)
+                new Producer(tablePageList, dataRows, ++writerTaskSequenceCounter, false)
             )
         );
         blockletProcessingCount.incrementAndGet();
         // set the entry count to zero
         processedDataCount += entryCount;
         LOGGER.info("Total Number Of records added to store: " + processedDataCount);
-        dataRows = new ArrayList<>(this.blockletSize);
+        dataRows = new ArrayList<>(this.pageSizeThreshold);
         this.entryCount = 0;
       } catch (InterruptedException e) {
         LOGGER.error(e, e.getMessage());
@@ -370,7 +370,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     try {
       semaphore.acquire();
       producerExecutorServiceTaskList.add(producerExecutorService
-          .submit(new Producer(blockletDataHolder, dataRows, ++writerTaskSequenceCounter, true)));
+          .submit(new Producer(tablePageList, dataRows, ++writerTaskSequenceCounter, true)));
       blockletProcessingCount.incrementAndGet();
       processedDataCount += entryCount;
       closeWriterExecutionService(producerExecutorService);
@@ -471,16 +471,16 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private void setWritingConfiguration() throws CarbonDataWriterException {
     // get blocklet size
-    this.blockletSize = Integer.parseInt(CarbonProperties.getInstance()
+    this.pageSizeThreshold = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
     if (version == ColumnarFormatVersion.V3) {
-      this.blockletSize = Integer.parseInt(CarbonProperties.getInstance()
+      this.pageSizeThreshold = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
               CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT));
     }
-    LOGGER.info("Number of rows per column blocklet " + blockletSize);
-    dataRows = new ArrayList<>(this.blockletSize);
+    LOGGER.info("Number of rows per column blocklet " + pageSizeThreshold);
+    dataRows = new ArrayList<>(this.pageSizeThreshold);
     int dimSet =
         Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
     // if atleast one dimension is present then initialize column splitter otherwise null
@@ -503,7 +503,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
 
     for (int i = 0; i < keyBlockHolder.length; i++) {
-      this.keyBlockHolder[i] = new CarbonKeyBlockHolder(blockletSize);
+      this.keyBlockHolder[i] = new CarbonKeyBlockHolder(pageSizeThreshold);
       this.keyBlockHolder[i].resetCounter();
     }
 
@@ -644,10 +644,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   }
 
   /**
-   * This class will hold the holder objects and manage producer and consumer for reading
-   * and writing the blocklet data
+   * This class will hold the encoded table pages.
    */
-  private final class BlockletDataHolder {
+  private final class TablePageList {
     /**
      * array of blocklet data holder objects
      */
@@ -662,7 +661,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
      */
     private int currentIndex;
 
-    private BlockletDataHolder() {
+    private TablePageList() {
       encodedTablePages = new EncodedTablePage[numberOfCores];
       available = new AtomicBoolean(false);
     }
@@ -711,14 +710,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private final class Producer implements Callable<Void> {
 
-    private BlockletDataHolder blockletDataHolder;
+    private TablePageList tablePageList;
     private List<CarbonRow> dataRows;
     private int sequenceNumber;
     private boolean isLastPage;
 
-    private Producer(BlockletDataHolder blockletDataHolder, List<CarbonRow> dataRows,
+    private Producer(TablePageList tablePageList, List<CarbonRow> dataRows,
         int sequenceNumber, boolean isLastPage) {
-      this.blockletDataHolder = blockletDataHolder;
+      this.tablePageList = tablePageList;
       this.dataRows = dataRows;
       this.sequenceNumber = sequenceNumber;
       this.isLastPage = isLastPage;
@@ -736,7 +735,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         encodedTablePage.setIsLastPage(isLastPage);
         // insert the object in array according to sequence number
         int indexInNodeHolderArray = (sequenceNumber - 1) % numberOfCores;
-        blockletDataHolder.put(encodedTablePage, indexInNodeHolderArray);
+        tablePageList.put(encodedTablePage, indexInNodeHolderArray);
         return null;
       } catch (Throwable throwable) {
         LOGGER.error(throwable, "Error in producer");
@@ -752,10 +751,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private final class Consumer implements Callable<Void> {
 
-    private BlockletDataHolder blockletDataHolder;
+    private TablePageList tablePageList;
 
-    private Consumer(BlockletDataHolder blockletDataHolder) {
-      this.blockletDataHolder = blockletDataHolder;
+    private Consumer(TablePageList tablePageList) {
+      this.tablePageList = tablePageList;
     }
 
     /**
@@ -768,7 +767,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       while (!processingComplete || blockletProcessingCount.get() > 0) {
         EncodedTablePage encodedTablePage = null;
         try {
-          encodedTablePage = blockletDataHolder.get();
+          encodedTablePage = tablePageList.get();
           if (null != encodedTablePage) {
             dataWriter.writeTablePage(encodedTablePage);
           }
