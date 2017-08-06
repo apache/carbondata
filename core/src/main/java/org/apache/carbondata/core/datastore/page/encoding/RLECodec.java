@@ -34,7 +34,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 
 public class RLECodec implements ColumnPageCodec {
 
-  enum RUN_STATE { INIT, START, REPEATED_RUN, NONREPEATED_RUN}
+  enum RUN_STATE { INIT, START, REPEATED_RUN, NONREPEATED_RUN }
 
   private DataType dataType;
   private int pageSize;
