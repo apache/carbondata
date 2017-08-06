@@ -66,6 +66,8 @@ public class CarbonHiveInputSplit extends FileSplit
   private Map<String, String> blockStorageIdMap =
       new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
+  private String tableInfo;
+
   private List<UpdateVO> invalidTimestampsList;
 
   public CarbonHiveInputSplit() {
@@ -110,6 +112,14 @@ public class CarbonHiveInputSplit extends FileSplit
       Map<String, String> blockStorageIdMap) {
     this(segmentId, path, start, length, locations, numberOfBlocklets, version);
     this.blockStorageIdMap = blockStorageIdMap;
+  }
+
+  public CarbonHiveInputSplit(String segmentId, Path path, long start, long length,
+      String[] locations, int numberOfBlocklets, ColumnarFormatVersion version,
+      Map<String, String> blockStorageIdMap, String tableInfo) {
+    this(segmentId, path, start, length, locations, numberOfBlocklets, version);
+    this.blockStorageIdMap = blockStorageIdMap;
+    this.tableInfo = tableInfo;
   }
 
   public static CarbonHiveInputSplit from(String segmentId, FileSplit split,
@@ -161,6 +171,7 @@ public class CarbonHiveInputSplit extends FileSplit
       invalidSegments.add(in.readUTF());
     }
     this.numberOfBlocklets = in.readInt();
+    this.tableInfo = in.readUTF();
   }
 
   @Override public void write(DataOutput out) throws IOException {
@@ -173,6 +184,7 @@ public class CarbonHiveInputSplit extends FileSplit
       out.writeUTF(invalidSegment);
     }
     out.writeInt(numberOfBlocklets);
+    out.writeUTF(tableInfo);
   }
 
   public List<String> getInvalidSegments() {
@@ -281,5 +293,9 @@ public class CarbonHiveInputSplit extends FileSplit
    */
   public Map<String, String> getBlockStorageIdMap() {
     return blockStorageIdMap;
+  }
+
+  public String getTableInfo() {
+    return this.tableInfo;
   }
 }
