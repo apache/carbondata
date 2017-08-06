@@ -131,6 +131,10 @@ public abstract class ColumnPage {
     }
   }
 
+  public static ColumnPage newPage(DataType dataType, int pageSize) throws MemoryException {
+    return newPage(dataType, pageSize, 0, 0);
+  }
+
   /**
    * Create a new page of dataType and number of row = pageSize
    */
