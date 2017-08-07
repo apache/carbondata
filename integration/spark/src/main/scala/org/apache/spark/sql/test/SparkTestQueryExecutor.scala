@@ -32,13 +32,14 @@ class SparkTestQueryExecutor extends TestQueryExecutorRegister {
   override def sql(sqlText: String): DataFrame = SparkTestQueryExecutor.cc.sql(sqlText)
 
   override def sqlContext: SQLContext = SparkTestQueryExecutor.cc
+
+  override def stop(): Unit = SparkTestQueryExecutor.cc.sparkContext.stop()
 }
 
 object SparkTestQueryExecutor {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   LOGGER.info("use TestQueryExecutorImplV1")
   CarbonProperties.getInstance()
-    .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
     .addProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
       System.getProperty("java.io.tmpdir"))
     .addProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)

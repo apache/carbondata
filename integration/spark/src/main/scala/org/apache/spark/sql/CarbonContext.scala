@@ -44,7 +44,7 @@ class CarbonContext(
 
   def this(sc: SparkContext) = {
     this(sc,
-      new File(CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL).getCanonicalPath,
+      null,
       new File(CarbonCommonConstants.METASTORE_LOCATION_DEFAULT_VAL).getCanonicalPath)
   }
 
@@ -66,8 +66,14 @@ class CarbonContext(
 
   @transient
   override lazy val catalog = {
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+    val carbonProperties = CarbonProperties.getInstance()
+    if (storePath != null) {
+      carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+      // In case if it is in carbon.properties for backward compatible
+    } else if (carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION) == null) {
+      carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION,
+        conf.getConfString("spark.sql.warehouse.dir"))
+    }
     new CarbonMetastore(this, storePath, metadataHive, queryId) with OverrideCatalog
   }
 

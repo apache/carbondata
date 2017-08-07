@@ -98,7 +98,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
   // ----------------------------------- Single Pass -----------------------------------
   // Waiting for merge [CARBONDATA-1145]
-  ignore("Test GLOBAL_SORT with SINGLE_PASS") {
+  test("Test GLOBAL_SORT with SINGLE_PASS") {
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
       "OPTIONS('SORT_SCOPE'='GLOBAL_SORT', 'SINGLE_PASS'='TRUE')")
 

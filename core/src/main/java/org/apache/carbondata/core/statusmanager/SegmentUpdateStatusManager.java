@@ -788,9 +788,6 @@ public class SegmentUpdateStatusManager {
         CarbonUpdateUtil.getRequiredFieldFromTID(completeBlockName, TupleIdEnum.BLOCK_ID)));
     String segmentId =
         CarbonUpdateUtil.getRequiredFieldFromTID(completeBlockName, TupleIdEnum.SEGMENT_ID);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
     SegmentUpdateDetails[] listOfSegmentUpdateDetailsArray =
         readLoadMetadata();
     for (SegmentUpdateDetails block : listOfSegmentUpdateDetailsArray) {

@@ -272,12 +272,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
 
     org.apache.carbondata.format.TableSchema thriftFactTable =
         fromWrapperToExternalTableSchema(wrapperTableInfo.getFactTable());
-    List<org.apache.carbondata.format.TableSchema> thriftAggTables =
-        new ArrayList<org.apache.carbondata.format.TableSchema>();
-    for (TableSchema wrapperAggTableSchema : wrapperTableInfo.getAggregateTableList()) {
-      thriftAggTables.add(fromWrapperToExternalTableSchema(wrapperAggTableSchema));
-    }
-    return new org.apache.carbondata.format.TableInfo(thriftFactTable, thriftAggTables);
+    return new org.apache.carbondata.format.TableInfo(thriftFactTable, new ArrayList<org.apache
+        .carbondata.format.TableSchema>());
   }
 
   /* (non-Javadoc)
@@ -517,13 +513,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperTableInfo.setStorePath(storePath);
     wrapperTableInfo.setFactTable(
         fromExternalToWrapperTableSchema(externalTableInfo.getFact_table(), tableName));
-    List<TableSchema> aggTablesList = new ArrayList<TableSchema>();
-    int index = 0;
-    for (org.apache.carbondata.format.TableSchema aggTable : externalTableInfo
-        .getAggregate_table_list()) {
-      aggTablesList.add(fromExternalToWrapperTableSchema(aggTable, "agg_table_" + index));
-      index++;
-    }
     return wrapperTableInfo;
   }
 

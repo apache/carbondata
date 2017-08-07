@@ -18,13 +18,16 @@ package org.apache.carbondata.core.datastore.chunk.reader.measure.v3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
@@ -220,6 +223,20 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     // set the null value indexes
     datChunk.setNullValueIndexHolder(getPresenceMeta(measureColumnChunk.presence));
     return datChunk;
+  }
+
+  protected ColumnPage decodeMeasure(MeasureRawColumnChunk measureRawColumnChunk,
+      DataChunk2 measureColumnChunk, int copyPoint) throws MemoryException {
+    List<ByteBuffer> encoder_meta = measureColumnChunk.getEncoder_meta();
+    // for measure, it should have only one ValueEncoderMeta
+    assert (encoder_meta.size() > 0);
+    byte[] encodedMeta = encoder_meta.get(0).array();
+
+    ColumnPageCodecMeta meta = new ColumnPageCodecMeta();
+    meta.deserialize(encodedMeta);
+    ColumnPageCodec codec = strategy.newCodec(meta);
+    byte[] rawData = measureRawColumnChunk.getRawData().array();
+    return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);
   }
 
 }

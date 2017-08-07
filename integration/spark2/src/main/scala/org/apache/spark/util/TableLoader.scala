@@ -61,7 +61,7 @@ object TableLoader {
 
   def loadTable(spark: SparkSession, dbName: Option[String], tableName: String, inputPaths: String,
       options: scala.collection.immutable.Map[String, String]): Unit = {
-    LoadTable(dbName, tableName, inputPaths, Nil, options).run(spark)
+    LoadTable(dbName, tableName, inputPaths, Nil, options, false).run(spark)
   }
 
   def main(args: Array[String]): Unit = {
@@ -80,7 +80,8 @@ object TableLoader {
 
     val spark = TableAPIUtil.spark(storePath, s"TableLoader: $dbName.$tableName")
 
-    CarbonEnv.getInstance(spark).carbonMetastore.checkSchemasModifiedTimeAndReloadTables()
+    CarbonEnv.getInstance(spark).carbonMetastore.
+      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(spark).storePath)
     loadTable(spark, Option(dbName), tableName, inputPaths, map)
   }
 

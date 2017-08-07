@@ -44,7 +44,7 @@ class VectorReaderTestCase extends Spark2QueryTest with BeforeAndAfterAll {
           OPTIONS("tableName"="vectorreader")
       """)
     LoadTable(Some("default"), "vectorreader", s"$resourcesPath/source.csv", Nil,
-      Map()).run(sqlContext.sparkSession)
+      Map(), false).run(sqlContext.sparkSession)
   }
 
   test("test vector reader") {

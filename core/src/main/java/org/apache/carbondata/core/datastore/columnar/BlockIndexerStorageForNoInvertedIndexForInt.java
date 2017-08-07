@@ -60,6 +60,11 @@ public class BlockIndexerStorageForNoInvertedIndexForInt implements IndexStorage
     return new int[0];
   }
 
+  @Override
+  public int getDataRlePageLengthInBytes() {
+    return 0;
+  }
+
   @Override public int getTotalSize() {
     return totalSize;
   }
@@ -77,6 +82,11 @@ public class BlockIndexerStorageForNoInvertedIndexForInt implements IndexStorage
     return new int[0];
   }
 
+  @Override
+  public int getRowIdPageLengthInBytes() {
+    return 0;
+  }
+
   /**
    * no use
    *
@@ -84,6 +94,11 @@ public class BlockIndexerStorageForNoInvertedIndexForInt implements IndexStorage
    */
   public int[] getRowIdRlePage() {
     return new int[0];
+  }
+
+  @Override
+  public int getRowIdRlePageLengthInBytes() {
+    return 0;
   }
 
   /**

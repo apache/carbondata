@@ -48,8 +48,7 @@ object DataLoadProcessBuilderOnSpark {
   def loadDataUsingGlobalSort(
       sc: SparkContext,
       dataFrame: Option[DataFrame],
-      model: CarbonLoadModel,
-      currentLoadCount: Int): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+      model: CarbonLoadModel): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     val originRDD = if (dataFrame.isDefined) {
       dataFrame.get.rdd
     } else {
@@ -68,7 +67,6 @@ object DataLoadProcessBuilderOnSpark {
     }
 
     model.setPartitionId("0")
-    model.setSegmentId(currentLoadCount.toString)
     val modelBroadcast = sc.broadcast(model)
     val partialSuccessAccum = sc.accumulator(0, "Partial Success Accumulator")
 

@@ -21,7 +21,7 @@ import java.util.List;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
- * Interface for adding and retrieving index data.
+ * Datamap is an entity which can store and retrieve index data.
  */
 public interface DataMap {
 
@@ -45,6 +45,12 @@ public interface DataMap {
    * @return
    */
   List<Blocklet> prune(FilterResolverIntf filterExp);
+
+  /**
+   * Convert datamap to distributable object
+   * @return
+   */
+  DataMapDistributable toDistributable();
 
   /**
    * Clear complete index table and release memory.

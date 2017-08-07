@@ -21,8 +21,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 /**
  * A dictionary based on DoubleArrayTrie data structure that maps enumerations
@@ -116,7 +119,7 @@ public class DoubleArrayTrieDictionary {
    */
   public int getValue(String key) {
     String k = key + '\0';
-    byte[] bKeys = k.getBytes();
+    byte[] bKeys = k.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     return getValue(bKeys);
   }
 
@@ -315,7 +318,7 @@ public class DoubleArrayTrieDictionary {
    */
   public boolean insert(String key) {
     String k = key + '\0';
-    byte[] bKeys = k.getBytes();
+    byte[] bKeys = k.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     if (!insert(bKeys)) {
       return false;
     }

@@ -145,20 +145,4 @@ public class CarbonPropertiesValidationTest extends TestCase {
     assertTrue(
         CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT.equalsIgnoreCase(valueAfterValidation));
   }
-
-  @Test public void testValidateHighCardinalityIdentify()
-      throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
-    Method validateMethodType =
-        carbonProperties.getClass().getDeclaredMethod("validateHighCardinalityIdentify");
-    validateMethodType.setAccessible(true);
-    carbonProperties.addProperty(CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE, "xyz");
-    String valueBeforeValidation =
-        carbonProperties.getProperty(CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE);
-    validateMethodType.invoke(carbonProperties);
-    String valueAfterValidation =
-        carbonProperties.getProperty(CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE);
-    assertTrue(!valueBeforeValidation.equals(valueAfterValidation));
-    assertTrue(CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT
-        .equalsIgnoreCase(valueAfterValidation));
-  }
 }

@@ -34,6 +34,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.datastore.row.LoadStatusType;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
@@ -205,6 +206,40 @@ public class SegmentStatusManager {
     }
 
     return listOfLoadFolderDetailsArray;
+  }
+
+  /**
+   * This method will create new segment id
+   *
+   * @param loadMetadataDetails
+   * @return
+   */
+  public static int createNewSegmentId(LoadMetadataDetails[] loadMetadataDetails) {
+    int newSegmentId = -1;
+    for (int i = 0; i < loadMetadataDetails.length; i++) {
+      try {
+        int loadCount = Integer.parseInt(loadMetadataDetails[i].getLoadName());
+        if (newSegmentId < loadCount) {
+          newSegmentId = loadCount;
+        }
+      } catch (NumberFormatException ne) {
+        // this case is for compacted folders. For compacted folders Id will be like 0.1, 2.1
+        // consider a case when 12 loads are completed and after that major compaction is triggered.
+        // In this case new compacted folder will be created with name 12.1 and after query time
+        // out all the compacted folders will be deleted and entry will also be removed from the
+        // table status file. In that case also if a new load comes the new segment Id assigned
+        // should be 13 and not 0
+        String loadName = loadMetadataDetails[i].getLoadName();
+        if (loadName.contains(".")) {
+          int loadCount = Integer.parseInt(loadName.split("\\.")[0]);
+          if (newSegmentId < loadCount) {
+            newSegmentId = loadCount;
+          }
+        }
+      }
+    }
+    newSegmentId++;
+    return newSegmentId;
   }
 
   /**
@@ -492,7 +527,9 @@ public class SegmentStatusManager {
               + "as the segment has been compacted.");
           continue;
         }
-        if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
+        if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())
+            && !LoadStatusType.IN_PROGRESS.getMessage().equals(loadMetadata.getLoadStatus())
+            && !LoadStatusType.INSERT_OVERWRITE.getMessage().equals(loadMetadata.getLoadStatus())) {
           loadFound = true;
           updateSegmentMetadataDetails(loadMetadata);
           LOG.info("Info: " +

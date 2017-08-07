@@ -56,6 +56,12 @@ public class CacheType<K, V> {
       DRIVER_BTREE = new CacheType("driver_btree");
 
   /**
+   * Executor BTree cache which maintains size of BTree metadata
+   */
+  public static final CacheType<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
+      DRIVER_BLOCKLET_DATAMAP = new CacheType("driver_blocklet_datamap");
+
+  /**
    * cacheName which is unique name for a cache
    */
   private String cacheName;

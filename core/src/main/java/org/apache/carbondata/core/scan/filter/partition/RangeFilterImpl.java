@@ -63,6 +63,9 @@ public class RangeFilterImpl implements PartitionFilterIntf {
         Object filterValueOfList = PartitionUtil.getDataBasedOnDataTypeForFilter(
             literal.getLiteralExpValue().toString(),
             partitionInfo.getColumnSchemaList().get(0).getDataType());
+        if (filterValueOfList instanceof String) {
+          filterValueOfList = ByteUtil.toBytes((String)filterValueOfList);
+        }
         return PartitionFilterUtil.getPartitionMapForRangeFilter(partitionInfo,
             (ListPartitioner) partitioner, filterValueOfList, isGreaterThan, isEqualTo,
             timestampFormatter, dateFormatter);

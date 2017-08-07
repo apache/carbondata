@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.processing.newflow.steps;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -32,7 +33,6 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.parser.RowParser;
 import org.apache.carbondata.processing.newflow.parser.impl.RowParserImpl;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
@@ -61,7 +61,8 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
     return configuration.getDataFields();
   }
 
-  @Override public void initialize() throws CarbonDataLoadingException {
+  @Override public void initialize() throws IOException {
+    super.initialize();
     rowParser = new RowParserImpl(getOutput(), configuration);
     executorService = Executors.newCachedThreadPool();
   }

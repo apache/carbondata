@@ -29,7 +29,15 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_SORT;
-import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.*;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE;
 
 /**
  * This class maintains carbon session params
@@ -40,9 +48,11 @@ public class SessionParams implements Serializable {
       LogServiceFactory.getLogService(CacheProvider.class.getName());
 
   private Map<String, String> sProps;
+  private Map<String, String> addedProps;
 
   public SessionParams() {
     sProps = new HashMap<>();
+    addedProps = new HashMap<>();
   }
 
   /**
@@ -68,6 +78,15 @@ public class SessionParams implements Serializable {
       sProps.put(key, value);
     }
     return this;
+  }
+
+  public SessionParams addProps(Map<String, String> addedProps) {
+    this.addedProps.putAll(addedProps);
+    return this;
+  }
+
+  public Map<String, String> getAddedProps() {
+    return addedProps;
   }
 
   /**

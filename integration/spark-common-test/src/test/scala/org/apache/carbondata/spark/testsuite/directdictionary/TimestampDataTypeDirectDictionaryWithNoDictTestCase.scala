@@ -56,7 +56,8 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
         + "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     }
   }
 
@@ -91,7 +92,8 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
   override def afterAll {
     sql("drop table directDictionaryTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
 }

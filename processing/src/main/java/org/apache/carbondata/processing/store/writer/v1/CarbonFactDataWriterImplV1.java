@@ -24,17 +24,17 @@ import java.nio.channels.FileChannel;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.columnar.ColGroupBlockStorage;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedData;
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedDimensionPage;
+import org.apache.carbondata.core.datastore.page.key.TablePageKey;
+import org.apache.carbondata.core.datastore.page.statistics.TablePageStatistics;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.NodeHolder;
 import org.apache.carbondata.core.writer.CarbonFooterWriter;
 import org.apache.carbondata.format.FileFooter;
-import org.apache.carbondata.processing.store.TablePageKey;
-import org.apache.carbondata.processing.store.TablePageStatistics;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 
@@ -47,12 +47,11 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
     super(dataWriterVo);
   }
 
-  @Override
-  public NodeHolder buildDataNodeHolder(EncodedData encoded,
-      TablePageStatistics stats, TablePageKey key)
+  protected NodeHolder buildNodeHolder(EncodedTablePage encodedTablePage)
       throws CarbonDataWriterException {
     // if there are no NO-Dictionary column present in the table then
     // set the empty byte array
+    TablePageKey key = encodedTablePage.getPageKey();
     byte[] startKey = key.getStartKey();
     byte[] endKey = key.getEndKey();
     byte[] noDictionaryStartKey = key.getNoDictStartKey();
@@ -70,46 +69,48 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
     int totalKeySize = 0;
     int keyBlockSize = 0;
 
-    IndexStorage[] keyStorageArray = encoded.indexStorages;
-    boolean[] isSortedData = new boolean[keyStorageArray.length];
-    int[] keyLengths = new int[keyStorageArray.length];
-    byte[][] allMinValue = new byte[keyStorageArray.length][];
-    byte[][] allMaxValue = new byte[keyStorageArray.length][];
-    boolean[] colGrpBlock = new boolean[keyStorageArray.length];
-    byte[][] keyBlockData = encoded.dimensions;
-    byte[][] measureArray = encoded.measures;
+    int numDimensions = encodedTablePage.getNumDimensions();
+    boolean[] isSortedData = new boolean[numDimensions];
+    int[] keyLengths = new int[numDimensions];
+    int[] keyBlockIdxLengths = new int[numDimensions];
+    byte[][] allMinValue = new byte[numDimensions][];
+    byte[][] allMaxValue = new byte[numDimensions][];
+    byte[][] keyBlockData = NodeHolder.getKeyArray(encodedTablePage);
+    byte[][] measureArray = NodeHolder.getDataArray(encodedTablePage);
+    TablePageStatistics stats = new TablePageStatistics(encodedTablePage.getDimensions(),
+        encodedTablePage.getMeasures());
 
-    for (int i = 0; i < keyLengths.length; i++) {
-      keyLengths[i] = keyBlockData[i].length;
-      isSortedData[i] = keyStorageArray[i].isAlreadySorted();
+    EncodedDimensionPage[] dimensions = encodedTablePage.getDimensions();
+    for (int i = 0; i < dimensions.length; i++) {
+      IndexStorage indexStorage = dimensions[i].getIndexStorage();
+      keyLengths[i] = dimensions[i].getEncodedData().length;
+      isSortedData[i] = indexStorage.isAlreadySorted();
       if (!isSortedData[i]) {
         keyBlockSize++;
 
       }
       totalKeySize += keyLengths[i];
+      byte[] min = stats.getDimensionMinValue()[i];
+      byte[] max = stats.getDimensionMaxValue()[i];
       if (dataWriterVo.getIsComplexType()[i] || dataWriterVo.getIsDictionaryColumn()[i]) {
-        allMinValue[i] = keyStorageArray[i].getMin();
-        allMaxValue[i] = keyStorageArray[i].getMax();
+        allMinValue[i] = min;
+        allMaxValue[i] = max;
       } else {
-        allMinValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMin());
-        allMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArray[i].getMax());
-      }
-      //if keyStorageArray is instance of ColGroupBlockStorage than it's colGroup chunk
-      if (keyStorageArray[i] instanceof ColGroupBlockStorage) {
-        colGrpBlock[i] = true;
+        allMinValue[i] = updateMinMaxForNoDictionary(min);
+        allMaxValue[i] = updateMinMaxForNoDictionary(max);
       }
     }
-    int[] keyBlockIdxLengths = new int[keyBlockSize];
     byte[][] dataAfterCompression = new byte[keyBlockSize][];
     byte[][] indexMap = new byte[keyBlockSize][];
     int idx = 0;
-    for (int i = 0; i < isSortedData.length; i++) {
+    for (int i = 0; i < dimensions.length; i++) {
+      IndexStorage indexStorage = dimensions[i].getIndexStorage();
       if (!isSortedData[i]) {
         dataAfterCompression[idx] =
-            numberCompressor.compress((int[])keyStorageArray[i].getRowIdPage());
-        if (null != keyStorageArray[i].getRowIdRlePage()
-            && ((int[])keyStorageArray[i].getRowIdRlePage()).length > 0) {
-          indexMap[idx] = numberCompressor.compress((int[])keyStorageArray[i].getRowIdRlePage());
+            numberCompressor.compress((int[])indexStorage.getRowIdPage());
+        if (null != indexStorage.getRowIdRlePage()
+            && ((int[])indexStorage.getRowIdRlePage()).length > 0) {
+          indexMap[idx] = numberCompressor.compress((int[])indexStorage.getRowIdRlePage());
         } else {
           indexMap[idx] = new byte[0];
         }
@@ -128,10 +129,11 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
     int[] dataIndexMapLength = new int[compressDataBlockSize];
     idx = 0;
     for (int i = 0; i < dataWriterVo.getRleEncodingForDictDim().length; i++) {
+      IndexStorage indexStorage = dimensions[i].getIndexStorage();
       if (dataWriterVo.getRleEncodingForDictDim()[i]) {
         try {
           compressedDataIndex[idx] =
-              numberCompressor.compress((int[])keyStorageArray[i].getDataRlePage());
+              numberCompressor.compress((int[])indexStorage.getDataRlePage());
           dataIndexMapLength[idx] = compressedDataIndex[idx].length;
           idx++;
         } catch (Exception e) {
@@ -154,7 +156,8 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
     holder.setMeasureNullValueIndex(stats.getNullBitSet());
     // end key format will be <length of dictionary key><length of no
     // dictionary key><DictionaryKey><No Dictionary key>
-    byte[] updatedNoDictionaryEndKey = updateNoDictionaryStartAndEndKey(noDictionaryEndKey);
+    byte[] updatedNoDictionaryEndKey =
+        encodedTablePage.getPageKey().updateNoDictionaryStartAndEndKey(noDictionaryEndKey);
     ByteBuffer buffer = ByteBuffer.allocate(
         CarbonCommonConstants.INT_SIZE_IN_BYTE + CarbonCommonConstants.INT_SIZE_IN_BYTE
             + endKey.length + updatedNoDictionaryEndKey.length);
@@ -165,7 +168,8 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
     buffer.rewind();
     holder.setEndKey(buffer.array());
     holder.setMeasureLenght(msrLength);
-    byte[] updatedNoDictionaryStartKey = updateNoDictionaryStartAndEndKey(noDictionaryStartKey);
+    byte[] updatedNoDictionaryStartKey =
+        encodedTablePage.getPageKey().updateNoDictionaryStartAndEndKey(noDictionaryStartKey);
     // start key format will be <length of dictionary key><length of no
     // dictionary key><DictionaryKey><No Dictionary key>
     buffer = ByteBuffer.allocate(
@@ -185,38 +189,28 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
     holder.setCompressedIndexMap(indexMap);
     holder.setDataIndexMapLength(dataIndexMapLength);
     holder.setCompressedDataIndex(compressedDataIndex);
-    holder.setMeasureStats(stats.getMeasurePageStatistics());
     holder.setTotalDimensionArrayLength(totalKeySize);
     holder.setTotalMeasureArrayLength(totalMsrArrySize);
     //setting column min max value
     holder.setDimensionColumnMaxData(allMaxValue);
     holder.setDimensionColumnMinData(allMinValue);
     holder.setRleEncodingForDictDim(dataWriterVo.getRleEncodingForDictDim());
-    holder.setColGrpBlocks(colGrpBlock);
+    holder.setEncodedData(encodedTablePage);
     return holder;
   }
 
-  @Override public void writeBlockletData(NodeHolder holder) throws CarbonDataWriterException {
-    if (holder.getEntryCount() == 0) {
+  @Override public void writeTablePage(EncodedTablePage encodedTablePage)
+      throws CarbonDataWriterException {
+    if (encodedTablePage.getPageSize() == 0) {
       return;
     }
-    int indexBlockSize = 0;
-    for (int i = 0; i < holder.getKeyBlockIndexLength().length; i++) {
-      indexBlockSize += holder.getKeyBlockIndexLength()[i] + CarbonCommonConstants.INT_SIZE_IN_BYTE;
-    }
-
-    for (int i = 0; i < holder.getDataIndexMapLength().length; i++) {
-      indexBlockSize += holder.getDataIndexMapLength()[i];
-    }
-
-    long blockletDataSize =
-        holder.getTotalDimensionArrayLength() + holder.getTotalMeasureArrayLength()
-            + indexBlockSize;
+    long blockletDataSize = encodedTablePage.getEncodedSize();
     updateBlockletFileChannel(blockletDataSize);
+    NodeHolder nodeHolder = buildNodeHolder(encodedTablePage);
     // write data to file and get its offset
-    long offset = writeDataToFile(holder, fileChannel);
+    long offset = writeDataToFile(nodeHolder, fileChannel);
     // get the blocklet info for currently added blocklet
-    BlockletInfoColumnar blockletInfo = getBlockletInfo(holder, offset);
+    BlockletInfoColumnar blockletInfo = getBlockletInfo(nodeHolder, offset);
     // add blocklet info to list
     blockletInfoList.add(blockletInfo);
     LOGGER.info("A new blocklet is added, its data size is: " + blockletDataSize + " Byte");
@@ -231,6 +225,7 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
    */
   private long writeDataToFile(NodeHolder nodeHolder, FileChannel channel)
       throws CarbonDataWriterException {
+    int numDimensions = nodeHolder.getKeyArray().length;
     // create byte buffer
     byte[][] compressedIndex = nodeHolder.getCompressedIndex();
     byte[][] compressedIndexMap = nodeHolder.getCompressedIndexMap();
@@ -262,16 +257,17 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
       // add measure data array to byte buffer
 
       ByteBuffer buffer1 = null;
-      for (int i = 0; i < compressedIndex.length; i++) {
-        buffer1 = ByteBuffer.allocate(nodeHolder.getKeyBlockIndexLength()[i]);
-        buffer1.putInt(compressedIndex[i].length);
-        buffer1.put(compressedIndex[i]);
-        if (compressedIndexMap[i].length > 0) {
-          buffer1.put(compressedIndexMap[i]);
+      for (int i = 0; i < numDimensions; i++) {
+        if (nodeHolder.getKeyBlockIndexLength()[i] > 0) {
+          buffer1 = ByteBuffer.allocate(nodeHolder.getKeyBlockIndexLength()[i]);
+          buffer1.putInt(compressedIndex[i].length);
+          buffer1.put(compressedIndex[i]);
+          if (compressedIndexMap[i].length > 0) {
+            buffer1.put(compressedIndexMap[i]);
+          }
+          buffer1.rewind();
+          byteBuffer.put(buffer1.array());
         }
-        buffer1.rewind();
-        byteBuffer.put(buffer1.array());
-
       }
       for (int i = 0; i < compressedDataIndex.length; i++) {
         byteBuffer.put(compressedDataIndex[i]);
@@ -356,12 +352,7 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
     info.setStartKey(nodeHolder.getStartKey());
     // set end key
     info.setEndKey(nodeHolder.getEndKey());
-    info.setStats(nodeHolder.getStats());
-    // return leaf metadata
-
-    //colGroup Blocks
-    info.setColGrpBlocks(nodeHolder.getColGrpBlocks());
-
+    info.setEncodedTablePage(nodeHolder.getEncodedData());
     return info;
   }
 
@@ -374,7 +365,7 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
       long currentPosition = channel.size();
       CarbonFooterWriter writer = new CarbonFooterWriter(filePath);
       FileFooter convertFileMeta = CarbonMetadataUtil
-          .convertFileFooter(blockletInfoList, localCardinality.length, localCardinality,
+          .convertFileFooter(blockletInfoList, localCardinality,
               thriftColumnSchemaList, dataWriterVo.getSegmentProperties());
       fillBlockIndexInfoDetails(convertFileMeta.getNum_rows(), carbonDataFileName, currentPosition);
       writer.writeFooter(convertFileMeta, currentPosition);

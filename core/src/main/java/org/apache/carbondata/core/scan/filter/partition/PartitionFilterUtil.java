@@ -26,6 +26,7 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.scan.partition.ListPartitioner;
 import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.RangePartitioner;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
@@ -44,7 +45,7 @@ public class PartitionFilterUtil {
       ListPartitioner partitioner, Object filterValue,  boolean isGreaterThan, boolean isEqualTo,
       DateFormat timestampFormatter, DateFormat dateFormatter) {
 
-    List<List<String>> values = partitionInfo.getListInfo();
+    List<List<String>> listInfo = partitionInfo.getListInfo();
     DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
 
     SerializableComparator comparator =
@@ -53,16 +54,18 @@ public class PartitionFilterUtil {
     BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), false);
     // add default partition
     partitionMap.set(0);
-
-    int partitions = values.size();
+    int partitions = listInfo.size();
     if (isGreaterThan) {
       if (isEqualTo) {
         // GreaterThanEqualTo(>=)
         outer1:
         for (int i = 0; i < partitions; i++) {
-          for (String value : values.get(i)) {
+          for (String value : listInfo.get(i)) {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
+            if (listValue instanceof String) {
+              listValue = ByteUtil.toBytes((String)listValue);
+            }
             if (comparator.compare(listValue, filterValue) >= 0) {
               partitionMap.set(i + 1);
               continue outer1;
@@ -73,9 +76,12 @@ public class PartitionFilterUtil {
         // GreaterThan(>)
         outer2:
         for (int i = 0; i < partitions; i++) {
-          for (String value : values.get(i)) {
+          for (String value : listInfo.get(i)) {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
+            if (listValue instanceof String) {
+              listValue = ByteUtil.toBytes((String)listValue);
+            }
             if (comparator.compare(listValue, filterValue) > 0) {
               partitionMap.set(i + 1);
               continue outer2;
@@ -88,9 +94,12 @@ public class PartitionFilterUtil {
         // LessThanEqualTo(<=)
         outer3:
         for (int i = 0; i < partitions; i++) {
-          for (String value : values.get(i)) {
+          for (String value : listInfo.get(i)) {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
+            if (listValue instanceof String) {
+              listValue = ByteUtil.toBytes((String)listValue);
+            }
             if (comparator.compare(listValue, filterValue) <= 0) {
               partitionMap.set(i + 1);
               continue outer3;
@@ -101,9 +110,12 @@ public class PartitionFilterUtil {
         // LessThanEqualTo(<)
         outer4:
         for (int i = 0; i < partitions; i++) {
-          for (String value : values.get(i)) {
+          for (String value : listInfo.get(i)) {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
+            if (listValue instanceof String) {
+              listValue = ByteUtil.toBytes((String)listValue);
+            }
             if (comparator.compare(listValue, filterValue) < 0) {
               partitionMap.set(i + 1);
               continue outer4;
@@ -143,8 +155,12 @@ public class PartitionFilterUtil {
     int partitionIndex = 0;
     // find the partition of filter value
     for (; partitionIndex < numPartitions; partitionIndex++) {
-      result = comparator.compare(filterValue, PartitionUtil.getDataBasedOnDataType(
-          values.get(partitionIndex), partitionColumnDataType, timestampFormatter, dateFormatter));
+      Object value = PartitionUtil.getDataBasedOnDataType(
+          values.get(partitionIndex), partitionColumnDataType, timestampFormatter, dateFormatter);
+      if (value instanceof String) {
+        value = ByteUtil.toBytes((String)value);
+      }
+      result = comparator.compare(filterValue, value);
       if (result <= 0) {
         break;
       }

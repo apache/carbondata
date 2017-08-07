@@ -21,6 +21,7 @@ import scala.collection.mutable.LinkedHashMap
 
 import org.apache.spark.sql.AnalysisException
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.util.ExampleUtils
@@ -32,7 +33,7 @@ object CarbonPartitionExample {
     val testData = ExampleUtils.currentPath + "/src/main/resources/data.csv"
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     // none partition table
     cc.sql("DROP TABLE IF EXISTS t0")
     cc.sql("""
@@ -121,18 +122,18 @@ object CarbonPartitionExample {
     cc.sql("alter table hiveDB.t7 add partition (city = 'Shanghai')")
     //  show partitions
     try {
-      cc.sql("SHOW PARTITIONS t0").show()
+      cc.sql("SHOW PARTITIONS t0").show(100, false)
     } catch {
-      case ex: AnalysisException => print(ex.getMessage())
+      case ex: AnalysisException => LOGGER.error(ex.getMessage())
     }
-    cc.sql("SHOW PARTITIONS t1").show()
-    cc.sql("SHOW PARTITIONS t3").show()
-    cc.sql("SHOW PARTITIONS t5").show()
-    cc.sql("SHOW PARTITIONS t7").show()
+    cc.sql("SHOW PARTITIONS t1").show(100, false)
+    cc.sql("SHOW PARTITIONS t3").show(100, false)
+    cc.sql("SHOW PARTITIONS t5").show(100, false)
+    cc.sql("SHOW PARTITIONS t7").show(100, false)
     cc.sql("use hiveDB").show()
-    cc.sql("SHOW PARTITIONS t7").show()
+    cc.sql("SHOW PARTITIONS t7").show(100, false)
     cc.sql("use default").show()
-    cc.sql("SHOW PARTITIONS partitionDB.t9").show()
+    cc.sql("SHOW PARTITIONS partitionDB.t9").show(100, false)
 
     cc.sql("DROP TABLE IF EXISTS t0")
     cc.sql("DROP TABLE IF EXISTS t1")

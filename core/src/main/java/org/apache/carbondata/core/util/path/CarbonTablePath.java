@@ -385,7 +385,7 @@ public class CarbonTablePath extends Path {
    * @param factUpdateTimeStamp unique identifier to identify an update
    * @return gets data file name only with out path
    */
-  public String getCarbonDataFileName(Integer filePartNo, Integer taskNo, int bucketNumber,
+  public static String getCarbonDataFileName(Integer filePartNo, Integer taskNo, int bucketNumber,
       int batchNo, String factUpdateTimeStamp) {
     return DATA_PART_PREFIX + filePartNo + "-" + taskNo + BATCH_PREFIX + batchNo + "-"
         + bucketNumber + "-" + factUpdateTimeStamp + CARBON_DATA_EXT;
@@ -398,7 +398,7 @@ public class CarbonTablePath extends Path {
    * @param factUpdatedTimeStamp time stamp
    * @return filename
    */
-  public String getCarbonIndexFileName(int taskNo, int bucketNumber, int batchNo,
+  public static String getCarbonIndexFileName(int taskNo, int bucketNumber, int batchNo,
       String factUpdatedTimeStamp) {
     return taskNo + BATCH_PREFIX + batchNo + "-" + bucketNumber + "-" + factUpdatedTimeStamp
         + INDEX_FILE_EXT;
@@ -430,6 +430,10 @@ public class CarbonTablePath extends Path {
 
   public String getFactDir() {
     return tablePath + File.separator + FACT_DIR;
+  }
+
+  public CarbonTableIdentifier getCarbonTableIdentifier() {
+    return carbonTableIdentifier;
   }
 
   @Override public boolean equals(Object o) {

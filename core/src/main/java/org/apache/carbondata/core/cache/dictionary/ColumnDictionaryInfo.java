@@ -194,8 +194,9 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
       byte[] dictionaryValue = getDictionaryBytesFromSurrogate(surrogateKey);
       int cmp = -1;
       if (this.getDataType() != DataType.STRING) {
-        cmp = compareFilterKeyWithDictionaryKey(new String(dictionaryValue), filterKey,
-            this.getDataType());
+        cmp = compareFilterKeyWithDictionaryKey(
+            new String(dictionaryValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
+            filterKey, this.getDataType());
 
       } else {
         cmp = ByteUtil.UnsafeComparer.INSTANCE.compareTo(dictionaryValue, key);
@@ -240,8 +241,9 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
         if (null == dictionaryValue) {
           cmp = -1;
         } else if (this.getDataType() != DataType.STRING) {
-          cmp = compareFilterKeyWithDictionaryKey(new String(dictionaryValue), filterKey,
-              this.getDataType());
+          cmp = compareFilterKeyWithDictionaryKey(
+              new String(dictionaryValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
+              filterKey, this.getDataType());
 
         } else {
           cmp =

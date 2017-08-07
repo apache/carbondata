@@ -26,11 +26,11 @@ import java.util.Map;
 
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
-import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
+import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor.ResolvedFilterInfoVisitorIntf;
 
-public class DimColumnResolvedFilterInfo implements Serializable {
+public class DimColumnResolvedFilterInfo extends ColumnResolvedFilterInfo implements Serializable {
   /**
    *
    */
@@ -53,19 +53,19 @@ public class DimColumnResolvedFilterInfo implements Serializable {
   /**
    * reolved filter object of a particlar filter Expression.
    */
-  private DimColumnFilterInfo resolvedFilterValueObj;
+  private ColumnFilterInfo resolvedFilterValueObj;
 
-  private Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionResolvedFilter;
+  private Map<CarbonDimension, List<ColumnFilterInfo>> dimensionResolvedFilter;
 
   public DimColumnResolvedFilterInfo() {
-    dimensionResolvedFilter = new HashMap<CarbonDimension, List<DimColumnFilterInfo>>(20);
+    dimensionResolvedFilter = new HashMap<CarbonDimension, List<ColumnFilterInfo>>(20);
   }
 
   public void addDimensionResolvedFilterInstance(CarbonDimension dimension,
-      DimColumnFilterInfo filterResolvedObj) {
-    List<DimColumnFilterInfo> currentVals = dimensionResolvedFilter.get(dimension);
+      ColumnFilterInfo filterResolvedObj) {
+    List<ColumnFilterInfo> currentVals = dimensionResolvedFilter.get(dimension);
     if (null == currentVals) {
-      currentVals = new ArrayList<DimColumnFilterInfo>(20);
+      currentVals = new ArrayList<ColumnFilterInfo>(20);
       currentVals.add(filterResolvedObj);
       dimensionResolvedFilter.put(dimension, currentVals);
     } else {
@@ -73,7 +73,7 @@ public class DimColumnResolvedFilterInfo implements Serializable {
     }
   }
 
-  public Map<CarbonDimension, List<DimColumnFilterInfo>> getDimensionResolvedFilterInstance() {
+  public Map<CarbonDimension, List<ColumnFilterInfo>> getDimensionResolvedFilterInstance() {
     return dimensionResolvedFilter;
   }
 
@@ -93,11 +93,11 @@ public class DimColumnResolvedFilterInfo implements Serializable {
     this.columnIndex = columnIndex;
   }
 
-  public DimColumnFilterInfo getFilterValues() {
+  public ColumnFilterInfo getFilterValues() {
     return resolvedFilterValueObj;
   }
 
-  public void setFilterValues(final DimColumnFilterInfo resolvedFilterValueObj) {
+  public void setFilterValues(final ColumnFilterInfo resolvedFilterValueObj) {
     this.resolvedFilterValueObj = resolvedFilterValueObj;
   }
 

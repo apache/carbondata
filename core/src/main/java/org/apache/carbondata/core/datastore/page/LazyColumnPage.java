@@ -20,7 +20,7 @@ package org.apache.carbondata.core.datastore.page;
 import java.math.BigDecimal;
 
 /**
- * This is a decorator of column page, it performs transformation lazily (when caller calls getXXX
+ * This is a decorator of column page, it performs decoding lazily (when caller calls getXXX
  * method to get the value from the page)
  */
 public class LazyColumnPage extends ColumnPage {
@@ -32,13 +32,14 @@ public class LazyColumnPage extends ColumnPage {
   private PrimitiveCodec codec;
 
   private LazyColumnPage(ColumnPage columnPage, PrimitiveCodec codec) {
-    super(columnPage.getDataType(), columnPage.getPageSize());
+    super(columnPage.getDataType(), columnPage.getPageSize(), columnPage.scale,
+        columnPage.precision);
     this.columnPage = columnPage;
     this.codec = codec;
   }
 
-  public static ColumnPage newPage(ColumnPage columnPage, PrimitiveCodec transform) {
-    return new LazyColumnPage(columnPage, transform);
+  public static ColumnPage newPage(ColumnPage columnPage, PrimitiveCodec codec) {
+    return new LazyColumnPage(columnPage, codec);
   }
 
   @Override
@@ -93,7 +94,7 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public BigDecimal getDecimal(int rowId) {
-    throw new UnsupportedOperationException("internal error");
+    return columnPage.getDecimal(rowId);
   }
 
   @Override
@@ -133,6 +134,16 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public byte[][] getByteArrayPage() {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void putDecimal(int rowId, BigDecimal decimal) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public byte[] getDecimalPage() {
     throw new UnsupportedOperationException("internal error");
   }
 

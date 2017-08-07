@@ -78,8 +78,7 @@ public final class CarbonMetadata {
     CarbonTable carbonTable = tableInfoMap.get(convertToLowerCase(tableInfo.getTableUniqueName()));
     if (null == carbonTable || carbonTable.getTableLastUpdatedTime() < tableInfo
         .getLastUpdatedTime()) {
-      carbonTable = new CarbonTable();
-      carbonTable.loadCarbonTable(tableInfo);
+      carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
       tableInfoMap.put(convertToLowerCase(tableInfo.getTableUniqueName()), carbonTable);
     }
   }

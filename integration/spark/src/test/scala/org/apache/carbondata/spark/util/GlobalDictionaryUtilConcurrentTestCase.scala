@@ -76,7 +76,8 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
   def buildTable() = {
     try {
       sql(
-        "CREATE TABLE IF NOT EXISTS employee (empid STRING) STORED BY 'org.apache.carbondata.format'")
+        "CREATE TABLE IF NOT EXISTS employee (empid STRING) STORED BY 'org.apache.carbondata.format' " +
+          "tblproperties('dictionary_include'='empid')")
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }

@@ -163,6 +163,8 @@ public class SegmentProperties {
 
   private int numberOfNoDictSortColumns = 0;
 
+  private int lastDimensionColOrdinal;
+
   public SegmentProperties(List<ColumnSchema> columnsInTable, int[] columnCardinality) {
     dimensions = new ArrayList<CarbonDimension>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     complexDimensions =
@@ -409,6 +411,7 @@ public class SegmentProperties {
       }
       counter++;
     }
+    lastDimensionColOrdinal = dimensonOrdinal;
     dimColumnsCardinality = new int[cardinalityIndexForNormalDimensionColumn.size()];
     complexDimColumnCardinality = new int[cardinalityIndexForComplexDimensionColumn.size()];
     int index = 0;
@@ -654,6 +657,26 @@ public class SegmentProperties {
     return dimensionValueSize;
   }
 
+  public int[] getColumnsValueSize() {
+    int[] dimensionValueSize =
+        new int[eachDimColumnValueSize.length + eachComplexDimColumnValueSize.length + measures
+            .size()];
+    System
+        .arraycopy(eachDimColumnValueSize, 0, dimensionValueSize, 0, eachDimColumnValueSize.length);
+    System.arraycopy(eachComplexDimColumnValueSize, 0, dimensionValueSize,
+        eachDimColumnValueSize.length, eachComplexDimColumnValueSize.length);
+    int k = eachDimColumnValueSize.length + eachComplexDimColumnValueSize.length;
+    for (int i = 0; i < measures.size(); i++) {
+      DataType dataType = measures.get(i).getDataType();
+      if (dataType.equals(DataType.DECIMAL)) {
+        dimensionValueSize[k++] = -1;
+      } else {
+        dimensionValueSize[k++] = 8;
+      }
+    }
+    return dimensionValueSize;
+  }
+
   /**
    * @return the dimensionKeyGenerator
    */
@@ -836,5 +859,9 @@ public class SegmentProperties {
 
   public int getNumberOfDictSortColumns() {
     return this.numberOfSortColumns - this.numberOfNoDictSortColumns;
+  }
+
+  public int getLastDimensionColOrdinal() {
+    return lastDimensionColOrdinal;
   }
 }

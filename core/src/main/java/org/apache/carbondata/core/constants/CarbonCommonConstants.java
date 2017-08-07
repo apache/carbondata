@@ -71,10 +71,6 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String SORT_SIZE = "carbon.sort.size";
   /**
-   * default location of the carbon member, hierarchy and fact files
-   */
-  public static final String STORE_LOCATION_DEFAULT_VAL = "../carbon.store";
-  /**
    * CARDINALITY_INCREMENT_DEFAULT_VALUE
    */
   public static final int CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL = 10;
@@ -180,9 +176,15 @@ public final class CarbonCommonConstants {
   public static final String MEMBER_DEFAULT_VAL = "@NU#LL$!";
 
   /**
+   * default charset to be used for reading and writing
+   */
+  public static final String DEFAULT_CHARSET = "UTF-8";
+
+  /**
    * MEMBER_DEFAULT_VAL_ARRAY
    */
-  public static final byte[] MEMBER_DEFAULT_VAL_ARRAY = MEMBER_DEFAULT_VAL.getBytes();
+  public static final byte[] MEMBER_DEFAULT_VAL_ARRAY =
+      MEMBER_DEFAULT_VAL.getBytes(Charset.forName(DEFAULT_CHARSET));
 
   /**
    * Bytes for string 0, it is used in codegen in case of null values.
@@ -691,12 +693,10 @@ public final class CarbonCommonConstants {
    * BIG_DECIMAL_MEASURE
    */
   public static final char BIG_DECIMAL_MEASURE = 'b';
-
   /**
    * BIG_INT_MEASURE
    */
   public static final char BIG_INT_MEASURE = 'd';
-
   /**
    * CARBON_PREFETCH_BUFFERSIZE
    */
@@ -774,11 +774,6 @@ public final class CarbonCommonConstants {
    * xxhash algorithm property for hashmap. Default value false
    */
   public static final String ENABLE_XXHASH_DEFAULT = "true";
-
-  /**
-   * default charset to be used for reading and writing
-   */
-  public static final String DEFAULT_CHARSET = "UTF-8";
 
   /**
    * default charset class to be used for reading and writing
@@ -882,29 +877,6 @@ public final class CarbonCommonConstants {
   public static final String TABLE_BLOCKSIZE = "table_blocksize";
   // set in column level to disable inverted index
   public static final String NO_INVERTED_INDEX = "no_inverted_index";
-
-  /**
-   * this variable is to enable/disable identify high cardinality during first data loading
-   */
-  @CarbonProperty
-  public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE = "high.cardinality.identify.enable";
-  public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT = "true";
-
-  /**
-   * threshold of high cardinality
-   */
-  @CarbonProperty
-  public static final String HIGH_CARDINALITY_THRESHOLD = "high.cardinality.threshold";
-  public static final String HIGH_CARDINALITY_THRESHOLD_DEFAULT = "1000000";
-  public static final int HIGH_CARDINALITY_THRESHOLD_MIN = 10000;
-
-  /**
-   * percentage of cardinality in row count
-   */
-  @CarbonProperty
-  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE =
-      "high.cardinality.row.count.percentage";
-  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT = "80";
 
   /**
    * 16 mb size
@@ -1184,16 +1156,16 @@ public final class CarbonCommonConstants {
   public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT = "64";
   @CarbonProperty
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB = "sort.inmemory.size.inmb";
-
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT = "1024";
 
+  @CarbonProperty
+  public static final String UNSAFE_WORKING_MEMORY_IN_MB = "carbon.unsafe.working.memory.in.mb";
+  public static final String UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT = "512";
   /**
    * Sorts the data in batches and writes the batch data to store with index file.
    */
   @CarbonProperty
   public static final String LOAD_SORT_SCOPE = "carbon.load.sort.scope";
-  @CarbonProperty
-  public static final String LOAD_USE_BATCH_SORT = "carbon.load.use.batch.sort";
 
   /**
    * If set to BATCH_SORT, the sorting scope is smaller and more index tree will be created,
@@ -1301,12 +1273,36 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
 
+  public static final String ENABLE_HIVE_SCHEMA_META_STORE = "spark.carbon.hive.schema.store";
+
+  public static final String ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT = "false";
+
+  /**
+   * There is more often that in production uses different drivers for load and queries. So in case
+   * of load driver user should set this property to enable loader specific clean up.
+   */
+  public static final String DATA_MANAGEMENT_DRIVER = "spark.carbon.datamanagement.driver";
+
+  public static final String DATA_MANAGEMENT_DRIVER_DEFAULT = "false";
+
   @CarbonProperty
   public static final String CARBON_LEASE_RECOVERY_RETRY_COUNT =
       "carbon.lease.recovery.retry.count";
   @CarbonProperty
   public static final String CARBON_LEASE_RECOVERY_RETRY_INTERVAL =
       "carbon.lease.recovery.retry.interval";
+
+  /**
+   * whether to use multi directories when loading data,
+   * the main purpose is to avoid single-disk-hot-spot
+   */
+  @CarbonProperty
+  public static final String CARBON_USE_MULTI_TEMP_DIR = "carbon.use.multiple.temp.dir";
+
+  /**
+   * default value for multi temp dir
+   */
+  public static final String CARBON_USE_MULTI_TEMP_DIR_DEFAULT = "false";
 
   private CarbonCommonConstants() {
   }

@@ -18,6 +18,7 @@ package org.apache.carbondata.processing.merger;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -256,19 +257,18 @@ public class CarbonCompactionUtil {
   /**
    * This will check if any compaction request has been received for any table.
    *
-   * @param tableMetas
+   * @param carbonTables
    * @return
    */
-  public static TableMeta getNextTableToCompact(TableMeta[] tableMetas,
+  public static CarbonTable getNextTableToCompact(CarbonTable[] carbonTables,
       List<CarbonTableIdentifier> skipList) {
-    for (TableMeta table : tableMetas) {
-      CarbonTable ctable = table.carbonTable;
+    for (CarbonTable ctable : carbonTables) {
       String metadataPath = ctable.getMetaDataFilepath();
       // check for the compaction required file and at the same time exclude the tables which are
       // present in the skip list.
       if (CarbonCompactionUtil.isCompactionRequiredForTable(metadataPath) && !skipList
-          .contains(table.carbonTableIdentifier)) {
-        return table;
+          .contains(ctable.getCarbonTableIdentifier())) {
+        return ctable;
       }
     }
     return null;
@@ -371,6 +371,37 @@ public class CarbonCompactionUtil {
         if (tableLastUpdatedTime > dataFileFooter.getSchemaUpdatedTimeStamp()) {
           restructuredBlockExists = true;
           break;
+        }
+      }
+      if (restructuredBlockExists) {
+        break;
+      }
+    }
+    return restructuredBlockExists;
+  }
+
+  /**
+   * This method will check for any restructured block in the blocks selected for compaction
+   *
+   * @param segmentMapping
+   * @param tableLastUpdatedTime
+   * @return
+   */
+  public static boolean checkIfAnyRestructuredBlockExists(Map<String, TaskBlockInfo> segmentMapping,
+      long tableLastUpdatedTime) {
+    boolean restructuredBlockExists = false;
+    for (Map.Entry<String, TaskBlockInfo> taskMap : segmentMapping.entrySet()) {
+      String segmentId = taskMap.getKey();
+      TaskBlockInfo taskBlockInfo = taskMap.getValue();
+      Collection<List<TableBlockInfo>> infoList = taskBlockInfo.getAllTableBlockInfoList();
+      for (List<TableBlockInfo> listMetadata : infoList) {
+        for (TableBlockInfo blockInfo : listMetadata) {
+          // if schema modified timestamp is greater than footer stored schema timestamp,
+          // it indicates it is a restructured block
+          if (tableLastUpdatedTime > blockInfo.getDetailInfo().getSchemaUpdatedTimeStamp()) {
+            restructuredBlockExists = true;
+            break;
+          }
         }
       }
       if (restructuredBlockExists) {

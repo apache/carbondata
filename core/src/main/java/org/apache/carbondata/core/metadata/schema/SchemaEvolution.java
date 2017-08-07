@@ -47,4 +47,5 @@ public class SchemaEvolution implements Serializable {
   public void setSchemaEvolutionEntryList(List<SchemaEvolutionEntry> schemaEvolutionEntryList) {
     this.schemaEvolutionEntryList = schemaEvolutionEntryList;
   }
+
 }

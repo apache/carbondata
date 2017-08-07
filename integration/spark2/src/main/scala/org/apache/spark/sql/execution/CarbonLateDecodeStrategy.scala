@@ -17,9 +17,6 @@
 
 package org.apache.spark.sql.execution
 
-import java.text.SimpleDateFormat
-import java.util.Date
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
@@ -34,14 +31,13 @@ import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partition
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
-import org.apache.spark.sql.types.{AtomicType, DoubleType, IntegerType, StringType, TimestampType}
+import org.apache.spark.sql.types.{AtomicType, IntegerType, StringType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampDirectDictionaryGenerator
 import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.{CarbonAliasDecoderRelation}
+import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -99,8 +95,15 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       relation.addAttribute(newAttr)
       newAttr
     }
-    new CarbonDecoderRDD(Seq(relation), IncludeProfile(attrs),
-      CarbonAliasDecoderRelation(), rdd, output, SparkSession.getActiveSession.get)
+
+    new CarbonDecoderRDD(
+      Seq(relation),
+      IncludeProfile(attrs),
+      CarbonAliasDecoderRelation(),
+      rdd,
+      output,
+      CarbonEnv.getInstance(SparkSession.getActiveSession.get).storePath,
+      table.carbonTable.getTableInfo.serialize())
   }
 
   private[this] def toCatalystRDD(

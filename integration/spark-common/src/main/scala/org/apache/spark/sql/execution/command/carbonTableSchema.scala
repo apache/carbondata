@@ -90,7 +90,6 @@ case class CarbonMergerMapping(storeLocation: String,
     hdfsStoreLocation: String,
     metadataFilePath: String,
     var mergedLoadName: String,
-    tableCreationTime: Long,
     databaseName: String,
     factTableName: String,
     validSegments: Array[String],
@@ -117,14 +116,12 @@ case class UpdateTableModel(isUpdate: Boolean,
 case class CompactionModel(compactionSize: Long,
     compactionType: CompactionType,
     carbonTable: CarbonTable,
-    tableCreationTime: Long,
     isDDLTrigger: Boolean)
 
 case class CompactionCallableModel(storePath: String,
     carbonLoadModel: CarbonLoadModel,
     storeLocation: String,
     carbonTable: CarbonTable,
-    cubeCreationTime: Long,
     loadsToMerge: util.List[LoadMetadataDetails],
     sqlContext: SQLContext,
     compactionType: CompactionType)
@@ -526,7 +523,6 @@ class TableNewProcessor(cm: TableModel) {
     tableInfo.setTableUniqueName(cm.databaseName + "_" + cm.tableName)
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
-    tableInfo.setAggregateTableList(new util.ArrayList[TableSchema]())
     tableInfo
   }
 

@@ -39,7 +39,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
 
   public RowLevelFilterResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
-    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier);
+    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier, false);
     dimColEvaluatorInfoList =
         new ArrayList<DimColumnResolvedFilterInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(
@@ -72,6 +72,7 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
           msrColumnEvalutorInfo.setRowIndex(index++);
           msrColumnEvalutorInfo
               .setColumnIndex(columnExpression.getCarbonColumn().getOrdinal());
+          msrColumnEvalutorInfo.setMeasure(columnExpression.getMeasure());
           msrColumnEvalutorInfo.setType(columnExpression.getCarbonColumn().getDataType());
           msrColEvalutorInfoList.add(msrColumnEvalutorInfo);
         }

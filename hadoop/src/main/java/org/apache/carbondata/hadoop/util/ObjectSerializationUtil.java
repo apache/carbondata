@@ -16,11 +16,7 @@
  */
 package org.apache.carbondata.hadoop.util;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
+import java.io.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -70,7 +66,11 @@ public class ObjectSerializationUtil {
       }
     }
 
-    return new String(Base64.encodeBase64(baos.toByteArray()),
+    return encodeToString(baos.toByteArray());
+  }
+
+  public static String encodeToString(byte[] bytes) throws UnsupportedEncodingException {
+    return new String(Base64.encodeBase64(bytes),
             CarbonCommonConstants.DEFAULT_CHARSET);
   }
 
@@ -86,8 +86,7 @@ public class ObjectSerializationUtil {
       return null;
     }
 
-    byte[] bytes =
-            Base64.decodeBase64(objectString.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
+    byte[] bytes = decodeStringToBytes(objectString);
 
     ByteArrayInputStream bais = null;
     GZIPInputStream gis = null;
@@ -115,5 +114,10 @@ public class ObjectSerializationUtil {
         LOG.error(e);
       }
     }
+  }
+
+  public static byte[] decodeStringToBytes(String objectString)
+    throws UnsupportedEncodingException {
+    return Base64.decodeBase64(objectString.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
   }
 }
