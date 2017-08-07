@@ -17,10 +17,16 @@
 
 package org.apache.carbondata.core.memory;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+
 /**
  * Holds the pointers for rows.
  */
 public class IntPointerBuffer {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(IntPointerBuffer.class.getName());
 
   private int length;
 
@@ -28,15 +34,15 @@ public class IntPointerBuffer {
 
   private int[] pointerBlock;
 
-  private MemoryBlock baseBlock;
-
   private MemoryBlock pointerMemoryBlock;
 
-  public IntPointerBuffer(MemoryBlock baseBlock) {
+  private long taskId;
+
+  public IntPointerBuffer(long taskId) {
     // TODO can be configurable, it is initial size and it can grow automatically.
     this.length = 100000;
     pointerBlock = new int[length];
-    this.baseBlock = baseBlock;
+    this.taskId = taskId;
   }
 
   public IntPointerBuffer(int length) {
@@ -67,22 +73,23 @@ public class IntPointerBuffer {
     return pointerBlock[rowId];
   }
 
-  public void loadToUnsafe() throws MemoryException {
-    pointerMemoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(pointerBlock.length * 4);
-    for (int i = 0; i < pointerBlock.length; i++) {
-      CarbonUnsafe.unsafe
-          .putInt(pointerMemoryBlock.getBaseObject(), pointerMemoryBlock.getBaseOffset() + i * 4,
-              pointerBlock[i]);
+  public void loadToUnsafe() {
+    try {
+      pointerMemoryBlock =
+          UnsafeSortMemoryManager.allocateMemoryWithRetry(this.taskId, pointerBlock.length * 4);
+      for (int i = 0; i < pointerBlock.length; i++) {
+        CarbonUnsafe.unsafe
+            .putInt(pointerMemoryBlock.getBaseObject(), pointerMemoryBlock.getBaseOffset() + i * 4,
+                pointerBlock[i]);
+      }
+      pointerBlock = null;
+    } catch (MemoryException e) {
+      LOGGER.warn("Not enough memory for allocating pointer buffer, sorting in heap");
     }
-    pointerBlock = null;
   }
 
   public int getActualSize() {
     return actualSize;
-  }
-
-  public MemoryBlock getBaseBlock() {
-    return baseBlock;
   }
 
   public int[] getPointerBlock() {
@@ -103,10 +110,7 @@ public class IntPointerBuffer {
   public void freeMemory() {
     pointerBlock = null;
     if (pointerMemoryBlock != null) {
-      UnsafeMemoryManager.INSTANCE.freeMemory(pointerMemoryBlock);
-    }
-    if (baseBlock != null) {
-      UnsafeMemoryManager.INSTANCE.freeMemory(baseBlock);
+      UnsafeSortMemoryManager.INSTANCE.freeMemory(this.taskId, pointerMemoryBlock);
     }
   }
 }

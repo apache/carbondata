@@ -20,6 +20,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -29,6 +30,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -76,6 +78,8 @@ public class CarbonInputSplit extends FileSplit
    * list of delete delta files for split
    */
   private String[] deleteDeltaFiles;
+
+  private BlockletDetailInfo detailInfo;
 
   public CarbonInputSplit() {
     segmentId = null;
@@ -138,10 +142,12 @@ public class CarbonInputSplit extends FileSplit
       BlockletInfos blockletInfos =
           new BlockletInfos(split.getNumberOfBlocklets(), 0, split.getNumberOfBlocklets());
       try {
-        tableBlockInfoList.add(
+        TableBlockInfo blockInfo =
             new TableBlockInfo(split.getPath().toString(), split.getStart(), split.getSegmentId(),
                 split.getLocations(), split.getLength(), blockletInfos, split.getVersion(),
-                split.getDeleteDeltaFiles()));
+                split.getDeleteDeltaFiles());
+        blockInfo.setDetailInfo(split.getDetailInfo());
+        tableBlockInfoList.add(blockInfo);
       } catch (IOException e) {
         throw new RuntimeException("fail to get location of split: " + split, e);
       }
@@ -153,9 +159,12 @@ public class CarbonInputSplit extends FileSplit
     BlockletInfos blockletInfos =
         new BlockletInfos(inputSplit.getNumberOfBlocklets(), 0, inputSplit.getNumberOfBlocklets());
     try {
-      return new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(),
-          inputSplit.getSegmentId(), inputSplit.getLocations(), inputSplit.getLength(),
-          blockletInfos, inputSplit.getVersion(), inputSplit.getDeleteDeltaFiles());
+      TableBlockInfo blockInfo =
+          new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(),
+              inputSplit.getSegmentId(), inputSplit.getLocations(), inputSplit.getLength(),
+              blockletInfos, inputSplit.getVersion(), inputSplit.getDeleteDeltaFiles());
+      blockInfo.setDetailInfo(inputSplit.getDetailInfo());
+      return blockInfo;
     } catch (IOException e) {
       throw new RuntimeException("fail to get location of split: " + inputSplit, e);
     }
@@ -180,6 +189,11 @@ public class CarbonInputSplit extends FileSplit
     for (int i = 0; i < numberOfDeleteDeltaFiles; i++) {
       deleteDeltaFiles[i] = in.readUTF();
     }
+    boolean detailInfoExists = in.readBoolean();
+    if (detailInfoExists) {
+      detailInfo = new BlockletDetailInfo();
+      detailInfo.readFields(in);
+    }
   }
 
   @Override public void write(DataOutput out) throws IOException {
@@ -196,6 +210,10 @@ public class CarbonInputSplit extends FileSplit
       for (int i = 0; i < deleteDeltaFiles.length; i++) {
         out.writeUTF(deleteDeltaFiles[i]);
       }
+    }
+    out.writeBoolean(detailInfo != null);
+    if (detailInfo != null) {
+      detailInfo.write(out);
     }
   }
 
@@ -261,8 +279,10 @@ public class CarbonInputSplit extends FileSplit
     String filePath1 = this.getPath().getName();
     String filePath2 = other.getPath().getName();
     if (CarbonTablePath.isCarbonDataFile(filePath1)) {
-      byte[] firstTaskId = CarbonTablePath.DataFileUtil.getTaskNo(filePath1).getBytes();
-      byte[] otherTaskId = CarbonTablePath.DataFileUtil.getTaskNo(filePath2).getBytes();
+      byte[] firstTaskId = CarbonTablePath.DataFileUtil.getTaskNo(filePath1)
+          .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      byte[] otherTaskId = CarbonTablePath.DataFileUtil.getTaskNo(filePath2)
+          .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       int compare = ByteUtil.compare(firstTaskId, otherTaskId);
       if (compare != 0) {
         return compare;
@@ -309,5 +329,17 @@ public class CarbonInputSplit extends FileSplit
 
   public String[] getDeleteDeltaFiles() {
     return deleteDeltaFiles;
+  }
+
+  public void setDeleteDeltaFiles(String[] deleteDeltaFiles) {
+    this.deleteDeltaFiles = deleteDeltaFiles;
+  }
+
+  public BlockletDetailInfo getDetailInfo() {
+    return detailInfo;
+  }
+
+  public void setDetailInfo(BlockletDetailInfo detailInfo) {
+    this.detailInfo = detailInfo;
   }
 }

@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.util
 
+import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 
 import org.apache.spark.sql._
@@ -109,7 +110,8 @@ object CarbonScalaUtil {
         case b: java.lang.Boolean => b.toString
         case s: java.lang.Short => s.toString
         case f: java.lang.Float => f.toString
-        case bs: Array[Byte] => new String(bs)
+        case bs: Array[Byte] => new String(bs,
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))
         case s: scala.collection.Seq[Any] =>
           val delimiter = if (level == 1) {
             delimiterLevel1

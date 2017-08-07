@@ -131,11 +131,14 @@ public class FilterExpressionProcessor implements FilterProcessor {
       }
     }
     if (LOGGER.isDebugEnabled()) {
+      char delimiter = ',';
       LOGGER.debug(
-          "Successfully retrieved the start and end key" + "Dictionary Start Key: " + searchStartKey
-              .getDictionaryKeys() + "No Dictionary Start Key " + searchStartKey
-              .getNoDictionaryKeys() + "Dictionary End Key: " + searchEndKey.getDictionaryKeys()
-              + "No Dictionary End Key " + searchEndKey.getNoDictionaryKeys());
+          "Successfully retrieved the start and end key" + "Dictionary Start Key: " + joinByteArray(
+              searchStartKey.getDictionaryKeys(), delimiter) + "No Dictionary Start Key "
+              + joinByteArray(searchStartKey.getNoDictionaryKeys(), delimiter)
+              + "Dictionary End Key: " + joinByteArray(searchEndKey.getDictionaryKeys(), delimiter)
+              + "No Dictionary End Key " + joinByteArray(searchEndKey.getNoDictionaryKeys(),
+              delimiter));
     }
     long startTimeInMillis = System.currentTimeMillis();
     DataRefNodeFinder blockFinder = new BTreeDataRefNodeFinder(
@@ -157,6 +160,21 @@ public class FilterExpressionProcessor implements FilterProcessor {
         .size());
 
     return listOfDataBlocksToScan;
+  }
+
+  private String joinByteArray(byte[] bytes, char delimiter) {
+    String byteArrayAsString = "";
+    if (null != bytes) {
+      for (int i = 0; i < bytes.length; i++) {
+        byteArrayAsString = byteArrayAsString + delimiter + bytes[i];
+      }
+      if (byteArrayAsString.length() > 0) {
+        byteArrayAsString = byteArrayAsString.substring(1);
+      }
+    } else {
+      byteArrayAsString = null;
+    }
+    return byteArrayAsString;
   }
 
   /**
@@ -397,11 +415,34 @@ public class FilterExpressionProcessor implements FilterProcessor {
         return new TrueConditionalResolverImpl(expression, false, false, tableIdentifier);
       case EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
-        if (currentCondExpression.isSingleDimension()
+        if (currentCondExpression.isSingleColumn()
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
             != DataType.ARRAY
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
             != DataType.STRUCT) {
+
+          if (currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure()) {
+            if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
+                && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
+                FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
+                    || FilterUtil
+                    .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
+              return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
+                  tableIdentifier);
+            }
+            if (currentCondExpression.getFilterExpressionType() == ExpressionType.GREATERTHAN
+                || currentCondExpression.getFilterExpressionType() == ExpressionType.LESSTHAN
+                || currentCondExpression.getFilterExpressionType()
+                == ExpressionType.GREATERTHAN_EQUALTO
+                || currentCondExpression.getFilterExpressionType()
+                == ExpressionType.LESSTHAN_EQUALTO) {
+              return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, true,
+                  tableIdentifier);
+            }
+            return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
+                tableIdentifier,
+                currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
+          }
           // getting new dim index.
           if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
               .hasEncoding(Encoding.DICTIONARY) || currentCondExpression.getColumnList().get(0)
@@ -425,20 +466,44 @@ public class FilterExpressionProcessor implements FilterProcessor {
             }
           }
           return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
-              tableIdentifier);
+              tableIdentifier,
+              currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
 
         }
         break;
       case RANGE:
         return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
-            tableIdentifier);
+            tableIdentifier, false);
       case NOT_EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
-        if (currentCondExpression.isSingleDimension()
+        if (currentCondExpression.isSingleColumn()
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
             != DataType.ARRAY
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
             != DataType.STRUCT) {
+
+          if (currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure()) {
+            if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
+                && FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getRight()) || (
+                FilterUtil.checkIfRightExpressionRequireEvaluation(currentCondExpression.getRight())
+                    || FilterUtil
+                    .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
+              return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
+                  tableIdentifier);
+            }
+            if (currentCondExpression.getFilterExpressionType() == ExpressionType.GREATERTHAN
+                || currentCondExpression.getFilterExpressionType() == ExpressionType.LESSTHAN
+                || currentCondExpression.getFilterExpressionType()
+                == ExpressionType.GREATERTHAN_EQUALTO
+                || currentCondExpression.getFilterExpressionType()
+                == ExpressionType.LESSTHAN_EQUALTO) {
+              return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, false,
+                  tableIdentifier);
+            }
+            return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false,
+                tableIdentifier, true);
+          }
+
           if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
               .hasEncoding(Encoding.DICTIONARY) || currentCondExpression.getColumnList().get(0)
               .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
@@ -460,31 +525,32 @@ public class FilterExpressionProcessor implements FilterProcessor {
             }
 
             return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false,
-                tableIdentifier);
+                tableIdentifier, false);
           }
           return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false,
-              tableIdentifier);
+              tableIdentifier, false);
         }
         break;
 
       default:
         if (expression instanceof ConditionalExpression) {
           condExpression = (ConditionalExpression) expression;
-          if (condExpression.isSingleDimension()
+          if (condExpression.isSingleColumn()
               && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
               != DataType.ARRAY
               && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
               != DataType.STRUCT) {
             condExpression = (ConditionalExpression) expression;
-            if (condExpression.getColumnList().get(0).getCarbonColumn()
+            if ((condExpression.getColumnList().get(0).getCarbonColumn()
                 .hasEncoding(Encoding.DICTIONARY) && !condExpression.getColumnList().get(0)
-                .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-              return new ConditionalFilterResolverImpl(expression, true, true, tableIdentifier);
+                .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY))
+                || (currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure())) {
+              return new ConditionalFilterResolverImpl(expression, true, true, tableIdentifier,
+                  currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
             }
           }
         }
     }
     return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
   }
-
 }

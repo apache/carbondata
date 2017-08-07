@@ -19,7 +19,7 @@ package org.apache.carbondata.core.locks;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 
 /**
  * This class contains all carbon lock utilities
@@ -66,15 +66,12 @@ public class CarbonLockUtil {
    * Given a lock type this method will return a new lock object if not acquired by any other
    * operation
    *
-   * @param carbonTable
+   * @param identifier
    * @param lockType
    * @return
    */
-  public static ICarbonLock getLockObject(CarbonTable carbonTable,
-                            String lockType) {
-    ICarbonLock carbonLock = CarbonLockFactory
-            .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier().getCarbonTableIdentifier(),
-                    lockType);
+  public static ICarbonLock getLockObject(CarbonTableIdentifier identifier, String lockType) {
+    ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(identifier, lockType);
     LOGGER.info("Trying to acquire lock: " + carbonLock);
     if (carbonLock.lockWithRetries()) {
       LOGGER.info("Successfully acquired the lock " + carbonLock);

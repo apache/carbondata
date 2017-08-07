@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.core.datastore.block;
 
+import java.io.Serializable;
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -26,7 +28,7 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
  * block will be loaded together. This class will be used to store table block info
  * and equals and hash code method is used to identify blocklet belongs to same block
  */
-public class BlockInfo {
+public class BlockInfo implements Serializable {
 
   /**
    * table block info, stores all the details

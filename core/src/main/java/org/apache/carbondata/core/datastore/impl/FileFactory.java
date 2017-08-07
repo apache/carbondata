@@ -87,6 +87,10 @@ public final class FileFactory {
     return FileType.LOCAL;
   }
 
+  public static CarbonFile getCarbonFile(String path) {
+    return getCarbonFile(path, getFileType(path));
+  }
+
   public static CarbonFile getCarbonFile(String path, FileType fileType) {
     switch (fileType) {
       case LOCAL:
@@ -365,6 +369,20 @@ public final class FileFactory {
     File[] files = path.listFiles();
     for (int i = 0; i < files.length; i++) {
       deleteAllFilesOfDir(files[i]);
+    }
+    return path.delete();
+  }
+
+  public static boolean deleteAllCarbonFilesOfDir(CarbonFile path) {
+    if (!path.exists()) {
+      return true;
+    }
+    if (!path.isDirectory()) {
+      return path.delete();
+    }
+    CarbonFile[] files = path.listFiles();
+    for (int i = 0; i < files.length; i++) {
+      deleteAllCarbonFilesOfDir(files[i]);
     }
     return path.delete();
   }

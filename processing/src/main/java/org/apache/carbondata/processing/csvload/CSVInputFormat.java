@@ -20,9 +20,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.Charset;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
@@ -225,7 +227,8 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
         filePosition = fileIn;
         inputStream = boundedInputStream;
       }
-      reader = new InputStreamReader(inputStream);
+      reader = new InputStreamReader(inputStream,
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       csvParser = new CsvParser(extractCsvParserSettings(job));
       csvParser.beginParsing(reader);
     }
@@ -303,6 +306,9 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
         }
         if (boundedInputStream != null) {
           boundedInputStream.close();
+        }
+        if (null != csvParser) {
+          csvParser.stopParsing();
         }
       } finally {
         reader = null;

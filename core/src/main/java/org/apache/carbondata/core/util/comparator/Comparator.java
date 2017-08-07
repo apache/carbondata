@@ -42,6 +42,29 @@ public final class Comparator {
         return new ByteArraySerializableComparator();
     }
   }
+
+  /**
+   * create Comparator for Measure Datatype
+   *
+   * @param dataType
+   * @return
+   */
+  public static SerializableComparator getComparatorByDataTypeForMeasure(DataType dataType) {
+    switch (dataType) {
+      case INT:
+        return new IntSerializableComparator();
+      case SHORT:
+        return new ShortSerializableComparator();
+      case LONG:
+        return new LongSerializableComparator();
+      case DOUBLE:
+        return new DoubleSerializableComparator();
+      case DECIMAL:
+        return new BigDecimalSerializableComparator();
+      default:
+        throw new IllegalArgumentException("Unsupported data type");
+    }
+  }
 }
 
 class ByteArraySerializableComparator implements SerializableComparator {
@@ -52,6 +75,13 @@ class ByteArraySerializableComparator implements SerializableComparator {
 
 class IntSerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
+    if (key1 == null && key2 == null) {
+      return 0;
+    } else if (key1 == null) {
+      return -1;
+    } else if (key2 == null) {
+      return 1;
+    }
     if ((int) key1 < (int) key2) {
       return -1;
     } else if ((int) key1 > (int) key2) {
@@ -64,6 +94,13 @@ class IntSerializableComparator implements SerializableComparator {
 
 class ShortSerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
+    if (key1 == null && key2 == null) {
+      return 0;
+    } else if (key1 == null) {
+      return -1;
+    } else if (key2 == null) {
+      return 1;
+    }
     if ((short) key1 < (short) key2) {
       return -1;
     } else if ((short) key1 > (short) key2) {
@@ -76,6 +113,13 @@ class ShortSerializableComparator implements SerializableComparator {
 
 class DoubleSerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
+    if (key1 == null && key2 == null) {
+      return 0;
+    } else if (key1 == null) {
+      return -1;
+    } else if (key2 == null) {
+      return 1;
+    }
     if ((double) key1 < (double) key2) {
       return -1;
     } else if ((double) key1 > (double) key2) {
@@ -88,6 +132,13 @@ class DoubleSerializableComparator implements SerializableComparator {
 
 class LongSerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
+    if (key1 == null && key2 == null) {
+      return 0;
+    } else if (key1 == null) {
+      return -1;
+    } else if (key2 == null) {
+      return 1;
+    }
     if ((long) key1 < (long) key2) {
       return -1;
     } else if ((long) key1 > (long) key2) {
@@ -100,6 +151,13 @@ class LongSerializableComparator implements SerializableComparator {
 
 class BigDecimalSerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
+    if (key1 == null && key2 == null) {
+      return 0;
+    } else if (key1 == null) {
+      return -1;
+    } else if (key2 == null) {
+      return 1;
+    }
     return ((BigDecimal) key1).compareTo((BigDecimal) key2);
   }
 }

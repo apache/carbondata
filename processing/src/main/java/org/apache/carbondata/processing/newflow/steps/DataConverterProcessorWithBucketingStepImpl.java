@@ -68,6 +68,7 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
 
   @Override
   public void initialize() throws IOException {
+    super.initialize();
     child.initialize();
     converters = new ArrayList<>();
     badRecordLogger = createBadRecordLogger();

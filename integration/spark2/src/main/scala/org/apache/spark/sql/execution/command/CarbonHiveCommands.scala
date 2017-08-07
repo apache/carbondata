@@ -18,9 +18,10 @@
 package org.apache.spark.sql.hive.execution.command
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{CarbonDropTableCommand, DropDatabaseCommand, ResetCommand, RunnableCommand, SetCommand}
 
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 
 case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
   extends RunnableCommand {
@@ -29,16 +30,19 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     val dbName = command.databaseName
+    var tablesInDB: Seq[TableIdentifier] = null
+    if (sparkSession.sessionState.catalog.listDatabases().exists(_.equalsIgnoreCase(dbName))) {
+      tablesInDB = sparkSession.sessionState.catalog.listTables(dbName)
+    }
     // DropHiveDB command will fail if cascade is false and one or more table exists in database
     val rows = command.run(sparkSession)
-    if (command.cascade) {
-      val tablesInDB = CarbonEnv.getInstance(sparkSession).carbonMetastore.getAllTables()
-        .filter(_.database.exists(_.equalsIgnoreCase(dbName)))
+    if (command.cascade && tablesInDB != null) {
       tablesInDB.foreach { tableName =>
         CarbonDropTableCommand(true, tableName.database, tableName.table).run(sparkSession)
       }
     }
-    CarbonEnv.getInstance(sparkSession).carbonMetastore.dropDatabaseDirectory(dbName.toLowerCase)
+    CarbonUtil.dropDatabaseDirectory(dbName.toLowerCase,
+      CarbonEnv.getInstance(sparkSession).storePath)
     rows
   }
 }

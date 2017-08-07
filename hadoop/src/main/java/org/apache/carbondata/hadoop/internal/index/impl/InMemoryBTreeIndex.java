@@ -79,7 +79,7 @@ class InMemoryBTreeIndex implements Index {
 
     FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
 
-    AbsoluteTableIdentifier identifier = null;
+    AbsoluteTableIdentifier identifier = AbsoluteTableIdentifier.from(segment.getPath(), "", "");
 
     //for this segment fetch blocks matching filter in BTree
     List<DataRefNode> dataRefNodes =

@@ -79,10 +79,10 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       storePath: String,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable, forceTableClean: Boolean): Unit = {
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     try {
-      DataManagementFunc.cleanFiles(dbName, tableName, storePath, carbonTable)
+      DataManagementFunc.cleanFiles(dbName, tableName, storePath, carbonTable, forceTableClean)
       LOGGER.audit(s"Clean files operation is success for $dbName.$tableName.")
     } catch {
       case ex: Exception =>
@@ -157,8 +157,9 @@ object CarbonStore {
   def isSegmentValid(
       dbName: String,
       tableName: String,
+      storePath: String,
       segmentId: String): Boolean = {
-    val identifier = AbsoluteTableIdentifier.from(dbName, tableName)
+    val identifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
     val validAndInvalidSegments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = new
         SegmentStatusManager(
           identifier).getValidAndInvalidSegments

@@ -101,6 +101,14 @@ The following DDL operations are supported in CarbonData :
 
    - All dimensions except complex datatype columns are part of multi dimensional key(MDK). This behavior can be overridden by using TBLPROPERTIES. If the user wants to keep any column (except columns of complex datatype) in multi dimensional key then he can keep the columns either in DICTIONARY_EXCLUDE or DICTIONARY_INCLUDE.
 
+   - **Sort Columns Configuration**
+
+     "SORT_COLUMN" property is for users to specify which columns belong to the MDK index. If user don't specify "SORT_COLUMN" property, by default MDK index be built by using all dimension columns except complex datatype column. 
+
+```
+       TBLPROPERTIES ('SORT_COLUMNS'='column1, column3')
+```
+
 ### Example:
 ```
     CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
@@ -115,8 +123,23 @@ The following DDL operations are supported in CarbonData :
       STORED BY 'carbondata'
       TBLPROPERTIES ('DICTIONARY_EXCLUDE'='storeCity',
                      'DICTIONARY_INCLUDE'='productNumber',
-                     'NO_INVERTED_INDEX'='productBatch')
+                     'NO_INVERTED_INDEX'='productBatch',
+                     'SORT_COLUMNS'='productName,storeCity')
 ```
+
+   - **SORT_COLUMNS**
+
+    This table property specifies the order of the sort column.
+
+```
+    TBLPROPERTIES('SORT_COLUMNS'='column1, column3')
+```
+
+   NOTE:
+
+   - If this property is not specified, then by default SORT_COLUMNS consist of all dimension (exclude Complex Column).
+
+   - If this property is specified but with empty argument, then the table will be loaded without sort. For example, ('SORT_COLUMNS'='')
 
 ## SHOW TABLE
 

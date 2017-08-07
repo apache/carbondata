@@ -22,7 +22,9 @@ import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
 
@@ -60,6 +62,14 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
       CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
     carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
+    // Create table and metadata folders if not exist
+    val carbonTablePath = CarbonStorePath
+      .getCarbonTablePath(table.getStorePath, table.getCarbonTableIdentifier)
+    val metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath
+    val fileType = FileFactory.getFileType(metadataDirectoryPath)
+    if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
+      FileFactory.mkdirs(metadataDirectoryPath, fileType)
+    }
     carbonLoadModel
   }
 
@@ -81,7 +91,8 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE TABLE IF NOT EXISTS sample (id STRING, name STRING, city STRING, " +
-          "age INT) STORED BY 'org.apache.carbondata.format'"
+          "age INT) STORED BY 'org.apache.carbondata.format' " +
+          "TBLPROPERTIES('dictionary_include'='city')"
       )
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
@@ -94,7 +105,7 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
           "ActiveProvince: string, Activecity: string, ActiveDistrict: string, ActiveStreet: " +
           "string>>, proddate struct<productionDate: string,activeDeactivedate: array<string>>, " +
           "gamePointId INT,contractNumber INT) STORED BY 'org.apache.carbondata.format'" +
-          "TBLPROPERTIES('DICTIONARY_EXCLUDE'='ROMSize')"
+          "TBLPROPERTIES('DICTIONARY_EXCLUDE'='ROMSize', 'dictionary_include'='channelsId')"
       )
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)

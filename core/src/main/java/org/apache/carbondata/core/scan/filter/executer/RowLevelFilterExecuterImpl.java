@@ -104,17 +104,31 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,
       Map<Integer, GenericQueryType> complexDimensionInfoMap) {
-    this.dimColEvaluatorInfoList = dimColEvaluatorInfoList;
     this.segmentProperties = segmentProperties;
-    this.dimensionBlocksIndex = new int[dimColEvaluatorInfoList.size()];
-    this.isDimensionPresentInCurrentBlock = new boolean[dimColEvaluatorInfoList.size()];
+    if (null == dimColEvaluatorInfoList) {
+      this.dimColEvaluatorInfoList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    } else {
+      this.dimColEvaluatorInfoList = dimColEvaluatorInfoList;
+    }
+    if (dimColEvaluatorInfoList.size() > 0) {
+      this.isDimensionPresentInCurrentBlock = new boolean[dimColEvaluatorInfoList.size()];
+      this.dimensionBlocksIndex = new int[dimColEvaluatorInfoList.size()];
+    } else {
+      this.isDimensionPresentInCurrentBlock = new boolean[]{false};
+      this.dimensionBlocksIndex = new int[]{0};
+    }
     if (null == msrColEvalutorInfoList) {
       this.msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(20);
     } else {
       this.msrColEvalutorInfoList = msrColEvalutorInfoList;
     }
-    this.measureBlocksIndex = new int[msrColEvalutorInfoList.size()];
-    this.isMeasurePresentInCurrentBlock = new boolean[msrColEvalutorInfoList.size()];
+    if (msrColEvalutorInfoList.size() > 0) {
+      this.isMeasurePresentInCurrentBlock = new boolean[msrColEvalutorInfoList.size()];
+      this.measureBlocksIndex = new int[msrColEvalutorInfoList.size()];
+    } else {
+      this.isMeasurePresentInCurrentBlock = new boolean[]{false};
+      this.measureBlocksIndex = new int[] {0};
+    }
     this.exp = exp;
     this.tableIdentifier = tableIdentifier;
     this.complexDimensionInfoMap = complexDimensionInfoMap;

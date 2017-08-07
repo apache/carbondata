@@ -58,6 +58,7 @@ import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public final class CarbonDataProcessorUtil {
   private static final LogService LOGGER =
@@ -145,20 +146,30 @@ public final class CarbonDataProcessorUtil {
   /**
    * This method will be used to delete sort temp location is it is exites
    */
-  public static void deleteSortLocationIfExists(String tempFileLocation) {
-    // create new temp file location where this class
-    //will write all the temp files
-    File file = new File(tempFileLocation);
-
-    if (file.exists()) {
-      try {
-        CarbonUtil.deleteFoldersAndFiles(file);
-      } catch (IOException | InterruptedException e) {
-        LOGGER.error(e);
+  public static void deleteSortLocationIfExists(String[] locations) {
+    for (String loc : locations) {
+      File file = new File(loc);
+      if (file.exists()) {
+        try {
+          CarbonUtil.deleteFoldersAndFiles(file);
+        } catch (IOException | InterruptedException e) {
+          LOGGER.error(e, "Failed to delete " + loc);
+        }
       }
     }
   }
 
+  /**
+   * This method will be used to create dirs
+   * @param locations locations to create
+   */
+  public static void createLocations(String[] locations) {
+    for (String loc : locations) {
+      if (!new File(loc).mkdirs()) {
+        LOGGER.warn("Error occurs while creating dirs: " + loc);
+      }
+    }
+  }
   /**
    * This method will form the local data folder store location
    *
@@ -169,19 +180,34 @@ public final class CarbonDataProcessorUtil {
    * @param segmentId
    * @return
    */
-  public static String getLocalDataFolderLocation(String databaseName, String tableName,
+  public static String[] getLocalDataFolderLocation(String databaseName, String tableName,
       String taskId, String partitionId, String segmentId, boolean isCompactionFlow) {
     String tempLocationKey =
-        getTempStoreLocationKey(databaseName, tableName, taskId, isCompactionFlow);
-    String baseStorePath = CarbonProperties.getInstance()
-        .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
+        getTempStoreLocationKey(databaseName, tableName, segmentId, taskId, isCompactionFlow);
+    String baseTempStorePath = CarbonProperties.getInstance()
+        .getProperty(tempLocationKey);
+    if (baseTempStorePath == null) {
+      LOGGER.warn("Location not set for the key " + tempLocationKey
+          + ". This will occur during a global-sort loading,"
+          + " in this case local dirs will be chosen by spark");
+      baseTempStorePath = "./store.location";
+    }
+
+    String[] baseTmpStorePathArray = StringUtils.split(baseTempStorePath, File.pathSeparator);
+    String[] localDataFolderLocArray = new String[baseTmpStorePathArray.length];
+
     CarbonTable carbonTable = CarbonMetadata.getInstance()
         .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(baseStorePath, carbonTable.getCarbonTableIdentifier());
-    String carbonDataDirectoryPath =
-        carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
-    return carbonDataDirectoryPath + File.separator + taskId;
+    for (int i = 0 ; i < baseTmpStorePathArray.length; i++) {
+      String tmpStore = baseTmpStorePathArray[i];
+      CarbonTablePath carbonTablePath =
+          CarbonStorePath.getCarbonTablePath(tmpStore, carbonTable.getCarbonTableIdentifier());
+      String carbonDataDirectoryPath =
+          carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
+
+      localDataFolderLocArray[i] = carbonDataDirectoryPath + File.separator + taskId;
+    }
+    return localDataFolderLocArray;
   }
 
   /**
@@ -189,14 +215,15 @@ public final class CarbonDataProcessorUtil {
    *
    * @param databaseName
    * @param tableName
+   * @param segmentId
    * @param taskId
    * @param isCompactionFlow
    * @return
    */
-  public static String getTempStoreLocationKey(String databaseName, String tableName, String taskId,
-      boolean isCompactionFlow) {
+  public static String getTempStoreLocationKey(String databaseName, String tableName,
+      String segmentId, String taskId, boolean isCompactionFlow) {
     String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
-        + CarbonCommonConstants.UNDERSCORE + taskId;
+        + CarbonCommonConstants.UNDERSCORE + segmentId + CarbonCommonConstants.UNDERSCORE + taskId;
     if (isCompactionFlow) {
       tempLocationKey = CarbonCommonConstants.COMPACTION_KEY_WORD + CarbonCommonConstants.UNDERSCORE
           + tempLocationKey;
@@ -461,6 +488,26 @@ public final class CarbonDataProcessorUtil {
     return sortScope;
   }
 
+  public static SortScopeOptions.SortScope getSortScope(String sortScopeString) {
+    SortScopeOptions.SortScope sortScope;
+    try {
+      // first check whether user input it from ddl, otherwise get from carbon properties
+      if (sortScopeString == null) {
+        sortScope = SortScopeOptions.getSortScope(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+                CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT));
+      } else {
+        sortScope = SortScopeOptions.getSortScope(sortScopeString);
+      }
+      LOGGER.warn("sort scope is set to " + sortScope);
+    } catch (Exception e) {
+      sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
+      LOGGER.warn("Exception occured while resolving sort scope. " +
+          "sort scope is set to " + sortScope);
+    }
+    return sortScope;
+  }
+
   /**
    * Get the batch sort size
    * @param configuration
@@ -539,4 +586,22 @@ public final class CarbonDataProcessorUtil {
     return false;
   }
 
+  /**
+   * This method will return an array whose element with be appended with the `append` strings
+   * @param inputArr  inputArr
+   * @param append strings to append
+   * @return result
+   */
+  public static String[] arrayAppend(String[] inputArr, String... append) {
+    String[] outArr = new String[inputArr.length];
+    StringBuffer sb = new StringBuffer();
+    for (String str : append) {
+      sb.append(str);
+    }
+    String appendStr = sb.toString();
+    for (int i = 0; i < inputArr.length; i++) {
+      outArr[i] = inputArr[i] + appendStr;
+    }
+    return outArr;
+  }
 }

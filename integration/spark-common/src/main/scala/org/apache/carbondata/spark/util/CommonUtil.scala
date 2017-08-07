@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.util
 
+
 import java.text.SimpleDateFormat
 import java.util
 
@@ -35,18 +36,26 @@ import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.datastore.row.LoadStatusType
+import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.comparator.Comparator
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
 object CommonUtil {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -442,6 +451,31 @@ object CommonUtil {
     parsedPropertyValueString
   }
 
+  def readAndUpdateLoadProgressInTableMeta(model: CarbonLoadModel,
+      storePath: String,
+      insertOverwrite: Boolean): Unit = {
+    val newLoadMetaEntry = new LoadMetadataDetails
+    val status: String = if (insertOverwrite) {
+      LoadStatusType.INSERT_OVERWRITE.getMessage
+    } else {
+      LoadStatusType.IN_PROGRESS.getMessage
+    }
+    // reading the start time of data load.
+    val loadStartTime = CarbonUpdateUtil.readCurrentTime
+    model.setFactTimeStamp(loadStartTime)
+    CarbonLoaderUtil
+      .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp, false)
+    val entryAdded: Boolean =
+      CarbonLoaderUtil.recordLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite)
+    if (!entryAdded) {
+      sys
+        .error(s"Failed to add entry in table status for ${ model.getDatabaseName }.${
+          model
+            .getTableName
+        }")
+    }
+  }
+
   def readLoadMetadataDetails(model: CarbonLoadModel, storePath: String): Unit = {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
     val details = SegmentStatusManager.readLoadMetadata(metadataPath)
@@ -585,38 +619,136 @@ object CommonUtil {
     var result = Seq.newBuilder[Row]
     partitionType match {
       case PartitionType.RANGE =>
-        result.+=(RowFactory.create(columnName + "=default"))
-        var rangeInfo = partitionInfo.getRangeInfo
-        var size = rangeInfo.size() - 1
+        result.+=(RowFactory.create("0" + ", " + columnName + " = DEFAULT"))
+        val rangeInfo = partitionInfo.getRangeInfo
+        val size = rangeInfo.size() - 1
         for (index <- 0 to size) {
           if (index == 0) {
-            result.+=(RowFactory.create(columnName + "<" + rangeInfo.get(index)))
+            val id = partitionInfo.getPartitionId(index + 1).toString
+            val desc = columnName + " < " + rangeInfo.get(index)
+            result.+=(RowFactory.create(id + ", " + desc))
           } else {
-            result.+=(RowFactory.create(rangeInfo.get(index - 1) + "<=" +
-              columnName + "<" + rangeInfo.get(index)))
+            val id = partitionInfo.getPartitionId(index + 1).toString
+            val desc = rangeInfo.get(index - 1) + " <= " + columnName + " < " + rangeInfo.get(index)
+            result.+=(RowFactory.create(id + ", " + desc))
           }
         }
       case PartitionType.RANGE_INTERVAL =>
-        result.+=(RowFactory.create(columnName + "="))
+        result.+=(RowFactory.create(columnName + " = "))
       case PartitionType.LIST =>
-        result.+=(RowFactory.create(columnName + "=default"))
-        var listInfo = partitionInfo.getListInfo
+        result.+=(RowFactory.create("0" + ", " + columnName + " = DEFAULT"))
+        val listInfo = partitionInfo.getListInfo
         listInfo.asScala.foreach {
           f =>
-            result.+=(RowFactory.create(columnName + "=" +
-              f.toArray().mkString(", ")))
+            val id = partitionInfo.getPartitionId(listInfo.indexOf(f) + 1).toString
+            val desc = columnName + " = " + f.toArray().mkString(", ")
+            result.+=(RowFactory.create(id + ", " + desc))
         }
       case PartitionType.HASH =>
-        var hashNumber = partitionInfo.getNumPartitions
-        result.+=(RowFactory.create(columnName + "=HASH_NUMBER(" + hashNumber.toString() + ")"))
+        val hashNumber = partitionInfo.getNumPartitions
+        result.+=(RowFactory.create(columnName + " = HASH_NUMBER(" + hashNumber.toString() + ")"))
       case others =>
-        result.+=(RowFactory.create(columnName + "="))
+        result.+=(RowFactory.create(columnName + " = "))
     }
-    result.result()
+    val rows = result.result()
+    rows
   }
 
   def partitionInfoOutput: Seq[Attribute] = Seq(
-    AttributeReference("partition", StringType, nullable = false,
-      new MetadataBuilder().putString("comment", "partitions info").build())()
+    AttributeReference("Partition(Id, DESC)", StringType, false,
+      new MetadataBuilder().putString("comment", "partition").build())()
   )
+
+  /**
+   * Method to clear the memory for a task
+   * if present
+   */
+  def clearUnsafeMemory(taskId: Long) {
+    UnsafeMemoryManager.
+      INSTANCE.freeMemoryAll(taskId)
+    UnsafeSortMemoryManager.
+      INSTANCE.freeMemoryAll(taskId)
+  }
+
+  /**
+   * The in-progress segments which are left when the driver is down will be marked as deleted
+   * when driver is initializing.
+   * @param storePath
+   * @param sparkContext
+   */
+  def cleanInProgressSegments(storePath: String, sparkContext: SparkContext): Unit = {
+    val prop = CarbonProperties.getInstance().
+      getProperty(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER)
+    if (prop != null) {
+      sparkContext.getConf.set(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER, prop)
+    }
+    val loaderDriver = sparkContext.getConf.get(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER,
+      CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT).toBoolean
+    if (!loaderDriver) {
+      return
+    }
+    try {
+      val fileType = FileFactory.getFileType(storePath)
+      if (FileFactory.isFileExist(storePath, fileType)) {
+        val file = FileFactory.getCarbonFile(storePath, fileType)
+        val databaseFolders = file.listFiles()
+        databaseFolders.foreach { databaseFolder =>
+          if (databaseFolder.isDirectory) {
+            val tableFolders = databaseFolder.listFiles()
+            tableFolders.foreach { tableFolder =>
+              if (tableFolder.isDirectory) {
+                val identifier =
+                  AbsoluteTableIdentifier.from(storePath,
+                    databaseFolder.getName, tableFolder.getName)
+                val carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier)
+                val tableStatusFile = carbonTablePath.getTableStatusFilePath
+                if (FileFactory.isFileExist(tableStatusFile, fileType)) {
+                  val segmentStatusManager = new SegmentStatusManager(identifier)
+                  val carbonLock = segmentStatusManager.getTableStatusLock
+                  try {
+                    if (carbonLock.lockWithRetries) {
+                      LOGGER.info("Acquired lock for table" +
+                        identifier.getCarbonTableIdentifier.getTableUniqueName
+                        + " for table status updation")
+                      val listOfLoadFolderDetailsArray =
+                        SegmentStatusManager.readLoadMetadata(
+                          carbonTablePath.getMetadataDirectoryPath)
+                      var loadInprogressExist = false
+                      val staleFolders: Seq[CarbonFile] = Seq()
+                      listOfLoadFolderDetailsArray.foreach { load =>
+                        if (load.getLoadStatus.equals(LoadStatusType.IN_PROGRESS.getMessage) ||
+                            load.getLoadStatus.equals(LoadStatusType.INSERT_OVERWRITE.getMessage)) {
+                          load.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE)
+                          staleFolders :+ FileFactory.getCarbonFile(
+                            carbonTablePath.getCarbonDataDirectoryPath("0", load.getLoadName))
+                          loadInprogressExist = true
+                        }
+                      }
+                      if (loadInprogressExist) {
+                        SegmentStatusManager
+                          .writeLoadDetailsIntoFile(tableStatusFile, listOfLoadFolderDetailsArray)
+                        staleFolders.foreach(CarbonUtil.deleteFoldersAndFiles(_))
+                      }
+                    }
+                  } finally {
+                    if (carbonLock.unlock) {
+                      LOGGER.info(s"Released table status lock for table " +
+                                  s"${identifier.getCarbonTableIdentifier.getTableUniqueName}")
+                    } else {
+                      LOGGER.error(s"Error while releasing table status lock for table " +
+                                  s"${identifier.getCarbonTableIdentifier.getTableUniqueName}")
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      case s: java.io.FileNotFoundException =>
+        // Create folders and files.
+        LOGGER.error(s)
+    }
+  }
 }

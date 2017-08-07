@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.command
 import java.io.File
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
@@ -41,7 +42,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
-import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
@@ -128,7 +129,6 @@ private[sql] case class AlterTableCompaction(alterTableModel: AlterTableModel) e
 
 
     val table = relation.tableMeta.carbonTable
-    carbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
     carbonLoadModel.setTableName(table.getFactTableName)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     // Need to fill dimension relation
@@ -312,7 +312,7 @@ object LoadTable {
 }
 
 private[sql] case class LoadTableByInsert(relation: CarbonDatasourceRelation,
-                                          child: LogicalPlan) extends RunnableCommand {
+    child: LogicalPlan, isOverwriteExist: Boolean) extends RunnableCommand {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   def run(sqlContext: SQLContext): Seq[Row] = {
     val df = new DataFrame(sqlContext, child)
@@ -323,7 +323,7 @@ private[sql] case class LoadTableByInsert(relation: CarbonDatasourceRelation,
       null,
       Seq(),
       scala.collection.immutable.Map("fileheader" -> header),
-      false,
+      isOverwriteExist,
       null,
       Some(df)).run(sqlContext)
     // updating relation metadata. This is in case of auto detect high cardinality
@@ -338,7 +338,7 @@ case class LoadTable(
     factPathFromUser: String,
     dimFilesPath: Seq[DataLoadTableFileMapping],
     options: scala.collection.immutable.Map[String, String],
-    isOverwriteExist: Boolean = false,
+    isOverwriteExist: Boolean,
     var inputSqlString: String = null,
     dataFrame: Option[DataFrame] = None,
     updateModel: Option[UpdateTableModel] = None) extends RunnableCommand {
@@ -361,9 +361,6 @@ case class LoadTable(
     }
 
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
-    if (isOverwriteExist) {
-      sys.error(s"Overwrite is not supported for carbon table with $dbName.$tableName")
-    }
     if (null == CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)) {
       logError(s"Data loading failed. table not found: $dbName.$tableName")
       LOGGER.audit(s"Data loading failed. table not found: $dbName.$tableName")
@@ -404,7 +401,6 @@ case class LoadTable(
       carbonLoadModel.setStorePath(relation.tableMeta.storePath)
 
       val table = relation.tableMeta.carbonTable
-      carbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
       carbonLoadModel.setTableName(table.getFactTableName)
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       // Need to fill dimension relation
@@ -419,7 +415,7 @@ case class LoadTable(
 
       val delimiter = options.getOrElse("delimiter", ",")
       val quoteChar = options.getOrElse("quotechar", "\"")
-      val fileHeader = options.getOrElse("fileheader", "")
+      var fileHeader = options.getOrElse("fileheader", "")
       val escapeChar = options.getOrElse("escapechar", "\\")
       val commentchar = options.getOrElse("commentchar", "#")
       val columnDict = options.getOrElse("columndict", null)
@@ -441,6 +437,35 @@ case class LoadTable(
       val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb", null)
       val globalSortPartitions = options.getOrElse("global_sort_partitions", null)
       ValidateUtil.validateGlobalSortPartitions(globalSortPartitions)
+
+      // if there isn't file header in csv file and load sql doesn't provide FILEHEADER option,
+      // we should use table schema to generate file header.
+      val headerOption = options.get("header")
+      if (headerOption.isDefined) {
+        // whether the csv file has file header
+        // the default value is true
+        val header = try {
+          headerOption.get.toBoolean
+        } catch {
+          case ex: IllegalArgumentException =>
+            throw new MalformedCarbonCommandException(
+              "'header' option should be either 'true' or 'false'. " + ex.getMessage)
+        }
+        header match {
+          case true =>
+            if (fileHeader.nonEmpty) {
+              throw new MalformedCarbonCommandException(
+                "When 'header' option is true, 'fileheader' option is not required.")
+            }
+          case false =>
+            // generate file header
+            if (fileHeader.isEmpty) {
+              fileHeader = table.getCreateOrderColumn(table.getFactTableName)
+                .asScala.map(_.getColName).mkString(",")
+            }
+        }
+      }
+
       val bad_record_path = options.getOrElse("bad_record_path",
           CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
             CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))
@@ -534,8 +559,11 @@ case class LoadTable(
         val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
         val dimensions = carbonTable.getDimensionByTableName(
           carbonTable.getFactTableName).asScala.toArray
-        if (null == carbonLoadModel.getLoadMetadataDetails) {
-          CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+        // add the start entry for the new load in the table status file
+        CommonUtil.
+          readAndUpdateLoadProgressInTableMeta(carbonLoadModel, storePath, isOverwriteExist)
+        if (isOverwriteExist) {
+          LOGGER.info(s"Overwrite is in progress for carbon table with $dbName.$tableName")
         }
         if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
             StringUtils.isEmpty(columnDict) && StringUtils.isEmpty(allDictionaryPath)) {
@@ -596,6 +624,7 @@ case class LoadTable(
             columnar,
             partitionStatus,
             server,
+            isOverwriteExist,
             dataFrame,
             updateModel)
         } else {
@@ -641,6 +670,7 @@ case class LoadTable(
             columnar,
             partitionStatus,
             None,
+            isOverwriteExist,
             loadDataFrame,
             updateModel)
         }
@@ -738,27 +768,26 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
     val dbName = getDB.getDatabaseName(databaseNameOp, sqlContext)
     val identifier = TableIdentifier(tableName, Option(dbName))
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
-    val carbonLock = CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier.getDatabaseName,
-        carbonTableIdentifier.getTableName + CarbonCommonConstants.UNDERSCORE +
-        LockUsage.DROP_TABLE_LOCK)
-    val storePath = CarbonEnv.get.carbonMetastore.storePath
-    var isLocked = false
+    val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.DROP_TABLE_LOCK)
+    val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
+    val catalog = CarbonEnv.get.carbonMetastore
+    val storePath = catalog.storePath
     try {
-      isLocked = carbonLock.lockWithRetries()
-      if (isLocked) {
-        logInfo("Successfully able to get the lock for drop.")
-      }
-      else {
-        LOGGER.audit(s"Dropping table $dbName.$tableName failed as the Table is locked")
-        sys.error("Table is locked for deletion. Please try after some time")
+      locksToBeAcquired foreach {
+        lock => carbonLocks += CarbonLockUtil.getLockObject(carbonTableIdentifier, lock)
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
       CarbonEnv.get.carbonMetastore.dropTable(storePath, identifier)(sqlContext)
       LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
+    } catch {
+      case ex: Exception =>
+        LOGGER.error(ex, s"Dropping table $dbName.$tableName failed")
+        sys.error(s"Dropping table $dbName.$tableName failed: ${ex.getMessage}")
     } finally {
-      if (carbonLock != null && isLocked) {
-        if (carbonLock.unlock()) {
-          logInfo("Table MetaData Unlocked Successfully after dropping the table")
+      if (carbonLocks.nonEmpty) {
+        val unlocked = carbonLocks.forall(_.unlock())
+        if (unlocked) {
+          logInfo("Table MetaData Unlocked Successfully")
           // deleting any remaining files.
           val metadataFilePath = CarbonStorePath
             .getCarbonTablePath(storePath, carbonTableIdentifier).getMetadataDirectoryPath
@@ -947,8 +976,8 @@ private[sql] case class CleanFiles(
       getDB.getDatabaseName(databaseNameOp, sqlContext),
       tableName,
       sqlContext.asInstanceOf[CarbonContext].storePath,
-      carbonTable
-    )
+      carbonTable,
+      false)
     Seq.empty
   }
 }

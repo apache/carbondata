@@ -42,12 +42,16 @@ public class FilterInfoTypeVisitorFactory {
       }
     }
     else {
-      if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-        return new CustomTypeDictionaryVisitor();
-      } else if (!columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-        return new NoDictionaryTypeVisitor();
-      } else if (columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
-        return new DictionaryColumnVisitor();
+      if (null != columnExpression.getDimension()) {
+        if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+          return new CustomTypeDictionaryVisitor();
+        } else if (!columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+          return new NoDictionaryTypeVisitor();
+        } else if (columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+          return new DictionaryColumnVisitor();
+        }
+      } else if (columnExpression.getMeasure().isMeasure()) {
+        return new MeasureColumnVisitor();
       }
     }
     return null;

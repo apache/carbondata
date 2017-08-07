@@ -102,8 +102,6 @@
     <module>integration/spark-common</module>
     <module>integration/spark-common-test</module>
     <module>assembly</module>
-    <module>examples/flink</module>
-
   </modules>
 
   <properties>
@@ -114,6 +112,9 @@
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
     <dev.path>${basedir}/dev</dev.path>
+    <spark.master.url>local[2]</spark.master.url>
+    <hdfs.url>local</hdfs.url>
+    <suite.name>org.apache.carbondata.cluster.sdv.suite.SDVSuites</suite.name>
   </properties>
 
   <repositories>
@@ -135,18 +136,60 @@
         <artifactId>hadoop-common</artifactId>
         <version>${hadoop.version}</version>
         <scope>${hadoop.deps.scope}</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-hdfs</artifactId>
         <version>${hadoop.version}</version>
         <scope>${hadoop.deps.scope}</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.hadoop</groupId>
         <artifactId>hadoop-mapreduce-client-core</artifactId>
         <version>${hadoop.version}</version>
         <scope>${hadoop.deps.scope}</scope>
+        <exclusions>
+          <exclusion>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+          <exclusion>
+            <groupId>javax.servlet.jsp</groupId>
+            <artifactId>*</artifactId>
+          </exclusion>
+        </exclusions>
       </dependency>
       <dependency>
         <groupId>org.apache.spark</groupId>
@@ -299,9 +342,9 @@
       <!-- This profile only should be used for release prepare to cover all the modules -->
       <id>build-all</id>
       <properties>
-        <spark.version>1.6.2</spark.version>
-        <scala.binary.version>2.10</scala.binary.version>
-        <scala.version>2.10.4</scala.version>
+        <spark.version>2.1.0</spark.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.11.8</scala.version>
         <maven.test.skip>true</maven.test.skip>
       </properties>
       <modules>
@@ -312,6 +355,7 @@
         <module>examples/spark2</module>
         <module>integration/hive</module>
         <module>integration/presto</module>
+        <module>examples/flink</module>
       </modules>
     </profile>
     <profile>
@@ -337,13 +381,11 @@
       <modules>
         <module>integration/spark</module>
         <module>examples/spark</module>
+        <module>examples/flink</module>
       </modules>
     </profile>
     <profile>
       <id>spark-1.6</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <spark.version>1.6.2</spark.version>
         <scala.binary.version>2.10</scala.binary.version>
@@ -352,10 +394,14 @@
       <modules>
         <module>integration/spark</module>
         <module>examples/spark</module>
+        <module>examples/flink</module>
       </modules>
     </profile>
     <profile>
       <id>spark-2.1</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
         <spark.version>2.1.0</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
@@ -398,6 +444,12 @@
     </profile>
     <profile>
       <id>include-all</id>
+    </profile>
+    <profile>
+      <id>sdvtest</id>
+      <modules>
+        <module>integration/spark-common-cluster-test</module>
+      </modules>
     </profile>
     <profile>
       <id>rat</id>

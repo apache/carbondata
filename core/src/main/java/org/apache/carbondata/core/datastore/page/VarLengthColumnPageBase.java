@@ -22,6 +22,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.ByteUtil;
 
 import static org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL;
@@ -34,8 +35,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   // the length of bytes added in the page
   int totalLength;
 
-  VarLengthColumnPageBase(DataType dataType, int pageSize) {
-    super(dataType, pageSize);
+  VarLengthColumnPageBase(DataType dataType, int pageSize, int scale, int precision) {
+    super(dataType, pageSize, scale, precision);
     rowOffset = new int[pageSize + 1];
     totalLength = 0;
   }
@@ -83,7 +84,59 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   /**
    * Create a new column page based on the LV (Length Value) encoded bytes
    */
-  static ColumnPage newDecimalColumnPage(byte[] lvEncodedBytes) throws MemoryException {
+  static ColumnPage newDecimalColumnPage(byte[] lvEncodedBytes, int scale, int precision)
+      throws MemoryException {
+    DecimalConverterFactory.DecimalConverter decimalConverter =
+        DecimalConverterFactory.INSTANCE.getDecimalConverter(precision, scale);
+    int size = decimalConverter.getSize();
+    if (size < 0) {
+      return getLVBytesColumnPage(lvEncodedBytes, scale, precision, DataType.DECIMAL);
+    } else {
+      // Here the size is always fixed.
+      return getDecimalColumnPage(lvEncodedBytes, scale, precision, size);
+    }
+  }
+
+  /**
+   * Create a new column page based on the LV (Length Value) encoded bytes
+   */
+  static ColumnPage newVarLengthColumnPage(byte[] lvEncodedBytes, int scale, int precision)
+      throws MemoryException {
+    return getLVBytesColumnPage(lvEncodedBytes, scale, precision, DataType.BYTE_ARRAY);
+  }
+
+  private static ColumnPage getDecimalColumnPage(byte[] lvEncodedBytes, int scale, int precision,
+      int size) throws MemoryException {
+    List<Integer> rowOffset = new ArrayList<>();
+    int offset;
+    int rowId = 0;
+    for (offset = 0; offset < lvEncodedBytes.length; offset += size) {
+      rowOffset.add(offset);
+      rowId++;
+    }
+    rowOffset.add(offset);
+
+    VarLengthColumnPageBase page;
+    if (unsafe) {
+      page = new UnsafeVarLengthColumnPage(DECIMAL, rowId, scale, precision);
+    } else {
+      page = new SafeVarLengthColumnPage(DECIMAL, rowId, scale, precision);
+    }
+
+    // set total length and rowOffset in page
+    page.totalLength = offset;
+    page.rowOffset = new int[rowId + 1];
+    for (int i = 0; i < rowId + 1; i++) {
+      page.rowOffset[i] = rowOffset.get(i);
+    }
+    for (int i = 0; i < rowId; i++) {
+      page.putBytes(i, lvEncodedBytes, i * size, size);
+    }
+    return page;
+  }
+
+  private static ColumnPage getLVBytesColumnPage(byte[] lvEncodedBytes, int scale,
+      int precision, DataType dataType) throws MemoryException {
     // extract length and data, set them to rowOffset and unsafe memory correspondingly
     int rowId = 0;
     List<Integer> rowOffset = new ArrayList<>();
@@ -107,9 +160,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     VarLengthColumnPageBase page;
     int inputDataLength = offset;
     if (unsafe) {
-      page = new UnsafeVarLengthColumnPage(DECIMAL, numRows, inputDataLength);
+      page = new UnsafeVarLengthColumnPage(DECIMAL, numRows, inputDataLength, scale, precision);
     } else {
-      page = new SafeVarLengthColumnPage(DECIMAL, numRows);
+      page = new SafeVarLengthColumnPage(dataType, numRows, scale, precision);
     }
 
     // set total length and rowOffset in page
@@ -240,6 +293,19 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   @Override
   public double[] getDoublePage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
+  public byte[] getDecimalPage() {
+    // output LV encoded byte array
+    int offset = 0;
+    byte[] data = new byte[totalLength];
+    for (int rowId = 0; rowId < pageSize; rowId++) {
+      int length = rowOffset[rowId + 1] - rowOffset[rowId];
+      copyBytes(rowId, data, offset, length);
+      offset += length;
+    }
+    return data;
   }
 
   /**

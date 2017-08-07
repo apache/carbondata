@@ -27,6 +27,7 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
@@ -105,7 +106,7 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     // read the schema file to get the absoluteTableIdentifier having the correct table id
     // persisted in the schema
     CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
-    setCarbonTable(configuration, carbonTable);
+    setTableInfo(configuration, carbonTable.getTableInfo());
   }
 
   private static CarbonTable getCarbonTable(Configuration configuration, String path)
@@ -127,7 +128,8 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     String projection = getProjection(configuration, carbonTable,
         identifier.getCarbonTableIdentifier().getTableName());
     CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
-    QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable);
+    QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable,
+        new DataTypeConverterImpl());
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);

@@ -22,6 +22,7 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,12 +32,15 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.IntPointerBuffer;
 import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
+import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.processing.newflow.sort.unsafe.comparator.UnsafeRowComparator;
 import org.apache.carbondata.processing.newflow.sort.unsafe.comparator.UnsafeRowComparatorForNormalDIms;
 import org.apache.carbondata.processing.newflow.sort.unsafe.holder.UnsafeCarbonRow;
@@ -86,6 +90,8 @@ public class UnsafeSortDataRows {
    */
   private Semaphore semaphore;
 
+  private final long taskId;
+
   public UnsafeSortDataRows(SortParameters parameters,
       UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger, int inMemoryChunkSize) {
     this.parameters = parameters;
@@ -94,9 +100,9 @@ public class UnsafeSortDataRows {
 
     // observer of writing file in thread
     this.threadStatusObserver = new ThreadStatusObserver();
-
+    this.taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
     this.inMemoryChunkSize = inMemoryChunkSize;
-    this.inMemoryChunkSize = this.inMemoryChunkSize * 1024 * 1024;
+    this.inMemoryChunkSize = inMemoryChunkSize * 1024 * 1024;
     enableInMemoryIntermediateMerge = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT,
             CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT_DEFAULT));
@@ -115,19 +121,23 @@ public class UnsafeSortDataRows {
    * This method will be used to initialize
    */
   public void initialize() throws MemoryException {
-    MemoryBlock baseBlock = UnsafeMemoryManager.allocateMemoryWithRetry(inMemoryChunkSize);
+    MemoryBlock baseBlock =
+        UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
+    boolean isMemoryAvailable =
+        UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(baseBlock.size());
+    if (isMemoryAvailable) {
+      UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(baseBlock.size());
+    }
     this.rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
         parameters.getNoDictionarySortColumn(),
         parameters.getDimColCount() + parameters.getComplexDimColCount(),
         parameters.getMeasureColCount(), parameters.getMeasureDataType(), baseBlock,
-        !UnsafeMemoryManager.INSTANCE.isMemoryAvailable());
+        !isMemoryAvailable, taskId);
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
 
     // create new sort temp directory
-    if (!new File(parameters.getTempFileLocation()).mkdirs()) {
-      LOGGER.info("Sort Temp Location Already Exists");
-    }
+    CarbonDataProcessorUtil.createLocations(parameters.getTempFileLocation());
     this.dataSorterAndWriterExecutorService =
         Executors.newFixedThreadPool(parameters.getNumberOfCores());
     semaphore = new Semaphore(parameters.getNumberOfCores());
@@ -177,8 +187,13 @@ public class UnsafeSortDataRows {
           unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
           semaphore.acquire();
           dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
-          MemoryBlock memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(inMemoryChunkSize);
-          boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
+          MemoryBlock memoryBlock =
+              UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
+          boolean saveToDisk =
+              UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(memoryBlock.size());
+          if (!saveToDisk) {
+            UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(memoryBlock.size());
+          }
           rowPage = new UnsafeCarbonRowPage(
                   parameters.getNoDictionaryDimnesionColumn(),
                   parameters.getNoDictionarySortColumn(),
@@ -186,7 +201,7 @@ public class UnsafeSortDataRows {
                   parameters.getMeasureColCount(),
                   parameters.getMeasureDataType(),
                   memoryBlock,
-                  saveToDisk);
+                  saveToDisk, taskId);
           bytesAdded += rowPage.addRow(rowBatch[i]);
         } catch (Exception e) {
           LOGGER.error(
@@ -214,14 +229,18 @@ public class UnsafeSortDataRows {
         unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
         semaphore.acquire();
         dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
-        MemoryBlock memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(inMemoryChunkSize);
-        boolean saveToDisk = !UnsafeMemoryManager.INSTANCE.isMemoryAvailable();
+        MemoryBlock memoryBlock =
+            UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
+        boolean saveToDisk = UnsafeSortMemoryManager.INSTANCE.isMemoryAvailable(memoryBlock.size());
+        if (!saveToDisk) {
+          UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(memoryBlock.size());
+        }
         rowPage = new UnsafeCarbonRowPage(
             parameters.getNoDictionaryDimnesionColumn(),
             parameters.getNoDictionarySortColumn(),
             parameters.getDimColCount(), parameters.getMeasureColCount(),
             parameters.getMeasureDataType(), memoryBlock,
-            saveToDisk);
+            saveToDisk, taskId);
         rowPage.addRow(row);
       } catch (Exception e) {
         LOGGER.error(
@@ -343,11 +362,14 @@ public class UnsafeSortDataRows {
           timSort.sort(page.getBuffer(), 0, page.getBuffer().getActualSize(),
               new UnsafeRowComparatorForNormalDIms(page));
         }
-        if (rowPage.isSaveToDisk()) {
+        if (page.isSaveToDisk()) {
           // create a new file every time
+          // create a new file and pick a temp directory randomly every time
+          String tmpDir = parameters.getTempFileLocation()[
+              new Random().nextInt(parameters.getTempFileLocation().length)];
           File sortTempFile = new File(
-              parameters.getTempFileLocation() + File.separator + parameters.getTableName() + System
-                  .nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
+              tmpDir + File.separator + parameters.getTableName()
+                  + System.nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
           writeData(page, sortTempFile);
           LOGGER.info("Time taken to sort row page with size" + page.getBuffer().getActualSize()
               + " and write is: " + (System.currentTimeMillis() - startTime));
@@ -356,6 +378,18 @@ public class UnsafeSortDataRows {
           // intermediate merging of sort temp files will be triggered
           unsafeInMemoryIntermediateFileMerger.addFileToMerge(sortTempFile);
         } else {
+          // creating a new memory block as size is already allocated
+          // so calling lazy memory allocator
+          MemoryBlock newMemoryBlock = UnsafeSortMemoryManager.INSTANCE
+              .allocateMemoryLazy(taskId, page.getDataBlock().size());
+          // copying data from working memory manager to sortmemory manager
+          CarbonUnsafe.unsafe
+              .copyMemory(page.getDataBlock().getBaseObject(), page.getDataBlock().getBaseOffset(),
+                  newMemoryBlock.getBaseObject(), newMemoryBlock.getBaseOffset(),
+                  page.getDataBlock().size());
+          // free unsafememory manager
+          page.freeMemory();
+          page.setNewDataBlock(newMemoryBlock);
           // add sort temp filename to and arrayList. When the list size reaches 20 then
           // intermediate merging of sort temp files will be triggered
           page.getBuffer().loadToUnsafe();

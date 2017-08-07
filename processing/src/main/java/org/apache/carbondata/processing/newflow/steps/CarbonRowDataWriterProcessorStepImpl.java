@@ -16,9 +16,7 @@
  */
 package org.apache.carbondata.processing.newflow.steps;
 
-import java.io.File;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.Iterator;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -33,7 +31,6 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
-import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
@@ -86,15 +83,16 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   }
 
   @Override public void initialize() throws IOException {
+    super.initialize();
     child.initialize();
   }
 
-  private String getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
-    String storeLocation = CarbonDataProcessorUtil
+  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
+    String[] storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
             configuration.getSegmentId() + "", false);
-    new File(storeLocation).mkdirs();
+    CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }
 
@@ -148,9 +146,10 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   }
 
   private void doExecute(Iterator<CarbonRowBatch> iterator, int partitionId, int iteratorIndex) {
-    String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
+    String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
     CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
-        .createCarbonFactDataHandlerModel(configuration, storeLocation, partitionId, iteratorIndex);
+        .createCarbonFactDataHandlerModel(configuration, storeLocation, partitionId,
+            iteratorIndex);
     CarbonFactHandler dataHandler = null;
     boolean rowsNotExist = true;
     while (iterator.hasNext()) {
@@ -257,17 +256,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
 
     Object[] measures = new Object[outputLength];
     for (int i = 0; i < this.measureCount; i++) {
-      Object value = row.getObject(i + this.dimensionWithComplexCount);
-      if (null != value) {
-        if (measureDataType[i] == DataType.DECIMAL) {
-          BigDecimal val = (BigDecimal) value;
-          measures[i] = DataTypeUtil.bigDecimalToByte(val);
-        } else {
-          measures[i] = value;
-        }
-      } else {
-        measures[i] = null;
-      }
+      measures[i] = row.getObject(i + this.dimensionWithComplexCount);
     }
 
     return WriteStepRowUtil.fromColumnCategory(dim, nonDicArray, measures);

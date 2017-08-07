@@ -29,7 +29,7 @@ public class TrueConditionalResolverImpl extends ConditionalFilterResolverImpl {
   public TrueConditionalResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
 
-    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier);
+    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier, false);
   }
 
   @Override

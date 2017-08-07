@@ -16,19 +16,21 @@
  */
 package org.apache.carbondata.core.indexstore;
 
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
+
 /**
  * Datamap type
  */
 public enum DataMapType {
-  BLOCKLET("org.apache.carbondata.datamap.BlockletDataMap");
+  BLOCKLET(BlockletDataMapFactory.class);
 
-  private String className;
+  private Class<? extends DataMapFactory> classObject;
 
-  DataMapType(String className) {
-    this.className = className;
+  DataMapType(Class<? extends DataMapFactory> classObject) {
+    this.classObject = classObject;
   }
 
-  public String getClassName() {
-    return className;
+  public Class<? extends DataMapFactory> getClassObject() {
+    return classObject;
   }
 }

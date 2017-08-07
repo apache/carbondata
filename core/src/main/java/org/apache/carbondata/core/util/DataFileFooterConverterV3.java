@@ -85,6 +85,17 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     return dataFileFooter;
   }
 
+  @Override public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
+    CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(tableBlockInfo.getFilePath());
+    FileHeader fileHeader = carbonHeaderReader.readHeader();
+    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+    List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
+    for (int i = 0; i < table_columns.size(); i++) {
+      columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+    }
+    return columnSchemaList;
+  }
+
   /**
    * Below method is to convert the blocklet info of the thrift to wrapper
    * blocklet info

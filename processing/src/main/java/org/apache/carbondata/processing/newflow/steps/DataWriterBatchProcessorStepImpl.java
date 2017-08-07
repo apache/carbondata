@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.processing.newflow.steps;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -55,15 +54,16 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
   }
 
   @Override public void initialize() throws IOException {
+    super.initialize();
     child.initialize();
   }
 
-  private String getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
-    String storeLocation = CarbonDataProcessorUtil
+  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
+    String[] storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
             configuration.getSegmentId() + "", false);
-    new File(storeLocation).mkdirs();
+    CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }
 
@@ -78,7 +78,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
               System.currentTimeMillis());
       int i = 0;
       for (Iterator<CarbonRowBatch> iterator : iterators) {
-        String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
+        String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
         int k = 0;
         while (iterator.hasNext()) {
           CarbonRowBatch next = iterator.next();

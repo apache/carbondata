@@ -122,12 +122,14 @@ case class CarbonScan(
     columnProjection.foreach { attr =>
       projection.addColumn(attr.name)
     }
+
     new CarbonScanRDD(
       ocRaw.sparkContext,
       projection,
       buildCarbonPlan.getFilterExpression,
       carbonTable.getAbsoluteTableIdentifier,
-      carbonTable
+      carbonTable.getTableInfo.serialize(),
+      carbonTable.getTableInfo
     )
   }
 

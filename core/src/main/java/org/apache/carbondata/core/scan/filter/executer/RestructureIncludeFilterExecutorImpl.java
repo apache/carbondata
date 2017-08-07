@@ -22,13 +22,16 @@ import java.util.BitSet;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 public class RestructureIncludeFilterExecutorImpl extends RestructureEvaluatorImpl {
 
   protected DimColumnResolvedFilterInfo dimColumnEvaluatorInfo;
+  protected MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo;
   protected SegmentProperties segmentProperties;
+  protected boolean isMeasure;
 
   /**
    * flag to check whether filter values contain the default value applied on the dimension column
@@ -37,11 +40,19 @@ public class RestructureIncludeFilterExecutorImpl extends RestructureEvaluatorIm
   protected boolean isDefaultValuePresentInFilterValues;
 
   public RestructureIncludeFilterExecutorImpl(DimColumnResolvedFilterInfo dimColumnEvaluatorInfo,
-      SegmentProperties segmentProperties) {
+      MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo,
+      SegmentProperties segmentProperties, boolean isMeasure) {
     this.dimColumnEvaluatorInfo = dimColumnEvaluatorInfo;
+    this.measureColumnResolvedFilterInfo = measureColumnResolvedFilterInfo;
+    this.isMeasure = isMeasure;
     this.segmentProperties = segmentProperties;
-    isDefaultValuePresentInFilterValues =
-        isDimensionDefaultValuePresentInFilterValues(dimColumnEvaluatorInfo);
+    if (isMeasure) {
+      isDefaultValuePresentInFilterValues =
+          isMeasureDefaultValuePresentInFilterValues(measureColumnResolvedFilterInfo);
+    } else {
+      isDefaultValuePresentInFilterValues =
+          isDimensionDefaultValuePresentInFilterValues(dimColumnEvaluatorInfo);
+    }
   }
 
   @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {

@@ -28,8 +28,9 @@ import org.apache.spark.sql.execution.command.{CompactionCallableModel, Compacti
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
@@ -250,7 +251,6 @@ object DataManagementFunc {
       carbonLoadModel,
       storeLocation,
       compactionModel.carbonTable,
-      compactionModel.tableCreationTime,
       loadsToMerge,
       sqlContext,
       compactionModel.compactionType
@@ -266,7 +266,6 @@ object DataManagementFunc {
   def prepareCarbonLoadModel(storePath: String,
       table: CarbonTable,
       newCarbonLoadModel: CarbonLoadModel): Unit = {
-    newCarbonLoadModel.setAggTables(table.getAggregateTablesName.asScala.toArray)
     newCarbonLoadModel.setTableName(table.getFactTableName)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     // Need to fill dimension relation
@@ -352,16 +351,24 @@ object DataManagementFunc {
       dbName: String,
       tableName: String,
       storePath: String,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable,
+      forceTableClean: Boolean): Unit = {
     val identifier = new CarbonTableIdentifier(dbName, tableName, "")
     val carbonCleanFilesLock =
       CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.CLEAN_FILES_LOCK)
     try {
       if (carbonCleanFilesLock.lockWithRetries()) {
         LOGGER.info("Clean files lock has been successfully acquired.")
-        deleteLoadsAndUpdateMetadata(dbName, tableName, storePath,
-          isForceDeletion = true, carbonTable)
-        CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
+        if (forceTableClean) {
+          val absIdent = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
+          FileFactory.deleteAllCarbonFilesOfDir(
+            FileFactory.getCarbonFile(absIdent.getTablePath,
+            FileFactory.getFileType(absIdent.getTablePath)))
+        } else {
+          deleteLoadsAndUpdateMetadata(dbName, tableName, storePath,
+            isForceDeletion = true, carbonTable)
+          CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
+        }
       } else {
         val errorMsg = "Clean files request is failed for " +
             s"$dbName.$tableName" +

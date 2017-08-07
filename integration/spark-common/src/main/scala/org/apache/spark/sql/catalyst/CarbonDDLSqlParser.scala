@@ -253,13 +253,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
     val (dims, msrs, noDictionaryDims, sortKeyDims) = extractDimAndMsrFields(
       fields, tableProperties)
-    if (dims.isEmpty && !isAlterFlow) {
-      throw new MalformedCarbonCommandException(
-        s"Table ${dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME)}.$tableName " +
-        "can not be created without key columns. Please use DICTIONARY_INCLUDE or " +
-        "DICTIONARY_EXCLUDE to set at least one key column " +
-        "if all specified columns are numeric types")
-    }
 
     // column properties
     val colProps = extractColumnProperties(fields, tableProperties)
@@ -573,6 +566,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     // All excluded cols should be there in create table cols
     if (tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).isDefined) {
+      LOGGER.warn("dictionary_exclude option was deprecated, " +
+                  "by default string column does not use global dictionary.")
       dictExcludeCols =
         tableProperties.get(CarbonCommonConstants.DICTIONARY_EXCLUDE).get.split(',').map(_.trim)
       dictExcludeCols
@@ -618,19 +613,17 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       }
     }
 
-    // by default consider all String cols as dims and if any dictionary exclude is present then
+    // by default consider all String cols as dims and if any dictionary include isn't present then
     // add it to noDictionaryDims list. consider all dictionary excludes/include cols as dims
     fields.foreach { field =>
-      if (dictExcludeCols.toSeq.exists(x => x.equalsIgnoreCase(field.column))) {
-        val dataType = DataTypeUtil.getDataType(field.dataType.get.toUpperCase())
-        if (dataType != DataType.TIMESTAMP && dataType != DataType.DATE) {
-          noDictionaryDims :+= field.column
-        }
-        dimFields += field
-      } else if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
+      if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
         dimFields += field
       } else if (isDetectAsDimentionDatatype(field.dataType.get)) {
         dimFields += field
+        // consider all String cols as noDicitonaryDims by default
+        if (DataType.STRING.getName.equalsIgnoreCase(field.dataType.get)) {
+          noDictionaryDims :+= field.column
+        }
       } else if (sortKeyDimsTmp.exists(x => x.equalsIgnoreCase(field.column))) {
         noDictionaryDims :+= field.column
         dimFields += field
@@ -840,7 +833,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       "SERIALIZATION_NULL_FORMAT", "BAD_RECORDS_LOGGER_ENABLE", "BAD_RECORDS_ACTION",
       "ALL_DICTIONARY_PATH", "MAXCOLUMNS", "COMMENTCHAR", "DATEFORMAT", "BAD_RECORD_PATH",
       "SINGLE_PASS", "IS_EMPTY_DATA_BAD_RECORD", "SORT_SCOPE", "BATCH_SORT_SIZE_INMB",
-      "GLOBAL_SORT_PARTITIONS"
+      "GLOBAL_SORT_PARTITIONS", "HEADER"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder

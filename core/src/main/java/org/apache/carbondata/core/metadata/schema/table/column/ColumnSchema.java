@@ -16,17 +16,24 @@
  */
 package org.apache.carbondata.core.metadata.schema.table.column;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.Writable;
+import org.apache.carbondata.core.metadata.schema.table.WritableUtil;
 
 /**
  * Store the information about the column meta data present the table
  */
-public class ColumnSchema implements Serializable {
+public class ColumnSchema implements Serializable, Writable {
 
   /**
    * serialization version
@@ -37,6 +44,7 @@ public class ColumnSchema implements Serializable {
    * dataType
    */
   private DataType dataType;
+
   /**
    * Name of the column. If it is a complex data type, we follow a naming rule
    * grand_parent_column.parent_column.child_column
@@ -360,17 +368,6 @@ public class ColumnSchema implements Serializable {
   }
 
   /**
-   * @param property
-   * @return
-   */
-  public String getColumnProperty(String property) {
-    if (null != columnProperties) {
-      return columnProperties.get(property);
-    }
-    return null;
-  }
-
-  /**
    * return columnproperties
    */
   public Map<String, String> getColumnProperties() {
@@ -420,5 +417,68 @@ public class ColumnSchema implements Serializable {
 
   public void setSortColumn(boolean sortColumn) {
     isSortColumn = sortColumn;
+  }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeShort(dataType.ordinal());
+    out.writeUTF(columnName);
+    out.writeUTF(columnUniqueId);
+    out.writeUTF(columnReferenceId);
+    if (encodingList == null) {
+      out.writeShort(0);
+    } else {
+      out.writeShort(encodingList.size());
+      for (Encoding encoding : encodingList) {
+        out.writeShort(encoding.ordinal());
+      }
+    }
+    out.writeBoolean(isDimensionColumn);
+    out.writeInt(scale);
+    out.writeInt(precision);
+    out.writeInt(schemaOrdinal);
+    out.writeInt(numberOfChild);
+    WritableUtil.writeByteArray(out, defaultValue);
+    if (columnProperties == null) {
+      out.writeShort(0);
+    } else {
+      out.writeShort(columnProperties.size());
+      for (Map.Entry<String, String> entry : columnProperties.entrySet()) {
+        out.writeUTF(entry.getKey());
+        out.writeUTF(entry.getValue());
+      }
+    }
+    out.writeBoolean(invisible);
+    out.writeBoolean(isSortColumn);
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    int ordinal = in.readShort();
+    this.dataType = DataType.valueOf(ordinal);
+    this.columnName = in.readUTF();
+    this.columnUniqueId = in.readUTF();
+    this.columnReferenceId = in.readUTF();
+    int encodingListSize = in.readShort();
+    this.encodingList = new ArrayList<>(encodingListSize);
+    for (int i = 0; i < encodingListSize; i++) {
+      ordinal = in.readShort();
+      encodingList.add(Encoding.valueOf(ordinal));
+    }
+    this.isDimensionColumn = in.readBoolean();
+    this.scale = in.readInt();
+    this.precision = in.readInt();
+    this.schemaOrdinal = in.readInt();
+    this.numberOfChild = in.readInt();
+    this.defaultValue = WritableUtil.readByteArray(in);
+    int mapSize = in.readShort();
+    this.columnProperties = new HashMap<>(mapSize);
+    for (int i = 0; i < mapSize; i++) {
+      String key = in.readUTF();
+      String value = in.readUTF();
+      this.columnProperties.put(key, value);
+    }
+    this.invisible = in.readBoolean();
+    this.isSortColumn = in.readBoolean();
   }
 }
