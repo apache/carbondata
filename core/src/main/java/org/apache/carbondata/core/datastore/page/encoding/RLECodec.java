@@ -32,6 +32,17 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.CodecMetaFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
+/**
+ * RLE encoding implementation for integral column page.
+ * This encoding keeps track of repeated-run and non-repeated-run, and make use
+ * of the highest bit of the length field to indicate the type of run.
+ * The length field is encoded as 32bits value.
+ *
+ * For example: input data {5, 5, 1, 2, 3, 3, 3, 3, 3} will be encoded to
+ * {0x00, 0x00, 0x00, 0x02, 0x05,             (repeated-run, 2 values of 5)
+ *  0x80, 0x00, 0x00, 0x03, 0x01, 0x02, 0x03, (non-repeated-run, 3 values: 1, 2, 3)
+ *  0x00, 0x00, 0x00, 0x04, 0x03}             (repeated-run, 4 values of 3)
+ */
 public class RLECodec implements ColumnPageCodec {
 
   enum RUN_STATE { INIT, START, REPEATED_RUN, NONREPEATED_RUN }
@@ -39,6 +50,11 @@ public class RLECodec implements ColumnPageCodec {
   private DataType dataType;
   private int pageSize;
 
+  /**
+   * New RLECodec
+   * @param dataType data type of the raw column page before encode
+   * @param pageSize page size of the raw column page before encode
+   */
   RLECodec(DataType dataType, int pageSize) {
     this.dataType = dataType;
     this.pageSize = pageSize;
@@ -67,6 +83,7 @@ public class RLECodec implements ColumnPageCodec {
     return decoder.decode(input, offset, length);
   }
 
+  // This codec supports integral type only
   private void validateDataType(DataType dataType) {
     switch (dataType) {
       case BYTE:
@@ -278,6 +295,8 @@ public class RLECodec implements ColumnPageCodec {
 
   }
 
+  // It decodes data in one shot. It is suitable for scan query
+  // TODO: add a on-the-fly decoder for filter query with high selectivity
   private class Decoder {
 
     // src data type
