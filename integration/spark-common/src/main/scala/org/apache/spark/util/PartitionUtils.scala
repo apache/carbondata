@@ -35,6 +35,7 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
+import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.util.CommonUtil
 
 object PartitionUtils {
@@ -148,7 +149,9 @@ object PartitionUtils {
   @throws(classOf[IOException])
   def deleteOriginalCarbonFile(identifier: AbsoluteTableIdentifier, segmentId: String,
       partitionIds: List[String], oldPartitionIdList: List[Int], storePath: String,
-      dbName: String, tableName: String, partitionInfo: PartitionInfo): Unit = {
+      dbName: String, tableName: String, partitionInfo: PartitionInfo,
+      carbonLoadModel: CarbonLoadModel): Unit = {
+    val newTime = carbonLoadModel.getFactTimeStamp
     val tableBlockInfoList =
       getPartitionBlockList(identifier, segmentId, partitionIds, oldPartitionIdList,
         partitionInfo).asScala
@@ -156,20 +159,22 @@ object PartitionUtils {
     val carbonTablePath = new CarbonTablePath(storePath, dbName, tableName)
     tableBlockInfoList.foreach{ tableBlockInfo =>
       val path = tableBlockInfo.getFilePath
-      // add carbondata file
-      pathList.add(path)
-      // add index file
-      val version = tableBlockInfo.getVersion
       val timestamp = CarbonTablePath.DataFileUtil.getTimeStampFromFileName(path)
-      val taskNo = CarbonTablePath.DataFileUtil.getTaskNo(path)
-      val batchNo = CarbonTablePath.DataFileUtil.getBatchNoFromTaskNo(taskNo)
-      val taskId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskNo)
-      val bucketNumber = CarbonTablePath.DataFileUtil.getBucketNo(path)
-      val indexFilePath = carbonTablePath.getCarbonIndexFilePath(String.valueOf(taskId), "0",
-        segmentId, batchNo, String.valueOf(bucketNumber), timestamp, version)
-      // indexFilePath could be duplicated when multiple data file related to one index file
-      if (indexFilePath != null && !pathList.contains(indexFilePath)) {
-        pathList.add(indexFilePath)
+      if (timestamp.toLong != newTime) {
+        // add carbondata file
+        pathList.add(path)
+        // add index file
+        val version = tableBlockInfo.getVersion
+        val taskNo = CarbonTablePath.DataFileUtil.getTaskNo(path)
+        val batchNo = CarbonTablePath.DataFileUtil.getBatchNoFromTaskNo(taskNo)
+        val taskId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskNo)
+        val bucketNumber = CarbonTablePath.DataFileUtil.getBucketNo(path)
+        val indexFilePath = carbonTablePath.getCarbonIndexFilePath(String.valueOf(taskId), "0",
+          segmentId, batchNo, String.valueOf(bucketNumber), timestamp, version)
+        // indexFilePath could be duplicated when multiple data file related to one index file
+        if (indexFilePath != null && !pathList.contains(indexFilePath)) {
+          pathList.add(indexFilePath)
+        }
       }
     }
     val files: util.List[File] = new util.ArrayList[File]()

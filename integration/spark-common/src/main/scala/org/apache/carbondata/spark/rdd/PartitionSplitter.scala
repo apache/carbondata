@@ -90,7 +90,7 @@ object PartitionSplitter {
        try {
          PartitionUtils.
            deleteOriginalCarbonFile(identifier, segmentId, Seq(partitionId).toList,
-             oldPartitionIdList, storePath, databaseName, tableName, partitionInfo)
+             oldPartitionIdList, storePath, databaseName, tableName, partitionInfo, carbonLoadModel)
        } catch {
          case e: IOException => sys.error(s"Exception while delete original carbon files " +
          e.getMessage)

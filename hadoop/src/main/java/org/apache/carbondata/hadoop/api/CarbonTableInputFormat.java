@@ -294,7 +294,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     // prune partitions for filter query on partition table
     BitSet matchedPartitions = null;
     if (partitionInfo != null) {
-      matchedPartitions = setMatchedPartitions(null, filter, partitionInfo);
+      matchedPartitions = setMatchedPartitions(null, filter, partitionInfo, null);
       if (matchedPartitions != null) {
         if (matchedPartitions.cardinality() == 0) {
           return new ArrayList<InputSplit>();
@@ -352,9 +352,11 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
       // prune partitions for filter query on partition table
       String partitionIds = job.getConfiguration().get(ALTER_PARTITION_ID);
+      // matchedPartitions records partitionIndex, not partitionId
       BitSet matchedPartitions = null;
       if (partitionInfo != null) {
-        matchedPartitions = setMatchedPartitions(partitionIds, filter, partitionInfo);
+        matchedPartitions =
+            setMatchedPartitions(partitionIds, filter, partitionInfo, oldPartitionIdList);
         if (matchedPartitions != null) {
           if (matchedPartitions.cardinality() == 0) {
             return new ArrayList<InputSplit>();
@@ -382,13 +384,15 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   private BitSet setMatchedPartitions(String partitionIds, Expression filter,
-      PartitionInfo partitionInfo) {
+      PartitionInfo partitionInfo, List<Integer> oldPartitionIdList) {
     BitSet matchedPartitions = null;
     if (null != partitionIds) {
       String[] partList = partitionIds.replace("[", "").replace("]", "").split(",");
+      // only one partitionId in current alter table statement
       matchedPartitions = new BitSet(Integer.parseInt(partList[0]));
       for (String partitionId : partList) {
-        matchedPartitions.set(Integer.parseInt(partitionId));
+        Integer index = oldPartitionIdList.indexOf(Integer.parseInt(partitionId));
+        matchedPartitions.set(index);
       }
     } else {
       if (null != filter) {

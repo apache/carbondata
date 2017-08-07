@@ -51,12 +51,14 @@ import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
 
 /**
- *
+ * This RDD is used in alter table partition statement to get data of target partitions,
+ * then repartition data according to new partitionInfo
  * @param sc
  * @param partitionIds  the ids of target partition to be scanned
  * @param storePath
  * @param segmentId
- * @param oldPartitionIdList   the taskId in partition order before partitionInfo is modified
+ * @param bucketId
+ * @param oldPartitionIdList  the taskId in partition order before partitionInfo is modified
  * @param carbonTableIdentifier
  * @param carbonLoadModel
  */

@@ -80,7 +80,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       case dbName ~ table ~ addInfo =>
         val alterTableAddPartitionModel =
           AlterTableSplitPartitionModel(dbName, table, "0", addInfo)
-        AlterTableSplitPartition(alterTableAddPartitionModel)
+        AlterTableSplitPartitionCommand(alterTableAddPartitionModel)
     }
 
   protected lazy val alterSplitPartition: Parser[LogicalPlan] =
@@ -92,7 +92,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         if (partitionId == 0) {
           sys.error("Please use [Alter Table Add Partition] statement to split default partition!")
         }
-        AlterTableSplitPartition(alterTableSplitPartitionModel)
+        AlterTableSplitPartitionCommand(alterTableSplitPartitionModel)
     }
 
   protected lazy val alterTable: Parser[LogicalPlan] =
