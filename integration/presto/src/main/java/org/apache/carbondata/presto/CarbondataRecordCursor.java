@@ -26,7 +26,6 @@ import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
-
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.type.DecimalType;
 import com.facebook.presto.spi.type.Decimals;
@@ -37,7 +36,6 @@ import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
 import scala.Int;
 import scala.Tuple3;
-
 
 import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
 import static com.facebook.presto.spi.type.Decimals.isShortDecimal;
@@ -58,7 +56,7 @@ public class CarbondataRecordCursor implements RecordCursor {
   private CarbondataSplit split;
   private CarbonIterator<Object[]> rowCursor;
   private CarbonDictionaryDecodeReaderSupport readSupport;
-  private Tuple3<DataType,Dictionary,Int>[] dictionary;
+  private Tuple3<DataType, Dictionary, Int>[] dictionary;
 
   private long totalBytes;
   private long nanoStart;
@@ -66,7 +64,7 @@ public class CarbondataRecordCursor implements RecordCursor {
 
   public CarbondataRecordCursor(CarbonDictionaryDecodeReaderSupport readSupport,
       CarbonIterator<Object[]> carbonIterator, List<CarbondataColumnHandle> columnHandles,
-      CarbondataSplit split, Tuple3<DataType,Dictionary,Int>[] dictionaries ) {
+      CarbondataSplit split, Tuple3<DataType, Dictionary, Int>[] dictionaries) {
     this.rowCursor = carbonIterator;
     this.columnHandles = columnHandles;
     this.readSupport = readSupport;
@@ -102,8 +100,8 @@ public class CarbondataRecordCursor implements RecordCursor {
     }
 
     if (rowCursor.hasNext()) {
-       fields = readSupport.readRow(rowCursor.next(),dictionary);
-       totalBytes += fields.length;
+      fields = readSupport.readRow(rowCursor.next(), dictionary);
+      totalBytes += fields.length;
       return true;
     }
     return false;
@@ -111,25 +109,25 @@ public class CarbondataRecordCursor implements RecordCursor {
 
   @Override public boolean getBoolean(int field) {
     checkFieldType(field, BOOLEAN);
-    return (Boolean)getFieldValue(field);
+    return (Boolean) getFieldValue(field);
   }
 
   @Override public long getLong(int field) {
     Object obj = getFieldValue(field);
     Long timeStr = 0L;
-    if( obj instanceof  Integer ){
-      timeStr = ((Integer)obj).longValue();
-    } else if( obj instanceof Long ) {
-      timeStr = (Long)obj;
+    if (obj instanceof Integer) {
+      timeStr = ((Integer) obj).longValue();
+    } else if (obj instanceof Long) {
+      timeStr = (Long) obj;
     } else {
       timeStr = Math.round(Double.parseDouble(obj.toString()));
     }
     Type actual = getType(field);
 
     if (actual instanceof TimestampType) {
-      return new Timestamp(Long.parseLong(timeStr)).getTime() / 1000;
-    } else if (isShortDecimal(actual)) {
-      return shortDecimalPartitionKey(getFieldValue(field), (DecimalType) actual,
+      return new Timestamp(timeStr).getTime() / 1000;
+    } else if (obj instanceof String && isShortDecimal(actual)) {
+      return shortDecimalPartitionKey((String) obj, (DecimalType) actual,
           columnHandles.get(field).getColumnName());
     }
     //suppose the
@@ -138,7 +136,7 @@ public class CarbondataRecordCursor implements RecordCursor {
 
   @Override public double getDouble(int field) {
     checkFieldType(field, DOUBLE);
-    return (Double)getFieldValue(field);
+    return (Double) getFieldValue(field);
   }
 
   @Override public Slice getSlice(int field) {
