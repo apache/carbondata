@@ -80,32 +80,43 @@ class CarbonSessionCatalog(
    */
   override def lookupRelation(name: TableIdentifier,
       alias: Option[String]): LogicalPlan = {
-    super.lookupRelation(name, alias) match {
+    val rtnRelation = super.lookupRelation(name, alias)
+    var toRefreshRelation = false
+    rtnRelation match {
       case SubqueryAlias(_,
           LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _),
           _) =>
-        refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
+        toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
       case LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
-        refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
-      case relation => relation
+        toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
+      case _ =>
+    }
+
+    if (toRefreshRelation) {
+      super.lookupRelation(name, alias)
+    } else {
+      rtnRelation
     }
   }
 
   private def refreshRelationFromCache(name: TableIdentifier,
       alias: Option[String],
-      carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): LogicalPlan = {
-    carbonEnv.carbonMetastore.checkSchemasModifiedTimeAndReloadTables
-    carbonEnv.carbonMetastore
-      .getTableFromMetadata(carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
-        carbonDatasourceHadoopRelation.carbonTable.getFactTableName) match {
-      case tableMeta: TableMeta =>
-        if (tableMeta.carbonTable.getTableLastUpdatedTime !=
-            carbonDatasourceHadoopRelation.carbonTable.getTableLastUpdatedTime) {
-          refreshTable(name)
-        }
-      case _ => refreshTable(name)
+      carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): Boolean = {
+    var isRefreshed = false
+    carbonEnv.carbonMetastore.
+      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(sparkSession).storePath)
+
+    val tableMeta = carbonEnv.carbonMetastore
+      .getTableFromMetadataCache(carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
+        carbonDatasourceHadoopRelation.carbonTable.getFactTableName)
+    if (tableMeta.isDefined &&
+        tableMeta.get.carbonTable.getTableLastUpdatedTime !=
+          carbonDatasourceHadoopRelation.carbonTable.getTableLastUpdatedTime) {
+      refreshTable(name)
+      isRefreshed = true
+      logInfo(s"Schema changes have been detected for table: $name")
     }
-    super.lookupRelation(name, alias)
+    isRefreshed
   }
 }
 

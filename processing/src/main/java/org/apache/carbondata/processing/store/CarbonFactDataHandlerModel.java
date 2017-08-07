@@ -77,7 +77,7 @@ public class CarbonFactDataHandlerModel {
   /**
    * local store location
    */
-  private String storeLocation;
+  private String[] storeLocation;
   /**
    * flag to check whether use inverted index
    */
@@ -163,7 +163,7 @@ public class CarbonFactDataHandlerModel {
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
-      CarbonDataLoadConfiguration configuration, String storeLocation, int bucketId,
+      CarbonDataLoadConfiguration configuration, String[] storeLocation, int bucketId,
       int taskExtension) {
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
@@ -265,7 +265,7 @@ public class CarbonFactDataHandlerModel {
    */
   public static CarbonFactDataHandlerModel getCarbonFactDataHandlerModel(CarbonLoadModel loadModel,
       CarbonTable carbonTable, SegmentProperties segmentProperties, String tableName,
-      String tempStoreLocation) {
+      String[] tempStoreLocation) {
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     carbonFactDataHandlerModel.setDatabaseName(loadModel.getDatabaseName());
@@ -375,11 +375,11 @@ public class CarbonFactDataHandlerModel {
     this.measureCount = measureCount;
   }
 
-  public String getStoreLocation() {
+  public String[] getStoreLocation() {
     return storeLocation;
   }
 
-  public void setStoreLocation(String storeLocation) {
+  public void setStoreLocation(String[] storeLocation) {
     this.storeLocation = storeLocation;
   }
 

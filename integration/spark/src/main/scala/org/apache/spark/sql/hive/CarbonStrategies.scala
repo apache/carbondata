@@ -70,9 +70,8 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
             carbonRawScan(projectList, predicates, l)(sqlContext) :: Nil
           }
         case InsertIntoCarbonTable(relation: CarbonDatasourceRelation,
-            _, child: LogicalPlan, _, _) =>
-            ExecutedCommand(LoadTableByInsert(relation,
-                child)) :: Nil
+            _, child: LogicalPlan, overwrite, _) =>
+            ExecutedCommand(LoadTableByInsert(relation, child, overwrite)) :: Nil
         case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
           CarbonDictionaryDecoder(relations,
             profile,

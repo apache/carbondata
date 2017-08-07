@@ -21,7 +21,6 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
-import org.apache.spark.unsafe.types.UTF8String;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -47,14 +46,6 @@ public class DataTypeUtilTest {
     BigDecimal expected = new BigDecimal(bigInteger, 0);
     BigDecimal result = byteToBigDecimal(byteArr);
     assertEquals(expected, result);
-
-  }
-
-  @Test public void testGetAggType() {
-    assertTrue(getAggType(DataType.DECIMAL) == 'b');
-    assertTrue(getAggType(DataType.INT) == 'd');
-    assertTrue(getAggType(DataType.LONG) == 'd');
-    assertTrue(getAggType(DataType.NULL) == 'n');
 
   }
 
@@ -90,28 +81,11 @@ public class DataTypeUtilTest {
     assertEquals(getDataBasedOnDataType("0", DataType.LONG), 0L);
     java.math.BigDecimal javaDecVal = new java.math.BigDecimal(1);
     scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
-    org.apache.spark.sql.types.Decimal expected =
-        new org.apache.spark.sql.types.Decimal().set(scalaDecVal);
-    assertEquals(getDataBasedOnDataType("1", DataType.DECIMAL), expected);
+    assertEquals(getDataBasedOnDataType("1", DataType.DECIMAL),
+        DataTypeUtil.getDataTypeConverter().convertToDecimal(scalaDecVal));
     assertEquals(getDataBasedOnDataType("default", DataType.NULL),
-        UTF8String.fromString("default"));
+        DataTypeUtil.getDataTypeConverter().convertFromStringToUTF8String("default"));
     assertEquals(getDataBasedOnDataType((String) null, DataType.NULL), null);
-  }
-
-  @Test public void testGetMeasureDataBasedOnDataType() throws NumberFormatException {
-    assertEquals(getMeasureDataBasedOnDataType(new Long("1"), DataType.LONG), Long.parseLong("1"));
-    assertEquals(getMeasureDataBasedOnDataType(new Double("1"), DataType.DOUBLE),
-        Double.parseDouble("1"));
-    java.math.BigDecimal javaDecVal = new java.math.BigDecimal(1);
-    scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
-    org.apache.spark.sql.types.Decimal expected =
-        new org.apache.spark.sql.types.Decimal().set(scalaDecVal);
-    assertEquals(
-            getMeasureDataBasedOnDataType(
-                    new java.math.BigDecimal(1),
-                    DataType.DECIMAL),
-            expected);
-    assertEquals(getMeasureDataBasedOnDataType("1", DataType.STRING), "1");
   }
 
   @Test public void testGetMeasureValueBasedOnDataType() {

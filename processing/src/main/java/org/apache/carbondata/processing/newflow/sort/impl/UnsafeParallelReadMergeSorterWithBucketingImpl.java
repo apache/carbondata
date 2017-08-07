@@ -124,13 +124,13 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl implements Sorter {
   }
 
   private UnsafeSingleThreadFinalSortFilesMerger getFinalMerger(String bucketId) {
-    String storeLocation = CarbonDataProcessorUtil
+    String[] storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(sortParameters.getDatabaseName(), sortParameters.getTableName(),
             String.valueOf(sortParameters.getTaskNo()), bucketId,
             sortParameters.getSegmentId() + "", false);
     // Set the data file location
-    String dataFolderLocation =
-        storeLocation + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
+    String[] dataFolderLocation = CarbonDataProcessorUtil.arrayAppend(storeLocation,
+        File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     return new UnsafeSingleThreadFinalSortFilesMerger(sortParameters, dataFolderLocation);
   }
 
@@ -168,11 +168,12 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl implements Sorter {
   }
 
   private void setTempLocation(SortParameters parameters) {
-    String carbonDataDirectoryPath = CarbonDataProcessorUtil
+    String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(parameters.getDatabaseName(), parameters.getTableName(),
             parameters.getTaskNo(), parameters.getPartitionID(), parameters.getSegmentId(), false);
-    parameters.setTempFileLocation(
-        carbonDataDirectoryPath + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
+    String[] tmpLoc = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath, File.separator,
+        CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
+    parameters.setTempFileLocation(tmpLoc);
   }
 
   /**

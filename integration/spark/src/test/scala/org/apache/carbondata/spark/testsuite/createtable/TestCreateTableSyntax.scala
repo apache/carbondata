@@ -153,7 +153,7 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
       sql("drop table if exists carbontable")
       sql("create table carbontable(msr1 int, msr2 double, msr3 bigint, msr4 decimal)" +
         " stored by 'org.apache.carbondata.format'")
-      assert(false)
+      assert(true)
     } catch {
       case e : MalformedCarbonCommandException => {
         assert(e.getMessage.equals("Table default.carbontable can not be created without " +

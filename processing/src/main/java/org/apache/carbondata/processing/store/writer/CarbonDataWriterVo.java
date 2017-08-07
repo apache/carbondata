@@ -28,7 +28,7 @@ import org.apache.carbondata.processing.store.file.IFileManagerComposite;
  */
 public class CarbonDataWriterVo {
 
-  private String storeLocation;
+  private String[] storeLocation;
 
   private int measureCount;
 
@@ -67,14 +67,14 @@ public class CarbonDataWriterVo {
   /**
    * @return the storeLocation
    */
-  public String getStoreLocation() {
+  public String[] getStoreLocation() {
     return storeLocation;
   }
 
   /**
    * @param storeLocation the storeLocation to set
    */
-  public void setStoreLocation(String storeLocation) {
+  public void setStoreLocation(String[] storeLocation) {
     this.storeLocation = storeLocation;
   }
 

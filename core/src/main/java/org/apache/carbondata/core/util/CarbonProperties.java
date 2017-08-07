@@ -22,7 +22,9 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -55,6 +57,11 @@ public final class CarbonProperties {
   private Set<String> propertySet = new HashSet<String>();
 
   /**
+   * It is purely for testing
+   */
+  private Map<String, String> addedProperty = new HashMap<>();
+
+  /**
    * Private constructor this will call load properties method to load all the
    * carbon properties in memory.
    */
@@ -83,17 +90,11 @@ public final class CarbonProperties {
     } catch (IllegalAccessException e) {
       LOGGER.error("Illelagal access to declared field" + e.getMessage());
     }
-    if (null == carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION)) {
-      carbonProperties.setProperty(CarbonCommonConstants.STORE_LOCATION,
-          CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
-    }
 
     validateBlockletSize();
     validateNumCores();
     validateNumCoresBlockSort();
     validateSortSize();
-    validateHighCardinalityIdentify();
-    validateHighCardinalityThreshold();
     validateCarbonDataFileVersion();
     validateExecutorStartUpTime();
     validatePrefetchBufferSize();
@@ -449,41 +450,6 @@ public final class CarbonProperties {
     }
   }
 
-  private void validateHighCardinalityIdentify() {
-    String highcardIdentifyStr =
-        carbonProperties.getProperty(CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE);
-    boolean validateBoolean = CarbonUtil.validateBoolean(highcardIdentifyStr);
-    if (!validateBoolean) {
-      LOGGER.info("The high cardinality identify value \"" + highcardIdentifyStr
-          + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT);
-      carbonProperties.setProperty(CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE,
-          CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT);
-    }
-  }
-
-  private void validateHighCardinalityThreshold() {
-    String highcardThresholdStr = carbonProperties
-        .getProperty(CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
-            CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
-    try {
-      int highcardThreshold = Integer.parseInt(highcardThresholdStr);
-      if (highcardThreshold < CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN) {
-        LOGGER.info("The high cardinality threshold value \"" + highcardThresholdStr
-            + "\" is invalid. Using the min value \""
-            + CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN);
-        carbonProperties.setProperty(CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
-            CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_MIN + "");
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The high cardinality threshold value \"" + highcardThresholdStr
-          + "\" is invalid. Using the default value \""
-          + CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
-      carbonProperties.setProperty(CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
-          CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT);
-    }
-  }
-
   /**
    * Below method will be used to validate the data file version parameter
    * if parameter is invalid current version will be set
@@ -613,6 +579,7 @@ public final class CarbonProperties {
    */
   public CarbonProperties addProperty(String key, String value) {
     carbonProperties.setProperty(key, value);
+    addedProperty.put(key, value);
     return this;
   }
 
@@ -892,11 +859,32 @@ public final class CarbonProperties {
   }
 
   /**
+   * Returns whether to use multi temp dirs
+   * @return boolean
+   */
+  public boolean isUseMultiTempDir() {
+    String usingMultiDirStr = getProperty(CarbonCommonConstants.CARBON_USE_MULTI_TEMP_DIR,
+        CarbonCommonConstants.CARBON_USE_MULTI_TEMP_DIR_DEFAULT);
+    boolean validateBoolean = CarbonUtil.validateBoolean(usingMultiDirStr);
+    if (!validateBoolean) {
+      LOGGER.info("The carbon.use.multiple.temp.dir configuration value is invalid."
+          + "Configured value: \"" + usingMultiDirStr + "\"."
+          + "Data Load will not use multiple temp directories.");
+      usingMultiDirStr = CarbonCommonConstants.CARBON_USE_MULTI_TEMP_DIR_DEFAULT;
+    }
+    return usingMultiDirStr.equalsIgnoreCase("true");
+  }
+
+  /**
    * returns true if carbon property
    * @param key
    * @return
    */
   public boolean isCarbonProperty(String key) {
     return propertySet.contains(key);
+  }
+
+  public Map<String, String> getAddedProperty() {
+    return addedProperty;
   }
 }

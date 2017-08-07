@@ -33,9 +33,12 @@ public class DataLoadExecutor {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataLoadExecutor.class.getName());
 
-  public void execute(CarbonLoadModel loadModel, String storeLocation,
+  private AbstractDataLoadProcessorStep loadProcessorStep;
+
+  private boolean isClosed;
+
+  public void execute(CarbonLoadModel loadModel, String[] storeLocation,
       CarbonIterator<Object[]>[] inputIterators) throws Exception {
-    AbstractDataLoadProcessorStep loadProcessorStep = null;
     try {
       loadProcessorStep =
           new DataLoadProcessBuilder().build(loadModel, storeLocation, inputIterators);
@@ -60,10 +63,6 @@ public class DataLoadExecutor {
     } finally {
       removeBadRecordKey(
           loadModel.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier());
-      if (loadProcessorStep != null) {
-        // 3. Close the step
-        loadProcessorStep.close();
-      }
     }
   }
 
@@ -90,5 +89,15 @@ public class DataLoadExecutor {
   private void removeBadRecordKey(CarbonTableIdentifier carbonTableIdentifier) {
     String badRecordLoggerKey = carbonTableIdentifier.getBadRecordLoggerKey();
     BadRecordsLogger.removeBadRecordKey(badRecordLoggerKey);
+  }
+
+  /**
+   * Method to clean all the resource
+   */
+  public void close() {
+    if (!isClosed && loadProcessorStep != null) {
+      loadProcessorStep.close();
+    }
+    isClosed = true;
   }
 }

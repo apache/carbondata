@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.presto;
 
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -39,6 +40,7 @@ import org.apache.carbondata.core.scan.expression.logical.OrExpression;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
+import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 
@@ -109,7 +111,8 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     CarbonTable targetTable = tableCacheModel.carbonTable;
     CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(targetTable, targetCols);
     QueryModel queryModel =
-        QueryModel.createModel(targetTable.getAbsoluteTableIdentifier(), queryPlan, targetTable);
+        QueryModel.createModel(targetTable.getAbsoluteTableIdentifier(),
+            queryPlan, targetTable, new DataTypeConverterImpl());
 
     // Push down filter
     fillFilter2QueryModel(queryModel, carbondataSplit.getConstraints(), targetTable);

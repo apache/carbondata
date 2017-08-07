@@ -125,7 +125,6 @@ public class PrimitiveQueryTypeTest {
         return "2015-10-20 12:30:01";
       }
     };
-
     Object expectedValue = primitiveQueryTypeForTimeStampForIsDictionaryFalse
         .getDataBasedOnDataTypeFromSurrogates(surrogateData);
     Object actualValue = primitiveQueryTypeForTimeStampForIsDictionaryFalse

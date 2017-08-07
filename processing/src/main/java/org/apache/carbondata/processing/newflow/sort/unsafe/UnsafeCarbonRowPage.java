@@ -25,6 +25,8 @@ import java.util.Arrays;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.IntPointerBuffer;
 import org.apache.carbondata.core.memory.MemoryBlock;
+import org.apache.carbondata.core.memory.UnsafeMemoryManager;
+import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -55,9 +57,13 @@ public class UnsafeCarbonRowPage {
 
   private boolean saveToDisk;
 
+  private MemoryManagerType managerType;
+
+  private long taskId;
+
   public UnsafeCarbonRowPage(boolean[] noDictionaryDimensionMapping,
       boolean[] noDictionarySortColumnMapping, int dimensionSize, int measureSize, DataType[] type,
-      MemoryBlock memoryBlock, boolean saveToDisk) {
+      MemoryBlock memoryBlock, boolean saveToDisk, long taskId) {
     this.noDictionaryDimensionMapping = noDictionaryDimensionMapping;
     this.noDictionarySortColumnMapping = noDictionarySortColumnMapping;
     this.dimensionSize = dimensionSize;
@@ -65,10 +71,12 @@ public class UnsafeCarbonRowPage {
     this.measureDataType = type;
     this.saveToDisk = saveToDisk;
     this.nullSetWords = new long[((measureSize - 1) >> 6) + 1];
-    buffer = new IntPointerBuffer(memoryBlock);
-    this.dataBlock = buffer.getBaseBlock();
+    this.taskId = taskId;
+    buffer = new IntPointerBuffer(this.taskId);
+    this.dataBlock = memoryBlock;
     // TODO Only using 98% of space for safe side.May be we can have different logic.
     sizeToBeUsed = dataBlock.size() - (dataBlock.size() * 5) / 100;
+    this.managerType = MemoryManagerType.UNSAFE_MEMORY_MANAGER;
   }
 
   public int addRow(Object[] row) {
@@ -230,7 +238,7 @@ public class UnsafeCarbonRowPage {
             CarbonUnsafe.unsafe.copyMemory(baseObject, address + size, bigDecimalInBytes,
                 CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
             size += bigDecimalInBytes.length;
-            rowToFill[dimensionSize + mesCount] = bigDecimalInBytes;
+            rowToFill[dimensionSize + mesCount] = DataTypeUtil.byteToBigDecimal(bigDecimalInBytes);
             break;
         }
       } else {
@@ -324,7 +332,14 @@ public class UnsafeCarbonRowPage {
   }
 
   public void freeMemory() {
-    buffer.freeMemory();
+    switch (managerType) {
+      case UNSAFE_MEMORY_MANAGER:
+        UnsafeMemoryManager.INSTANCE.freeMemory(taskId, dataBlock);
+        break;
+      default:
+        UnsafeSortMemoryManager.INSTANCE.freeMemory(taskId, dataBlock);
+        buffer.freeMemory();
+    }
   }
 
   public boolean isSaveToDisk() {
@@ -368,5 +383,14 @@ public class UnsafeCarbonRowPage {
 
   public boolean[] getNoDictionarySortColumnMapping() {
     return noDictionarySortColumnMapping;
+  }
+
+  public void setNewDataBlock(MemoryBlock newMemoryBlock) {
+    this.dataBlock = newMemoryBlock;
+    this.managerType = MemoryManagerType.UNSAFE_SORT_MEMORY_MANAGER;
+  }
+
+  public enum MemoryManagerType {
+    UNSAFE_MEMORY_MANAGER, UNSAFE_SORT_MEMORY_MANAGER
   }
 }

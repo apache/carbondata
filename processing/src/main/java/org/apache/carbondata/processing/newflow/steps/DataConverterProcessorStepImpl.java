@@ -61,6 +61,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
 
   @Override
   public void initialize() throws IOException {
+    super.initialize();
     child.initialize();
     converters = new ArrayList<>();
     badRecordLogger = createBadRecordLogger(configuration);

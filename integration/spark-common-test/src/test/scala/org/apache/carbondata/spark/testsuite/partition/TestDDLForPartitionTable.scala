@@ -105,9 +105,8 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("workgroupcategory"))
     assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.STRING)
-    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 2)
-    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(0) == Encoding.DICTIONARY)
-    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(1) == Encoding.INVERTED_INDEX)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 1)
+    assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(0) == Encoding.INVERTED_INDEX)
     assert(partitionInfo.getPartitionType == PartitionType.LIST)
     assert(partitionInfo.getListInfo.size == 3)
     assert(partitionInfo.getListInfo.get(0).size == 1)
@@ -128,6 +127,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test describe formatted for partition column") {
+    sql("drop table if exists des")
     sql(
       """create table des(a int, b string) partitioned by (c string) stored by 'carbondata'
         |tblproperties ('partition_type'='list','list_info'='1,2')""".stripMargin)
@@ -356,8 +356,6 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll = {
     dropTable
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
   }
 
   def dropTable = {

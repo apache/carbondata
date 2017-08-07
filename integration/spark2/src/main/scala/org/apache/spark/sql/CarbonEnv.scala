@@ -20,7 +20,7 @@ package org.apache.spark.sql
 import java.util.Map
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.spark.sql.hive.{CarbonMetastore, CarbonSessionCatalog}
+import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonMetaStoreFactory, CarbonSessionCatalog}
 import org.apache.spark.sql.internal.CarbonSQLConf
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -34,11 +34,13 @@ import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
  */
 class CarbonEnv {
 
-  var carbonMetastore: CarbonMetastore = _
+  var carbonMetastore: CarbonMetaStore = _
 
   var sessionParams: SessionParams = _
 
   var carbonSessionInfo: CarbonSessionInfo = _
+
+  var storePath: String = _
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -61,10 +63,14 @@ class CarbonEnv {
       // add session params after adding DefaultCarbonParams
       config.addDefaultCarbonSessionParams()
       carbonMetastore = {
-        val storePath =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
+        val properties = CarbonProperties.getInstance()
+        storePath = properties.getProperty(CarbonCommonConstants.STORE_LOCATION)
+        if (storePath == null) {
+          storePath = sparkSession.conf.get("spark.sql.warehouse.dir")
+          properties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+        }
         LOGGER.info(s"carbon env initial: $storePath")
-        new CarbonMetastore(sparkSession.conf, storePath)
+        CarbonMetaStoreFactory.createCarbonMetaStore(sparkSession.conf)
       }
       CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
       initialized = true

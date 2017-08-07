@@ -22,13 +22,16 @@ import java.util.BitSet;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.util.BitSetGroup;
 
 public class RestructureExcludeFilterExecutorImpl extends RestructureEvaluatorImpl {
 
   protected DimColumnResolvedFilterInfo dimColEvaluatorInfo;
+  protected MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo;
   protected SegmentProperties segmentProperties;
+  protected boolean isMeasure;
 
   /**
    * flag to check whether filter values contain the default value applied on the dimension column
@@ -37,11 +40,19 @@ public class RestructureExcludeFilterExecutorImpl extends RestructureEvaluatorIm
   protected boolean isDefaultValuePresentInFilterValues;
 
   public RestructureExcludeFilterExecutorImpl(DimColumnResolvedFilterInfo dimColEvaluatorInfo,
-      SegmentProperties segmentProperties) {
+      MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo,
+      SegmentProperties segmentProperties, boolean isMeasure) {
     this.dimColEvaluatorInfo = dimColEvaluatorInfo;
+    this.measureColumnResolvedFilterInfo = measureColumnResolvedFilterInfo;
     this.segmentProperties = segmentProperties;
-    isDefaultValuePresentInFilterValues =
-        isDimensionDefaultValuePresentInFilterValues(dimColEvaluatorInfo);
+    this.isMeasure = isMeasure;
+    if (isMeasure) {
+      isDefaultValuePresentInFilterValues =
+          isMeasureDefaultValuePresentInFilterValues(measureColumnResolvedFilterInfo);
+    } else {
+      isDefaultValuePresentInFilterValues =
+          isDimensionDefaultValuePresentInFilterValues(dimColEvaluatorInfo);
+    }
   }
 
   @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {

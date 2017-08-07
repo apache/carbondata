@@ -252,7 +252,6 @@ public final class ByteUtil {
       }
       return len1 - len2;
     }
-
     public boolean equals(byte[] buffer1, byte[] buffer2) {
       if (buffer1.length != buffer2.length) {
         return false;

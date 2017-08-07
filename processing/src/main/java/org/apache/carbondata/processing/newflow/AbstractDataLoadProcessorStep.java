@@ -56,7 +56,20 @@ public abstract class AbstractDataLoadProcessorStep {
     this.child = child;
     this.rowCounter = new AtomicLong();
     this.closed = false;
+  }
 
+  /**
+   * The output meta for this step. The data returns from this step is as per this meta.
+   *
+   */
+  public abstract DataField[] getOutput();
+
+  /**
+   * Initialization process for this step.
+   *
+   * @throws IOException
+   */
+  public void initialize() throws IOException {
     if (LOGGER.isInfoEnabled()) {
       // This thread prints the rows processed in each step for every 10 seconds.
       new Thread() {
@@ -74,19 +87,6 @@ public abstract class AbstractDataLoadProcessorStep {
       }.start();
     }
   }
-
-  /**
-   * The output meta for this step. The data returns from this step is as per this meta.
-   *
-   */
-  public abstract DataField[] getOutput();
-
-  /**
-   * Initialization process for this step.
-   *
-   * @throws IOException
-   */
-  public abstract void initialize() throws IOException;
 
   /**
    * Tranform the data as per the implementation.

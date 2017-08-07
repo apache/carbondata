@@ -58,7 +58,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
    */
   private def loadTempCSV(options: CarbonOption): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
-    val storePath = CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore.storePath
+    val storePath = CarbonEnv.getInstance(sqlContext.sparkSession).storePath
     val tempCSVFolder = new StringBuilder(storePath).append(CarbonCommonConstants.FILE_SEPARATOR)
       .append("tempCSV")
       .append(CarbonCommonConstants.UNDERSCORE).append(options.dbName)
@@ -136,7 +136,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       null,
       Seq(),
       Map("fileheader" -> header) ++ options.toMap,
-      isOverwriteExist = false,
+      isOverwriteTable = false,
       null,
       Some(dataFrame)).run(sqlContext.sparkSession)
   }

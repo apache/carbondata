@@ -24,7 +24,7 @@ import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 // This extension uses unsafe memory to store page data, for variable length data type (string,
 // decimal)
@@ -47,15 +47,18 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   private static final double FACTOR = 1.25;
 
+  private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+
   /**
    * create a page
    * @param dataType data type
    * @param pageSize number of row
    */
-  UnsafeVarLengthColumnPage(DataType dataType, int pageSize) throws MemoryException {
-    super(dataType, pageSize);
+  UnsafeVarLengthColumnPage(DataType dataType, int pageSize, int scale, int precision)
+      throws MemoryException {
+    super(dataType, pageSize, scale, precision);
     capacity = (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR);
-    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry((long)(capacity));
+    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
     baseAddress = memoryBlock.getBaseObject();
     baseOffset = memoryBlock.getBaseOffset();
   }
@@ -66,10 +69,11 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
    * @param pageSize number of row
    * @param capacity initial capacity of the page, in bytes
    */
-  UnsafeVarLengthColumnPage(DataType dataType, int pageSize, int capacity) throws MemoryException {
-    super(dataType, pageSize);
+  UnsafeVarLengthColumnPage(DataType dataType, int pageSize, int capacity,
+      int scale, int precision) throws MemoryException {
+    super(dataType, pageSize, scale, precision);
     this.capacity = capacity;
-    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry((long)(capacity));
+    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long)(capacity));
     baseAddress = memoryBlock.getBaseObject();
     baseOffset = memoryBlock.getBaseOffset();
   }
@@ -77,7 +81,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   @Override
   public void freeMemory() {
     if (memoryBlock != null) {
-      UnsafeMemoryManager.INSTANCE.freeMemory(memoryBlock);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       memoryBlock = null;
       baseAddress = null;
       baseOffset = 0;
@@ -90,10 +94,10 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   private void ensureMemory(int requestSize) throws MemoryException {
     if (totalLength + requestSize > capacity) {
       int newSize = 2 * capacity;
-      MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(newSize);
+      MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, newSize);
       CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset,
           newBlock.getBaseObject(), newBlock.getBaseOffset(), capacity);
-      UnsafeMemoryManager.INSTANCE.freeMemory(memoryBlock);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       memoryBlock = newBlock;
       baseAddress = newBlock.getBaseObject();
       baseOffset = newBlock.getBaseOffset();
@@ -117,6 +121,10 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
         baseAddress, baseOffset + rowOffset[rowId], length);
   }
 
+  @Override public void putDecimal(int rowId, BigDecimal decimal) {
+    putBytes(rowId, decimalConverter.convert(decimal));
+  }
+
   @Override
   public BigDecimal getDecimal(int rowId) {
     int length = rowOffset[rowId + 1] - rowOffset[rowId];
@@ -124,7 +132,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
     CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset + rowOffset[rowId],
         bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
 
-    return DataTypeUtil.byteToBigDecimal(bytes);
+    return decimalConverter.getDecimal(bytes);
   }
 
   @Override
