@@ -112,7 +112,7 @@ object DataLoadProcessBuilderOnSpark {
     // Because if the number of partitions greater than 1, there will be action operator(sample) in
     // sortBy operator. So here we cache the rdd to avoid do input and convert again.
     if (numPartitions > 1) {
-      convertRDD.persist(StorageLevel.MEMORY_AND_DISK)
+      convertRDD.persist(StorageLevel.MEMORY_AND_DISK_SER)
     }
 
     import scala.reflect.classTag
