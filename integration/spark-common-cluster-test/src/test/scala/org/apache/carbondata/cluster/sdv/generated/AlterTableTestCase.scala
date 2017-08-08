@@ -1073,7 +1073,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     prop.addProperty("carbon.enable.auto.load.merge", "false")
     prop.addProperty("carbon.bad.records.action", "FORCE")
     prop.addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-      TestQueryExecutor.storeLocation+"/baaaaaaadrecords")
+      TestQueryExecutor.warehouse+"/baaaaaaadrecords")
   }
 
   override def afterAll: Unit = {

@@ -71,10 +71,6 @@ object TestQueryExecutor {
   }
 
   val resourcesPath = if (hdfsUrl.startsWith("hdfs://")) {
-    System.setProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION, hdfsUrl)
-    ResourceRegisterAndCopier.
-      copyResourcesifNotExists(hdfsUrl, s"$integrationPath/spark-common-test/src/test/resources",
-        s"$integrationPath//spark-common-cluster-test/src/test/resources/testdatafileslist.txt")
     hdfsUrl
   } else {
     s"$integrationPath/spark-common-test/src/test/resources"
