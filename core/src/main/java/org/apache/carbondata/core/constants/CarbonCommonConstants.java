@@ -1304,6 +1304,22 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_USE_MULTI_TEMP_DIR_DEFAULT = "false";
 
+  /**
+   * Which storage level to persist rdd when sort_scope=global_sort
+   */
+  @CarbonProperty
+  public static final String CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL =
+      "carbon.global.sort.rdd.storage.level";
+
+  /**
+   * The default value(MEMORY_ONLY) is designed for executors with big memory, if user's executor
+   * has less memory, set the CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL to MEMORY_AND_DISK_SER or
+   * other storage level to correspond to different environment.
+   * You can get more recommendations about storage level in spark website:
+   * http://spark.apache.org/docs/latest/rdd-programming-guide.html#rdd-persistence.
+   */
+  public static final String CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL_DEFAULT = "MEMORY_ONLY";
+
   private CarbonCommonConstants() {
   }
 }

@@ -32,6 +32,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.csvload.{CSVInputFormat, StringArrayWritable}
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadProcessBuilder
@@ -112,7 +113,8 @@ object DataLoadProcessBuilderOnSpark {
     // Because if the number of partitions greater than 1, there will be action operator(sample) in
     // sortBy operator. So here we cache the rdd to avoid do input and convert again.
     if (numPartitions > 1) {
-      convertRDD.persist(StorageLevel.MEMORY_AND_DISK)
+      convertRDD.persist(StorageLevel.fromString(
+        CarbonProperties.getInstance().getGlobalSortRddStorageLevel()))
     }
 
     import scala.reflect.classTag

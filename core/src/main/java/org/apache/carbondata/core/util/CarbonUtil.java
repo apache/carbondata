@@ -1714,6 +1714,34 @@ public final class CarbonUtil {
   }
 
   /**
+   * validate the storage level
+   * @param storageLevel
+   * @return boolean
+   */
+  public static boolean isValidStorageLevel(String storageLevel) {
+    if (null == storageLevel || storageLevel.trim().equals("")) {
+      return false;
+    }
+    switch (storageLevel.toUpperCase()) {
+      case "DISK_ONLY":
+      case "DISK_ONLY_2":
+      case "MEMORY_ONLY":
+      case "MEMORY_ONLY_2":
+      case "MEMORY_ONLY_SER":
+      case "MEMORY_ONLY_SER_2":
+      case "MEMORY_AND_DISK":
+      case "MEMORY_AND_DISK_2":
+      case "MEMORY_AND_DISK_SER":
+      case "MEMORY_AND_DISK_SER_2":
+      case "OFF_HEAP":
+      case "NONE":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
    * validate teh batch size
    *
    * @param value
