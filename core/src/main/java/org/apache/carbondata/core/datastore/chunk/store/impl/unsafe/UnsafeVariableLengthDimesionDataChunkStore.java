@@ -170,7 +170,8 @@ public class UnsafeVariableLengthDimesionDataChunkStore
     byte[] value = getRow(rowId);
     DataType dt = vector.getType();
     if ((!(dt instanceof StringType) && value.length == 0) || ByteUtil.UnsafeComparer.INSTANCE
-        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, value)) {
+        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, value)
+        || (!(dt instanceof StringType) && value.length == 0)) {
       vector.putNull(vectorRow);
     } else {
       if (dt instanceof StringType) {

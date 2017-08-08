@@ -283,7 +283,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
     intercept[Exception]  { sql("""ALTER TABLE DROP PARTITION(0)""")}
     intercept[Exception]  { sql("""ALTER TABLE DROP PARTITION(0) WITH DATA""")}
-    
+
     sql("""ALTER TABLE list_table_area DROP PARTITION(2) WITH DATA""")
     val carbonTable2 = CarbonMetadata.getInstance().getCarbonTable("default_list_table_area")
     val partitionInfo2 = carbonTable2.getPartitionInfo(carbonTable.getFactTableName)

@@ -33,6 +33,7 @@ import java.util.ArrayList;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.IsEqual.equalTo;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -59,5 +60,12 @@ public class ListExpressionUnitTest {
     String expected_value = "Row is for left";
     ExpressionResult result = listExpression.evaluate(value);
     assertThat(expected_value, is(equalTo(result.getList().get(0).getString())));
+  }
+
+  @Test public void testGetString() {
+    String actualValue = listExpression.getString();
+    String expectedValue =
+        "ListExpression(ColumnExpression(left_name);ColumnExpression(right_name);)";
+    assertEquals(expectedValue, actualValue);
   }
 }

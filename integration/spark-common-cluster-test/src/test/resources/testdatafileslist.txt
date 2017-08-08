@@ -234,3 +234,4 @@ Data/splchar.csv
 source.csv
 Data/v1_version/metastore_db.zip
 Data/v1_version/store.zip
+2000_UniqData_partition_1.csv
