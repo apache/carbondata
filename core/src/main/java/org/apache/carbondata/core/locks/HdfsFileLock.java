@@ -73,6 +73,14 @@ public class HdfsFileLock extends AbstractCarbonLock {
   }
 
   /**
+   * @param lockFilePath
+   */
+  public HdfsFileLock(String lockFilePath) {
+    this.location = lockFilePath;
+    initRetry();
+  }
+
+  /**
    * @param tableIdentifier
    * @param lockFile
    */

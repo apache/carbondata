@@ -19,7 +19,7 @@ package org.apache.spark.sql.test
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql._
-import org.apache.spark.sql.test.TestQueryExecutor.integrationPath
+import org.apache.spark.sql.test.TestQueryExecutor.{hdfsUrl, integrationPath, warehouse}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -67,9 +67,17 @@ object Spark2TestQueryExecutor {
     .master(TestQueryExecutor.masterUrl)
     .appName("Spark2TestQueryExecutor")
     .enableHiveSupport()
-    .config("spark.sql.warehouse.dir", TestQueryExecutor.warehouse)
+    .config("spark.sql.warehouse.dir", warehouse)
     .config("spark.sql.crossJoin.enabled", "true")
     .getOrCreateCarbonSession(null, TestQueryExecutor.metastoredb)
+  if (warehouse.startsWith("hdfs://")) {
+    System.setProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION, warehouse)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
+      CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
+    ResourceRegisterAndCopier.
+      copyResourcesifNotExists(hdfsUrl, s"$integrationPath/spark-common-test/src/test/resources",
+        s"$integrationPath//spark-common-cluster-test/src/test/resources/testdatafileslist.txt")
+  }
   FileFactory.getConfiguration.
     set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
   spark.sparkContext.setLogLevel("ERROR")
