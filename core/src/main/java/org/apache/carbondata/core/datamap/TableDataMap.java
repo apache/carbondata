@@ -14,15 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.indexstore;
+package org.apache.carbondata.core.datamap;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.events.EventListener;
+import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+
 /**
  * DataMap at the table level, user can add any number of datamaps for one table. Depends
  * on the filter condition it can prune the blocklets.
@@ -52,7 +57,8 @@ public final class TableDataMap implements EventListener {
    * @param filterExp
    * @return
    */
-  public List<Blocklet> prune(List<String> segmentIds, FilterResolverIntf filterExp) {
+  public List<Blocklet> prune(List<String> segmentIds, FilterResolverIntf filterExp)
+      throws IOException {
     List<Blocklet> blocklets = new ArrayList<>();
     for (String segmentId : segmentIds) {
       List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
@@ -78,7 +84,7 @@ public final class TableDataMap implements EventListener {
    *
    * @return
    */
-  public List<DataMapDistributable> toDistributable(List<String> segmentIds) {
+  public List<DataMapDistributable> toDistributable(List<String> segmentIds) throws IOException {
     List<DataMapDistributable> distributables = new ArrayList<>();
     for (String segmentsId : segmentIds) {
       List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentsId);
@@ -130,4 +136,7 @@ public final class TableDataMap implements EventListener {
     return dataMapName;
   }
 
+  public DataMapFactory getDataMapFactory() {
+    return dataMapFactory;
+  }
 }

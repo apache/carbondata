@@ -42,9 +42,6 @@ public class EncodedTablePage {
   // number of row in this page
   private int pageSize;
 
-  // true if it is last page of all input rows
-  private boolean isLastPage;
-
   // size in bytes of all encoded columns (including data and metadate)
   private int encodedSize;
 
@@ -126,14 +123,6 @@ public class EncodedTablePage {
 
   public TablePageKey getPageKey() {
     return pageKey;
-  }
-
-  public boolean isLastPage() {
-    return isLastPage;
-  }
-
-  public void setIsLastPage(boolean isWriteAll) {
-    this.isLastPage = isWriteAll;
   }
 
   public EncodedMeasurePage getMeasure(int measureIndex) {

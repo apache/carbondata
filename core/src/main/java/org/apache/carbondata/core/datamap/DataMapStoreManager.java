@@ -14,15 +14,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.indexstore;
+package org.apache.carbondata.core.datamap;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
 /**
@@ -35,7 +36,7 @@ public final class DataMapStoreManager {
   /**
    * Contains the list of datamaps for each table.
    */
-  private Map<AbsoluteTableIdentifier, List<TableDataMap>> dataMapMappping = new HashMap<>();
+  private Map<String, List<TableDataMap>> allDataMaps = new ConcurrentHashMap<>();
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataMapStoreManager.class.getName());
@@ -44,22 +45,27 @@ public final class DataMapStoreManager {
 
   }
 
+  public List<TableDataMap> getAllDataMap(AbsoluteTableIdentifier identifier) {
+    return allDataMaps.get(identifier.uniqueName());
+  }
+
   /**
    * Get the datamap for reading data.
    *
    * @param dataMapName
-   * @param mapType
+   * @param factoryClass
    * @return
    */
   public TableDataMap getDataMap(AbsoluteTableIdentifier identifier, String dataMapName,
-      DataMapType mapType) {
-    List<TableDataMap> tableDataMaps = dataMapMappping.get(identifier);
+      Class<? extends DataMapFactory> factoryClass) {
+    String table = identifier.uniqueName();
+    List<TableDataMap> tableDataMaps = allDataMaps.get(table);
     TableDataMap dataMap;
     if (tableDataMaps == null) {
-      createTableDataMap(identifier, mapType, dataMapName);
-      tableDataMaps = dataMapMappping.get(identifier);
+      dataMap = createAndRegisterDataMap(identifier, factoryClass, dataMapName);
+    } else {
+      dataMap = getAbstractTableDataMap(dataMapName, tableDataMaps);
     }
-    dataMap = getAbstractTableDataMap(dataMapName, tableDataMaps);
     if (dataMap == null) {
       throw new RuntimeException("Datamap does not exist");
     }
@@ -67,25 +73,24 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * Create new datamap instance using datamap name, datamap type and table identifier
-   *
-   * @param mapType
-   * @return
+   * Return a new datamap instance and registered in the store manager.
+   * The datamap is created using datamap name, datamap factory class and table identifier.
    */
-  private TableDataMap createTableDataMap(AbsoluteTableIdentifier identifier,
-      DataMapType mapType, String dataMapName) {
-    List<TableDataMap> tableDataMaps = dataMapMappping.get(identifier);
+  public TableDataMap createAndRegisterDataMap(AbsoluteTableIdentifier identifier,
+      Class<? extends DataMapFactory> factoryClass, String dataMapName) {
+    String table = identifier.uniqueName();
+    List<TableDataMap> tableDataMaps = allDataMaps.get(table);
     if (tableDataMaps == null) {
       tableDataMaps = new ArrayList<>();
-      dataMapMappping.put(identifier, tableDataMaps);
+      allDataMaps.put(table, tableDataMaps);
     }
     TableDataMap dataMap = getAbstractTableDataMap(dataMapName, tableDataMaps);
     if (dataMap != null) {
-      throw new RuntimeException("Already datamap exists in that path with type " + mapType);
+      throw new RuntimeException("Already datamap exists in that path with type " + dataMapName);
     }
 
     try {
-      DataMapFactory dataMapFactory = mapType.getClassObject().newInstance();
+      DataMapFactory dataMapFactory = factoryClass.newInstance();
       dataMapFactory.init(identifier, dataMapName);
       dataMap = new TableDataMap(identifier, dataMapName, dataMapFactory);
     } catch (Exception e) {
@@ -114,7 +119,7 @@ public final class DataMapStoreManager {
    * @param dataMapName
    */
   public void clearDataMap(AbsoluteTableIdentifier identifier, String dataMapName) {
-    List<TableDataMap> tableDataMaps = dataMapMappping.get(identifier);
+    List<TableDataMap> tableDataMaps = allDataMaps.get(identifier);
     if (tableDataMaps != null) {
       int i = 0;
       for (TableDataMap tableDataMap: tableDataMaps) {

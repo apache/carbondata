@@ -1922,5 +1922,11 @@ public final class CarbonUtil {
         throw new IllegalArgumentException("Invalid data type: " + meta.getType());
     }
   }
+
+  public static void requireNotNull(Object obj) {
+    if (obj == null) {
+      throw new IllegalArgumentException("parameter not be null");
+    }
+  }
 }
 

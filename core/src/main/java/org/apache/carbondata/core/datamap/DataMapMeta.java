@@ -14,43 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.indexstore;
 
-import org.apache.carbondata.core.datastore.block.Distributable;
+package org.apache.carbondata.core.datamap;
 
-/**
- * Distributable class for datamap.
- */
-public abstract class DataMapDistributable implements Distributable {
+import java.util.List;
 
-  private String tablePath;
+import org.apache.carbondata.core.indexstore.schema.FilterType;
 
-  private String segmentId;
+public class DataMapMeta {
 
-  private String dataMapName;
+  private List<String> indexedColumns;
 
-  public String getTablePath() {
-    return tablePath;
+  private FilterType optimizedOperation;
+
+  public DataMapMeta(List<String> indexedColumns, FilterType optimizedOperation) {
+    this.indexedColumns = indexedColumns;
+    this.optimizedOperation = optimizedOperation;
   }
 
-  public void setTablePath(String tablePath) {
-    this.tablePath = tablePath;
+  public List<String> getIndexedColumns() {
+    return indexedColumns;
   }
 
-  public String getSegmentId() {
-    return segmentId;
+  public FilterType getOptimizedOperation() {
+    return optimizedOperation;
   }
-
-  public void setSegmentId(String segmentId) {
-    this.segmentId = segmentId;
-  }
-
-  public String getDataMapName() {
-    return dataMapName;
-  }
-
-  public void setDataMapName(String dataMapName) {
-    this.dataMapName = dataMapName;
-  }
-
 }

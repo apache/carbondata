@@ -156,4 +156,8 @@ public class AbsoluteTableIdentifier implements Serializable {
     }
     return true;
   }
+
+  public String uniqueName() {
+    return storePath + "/" + carbonTableIdentifier.toString().toLowerCase();
+  }
 }

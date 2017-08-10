@@ -24,7 +24,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.datastore.GenericDataType;
+import org.apache.carbondata.core.datastore.DimensionType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -44,9 +44,8 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.processing.datatypes.GenericDataType;
 
 import org.apache.spark.sql.types.Decimal;
 
@@ -73,7 +72,12 @@ public class TablePage {
 
   private TablePageKey key;
 
-  private ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
+  private EncodedTablePage encodedTablePage;
+
+  private EncodingStrategy encodingStrategy = new DefaultEncodingStrategy();
+
+  // true if it is last page of all input rows
+  private boolean isLastPage;
 
   TablePage(CarbonFactDataHandlerModel model, int pageSize) throws MemoryException {
     this.model = model;
@@ -240,14 +244,16 @@ public class TablePage {
     return output;
   }
 
-  EncodedTablePage encode() throws KeyGenException, MemoryException, IOException {
+  void encode() throws KeyGenException, MemoryException, IOException {
     // encode dimensions and measure
     EncodedDimensionPage[] dimensions = encodeAndCompressDimensions();
     EncodedMeasurePage[] measures = encodeAndCompressMeasures();
-    return EncodedTablePage.newInstance(pageSize, dimensions, measures, key);
+    this.encodedTablePage = EncodedTablePage.newInstance(pageSize, dimensions, measures, key);
   }
 
-  private EncodingStrategy encodingStrategy = new DefaultEncodingStrategy();
+  public EncodedTablePage getEncodedTablePage() {
+    return encodedTablePage;
+  }
 
   // apply measure and set encodedData in `encodedData`
   private EncodedMeasurePage[] encodeAndCompressMeasures()
@@ -300,6 +306,52 @@ public class TablePage {
 
     encodedDimensions.addAll(encodedComplexDimenions);
     return encodedDimensions.toArray(new EncodedDimensionPage[encodedDimensions.size()]);
+  }
+
+  /**
+   * return column page of specified column name
+   */
+  public ColumnPage getColumnPage(String columnName) {
+    int dictDimensionIndex = -1;
+    int noDictDimensionIndex = -1;
+    ColumnPage page = null;
+    TableSpec spec = model.getTableSpec();
+    int numDimensions = spec.getNumDimensions();
+    for (int i = 0; i < numDimensions; i++) {
+      DimensionType type = spec.getDimensionSpec(i).getDimensionType();
+      if ((type == DimensionType.GLOBAL_DICTIONARY) || (type == DimensionType.DIRECT_DICTIONARY)) {
+        page = dictDimensionPages[++dictDimensionIndex];
+      } else if (type == DimensionType.PLAIN_VALUE) {
+        page = noDictDimensionPages[++noDictDimensionIndex];
+      } else {
+        // do not support datamap on complex column
+        continue;
+      }
+      String fieldName = spec.getDimensionSpec(i).getFieldName();
+      if (fieldName.equalsIgnoreCase(columnName)) {
+        return page;
+      }
+    }
+    int numMeasures = spec.getNumMeasures();
+    for (int i = 0; i < numMeasures; i++) {
+      String fieldName = spec.getMeasureSpec(i).getFieldName();
+      if (fieldName.equalsIgnoreCase(columnName)) {
+        return measurePage[i];
+      }
+    }
+    throw new IllegalArgumentException("DataMap: must have '" + columnName + "' column in schema");
+  }
+
+  public boolean isLastPage() {
+    return isLastPage;
+  }
+
+  public void setIsLastPage(boolean isWriteAll) {
+    this.isLastPage = isWriteAll;
+  }
+
+  public int getPageSize() {
+    return pageSize;
   }
 }
 

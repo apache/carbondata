@@ -39,6 +39,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.FileFooter3;
+import org.apache.carbondata.processing.store.TablePage;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 
@@ -57,22 +58,25 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
   /**
    * persist the page data to be written in the file
    */
-  private DataWriterHolder dataWriterHolder;
+  private BlockletDataHolder blockletDataHolder;
 
-  private long blockletSize;
+  /**
+   * Threshold of blocklet size in MB
+   */
+  private long blockletSizeThreshold;
 
   public CarbonFactDataWriterImplV3(CarbonDataWriterVo dataWriterVo) {
     super(dataWriterVo);
-    blockletSize = Long.parseLong(CarbonProperties.getInstance()
+    blockletSizeThreshold = Long.parseLong(CarbonProperties.getInstance()
         .getProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
             CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE))
         * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
         * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
-    if (blockletSize > fileSizeInBytes) {
-      blockletSize = fileSizeInBytes;
-      LOGGER.info("Blocklet size configure for table is: " + blockletSize);
+    if (blockletSizeThreshold > fileSizeInBytes) {
+      blockletSizeThreshold = fileSizeInBytes;
+      LOGGER.info("Blocklet size configure for table is: " + blockletSizeThreshold);
     }
-    dataWriterHolder = new DataWriterHolder();
+    blockletDataHolder = new BlockletDataHolder();
   }
 
   @Override protected void writeBlockletInfoToFile(FileChannel channel, String filePath)
@@ -100,75 +104,73 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
   }
 
   /**
-   * Below method will be used to write one table page data
+   * Below method will be used to write one table page data, invoked by Consumer
+   * @param tablePage
    */
-  @Override public void writeTablePage(EncodedTablePage encodedTablePage)
+  @Override public void writeTablePage(TablePage tablePage)
       throws CarbonDataWriterException {
     // condition for writting all the pages
-    if (!encodedTablePage.isLastPage()) {
+    if (!tablePage.isLastPage()) {
       boolean isAdded = false;
       // check if size more than blocklet size then write the page to file
-      if (dataWriterHolder.getSize() + encodedTablePage.getEncodedSize() >= blockletSize) {
-        // if one page size is more than blocklet size
-        if (dataWriterHolder.getEncodedTablePages().size() == 0) {
+      if (blockletDataHolder.getSize() + tablePage.getEncodedTablePage().getEncodedSize() >=
+          blockletSizeThreshold) {
+        // if blocklet size exceeds threshold, write blocklet data
+        if (blockletDataHolder.getEncodedTablePages().size() == 0) {
           isAdded = true;
-          dataWriterHolder.addPage(encodedTablePage);
+          addPageData(tablePage);
         }
 
-        LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getNumberOfPagesAdded()
-            + " :Rows Added: " + dataWriterHolder.getTotalRows());
+        LOGGER.info("Number of Pages for blocklet is: " + blockletDataHolder.getNumberOfPagesAdded()
+            + " :Rows Added: " + blockletDataHolder.getTotalRows());
+
         // write the data
         writeBlockletToFile();
+
       }
       if (!isAdded) {
-        dataWriterHolder.addPage(encodedTablePage);
+        addPageData(tablePage);
       }
     } else {
       //for last blocklet check if the last page will exceed the blocklet size then write
       // existing pages and then last page
-      if (encodedTablePage.getPageSize() > 0) {
-        dataWriterHolder.addPage(encodedTablePage);
+
+      if (tablePage.getPageSize() > 0) {
+        addPageData(tablePage);
       }
-      if (dataWriterHolder.getNumberOfPagesAdded() > 0) {
-        LOGGER.info("Number of Pages for blocklet is: " + dataWriterHolder.getNumberOfPagesAdded()
-            + " :Rows Added: " + dataWriterHolder.getTotalRows());
+      if (blockletDataHolder.getNumberOfPagesAdded() > 0) {
+        LOGGER.info("Number of Pages for blocklet is: " + blockletDataHolder.getNumberOfPagesAdded()
+            + " :Rows Added: " + blockletDataHolder.getTotalRows());
         writeBlockletToFile();
       }
     }
   }
 
+  private void addPageData(TablePage tablePage) {
+    blockletDataHolder.addPage(tablePage);
+    if (listener != null) {
+      if (pageId == 0) {
+        listener.onBlockletStart(blockletId);
+      }
+      listener.onPageAdded(blockletId, pageId++, tablePage);
+    }
+  }
+
   /**
-   * Write one blocklet data to file
+   * Write the collect blocklet data (blockletDataHolder) to file
    */
   private void writeBlockletToFile() {
     // get the list of all encoded table page
-    List<EncodedTablePage> encodedTablePageList = dataWriterHolder.getEncodedTablePages();
+    List<EncodedTablePage> encodedTablePageList = blockletDataHolder.getEncodedTablePages();
     int numDimensions = encodedTablePageList.get(0).getNumDimensions();
     int numMeasures = encodedTablePageList.get(0).getNumMeasures();
-    long blockletDataSize = 0;
     // get data chunks for all the column
     byte[][] dataChunkBytes = new byte[numDimensions + numMeasures][];
-    int measureStartIndex = numDimensions;
-    // calculate the size of data chunks
-    try {
-      for (int i = 0; i < numDimensions; i++) {
-        dataChunkBytes[i] = CarbonUtil.getByteArray(
-            CarbonMetadataUtil.getDimensionDataChunk3(encodedTablePageList, i));
-        blockletDataSize += dataChunkBytes[i].length;
-      }
-      for (int i = 0; i < numMeasures; i++) {
-        dataChunkBytes[measureStartIndex] = CarbonUtil.getByteArray(
-            CarbonMetadataUtil.getMeasureDataChunk3(encodedTablePageList, i));
-        blockletDataSize += dataChunkBytes[measureStartIndex].length;
-        measureStartIndex++;
-      }
-    } catch (IOException e) {
-      throw new CarbonDataWriterException("Problem while getting the data chunks", e);
-    }
+    long metadataSize = fillDataChunk(encodedTablePageList, dataChunkBytes);
     // calculate the total size of data to be written
-    blockletDataSize += dataWriterHolder.getSize();
+    long blockletSize = blockletDataHolder.getSize() + metadataSize;
     // to check if data size will exceed the block size then create a new file
-    updateBlockletFileChannel(blockletDataSize);
+    createNewFileIfReachThreshold(blockletSize);
 
     // write data to file
     try {
@@ -177,11 +179,43 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
         writeHeaderToFile(fileChannel);
       }
       writeBlockletToFile(fileChannel, dataChunkBytes);
+      if (listener != null) {
+        listener.onBlockletEnd(blockletId++);
+      }
+      pageId = 0;
     } catch (IOException e) {
       throw new CarbonDataWriterException("Problem when writing file", e);
     }
     // clear the data holder
-    dataWriterHolder.clear();
+    blockletDataHolder.clear();
+
+  }
+
+  /**
+   * Fill dataChunkBytes and return total size of page metadata
+   */
+  private long fillDataChunk(List<EncodedTablePage> encodedTablePageList, byte[][] dataChunkBytes) {
+    int size = 0;
+    int numDimensions = encodedTablePageList.get(0).getNumDimensions();
+    int numMeasures = encodedTablePageList.get(0).getNumMeasures();
+    int measureStartIndex = numDimensions;
+    // calculate the size of data chunks
+    try {
+      for (int i = 0; i < numDimensions; i++) {
+        dataChunkBytes[i] = CarbonUtil.getByteArray(
+            CarbonMetadataUtil.getDimensionDataChunk3(encodedTablePageList, i));
+        size += dataChunkBytes[i].length;
+      }
+      for (int i = 0; i < numMeasures; i++) {
+        dataChunkBytes[measureStartIndex] = CarbonUtil.getByteArray(
+            CarbonMetadataUtil.getMeasureDataChunk3(encodedTablePageList, i));
+        size += dataChunkBytes[measureStartIndex].length;
+        measureStartIndex++;
+      }
+    } catch (IOException e) {
+      throw new CarbonDataWriterException("Problem while getting the data chunks", e);
+    }
+    return size;
   }
 
   /**
@@ -210,7 +244,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     List<Long> currentDataChunksOffset = new ArrayList<>();
     // to maintain the length of each data chunk in blocklet
     List<Integer> currentDataChunksLength = new ArrayList<>();
-    List<EncodedTablePage> encodedTablePages = dataWriterHolder.getEncodedTablePages();
+    List<EncodedTablePage> encodedTablePages = blockletDataHolder.getEncodedTablePages();
     int numberOfDimension = encodedTablePages.get(0).getNumDimensions();
     int numberOfMeasures = encodedTablePages.get(0).getNumMeasures();
     ByteBuffer buffer = null;
@@ -258,7 +292,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
             encodedTablePages, dataWriterVo.getSegmentProperties().getMeasures()));
     BlockletInfo3 blockletInfo3 =
         new BlockletInfo3(numberOfRows, currentDataChunksOffset, currentDataChunksLength,
-            dimensionOffset, measureOffset, dataWriterHolder.getEncodedTablePages().size());
+            dimensionOffset, measureOffset, blockletDataHolder.getEncodedTablePages().size());
     blockletMetadata.add(blockletInfo3);
   }
 
@@ -328,10 +362,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
    * @throws CarbonDataWriterException
    */
   public void closeWriter() throws CarbonDataWriterException {
-    CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
-    renameCarbonDataFile();
-    copyCarbonDataFileToCarbonStorePath(
-        this.carbonDataFileTempPath.substring(0, this.carbonDataFileTempPath.lastIndexOf('.')));
+    commitCurrentFile(true);
     try {
       writeIndexFile();
     } catch (IOException e) {
