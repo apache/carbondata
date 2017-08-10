@@ -79,7 +79,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
           input.getPageSize(),
           result,
           new DirectCompressorCodecMeta(compressor.getName(), stats.getDataType(), stats),
-          input.getStatistics().getNullBits());
+          input.getNullBits());
     }
 
     @Override

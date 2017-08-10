@@ -19,7 +19,7 @@ package org.apache.carbondata.core.scan.result.vector;
 import java.math.BigDecimal;
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 import org.apache.spark.sql.types.Decimal;
@@ -28,25 +28,24 @@ public class MeasureDataVectorProcessor {
 
   public interface MeasureVectorFiller {
 
-    void fillMeasureVector(MeasureColumnDataChunk dataChunk, ColumnVectorInfo info);
+    void fillMeasureVector(ColumnPage dataChunk, ColumnVectorInfo info);
 
-    void fillMeasureVectorForFilter(int[] rowMapping, MeasureColumnDataChunk dataChunk,
+    void fillMeasureVectorForFilter(int[] rowMapping, ColumnPage dataChunk,
         ColumnVectorInfo info);
   }
 
   public static class IntegralMeasureVectorFiller implements MeasureVectorFiller {
 
     @Override
-    public void fillMeasureVector(MeasureColumnDataChunk dataChunk, ColumnVectorInfo info) {
+    public void fillMeasureVector(ColumnPage dataChunk, ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
-          vector.putInt(vectorOffset,
-              (int)dataChunk.getColumnPage().getLong(i));
+          vector.putInt(vectorOffset, (int)dataChunk.getLong(i));
           vectorOffset++;
         }
       } else {
@@ -54,8 +53,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(i)) {
             vector.putNull(vectorOffset);
           } else {
-            vector.putInt(vectorOffset,
-                (int)dataChunk.getColumnPage().getLong(i));
+            vector.putInt(vectorOffset, (int)dataChunk.getLong(i));
           }
           vectorOffset++;
         }
@@ -63,18 +61,17 @@ public class MeasureDataVectorProcessor {
     }
 
     @Override
-    public void fillMeasureVectorForFilter(int[] rowMapping, MeasureColumnDataChunk dataChunk,
+    public void fillMeasureVectorForFilter(int[] rowMapping, ColumnPage dataChunk,
         ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           int currentRow = rowMapping[i];
-          vector.putInt(vectorOffset,
-              (int)dataChunk.getColumnPage().getLong(currentRow));
+          vector.putInt(vectorOffset, (int)dataChunk.getLong(currentRow));
           vectorOffset++;
         }
       } else {
@@ -83,8 +80,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
-            vector.putInt(vectorOffset,
-                (int)dataChunk.getColumnPage().getLong(currentRow));
+            vector.putInt(vectorOffset, (int)dataChunk.getLong(currentRow));
           }
           vectorOffset++;
         }
@@ -95,16 +91,15 @@ public class MeasureDataVectorProcessor {
   public static class ShortMeasureVectorFiller implements MeasureVectorFiller {
 
     @Override
-    public void fillMeasureVector(MeasureColumnDataChunk dataChunk, ColumnVectorInfo info) {
+    public void fillMeasureVector(ColumnPage dataChunk, ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
-          vector.putShort(vectorOffset,
-              (short) dataChunk.getColumnPage().getLong(i));
+          vector.putShort(vectorOffset, (short) dataChunk.getLong(i));
           vectorOffset++;
         }
       } else {
@@ -112,8 +107,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(i)) {
             vector.putNull(vectorOffset);
           } else {
-            vector.putShort(vectorOffset,
-                (short) dataChunk.getColumnPage().getLong(i));
+            vector.putShort(vectorOffset, (short) dataChunk.getLong(i));
           }
           vectorOffset++;
         }
@@ -121,18 +115,17 @@ public class MeasureDataVectorProcessor {
     }
 
     @Override
-    public void fillMeasureVectorForFilter(int[] rowMapping, MeasureColumnDataChunk dataChunk,
+    public void fillMeasureVectorForFilter(int[] rowMapping, ColumnPage dataChunk,
         ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           int currentRow = rowMapping[i];
-          vector.putShort(vectorOffset,
-              (short) dataChunk.getColumnPage().getLong(currentRow));
+          vector.putShort(vectorOffset, (short) dataChunk.getLong(currentRow));
           vectorOffset++;
         }
       } else {
@@ -141,8 +134,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
-            vector.putShort(vectorOffset,
-                (short) dataChunk.getColumnPage().getLong(currentRow));
+            vector.putShort(vectorOffset, (short) dataChunk.getLong(currentRow));
           }
           vectorOffset++;
         }
@@ -153,16 +145,15 @@ public class MeasureDataVectorProcessor {
   public static class LongMeasureVectorFiller implements MeasureVectorFiller {
 
     @Override
-    public void fillMeasureVector(MeasureColumnDataChunk dataChunk, ColumnVectorInfo info) {
+    public void fillMeasureVector(ColumnPage dataChunk, ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
-          vector.putLong(vectorOffset,
-              dataChunk.getColumnPage().getLong(i));
+          vector.putLong(vectorOffset, dataChunk.getLong(i));
           vectorOffset++;
         }
       } else {
@@ -170,8 +161,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(i)) {
             vector.putNull(vectorOffset);
           } else {
-            vector.putLong(vectorOffset,
-                dataChunk.getColumnPage().getLong(i));
+            vector.putLong(vectorOffset, dataChunk.getLong(i));
           }
           vectorOffset++;
         }
@@ -179,18 +169,17 @@ public class MeasureDataVectorProcessor {
     }
 
     @Override
-    public void fillMeasureVectorForFilter(int[] rowMapping, MeasureColumnDataChunk dataChunk,
+    public void fillMeasureVectorForFilter(int[] rowMapping, ColumnPage dataChunk,
         ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           int currentRow = rowMapping[i];
-          vector.putLong(vectorOffset,
-              dataChunk.getColumnPage().getLong(currentRow));
+          vector.putLong(vectorOffset, dataChunk.getLong(currentRow));
           vectorOffset++;
         }
       } else {
@@ -199,8 +188,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
-            vector.putLong(vectorOffset,
-                dataChunk.getColumnPage().getLong(currentRow));
+            vector.putLong(vectorOffset, dataChunk.getLong(currentRow));
           }
           vectorOffset++;
         }
@@ -211,20 +199,20 @@ public class MeasureDataVectorProcessor {
   public static class DecimalMeasureVectorFiller implements MeasureVectorFiller {
 
     @Override
-    public void fillMeasureVector(MeasureColumnDataChunk dataChunk, ColumnVectorInfo info) {
+    public void fillMeasureVector(ColumnPage dataChunk, ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
       int newMeasureScale = info.measure.getMeasure().getScale();
-      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      BitSet nullBitSet = dataChunk.getNullBits();
       for (int i = offset; i < len; i++) {
         if (nullBitSet.get(i)) {
           vector.putNull(vectorOffset);
         } else {
           BigDecimal decimal =
-              dataChunk.getColumnPage().getDecimal(i);
+              dataChunk.getDecimal(i);
           if (decimal.scale() < newMeasureScale) {
             decimal = decimal.setScale(newMeasureScale);
           }
@@ -236,21 +224,20 @@ public class MeasureDataVectorProcessor {
     }
 
     @Override
-    public void fillMeasureVectorForFilter(int[] rowMapping, MeasureColumnDataChunk dataChunk,
+    public void fillMeasureVectorForFilter(int[] rowMapping, ColumnPage dataChunk,
         ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
       int precision = info.measure.getMeasure().getPrecision();
-      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      BitSet nullBitSet = dataChunk.getNullBits();
       for (int i = offset; i < len; i++) {
         int currentRow = rowMapping[i];
         if (nullBitSet.get(currentRow)) {
           vector.putNull(vectorOffset);
         } else {
-          BigDecimal decimal =
-              dataChunk.getColumnPage().getDecimal(currentRow);
+          BigDecimal decimal = dataChunk.getDecimal(currentRow);
           if (info.measure.getMeasure().getScale() > decimal.scale()) {
             decimal = decimal.setScale(info.measure.getMeasure().getScale());
           }
@@ -265,16 +252,15 @@ public class MeasureDataVectorProcessor {
   public static class DefaultMeasureVectorFiller implements MeasureVectorFiller {
 
     @Override
-    public void fillMeasureVector(MeasureColumnDataChunk dataChunk, ColumnVectorInfo info) {
+    public void fillMeasureVector(ColumnPage dataChunk, ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
-          vector.putDouble(vectorOffset,
-              dataChunk.getColumnPage().getDouble(i));
+          vector.putDouble(vectorOffset, dataChunk.getDouble(i));
           vectorOffset++;
         }
       } else {
@@ -282,8 +268,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(i)) {
             vector.putNull(vectorOffset);
           } else {
-            vector.putDouble(vectorOffset,
-                dataChunk.getColumnPage().getDouble(i));
+            vector.putDouble(vectorOffset, dataChunk.getDouble(i));
           }
           vectorOffset++;
         }
@@ -291,18 +276,17 @@ public class MeasureDataVectorProcessor {
     }
 
     @Override
-    public void fillMeasureVectorForFilter(int[] rowMapping, MeasureColumnDataChunk dataChunk,
+    public void fillMeasureVectorForFilter(int[] rowMapping, ColumnPage dataChunk,
         ColumnVectorInfo info) {
       int offset = info.offset;
       int len = offset + info.size;
       int vectorOffset = info.vectorOffset;
       CarbonColumnVector vector = info.vector;
-      BitSet nullBitSet = dataChunk.getNullValueIndexHolder().getBitSet();
+      BitSet nullBitSet = dataChunk.getNullBits();
       if (nullBitSet.isEmpty()) {
         for (int i = offset; i < len; i++) {
           int currentRow = rowMapping[i];
-          vector.putDouble(vectorOffset,
-              dataChunk.getColumnPage().getDouble(currentRow));
+          vector.putDouble(vectorOffset, dataChunk.getDouble(currentRow));
           vectorOffset++;
         }
       } else {
@@ -311,8 +295,7 @@ public class MeasureDataVectorProcessor {
           if (nullBitSet.get(currentRow)) {
             vector.putNull(vectorOffset);
           } else {
-            vector.putDouble(vectorOffset,
-                dataChunk.getColumnPage().getDouble(currentRow));
+            vector.putDouble(vectorOffset, dataChunk.getDouble(currentRow));
           }
           vectorOffset++;
         }

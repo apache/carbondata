@@ -21,9 +21,9 @@ import java.io.IOException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -93,14 +93,14 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     }
     scannedResult.setDimensionChunks(dimensionColumnDataChunks);
     MeasureRawColumnChunk[] measureRawColumnChunks = blocksChunkHolder.getMeasureRawDataChunk();
-    MeasureColumnDataChunk[][] measureColumnDataChunks =
-        new MeasureColumnDataChunk[measureRawColumnChunks.length][];
+    ColumnPage[][] columnPages =
+        new ColumnPage[measureRawColumnChunks.length][];
     for (int i = 0; i < measureRawColumnChunks.length; i++) {
       if (measureRawColumnChunks[i] != null) {
-        measureColumnDataChunks[i] = measureRawColumnChunks[i].convertToMeasureColDataChunks();
+        columnPages[i] = measureRawColumnChunks[i].convertToMeasureColDataChunks();
       }
     }
-    scannedResult.setMeasureChunks(measureColumnDataChunks);
+    scannedResult.setMeasureChunks(columnPages);
     int[] numberOfRows = null;
     if (blockExecutionInfo.getAllSelectedDimensionBlocksIndexes().length > 0) {
       for (int i = 0; i < dimensionRawColumnChunks.length; i++) {

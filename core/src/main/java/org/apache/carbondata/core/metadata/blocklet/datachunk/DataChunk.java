@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.metadata.blocklet.datachunk;
 
 import java.io.Serializable;
+import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
@@ -50,7 +51,7 @@ public class DataChunk implements Serializable {
   /**
    * information about presence of values in each row of this column chunk
    */
-  private transient PresenceMeta nullValueIndexForColumn;
+  private transient BitSet nullValueIndexForColumn;
 
   /**
    * offset of row id page, only if encoded using inverted index
@@ -128,14 +129,14 @@ public class DataChunk implements Serializable {
   /**
    * @return the nullValueIndexForColumn
    */
-  public PresenceMeta getNullValueIndexForColumn() {
+  public BitSet getNullValueIndexForColumn() {
     return nullValueIndexForColumn;
   }
 
   /**
    * @param nullValueIndexForColumn the nullValueIndexForColumn to set
    */
-  public void setNullValueIndexForColumn(PresenceMeta nullValueIndexForColumn) {
+  public void setNullValueIndexForColumn(BitSet nullValueIndexForColumn) {
     this.nullValueIndexForColumn = nullValueIndexForColumn;
   }
 

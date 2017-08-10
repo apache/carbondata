@@ -90,7 +90,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
             input.getPageSize(),
             result,
             new AdaptiveDeltaIntegralCodecMeta(targetDataType, stats, compressor.getName()),
-            input.getStatistics().getNullBits());
+            input.getNullBits());
       }
 
       @Override

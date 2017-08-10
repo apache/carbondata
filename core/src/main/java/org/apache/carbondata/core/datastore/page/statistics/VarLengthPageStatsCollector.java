@@ -97,10 +97,6 @@ public class VarLengthPageStatsCollector implements ColumnPageStatsCollector {
         return max;
       }
 
-      @Override public BitSet getNullBits() {
-        return null;
-      }
-
       @Override public int getDecimalPoint() {
         return 0;
       }

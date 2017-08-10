@@ -154,7 +154,7 @@ public class RLECodec implements ColumnPageCodec {
           input.getPageSize(),
           encoded,
           new RLECodecMeta(input.getDataType(), input.getPageSize(), stats),
-          stats.getNullBits());
+          input.getNullBits());
     }
 
     @Override

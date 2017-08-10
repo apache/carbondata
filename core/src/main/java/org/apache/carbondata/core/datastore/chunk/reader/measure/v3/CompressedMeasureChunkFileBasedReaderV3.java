@@ -23,7 +23,6 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -210,10 +209,9 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
    * @return DimensionColumnDataChunk
    */
   @Override
-  public MeasureColumnDataChunk convertToMeasureChunk(
+  public ColumnPage convertToMeasureChunk(
       MeasureRawColumnChunk measureRawColumnChunk, int pageNumber)
       throws IOException, MemoryException {
-    MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();
     // data chunk of blocklet column
     DataChunk3 dataChunk3 = measureRawColumnChunk.getDataChunkV3();
     // data chunk of page
@@ -224,12 +222,8 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     int copyPoint = measureRawColumnChunk.getOffSet() + measureColumnChunkLength
         .get(measureRawColumnChunk.getBlockletId()) + dataChunk3.getPage_offset().get(pageNumber);
     ColumnPage decodedPage = decodeMeasure(measureRawColumnChunk, measureColumnChunk, copyPoint);
-
-    // set the data chunk
-    datChunk.setColumnPage(decodedPage);
-    // set the null value indexes
-    datChunk.setNullValueIndexHolder(getPresenceMeta(measureColumnChunk.presence));
-    return datChunk;
+    decodedPage.setNullBits(getNullBitSet(measureColumnChunk.presence));
+    return decodedPage;
   }
 
   protected ColumnPage decodeMeasure(MeasureRawColumnChunk measureRawColumnChunk,

@@ -69,7 +69,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
             input.getPageSize(),
             result,
             new AdaptiveIntegralCodecMeta(targetDataType, stats, compressor.getName()),
-            input.getStatistics().getNullBits());
+            input.getNullBits());
       }
 
       @Override
