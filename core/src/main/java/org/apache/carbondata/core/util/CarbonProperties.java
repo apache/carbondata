@@ -867,7 +867,7 @@ public final class CarbonProperties {
         CarbonCommonConstants.CARBON_USE_MULTI_TEMP_DIR_DEFAULT);
     boolean validateBoolean = CarbonUtil.validateBoolean(usingMultiDirStr);
     if (!validateBoolean) {
-      LOGGER.info("The carbon.use.multiple.temp.dir configuration value is invalid."
+      LOGGER.error("The carbon.use.multiple.temp.dir configuration value is invalid."
           + "Configured value: \"" + usingMultiDirStr + "\"."
           + "Data Load will not use multiple temp directories.");
       usingMultiDirStr = CarbonCommonConstants.CARBON_USE_MULTI_TEMP_DIR_DEFAULT;
@@ -884,7 +884,7 @@ public final class CarbonProperties {
         CarbonCommonConstants.CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL_DEFAULT);
     boolean validateStorageLevel = CarbonUtil.isValidStorageLevel(storageLevel);
     if (!validateStorageLevel) {
-      LOGGER.info("The " + CarbonCommonConstants.CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL
+      LOGGER.error("The " + CarbonCommonConstants.CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL
           + " configuration value is invalid. It will use default storage level("
           + CarbonCommonConstants.CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL_DEFAULT
           + ") to persist rdd.");
