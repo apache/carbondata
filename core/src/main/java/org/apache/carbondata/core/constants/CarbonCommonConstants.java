@@ -1308,7 +1308,8 @@ public final class CarbonCommonConstants {
    * Which storage level to persist rdd when sort_scope=global_sort
    */
   @CarbonProperty
-  public static final String CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL = "carbon.global.sort.rdd.storage.level";
+  public static final String CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL =
+      "carbon.global.sort.rdd.storage.level";
 
   /**
    * default value for carbon.global.sort.rdd.storage.level
