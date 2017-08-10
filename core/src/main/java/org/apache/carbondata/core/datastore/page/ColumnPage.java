@@ -23,6 +23,7 @@ import java.math.BigDecimal;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
@@ -68,7 +69,7 @@ public abstract class ColumnPage {
     return dataType;
   }
 
-  public Object getStatistics() {
+  public SimpleStatsResult getStatistics() {
     return statsCollector.getPageStats();
   }
 

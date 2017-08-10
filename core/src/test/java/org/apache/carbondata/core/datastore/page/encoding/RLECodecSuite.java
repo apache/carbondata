@@ -21,6 +21,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.encoding.rle.RLECodec;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -111,9 +112,10 @@ public class RLECodecSuite {
 
   private void testBytePageEncode(ColumnPage inputPage, byte[] expectedEncodedBytes)
       throws IOException, MemoryException {
-    RLECodec codec = new RLECodec(DataType.BYTE, inputPage.getPageSize());
-    EncodedColumnPage out = codec.encode(inputPage);
-    byte[] encoded = out.getEncodedData();
+    RLECodec codec = new RLECodec();
+    Encoder encoder = codec.createEncoder(null);
+    EncodedColumnPage result = encoder.encode(inputPage);
+    byte[] encoded = result.getEncodedData();
     assertEquals(expectedEncodedBytes.length, encoded.length);
     for (int i = 0; i < encoded.length; i++) {
       assertEquals(expectedEncodedBytes[i], encoded[i]);
@@ -121,8 +123,9 @@ public class RLECodecSuite {
   }
 
   private void testBytePageDecode(byte[] inputBytes, byte[] expectedDecodedBytes) throws IOException, MemoryException {
-    RLECodec codec = new RLECodec(DataType.BYTE, expectedDecodedBytes.length);
-    ColumnPage page = codec.decode(inputBytes, 0, inputBytes.length);
+    RLECodec codec = new RLECodec();
+    Decoder decoder = codec.createDecoder(null);
+    ColumnPage page = decoder.decode(inputBytes, 0, inputBytes.length);
     byte[] decoded = page.getBytePage();
     assertEquals(expectedDecodedBytes.length, decoded.length);
     for (int i = 0; i < decoded.length; i++) {

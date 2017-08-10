@@ -17,30 +17,23 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
-import org.apache.carbondata.core.datastore.compression.Compressor;
+import java.io.IOException;
+
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.memory.MemoryException;
 
-public abstract class IndexStorageCodec implements ColumnPageCodec {
-  protected ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
-  protected Compressor compressor;
-  protected boolean isSort;
-  protected boolean isInvertedIndex;
+public interface Encoder {
 
-  IndexStorageCodec(boolean isSort, boolean isInvertedIndex, Compressor compressor) {
-    this.isSort = isSort;
-    this.isInvertedIndex = isInvertedIndex;
-    this.compressor = compressor;
-  }
+  /**
+   * Apply encoding algorithm on input column page and return encoded data
+   */
+  EncodedColumnPage encode(ColumnPage input) throws MemoryException, IOException;
 
-  public EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input) {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public Decoder createDecoder(ColumnPageCodecMeta meta) {
-    throw new UnsupportedOperationException("internal error");
-  }
+  /**
+   * Apply encoding algorithm for complex column page and return the coded data
+   * TODO: remove this interface after complex column page is unified with column page
+   */
+  EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input);
 
 }

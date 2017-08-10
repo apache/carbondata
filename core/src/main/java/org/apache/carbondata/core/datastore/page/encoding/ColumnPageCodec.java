@@ -17,41 +17,26 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
-import java.io.IOException;
-
-import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
-import org.apache.carbondata.core.memory.MemoryException;
+import java.util.Map;
 
 /**
- *  Codec for a column page data, implementation should not keep state across pages,
- *  caller may use the same object to apply multiple pages.
+ *  Codec for a column page data.
  */
 public interface ColumnPageCodec {
-
   /**
-   * Codec name will be stored in BlockletHeader (DataChunk3)
+   * Return the codec name
    */
   String getName();
 
   /**
-   * encode a column page and return the encoded data
+   * Return a new Encoder which will be used to encode one column page.
+   * This will be called for every column page
    */
-  EncodedColumnPage encode(ColumnPage input) throws MemoryException, IOException;
+  Encoder createEncoder(Map<String, String> parameter);
 
   /**
-   * encode complex column page and return the coded data
-   * TODO: remove this interface after complex column page is unified with column page
+   * Return a new Decoder with specified metadata.
+   * This will be called for every column page
    */
-  EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input);
-
-  /**
-   * decode byte array from offset to a column page
-   * @param input encoded byte array
-   * @param offset startoffset of the input to decode
-   * @param length length of data to decode
-   * @return decoded data
-   */
-  ColumnPage decode(byte[] input, int offset, int length) throws MemoryException, IOException;
-
+  Decoder createDecoder(ColumnPageCodecMeta meta);
 }

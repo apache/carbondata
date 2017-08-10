@@ -85,7 +85,7 @@ public class VarLengthPageStatsCollector implements ColumnPageStatsCollector {
   }
 
   @Override
-  public Object getPageStats() {
+  public SimpleStatsResult getPageStats() {
     // for binary type, we do not collect its stats
     return new SimpleStatsResult() {
 

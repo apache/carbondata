@@ -17,6 +17,9 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import java.io.IOException;
+import java.util.Map;
+
 import org.apache.carbondata.core.datastore.DimensionType;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForInt;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForInt;
@@ -25,6 +28,7 @@ import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -41,26 +45,37 @@ public class DirectDictDimensionIndexCodec extends IndexStorageCodec {
   }
 
   @Override
-  public EncodedColumnPage encode(ColumnPage input) throws MemoryException {
-    IndexStorage indexStorage;
-    byte[][] data = input.getByteArrayPage();
-    if (isInvertedIndex) {
-      if (version == ColumnarFormatVersion.V3) {
-        indexStorage = new BlockIndexerStorageForShort(data, false, false, isSort);
-      } else {
-        indexStorage = new BlockIndexerStorageForInt(data, false, false, isSort);
+  public Encoder createEncoder(Map<String, String> parameter) {
+    return new Encoder() {
+      @Override
+      public EncodedColumnPage encode(ColumnPage input)
+          throws MemoryException, IOException {
+        IndexStorage indexStorage;
+        byte[][] data = input.getByteArrayPage();
+        if (isInvertedIndex) {
+          if (version == ColumnarFormatVersion.V3) {
+            indexStorage = new BlockIndexerStorageForShort(data, false, false, isSort);
+          } else {
+            indexStorage = new BlockIndexerStorageForInt(data, false, false, isSort);
+          }
+        } else {
+          if (version == ColumnarFormatVersion.V3) {
+            indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
+          } else {
+            indexStorage = new BlockIndexerStorageForNoInvertedIndexForInt(data);
+          }
+        }
+        byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
+        byte[] compressed = compressor.compressByte(flattened);
+        return new EncodedDimensionPage(input.getPageSize(), compressed, indexStorage,
+            DimensionType.GLOBAL_DICTIONARY);
       }
-    } else {
-      if (version == ColumnarFormatVersion.V3) {
-        indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
-      } else {
-        indexStorage = new BlockIndexerStorageForNoInvertedIndexForInt(data);
+
+      @Override
+      public EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input) {
+        return DirectDictDimensionIndexCodec.super.encodeComplexColumn(input);
       }
-    }
-    byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
-    byte[] compressed = compressor.compressByte(flattened);
-    return new EncodedDimensionPage(input.getPageSize(), compressed, indexStorage,
-        DimensionType.GLOBAL_DICTIONARY);
+    };
   }
 
 }

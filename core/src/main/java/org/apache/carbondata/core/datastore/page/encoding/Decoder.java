@@ -17,23 +17,16 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
-import org.apache.carbondata.core.datastore.TableSpec;
-import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import java.io.IOException;
 
-/**
- * Base class for encoding strategy implementation.
- */
-public abstract class EncodingStrategy {
+import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.memory.MemoryException;
+
+public interface Decoder {
 
   /**
-   * Return new encoder for specified column
+   * Apply decoding algorithm on input byte array and return decoded column page
    */
-  public abstract Encoder createEncoder(TableSpec.ColumnSpec columnSpec, SimpleStatsResult stats);
-
-  /**
-   * Return new decoder for specified measure column and metadata read from file
-   */
-  public abstract Decoder createDecoder(ValueEncoderMeta meta);
+  ColumnPage decode(byte[] input, int offset, int length) throws MemoryException, IOException;
 
 }

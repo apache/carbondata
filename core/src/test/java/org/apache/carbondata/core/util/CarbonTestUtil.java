@@ -15,25 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.encoding;
+package org.apache.carbondata.core.util;
 
-import org.apache.carbondata.core.datastore.TableSpec;
-import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodecMeta;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 
-/**
- * Base class for encoding strategy implementation.
- */
-public abstract class EncodingStrategy {
+public class CarbonTestUtil {
 
-  /**
-   * Return new encoder for specified column
-   */
-  public abstract Encoder createEncoder(TableSpec.ColumnSpec columnSpec, SimpleStatsResult stats);
+  public static ValueEncoderMeta createValueEncoderMeta() {
+    ColumnarFormatVersion version =
+        CarbonProperties.getInstance().getFormatVersion();
 
-  /**
-   * Return new decoder for specified measure column and metadata read from file
-   */
-  public abstract Decoder createDecoder(ValueEncoderMeta meta);
-
+    switch (version) {
+      case V1:
+      case V2:
+        return new ValueEncoderMeta();
+      case V3:
+        return new ColumnPageCodecMeta();
+      default:
+        throw new UnsupportedOperationException("unsupported version: " + version);
+    }
+  }
 }

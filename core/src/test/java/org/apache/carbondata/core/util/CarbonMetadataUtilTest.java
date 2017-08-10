@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.util;
 
+import java.io.DataOutput;
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.BitSet;
@@ -27,9 +29,10 @@ import java.util.Set;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
+import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveCodecMeta;
+import org.apache.carbondata.core.datastore.page.encoding.rle.RLECodecMeta;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
-import org.apache.carbondata.core.metadata.CodecMetaFactory;
-import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodecMeta;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.format.BlockIndex;
@@ -118,11 +121,11 @@ public class CarbonMetadataUtilTest {
     blockletInfoList.add(blockletInfo);
     blockletInfoList.add(blockletInfo);
 
-    ValueEncoderMeta meta = CodecMetaFactory.createMeta();
+    ValueEncoderMeta meta = CarbonTestUtil.createValueEncoderMeta();
     meta.setDecimal(5);
     meta.setMinValue(objMinArr);
     meta.setMaxValue(objMaxArr);
-    meta.setType(ColumnPageCodecMeta.DOUBLE_MEASURE);
+    meta.setType(AdaptiveCodecMeta.DOUBLE_MEASURE);
 
     List<Encoding> encoders = new ArrayList<>();
     encoders.add(Encoding.INVERTED_INDEX);
@@ -202,22 +205,18 @@ public class CarbonMetadataUtilTest {
 
     ValueEncoderMeta[] metas = new ValueEncoderMeta[6];
     for (int i = 0; i < metas.length; i++) {
-      metas[i] = CodecMetaFactory.createMeta();
+      metas[i] = CarbonTestUtil.createValueEncoderMeta();
       metas[i].setMinValue(objMinArr[i]);
       metas[i].setMaxValue(objMaxArr[i]);
       metas[i].setDecimal(objDecimal[i]);
-      metas[i].setType(ColumnPageCodecMeta.BIG_INT_MEASURE);
+      metas[i].setType(AdaptiveCodecMeta.BIG_INT_MEASURE);
     }
 
     BlockletInfoColumnar blockletInfoColumnar = new BlockletInfoColumnar();
 
-    final ValueEncoderMeta meta = CodecMetaFactory.createMeta();
+    final ValueEncoderMeta meta = new RLECodecMeta();
 
     new MockUp<ColumnPageCodecMeta>() {
-      @SuppressWarnings("unused") @Mock
-      public byte[] serialize() {
-        return new byte[]{1,2};
-      }
       @SuppressWarnings("unused") @Mock
       public byte[] getMaxAsBytes() {
         return new byte[]{1,2};
@@ -227,8 +226,15 @@ public class CarbonMetadataUtilTest {
         return new byte[]{1,2};
       }
       @SuppressWarnings("unused") @Mock
-      public org.apache.carbondata.core.metadata.datatype.DataType getSrcDataType() {
+      public org.apache.carbondata.core.metadata.datatype.DataType getDataType() {
         return org.apache.carbondata.core.metadata.datatype.DataType.DOUBLE;
+      }
+      @SuppressWarnings("unused") @Mock
+      public org.apache.carbondata.core.metadata.encoder.Encoding getEncoding() {
+        return org.apache.carbondata.core.metadata.encoder.Encoding.RLE_INTEGRAL;
+      }
+      @SuppressWarnings("unused") @Mock
+      public void write(DataOutput out) throws IOException {
       }
     };
 

@@ -20,7 +20,7 @@ package org.apache.carbondata.core.datastore.page.statistics;
 import java.math.BigDecimal;
 import java.util.BitSet;
 
-import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodecMeta;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
@@ -53,13 +53,14 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     }
   }
 
-  // this is for decode flow, we do not need to create nullBits, so passing 0 as pageSize
+  // this is for decode flow
   public static PrimitivePageStatsCollector newInstance(ColumnPageCodecMeta meta) {
+    int scale = meta.getScale();
+    int precision = meta.getPrecision();
     PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(meta.getSrcDataType(), 0, meta.getScale(),
-            meta.getPrecision());
+        new PrimitivePageStatsCollector(meta.getDataType(), 0, scale, precision);
     // set min max from meta
-    switch (meta.getSrcDataType()) {
+    switch (meta.getDataType()) {
       case BYTE:
         instance.minByte = (byte) meta.getMinValue();
         instance.maxByte = (byte) meta.getMaxValue();
@@ -85,8 +86,8 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         instance.minDecimal = (BigDecimal) meta.getMinValue();
         instance.maxDecimal = (BigDecimal) meta.getMaxValue();
         instance.decimal = meta.getDecimal();
-        instance.scale = meta.getScale();
-        instance.precision = meta.getPrecision();
+        instance.scale = scale;
+        instance.precision = precision;
         break;
     }
     return instance;
@@ -268,7 +269,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   }
 
   @Override
-  public Object getPageStats() {
+  public SimpleStatsResult getPageStats() {
     return this;
   }
 
