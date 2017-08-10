@@ -31,14 +31,13 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cacheable;
+import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
-import org.apache.carbondata.core.indexstore.DataMap;
-import org.apache.carbondata.core.indexstore.DataMapDistributable;
-import org.apache.carbondata.core.indexstore.DataMapWriter;
 import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
@@ -64,6 +63,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BlockletDataMap.class.getName());
 
+  public static final String NAME = "clustered.btree.blocklet";
+
   private static int KEY_INDEX = 0;
 
   private static int MIN_VALUES_INDEX = 1;
@@ -88,31 +89,23 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private int[] columnCardinality;
 
-  @Override public DataMapWriter getWriter() {
-    return null;
-  }
-
-  @Override public void init(String path) {
+  @Override public void init(String path) throws IOException, MemoryException {
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
-    try {
-      List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(path);
-      for (DataFileFooter fileFooter : indexInfo) {
-        List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
-        if (segmentProperties == null) {
-          columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
-          segmentProperties = new SegmentProperties(columnInTable, columnCardinality);
-          createSchema(segmentProperties);
-        }
-        TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
-        fileFooter = CarbonUtil.readMetadatFile(blockInfo);
+    List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(path);
+    for (DataFileFooter fileFooter : indexInfo) {
+      List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
+      if (segmentProperties == null) {
+        columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
+        segmentProperties = new SegmentProperties(columnInTable, columnCardinality);
+        createSchema(segmentProperties);
+      }
+      TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
+      fileFooter = CarbonUtil.readMetadatFile(blockInfo);
 
-        loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath());
-      }
-      if (unsafeMemoryDMStore != null) {
-        unsafeMemoryDMStore.finishWriting();
-      }
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+      loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath());
+    }
+    if (unsafeMemoryDMStore != null) {
+      unsafeMemoryDMStore.finishWriting();
     }
   }
 

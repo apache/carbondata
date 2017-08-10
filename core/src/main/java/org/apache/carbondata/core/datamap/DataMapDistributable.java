@@ -14,23 +14,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.indexstore;
+package org.apache.carbondata.core.datamap;
 
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
+import org.apache.carbondata.core.datastore.block.Distributable;
 
 /**
- * Datamap type
+ * Distributable class for datamap.
  */
-public enum DataMapType {
-  BLOCKLET(BlockletDataMapFactory.class);
+public abstract class DataMapDistributable implements Distributable {
 
-  private Class<? extends DataMapFactory> classObject;
+  private String tablePath;
 
-  DataMapType(Class<? extends DataMapFactory> classObject) {
-    this.classObject = classObject;
+  private String segmentId;
+
+  private String dataMapName;
+
+  public String getTablePath() {
+    return tablePath;
   }
 
-  public Class<? extends DataMapFactory> getClassObject() {
-    return classObject;
+  public void setTablePath(String tablePath) {
+    this.tablePath = tablePath;
   }
+
+  public String getSegmentId() {
+    return segmentId;
+  }
+
+  public void setSegmentId(String segmentId) {
+    this.segmentId = segmentId;
+  }
+
+  public String getDataMapName() {
+    return dataMapName;
+  }
+
+  public void setDataMapName(String dataMapName) {
+    this.dataMapName = dataMapName;
+  }
+
 }

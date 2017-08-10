@@ -128,9 +128,9 @@ public class CarbonTableIdentifier implements Serializable {
     return true;
   }
 
-  /*
- * @return table unidque name
- */
+  /**
+   * return unique table name
+   */
   @Override public String toString() {
     return databaseName + '_' + tableName;
   }

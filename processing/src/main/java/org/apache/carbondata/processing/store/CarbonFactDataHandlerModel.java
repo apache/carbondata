@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
@@ -39,6 +38,8 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.processing.datamap.DataMapWriterListener;
+import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
@@ -159,6 +160,8 @@ public class CarbonFactDataHandlerModel {
 
   private SortScopeOptions.SortScope sortScope;
 
+  private DataMapWriterListener dataMapWriterlistener;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
@@ -254,6 +257,11 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.taskExtension = taskExtension;
     carbonFactDataHandlerModel.tableSpec = configuration.getTableSpec();
     carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
+
+    DataMapWriterListener listener = new DataMapWriterListener();
+    listener.registerAllWriter(configuration.getTableIdentifier(), configuration.getSegmentId());
+    carbonFactDataHandlerModel.dataMapWriterlistener = listener;
+
     return carbonFactDataHandlerModel;
   }
 
@@ -556,6 +564,10 @@ public class CarbonFactDataHandlerModel {
 
   public SortScopeOptions.SortScope getSortScope() {
     return sortScope;
+  }
+
+  public DataMapWriterListener getDataMapWriterlistener() {
+    return dataMapWriterlistener;
   }
 }
 

@@ -256,10 +256,7 @@ object DataManagementFunc {
       compactionModel.compactionType
     )
 
-    val future: Future[Void] = executor
-        .submit(new CompactionCallable(compactionCallableModel
-        )
-        )
+    val future: Future[Void] = executor.submit(new CompactionCallable(compactionCallableModel))
     futureList.add(future)
   }
 

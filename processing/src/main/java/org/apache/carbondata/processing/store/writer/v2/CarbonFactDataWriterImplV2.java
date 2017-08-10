@@ -37,6 +37,7 @@ import org.apache.carbondata.core.util.NodeHolder;
 import org.apache.carbondata.core.writer.CarbonFooterWriter;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.FileFooter;
+import org.apache.carbondata.processing.store.TablePage;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.v1.CarbonFactDataWriterImplV1;
 
@@ -63,19 +64,19 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
   /**
    * Below method will be used to write the data to carbon data file
    *
-   * @param encodedTablePage
+   * @param tablePage
    * @throws CarbonDataWriterException any problem in writing operation
    */
-  @Override public void writeTablePage(EncodedTablePage encodedTablePage)
+  @Override public void writeTablePage(TablePage tablePage)
       throws CarbonDataWriterException {
-    NodeHolder nodeHolder = buildNodeHolder(encodedTablePage);
-    if (encodedTablePage.getPageSize() == 0) {
+    NodeHolder nodeHolder = buildNodeHolder(tablePage.getEncodedTablePage());
+    if (tablePage.getPageSize() == 0) {
       return;
     }
     // size to calculate the size of the blocklet
     int size = 0;
     // get the blocklet info object
-    BlockletInfoColumnar blockletInfo = getBlockletInfo(encodedTablePage, 0);
+    BlockletInfoColumnar blockletInfo = getBlockletInfo(tablePage.getEncodedTablePage(), 0);
 
     List<DataChunk2> datachunks = null;
     try {
@@ -105,7 +106,7 @@ public class CarbonFactDataWriterImplV2 extends CarbonFactDataWriterImplV1 {
         nodeHolder.getTotalDimensionArrayLength() + nodeHolder.getTotalMeasureArrayLength() + size;
     // if size of the file already reached threshold size then create a new file and get the file
     // channel object
-    updateBlockletFileChannel(blockletDataSize);
+    createNewFileIfReachThreshold(blockletDataSize);
     // writer the version header in the file if current file size is zero
     // this is done so carbondata file can be read separately
     try {

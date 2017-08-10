@@ -18,14 +18,15 @@
 package org.apache.carbondata.processing.store.writer;
 
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
-import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.processing.store.TablePage;
 
 public interface CarbonFactDataWriter<T> {
 
   /**
    * write a encoded table page
+   * @param tablePage
    */
-  void writeTablePage(EncodedTablePage encodedTablePage) throws CarbonDataWriterException;
+  void writeTablePage(TablePage tablePage) throws CarbonDataWriterException;
 
   /**
    * Below method will be used to write the leaf meta data to file

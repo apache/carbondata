@@ -35,6 +35,7 @@ import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.NodeHolder;
 import org.apache.carbondata.core.writer.CarbonFooterWriter;
 import org.apache.carbondata.format.FileFooter;
+import org.apache.carbondata.processing.store.TablePage;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 
@@ -199,14 +200,14 @@ public class CarbonFactDataWriterImplV1 extends AbstractFactDataWriter<int[]> {
     return holder;
   }
 
-  @Override public void writeTablePage(EncodedTablePage encodedTablePage)
+  @Override public void writeTablePage(TablePage tablePage)
       throws CarbonDataWriterException {
-    if (encodedTablePage.getPageSize() == 0) {
+    if (tablePage.getPageSize() == 0) {
       return;
     }
-    long blockletDataSize = encodedTablePage.getEncodedSize();
-    updateBlockletFileChannel(blockletDataSize);
-    NodeHolder nodeHolder = buildNodeHolder(encodedTablePage);
+    long blockletDataSize = tablePage.getEncodedTablePage().getEncodedSize();
+    createNewFileIfReachThreshold(blockletDataSize);
+    NodeHolder nodeHolder = buildNodeHolder(tablePage.getEncodedTablePage());
     // write data to file and get its offset
     long offset = writeDataToFile(nodeHolder, fileChannel);
     // get the blocklet info for currently added blocklet
