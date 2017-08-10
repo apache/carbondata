@@ -15,10 +15,15 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.presto;
+package org.apache.carbondata.presto.constants;
 
-import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
+/**
+ * Constants for presto functionality
+ */
+public final class PrestoCommonConstants {
 
-enum CarbondataTransactionHandle implements ConnectorTransactionHandle {
-  INSTANCE
+  public static final String COLUMNAR_DATA_READ_BATCH_SIZE = "4096";
+
 }
+
+

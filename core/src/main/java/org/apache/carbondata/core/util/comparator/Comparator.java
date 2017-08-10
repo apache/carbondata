@@ -152,6 +152,13 @@ class BigDecimalSerializableComparator implements SerializableComparator {
     } else if (key2 == null) {
       return 1;
     }
-    return ((BigDecimal) key1).compareTo((BigDecimal) key2);
+    if (key1 instanceof Double) {
+      key1 = new BigDecimal((Double) key1);
+    }
+    if (key2 instanceof Double) {
+      key2 = new BigDecimal((Double) key2);
+    }
+    return ((BigDecimal) (key1)).compareTo((BigDecimal) (key2));
+
   }
 }

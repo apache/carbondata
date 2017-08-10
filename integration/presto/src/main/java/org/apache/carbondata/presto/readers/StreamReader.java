@@ -14,11 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.carbondata.presto.readers;
 
-package org.apache.carbondata.presto;
+import java.io.IOException;
 
-import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
+import com.facebook.presto.spi.block.Block;
+import com.facebook.presto.spi.type.Type;
 
-enum CarbondataTransactionHandle implements ConnectorTransactionHandle {
-  INSTANCE
+/**
+ * This interface provides a skeletal implementation of the
+ * StreamReader.
+ */
+public interface StreamReader {
+
+  Block readBlock(Type type) throws IOException;
+
+  void setStreamData(Object[] data);
 }
