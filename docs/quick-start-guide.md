@@ -153,7 +153,7 @@ scala>cc.sql("LOAD DATA INPATH 'sample.csv file path'
 ```
 **NOTE**: Please provide the real file path of `sample.csv` for the above script.
 
-###### Query Data from a Table
+###### Querying Data from a Table
 
 ```
 scala>cc.sql("SELECT * FROM test_table").show()
