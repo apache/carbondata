@@ -895,6 +895,38 @@ public final class CarbonProperties {
   }
 
   /**
+   * Returns parallelism for segment update
+   * @return int
+   */
+  public int getParallelismForSegmentUpdate() {
+    int parallelism = Integer.parseInt(
+        CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM_DEFAULT);
+    boolean isInvalidValue = false;
+    try {
+      String strParallelism = getProperty(CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM,
+          CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM_DEFAULT);
+      parallelism = Integer.parseInt(strParallelism);
+      if (parallelism <= 0 || parallelism > 1000) {
+        isInvalidValue = true;
+      }
+    } catch (NumberFormatException e) {
+      isInvalidValue = true;
+    }
+
+    if (isInvalidValue) {
+      LOGGER.error("The specified value for property "
+          + CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM
+          + " is incorrect. Correct value should be in range of 0 - 1000."
+          + " Taking the default value: "
+          + CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM_DEFAULT);
+      parallelism = Integer.parseInt(
+          CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM_DEFAULT);
+    }
+
+    return parallelism;
+  }
+
+  /**
    * returns true if carbon property
    * @param key
    * @return

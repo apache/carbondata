@@ -19,7 +19,6 @@ package org.apache.carbondata.spark.rdd
 
 import java.text.SimpleDateFormat
 import java.util
-import java.util.UUID
 import java.util.concurrent._
 
 import scala.collection.JavaConverters._
@@ -32,10 +31,10 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
-import org.apache.spark.{SparkEnv, SparkException}
-import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, NewHadoopRDD, RDD, UpdateCoalescedRDD}
+import org.apache.spark.{SparkEnv, SparkException, TaskContext}
+import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, NewHadoopRDD, RDD}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
-import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.util.SparkUtil
 
@@ -59,8 +58,8 @@ import org.apache.carbondata.processing.csvload.{BlockDetails, CSVInputFormat, S
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.newflow.DataLoadProcessBuilder
-import org.apache.carbondata.processing.newflow.exception.{BadRecordFoundException, CarbonDataLoadingException}
+import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.newflow.sort.SortScopeOptions
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.{DataLoadResultImpl, PartitionFactory, _}
@@ -682,7 +681,9 @@ object CarbonDataRDDFactory {
       }
 
       def loadDataFrameForUpdate(): Unit = {
-        def triggerDataLoadForSegment(key: String,
+        val segmentUpdateParallelism = CarbonProperties.getInstance().getParallelismForSegmentUpdate
+
+        def triggerDataLoadForSegment(key: String, taskNo: Int,
             iter: Iterator[Row]): Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] = {
           val rddResult = new updateResultImpl()
           val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -693,11 +694,7 @@ object CarbonDataRDDFactory {
             var uniqueLoadStatusId = ""
             try {
               val segId = key
-              val taskNo = CarbonUpdateUtil
-                .getLatestTaskIdForSegment(segId,
-                  CarbonStorePath.getCarbonTablePath(carbonLoadModel.getStorePath,
-                    carbonTable.getCarbonTableIdentifier))
-              val index = taskNo + 1
+              val index = taskNo
               uniqueLoadStatusId = carbonLoadModel.getTableName +
                                    CarbonCommonConstants.UNDERSCORE +
                                    (index + "_0")
@@ -720,8 +717,6 @@ object CarbonDataRDDFactory {
 
               // storeLocation = CarbonDataLoadRDD.initialize(carbonLoadModel, index)
               loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
-              val rddIteratorKey = CarbonCommonConstants.RDDUTIL_UPDATE_KEY +
-                                   UUID.randomUUID().toString
               UpdateDataLoad.DataLoadForUpdate(segId,
                 index,
                 iter,
@@ -756,26 +751,53 @@ object CarbonDataRDDFactory {
 
         val updateRdd = dataFrame.get.rdd
 
+        // return directly if no rows to update
+        val noRowsToUpdate = updateRdd.isEmpty()
+        if (noRowsToUpdate) {
+          res = Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]]()
+          return
+        }
 
+        // splitting as (key, value) i.e., (segment, updatedRows)
         val keyRDD = updateRdd.map(row =>
-          // splitting as (key, value) i.e., (segment, updatedRows)
-          (row.get(row.size - 1).toString, Row(row.toSeq.slice(0, row.size - 1): _*))
-        )
-        val groupBySegmentRdd = keyRDD.groupByKey()
+            (row.get(row.size - 1).toString, Row(row.toSeq.slice(0, row.size - 1): _*)))
 
-        val nodeNumOfData = groupBySegmentRdd.partitions.flatMap[String, Array[String]] { p =>
-          DataLoadPartitionCoalescer.getPreferredLocs(groupBySegmentRdd, p).map(_.host)
-        }.distinct.size
-        val nodes = DistributionUtil.ensureExecutorsByNumberAndGetNodeList(nodeNumOfData,
-          sqlContext.sparkContext)
-        val groupBySegmentAndNodeRdd =
-          new UpdateCoalescedRDD[(String, scala.Iterable[Row])](groupBySegmentRdd,
-            nodes.distinct.toArray)
+        val loadMetadataDetails = SegmentStatusManager
+          .readLoadMetadata(carbonTable.getMetaDataFilepath)
+        val segmentIds = loadMetadataDetails.map(_.getLoadName)
+        val segmentIdIndex = segmentIds.zipWithIndex.toMap
+        val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonLoadModel.getStorePath,
+          carbonTable.getCarbonTableIdentifier)
+        val segmentId2maxTaskNo = segmentIds
+          .map(segId =>
+            (segId, CarbonUpdateUtil.getLatestTaskIdForSegment(segId, carbonTablePath)))
+          .toMap
 
-        res = groupBySegmentAndNodeRdd.map(x =>
-          triggerDataLoadForSegment(x._1, x._2.toIterator).toList
-        ).collect()
+        class SegmentPartitioner(segIdIndex: Map[String, Int], parallelism: Int)
+          extends org.apache.spark.Partitioner {
+          override def numPartitions: Int = segmentIdIndex.size * parallelism
 
+          override def getPartition(key: Any): Int = {
+            val segId = key.asInstanceOf[String]
+            // partitionId
+            segmentIdIndex(segId) * parallelism + Random.nextInt(parallelism)
+          }
+        }
+
+        val partitionByRdd = keyRDD
+          .partitionBy(new SegmentPartitioner(segmentIdIndex, segmentUpdateParallelism))
+
+        // because partitionId=segmentIdIndex*parallelism+RandomPart and RandomPart<parallelism,
+        // so segmentIdIndex=partitionId/parallelism, this has been verified.
+        res = partitionByRdd.map(_._2).mapPartitions(p => {
+          val partitionId = TaskContext.getPartitionId()
+          val segIdIndex = partitionId / segmentUpdateParallelism
+          val randomPart = partitionId - segIdIndex * segmentUpdateParallelism
+          val segId = segmentIds(segIdIndex)
+          val newTaskNo = segmentId2maxTaskNo(segId) + randomPart + 1
+
+          List(triggerDataLoadForSegment(segId, newTaskNo, p).toList).toIterator
+        }).collect()
       }
 
       def loadDataForPartitionTable(): Unit = {
