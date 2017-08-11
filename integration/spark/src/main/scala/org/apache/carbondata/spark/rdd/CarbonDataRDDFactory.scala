@@ -583,6 +583,8 @@ object CarbonDataRDDFactory {
       }
 
       def loadDataFrameForUpdate(): Unit = {
+        val segmentUpdateParallelism = CarbonProperties.getInstance().getParallelismForSegmentUpdate
+
         def triggerDataLoadForSegment(key: String,
             iter: Iterator[Row]): Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] = {
           val rddResult = new updateResultImpl()
@@ -593,12 +595,18 @@ object CarbonDataRDDFactory {
             val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
             var uniqueLoadStatusId = ""
             try {
-              val segId = key
+              val (segId, suffix) = if (segmentUpdateParallelism > 1) {
+                val keyWithSuffix = key.split(CarbonCommonConstants.DASH)
+                (keyWithSuffix(0), keyWithSuffix(1).toInt)
+              } else {
+                (key, 0)
+              }
+
               val taskNo = CarbonUpdateUtil
                 .getLatestTaskIdForSegment(segId,
                   CarbonStorePath.getCarbonTablePath(carbonLoadModel.getStorePath,
                     carbonTable.getCarbonTableIdentifier))
-              val index = taskNo + 1
+              val index = taskNo + suffix + 1
               uniqueLoadStatusId = carbonLoadModel.getTableName +
                                    CarbonCommonConstants.UNDERSCORE +
                                    (index + "_0")
@@ -657,11 +665,19 @@ object CarbonDataRDDFactory {
 
         val updateRdd = dataFrame.get.rdd
 
-
-        val keyRDD = updateRdd.map(row =>
-          // splitting as (key, value) i.e., (segment, updatedRows)
-          (row.get(row.size - 1).toString, Row(row.toSeq.slice(0, row.size - 1): _*))
-        )
+        // splitting as (key, value) i.e., (segment, updatedRows)
+        val keyRDD = if (segmentUpdateParallelism > 1) {
+          // adding random suffix to increase the parallelism for one segment.
+          // use if-else to avoid unnecessary check for every record if there is no need to optimize
+          updateRdd.map(row =>
+            (row.get(row.size - 1).toString +
+             CarbonCommonConstants.DASH + Random.nextInt(segmentUpdateParallelism),
+              Row(row.toSeq.slice(0, row.size - 1): _*))
+          )
+        } else {
+          updateRdd.map(row =>
+            (row.get(row.size - 1).toString, Row(row.toSeq.slice(0, row.size - 1): _*)))
+        }
         val groupBySegmentRdd = keyRDD.groupByKey()
 
         val nodeNumOfData = groupBySegmentRdd.partitions.flatMap[String, Array[String]] { p =>

@@ -28,6 +28,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
+import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
 /**
  * Data load in case of update command .
@@ -62,6 +63,8 @@ object UpdateDataLoad {
       case e: Exception =>
         LOGGER.error(e)
         throw e
+    } finally {
+      CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(carbonLoadModel, false)
     }
   }
 
