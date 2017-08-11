@@ -544,6 +544,10 @@ public final class CarbonCommonConstants {
    */
   public static final String UNDERSCORE = "_";
   /**
+   * DASH
+   */
+  public static final String DASH = "-";
+  /**
    * POINT
    */
   public static final String POINT = ".";
@@ -1329,6 +1333,20 @@ public final class CarbonCommonConstants {
    * http://spark.apache.org/docs/latest/rdd-programming-guide.html#rdd-persistence.
    */
   public static final String CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL_DEFAULT = "MEMORY_ONLY";
+
+  /**
+   * property for configuring parallelism per segment when doing an update. Increase this
+   * value will avoid data screw problem for a large segment.
+   * Refer to CARBONDATA-1373 for more details.
+   */
+  @CarbonProperty
+  public static final String CARBON_UPDATE_SEGMENT_PARALLELISM =
+      "carbon.update.segment.parallelism";
+
+  /**
+   * In default we will not optimize the update
+   */
+  public static final String CARBON_UPDATE_SEGMENT_PARALLELISM_DEFAULT = "1";
 
   private CarbonCommonConstants() {
   }
