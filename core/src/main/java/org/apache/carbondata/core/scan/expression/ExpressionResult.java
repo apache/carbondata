@@ -24,8 +24,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.TimeZone;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -177,6 +179,9 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         case TIMESTAMP:
           String format = CarbonUtil.getFormatFromProperty(this.getDataType());
           SimpleDateFormat parser = new SimpleDateFormat(format);
+          if (this.getDataType() == DataType.DATE) {
+            parser.setTimeZone(TimeZone.getTimeZone("GMT"));
+          }
           if (value instanceof Timestamp) {
             return parser.format((Timestamp) value);
           } else if (value instanceof java.sql.Date) {
@@ -187,7 +192,8 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             }
             return parser.format(new Timestamp((long) value));
           } else if (value instanceof Integer) {
-            return parser.format(new java.sql.Date((long)value));
+            long date = ((int) value) * DateDirectDictionaryGenerator.MILLIS_PER_DAY;
+            return parser.format(new java.sql.Date(date));
           }
           return value.toString();
         default:

@@ -122,6 +122,17 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
     )
   }
 
+  test("select doj from directDictionaryTable with greater than filter with cast") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > date('2016-03-14')"),
+      Seq(Row(Date.valueOf("2016-04-14")))
+    )
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > cast('2016-03-14' as date)"),
+      Seq(Row(Date.valueOf("2016-04-14")))
+    )
+  }
+
   test("select count(doj) from directDictionaryTable") {
     checkAnswer(
       sql("select count(doj) from directDictionaryTable"),
