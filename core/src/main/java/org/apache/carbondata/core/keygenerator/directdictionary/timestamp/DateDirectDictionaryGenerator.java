@@ -18,7 +18,6 @@ package org.apache.carbondata.core.keygenerator.directdictionary.timestamp;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
@@ -37,16 +36,10 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
 
   private static final int cutOffDate = Integer.MAX_VALUE >> 1;
   private static final long SECONDS_PER_DAY = 60 * 60 * 24L;
-  private static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
+  public static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
 
   private ThreadLocal<SimpleDateFormat> simpleDateFormatLocal = new ThreadLocal<>();
 
-  //Java TimeZone has no mention of thread safety. Use thread local instance to be safe.
-  private ThreadLocal<TimeZone> threadLocalLocalTimeZone = new ThreadLocal() {
-    @Override protected TimeZone initialValue() {
-      return Calendar.getInstance().getTimeZone();
-    }
-  };
   private String dateFormat;
 
   /**
@@ -154,14 +147,14 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   }
 
   private int generateKey(long timeValue) {
-    long milli = timeValue + threadLocalLocalTimeZone.get().getOffset(timeValue);
-    return (int) Math.floor((double) milli / MILLIS_PER_DAY) + cutOffDate;
+    return (int) Math.floor((double) timeValue / MILLIS_PER_DAY) + cutOffDate;
   }
 
   public void initialize() {
     if (simpleDateFormatLocal.get() == null) {
       simpleDateFormatLocal.set(new SimpleDateFormat(dateFormat));
       simpleDateFormatLocal.get().setLenient(false);
+      simpleDateFormatLocal.get().setTimeZone(TimeZone.getTimeZone("GMT"));
     }
   }
 
