@@ -478,7 +478,7 @@ column1 = 'USA');
 ```
 
 ```
-DELETE FROM columncarbonTable1 WHERE column2 >= 4
+DELETE FROM columncarbonTable1 WHERE column2 >= 4;
 ```
 
 **The Status Success/Failure shall be captured in the driver log and the client.**
