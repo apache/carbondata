@@ -96,7 +96,7 @@ To get started with CarbonData : [Quick Start](quick-start-guide.md), [DDL Opera
 
 2. Copy the `./conf/carbon.properties.template` file from CarbonData repository to `$SPARK_HOME/conf/` folder and rename the file to `carbon.properties`.
 
-3. Create `tar,gz` file of carbonlib folder and move it inside the carbonlib folder.
+3. Create `tar.gz` file of carbonlib folder and move it inside the carbonlib folder.
 
 ```
 cd $SPARK_HOME
