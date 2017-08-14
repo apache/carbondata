@@ -517,6 +517,32 @@ object CarbonDataRDDFactory {
       }
     }
 
+    def updateStatus(status: Array[(String, (LoadMetadataDetails, ExecutionErrors))],
+        loadStatus: String) = {
+      val metadataDetails = if (status != null && status(0) != null) {
+        status(0)._2._1
+      } else {
+        new LoadMetadataDetails
+      }
+      CarbonLoaderUtil
+        .populateNewLoadMetaEntry(metadataDetails,
+          loadStatus,
+          carbonLoadModel.getFactTimeStamp,
+          true)
+      val success = CarbonLoaderUtil.recordLoadMetadata(metadataDetails,
+        carbonLoadModel, false, overwriteTable)
+      if (!success) {
+        val errorMessage = "Dataload failed due to failure in table status updation."
+        LOGGER.audit("Data load is failed for " +
+                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+        LOGGER.error("Dataload failed due to failure in table status updation.")
+        throw new Exception(errorMessage)
+      } else if (!carbonLoadModel.isRetentionRequest) {
+        // TODO : Handle it
+        LOGGER.info("********Database updated**********")
+      }
+    }
+
     try {
       LOGGER.audit(s"Data load request has been received for table" +
           s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
@@ -986,6 +1012,7 @@ object CarbonDataRDDFactory {
         LOGGER.audit(s"Data load is failed for " +
             s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.warn("Cannot write load metadata file as data load failed")
+        updateStatus(status, loadStatus)
         throw new Exception(errorMessage)
       } else {
         // check if data load fails due to bad record and throw data load failure due to
@@ -998,6 +1025,7 @@ object CarbonDataRDDFactory {
           LOGGER.info("********clean up done**********")
           LOGGER.audit(s"Data load is failed for " +
                        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+          updateStatus(status, CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
           throw new Exception(status(0)._2._2.errorMsg)
         }
         // if segment is empty then fail the data load
@@ -1009,27 +1037,11 @@ object CarbonDataRDDFactory {
                        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }" +
                        " as there is no data to load")
           LOGGER.warn("Cannot write load metadata file as data load failed")
+          updateStatus(status, CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
           throw new Exception("No Data to load")
         }
-        val metadataDetails = status(0)._2._1
         writeDictionary(carbonLoadModel, result, false)
-        CarbonLoaderUtil
-          .populateNewLoadMetaEntry(metadataDetails,
-            loadStatus,
-            carbonLoadModel.getFactTimeStamp,
-            true)
-        val success = CarbonLoaderUtil.recordLoadMetadata(metadataDetails,
-          carbonLoadModel, false, overwriteTable)
-        if (!success) {
-          val errorMessage = "Dataload failed due to failure in table status updation."
-          LOGGER.audit("Data load is failed for " +
-              s"${ carbonLoadModel.getDatabaseName }.${carbonLoadModel.getTableName}")
-          LOGGER.error("Dataload failed due to failure in table status updation.")
-          throw new Exception(errorMessage)
-        } else if (!carbonLoadModel.isRetentionRequest) {
-          // TODO : Handle it
-          LOGGER.info("********Database updated**********")
-        }
+        updateStatus(status, loadStatus)
 
         if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS.equals(loadStatus)) {
           LOGGER.audit("Data load is partially successful for " +
