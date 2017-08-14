@@ -281,12 +281,9 @@ If the table contains 4 columns namely a1, b1, c1, and d1.
 - **To delete multiple columns:**
 
 ```
-   ALTER TABLE carbon DROP COLUMNS (b1,c1);
+   ALTER TABLE carbon DROP COLUMNS (c1,d1);
 ```
 
-```
-   ALTER TABLE carbon DROP COLUMNS (b1,c1);
-```
 
 ### **CHANGE DATA TYPE**
 
