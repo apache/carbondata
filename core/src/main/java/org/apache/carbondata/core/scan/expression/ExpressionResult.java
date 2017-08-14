@@ -77,7 +77,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             throw new FilterIllegalMemberException(e);
           }
         case SHORT:
-          return ((Short) value).intValue();
+          return Integer.parseInt(value.toString());
         case INT:
         case DOUBLE:
           if (value instanceof Double) {
@@ -86,12 +86,12 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           if (value instanceof Long) {
             return ((Long) value).intValue();
           }
-          return (Integer) value;
+          return Integer.parseInt(value.toString());
         case DATE:
           if (value instanceof java.sql.Date) {
             return (int) (((java.sql.Date) value).getTime());
           } else {
-            return (Integer) value;
+            return Integer.parseInt(value.toString());
           }
         case TIMESTAMP:
           if (value instanceof Timestamp) {
@@ -101,13 +101,16 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
               Long l = (Long) value / 1000;
               return l.intValue();
             }
-            return (Integer) value;
+            return Integer.parseInt(value.toString());
           }
         default:
           throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to integer type value");
       }
 
+    } catch (NumberFormatException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to Integer type value");
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Integer type value");
@@ -135,14 +138,14 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           } else if (value instanceof Integer) {
             return ((Integer) value).shortValue();
           }
-          return (Short) value;
+          return Short.parseShort(value.toString());
 
         case DATE:
 
           if (value instanceof java.sql.Date) {
             return (short) (((java.sql.Date) value).getTime());
           } else {
-            return (Short) value;
+            return Short.parseShort(value.toString());
           }
         case TIMESTAMP:
 
@@ -153,7 +156,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
               Long l = ((long) value / 1000);
               return l.shortValue();
             }
-            return (Short) value;
+            return Short.parseShort(value.toString());
           }
 
         default:
@@ -161,6 +164,9 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
               "Cannot convert" + this.getDataType().name() + " to integer type value");
       }
 
+    } catch (NumberFormatException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to Integer type value");
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Integer type value");
@@ -187,12 +193,15 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             }
             return parser.format(new Timestamp((long) value));
           } else if (value instanceof Integer) {
-            return parser.format(new java.sql.Date((int)value));
+            return parser.format(new java.sql.Date((int) value));
           }
           return value.toString();
         default:
           return value.toString();
       }
+    } catch (NumberFormatException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to Integer type value");
     } catch (Exception e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to String type value");
@@ -212,18 +221,18 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             throw new FilterIllegalMemberException(e);
           }
         case SHORT:
-          return ((Short) value).doubleValue();
+          return Double.parseDouble(value.toString());
         case INT:
-          return ((Integer) value).doubleValue();
+          return Double.parseDouble(value.toString());
         case LONG:
-          return ((Long) value).doubleValue();
+          return Double.parseDouble(value.toString());
         case DOUBLE:
-          return (Double) value;
+          return Double.parseDouble(value.toString());
         case DATE:
           if (value instanceof java.sql.Date) {
             return (double) ((java.sql.Date) value).getTime();
           } else {
-            return (Double) (value);
+            return Double.parseDouble(value.toString());
           }
         case TIMESTAMP:
           if (value instanceof Timestamp) {
@@ -233,12 +242,15 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
               Long l = (Long) value / 1000;
               return l.doubleValue();
             }
-            return (Double) (value);
+            return Double.parseDouble(value.toString());
           }
         default:
           throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to double type value");
       }
+    } catch (NumberFormatException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to Integer type value");
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Double type value");
@@ -258,29 +270,32 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             throw new FilterIllegalMemberException(e);
           }
         case SHORT:
-          return ((Short) value).longValue();
+          return Long.parseLong(value.toString());
         case INT:
-          return (Long) value;
+          return Long.parseLong(value.toString());
         case LONG:
-          return (Long) value;
+          return Long.parseLong(value.toString());
         case DOUBLE:
-          return (Long) value;
+          return Long.parseLong(value.toString());
         case DATE:
           if (value instanceof java.sql.Date) {
             return ((java.sql.Date) value).getTime();
           } else {
-            return (Long) value;
+            return Long.parseLong(value.toString());
           }
         case TIMESTAMP:
           if (value instanceof Timestamp) {
             return ((Timestamp) value).getTime();
           } else {
-            return (Long) value;
+            return Long.parseLong(value.toString());
           }
         default:
           throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to Long type value");
       }
+    } catch (NumberFormatException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to Long type value");
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(e.getMessage() + " " +
           "Cannot convert" + this.getDataType().name() + " to Long type value");
@@ -302,11 +317,11 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             throw new FilterIllegalMemberException(e);
           }
         case SHORT:
-          return new BigDecimal((short) value);
+          return new BigDecimal(Short.parseShort(value.toString()));
         case INT:
-          return new BigDecimal((int) value);
+          return new BigDecimal(Integer.parseInt(value.toString()));
         case LONG:
-          return new BigDecimal((long) value);
+          return new BigDecimal(Long.parseLong(value.toString()));
         case DOUBLE:
           return new BigDecimal(value.toString());
         case DECIMAL:
@@ -315,7 +330,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           if (value instanceof java.sql.Date) {
             return new BigDecimal(((java.sql.Date) value).getTime());
           } else {
-            return new BigDecimal((long) value);
+            return new BigDecimal(Long.parseLong(value.toString()));
           }
         case TIMESTAMP:
           if (value instanceof Timestamp) {
@@ -324,17 +339,19 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             if (isLiteral) {
               return new BigDecimal((long) value / 1000);
             }
-            return new BigDecimal((long) value);
+            return new BigDecimal(Long.parseLong(value.toString()));
           }
         default:
           throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to Long type value");
       }
+    } catch (NumberFormatException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to Long type value");
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Long type value");
     }
-
   }
 
   public Long getTime() throws FilterIllegalMemberException {
@@ -359,17 +376,17 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
                 "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
           }
         case SHORT:
-          return ((Short) value).longValue();
+          return Long.parseLong(value.toString());
         case INT:
         case LONG:
-          return (Long) value;
+          return Long.parseLong(value.toString());
         case DOUBLE:
-          return (Long) value;
+          return Long.parseLong(value.toString());
         case DATE:
           if (value instanceof java.sql.Date) {
             return ((Date) value).getTime();
           } else {
-            return (Long) value;
+            return Long.parseLong(value.toString());
           }
         case TIMESTAMP:
           if (value instanceof Timestamp) {
@@ -378,12 +395,15 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
             if (isLiteral) {
               return (Long) value / 1000;
             }
-            return (Long) value;
+            return Long.parseLong(value.toString());
           }
         default:
           throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
       }
+    } catch (NumberFormatException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to Integer type value");
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Time/Long type value");
@@ -411,6 +431,9 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
           throw new FilterIllegalMemberException(
               "Cannot convert" + this.getDataType().name() + " to boolean type value");
       }
+    } catch (NumberFormatException e) {
+      throw new FilterIllegalMemberException(
+          "Cannot convert" + this.getDataType().name() + " to Integer type value");
     } catch (ClassCastException e) {
       throw new FilterIllegalMemberException(
           "Cannot convert" + this.getDataType().name() + " to Boolean type value");
