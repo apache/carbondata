@@ -502,6 +502,7 @@ public final class CarbonCommonConstants {
    * CONSTANT_SIZE_TEN
    */
   public static final int CONSTANT_SIZE_TEN = 10;
+
   /**
    * LEVEL_METADATA_FILE
    */
@@ -510,9 +511,16 @@ public final class CarbonCommonConstants {
    * LOAD_STATUS SUCCESS
    */
   public static final String STORE_LOADSTATUS_SUCCESS = "Success";
+
+  /**
+   * Default batch for data read in Columnar format
+   */
+  public static final String COLUMNAR_DATA_READ_BATCH_SIZE = "4096";
+
   /**
    * LOAD_STATUS UPDATE
    */
+
   public static final String STORE_LOADSTATUS_UPDATE = "Update";
   /**
    * LOAD_STATUS FAILURE

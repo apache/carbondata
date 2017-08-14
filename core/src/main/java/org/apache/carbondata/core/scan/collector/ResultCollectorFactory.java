@@ -19,6 +19,7 @@ package org.apache.carbondata.core.scan.collector;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.scan.collector.impl.AbstractScannedResultCollector;
+import org.apache.carbondata.core.scan.collector.impl.ColumnBasedResultCollector;
 import org.apache.carbondata.core.scan.collector.impl.DictionaryBasedResultCollector;
 import org.apache.carbondata.core.scan.collector.impl.DictionaryBasedVectorResultCollector;
 import org.apache.carbondata.core.scan.collector.impl.RawBasedResultCollector;
@@ -63,6 +64,9 @@ public class ResultCollectorFactory {
         LOGGER.info("Vector based dictionary collector is used to scan and collect the data");
         scannerResultAggregator = new DictionaryBasedVectorResultCollector(blockExecutionInfo);
       }
+    } else if (blockExecutionInfo.isColumnCollector()) {
+      LOGGER.info("Column based dictionary collector is used to scan and collect the data");
+      scannerResultAggregator = new ColumnBasedResultCollector(blockExecutionInfo);
     } else {
       if (blockExecutionInfo.isRestructuredBlock()) {
         LOGGER.info("Restructure based dictionary collector is used to scan and collect the data");

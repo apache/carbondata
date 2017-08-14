@@ -14,27 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.scan.executor;
+package org.apache.carbondata.core.scan.executor.impl;
 
-import org.apache.carbondata.core.scan.executor.impl.ColumnDetailQueryExecutor;
-import org.apache.carbondata.core.scan.executor.impl.DetailQueryExecutor;
-import org.apache.carbondata.core.scan.executor.impl.VectorDetailQueryExecutor;
+import java.io.IOException;
+import java.util.List;
+
+import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.core.scan.result.iterator.ColumnBasedResultIterator;
 
-/**
- * Factory class to get the query executor from RDD
- * This will return the executor based on query type
- */
-public class QueryExecutorFactory {
+public class ColumnDetailQueryExecutor extends AbstractQueryExecutor {
 
-  public static QueryExecutor getQueryExecutor(QueryModel queryModel) {
-    if (queryModel.isVectorReader()) {
-      return new VectorDetailQueryExecutor();
-    }
-    if (queryModel.isColumnCollector()) {
-      return new ColumnDetailQueryExecutor();
-    } else {
-      return new DetailQueryExecutor();
-    }
+  @Override public CarbonIterator execute(QueryModel queryModel)
+      throws QueryExecutionException, IOException {
+    List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
+    this.queryIterator = new ColumnBasedResultIterator(blockExecutionInfoList, queryModel,
+        queryProperties.executorService);
+    return this.queryIterator;
   }
 }
