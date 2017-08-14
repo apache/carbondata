@@ -305,7 +305,7 @@ SHOW SEGMENTS FOR Table [db_name.]table_name LIMIT number_of_segments
 After you retrieve the segment ID of the segment that you want to delete, execute the following command to delete the selected segment.
 
 ```
-DELETE FROM TABLE [db_name.]table_name WHERE SEGMENT.ID IN (segment_id1, segments_id2, ....)
+DELETE FROM TABLE [db_name.]table_name WHERE SEGMENT.ID IN (segment_id1, segments_id2, ...)
 ```
 
 ### Parameter Description
@@ -356,7 +356,7 @@ This command will allow to update the carbon table based on the column expressio
 ```
  UPDATE <table_name>
  SET (column_name1, column_name2, ... column_name n) =
- (column1_expression , column2_expression . .. column n_expression )
+ (column1_expression , column2_expression, ... column n_expression )
  [ WHERE { <filter_condition> } ];
 ```
 
@@ -364,7 +364,7 @@ alternatively the following the command can also be used for updating the Carbon
 
 ```
 UPDATE <table_name>
-SET (column_name1, column_name2,) =
+SET (column_name1, column_name2) =
 (select sourceColumn1, sourceColumn2 from sourceTable
 [ WHERE { <filter_condition> } ] )
 [ WHERE { <filter_condition> } ];
