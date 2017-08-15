@@ -51,7 +51,7 @@ import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.csvload.{BlockDetails, CSVInputFormat, StringArrayWritable}
@@ -597,7 +597,7 @@ object CarbonDataRDDFactory {
       def loadDataFrameForUpdate(): Unit = {
         val segmentUpdateParallelism = CarbonProperties.getInstance().getParallelismForSegmentUpdate
 
-        def triggerDataLoadForSegment(key: String,
+        def triggerDataLoadForSegment(key: String, taskNo: Int,
             iter: Iterator[Row]): Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] = {
           val rddResult = new updateResultImpl()
           val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -607,18 +607,9 @@ object CarbonDataRDDFactory {
             val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
             var uniqueLoadStatusId = ""
             try {
-              val (segId, suffix) = if (segmentUpdateParallelism > 1) {
-                val keyWithSuffix = key.split(CarbonCommonConstants.DASH)
-                (keyWithSuffix(0), keyWithSuffix(1).toInt)
-              } else {
-                (key, 0)
-              }
+              val segId = key
+              val index = taskNo
 
-              val taskNo = CarbonUpdateUtil
-                .getLatestTaskIdForSegment(segId,
-                  CarbonStorePath.getCarbonTablePath(carbonLoadModel.getStorePath,
-                    carbonTable.getCarbonTableIdentifier))
-              val index = taskNo + suffix + 1
               uniqueLoadStatusId = carbonLoadModel.getTableName +
                                    CarbonCommonConstants.UNDERSCORE +
                                    (index + "_0")
@@ -641,8 +632,6 @@ object CarbonDataRDDFactory {
 
               // storeLocation = CarbonDataLoadRDD.initialize(carbonLoadModel, index)
               loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
-              val rddIteratorKey = CarbonCommonConstants.RDDUTIL_UPDATE_KEY +
-                                   UUID.randomUUID().toString
               UpdateDataLoad.DataLoadForUpdate(segId,
                 index,
                 iter,
@@ -677,19 +666,24 @@ object CarbonDataRDDFactory {
 
         val updateRdd = dataFrame.get.rdd
 
+        val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(carbonTable.getStorePath)
+        val segmentIds = loadMetadataDetails.map(l => l.getLoadName)
+        val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonLoadModel.getStorePath,
+          carbonTable.getCarbonTableIdentifier)
+        val segmentId2maxTaskNo = segmentIds
+          .map(segId =>
+            (segId, CarbonUpdateUtil.getLatestTaskIdForSegment(segId, carbonTablePath)))
+          .toMap
+
         // splitting as (key, value) i.e., (segment, updatedRows)
-        val keyRDD = if (segmentUpdateParallelism > 1) {
-          // adding random suffix to increase the parallelism for one segment.
-          // use if-else to avoid unnecessary check for every record if there is no need to optimize
-          updateRdd.map(row =>
-            (row.get(row.size - 1).toString +
-             CarbonCommonConstants.DASH + Random.nextInt(segmentUpdateParallelism),
-              Row(row.toSeq.slice(0, row.size - 1): _*))
-          )
-        } else {
-          updateRdd.map(row =>
-            (row.get(row.size - 1).toString, Row(row.toSeq.slice(0, row.size - 1): _*)))
-        }
+        // appending random part to key to distribute records
+        val keyRDD = updateRdd.map(row => {
+          val segId = row.get(row.size - 1).toString
+          val newTaskNo = segmentId2maxTaskNo(segId) + Random.nextInt(segmentUpdateParallelism) + 1
+          (segId + CarbonCommonConstants.DASH + newTaskNo,
+            Row(row.toSeq.slice(0, row.size - 1): _*))
+        })
+
         val groupBySegmentRdd = keyRDD.groupByKey()
 
         val nodeNumOfData = groupBySegmentRdd.partitions.flatMap[String, Array[String]] { p =>
@@ -701,10 +695,11 @@ object CarbonDataRDDFactory {
           new UpdateCoalescedRDD[(String, scala.Iterable[Row])](groupBySegmentRdd,
             nodes.distinct.toArray)
 
-        res = groupBySegmentAndNodeRdd.map(x =>
-          triggerDataLoadForSegment(x._1, x._2.toIterator).toList
-        ).collect()
-
+        res = groupBySegmentAndNodeRdd.map(x => {
+          val segIdAndTaskNo = x._1.split(CarbonCommonConstants.DASH)
+          triggerDataLoadForSegment(segIdAndTaskNo(0), segIdAndTaskNo(1).toInt, x._2.toIterator)
+            .toList
+        }).collect()
       }
 
       def loadDataForPartitionTable(): Unit = {
