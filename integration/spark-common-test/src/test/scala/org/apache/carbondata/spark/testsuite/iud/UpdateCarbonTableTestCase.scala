@@ -114,6 +114,30 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud.dest33""")
   }
 
+  test("update carbon table with optimized parallelism for segment") {
+    sql("""drop table if exists iud.dest_opt_segment_parallelism""")
+    sql(
+      """create table iud.dest_opt_segment_parallelism (c1 string,c2 int,c3 string,c5 string)
+        | STORED BY 'org.apache.carbondata.format'""".stripMargin)
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv'
+         | INTO table iud.dest_opt_segment_parallelism""".stripMargin)
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv'
+         | INTO table iud.dest_opt_segment_parallelism""".stripMargin)
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM, "3")
+    sql(
+      """update iud.dest_opt_segment_parallelism d
+        | set (c3,c5 ) = (select s.c33 ,s.c55 from iud.source2 s where d.c1 = s.c11)
+        | where d.c1 = 'a'""".stripMargin).show()
+    checkAnswer(
+      sql("""select c3,c5 from iud.dest_opt_segment_parallelism where c1='a'"""),
+      Seq(Row("MGM","Disco"),Row("MGM","Disco"))
+    )
+    sql("""drop table if exists iud.dest_opt_segment_parallelism""")
+  }
+
   test("update carbon table without alias in set three columns") {
     sql("""drop table if exists iud.dest44""")
     sql("""create table iud.dest44 (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
