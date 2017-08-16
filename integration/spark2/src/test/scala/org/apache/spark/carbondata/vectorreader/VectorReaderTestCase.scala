@@ -35,16 +35,9 @@ class VectorReaderTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
-    sql(
-    """
-           CREATE TABLE vectorreader
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
-           USING org.apache.spark.sql.CarbonSource
-          OPTIONS("tableName"="vectorreader")
-      """)
-    LoadTable(Some("default"), "vectorreader", s"$resourcesPath/source.csv", Nil,
-      Map(), false).run(sqlContext.sparkSession)
+    sql("CREATE TABLE vectorreader (ID Int, date Timestamp, country String, name String, phonetype String," +
+        "serialname String, salary Int) STORED BY 'carbondata'")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE vectorreader")
   }
 
   test("test vector reader") {

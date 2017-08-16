@@ -59,7 +59,9 @@ object ResourceRegisterAndCopier {
           val rsFile = FileFactory.getCarbonFile(hdfsDataPath, fileType)
           if (!rsFile.exists()) {
             val target = resourcePath + "/" + file
-            new File(resourcePath + "/" + file.substring(0, file.lastIndexOf("/"))).mkdirs()
+            if (file.lastIndexOf("/") > -1) {
+              new File(resourcePath + "/" + file.substring(0, file.lastIndexOf("/"))).mkdirs()
+            }
             downloadFile(link, file, target)
             // copy it
             copyLocalFile(hdfsDataPath, target)
