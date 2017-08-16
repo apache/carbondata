@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.execution.command.{CompactionCallableModel, CompactionModel}
+import org.apache.spark.sql.execution.command.{CompactionCallableModel, CompactionModel, SplitPartitionCallableModel}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -39,6 +39,7 @@ import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadM
 import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.compaction.CompactionCallable
 import org.apache.carbondata.spark.load._
+import org.apache.carbondata.spark.partition.SplitPartitionCallable
 import org.apache.carbondata.spark.util.{CommonUtil, LoadMetadataUtil}
 
 /**
@@ -257,6 +258,50 @@ object DataManagementFunc {
     )
 
     val future: Future[Void] = executor.submit(new CompactionCallable(compactionCallableModel))
+    futureList.add(future)
+  }
+
+  def executePartitionSplit( sqlContext: SQLContext,
+      carbonLoadModel: CarbonLoadModel,
+      executor: ExecutorService,
+      storePath: String,
+      segment: String,
+      partitionId: String,
+      oldPartitionIdList: List[Int]): Unit = {
+    val futureList: util.List[Future[Void]] = new util.ArrayList[Future[Void]](
+      CarbonCommonConstants.DEFAULT_COLLECTION_SIZE
+    )
+    scanSegmentsForSplitPartition(futureList, executor, storePath, segment, partitionId,
+      sqlContext, carbonLoadModel, oldPartitionIdList)
+    try {
+        futureList.asScala.foreach(future => {
+          future.get
+        }
+      )
+    } catch {
+      case e: Exception =>
+        LOGGER.error(e, s"Exception in partition split thread ${ e.getMessage }")
+        throw e
+    }
+  }
+
+  private def scanSegmentsForSplitPartition(futureList: util.List[Future[Void]],
+      executor: ExecutorService,
+      storePath: String,
+      segmentId: String,
+      partitionId: String,
+      sqlContext: SQLContext,
+      carbonLoadModel: CarbonLoadModel,
+      oldPartitionIdList: List[Int]): Unit = {
+
+    val splitModel = SplitPartitionCallableModel(storePath,
+      carbonLoadModel,
+      segmentId,
+      partitionId,
+      oldPartitionIdList,
+      sqlContext)
+
+    val future: Future[Void] = executor.submit(new SplitPartitionCallable(splitModel))
     futureList.add(future)
   }
 

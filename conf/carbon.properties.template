@@ -42,6 +42,9 @@ carbon.enableXXHash=true
 #carbon.max.level.cache.size=-1
 #enable prefetch of data during merge sort while reading data from sort temp files in data loading
 #carbon.merge.sort.prefetch=true
+######## Alter Partition Configuration ########
+#Number of cores to be used while alter partition
+carbon.number.of.cores.while.alterPartition=2
 ######## Compaction Configuration ########
 #Number of cores to be used while compacting
 carbon.number.of.cores.while.compacting=2

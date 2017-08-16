@@ -303,6 +303,20 @@ public class CarbonTablePath extends Path {
     }
   }
 
+  public String getCarbonIndexFilePath(String taskId, String partitionId, String segmentId,
+      int batchNo, String bucketNumber, String timeStamp,
+      ColumnarFormatVersion columnarFormatVersion) {
+    switch (columnarFormatVersion) {
+      case V1:
+      case V2:
+        return getCarbonIndexFilePath(taskId, partitionId, segmentId, bucketNumber);
+      default:
+        String segmentDir = getSegmentDir(partitionId, segmentId);
+        return segmentDir + File.separator + getCarbonIndexFileName(Integer.parseInt(taskId),
+            Integer.parseInt(bucketNumber), batchNo, timeStamp);
+    }
+  }
+
   private static String getCarbonIndexFileName(String taskNo, int bucketNumber,
       String factUpdatedtimeStamp) {
     return taskNo + "-" + bucketNumber + "-" + factUpdatedtimeStamp + INDEX_FILE_EXT;
@@ -535,6 +549,10 @@ public class CarbonTablePath extends Path {
      */
     public static int getTaskIdFromTaskNo(String taskNo) {
       return Integer.parseInt(taskNo.split(BATCH_PREFIX)[0]);
+    }
+
+    public static int getBatchNoFromTaskNo(String taskNo) {
+      return Integer.parseInt(taskNo.split(BATCH_PREFIX)[1]);
     }
 
     /**

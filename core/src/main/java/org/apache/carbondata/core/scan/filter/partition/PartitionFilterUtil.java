@@ -107,7 +107,7 @@ public class PartitionFilterUtil {
           }
         }
       } else {
-        // LessThanEqualTo(<)
+        // LessThan(<)
         outer4:
         for (int i = 0; i < partitions; i++) {
           for (String value : listInfo.get(i)) {

@@ -292,11 +292,13 @@ object CommonUtil {
         value.matches(pattern)
       case "timestamp" =>
         val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
         scala.util.Try(timeStampFormat.parse(value)).isSuccess
       case "date" =>
         val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT))
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
         scala.util.Try(dateFormat.parse(value)).isSuccess
       case _ =>
         validateTypeConvertForSpark2(partitionerField, value)
@@ -329,6 +331,40 @@ object CommonUtil {
         head = next
       } else {
         sys.error("Range info must be in ascending order, please check again!")
+      }
+    }
+  }
+
+  def validateSplitListInfo(originListInfo: List[String], newListInfo: List[String],
+      originList: List[List[String]]): Unit = {
+    if (originListInfo.size == 1) {
+      sys.error("The target list partition cannot be split, please check again!")
+    }
+    if (newListInfo.size == 1) {
+      sys.error("Can't split list to one partition, please check again!")
+    }
+    if (!(newListInfo.size < originListInfo.size)) {
+      sys.error("The size of new list must be smaller than original list, please check again!")
+    }
+    val tempList = newListInfo.mkString(",").split(",")
+      .map(_.trim.replace("(", "").replace(")", ""))
+    if (tempList.length != originListInfo.size) {
+      sys.error("The total number of elements in new list must equal to original list!")
+    }
+    if (!originListInfo.sameElements(tempList)) {
+      sys.error("The elements in new list must exist in original list")
+    }
+  }
+
+  def validateAddListInfo(newListInfo: List[String], originList: List[List[String]]): Unit = {
+    if (newListInfo.size < 1) {
+      sys.error("Please add at least one new partition")
+    }
+    for (originElementGroup <- originList) {
+      for (newElement <- newListInfo ) {
+        if (originElementGroup.contains(newElement)) {
+          sys.error(s"The partition $newElement is already exist! Please check again!")
+        }
       }
     }
   }

@@ -504,6 +504,8 @@ public class CarbonFactDataHandlerModel {
     return bucketId;
   }
 
+  public void setBucketId(Integer bucketId) { this.bucketId = bucketId; }
+
   public long getSchemaUpdatedTimeStamp() {
     return schemaUpdatedTimeStamp;
   }
