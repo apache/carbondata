@@ -52,6 +52,6 @@ public interface ColumnPageCodec {
    * @param length length of data to decode
    * @return decoded data
    */
-  ColumnPage decode(byte[] input, int offset, int length) throws MemoryException;
+  ColumnPage decode(byte[] input, int offset, int length) throws MemoryException, IOException;
 
 }
