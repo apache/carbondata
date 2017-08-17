@@ -211,8 +211,9 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
       CarbonTableIdentifier identifier =
           configuration.getTableIdentifier().getCarbonTableIdentifier();
       CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(configuration,
-          identifier.getDatabaseName() + File.separator + identifier.getTableName() + File.separator
-              + configuration.getSegmentId() + File.separator + configuration.getTaskNo());
+          identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
+              .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getSegmentId()
+              + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo());
     }
   }
 
