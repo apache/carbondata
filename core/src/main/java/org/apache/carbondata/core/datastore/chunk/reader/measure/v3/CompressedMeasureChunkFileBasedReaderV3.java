@@ -226,7 +226,7 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
   }
 
   protected ColumnPage decodeMeasure(MeasureRawColumnChunk measureRawColumnChunk,
-      DataChunk2 measureColumnChunk, int copyPoint) throws MemoryException {
+      DataChunk2 measureColumnChunk, int copyPoint) throws MemoryException, IOException {
     List<ByteBuffer> encoder_meta = measureColumnChunk.getEncoder_meta();
     // for measure, it should have only one ValueEncoderMeta
     assert (encoder_meta.size() > 0);
