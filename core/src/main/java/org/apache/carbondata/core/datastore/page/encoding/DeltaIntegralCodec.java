@@ -44,8 +44,8 @@ public class DeltaIntegralCodec extends AdaptiveCompressionCodec {
     return new DeltaIntegralCodec(srcDataType, targetDataType, stats, compressor);
   }
 
-  private DeltaIntegralCodec(DataType srcDataType, DataType targetDataType,
-      SimpleStatsResult stats, Compressor compressor) {
+  private DeltaIntegralCodec(DataType srcDataType, DataType targetDataType, SimpleStatsResult stats,
+      Compressor compressor) {
     super(srcDataType, targetDataType, stats, compressor);
     switch (srcDataType) {
       case BYTE:
@@ -62,8 +62,11 @@ public class DeltaIntegralCodec extends AdaptiveCompressionCodec {
         break;
       case FLOAT:
       case DOUBLE:
-        max = (long)((double) stats.getMax());
+        max = (long) ((double) stats.getMax());
         break;
+      default:
+        throw new UnsupportedOperationException(
+            "unsupported data type for Delta compress: " + srcDataType);
     }
   }
 

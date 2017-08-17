@@ -45,33 +45,35 @@ public class MeasureColumnVisitor implements ResolvedFilterInfoVisitorIntf {
    */
   public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
-    MeasureColumnResolvedFilterInfo resolveDimension =
-        (MeasureColumnResolvedFilterInfo) visitableObj;
-    ColumnFilterInfo resolvedFilterObject = null;
-    List<String> evaluateResultListFinal = null;
-    try {
-      // handling for is null case scenarios
-      if (metadata.getExpression() instanceof EqualToExpression) {
-        EqualToExpression expression = (EqualToExpression) metadata.getExpression();
-        if (expression.isNull) {
-          evaluateResultListFinal = new ArrayList<>(1);
+    if (visitableObj instanceof MeasureColumnResolvedFilterInfo) {
+      MeasureColumnResolvedFilterInfo resolveDimension =
+          (MeasureColumnResolvedFilterInfo) visitableObj;
+      ColumnFilterInfo resolvedFilterObject = null;
+      List<String> evaluateResultListFinal = new ArrayList<>(1);
+      try {
+        // handling for is null case scenarios
+        if (metadata.getExpression() instanceof EqualToExpression) {
+          EqualToExpression expression = (EqualToExpression) metadata.getExpression();
+          if (expression.isNull) {
+            evaluateResultListFinal = new ArrayList<>(1);
+            evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+          }
+        } else {
+          evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+        }
+        // Adding default  null member inorder to not display the same while
+        // displaying the report as per hive compatibility.
+        if (!metadata.isIncludeFilter() && !evaluateResultListFinal
+            .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
           evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
         }
-      } else {
-        evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+      } catch (FilterIllegalMemberException e) {
+        throw new FilterUnsupportedException(e);
       }
-      // Adding default  null member inorder to not display the same while
-      // displaying the report as per hive compatibility.
-      if (!metadata.isIncludeFilter() && !evaluateResultListFinal
-          .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-        evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
-      }
-    } catch (FilterIllegalMemberException e) {
-      throw new FilterUnsupportedException(e);
+      resolvedFilterObject = FilterUtil
+          .getMeasureValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter(),
+              metadata.getColumnExpression().getDataType(), resolveDimension.getMeasure());
+      resolveDimension.setFilterValues(resolvedFilterObject);
     }
-    resolvedFilterObject = FilterUtil
-        .getMeasureValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter(),
-            metadata.getColumnExpression().getDataType(), resolveDimension.getMeasure());
-    resolveDimension.setFilterValues(resolvedFilterObject);
   }
 }

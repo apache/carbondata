@@ -92,7 +92,7 @@ public final class DataMapStoreManager {
     try {
       DataMapFactory dataMapFactory = factoryClass.newInstance();
       dataMapFactory.init(identifier, dataMapName);
-      dataMap = new TableDataMap(identifier, dataMapName, dataMapFactory);
+      dataMap = new TableDataMap(dataMapName, dataMapFactory);
     } catch (Exception e) {
       LOGGER.error(e);
       throw new RuntimeException(e);
@@ -119,7 +119,7 @@ public final class DataMapStoreManager {
    * @param dataMapName
    */
   public void clearDataMap(AbsoluteTableIdentifier identifier, String dataMapName) {
-    List<TableDataMap> tableDataMaps = allDataMaps.get(identifier);
+    List<TableDataMap> tableDataMaps = allDataMaps.get(identifier.uniqueName());
     if (tableDataMaps != null) {
       int i = 0;
       for (TableDataMap tableDataMap: tableDataMaps) {

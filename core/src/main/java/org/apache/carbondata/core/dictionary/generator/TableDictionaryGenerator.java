@@ -16,14 +16,11 @@
  */
 package org.apache.carbondata.core.dictionary.generator;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -83,7 +80,6 @@ public class TableDictionaryGenerator
 
   @Override public void writeDictionaryData(String tableUniqueName) {
     int numOfCores = 1;
-    final String tableName = tableUniqueName;
     try {
       numOfCores = Integer.parseInt(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
@@ -92,16 +88,9 @@ public class TableDictionaryGenerator
       numOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     }
     long start = System.currentTimeMillis();
-    List<Future<Void>> taskSubmitList =
-            new ArrayList<>(columnMap.size());
     ExecutorService executorService = Executors.newFixedThreadPool(numOfCores);
-    for (final DictionaryGenerator generator: columnMap.values()) {
-      taskSubmitList.add(executorService.submit(new Callable<Void>() {
-        @Override public Void call() throws Exception {
-          ((DictionaryWriter) (generator)).writeDictionaryData(tableName);
-          return null;
-        }
-      }));
+    for (final DictionaryGenerator generator : columnMap.values()) {
+      executorService.execute(new WriteDictionaryDataRunnable(generator, tableUniqueName));
     }
 
     try {
@@ -122,6 +111,24 @@ public class TableDictionaryGenerator
           columnMap.put(dimension.getColumnId(),
               new IncrementalColumnDictionaryGenerator(dimension, 1));
         }
+      }
+    }
+  }
+
+  private static class WriteDictionaryDataRunnable implements Runnable {
+    private final DictionaryGenerator generator;
+    private final String tableUniqueName;
+
+    public WriteDictionaryDataRunnable(DictionaryGenerator generator, String tableUniqueName) {
+      this.generator = generator;
+      this.tableUniqueName = tableUniqueName;
+    }
+
+    @Override public void run() {
+      try {
+        ((DictionaryWriter)generator).writeDictionaryData(tableUniqueName);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
       }
     }
   }

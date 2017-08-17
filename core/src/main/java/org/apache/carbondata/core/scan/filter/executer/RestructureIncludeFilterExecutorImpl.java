@@ -19,7 +19,6 @@ package org.apache.carbondata.core.scan.filter.executer;
 import java.io.IOException;
 import java.util.BitSet;
 
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
@@ -28,11 +27,6 @@ import org.apache.carbondata.core.util.BitSetGroup;
 
 public class RestructureIncludeFilterExecutorImpl extends RestructureEvaluatorImpl {
 
-  protected DimColumnResolvedFilterInfo dimColumnEvaluatorInfo;
-  protected MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo;
-  protected SegmentProperties segmentProperties;
-  protected boolean isMeasure;
-
   /**
    * flag to check whether filter values contain the default value applied on the dimension column
    * which does not exist in the current block
@@ -40,12 +34,7 @@ public class RestructureIncludeFilterExecutorImpl extends RestructureEvaluatorIm
   protected boolean isDefaultValuePresentInFilterValues;
 
   public RestructureIncludeFilterExecutorImpl(DimColumnResolvedFilterInfo dimColumnEvaluatorInfo,
-      MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo,
-      SegmentProperties segmentProperties, boolean isMeasure) {
-    this.dimColumnEvaluatorInfo = dimColumnEvaluatorInfo;
-    this.measureColumnResolvedFilterInfo = measureColumnResolvedFilterInfo;
-    this.isMeasure = isMeasure;
-    this.segmentProperties = segmentProperties;
+      MeasureColumnResolvedFilterInfo measureColumnResolvedFilterInfo, boolean isMeasure) {
     if (isMeasure) {
       isDefaultValuePresentInFilterValues =
           isMeasureDefaultValuePresentInFilterValues(measureColumnResolvedFilterInfo);

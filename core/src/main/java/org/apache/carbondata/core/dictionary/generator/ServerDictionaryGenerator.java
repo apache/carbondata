@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.dictionary.generator;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -71,8 +72,14 @@ public class ServerDictionaryGenerator implements DictionaryGenerator<Integer, D
   }
 
   public void writeDictionaryData() throws Exception {
-    for (String tableUniqueName: tableMap.keySet()) {
-      TableDictionaryGenerator generator = tableMap.get(tableUniqueName);
+    final Iterator<Map.Entry<String, TableDictionaryGenerator>> iterator =
+        tableMap.entrySet().iterator();
+    String tableUniqueName;
+    TableDictionaryGenerator generator;
+    while (iterator.hasNext()) {
+      Map.Entry<String, TableDictionaryGenerator> entry = iterator.next();
+      tableUniqueName = entry.getKey();
+      generator = entry.getValue();
       generator.writeDictionaryData(tableUniqueName);
     }
   }

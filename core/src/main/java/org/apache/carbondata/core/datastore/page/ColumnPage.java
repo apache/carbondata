@@ -410,6 +410,8 @@ public abstract class ColumnPage {
       case DECIMAL:
         putDecimal(rowId, BigDecimal.ZERO);
         break;
+      default:
+        throw new IllegalArgumentException("unsupported data type: " + dataType);
     }
   }
 

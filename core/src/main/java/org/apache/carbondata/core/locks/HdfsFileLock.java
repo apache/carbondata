@@ -45,7 +45,7 @@ public class HdfsFileLock extends AbstractCarbonLock {
 
   private DataOutputStream dataOutputStream;
 
-  public static String tmpPath;
+  private static String tmpPath;
 
   static {
     Configuration conf = new Configuration(true);

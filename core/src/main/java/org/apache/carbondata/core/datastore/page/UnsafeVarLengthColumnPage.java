@@ -95,7 +95,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
     if (totalLength + requestSize > capacity) {
       int newSize = 2 * capacity;
       MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, newSize);
-      CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset,
+      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset,
           newBlock.getBaseObject(), newBlock.getBaseOffset(), capacity);
       UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       memoryBlock = newBlock;
@@ -117,7 +117,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
     } catch (MemoryException e) {
       throw new RuntimeException(e);
     }
-    CarbonUnsafe.unsafe.copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET + offset,
+    CarbonUnsafe.getUnsafe().copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET + offset,
         baseAddress, baseOffset + rowOffset[rowId], length);
   }
 
@@ -129,7 +129,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   public BigDecimal getDecimal(int rowId) {
     int length = rowOffset[rowId + 1] - rowOffset[rowId];
     byte[] bytes = new byte[length];
-    CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
         bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
 
     return decimalConverter.getDecimal(bytes);
@@ -141,7 +141,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
     for (int rowId = 0; rowId < pageSize; rowId++) {
       int length = rowOffset[rowId + 1] - rowOffset[rowId];
       byte[] rowData = new byte[length];
-      CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
           rowData, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
       bytes[rowId] = rowData;
     }
@@ -150,7 +150,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
-    CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
         dest, CarbonUnsafe.BYTE_ARRAY_OFFSET + destOffset, length);
   }
 

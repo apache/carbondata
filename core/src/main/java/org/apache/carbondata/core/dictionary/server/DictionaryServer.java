@@ -47,7 +47,7 @@ public class DictionaryServer {
   private EventLoopGroup worker;
   private int port;
   private static Object lock = new Object();
-  private static DictionaryServer INSTANCE = null;
+  private static volatile DictionaryServer INSTANCE = null;
 
   private DictionaryServer(int port) {
     startServer(port);

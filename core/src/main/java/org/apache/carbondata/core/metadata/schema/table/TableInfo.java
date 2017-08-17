@@ -185,15 +185,15 @@ public class TableInfo implements Serializable, Writable {
       return false;
     }
     TableInfo other = (TableInfo) obj;
-    if ((databaseName == null && other.databaseName != null) || (databaseName != null
-        && other.databaseName == null)) {
+    if (null == databaseName || null == other.databaseName) {
       return false;
     }
 
-    if ((tableUniqueName == null && other.tableUniqueName != null) || (tableUniqueName != null
-        && other.tableUniqueName == null)) {
+    if (null == tableUniqueName || null == other.tableUniqueName) {
       return false;
-    } else if (!tableUniqueName.equals(other.tableUniqueName)) {
+    }
+
+    if (!tableUniqueName.equals(other.tableUniqueName)) {
       return false;
     }
     return true;

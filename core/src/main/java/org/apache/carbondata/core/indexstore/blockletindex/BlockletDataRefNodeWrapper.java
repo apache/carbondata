@@ -52,7 +52,7 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
 
   @Override public DataRefNode getNextDataRefNode() {
     if (index + 1 < blockInfos.size()) {
-      new BlockletDataRefNodeWrapper(blockInfos, index + 1, dimensionLens);
+      return new BlockletDataRefNodeWrapper(blockInfos, index + 1, dimensionLens);
     }
     return null;
   }
