@@ -52,6 +52,46 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     implements InputFormat<Void, ArrayWritable>, CombineHiveInputFormat.AvoidSplitCombination {
   private static final String CARBON_TABLE = "mapreduce.input.carboninputformat.table";
 
+  /**
+   * this method will read the schema from the physical file and populate into CARBON_TABLE
+   *
+   * @param configuration
+   * @throws IOException
+   */
+  private static void populateCarbonTable(Configuration configuration, String paths)
+      throws IOException {
+    String dirs = configuration.get(INPUT_DIR, "");
+    String[] inputPaths = StringUtils.split(dirs);
+    String validInputPath = null;
+    if (inputPaths.length == 0) {
+      throw new InvalidPathException("No input paths specified in job");
+    } else {
+      if (paths != null) {
+        for (String inputPath : inputPaths) {
+          if (paths.startsWith(inputPath.replace("file:", ""))) {
+            validInputPath = inputPath;
+            break;
+          }
+        }
+      }
+    }
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        AbsoluteTableIdentifier.fromTablePath(validInputPath);
+    // read the schema file to get the absoluteTableIdentifier having the correct table id
+    // persisted in the schema
+    CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
+    configuration.set(CARBON_TABLE, ObjectSerializationUtil.convertObjectToString(carbonTable));
+    setTableInfo(configuration, carbonTable.getTableInfo());
+  }
+
+  private static CarbonTable getCarbonTable(Configuration configuration, String path)
+      throws IOException {
+    populateCarbonTable(configuration, path);
+    // read it from schema file in the store
+    String carbonTableStr = configuration.get(CARBON_TABLE);
+    return (CarbonTable) ObjectSerializationUtil.convertStringToObject(carbonTableStr);
+  }
+
   @Override public InputSplit[] getSplits(JobConf jobConf, int numSplits) throws IOException {
     org.apache.hadoop.mapreduce.JobContext jobContext = Job.getInstance(jobConf);
     List<org.apache.hadoop.mapreduce.InputSplit> splitList = super.getSplits(jobContext);
@@ -78,46 +118,6 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     return new CarbonHiveRecordReader(queryModel, readSupport, inputSplit, jobConf);
   }
 
-  /**
-   * this method will read the schema from the physical file and populate into CARBON_TABLE
-   *
-   * @param configuration
-   * @throws IOException
-   */
-  private static void populateCarbonTable(Configuration configuration, String paths)
-      throws IOException {
-    String dirs = configuration.get(INPUT_DIR, "");
-    String[] inputPaths = StringUtils.split(dirs);
-    String validInputPath = null;
-    if (inputPaths.length == 0) {
-      throw new InvalidPathException("No input paths specified in job");
-    } else {
-      if (paths != null) {
-        for (String inputPath : inputPaths) {
-          if (paths.startsWith(inputPath.replace("file:", ""))) {
-            validInputPath = inputPath;
-            break;
-          }
-        }
-      }
-    }
-      AbsoluteTableIdentifier absoluteTableIdentifier =
-              AbsoluteTableIdentifier.fromTablePath(validInputPath);
-      // read the schema file to get the absoluteTableIdentifier having the correct table id
-      // persisted in the schema
-      CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
-      configuration.set(CARBON_TABLE, ObjectSerializationUtil.convertObjectToString(carbonTable));
-      setTableInfo(configuration, carbonTable.getTableInfo());
-    }
-
-  private static CarbonTable getCarbonTable(Configuration configuration, String path)
-      throws IOException {
-    populateCarbonTable(configuration, path);
-    // read it from schema file in the store
-    String carbonTableStr = configuration.get(CARBON_TABLE);
-    return (CarbonTable) ObjectSerializationUtil.convertStringToObject(carbonTableStr);
-  }
-
   private QueryModel getQueryModel(Configuration configuration, String path) throws IOException {
     CarbonTable carbonTable = getCarbonTable(configuration, path);
     // getting the table absoluteTableIdentifier from the carbonTable
@@ -129,8 +129,8 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     String projection = getProjection(configuration, carbonTable,
         identifier.getCarbonTableIdentifier().getTableName());
     CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
-    QueryModel queryModel = QueryModel.createModel(identifier, queryPlan, carbonTable,
-        new DataTypeConverterImpl());
+    QueryModel queryModel =
+        QueryModel.createModel(identifier, queryPlan, carbonTable, new DataTypeConverterImpl());
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
