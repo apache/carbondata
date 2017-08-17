@@ -96,15 +96,15 @@ public class UnsafeCarbonRowPage {
     for (; dimCount < noDictionaryDimensionMapping.length; dimCount++) {
       if (noDictionaryDimensionMapping[dimCount]) {
         byte[] col = (byte[]) row[dimCount];
-        CarbonUnsafe.unsafe
+        CarbonUnsafe.getUnsafe()
             .putShort(baseObject, address + size, (short) col.length);
         size += 2;
-        CarbonUnsafe.unsafe.copyMemory(col, CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
+        CarbonUnsafe.getUnsafe().copyMemory(col, CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
             address + size, col.length);
         size += col.length;
       } else {
         int value = (int) row[dimCount];
-        CarbonUnsafe.unsafe.putInt(baseObject, address + size, value);
+        CarbonUnsafe.getUnsafe().putInt(baseObject, address + size, value);
         size += 4;
       }
     }
@@ -112,9 +112,9 @@ public class UnsafeCarbonRowPage {
     // write complex dimensions here.
     for (; dimCount < dimensionSize; dimCount++) {
       byte[] col = (byte[]) row[dimCount];
-      CarbonUnsafe.unsafe.putShort(baseObject, address + size, (short) col.length);
+      CarbonUnsafe.getUnsafe().putShort(baseObject, address + size, (short) col.length);
       size += 2;
-      CarbonUnsafe.unsafe.copyMemory(col, CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
+      CarbonUnsafe.getUnsafe().copyMemory(col, CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
           address + size, col.length);
       size += col.length;
     }
@@ -128,31 +128,31 @@ public class UnsafeCarbonRowPage {
         switch (measureDataType[mesCount]) {
           case SHORT:
             Short sval = (Short) value;
-            CarbonUnsafe.unsafe.putShort(baseObject, address + size, sval);
+            CarbonUnsafe.getUnsafe().putShort(baseObject, address + size, sval);
             size += 2;
             break;
           case INT:
             Integer ival = (Integer) value;
-            CarbonUnsafe.unsafe.putInt(baseObject, address + size, ival);
+            CarbonUnsafe.getUnsafe().putInt(baseObject, address + size, ival);
             size += 4;
             break;
           case LONG:
             Long val = (Long) value;
-            CarbonUnsafe.unsafe.putLong(baseObject, address + size, val);
+            CarbonUnsafe.getUnsafe().putLong(baseObject, address + size, val);
             size += 8;
             break;
           case DOUBLE:
             Double doubleVal = (Double) value;
-            CarbonUnsafe.unsafe.putDouble(baseObject, address + size, doubleVal);
+            CarbonUnsafe.getUnsafe().putDouble(baseObject, address + size, doubleVal);
             size += 8;
             break;
           case DECIMAL:
             BigDecimal decimalVal = (BigDecimal) value;
             byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(decimalVal);
-            CarbonUnsafe.unsafe.putShort(baseObject, address + size,
+            CarbonUnsafe.getUnsafe().putShort(baseObject, address + size,
                 (short) bigDecimalInBytes.length);
             size += 2;
-            CarbonUnsafe.unsafe
+            CarbonUnsafe.getUnsafe()
                 .copyMemory(bigDecimalInBytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
                     address + size, bigDecimalInBytes.length);
             size += bigDecimalInBytes.length;
@@ -163,7 +163,7 @@ public class UnsafeCarbonRowPage {
         unset(nullSetWords, mesCount);
       }
     }
-    CarbonUnsafe.unsafe.copyMemory(nullSetWords, CarbonUnsafe.LONG_ARRAY_OFFSET, baseObject,
+    CarbonUnsafe.getUnsafe().copyMemory(nullSetWords, CarbonUnsafe.LONG_ARRAY_OFFSET, baseObject,
         address + nullWordLoc, nullSetSize);
     return size;
   }
@@ -175,16 +175,16 @@ public class UnsafeCarbonRowPage {
     Object baseObject = dataBlock.getBaseObject();
     for (; dimCount < noDictionaryDimensionMapping.length; dimCount++) {
       if (noDictionaryDimensionMapping[dimCount]) {
-        short aShort = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+        short aShort = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
         byte[] col = new byte[aShort];
         size += 2;
-        CarbonUnsafe.unsafe
+        CarbonUnsafe.getUnsafe()
             .copyMemory(baseObject, address + size, col, CarbonUnsafe.BYTE_ARRAY_OFFSET,
                 col.length);
         size += col.length;
         rowToFill[dimCount] = col;
       } else {
-        int anInt = CarbonUnsafe.unsafe.getInt(baseObject, address + size);
+        int anInt = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
         size += 4;
         rowToFill[dimCount] = anInt;
       }
@@ -192,10 +192,10 @@ public class UnsafeCarbonRowPage {
 
     // write complex dimensions here.
     for (; dimCount < dimensionSize; dimCount++) {
-      short aShort = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+      short aShort = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
       byte[] col = new byte[aShort];
       size += 2;
-      CarbonUnsafe.unsafe
+      CarbonUnsafe.getUnsafe()
           .copyMemory(baseObject, address + size, col, CarbonUnsafe.BYTE_ARRAY_OFFSET, col.length);
       size += col.length;
       rowToFill[dimCount] = col;
@@ -203,7 +203,7 @@ public class UnsafeCarbonRowPage {
 
     int nullSetSize = nullSetWords.length * 8;
     Arrays.fill(nullSetWords, 0);
-    CarbonUnsafe.unsafe
+    CarbonUnsafe.getUnsafe()
         .copyMemory(baseObject, address + size, nullSetWords, CarbonUnsafe.LONG_ARRAY_OFFSET,
             nullSetSize);
     size += nullSetSize;
@@ -212,30 +212,30 @@ public class UnsafeCarbonRowPage {
       if (isSet(nullSetWords, mesCount)) {
         switch (measureDataType[mesCount]) {
           case SHORT:
-            Short sval = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+            Short sval = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
             size += 2;
             rowToFill[dimensionSize + mesCount] = sval;
             break;
           case INT:
-            Integer ival = CarbonUnsafe.unsafe.getInt(baseObject, address + size);
+            Integer ival = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
             size += 4;
             rowToFill[dimensionSize + mesCount] = ival;
             break;
           case LONG:
-            Long val = CarbonUnsafe.unsafe.getLong(baseObject, address + size);
+            Long val = CarbonUnsafe.getUnsafe().getLong(baseObject, address + size);
             size += 8;
             rowToFill[dimensionSize + mesCount] = val;
             break;
           case DOUBLE:
-            Double doubleVal = CarbonUnsafe.unsafe.getDouble(baseObject, address + size);
+            Double doubleVal = CarbonUnsafe.getUnsafe().getDouble(baseObject, address + size);
             size += 8;
             rowToFill[dimensionSize + mesCount] = doubleVal;
             break;
           case DECIMAL:
-            short aShort = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+            short aShort = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
             byte[] bigDecimalInBytes = new byte[aShort];
             size += 2;
-            CarbonUnsafe.unsafe.copyMemory(baseObject, address + size, bigDecimalInBytes,
+            CarbonUnsafe.getUnsafe().copyMemory(baseObject, address + size, bigDecimalInBytes,
                 CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
             size += bigDecimalInBytes.length;
             rowToFill[dimensionSize + mesCount] = DataTypeUtil.byteToBigDecimal(bigDecimalInBytes);
@@ -255,17 +255,17 @@ public class UnsafeCarbonRowPage {
     Object baseObject = dataBlock.getBaseObject();
     for (; dimCount < noDictionaryDimensionMapping.length; dimCount++) {
       if (noDictionaryDimensionMapping[dimCount]) {
-        short aShort = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+        short aShort = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
         byte[] col = new byte[aShort];
         size += 2;
-        CarbonUnsafe.unsafe
+        CarbonUnsafe.getUnsafe()
             .copyMemory(baseObject, address + size, col, CarbonUnsafe.BYTE_ARRAY_OFFSET,
                 col.length);
         size += col.length;
         stream.writeShort(aShort);
         stream.write(col);
       } else {
-        int anInt = CarbonUnsafe.unsafe.getInt(baseObject, address + size);
+        int anInt = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
         size += 4;
         stream.writeInt(anInt);
       }
@@ -273,10 +273,10 @@ public class UnsafeCarbonRowPage {
 
     // write complex dimensions here.
     for (; dimCount < dimensionSize; dimCount++) {
-      short aShort = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+      short aShort = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
       byte[] col = new byte[aShort];
       size += 2;
-      CarbonUnsafe.unsafe
+      CarbonUnsafe.getUnsafe()
           .copyMemory(baseObject, address + size, col, CarbonUnsafe.BYTE_ARRAY_OFFSET, col.length);
       size += col.length;
       stream.writeShort(aShort);
@@ -285,7 +285,7 @@ public class UnsafeCarbonRowPage {
 
     int nullSetSize = nullSetWords.length * 8;
     Arrays.fill(nullSetWords, 0);
-    CarbonUnsafe.unsafe
+    CarbonUnsafe.getUnsafe()
         .copyMemory(baseObject, address + size, nullSetWords, CarbonUnsafe.LONG_ARRAY_OFFSET,
             nullSetSize);
     size += nullSetSize;
@@ -297,30 +297,30 @@ public class UnsafeCarbonRowPage {
       if (isSet(nullSetWords, mesCount)) {
         switch (measureDataType[mesCount]) {
           case SHORT:
-            short sval = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+            short sval = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
             size += 2;
             stream.writeShort(sval);
             break;
           case INT:
-            int ival = CarbonUnsafe.unsafe.getInt(baseObject, address + size);
+            int ival = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
             size += 4;
             stream.writeInt(ival);
             break;
           case LONG:
-            long val = CarbonUnsafe.unsafe.getLong(baseObject, address + size);
+            long val = CarbonUnsafe.getUnsafe().getLong(baseObject, address + size);
             size += 8;
             stream.writeLong(val);
             break;
           case DOUBLE:
-            double doubleVal = CarbonUnsafe.unsafe.getDouble(baseObject, address + size);
+            double doubleVal = CarbonUnsafe.getUnsafe().getDouble(baseObject, address + size);
             size += 8;
             stream.writeDouble(doubleVal);
             break;
           case DECIMAL:
-            short aShort = CarbonUnsafe.unsafe.getShort(baseObject, address + size);
+            short aShort = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
             byte[] bigDecimalInBytes = new byte[aShort];
             size += 2;
-            CarbonUnsafe.unsafe.copyMemory(baseObject, address + size, bigDecimalInBytes,
+            CarbonUnsafe.getUnsafe().copyMemory(baseObject, address + size, bigDecimalInBytes,
                 CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
             size += bigDecimalInBytes.length;
             stream.writeShort(aShort);

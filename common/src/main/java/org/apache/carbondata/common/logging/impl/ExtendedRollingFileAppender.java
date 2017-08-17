@@ -74,6 +74,10 @@ public class ExtendedRollingFileAppender extends RollingFileAppender {
         }
       });
 
+      if (null == files) {
+        return;
+      }
+
       int backupFiles = files.length - 1;
 
       if (backupFiles <= maxBackupIndex) {

@@ -775,8 +775,7 @@ public class QueryUtil {
         new StructQueryType(dimension.getColName(), dimension.getColName(),
             dimensionToBlockIndexMap.get(dimension.getOrdinal()));
     complexTypeMap.put(dimension.getOrdinal(), parentQueryType);
-    parentBlockIndex =
-        fillChildrenDetails(eachComplexColumnValueSize, columnIdToDictionaryMap, parentBlockIndex,
+    fillChildrenDetails(eachComplexColumnValueSize, columnIdToDictionaryMap, parentBlockIndex,
             dimension, parentQueryType);
   }
 

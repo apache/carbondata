@@ -164,14 +164,16 @@ public class QueryStatisticsRecorderImpl implements QueryStatisticsRecorder, Ser
       values.add(String.valueOf(result_size));
       StringBuilder tableInfo = new StringBuilder();
       String[] columns = headers.split(",");
-      String line = "";
-      String hearLine = "";
-      String valueLine = "";
+      StringBuilder line = new StringBuilder("");
+      StringBuilder hearLine = new StringBuilder("");
+      StringBuilder valueLine = new StringBuilder("");
       for (int i = 0; i < columns.length; i++) {
         int len = Math.max(columns[i].length(), values.get(i).length());
-        line += "+" + printLine("-", len);
-        hearLine += "|" + printLine(" ", len - columns[i].length()) + columns[i];
-        valueLine += "|" + printLine(" ", len - values.get(i).length()) + values.get(i);
+        line.append("+").append(printLine("-", len));
+        hearLine.append("|").append(printLine(" ", len - columns[i].length()))
+            .append(columns[i]);
+        valueLine.append("|").append(printLine(" ", len - values.get(i).length()))
+            .append(values.get(i));
       }
       // struct table info
       tableInfo.append(line).append("+").append("\n");

@@ -21,11 +21,9 @@ import org.apache.carbondata.core.scan.expression.Expression;
 
 public class FilterOptimizerImpl implements FilterOptimizer {
 
-  protected FilterOptimizer filterOptimizer;
   protected Expression filterExpression;
 
-  public FilterOptimizerImpl(FilterOptimizer filterOptimizer, Expression filterExpression) {
-    this.filterOptimizer = filterOptimizer;
+  public FilterOptimizerImpl(Expression filterExpression) {
     this.filterExpression = filterExpression;
   }
 

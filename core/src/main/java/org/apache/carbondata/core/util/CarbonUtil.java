@@ -304,8 +304,9 @@ public final class CarbonUtil {
    */
   private static void deleteRecursive(File f) throws IOException {
     if (f.isDirectory()) {
-      if (f.listFiles() != null) {
-        for (File c : f.listFiles()) {
+      File[] files = f.listFiles();
+      if (null != files) {
+        for (File c : files) {
           deleteRecursive(c);
         }
       }
@@ -950,6 +951,7 @@ public final class CarbonUtil {
           fileReader.finish();
         } catch (IOException e) {
           // ignore the exception as nothing we can do about it
+          fileReader = null;
         }
       }
     }
@@ -1438,7 +1440,8 @@ public final class CarbonUtil {
     return valueEncoderMeta;
   }
 
-  public static byte[] serializeEncodeMetaUsingByteBuffer(ValueEncoderMeta valueEncoderMeta) {
+  public static byte[] serializeEncodeMetaUsingByteBuffer(ValueEncoderMeta valueEncoderMeta)
+      throws IOException {
     ByteBuffer buffer = null;
     switch (valueEncoderMeta.getType()) {
       case LONG:
@@ -1463,6 +1466,8 @@ public final class CarbonUtil {
         buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + 3);
         buffer.putChar(valueEncoderMeta.getTypeInChar());
         break;
+      default:
+        throw new IOException("Unsupported datatype: " + valueEncoderMeta.getType());
     }
     buffer.putInt(0); // decimal point, not used
     buffer.put(valueEncoderMeta.getDataTypeSelected());

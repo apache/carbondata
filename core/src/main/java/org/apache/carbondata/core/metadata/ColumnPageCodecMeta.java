@@ -194,6 +194,8 @@ public class ColumnPageCodecMeta extends ValueEncoderMeta implements Serializabl
         buffer.putInt(getScale());
         buffer.putInt(getPrecision());
         break;
+      default:
+        throw new RuntimeException("Unexpected type: " + srcDataType);
     }
     buffer.putInt(getDecimal());
     buffer.put(getDataTypeSelected());

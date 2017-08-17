@@ -367,6 +367,9 @@ public final class FileFactory {
       return path.delete();
     }
     File[] files = path.listFiles();
+    if (null == files) {
+      return true;
+    }
     for (int i = 0; i < files.length; i++) {
       deleteAllFilesOfDir(files[i]);
     }

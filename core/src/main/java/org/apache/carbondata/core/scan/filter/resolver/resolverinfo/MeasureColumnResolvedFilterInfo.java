@@ -44,8 +44,6 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
 
   private boolean isMeasureExistsInCurrentSilce = true;
 
-  private Object defaultValue;
-
   private CarbonColumn carbonColumn;
 
   private CarbonMeasure carbonMeasure;
@@ -113,10 +111,6 @@ public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
 
   public boolean isMeasureExistsInCurrentSlice() {
     return true;
-  }
-
-  public Object getDefaultValue() {
-    return defaultValue;
   }
 
   public CarbonColumn getCarbonColumn() {

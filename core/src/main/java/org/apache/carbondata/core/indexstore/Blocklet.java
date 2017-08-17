@@ -31,7 +31,7 @@ import org.apache.hadoop.fs.RemoteIterator;
  */
 public class Blocklet implements Serializable {
 
-  private Path path;
+  private String path;
 
   private String segmentId;
 
@@ -44,12 +44,12 @@ public class Blocklet implements Serializable {
   private String[] location;
 
   public Blocklet(String path, String blockletId) {
-    this.path = new Path(path);
+    this.path = path;
     this.blockletId = blockletId;
   }
 
   public Path getPath() {
-    return path;
+    return new Path(path);
   }
 
   public String getBlockletId() {
@@ -65,8 +65,9 @@ public class Blocklet implements Serializable {
   }
 
   public void updateLocations() throws IOException {
-    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
-    RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(path);
+    Path fspath = new Path(path);
+    FileSystem fs = fspath.getFileSystem(FileFactory.getConfiguration());
+    RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(fspath);
     LocatedFileStatus fileStatus = iter.next();
     location = fileStatus.getBlockLocations()[0].getHosts();
     length = fileStatus.getLen();

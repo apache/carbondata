@@ -19,6 +19,7 @@ package org.apache.carbondata.core.scan.expression;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -109,9 +110,12 @@ public class RangeExpressionEvaluator {
       Map<String, List<FilterModificationNode>> filterExpressionMap) {
 
     List<FilterModificationNode> deleteExp = new ArrayList<>();
-    for (String colName : filterExpressionMap.keySet()) {
-      // Check is there are multiple list for this Column.
-      List<FilterModificationNode> filterExp = filterExpressionMap.get(colName);
+    Iterator<Map.Entry<String, List<FilterModificationNode>>> iterator =
+        filterExpressionMap.entrySet().iterator();
+    Map.Entry<String, List<FilterModificationNode>> nextEntry = null;
+    while (iterator.hasNext()) {
+      nextEntry = iterator.next();
+      List<FilterModificationNode> filterExp = nextEntry.getValue();
       if (filterExp.size() > 1) {
         // There are multiple Expression for the same column traverse and check if they can
         // form a range.
@@ -120,8 +124,8 @@ public class RangeExpressionEvaluator {
 
         for (FilterModificationNode exp : filterExp) {
           if ((exp.getExpType() == GREATERTHAN) || (exp.getExpType() == GREATERTHAN_EQUALTO)) {
-            if ((null == endMax) || checkLiteralValue(exp.getCurrentExp(),
-                endMax.getCurrentExp())) {
+            if ((null == endMax) || ((checkLiteralValue(exp.getCurrentExp(),
+                endMax.getCurrentExp())))) {
               if (null == startMin) {
                 startMin = exp;
               } else {
@@ -141,8 +145,8 @@ public class RangeExpressionEvaluator {
             }
           }
           if ((exp.getExpType() == LESSTHAN) || (exp.getExpType() == LESSTHAN_EQUALTO)) {
-            if ((null == startMin) || checkLiteralValue(exp.getCurrentExp(),
-                startMin.getCurrentExp())) {
+            if ((null == startMin) || ((checkLiteralValue(exp.getCurrentExp(),
+                startMin.getCurrentExp())))) {
               if (null == endMax) {
                 endMax = exp;
               } else {
@@ -166,7 +170,7 @@ public class RangeExpressionEvaluator {
         if ((null != startMin) && (null != endMax)) {
           LOG.info(
               "GreaterThan and LessThan Filter Expression changed to Range Expression for column "
-                  + colName);
+                  + nextEntry.getKey());
           // the node can be converted to RANGE.
           Expression n1 = startMin.getCurrentExp();
           Expression n2 = endMax.getCurrentExp();

@@ -205,7 +205,7 @@ public final class FilterUtil {
             segmentProperties, true);
       } else {
         return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
-            msrColResolvedFilterInfo, segmentProperties, true);
+            msrColResolvedFilterInfo, true);
       }
     }
     if (null != dimColResolvedFilterInfo && dimColResolvedFilterInfo.getDimension().isColumnar()) {
@@ -221,7 +221,7 @@ public final class FilterUtil {
             segmentProperties, false);
       } else {
         return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
-            msrColResolvedFilterInfo, segmentProperties, false);
+            msrColResolvedFilterInfo, false);
       }
     } else {
       return new IncludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
@@ -254,7 +254,7 @@ public final class FilterUtil {
             segmentProperties, true);
       } else {
         return new RestructureExcludeFilterExecutorImpl(dimColResolvedFilterInfo,
-            msrColResolvedFilterInfo, segmentProperties, true);
+            msrColResolvedFilterInfo, true);
       }
     }
     if ((null != dimColResolvedFilterInfo) && (dimColResolvedFilterInfo.getDimension()
@@ -271,7 +271,7 @@ public final class FilterUtil {
             segmentProperties, false);
       } else {
         return new RestructureExcludeFilterExecutorImpl(dimColResolvedFilterInfo,
-            msrColResolvedFilterInfo, segmentProperties, false);
+            msrColResolvedFilterInfo, false);
       }
     } else {
       return new ExcludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);

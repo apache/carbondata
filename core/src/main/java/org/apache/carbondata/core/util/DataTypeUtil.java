@@ -154,7 +154,11 @@ public final class DataTypeUtil {
           bigDecimalMsrValue =
               bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
         }
-        return normalizeDecimalValue(bigDecimalMsrValue, carbonMeasure.getPrecision());
+        if (null != bigDecimalMsrValue) {
+          return normalizeDecimalValue(bigDecimalMsrValue, carbonMeasure.getPrecision());
+        } else {
+          return bigDecimalMsrValue;
+        }
       default:
         return measurePage.getDouble(index);
     }

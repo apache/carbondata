@@ -117,7 +117,7 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     } else {
       list.add(rowIds[i - 1]);
     }
-    double compressionPercentage = (((list.size() + map.size()) * 100) / rowIds.length);
+    int compressionPercentage = (((list.size() + map.size()) * 100) / rowIds.length);
     if (compressionPercentage > 70) {
       rowIdPage = rowIds;
     } else {

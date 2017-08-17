@@ -21,7 +21,7 @@ import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
 import org.apache.carbondata.core.memory.MemoryBlock;
 
 import static org.apache.carbondata.core.memory.CarbonUnsafe.BYTE_ARRAY_OFFSET;
-import static org.apache.carbondata.core.memory.CarbonUnsafe.unsafe;
+import static org.apache.carbondata.core.memory.CarbonUnsafe.getUnsafe;
 
 /**
  * Unsafe implementation of data map row.
@@ -43,14 +43,15 @@ public class UnsafeDataMapRow extends DataMapRow {
     int position = getPosition(ordinal);
     switch (schemas[ordinal].getSchemaType()) {
       case VARIABLE:
-        length = unsafe.getShort(block.getBaseObject(), block.getBaseOffset() + pointer + position);
+        length =
+            getUnsafe().getShort(block.getBaseObject(), block.getBaseOffset() + pointer + position);
         position += 2;
         break;
       default:
         length = schemas[ordinal].getLength();
     }
     byte[] data = new byte[length];
-    unsafe.copyMemory(block.getBaseObject(), block.getBaseOffset() + pointer + position, data,
+    getUnsafe().copyMemory(block.getBaseObject(), block.getBaseOffset() + pointer + position, data,
         BYTE_ARRAY_OFFSET, data.length);
     return data;
   }
@@ -60,7 +61,8 @@ public class UnsafeDataMapRow extends DataMapRow {
     int position = getPosition(ordinal);
     switch (schemas[ordinal].getSchemaType()) {
       case VARIABLE:
-        length = unsafe.getShort(block.getBaseObject(), block.getBaseOffset() + pointer + position);
+        length =
+            getUnsafe().getShort(block.getBaseObject(), block.getBaseOffset() + pointer + position);
         break;
       default:
         length = schemas[ordinal].getLength();
@@ -72,7 +74,8 @@ public class UnsafeDataMapRow extends DataMapRow {
     int length;
     switch (schemas[ordinal].getSchemaType()) {
       case VARIABLE:
-        length = unsafe.getShort(block.getBaseObject(), block.getBaseOffset() + pointer + position);
+        length =
+            getUnsafe().getShort(block.getBaseObject(), block.getBaseOffset() + pointer + position);
         break;
       default:
         length = schemas[ordinal].getLength();
@@ -91,7 +94,7 @@ public class UnsafeDataMapRow extends DataMapRow {
   }
 
   @Override public int getInt(int ordinal) {
-    return unsafe
+    return getUnsafe()
         .getInt(block.getBaseObject(), block.getBaseOffset() + pointer + getPosition(ordinal));
   }
 
@@ -104,7 +107,7 @@ public class UnsafeDataMapRow extends DataMapRow {
   }
 
   @Override public byte getByte(int ordinal) {
-    return unsafe
+    return getUnsafe()
         .getByte(block.getBaseObject(), block.getBaseOffset() + pointer + getPosition(ordinal));
   }
 
@@ -113,7 +116,7 @@ public class UnsafeDataMapRow extends DataMapRow {
   }
 
   @Override public short getShort(int ordinal) {
-    return unsafe
+    return getUnsafe()
         .getShort(block.getBaseObject(), block.getBaseOffset() + pointer + getPosition(ordinal));
   }
 
@@ -122,7 +125,7 @@ public class UnsafeDataMapRow extends DataMapRow {
   }
 
   @Override public long getLong(int ordinal) {
-    return unsafe
+    return getUnsafe()
         .getLong(block.getBaseObject(), block.getBaseOffset() + pointer + getPosition(ordinal));
   }
 
@@ -131,7 +134,7 @@ public class UnsafeDataMapRow extends DataMapRow {
   }
 
   @Override public float getFloat(int ordinal) {
-    return unsafe
+    return getUnsafe()
         .getFloat(block.getBaseObject(), block.getBaseOffset() + pointer + getPosition(ordinal));
   }
 
@@ -140,7 +143,7 @@ public class UnsafeDataMapRow extends DataMapRow {
   }
 
   @Override public double getDouble(int ordinal) {
-    return unsafe
+    return getUnsafe()
         .getDouble(block.getBaseObject(), block.getBaseOffset() + pointer + getPosition(ordinal));
   }
 

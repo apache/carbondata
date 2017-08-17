@@ -383,7 +383,7 @@ public class UnsafeSortDataRows {
           MemoryBlock newMemoryBlock = UnsafeSortMemoryManager.INSTANCE
               .allocateMemoryLazy(taskId, page.getDataBlock().size());
           // copying data from working memory manager to sortmemory manager
-          CarbonUnsafe.unsafe
+          CarbonUnsafe.getUnsafe()
               .copyMemory(page.getDataBlock().getBaseObject(), page.getDataBlock().getBaseOffset(),
                   newMemoryBlock.getBaseObject(), newMemoryBlock.getBaseOffset(),
                   page.getDataBlock().size());

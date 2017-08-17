@@ -137,22 +137,18 @@ public final class CarbonProperties {
   }
 
   private void validateLockType() {
-    String lockTypeConfigured = carbonProperties.getProperty(CarbonCommonConstants.LOCK_TYPE);
-    if (null != lockTypeConfigured) {
-      lockTypeConfigured = lockTypeConfigured.toUpperCase();
-      switch (lockTypeConfigured) {
-        // if user is setting the lock type as CARBON_LOCK_TYPE_ZOOKEEPER then no need to validate
-        // else validate based on the file system type for LOCAL file system lock will be
-        // CARBON_LOCK_TYPE_LOCAL and for the distributed one CARBON_LOCK_TYPE_HDFS
-        case CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER:
-          break;
-        case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
-        case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
-        default:
-          validateAndConfigureLockType(lockTypeConfigured);
-      }
-    } else {
-      validateAndConfigureLockType(lockTypeConfigured);
+    String lockTypeConfigured = carbonProperties
+        .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT);
+    switch (lockTypeConfigured.toUpperCase()) {
+      // if user is setting the lock type as CARBON_LOCK_TYPE_ZOOKEEPER then no need to validate
+      // else validate based on the file system type for LOCAL file system lock will be
+      // CARBON_LOCK_TYPE_LOCAL and for the distributed one CARBON_LOCK_TYPE_HDFS
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER:
+        break;
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
+      default:
+        validateAndConfigureLockType(lockTypeConfigured);
     }
   }
 

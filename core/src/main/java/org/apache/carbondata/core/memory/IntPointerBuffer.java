@@ -67,7 +67,7 @@ public class IntPointerBuffer {
     assert rowId >= 0 : "rowId (" + rowId + ") should >= 0";
     assert rowId < length : "rowId (" + rowId + ") should < length (" + length + ")";
     if (pointerBlock == null) {
-      return CarbonUnsafe.unsafe.getInt(pointerMemoryBlock.getBaseObject(),
+      return CarbonUnsafe.getUnsafe().getInt(pointerMemoryBlock.getBaseObject(),
           pointerMemoryBlock.getBaseOffset() + (rowId << 2));
     }
     return pointerBlock[rowId];
@@ -78,7 +78,7 @@ public class IntPointerBuffer {
       pointerMemoryBlock =
           UnsafeSortMemoryManager.allocateMemoryWithRetry(this.taskId, pointerBlock.length * 4);
       for (int i = 0; i < pointerBlock.length; i++) {
-        CarbonUnsafe.unsafe
+        CarbonUnsafe.getUnsafe()
             .putInt(pointerMemoryBlock.getBaseObject(), pointerMemoryBlock.getBaseOffset() + i * 4,
                 pointerBlock[i]);
       }

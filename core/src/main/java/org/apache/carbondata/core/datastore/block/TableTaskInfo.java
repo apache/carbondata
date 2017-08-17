@@ -60,6 +60,29 @@ public class TableTaskInfo implements Distributable {
     return taskId.compareTo(((TableTaskInfo)o).getTaskId());
   }
 
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+
+    if (null == obj) {
+      return false;
+    }
+
+    if (!(obj instanceof TableTaskInfo)) {
+      return false;
+    }
+
+    return 0 == taskId.compareTo(((TableTaskInfo)obj).getTaskId());
+  }
+
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + ((taskId == null) ? 0 : taskId.hashCode());
+    return result;
+  }
+
   /**
    * Finding which node has the maximum number of blocks for it.
    * @param blockList

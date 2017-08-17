@@ -74,6 +74,14 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
         lockFile);
   }
 
+  public static void initialize() {
+    String zooKeeperUrl =
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ZOOKEEPER_URL);
+    if (null == zk) {
+      zk = ZookeeperInit.getInstance(zooKeeperUrl).getZookeeper();
+    }
+  }
+
   /**
    * @param lockLocation
    * @param lockFile
@@ -82,9 +90,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     this.lockName = lockFile;
     this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation;
 
-    String zooKeeperUrl =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ZOOKEEPER_URL);
-    zk = ZookeeperInit.getInstance(zooKeeperUrl).getZookeeper();
+    initialize();
 
     this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation
         + CarbonCommonConstants.FILE_SEPARATOR + lockFile;

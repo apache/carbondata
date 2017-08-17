@@ -190,13 +190,15 @@ public class TableBlockInfo implements Distributable, Serializable {
     if (blockLength != other.blockLength) {
       return false;
     }
-    if (filePath == null && other.filePath != null) {
-      return false;
-    } else if (filePath != null && other.filePath == null) {
-      return false;
-    } else if (!filePath.equals(other.filePath)) {
+
+    if (null == filePath || null == other.filePath) {
+      return  false;
+    }
+
+    if (!filePath.equals(other.filePath)) {
       return false;
     }
+
     if (blockletInfos.getStartBlockletNumber() != other.blockletInfos.getStartBlockletNumber()) {
       return false;
     }
