@@ -187,6 +187,11 @@ public final class CarbonCommonConstants {
       MEMBER_DEFAULT_VAL.getBytes(Charset.forName(DEFAULT_CHARSET));
 
   /**
+   * Bytes for string 0, it is used in codegen in case of null values.
+   */
+  public static final byte[] ZERO_BYTE_ARRAY = "0".getBytes();
+
+  /**
    * FILE STATUS IN-PROGRESS
    */
   public static final String FILE_INPROGRESS_STATUS = ".inprogress";
