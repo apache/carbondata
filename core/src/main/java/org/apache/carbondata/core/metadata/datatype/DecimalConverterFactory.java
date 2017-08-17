@@ -69,11 +69,9 @@ public final class DecimalConverterFactory {
 
     private ByteBuffer buffer = ByteBuffer.allocate(4);
 
-    private int precision;
     private int scale;
 
     public DecimalIntConverter(int precision, int scale) {
-      this.precision = precision;
       this.scale = scale;
     }
 
@@ -116,11 +114,9 @@ public final class DecimalConverterFactory {
 
     private ByteBuffer buffer = ByteBuffer.allocate(8);
 
-    private int precision;
     private int scale;
 
     public DecimalLongConverter(int precision, int scale) {
-      this.precision = precision;
       this.scale = scale;
     }
 
@@ -147,7 +143,6 @@ public final class DecimalConverterFactory {
 
   public class DecimalUnscaledConverter implements DecimalConverter {
 
-    private int precision;
 
     private int scale;
 
@@ -156,7 +151,6 @@ public final class DecimalConverterFactory {
     private byte[] decimalBuffer = new byte[minBytesForPrecision[38]];
 
     public DecimalUnscaledConverter(int precision, int scale) {
-      this.precision = precision;
       this.scale = scale;
       this.numBytes = minBytesForPrecision[precision];
     }

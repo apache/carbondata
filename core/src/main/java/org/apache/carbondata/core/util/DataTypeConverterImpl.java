@@ -35,7 +35,7 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
   }
 
   public byte[] convertFromStringToByte(Object data) {
-    return data.toString().getBytes();
+    return data.toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
   }
 
   public Object convertFromStringToUTF8String(Object data) {

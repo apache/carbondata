@@ -110,7 +110,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     } else {
       this.dimColEvaluatorInfoList = dimColEvaluatorInfoList;
     }
-    if (dimColEvaluatorInfoList.size() > 0) {
+    if (this.dimColEvaluatorInfoList.size() > 0) {
       this.isDimensionPresentInCurrentBlock = new boolean[dimColEvaluatorInfoList.size()];
       this.dimensionBlocksIndex = new int[dimColEvaluatorInfoList.size()];
     } else {
@@ -122,7 +122,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     } else {
       this.msrColEvalutorInfoList = msrColEvalutorInfoList;
     }
-    if (msrColEvalutorInfoList.size() > 0) {
+    if (this.msrColEvalutorInfoList.size() > 0) {
       this.isMeasurePresentInCurrentBlock = new boolean[msrColEvalutorInfoList.size()];
       this.measureBlocksIndex = new int[msrColEvalutorInfoList.size()];
     } else {

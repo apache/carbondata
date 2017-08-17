@@ -20,12 +20,9 @@ package org.apache.carbondata.core.scan.complextypes;
 import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 
 public class ComplexQueryType {
-  protected GenericQueryType children;
-
   protected String name;
 
   protected String parentname;

@@ -114,11 +114,9 @@ public class UnsafeMemoryManager {
             - memoryUsed));
   }
 
-  public void freeMemoryAll(long taskId) {
+  public synchronized void freeMemoryAll(long taskId) {
     Set<MemoryBlock> memoryBlockSet = null;
-    synchronized (INSTANCE) {
-      memoryBlockSet = taskIdToMemoryBlockMap.remove(taskId);
-    }
+    memoryBlockSet = taskIdToMemoryBlockMap.remove(taskId);
     long occuppiedMemory = 0;
     if (null != memoryBlockSet) {
       Iterator<MemoryBlock> iterator = memoryBlockSet.iterator();
@@ -129,10 +127,8 @@ public class UnsafeMemoryManager {
         allocator.free(memoryBlock);
       }
     }
-    synchronized (INSTANCE) {
-      memoryUsed -= occuppiedMemory;
-      memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
-    }
+    memoryUsed -= occuppiedMemory;
+    memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(
           "Freeing memory of size: " + occuppiedMemory + ": Current available memory is: " + (

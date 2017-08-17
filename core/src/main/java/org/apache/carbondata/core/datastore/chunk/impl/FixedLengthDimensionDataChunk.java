@@ -110,6 +110,10 @@ public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
             case LONG:
               vector.putLong(vectorOffset++, (long) valueFromSurrogate);
               break;
+            default:
+              throw new IllegalArgumentException(
+                  "unsupported data type: " + columnVectorInfo.directDictionaryGenerator
+                      .getReturnType());
           }
         }
       }
@@ -150,6 +154,10 @@ public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
             case LONG:
               vector.putLong(vectorOffset++, (long) valueFromSurrogate);
               break;
+            default:
+              throw new IllegalArgumentException(
+                  "unsupported data type: " + columnVectorInfo.directDictionaryGenerator
+                      .getReturnType());
           }
         }
       }

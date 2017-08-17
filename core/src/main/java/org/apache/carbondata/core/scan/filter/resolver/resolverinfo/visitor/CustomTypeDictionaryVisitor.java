@@ -48,25 +48,28 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
   public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
     ColumnFilterInfo resolvedFilterObject = null;
-    DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
-    List<String> evaluateResultListFinal;
-    try {
-      evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
-    } catch (FilterIllegalMemberException e) {
-      throw new FilterUnsupportedException(e);
+    if (visitableObj instanceof DimColumnResolvedFilterInfo) {
+      DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
+      List<String> evaluateResultListFinal;
+      try {
+        evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+      } catch (FilterIllegalMemberException e) {
+        throw new FilterUnsupportedException(e);
+      }
+      resolvedFilterObject =
+          getDirectDictionaryValKeyMemberForFilter(metadata.getColumnExpression(),
+              evaluateResultListFinal, metadata.isIncludeFilter(),
+              metadata.getColumnExpression().getDimension().getDataType());
+      if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
+          .getFilterList().contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
+        // Adding default surrogate key of null member inorder to not display the same while
+        // displaying the report as per hive compatibility.
+        resolvedFilterObject.getFilterList()
+            .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+        Collections.sort(resolvedFilterObject.getFilterList());
+      }
+      resolveDimension.setFilterValues(resolvedFilterObject);
     }
-    resolvedFilterObject = getDirectDictionaryValKeyMemberForFilter(metadata.getColumnExpression(),
-        evaluateResultListFinal, metadata.isIncludeFilter(),
-        metadata.getColumnExpression().getDimension().getDataType());
-    if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
-        .getFilterList().contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
-      // Adding default surrogate key of null member inorder to not display the same while
-      // displaying the report as per hive compatibility.
-      resolvedFilterObject.getFilterList()
-          .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
-      Collections.sort(resolvedFilterObject.getFilterList());
-    }
-    resolveDimension.setFilterValues(resolvedFilterObject);
   }
 
   protected ColumnFilterInfo getDirectDictionaryValKeyMemberForFilter(

@@ -36,4 +36,27 @@ public class ColumnVectorInfo implements Comparable<ColumnVectorInfo> {
   @Override public int compareTo(ColumnVectorInfo o) {
     return ordinal - o.ordinal;
   }
+
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+
+    if (null == obj) {
+      return false;
+    }
+
+    if (!(obj instanceof ColumnVectorInfo)) {
+      return false;
+    }
+
+    return ordinal == ((ColumnVectorInfo) obj).ordinal;
+  }
+
+  @Override public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + (ordinal);
+    return result;
+  }
 }

@@ -53,16 +53,16 @@ public class UnsafeFixedLengthDimensionDataChunkStore
   @Override public byte[] getRow(int rowId) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplicitSorted) {
-      rowId = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
-          dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + (rowId
+      rowId = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
+          dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
     }
     // creating a row
     byte[] data = new byte[columnValueSize];
     //copy the row from memory block based on offset
     // offset position will be index * each column value length
-    CarbonUnsafe.unsafe.copyMemory(dataPageMemoryBlock.getBaseObject(),
-        dataPageMemoryBlock.getBaseOffset() + (rowId * columnValueSize), data,
+    CarbonUnsafe.getUnsafe().copyMemory(dataPageMemoryBlock.getBaseObject(),
+        dataPageMemoryBlock.getBaseOffset() + ((long)rowId * columnValueSize), data,
         CarbonUnsafe.BYTE_ARRAY_OFFSET, columnValueSize);
     return data;
   }
@@ -77,8 +77,8 @@ public class UnsafeFixedLengthDimensionDataChunkStore
   @Override public int getSurrogate(int index) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplicitSorted) {
-      index = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
-          dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + (index
+      index = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
+          dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)index
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
     }
     // below part is to convert the byte array to surrogate value
@@ -86,7 +86,7 @@ public class UnsafeFixedLengthDimensionDataChunkStore
     int surrogate = 0;
     for (int i = 0; i < columnValueSize; i++) {
       surrogate <<= 8;
-      surrogate ^= CarbonUnsafe.unsafe.getByte(dataPageMemoryBlock.getBaseObject(),
+      surrogate ^= CarbonUnsafe.getUnsafe().getByte(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + startOffsetOfData) & 0xFF;
       startOffsetOfData++;
     }
@@ -103,14 +103,14 @@ public class UnsafeFixedLengthDimensionDataChunkStore
   @Override public void fillRow(int rowId, byte[] buffer, int offset) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplicitSorted) {
-      rowId = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
-          dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + (rowId
+      rowId = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
+          dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
     }
     //copy the row from memory block based on offset
     // offset position will be index * each column value length
-    CarbonUnsafe.unsafe.copyMemory(dataPageMemoryBlock.getBaseObject(),
-        dataPageMemoryBlock.getBaseOffset() + (rowId * columnValueSize), buffer,
+    CarbonUnsafe.getUnsafe().copyMemory(dataPageMemoryBlock.getBaseObject(),
+        dataPageMemoryBlock.getBaseOffset() + ((long)rowId * columnValueSize), buffer,
         CarbonUnsafe.BYTE_ARRAY_OFFSET + offset, columnValueSize);
   }
 
@@ -133,7 +133,7 @@ public class UnsafeFixedLengthDimensionDataChunkStore
     index = index * columnValueSize;
     int compareResult = 0;
     for (int i = 0; i < compareValue.length; i++) {
-      compareResult = (CarbonUnsafe.unsafe
+      compareResult = (CarbonUnsafe.getUnsafe()
           .getByte(dataPageMemoryBlock.getBaseObject(), dataPageMemoryBlock.getBaseOffset() + index)
           & 0xff) - (compareValue[i] & 0xff);
       if (compareResult != 0) {

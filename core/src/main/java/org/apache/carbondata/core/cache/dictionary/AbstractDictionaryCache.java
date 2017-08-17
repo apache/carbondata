@@ -173,7 +173,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
   protected long getSortIndexSize(long numOfRecords) {
     // sort index has sort index and reverse sort index,each is 4 byte integer.
     // 32 byte is the array header of both the integer arrays
-    return numOfRecords * ObjectSizeCalculator.estimate(new Integer(0), 16) * 2 + 32;
+    return numOfRecords * ObjectSizeCalculator.estimate(0, 16) * 2 + 32;
   }
 
   /**

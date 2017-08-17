@@ -46,36 +46,39 @@ public class RangeDirectDictionaryVisitor extends CustomTypeDictionaryVisitor
    */
   public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
-    DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
-    ColumnFilterInfo resolvedFilterObject = null;
-    List<ExpressionResult> listOfExpressionResults = new ArrayList<ExpressionResult>(20);
-    List<String> evaluateResultListFinal = new ArrayList<String>();
-    try {
-      listOfExpressionResults = ((RangeExpression) metadata.getExpression()).getLiterals();
+    if (visitableObj instanceof DimColumnResolvedFilterInfo) {
+      DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
+      ColumnFilterInfo resolvedFilterObject = null;
+      List<ExpressionResult> listOfExpressionResults = null;
+      List<String> evaluateResultListFinal = new ArrayList<String>();
+      try {
+        listOfExpressionResults = ((RangeExpression) metadata.getExpression()).getLiterals();
 
-      for (ExpressionResult result : listOfExpressionResults) {
-        if (result.getString() == null) {
-          evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
-          continue;
+        for (ExpressionResult result : listOfExpressionResults) {
+          if (result.getString() == null) {
+            evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+            continue;
+          }
+          evaluateResultListFinal.add(result.getString());
         }
-        evaluateResultListFinal.add(result.getString());
+      } catch (FilterIllegalMemberException e) {
+        throw new FilterUnsupportedException(e);
       }
-    } catch (FilterIllegalMemberException e) {
-      throw new FilterUnsupportedException(e);
-    }
 
-    resolvedFilterObject = getDirectDictionaryValKeyMemberForFilter(metadata.getColumnExpression(),
-        evaluateResultListFinal, metadata.isIncludeFilter(),
-        metadata.getColumnExpression().getDimension().getDataType());
+      resolvedFilterObject =
+          getDirectDictionaryValKeyMemberForFilter(metadata.getColumnExpression(),
+              evaluateResultListFinal, metadata.isIncludeFilter(),
+              metadata.getColumnExpression().getDimension().getDataType());
 
-    if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
-        .getFilterList().contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
-      // Adding default surrogate key of null member inorder to not display the same while
-      // displaying the report as per hive compatibility.
-      resolvedFilterObject.getFilterList()
-          .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
-      Collections.sort(resolvedFilterObject.getFilterList());
+      if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
+          .getFilterList().contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
+        // Adding default surrogate key of null member inorder to not display the same while
+        // displaying the report as per hive compatibility.
+        resolvedFilterObject.getFilterList()
+            .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+        Collections.sort(resolvedFilterObject.getFilterList());
+      }
+      resolveDimension.setFilterValues(resolvedFilterObject);
     }
-    resolveDimension.setFilterValues(resolvedFilterObject);
   }
 }

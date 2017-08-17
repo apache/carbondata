@@ -25,7 +25,6 @@ import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.events.EventListener;
 import org.apache.carbondata.core.indexstore.Blocklet;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
@@ -34,8 +33,6 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
  */
 public final class TableDataMap implements EventListener {
 
-  private AbsoluteTableIdentifier identifier;
-
   private String dataMapName;
 
   private DataMapFactory dataMapFactory;
@@ -43,9 +40,8 @@ public final class TableDataMap implements EventListener {
   /**
    * It is called to initialize and load the required table datamap metadata.
    */
-  public TableDataMap(AbsoluteTableIdentifier identifier, String dataMapName,
+  public TableDataMap(String dataMapName,
       DataMapFactory dataMapFactory) {
-    this.identifier = identifier;
     this.dataMapName = dataMapName;
     this.dataMapFactory = dataMapFactory;
   }

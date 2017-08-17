@@ -59,7 +59,7 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BlockIndexStore.class.getName());
   public BlockIndexStore(String carbonStorePath, CarbonLRUCache lruCache) {
-    super(carbonStorePath, lruCache);
+    super(lruCache);
   }
 
   /**

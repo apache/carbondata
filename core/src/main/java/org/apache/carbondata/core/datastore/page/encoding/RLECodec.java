@@ -326,6 +326,8 @@ public class RLECodec implements ColumnPageCodec {
         case LONG:
           decodeLongPage(in, resultPage);
           break;
+        default:
+          throw new RuntimeException("unsupported datatype:" + dataType);
       }
       return resultPage;
     }
