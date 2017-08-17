@@ -663,16 +663,15 @@ object CarbonDataRDDFactory {
         val keyRDD = updateRdd.map(row =>
           (row.get(row.size - 1).toString, Row(row.toSeq.slice(0, row.size - 1): _*)))
 
-        val loadMetadataDetails = SegmentStatusManager
-          .readLoadMetadata(carbonTable.getMetaDataFilepath)
+        val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(
+          carbonTable.getMetaDataFilepath)
         val segmentIds = loadMetadataDetails.map(_.getLoadName)
         val segmentIdIndex = segmentIds.zipWithIndex.toMap
         val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonLoadModel.getStorePath,
           carbonTable.getCarbonTableIdentifier)
-        val segmentId2maxTaskNo = segmentIds
-          .map(segId =>
-            (segId, CarbonUpdateUtil.getLatestTaskIdForSegment(segId, carbonTablePath)))
-          .toMap
+        val segmentId2maxTaskNo = segmentIds.map { segId =>
+          (segId, CarbonUpdateUtil.getLatestTaskIdForSegment(segId, carbonTablePath))
+        }.toMap
 
         class SegmentPartitioner(segIdIndex: Map[String, Int], parallelism: Int)
           extends org.apache.spark.Partitioner {
@@ -685,20 +684,20 @@ object CarbonDataRDDFactory {
           }
         }
 
-        val partitionByRdd = keyRDD
-          .partitionBy(new SegmentPartitioner(segmentIdIndex, segmentUpdateParallelism))
+        val partitionByRdd = keyRDD.partitionBy(new SegmentPartitioner(segmentIdIndex,
+          segmentUpdateParallelism))
 
         // because partitionId=segmentIdIndex*parallelism+RandomPart and RandomPart<parallelism,
         // so segmentIdIndex=partitionId/parallelism, this has been verified.
-        res = partitionByRdd.map(_._2).mapPartitions(p => {
+        res = partitionByRdd.map(_._2).mapPartitions { partition =>
           val partitionId = TaskContext.getPartitionId()
           val segIdIndex = partitionId / segmentUpdateParallelism
           val randomPart = partitionId - segIdIndex * segmentUpdateParallelism
           val segId = segmentIds(segIdIndex)
           val newTaskNo = segmentId2maxTaskNo(segId) + randomPart + 1
 
-          List(triggerDataLoadForSegment(segId, newTaskNo, p).toList).toIterator
-        }).collect()
+          List(triggerDataLoadForSegment(segId, newTaskNo, partition).toList).toIterator
+        }.collect()
       }
 
       def loadDataForPartitionTable(): Unit = {
