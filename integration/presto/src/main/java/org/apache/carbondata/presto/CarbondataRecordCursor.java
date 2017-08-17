@@ -20,21 +20,28 @@ package org.apache.carbondata.presto;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Timestamp;
-import java.util.List;
 
+import java.util.List;
+import java.util.ArrayList;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+
 
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.type.DecimalType;
 import com.facebook.presto.spi.type.Decimals;
 import com.facebook.presto.spi.type.TimestampType;
 import com.facebook.presto.spi.type.Type;
+
+import com.google.common.base.Strings;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
 import scala.Int;
 import scala.Tuple3;
+
 
 import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
 import static com.facebook.presto.spi.type.Decimals.isShortDecimal;
@@ -121,6 +128,7 @@ public class CarbondataRecordCursor implements RecordCursor {
       timeStr = Math.round(Double.parseDouble(obj.toString()));
     }
     Type actual = getType(field);
+    
     if(actual instanceof TimestampType){
       return new Timestamp(timeStr).getTime()/1000;
     }
@@ -138,8 +146,9 @@ public class CarbondataRecordCursor implements RecordCursor {
     if (decimalType instanceof DecimalType) {
       DecimalType actual = (DecimalType) decimalType;
       CarbondataColumnHandle carbondataColumnHandle = columnHandles.get(field);
-      if(carbondataColumnHandle.getPrecision() > 0 ) {
-        checkFieldType(field, DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(), carbondataColumnHandle.getScale()));
+      if (carbondataColumnHandle.getPrecision() > 0) {
+        checkFieldType(field, DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
+            carbondataColumnHandle.getScale()));
       } else {
         checkFieldType(field, DecimalType.createDecimalType());
       }
@@ -177,7 +186,8 @@ public class CarbondataRecordCursor implements RecordCursor {
 
   @Override public boolean isNull(int field) {
     checkArgument(field < columnHandles.size(), "Invalid field index");
-    return getFieldValue(field) == null;
+    return getFieldValue(field) == null || CarbonCommonConstants.MEMBER_DEFAULT_VAL
+        .equals(getFieldValue(field).toString());
   }
 
   Object getFieldValue(int field) {

@@ -17,9 +17,36 @@
 
 package org.apache.carbondata.presto;
 
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
+
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.GreaterThanEqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpression;
+import org.apache.carbondata.core.scan.expression.conditional.InExpression;
+import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression;
+import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
+import org.apache.carbondata.core.scan.expression.conditional.NotEqualsExpression;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
+import org.apache.carbondata.core.scan.expression.logical.OrExpression;
+import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
+import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
+
 import org.apache.carbondata.core.util.DataTypeConverterImpl;
+
 import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
+
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorSplit;
@@ -29,31 +56,23 @@ import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Range;
 import com.facebook.presto.spi.predicate.TupleDomain;
-import com.facebook.presto.spi.type.*;
+import com.facebook.presto.spi.type.BigintType;
+import com.facebook.presto.spi.type.BooleanType;
+import com.facebook.presto.spi.type.DateType;
+import com.facebook.presto.spi.type.DecimalType;
+import com.facebook.presto.spi.type.DoubleType;
+import com.facebook.presto.spi.type.IntegerType;
+import com.facebook.presto.spi.type.SmallintType;
+import com.facebook.presto.spi.type.TimestampType;
+import com.facebook.presto.spi.type.Type;
+import com.facebook.presto.spi.type.VarcharType;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.scan.expression.ColumnExpression;
-import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.expression.LiteralExpression;
-import org.apache.carbondata.core.scan.expression.conditional.*;
-import org.apache.carbondata.core.scan.expression.logical.AndExpression;
-import org.apache.carbondata.core.scan.expression.logical.OrExpression;
-import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
-import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.apache.carbondata.presto.Types.checkType;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
+import static org.apache.carbondata.presto.Types.checkType;
 
 public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
 
@@ -73,7 +92,8 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
 
     CarbondataSplit carbondataSplit =
         checkType(split, CarbondataSplit.class, "split is not class CarbondataSplit");
-    checkArgument(carbondataSplit.getConnectorId().equals(connectorId), "split is not for this connector");
+    checkArgument(carbondataSplit.getConnectorId().equals(connectorId),
+        "split is not for this connector");
 
     String targetCols = "";
     // Convert all columns handles
@@ -86,9 +106,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     // Build column projection(check the column order)
     if (targetCols.length() > 0) {
       targetCols = targetCols.substring(0, targetCols.length() - 1);
-    }
-    else
-    {
+    } else {
       targetCols = null;
     }
     //String cols = String.join(",", columns.stream().map(a -> ((CarbondataColumnHandle)a).getColumnName()).collect(Collectors.toList()));
@@ -110,8 +128,8 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     fillFilter2QueryModel(queryModel, carbondataSplit.getConstraints(), targetTable);
 
     // Return new record set
-    return new CarbondataRecordSet(targetTable, session, carbondataSplit,
-        handles.build(), queryModel);
+    return new CarbondataRecordSet(targetTable, session, carbondataSplit, handles.build(),
+        queryModel);
   }
 
   // Build filter for QueryModel
@@ -145,57 +163,72 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
 
       List<Object> singleValues = new ArrayList<>();
       List<Expression> disjuncts = new ArrayList<>();
-      for (Range range : domain.getValues().getRanges().getOrderedRanges()) {
-        if (range.isSingleValue()) {
-          singleValues.add(range.getLow().getValue());
-        } else {
-          List<Expression> rangeConjuncts = new ArrayList<>();
-          if (!range.getLow().isLowerUnbounded()) {
-            Object value = ConvertDataByType(range.getLow().getValue(), type);
-            switch (range.getLow().getBound()) {
-              case ABOVE:
-                if (type == TimestampType.TIMESTAMP) {
-                  //todo not now
-                } else {
-                  GreaterThanExpression greater = new GreaterThanExpression(colExpression,
+      if (domain.getValues().getRanges().getOrderedRanges().size() == 0 && domain.isNullAllowed()) {
+        //support isNull Clause
+        EqualToExpression isNull =
+            new EqualToExpression(colExpression, new LiteralExpression(null, coltype), true);
+        disjuncts.add(isNull);
+      } else {
+        for (Range range : domain.getValues().getRanges().getOrderedRanges()) {
+          if (range.isSingleValue()) {
+            singleValues.add(range.getLow().getValue());
+          } else {
+            List<Expression> rangeConjuncts = new ArrayList<>();
+            if (range.getLow().isLowerUnbounded() && range.getHigh()
+                .isUpperUnbounded()) {//support isNotNull Clause
+              NotEqualsExpression isNotNull =
+                  new NotEqualsExpression(colExpression, new LiteralExpression(null, coltype),
+                      true);
+              rangeConjuncts.add(isNotNull);
+            }
+            if (!range.getLow().isLowerUnbounded()) {
+              Object value = ConvertDataByType(range.getLow().getValue(), type);
+              switch (range.getLow().getBound()) {
+                case ABOVE:
+                  if (type == TimestampType.TIMESTAMP) {
+                    //todo not now
+                  } else {
+                    GreaterThanExpression greater = new GreaterThanExpression(colExpression,
+                        new LiteralExpression(value, coltype));
+                    rangeConjuncts.add(greater);
+                  }
+                  break;
+                case EXACTLY:
+                  GreaterThanEqualToExpression greater =
+                      new GreaterThanEqualToExpression(colExpression,
                           new LiteralExpression(value, coltype));
                   rangeConjuncts.add(greater);
-                }
-                break;
-              case EXACTLY:
-                GreaterThanEqualToExpression greater =
-                        new GreaterThanEqualToExpression(colExpression,
-                                new LiteralExpression(value, coltype));
-                rangeConjuncts.add(greater);
-                break;
-              case BELOW:
-                throw new IllegalArgumentException("Low marker should never use BELOW bound");
-              default:
-                throw new AssertionError("Unhandled bound: " + range.getLow().getBound());
+                  break;
+                case BELOW:
+                  throw new IllegalArgumentException("Low marker should never use BELOW bound");
+                default:
+                  throw new AssertionError("Unhandled bound: " + range.getLow().getBound());
+              }
             }
-          }
-          if (!range.getHigh().isUpperUnbounded()) {
-            Object value = ConvertDataByType(range.getHigh().getValue(), type);
-            switch (range.getHigh().getBound()) {
-              case ABOVE:
-                throw new IllegalArgumentException("High marker should never use ABOVE bound");
-              case EXACTLY:
-                LessThanEqualToExpression less = new LessThanEqualToExpression(colExpression,
-                        new LiteralExpression(value, coltype));
-                rangeConjuncts.add(less);
-                break;
-              case BELOW:
-                LessThanExpression less2 =
-                        new LessThanExpression(colExpression, new LiteralExpression(value, coltype));
-                rangeConjuncts.add(less2);
-                break;
-              default:
-                throw new AssertionError("Unhandled bound: " + range.getHigh().getBound());
+            if (!range.getHigh().isUpperUnbounded()) {
+              Object value = ConvertDataByType(range.getHigh().getValue(), type);
+              switch (range.getHigh().getBound()) {
+                case ABOVE:
+                  throw new IllegalArgumentException("High marker should never use ABOVE bound");
+                case EXACTLY:
+                  LessThanEqualToExpression less = new LessThanEqualToExpression(colExpression,
+                      new LiteralExpression(value, coltype));
+                  rangeConjuncts.add(less);
+                  break;
+                case BELOW:
+                  LessThanExpression less2 =
+                      new LessThanExpression(colExpression, new LiteralExpression(value, coltype));
+                  rangeConjuncts.add(less2);
+                  break;
+                default:
+                  throw new AssertionError("Unhandled bound: " + range.getHigh().getBound());
+              }
             }
+            disjuncts.addAll(rangeConjuncts);
           }
-          disjuncts.addAll(rangeConjuncts);
         }
       }
+
       if (singleValues.size() == 1) {
         Expression ex = null;
         if (coltype.equals(DataType.STRING)) {
@@ -203,8 +236,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
               new LiteralExpression(((Slice) singleValues.get(0)).toStringUtf8(), coltype));
         } else if (coltype.equals(DataType.TIMESTAMP) || coltype.equals(DataType.DATE)) {
           Long value = (Long) singleValues.get(0) * 1000;
-          ex = new EqualToExpression(colExpression,
-              new LiteralExpression(value , coltype));
+          ex = new EqualToExpression(colExpression, new LiteralExpression(value, coltype));
         } else ex = new EqualToExpression(colExpression,
             new LiteralExpression(singleValues.get(0), coltype));
         filters.add(ex);
