@@ -126,8 +126,8 @@ public class CarbondataRecordCursor implements RecordCursor {
 
     if (actual instanceof TimestampType) {
       return new Timestamp(timeStr).getTime() / 1000;
-    } else if (obj instanceof String && isShortDecimal(actual)) {
-      return shortDecimalPartitionKey((String) obj, (DecimalType) actual,
+    } else if (isShortDecimal(actual)) {
+      return shortDecimalPartitionKey(obj.toString(), (DecimalType) actual,
           columnHandles.get(field).getColumnName());
     }
     //suppose the
