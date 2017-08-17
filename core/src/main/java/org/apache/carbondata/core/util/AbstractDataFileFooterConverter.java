@@ -31,7 +31,6 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
-import org.apache.carbondata.core.metadata.blocklet.datachunk.PresenceMeta;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
@@ -54,12 +53,9 @@ public abstract class AbstractDataFileFooterConverter {
    * @param presentMetadataThrift
    * @return wrapper presence meta
    */
-  private static PresenceMeta getPresenceMeta(
+  private static BitSet getPresenceMeta(
       org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
-    PresenceMeta presenceMeta = new PresenceMeta();
-    presenceMeta.setRepresentNullValues(presentMetadataThrift.isRepresents_presence());
-    presenceMeta.setBitSet(BitSet.valueOf(presentMetadataThrift.getPresent_bit_stream()));
-    return presenceMeta;
+    return BitSet.valueOf(presentMetadataThrift.getPresent_bit_stream());
   }
 
   /**

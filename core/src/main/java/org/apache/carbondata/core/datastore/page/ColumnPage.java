@@ -19,10 +19,12 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsCollector;
+import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
@@ -45,6 +47,9 @@ public abstract class ColumnPage {
   protected int scale;
   protected int precision;
 
+  // The index of the rowId whose value is null, will be set to 1
+  private BitSet nullBitSet;
+
   // statistics collector for this column page
   private ColumnPageStatsCollector statsCollector;
 
@@ -59,6 +64,7 @@ public abstract class ColumnPage {
     this.pageSize = pageSize;
     this.scale = scale;
     this.precision = precision;
+    this.nullBitSet = new BitSet(pageSize);
     if (dataType == DECIMAL) {
       decimalConverter = DecimalConverterFactory.INSTANCE.getDecimalConverter(precision, scale);
     }
@@ -68,7 +74,7 @@ public abstract class ColumnPage {
     return dataType;
   }
 
-  public Object getStatistics() {
+  public SimpleStatsResult getStatistics() {
     return statsCollector.getPageStats();
   }
 
@@ -129,6 +135,10 @@ public abstract class ColumnPage {
     } else {
       return new SafeVarLengthColumnPage(dataType, pageSize, scale, precision);
     }
+  }
+
+  public static ColumnPage newPage(DataType dataType, int pageSize) throws MemoryException {
+    return newPage(dataType, pageSize, 0, 0);
   }
 
   /**
@@ -301,6 +311,7 @@ public abstract class ColumnPage {
     if (value == null) {
       putNull(rowId);
       statsCollector.updateNull(rowId);
+      nullBitSet.set(rowId);
       return;
     }
     switch (dataType) {
@@ -571,4 +582,11 @@ public abstract class ColumnPage {
     }
   }
 
+  public BitSet getNullBits() {
+    return nullBitSet;
+  }
+
+  public void setNullBits(BitSet nullBitSet) {
+    this.nullBitSet = nullBitSet;
+  }
 }

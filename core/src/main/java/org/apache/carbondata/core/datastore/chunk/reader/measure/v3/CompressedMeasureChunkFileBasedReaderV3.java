@@ -16,22 +16,28 @@
  */
 package org.apache.carbondata.core.datastore.chunk.reader.measure.v3;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
+import org.apache.carbondata.core.datastore.page.encoding.Decoder;
+import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveDeltaIntegralCodecMeta;
+import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveIntegralCodecMeta;
+import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressorCodecMeta;
+import org.apache.carbondata.core.datastore.page.encoding.rle.RLECodecMeta;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
+import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
+import org.apache.carbondata.format.Encoding;
 
 import org.apache.commons.lang.ArrayUtils;
 
@@ -203,10 +209,9 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
    * @return DimensionColumnDataChunk
    */
   @Override
-  public MeasureColumnDataChunk convertToMeasureChunk(
+  public ColumnPage convertToMeasureChunk(
       MeasureRawColumnChunk measureRawColumnChunk, int pageNumber)
       throws IOException, MemoryException {
-    MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();
     // data chunk of blocklet column
     DataChunk3 dataChunk3 = measureRawColumnChunk.getDataChunkV3();
     // data chunk of page
@@ -217,24 +222,45 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     int copyPoint = measureRawColumnChunk.getOffSet() + measureColumnChunkLength
         .get(measureRawColumnChunk.getBlockletId()) + dataChunk3.getPage_offset().get(pageNumber);
     ColumnPage decodedPage = decodeMeasure(measureRawColumnChunk, measureColumnChunk, copyPoint);
-
-    // set the data chunk
-    datChunk.setColumnPage(decodedPage);
-    // set the null value indexes
-    datChunk.setNullValueIndexHolder(getPresenceMeta(measureColumnChunk.presence));
-    return datChunk;
+    decodedPage.setNullBits(getNullBitSet(measureColumnChunk.presence));
+    return decodedPage;
   }
 
   protected ColumnPage decodeMeasure(MeasureRawColumnChunk measureRawColumnChunk,
-      DataChunk2 measureColumnChunk, int copyPoint) throws MemoryException {
+      DataChunk2 measureColumnChunk, int copyPoint) throws MemoryException, IOException {
+    List<Encoding> encodings = measureColumnChunk.getEncoders();
+    assert (encodings.size() == 1);
+
     List<ByteBuffer> encoder_meta = measureColumnChunk.getEncoder_meta();
     // for measure, it should have only one ValueEncoderMeta
     assert (encoder_meta.size() > 0);
     byte[] encodedMeta = encoder_meta.get(0).array();
+    ByteArrayInputStream stream = new ByteArrayInputStream(encodedMeta);
+    DataInputStream in = new DataInputStream(stream);
+    ValueEncoderMeta meta;
+    Encoding encoding = encodings.get(0);
+    if (encoding == Encoding.DIRECT_COMPRESS) {
+      DirectCompressorCodecMeta codecMeta = new DirectCompressorCodecMeta();
+      codecMeta.readFields(in);
+      meta = codecMeta;
+    } else if (encoding == Encoding.ADAPTIVE_INTEGRAL) {
+      AdaptiveIntegralCodecMeta codecMeta = new AdaptiveIntegralCodecMeta();
+      codecMeta.readFields(in);
+      meta = codecMeta;
+    } else if (encoding == Encoding.ADAPTIVE_DELTA_INTEGRAL) {
+      AdaptiveDeltaIntegralCodecMeta codecMeta = new AdaptiveDeltaIntegralCodecMeta();
+      codecMeta.readFields(in);
+      meta = codecMeta;
+    } else if (encoding == Encoding.RLE_INTEGRAL) {
+      RLECodecMeta rleCodecMeta = new RLECodecMeta();
+      rleCodecMeta.readFields(in);
+      meta = rleCodecMeta;
+    } else {
+      // read as ValueEncoderMeta for backward compatible
+      meta = CarbonUtil.deserializeEncoderMetaV3(encodedMeta);
+    }
 
-    ColumnPageCodecMeta meta = new ColumnPageCodecMeta();
-    meta.deserialize(encodedMeta);
-    ColumnPageCodec codec = strategy.newCodec(meta);
+    Decoder codec = strategy.createDecoder(meta);
     byte[] rawData = measureRawColumnChunk.getRawData().array();
     return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);
   }

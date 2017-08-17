@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.datastore.page.statistics;
 
 import java.math.BigDecimal;
-import java.util.BitSet;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -85,7 +84,7 @@ public class VarLengthPageStatsCollector implements ColumnPageStatsCollector {
   }
 
   @Override
-  public Object getPageStats() {
+  public SimpleStatsResult getPageStats() {
     // for binary type, we do not collect its stats
     return new SimpleStatsResult() {
 
@@ -95,10 +94,6 @@ public class VarLengthPageStatsCollector implements ColumnPageStatsCollector {
 
       @Override public Object getMax() {
         return max;
-      }
-
-      @Override public BitSet getNullBits() {
-        return null;
       }
 
       @Override public int getDecimalPoint() {

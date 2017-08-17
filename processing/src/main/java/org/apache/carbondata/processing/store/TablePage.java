@@ -30,15 +30,14 @@ import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
-import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingStrategy;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedDimensionPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
+import org.apache.carbondata.core.datastore.page.encoding.Encoder;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategy;
 import org.apache.carbondata.core.datastore.page.key.TablePageKey;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
-import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.datastore.page.statistics.VarLengthPageStatsCollector;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
@@ -63,7 +62,7 @@ public class TablePage {
   private ColumnPage[] dictDimensionPages;
   private ColumnPage[] noDictDimensionPages;
   private ComplexColumnPage[] complexDimensionPages;
-  private ColumnPage[] measurePage;
+  private ColumnPage[] measurePages;
 
   // the num of rows in this page, it must be less than short value (65536)
   private int pageSize;
@@ -101,15 +100,15 @@ public class TablePage {
       // we get the first row.
       complexDimensionPages[i] = null;
     }
-    measurePage = new ColumnPage[model.getMeasureCount()];
+    measurePages = new ColumnPage[model.getMeasureCount()];
     DataType[] dataTypes = model.getMeasureDataType();
-    for (int i = 0; i < measurePage.length; i++) {
+    for (int i = 0; i < measurePages.length; i++) {
       TableSpec.MeasureSpec measureSpec = model.getTableSpec().getMeasureSpec(i);
       ColumnPage page = ColumnPage
           .newPage(dataTypes[i], pageSize, measureSpec.getScale(), measureSpec.getPrecision());
       page.setStatsCollector(PrimitivePageStatsCollector.newInstance(dataTypes[i], pageSize,
           measureSpec.getScale(), measureSpec.getPrecision()));
-      measurePage[i] = page;
+      measurePages[i] = page;
     }
     boolean hasNoDictionary = noDictDimensionPages.length > 0;
     this.key = new TablePageKey(pageSize, model.getMDKeyGenerator(), model.getSegmentProperties(),
@@ -158,17 +157,17 @@ public class TablePage {
 
     // 3. convert measure columns
     Object[] measureColumns = WriteStepRowUtil.getMeasure(row);
-    for (int i = 0; i < measurePage.length; i++) {
+    for (int i = 0; i < measurePages.length; i++) {
       Object value = measureColumns[i];
 
       // in compaction flow the measure with decimal type will come as Spark decimal.
       // need to convert it to byte array.
-      if (measurePage[i].getDataType() == DataType.DECIMAL &&
+      if (measurePages[i].getDataType() == DataType.DECIMAL &&
           model.isCompactionFlow() &&
           value != null) {
         value = ((Decimal) value).toJavaBigDecimal();
       }
-      measurePage[i].putData(rowId, value);
+      measurePages[i].putData(rowId, value);
     }
   }
 
@@ -226,7 +225,7 @@ public class TablePage {
     for (ColumnPage page : noDictDimensionPages) {
       page.freeMemory();
     }
-    for (ColumnPage page : measurePage) {
+    for (ColumnPage page : measurePages) {
       page.freeMemory();
     }
   }
@@ -258,11 +257,12 @@ public class TablePage {
   // apply measure and set encodedData in `encodedData`
   private EncodedMeasurePage[] encodeAndCompressMeasures()
       throws MemoryException, IOException {
-    EncodedMeasurePage[] encodedMeasures = new EncodedMeasurePage[measurePage.length];
-    for (int i = 0; i < measurePage.length; i++) {
-      ColumnPageCodec encoder =
-          encodingStrategy.newCodec((SimpleStatsResult)(measurePage[i].getStatistics()));
-      encodedMeasures[i] = (EncodedMeasurePage) encoder.encode(measurePage[i]);
+    EncodedMeasurePage[] encodedMeasures = new EncodedMeasurePage[measurePages.length];
+    for (int i = 0; i < measurePages.length; i++) {
+      Encoder encoder = encodingStrategy.createEncoder(
+          model.getTableSpec().getMeasureSpec(i),
+          measurePages[i].getStatistics());
+      encodedMeasures[i] = (EncodedMeasurePage) encoder.encode(measurePages[i]);
     }
     return encodedMeasures;
   }
@@ -278,23 +278,29 @@ public class TablePage {
     int complexDimIndex = 0;
     int numDimensions = tableSpec.getNumDimensions();
     for (int i = 0; i < numDimensions; i++) {
-      ColumnPageCodec codec;
+      Encoder codec;
       EncodedDimensionPage encodedPage;
       TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
       switch (spec.getDimensionType()) {
         case GLOBAL_DICTIONARY:
         case DIRECT_DICTIONARY:
-          codec = encodingStrategy.newCodec(spec);
+          codec = encodingStrategy.createEncoder(
+              spec,
+              dictDimensionPages[dictIndex].getStatistics());
           encodedPage = (EncodedDimensionPage) codec.encode(dictDimensionPages[dictIndex++]);
           encodedDimensions.add(encodedPage);
           break;
         case PLAIN_VALUE:
-          codec = encodingStrategy.newCodec(spec);
+          codec = encodingStrategy.createEncoder(
+              spec,
+              noDictDimensionPages[noDictIndex].getStatistics());
           encodedPage = (EncodedDimensionPage) codec.encode(noDictDimensionPages[noDictIndex++]);
           encodedDimensions.add(encodedPage);
           break;
         case COMPLEX:
-          codec = encodingStrategy.newCodec(spec);
+          codec = encodingStrategy.createEncoder(
+              spec,
+              null);
           EncodedColumnPage[] encodedPages = codec.encodeComplexColumn(
               complexDimensionPages[complexDimIndex++]);
           for (EncodedColumnPage page : encodedPages) {

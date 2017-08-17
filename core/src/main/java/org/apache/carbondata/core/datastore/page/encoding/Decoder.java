@@ -15,21 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.statistics;
+package org.apache.carbondata.core.datastore.page.encoding;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import java.io.IOException;
 
-public interface SimpleStatsResult {
+import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.memory.MemoryException;
 
-  Object getMin();
+public interface Decoder {
 
-  Object getMax();
+  /**
+   * Apply decoding algorithm on input byte array and return decoded column page
+   */
+  ColumnPage decode(byte[] input, int offset, int length) throws MemoryException, IOException;
 
-  int getDecimalPoint();
-
-  DataType getDataType();
-
-  int getScale();
-
-  int getPrecision();
 }

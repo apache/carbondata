@@ -17,7 +17,9 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import java.io.IOException;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.carbondata.core.datastore.DimensionType;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForInt;
@@ -42,33 +44,38 @@ public class ComplexDimensionIndexCodec extends IndexStorageCodec {
   }
 
   @Override
-  public EncodedColumnPage encode(ColumnPage input) throws MemoryException {
-    throw new UnsupportedOperationException("internal error");
-  }
+  public Encoder createEncoder(Map<String, String> parameter) {
+    return new Encoder() {
+      @Override public EncodedColumnPage encode(ColumnPage input)
+          throws MemoryException, IOException {
+        throw new UnsupportedOperationException();
+      }
 
-  @Override
-  public EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input) {
-    EncodedColumnPage[] encodedPages = new EncodedColumnPage[input.getDepth()];
-    int index = 0;
-    Iterator<byte[][]> iterator = input.iterator();
-    while (iterator.hasNext()) {
-      byte[][] data = iterator.next();
-      encodedPages[index++] = encodeChildColumn(input.getPageSize(), data);
-    }
-    return encodedPages;
-  }
+      @Override
+      public EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input) {
+        EncodedColumnPage[] encodedPages = new EncodedColumnPage[input.getDepth()];
+        int index = 0;
+        Iterator<byte[][]> iterator = input.iterator();
+        while (iterator.hasNext()) {
+          byte[][] data = iterator.next();
+          encodedPages[index++] = encodeChildColumn(input.getPageSize(), data);
+        }
+        return encodedPages;
+      }
 
-  private EncodedColumnPage encodeChildColumn(int pageSize, byte[][] data) {
-    IndexStorage indexStorage;
-    if (version == ColumnarFormatVersion.V3) {
-      indexStorage = new BlockIndexerStorageForShort(data, false, false, false);
-    } else {
-      indexStorage = new BlockIndexerStorageForInt(data, false, false, false);
-    }
-    byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
-    byte[] compressed = compressor.compressByte(flattened);
-    return new EncodedDimensionPage(pageSize, compressed, indexStorage,
-        DimensionType.COMPLEX);
+      private EncodedColumnPage encodeChildColumn(int pageSize, byte[][] data) {
+        IndexStorage indexStorage;
+        if (version == ColumnarFormatVersion.V3) {
+          indexStorage = new BlockIndexerStorageForShort(data, false, false, false);
+        } else {
+          indexStorage = new BlockIndexerStorageForInt(data, false, false, false);
+        }
+        byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
+        byte[] compressed = compressor.compressByte(flattened);
+        return new EncodedDimensionPage(pageSize, compressed, indexStorage,
+            DimensionType.COMPLEX);
+      }
+    };
   }
 
 }

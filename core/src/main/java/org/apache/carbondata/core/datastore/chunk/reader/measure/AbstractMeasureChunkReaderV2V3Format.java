@@ -22,9 +22,9 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
-import org.apache.carbondata.core.metadata.blocklet.datachunk.PresenceMeta;
 
 /**
  * Abstract class for V2, V3 format measure column reader
@@ -99,13 +99,11 @@ public abstract class AbstractMeasureChunkReaderV2V3Format extends AbstractMeasu
    * @param presentMetadataThrift
    * @return wrapper presence meta
    */
-  protected PresenceMeta getPresenceMeta(
+  protected BitSet getNullBitSet(
       org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
-    PresenceMeta presenceMeta = new PresenceMeta();
-    presenceMeta.setRepresentNullValues(presentMetadataThrift.isRepresents_presence());
-    presenceMeta.setBitSet(BitSet.valueOf(CompressorFactory.getInstance().getCompressor()
-        .unCompressByte(presentMetadataThrift.getPresent_bit_stream())));
-    return presenceMeta;
+    Compressor compressor = CompressorFactory.getInstance().getCompressor();
+    return BitSet.valueOf(
+        compressor.unCompressByte(presentMetadataThrift.getPresent_bit_stream()));
   }
 
   /**

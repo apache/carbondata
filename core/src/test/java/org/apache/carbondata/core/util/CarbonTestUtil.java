@@ -15,21 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.statistics;
+package org.apache.carbondata.core.util;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodecMeta;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 
-public interface SimpleStatsResult {
+public class CarbonTestUtil {
 
-  Object getMin();
+  public static ValueEncoderMeta createValueEncoderMeta() {
+    ColumnarFormatVersion version =
+        CarbonProperties.getInstance().getFormatVersion();
 
-  Object getMax();
-
-  int getDecimalPoint();
-
-  DataType getDataType();
-
-  int getScale();
-
-  int getPrecision();
+    switch (version) {
+      case V1:
+      case V2:
+        return new ValueEncoderMeta();
+      case V3:
+        return new ColumnPageCodecMeta();
+      default:
+        throw new UnsupportedOperationException("unsupported version: " + version);
+    }
+  }
 }

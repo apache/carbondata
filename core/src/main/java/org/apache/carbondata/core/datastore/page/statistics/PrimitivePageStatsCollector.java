@@ -18,9 +18,8 @@
 package org.apache.carbondata.core.datastore.page.statistics;
 
 import java.math.BigDecimal;
-import java.util.BitSet;
 
-import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodecMeta;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
@@ -38,9 +37,6 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   // scale of the double value
   private int decimal;
 
-  // The index of the rowId whose value is null, will be set to 1
-  private BitSet nullBitSet;
-
   private boolean isFirst = true;
   private BigDecimal zeroDecimal;
 
@@ -49,17 +45,18 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       scale, int precision) {
     switch (dataType) {
       default:
-        return new PrimitivePageStatsCollector(dataType, pageSize, scale, precision);
+        return new PrimitivePageStatsCollector(dataType, scale, precision);
     }
   }
 
-  // this is for decode flow, we do not need to create nullBits, so passing 0 as pageSize
+  // this is for decode flow
   public static PrimitivePageStatsCollector newInstance(ColumnPageCodecMeta meta) {
+    int scale = meta.getScale();
+    int precision = meta.getPrecision();
     PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(meta.getSrcDataType(), 0, meta.getScale(),
-            meta.getPrecision());
+        new PrimitivePageStatsCollector(meta.getDataType(), scale, precision);
     // set min max from meta
-    switch (meta.getSrcDataType()) {
+    switch (meta.getDataType()) {
       case BYTE:
         instance.minByte = (byte) meta.getMinValue();
         instance.maxByte = (byte) meta.getMaxValue();
@@ -85,8 +82,8 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         instance.minDecimal = (BigDecimal) meta.getMinValue();
         instance.maxDecimal = (BigDecimal) meta.getMaxValue();
         instance.decimal = meta.getDecimal();
-        instance.scale = meta.getScale();
-        instance.precision = meta.getPrecision();
+        instance.scale = scale;
+        instance.precision = precision;
         break;
     }
     return instance;
@@ -94,7 +91,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   public static PrimitivePageStatsCollector newInstance(ValueEncoderMeta meta) {
     PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(meta.getType(), 0, -1, -1);
+        new PrimitivePageStatsCollector(meta.getType(), -1, -1);
     // set min max from meta
     switch (meta.getType()) {
       case BYTE:
@@ -129,9 +126,8 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     return instance;
   }
 
-  private PrimitivePageStatsCollector(DataType dataType, int pageSize, int scale, int precision) {
+  private PrimitivePageStatsCollector(DataType dataType, int scale, int precision) {
     this.dataType = dataType;
-    this.nullBitSet = new BitSet(pageSize);
     switch (dataType) {
       case BYTE:
         minByte = Byte.MAX_VALUE;
@@ -164,7 +160,6 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   @Override
   public void updateNull(int rowId) {
-    nullBitSet.set(rowId);
     long value = 0;
     switch (dataType) {
       case BYTE:
@@ -268,7 +263,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   }
 
   @Override
-  public Object getPageStats() {
+  public SimpleStatsResult getPageStats() {
     return this;
   }
 
@@ -325,11 +320,6 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         return maxDecimal;
     }
     return null;
-  }
-
-  @Override
-  public BitSet getNullBits() {
-    return nullBitSet;
   }
 
   @Override

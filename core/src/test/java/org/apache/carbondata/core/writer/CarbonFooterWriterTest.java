@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.writer;
 
+import java.io.DataOutput;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,9 +31,9 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
+import org.apache.carbondata.core.datastore.page.encoding.rle.RLECodecMeta;
 import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
-import org.apache.carbondata.core.metadata.CodecMetaFactory;
-import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodecMeta;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -151,13 +152,9 @@ public class CarbonFooterWriterTest extends TestCase{
     infoColumnar.setMeasureNullValueIndex(new BitSet[] {new BitSet(),new BitSet()});
     infoColumnar.setEncodedTablePage(EncodedTablePage.newEmptyInstance());
 
-    final ValueEncoderMeta meta = CodecMetaFactory.createMeta();
+    final ValueEncoderMeta meta = new RLECodecMeta();
 
     new MockUp<ColumnPageCodecMeta>() {
-      @SuppressWarnings("unused") @Mock
-      public byte[] serialize() {
-        return new byte[]{1,2};
-      }
       @SuppressWarnings("unused") @Mock
       public byte[] getMaxAsBytes() {
         return new byte[]{1,2};
@@ -167,8 +164,15 @@ public class CarbonFooterWriterTest extends TestCase{
         return new byte[]{1,2};
       }
       @SuppressWarnings("unused") @Mock
-      public DataType getSrcDataType() {
+      public DataType getDataType() {
         return DataType.DOUBLE;
+      }
+      @SuppressWarnings("unused") @Mock
+      public Encoding getEncoding() {
+        return Encoding.RLE_INTEGRAL;
+      }
+      @SuppressWarnings("unused") @Mock
+      public void write(DataOutput out) throws IOException {
       }
 
     };

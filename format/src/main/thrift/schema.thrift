@@ -47,6 +47,10 @@ enum Encoding{
 	INVERTED_INDEX = 3; // Identifies that a column is encoded using inverted index, can be used only along with dictionary encoding
 	BIT_PACKED = 4;	// Identifies that a column is encoded using bit packing, can be used only along with dictionary encoding
 	DIRECT_DICTIONARY = 5; // Identifies that a column is direct dictionary encoded
+	DIRECT_COMPRESS = 6;  // Identifies that a columm is encoded using DirectCompressCodec
+	ADAPTIVE_INTEGRAL = 7; // Identifies that a column is encoded using AdaptiveIntegralCodec
+	ADAPTIVE_DELTA_INTEGRAL = 8; // Identifies that a column is encoded using AdaptiveDeltaIntegralCodec
+	RLE_INTEGRAL = 9;     // Identifies that a column is encoded using RLECodec
 }
 
 enum PartitionType{
