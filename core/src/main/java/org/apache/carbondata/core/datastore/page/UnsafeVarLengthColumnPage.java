@@ -121,6 +121,16 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
         baseAddress, baseOffset + rowOffset[rowId], length);
   }
 
+  @Override
+  public void setByteArrayPage(byte[][] byteArray) {
+    if (totalLength != 0) {
+      throw new IllegalStateException("page is not empty");
+    }
+    for (int i = 0; i < byteArray.length; i++) {
+      putBytes(i, byteArray[i]);
+    }
+  }
+
   @Override public void putDecimal(int rowId, BigDecimal decimal) {
     putBytes(rowId, decimalConverter.convert(decimal));
   }
@@ -133,6 +143,15 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
         bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
 
     return decimalConverter.getDecimal(bytes);
+  }
+
+  @Override
+  public byte[] getBytes(int rowId) {
+    int length = rowOffset[rowId + 1] - rowOffset[rowId];
+    byte[] bytes = new byte[length];
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+        bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
+    return bytes;
   }
 
   @Override

@@ -21,6 +21,8 @@ import java.io.IOException;
 
 public interface Compressor {
 
+  String getName();
+
   byte[] compressByte(byte[] unCompInput);
 
   byte[] unCompressByte(byte[] compInput);

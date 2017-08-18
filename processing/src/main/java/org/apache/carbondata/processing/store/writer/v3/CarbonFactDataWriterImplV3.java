@@ -28,8 +28,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedDimensionPage;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
@@ -262,9 +261,9 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       channel.write(buffer);
       offset += dataChunkBytes[i].length;
       for (EncodedTablePage encodedTablePage : encodedTablePages) {
-        EncodedDimensionPage dimension = encodedTablePage.getDimension(i);
-        int bufferSize = dimension.getSerializedSize();
-        buffer = dimension.serialize();
+        EncodedColumnPage dimension = encodedTablePage.getDimension(i);
+        buffer = dimension.getEncodedData();
+        int bufferSize = buffer.limit();
         channel.write(buffer);
         offset += bufferSize;
       }
@@ -279,9 +278,9 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       offset += dataChunkBytes[dataChunkStartIndex].length;
       dataChunkStartIndex++;
       for (EncodedTablePage encodedTablePage : encodedTablePages) {
-        EncodedMeasurePage measure = encodedTablePage.getMeasure(i);
-        int bufferSize = measure.getSerializedSize();
-        buffer = measure.serialize();
+        EncodedColumnPage measure = encodedTablePage.getMeasure(i);
+        buffer = measure.getEncodedData();
+        int bufferSize = buffer.limit();
         channel.write(buffer);
         offset += bufferSize;
       }
@@ -303,6 +302,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
    * @param carbonDataFileName The name of carbonData file
    * @param currentPosition current offset
    */
+  @Override
   protected void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
       long currentPosition) {
     byte[][] currentMinValue = new byte[blockletIndex.get(0).min_max_index.max_values.size()][];

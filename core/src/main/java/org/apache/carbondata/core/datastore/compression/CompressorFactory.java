@@ -24,14 +24,14 @@ public class CompressorFactory {
 
   private static final CompressorFactory COMPRESSOR_FACTORY = new CompressorFactory();
 
-  private final Compressor compressor;
+  private final Compressor snappyCompressor;
 
   private CompressorFactory() {
     String compressorType = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
     switch (compressorType) {
       case "snappy":
-        compressor = new SnappyCompressor();
+        snappyCompressor = new SnappyCompressor();
         break;
       default:
         throw new RuntimeException(
@@ -44,7 +44,15 @@ public class CompressorFactory {
   }
 
   public Compressor getCompressor() {
-    return compressor;
+    return getCompressor(CarbonCommonConstants.DEFAULT_COMPRESSOR);
+  }
+
+  public Compressor getCompressor(String name) {
+    if (name.equalsIgnoreCase("snappy")) {
+      return snappyCompressor;
+    } else {
+      throw new UnsupportedOperationException(name + " compressor is not supported");
+    }
   }
 
 }

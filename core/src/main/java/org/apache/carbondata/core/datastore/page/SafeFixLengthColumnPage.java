@@ -170,6 +170,11 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
+  @Override
+  public byte[] getBytes(int rowId) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
   /**
    * Get byte value page
    */
@@ -312,7 +317,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    * @param codec type of transformation
    */
   @Override
-  public void encode(PrimitiveCodec codec) {
+  public void convertValue(ColumnPageValueConverter codec) {
     switch (dataType) {
       case BYTE:
         for (int i = 0; i < pageSize; i++) {
@@ -345,7 +350,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
         }
         break;
       default:
-        throw new UnsupportedOperationException("not support encode on " + dataType + " page");
+        throw new UnsupportedOperationException("not support value conversion on " +
+            dataType + " page");
     }
   }
 

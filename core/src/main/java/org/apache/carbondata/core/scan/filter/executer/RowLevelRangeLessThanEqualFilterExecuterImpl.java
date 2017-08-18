@@ -23,9 +23,9 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -228,13 +228,13 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     return null;
   }
 
-  private BitSet getFilteredIndexesForMeasures(MeasureColumnDataChunk measureColumnDataChunk,
+  private BitSet getFilteredIndexesForMeasures(ColumnPage columnPage,
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     Object[] filterValues = this.msrFilterRangeValues;
     DataType msrType = msrColEvalutorInfoList.get(0).getType();
     SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
-    BitSet nullBitSet = measureColumnDataChunk.getNullValueIndexHolder().getBitSet();
+    BitSet nullBitSet = columnPage.getNullBits();
     for (int i = 0; i < filterValues.length; i++) {
       if (filterValues[i] == null) {
         for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
@@ -245,7 +245,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       for (int startIndex = 0; startIndex < numerOfRows; startIndex++) {
         if (!nullBitSet.get(startIndex)) {
           Object msrValue = DataTypeUtil
-              .getMeasureObjectBasedOnDataType(measureColumnDataChunk.getColumnPage(), startIndex,
+              .getMeasureObjectBasedOnDataType(columnPage, startIndex,
                   msrType, msrColEvalutorInfoList.get(0).getMeasure());
 
           if (comparator.compare(msrValue, filterValues[i]) <= 0) {

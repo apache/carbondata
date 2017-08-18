@@ -19,8 +19,8 @@ package org.apache.carbondata.core.datastore.chunk.reader;
 import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
 
 /**
@@ -55,7 +55,7 @@ public interface MeasureColumnChunkReader {
    * @return
    * @throws IOException
    */
-  MeasureColumnDataChunk convertToMeasureChunk(MeasureRawColumnChunk measureRawColumnChunk,
+  ColumnPage convertToColumnPage(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber) throws IOException, MemoryException;
 
 }

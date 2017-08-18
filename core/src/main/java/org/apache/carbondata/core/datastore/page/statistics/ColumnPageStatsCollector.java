@@ -32,5 +32,5 @@ public interface ColumnPageStatsCollector {
   /**
    * return the collected statistics
    */
-  Object getPageStats();
+  SimpleStatsResult getPageStats();
 }

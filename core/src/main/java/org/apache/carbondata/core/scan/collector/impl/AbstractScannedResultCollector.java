@@ -21,7 +21,7 @@ import java.math.RoundingMode;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.collector.ScannedResultCollector;
@@ -86,19 +86,19 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
     }
   }
 
-  protected Object getMeasureData(MeasureColumnDataChunk dataChunk, int index,
+  protected Object getMeasureData(ColumnPage dataChunk, int index,
       CarbonMeasure carbonMeasure) {
-    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+    if (!dataChunk.getNullBits().get(index)) {
       switch (carbonMeasure.getDataType()) {
         case SHORT:
-          return (short)dataChunk.getColumnPage().getLong(index);
+          return (short)dataChunk.getLong(index);
         case INT:
-          return (int)dataChunk.getColumnPage().getLong(index);
+          return (int)dataChunk.getLong(index);
         case LONG:
-          return dataChunk.getColumnPage().getLong(index);
+          return dataChunk.getLong(index);
         case DECIMAL:
           BigDecimal bigDecimalMsrValue =
-              dataChunk.getColumnPage().getDecimal(index);
+              dataChunk.getDecimal(index);
           if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
             bigDecimalMsrValue =
                 bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
@@ -106,7 +106,7 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
           // convert data type as per the computing engine
           return DataTypeUtil.getDataTypeConverter().convertToDecimal(bigDecimalMsrValue);
         default:
-          return dataChunk.getColumnPage().getDouble(index);
+          return dataChunk.getDouble(index);
       }
     }
     return null;

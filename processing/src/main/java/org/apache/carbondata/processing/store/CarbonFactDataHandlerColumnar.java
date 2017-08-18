@@ -530,7 +530,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     System.arraycopy(blockKeySize, noOfColStore, keyBlockSize, noOfColStore,
         blockKeySize.length - noOfColStore);
     this.dataWriter = getFactDataWriter();
-    this.dataWriter.setIsNoDictionary(isNoDictionary);
     // initialize the channel;
     this.dataWriter.initializeWriter();
     //initializeColGrpMinMax();

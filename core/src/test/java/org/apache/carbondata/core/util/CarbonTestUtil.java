@@ -15,24 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page;
+package org.apache.carbondata.core.util;
 
-// Transformation type that can be applied to ColumnPage
-public interface PrimitiveCodec {
-  void encode(int rowId, byte value);
-  void encode(int rowId, short value);
-  void encode(int rowId, int value);
-  void encode(int rowId, long value);
-  void encode(int rowId, float value);
-  void encode(int rowId, double value);
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 
-  long decodeLong(byte value);
-  long decodeLong(short value);
-  long decodeLong(int value);
-  double decodeDouble(byte value);
-  double decodeDouble(short value);
-  double decodeDouble(int value);
-  double decodeDouble(long value);
-  double decodeDouble(float value);
-  double decodeDouble(double value);
+public class CarbonTestUtil {
+
+  public static ValueEncoderMeta createValueEncoderMeta() {
+    ColumnarFormatVersion version =
+        CarbonProperties.getInstance().getFormatVersion();
+
+    switch (version) {
+      case V1:
+      case V2:
+        return new ValueEncoderMeta();
+      case V3:
+        return new ColumnPageEncoderMeta();
+      default:
+        throw new UnsupportedOperationException("unsupported version: " + version);
+    }
+  }
 }

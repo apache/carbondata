@@ -21,8 +21,8 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
 
 /**
@@ -33,7 +33,7 @@ import org.apache.carbondata.core.memory.MemoryException;
  */
 public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
 
-  private MeasureColumnDataChunk[] dataChunks;
+  private ColumnPage[] dataChunks;
 
   private MeasureColumnChunkReader chunkReader;
 
@@ -46,17 +46,17 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
   }
 
   /**
-   * Convert all raw data with all pages to processed MeasureColumnDataChunk's
+   * Convert all raw data with all pages to processed ColumnPage
    * @return
    */
-  public MeasureColumnDataChunk[] convertToMeasureColDataChunks() {
+  public ColumnPage[] convertToMeasureColDataChunks() {
     if (dataChunks == null) {
-      dataChunks = new MeasureColumnDataChunk[pagesCount];
+      dataChunks = new ColumnPage[pagesCount];
     }
     for (int i = 0; i < pagesCount; i++) {
       try {
         if (dataChunks[i] == null) {
-          dataChunks[i] = chunkReader.convertToMeasureChunk(this, i);
+          dataChunks[i] = chunkReader.convertToColumnPage(this, i);
         }
       } catch (Exception e) {
         throw new RuntimeException(e);
@@ -67,19 +67,19 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
   }
 
   /**
-   * Convert raw data with specified page number processed to MeasureColumnDataChunk
+   * Convert raw data with specified page number processed to ColumnPage
    * @param index
    * @return
    */
-  public MeasureColumnDataChunk convertToMeasureColDataChunk(int index) {
+  public ColumnPage convertToMeasureColDataChunk(int index) {
     assert index < pagesCount;
     if (dataChunks == null) {
-      dataChunks = new MeasureColumnDataChunk[pagesCount];
+      dataChunks = new ColumnPage[pagesCount];
     }
 
     try {
       if (dataChunks[index] == null) {
-        dataChunks[index] = chunkReader.convertToMeasureChunk(this, index);
+        dataChunks[index] = chunkReader.convertToColumnPage(this, index);
       }
     } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);

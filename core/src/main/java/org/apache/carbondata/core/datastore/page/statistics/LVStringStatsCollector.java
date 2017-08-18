@@ -18,20 +18,20 @@
 package org.apache.carbondata.core.datastore.page.statistics;
 
 import java.math.BigDecimal;
-import java.util.BitSet;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil;
 
-public class VarLengthPageStatsCollector implements ColumnPageStatsCollector {
+public class LVStringStatsCollector implements ColumnPageStatsCollector {
 
   private byte[] min, max;
 
-  public static VarLengthPageStatsCollector newInstance() {
-    return new VarLengthPageStatsCollector();
+  public static LVStringStatsCollector newInstance() {
+    return new LVStringStatsCollector();
   }
 
-  private VarLengthPageStatsCollector() {
+  private LVStringStatsCollector() {
+
   }
 
   @Override
@@ -71,22 +71,35 @@ public class VarLengthPageStatsCollector implements ColumnPageStatsCollector {
 
   @Override
   public void update(byte[] value) {
-    if (min == null && max == null) {
-      min = value;
-      max = value;
-    } else {
-      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(min, value) > 0) {
-        min = value;
+    // input value is LV encoded
+    assert (value.length >= 2);
+    if (value.length == 2) {
+      assert (value[0] == 0 && value[1] == 0);
+      if (min == null && max == null) {
+        min = new byte[0];
+        max = new byte[0];
       }
-      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(max, value) < 0) {
-        max = value;
+      return;
+    }
+    int length = (value[0] << 8) + value[1];
+    assert (length > 0);
+    byte[] v = new byte[value.length - 2];
+    System.arraycopy(value, 2, v, 0, v.length);
+    if (min == null && max == null) {
+      min = v;
+      max = v;
+    } else {
+      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(min, v) > 0) {
+        min = v;
+      }
+      if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(max, v) < 0) {
+        max = v;
       }
     }
   }
 
   @Override
-  public Object getPageStats() {
-    // for binary type, we do not collect its stats
+  public SimpleStatsResult getPageStats() {
     return new SimpleStatsResult() {
 
       @Override public Object getMin() {
@@ -97,16 +110,12 @@ public class VarLengthPageStatsCollector implements ColumnPageStatsCollector {
         return max;
       }
 
-      @Override public BitSet getNullBits() {
-        return null;
-      }
-
       @Override public int getDecimalPoint() {
         return 0;
       }
 
       @Override public DataType getDataType() {
-        return null;
+        return DataType.STRING;
       }
 
       @Override public int getScale() {

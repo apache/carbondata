@@ -183,6 +183,11 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
+  @Override
+  public byte[] getBytes(int rowId) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
   @Override public byte[] getDecimalPage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
@@ -322,7 +327,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
-  public void encode(PrimitiveCodec codec) {
+  public void convertValue(ColumnPageValueConverter codec) {
     int pageSize = getPageSize();
     switch (dataType) {
       case BYTE:

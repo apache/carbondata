@@ -49,6 +49,11 @@ public class SnappyCompressor implements Compressor {
     }
   }
 
+  @Override
+  public String getName() {
+    return "snappy";
+  }
+
   @Override public byte[] compressByte(byte[] unCompInput) {
     try {
       return Snappy.rawCompress(unCompInput, unCompInput.length);

@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.core.datastore.page.statistics;
 
-import java.util.BitSet;
-
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 public interface SimpleStatsResult {
@@ -26,8 +24,6 @@ public interface SimpleStatsResult {
   Object getMin();
 
   Object getMax();
-
-  BitSet getNullBits();
 
   int getDecimalPoint();
 

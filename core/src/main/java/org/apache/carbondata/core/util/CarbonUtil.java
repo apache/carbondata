@@ -26,6 +26,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
@@ -1335,6 +1336,7 @@ public final class CarbonUtil {
       stream.flush();
       thriftByteArray = stream.toByteArray();
     } catch (TException | IOException e) {
+      LOGGER.error("Error while converting to byte array from thrift object: " + e.getMessage());
       closeStreams(stream);
     } finally {
       closeStreams(stream);
@@ -1956,10 +1958,51 @@ public final class CarbonUtil {
     }
   }
 
-  public static void requireNotNull(Object obj) {
-    if (obj == null) {
-      throw new IllegalArgumentException("parameter not be null");
+
+  /**
+   * convert value to byte array
+   */
+  public static byte[] getValueAsBytes(DataType dataType, Object value) {
+    ByteBuffer b;
+    switch (dataType) {
+      case BYTE:
+        b = ByteBuffer.allocate(8);
+        b.putLong((byte) value);
+        b.flip();
+        return b.array();
+      case SHORT:
+        b = ByteBuffer.allocate(8);
+        b.putLong((short) value);
+        b.flip();
+        return b.array();
+      case INT:
+        b = ByteBuffer.allocate(8);
+        b.putLong((int) value);
+        b.flip();
+        return b.array();
+      case LONG:
+        b = ByteBuffer.allocate(8);
+        b.putLong((long) value);
+        b.flip();
+        return b.array();
+      case DOUBLE:
+        b = ByteBuffer.allocate(8);
+        b.putDouble((double) value);
+        b.flip();
+        return b.array();
+      case DECIMAL:
+        return DataTypeUtil.bigDecimalToByte((BigDecimal)value);
+      case BYTE_ARRAY:
+        return (byte[]) value;
+      case STRING:
+      case TIMESTAMP:
+      case DATE:
+        return (byte[]) value;
+      default:
+        throw new IllegalArgumentException("Invalid data type: " + dataType);
     }
   }
+
+
 }
 

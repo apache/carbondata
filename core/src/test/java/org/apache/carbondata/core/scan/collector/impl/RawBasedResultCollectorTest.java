@@ -99,17 +99,17 @@ public class RawBasedResultCollectorTest {
 //        return new byte[][] { { 1, 2 }, { 1, 2 } };
 //      }
 //
-//      @SuppressWarnings("unused") @Mock public MeasureColumnDataChunk getMeasureChunk(int ordinal) {
-//        MeasureColumnDataChunk measureColumnDataChunk = new MeasureColumnDataChunk();
+//      @SuppressWarnings("unused") @Mock public ColumnPage getMeasureChunk(int ordinal) {
+//        ColumnPage ColumnPage = new ColumnPage();
 //        PresenceMeta presenceMeta = new PresenceMeta();
 //        BitSet bitSet = new BitSet();
 //        bitSet.set(1);
 //        presenceMeta.setBitSet(bitSet);
-//        measureColumnDataChunk.setNullValueIndexHolder(presenceMeta);
+//        ColumnPage.setNullValueIndexHolder(presenceMeta);
 //        CarbonReadDataHolder carbonReadDataHolder = new CarbonReadDataHolder();
 //        carbonReadDataHolder.setReadableLongValues(new long[] { 1 });
-//        measureColumnDataChunk.setColumnPage(carbonReadDataHolder);
-//        return measureColumnDataChunk;
+//        ColumnPage.setColumnPage(carbonReadDataHolder);
+//        return ColumnPage;
 //      }
 //    };
 //

@@ -19,7 +19,6 @@ package org.apache.carbondata.core.scan.result;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Map;
@@ -28,8 +27,8 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.mutate.TupleIdEnum;
@@ -88,7 +87,7 @@ public abstract class AbstractScannedResult {
   /**
    * measure column data chunk
    */
-  protected MeasureColumnDataChunk[][] measureDataChunks;
+  protected ColumnPage[][] measureDataChunks;
   /**
    * dictionary column block index in file
    */
@@ -169,7 +168,7 @@ public abstract class AbstractScannedResult {
    *
    * @param measureDataChunks measure data chunks
    */
-  public void setMeasureChunks(MeasureColumnDataChunk[][] measureDataChunks) {
+  public void setMeasureChunks(ColumnPage[][] measureDataChunks) {
     this.measureDataChunks = measureDataChunks;
   }
 
@@ -183,7 +182,7 @@ public abstract class AbstractScannedResult {
    * @param ordinal measure ordinal
    * @return measure column chunk
    */
-  public MeasureColumnDataChunk getMeasureChunk(int ordinal) {
+  public ColumnPage getMeasureChunk(int ordinal) {
     return measureDataChunks[ordinal][pageCounter];
   }
 
@@ -561,55 +560,6 @@ public abstract class AbstractScannedResult {
    */
   public void setIndexes(int[][] indexes) {
     this.rowMapping = indexes;
-  }
-
-  /**
-   * Below method will be used to check whether measure value is null or not
-   *
-   * @param ordinal  measure ordinal
-   * @param rowIndex row number to be checked
-   * @return whether it is null or not
-   */
-  protected boolean isNullMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal][pageCounter].getNullValueIndexHolder().getBitSet()
-        .get(rowIndex);
-  }
-
-  /**
-   * Below method will be used to get the measure value of
-   * long type
-   *
-   * @param ordinal  measure ordinal
-   * @param rowIndex row number of the measure value
-   * @return measure value of long type
-   */
-  protected long getLongMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal][pageCounter].getColumnPage()
-        .getLong(rowIndex);
-  }
-
-  /**
-   * Below method will be used to get the measure value of double type
-   *
-   * @param ordinal  measure ordinal
-   * @param rowIndex row number
-   * @return measure value of double type
-   */
-  protected double getDoubleMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal][pageCounter].getColumnPage()
-        .getDouble(rowIndex);
-  }
-
-  /**
-   * Below method will be used to get the measure type of big decimal data type
-   *
-   * @param ordinal  ordinal of the of the measure
-   * @param rowIndex row number
-   * @return measure of big decimal type
-   */
-  protected BigDecimal getBigDecimalMeasureValue(int ordinal, int rowIndex) {
-    return measureDataChunks[ordinal][pageCounter].getColumnPage()
-        .getDecimal(rowIndex);
   }
 
   public int getRowCounter() {

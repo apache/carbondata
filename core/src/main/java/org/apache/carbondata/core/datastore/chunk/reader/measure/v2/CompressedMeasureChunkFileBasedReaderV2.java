@@ -21,11 +21,10 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
@@ -48,7 +47,8 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     super(blockletInfo, filePath);
   }
 
-  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
+  @Override
+  public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
       throws IOException {
     int dataLength = 0;
     if (measureColumnChunkOffsets.size() - 1 == blockIndex) {
@@ -108,9 +108,8 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     return dataChunks;
   }
 
-  public MeasureColumnDataChunk convertToMeasureChunk(MeasureRawColumnChunk measureRawColumnChunk,
+  public ColumnPage convertToColumnPage(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber) throws IOException, MemoryException {
-    MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();
     int copyPoint = measureRawColumnChunk.getOffSet();
     int blockIndex = measureRawColumnChunk.getBlockletId();
     ByteBuffer rawData = measureRawColumnChunk.getRawData();
@@ -121,12 +120,8 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     }
 
     ColumnPage page = decodeMeasure(measureRawColumnChunk, measureColumnChunk, copyPoint);
-
-    // set the data chunk
-    datChunk.setColumnPage(page);
-    // set the enun value indexes
-    datChunk.setNullValueIndexHolder(getPresenceMeta(measureColumnChunk.presence));
-    return datChunk;
+    page.setNullBits(getNullBitSet(measureColumnChunk.presence));
+    return page;
   }
 
   protected ColumnPage decodeMeasure(MeasureRawColumnChunk measureRawColumnChunk,
@@ -136,7 +131,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
     byte[] encodedMeta = encoder_meta.get(0).array();
 
     ValueEncoderMeta meta = CarbonUtil.deserializeEncoderMetaV3(encodedMeta);
-    ColumnPageCodec codec = strategy.newCodec(meta);
+    ColumnPageDecoder codec = strategy.createDecoder(null, meta);
     byte[] rawData = measureRawColumnChunk.getRawData().array();
     return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);
   }

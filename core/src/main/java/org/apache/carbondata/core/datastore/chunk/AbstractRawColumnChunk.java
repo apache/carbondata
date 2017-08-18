@@ -31,8 +31,6 @@ public abstract class AbstractRawColumnChunk {
 
   protected ByteBuffer rawData;
 
-  private int[] lengths;
-
   private int[] offsets;
 
   private int[] rowCount;
@@ -41,11 +39,11 @@ public abstract class AbstractRawColumnChunk {
 
   protected int blockletId;
 
-  protected int offSet;
+  private int offSet;
 
   protected int length;
 
-  protected DataChunk3 dataChunkV3;
+  private DataChunk3 dataChunkV3;
 
   public AbstractRawColumnChunk(int blockletId, ByteBuffer rawData, int offSet, int length) {
     this.blockletId = blockletId;
@@ -72,18 +70,6 @@ public abstract class AbstractRawColumnChunk {
 
   public ByteBuffer getRawData() {
     return rawData;
-  }
-
-  public void setRawData(ByteBuffer rawData) {
-    this.rawData = rawData;
-  }
-
-  public int[] getLengths() {
-    return lengths;
-  }
-
-  public void setLengths(int[] lengths) {
-    this.lengths = lengths;
   }
 
   public int[] getOffsets() {

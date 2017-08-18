@@ -433,7 +433,7 @@ public class NodeHolder {
     int numDimensions = encodedTablePage.getNumDimensions();
     byte[][] keyArray = new byte[numDimensions][];
     for (int i = 0; i < numDimensions; i++) {
-      keyArray[i] = encodedTablePage.getDimension(i).getEncodedData();
+      keyArray[i] = encodedTablePage.getDimension(i).getEncodedData().array();
     }
     return keyArray;
   }
@@ -442,7 +442,7 @@ public class NodeHolder {
     int numMeasures = encodedTablePage.getNumMeasures();
     byte[][] dataArray = new byte[numMeasures][];
     for (int i = 0; i < numMeasures; i++) {
-      dataArray[i] = encodedTablePage.getMeasure(i).getEncodedData();
+      dataArray[i] = encodedTablePage.getMeasure(i).getEncodedData().array();
     }
     return dataArray;
   }

@@ -15,27 +15,21 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.encoding;
+package org.apache.carbondata.core.datastore.page.encoding.adaptive;
 
-import java.io.IOException;
-
-import org.apache.carbondata.core.datastore.compression.Compressor;
-import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
  * Subclass of this codec depends on statistics of the column page (adaptive) to perform apply
  * and decode, it also employs compressor to compress the encoded data
  */
-public abstract class AdaptiveCompressionCodec implements ColumnPageCodec {
+public abstract class AdaptiveCodec implements ColumnPageCodec {
 
   // TODO: cache and reuse the same encoder since snappy is thread-safe
-
-  // compressor that can be used by subclass
-  protected final Compressor compressor;
 
   // statistics of this page, can be used by subclass
   protected final SimpleStatsResult stats;
@@ -46,21 +40,13 @@ public abstract class AdaptiveCompressionCodec implements ColumnPageCodec {
   // the data type specified in schema
   protected final DataType srcDataType;
 
-  protected AdaptiveCompressionCodec(DataType srcDataType, DataType targetDataType,
-      SimpleStatsResult stats, Compressor compressor) {
+  protected AdaptiveCodec(DataType srcDataType, DataType targetDataType,
+      SimpleStatsResult stats) {
     this.stats = stats;
     this.srcDataType = srcDataType;
     this.targetDataType = targetDataType;
-    this.compressor = compressor;
   }
 
-  public abstract String getName();
-
-  public abstract EncodedColumnPage encode(ColumnPage input) throws MemoryException, IOException;
-
-  public abstract ColumnPage decode(byte[] input, int offset, int length) throws MemoryException;
-
-  @Override
   public EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input) {
     throw new UnsupportedOperationException("internal error");
   }

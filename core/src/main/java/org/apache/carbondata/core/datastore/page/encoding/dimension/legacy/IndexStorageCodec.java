@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.encoding;
+package org.apache.carbondata.core.datastore.page.encoding.dimension.legacy;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
-import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
-import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.CarbonProperties;
 
@@ -37,12 +37,7 @@ public abstract class IndexStorageCodec implements ColumnPageCodec {
   }
 
   @Override
-  public EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input) {
-    throw new UnsupportedOperationException("internal error");
-  }
-
-  @Override
-  public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
+  public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
     throw new UnsupportedOperationException("internal error");
   }
 }
