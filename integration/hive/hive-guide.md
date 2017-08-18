@@ -91,6 +91,7 @@ $HIVE_HOME/bin/hive
 ### Query data from hive table
 
 ```
+alter table hive_carbon set location '<hdfs store path>/hive_carbon';
 set hive.mapred.supports.subdirectories=true;
 set mapreduce.input.fileinputformat.input.dir.recursive=true;
 
