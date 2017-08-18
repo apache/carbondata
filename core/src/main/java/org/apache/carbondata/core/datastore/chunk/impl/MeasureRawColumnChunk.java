@@ -21,19 +21,19 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.memory.MemoryException;
 
 /**
  * Contains raw measure data
  * 1. The read uncompressed raw data of column chunk with all pages is stored in this instance.
- * 2. The raw data can be converted to processed chunk using convertToMeasureColDataChunk method
+ * 2. The raw data can be converted to processed chunk using convertToColumnPage method
  *  by specifying page number.
  */
 public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
 
-  private MeasureColumnDataChunk[] dataChunks;
+  private ColumnPage[] columnPages;
 
   private MeasureColumnChunkReader chunkReader;
 
@@ -46,53 +46,50 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
   }
 
   /**
-   * Convert all raw data with all pages to processed MeasureColumnDataChunk's
-   * @return
+   * Convert all raw data with all pages to processed ColumnPage
    */
-  public MeasureColumnDataChunk[] convertToMeasureColDataChunks() {
-    if (dataChunks == null) {
-      dataChunks = new MeasureColumnDataChunk[pagesCount];
+  public ColumnPage[] convertToColumnPage() {
+    if (columnPages == null) {
+      columnPages = new ColumnPage[pagesCount];
     }
     for (int i = 0; i < pagesCount; i++) {
       try {
-        if (dataChunks[i] == null) {
-          dataChunks[i] = chunkReader.convertToMeasureChunk(this, i);
+        if (columnPages[i] == null) {
+          columnPages[i] = chunkReader.convertToColumnPage(this, i);
         }
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
     }
 
-    return dataChunks;
+    return columnPages;
   }
 
   /**
-   * Convert raw data with specified page number processed to MeasureColumnDataChunk
-   * @param index
-   * @return
+   * Convert raw data with specified `columnIndex` processed to ColumnPage
    */
-  public MeasureColumnDataChunk convertToMeasureColDataChunk(int index) {
-    assert index < pagesCount;
-    if (dataChunks == null) {
-      dataChunks = new MeasureColumnDataChunk[pagesCount];
+  public ColumnPage convertToColumnPage(int columnIndex) {
+    assert columnIndex < pagesCount;
+    if (columnPages == null) {
+      columnPages = new ColumnPage[pagesCount];
     }
 
     try {
-      if (dataChunks[index] == null) {
-        dataChunks[index] = chunkReader.convertToMeasureChunk(this, index);
+      if (columnPages[columnIndex] == null) {
+        columnPages[columnIndex] = chunkReader.convertToColumnPage(this, columnIndex);
       }
     } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);
     }
 
-    return dataChunks[index];
+    return columnPages[columnIndex];
   }
 
   @Override public void freeMemory() {
-    if (null != dataChunks) {
-      for (int i = 0; i < dataChunks.length; i++) {
-        if (dataChunks[i] != null) {
-          dataChunks[i].freeMemory();
+    if (null != columnPages) {
+      for (int i = 0; i < columnPages.length; i++) {
+        if (columnPages[i] != null) {
+          columnPages[i].freeMemory();
         }
       }
     }

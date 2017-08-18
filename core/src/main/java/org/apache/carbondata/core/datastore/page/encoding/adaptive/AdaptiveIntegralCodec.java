@@ -15,35 +15,37 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.encoding;
+package org.apache.carbondata.core.datastore.page.encoding.adaptive;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
-import org.apache.carbondata.core.datastore.page.PrimitiveCodec;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.CodecMetaFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.format.Encoding;
 
 /**
  * Codec for integer (byte, short, int, long) data type page.
- * This codec will do type casting on page data to make storage minimum.
+ * This converter will do type casting on page data to make storage minimum.
  */
-class AdaptiveIntegralCodec extends AdaptiveCompressionCodec {
+public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
   private ColumnPage encodedPage;
 
-  public static ColumnPageCodec newInstance(DataType srcDataType, DataType targetDataType,
-      SimpleStatsResult stats, Compressor compressor) {
-    return new AdaptiveIntegralCodec(srcDataType, targetDataType, stats, compressor);
-  }
-
-  private AdaptiveIntegralCodec(DataType srcDataType, DataType targetDataType,
-      SimpleStatsResult stats, Compressor compressor) {
-    super(srcDataType, targetDataType, stats, compressor);
+  public AdaptiveIntegralCodec(DataType srcDataType, DataType targetDataType,
+      SimpleStatsResult stats) {
+    super(srcDataType, targetDataType, stats);
   }
 
   @Override
@@ -52,26 +54,54 @@ class AdaptiveIntegralCodec extends AdaptiveCompressionCodec {
   }
 
   @Override
-  public EncodedColumnPage encode(ColumnPage input) throws MemoryException, IOException {
-    encodedPage = ColumnPage
-        .newPage(targetDataType, input.getPageSize(), stats.getScale(), stats.getPrecision());
-    input.encode(codec);
-    byte[] result = encodedPage.compress(compressor);
-    encodedPage.freeMemory();
-    return new EncodedMeasurePage(input.getPageSize(), result,
-        CodecMetaFactory.createMeta(stats, targetDataType),
-        ((SimpleStatsResult)input.getStatistics()).getNullBits());
+  public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
+    final Compressor compressor = CompressorFactory.getInstance().getCompressor();
+    return new ColumnPageEncoder() {
+      @Override
+      protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
+        if (encodedPage != null) {
+          throw new IllegalStateException("already encoded");
+        }
+        encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
+        input.convertValue(converter);
+        byte[] result = encodedPage.compress(compressor);
+        encodedPage.freeMemory();
+        return result;
+      }
+
+      @Override
+      protected List<Encoding> getEncodingList() {
+        List<Encoding> encodings = new ArrayList<Encoding>();
+        encodings.add(Encoding.ADAPTIVE_INTEGRAL);
+        return encodings;
+      }
+
+      @Override
+      protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
+        return new AdaptiveIntegralEncoderMeta(targetDataType, stats, compressor.getName());
+      }
+
+    };
   }
 
   @Override
-  public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
-    ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length,
-        stats.getScale(), stats.getPrecision());
-    return LazyColumnPage.newPage(page, codec);
+  public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
+    AdaptiveIntegralEncoderMeta codecMeta = (AdaptiveIntegralEncoderMeta) meta;
+    final Compressor compressor = CompressorFactory.getInstance().getCompressor(
+        codecMeta.getCompressorName());
+    final DataType targetDataType = codecMeta.getTargetDataType();
+    return new ColumnPageDecoder() {
+      @Override
+      public ColumnPage decode(byte[] input, int offset, int length)
+          throws MemoryException, IOException {
+        ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+        return LazyColumnPage.newPage(page, converter);
+      }
+    };
   }
 
   // encoded value = (type cast page value to target data type)
-  private PrimitiveCodec codec = new PrimitiveCodec() {
+  private ColumnPageValueConverter converter = new ColumnPageValueConverter() {
     @Override
     public void encode(int rowId, byte value) {
       switch (targetDataType) {

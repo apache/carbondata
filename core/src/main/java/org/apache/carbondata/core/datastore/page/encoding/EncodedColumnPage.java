@@ -17,62 +17,65 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.BitSet;
 
+import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 
 /**
- * An column page after encoding and compression.
+ * An column page after encoding.
  */
-public abstract class EncodedColumnPage {
-
-  // number of row of this page
-  protected int pageSize;
+public class EncodedColumnPage {
 
   // encoded and compressed column page data
-  protected byte[] encodedData;
-
-  protected BitSet nullBitSet;
+  protected final byte[] encodedData;
 
   // metadata of this page
-  protected DataChunk2 dataChunk2;
+  private DataChunk2 pageMetadata;
 
-  EncodedColumnPage(int pageSize, byte[] encodedData) {
-    this.pageSize = pageSize;
+  // stats of this page
+  private SimpleStatsResult stats;
+
+  /**
+   * Constructor
+   * @param pageMetadata metadata of the encoded page
+   * @param encodedData encoded data for this page
+   */
+  public EncodedColumnPage(DataChunk2 pageMetadata, byte[] encodedData,
+      SimpleStatsResult stats) {
+    if (pageMetadata == null) {
+      throw new IllegalArgumentException("data chunk2 must not be null");
+    }
+    if (encodedData == null) {
+      throw new IllegalArgumentException("encoded data must not be null");
+    }
+    this.pageMetadata = pageMetadata;
     this.encodedData = encodedData;
-  }
-
-  public abstract DataChunk2 buildDataChunk2() throws IOException;
-
-  /**
-   * return the encoded and compressed data page
-   */
-  public byte[] getEncodedData() {
-    return encodedData;
+    this.stats = stats;
   }
 
   /**
-   * return the size of the s
+   * return the encoded data as ByteBuffer
    */
-  public int getSerializedSize() {
-    return encodedData.length;
-  }
-
-  public ByteBuffer serialize() {
+  public ByteBuffer getEncodedData() {
     return ByteBuffer.wrap(encodedData);
   }
 
-  public DataChunk2 getDataChunk2() {
-    return dataChunk2;
+  public DataChunk2 getPageMetadata() {
+    return pageMetadata;
   }
 
-  public void setNullBitSet(BitSet nullBitSet) {
-    this.nullBitSet = nullBitSet;
+  /**
+   * Return the total size of serialized data and metadata
+   */
+  public int getTotalSerializedSize() {
+    int metadataSize = CarbonUtil.getByteArray(pageMetadata).length;
+    int dataSize = encodedData.length;
+    return metadataSize + dataSize;
   }
 
-  public BitSet getNullBitSet() {
-    return nullBitSet;
+  public SimpleStatsResult getStats() {
+    return stats;
   }
 }

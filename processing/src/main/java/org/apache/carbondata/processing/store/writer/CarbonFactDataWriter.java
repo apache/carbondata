@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.processing.store.writer;
 
+import java.io.IOException;
+
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.processing.store.TablePage;
 
@@ -26,7 +28,7 @@ public interface CarbonFactDataWriter<T> {
    * write a encoded table page
    * @param tablePage
    */
-  void writeTablePage(TablePage tablePage) throws CarbonDataWriterException;
+  void writeTablePage(TablePage tablePage) throws CarbonDataWriterException, IOException;
 
   /**
    * Below method will be used to write the leaf meta data to file
@@ -44,10 +46,5 @@ public interface CarbonFactDataWriter<T> {
    * Below method will be used to close the writer
    */
   void closeWriter() throws CarbonDataWriterException;
-
-  /**
-   * @param isNoDictionary
-   */
-  void setIsNoDictionary(boolean[] isNoDictionary);
 
 }

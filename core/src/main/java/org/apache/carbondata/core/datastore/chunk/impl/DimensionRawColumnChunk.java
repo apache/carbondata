@@ -23,6 +23,7 @@ import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.AbstractRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
+import org.apache.carbondata.core.memory.MemoryException;
 
 /**
  * Contains raw dimension data,
@@ -57,7 +58,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
         if (dataChunks[i] == null) {
           dataChunks[i] = chunkReader.convertToDimensionChunk(this, i);
         }
-      } catch (Exception e) {
+      } catch (IOException | MemoryException e) {
         throw new RuntimeException(e);
       }
     }
@@ -77,7 +78,7 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
     if (dataChunks[index] == null) {
       try {
         dataChunks[index] = chunkReader.convertToDimensionChunk(this, index);
-      } catch (IOException e) {
+      } catch (IOException | MemoryException e) {
         throw new RuntimeException(e);
       }
     }

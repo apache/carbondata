@@ -17,21 +17,11 @@
 
 package org.apache.carbondata.core.datastore.page.statistics;
 
-import java.nio.ByteBuffer;
-import java.util.BitSet;
-
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedDimensionPage;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
-import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 // Statistics of dimension and measure column in a TablePage
 public class TablePageStatistics {
-
-  // number of dimension after complex column expanded
-  private int numDimensionsExpanded;
 
   // min of each dimension column
   private byte[][] dimensionMinValue;
@@ -45,67 +35,32 @@ public class TablePageStatistics {
   // max os each measure column
   private byte[][] measureMaxValue;
 
-  // null bit set for each measure column
-  private BitSet[] nullBitSet;
-
-  public TablePageStatistics(EncodedDimensionPage[] dimensions,
-      EncodedMeasurePage[] measures) {
-    this.numDimensionsExpanded = dimensions.length;
+  public TablePageStatistics(EncodedColumnPage[] dimensions,
+      EncodedColumnPage[] measures) {
+    int numDimensionsExpanded = dimensions.length;
     int numMeasures = measures.length;
     this.dimensionMinValue = new byte[numDimensionsExpanded][];
     this.dimensionMaxValue = new byte[numDimensionsExpanded][];
     this.measureMinValue = new byte[numMeasures][];
     this.measureMaxValue = new byte[numMeasures][];
-    this.nullBitSet = new BitSet[numMeasures];
     updateDimensionMinMax(dimensions);
     updateMeasureMinMax(measures);
   }
 
-  private void updateDimensionMinMax(EncodedDimensionPage[] dimensions) {
+  private void updateDimensionMinMax(EncodedColumnPage[] dimensions) {
     for (int i = 0; i < dimensions.length; i++) {
-      IndexStorage keyStorageArray = dimensions[i].getIndexStorage();
-      switch (dimensions[i].getDimensionType()) {
-        case GLOBAL_DICTIONARY:
-        case DIRECT_DICTIONARY:
-        case COLUMN_GROUP:
-        case COMPLEX:
-          dimensionMinValue[i] = keyStorageArray.getMin();
-          dimensionMaxValue[i] = keyStorageArray.getMax();
-          break;
-        case PLAIN_VALUE:
-          dimensionMinValue[i] = updateMinMaxForNoDictionary(keyStorageArray.getMin());
-          dimensionMaxValue[i] = updateMinMaxForNoDictionary(keyStorageArray.getMax());
-          break;
-      }
+      SimpleStatsResult stats = dimensions[i].getStats();
+      dimensionMaxValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMax());
+      dimensionMinValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMin());
     }
   }
 
-  private void updateMeasureMinMax(EncodedMeasurePage[] measures) {
+  private void updateMeasureMinMax(EncodedColumnPage[] measures) {
     for (int i = 0; i < measures.length; i++) {
-      ValueEncoderMeta meta = measures[i].getMetaData();
-      if (meta instanceof ColumnPageCodecMeta) {
-        ColumnPageCodecMeta metadata = (ColumnPageCodecMeta) meta;
-        measureMaxValue[i] = metadata.getMaxAsBytes();
-        measureMinValue[i] = metadata.getMinAsBytes();
-      } else {
-        measureMaxValue[i] = CarbonUtil.getMaxValueAsBytes(meta);
-        measureMinValue[i] = CarbonUtil.getMinValueAsBytes(meta);
-      }
-      nullBitSet[i] = measures[i].getNullBitSet();
+      SimpleStatsResult stats = measures[i].getStats();
+      measureMaxValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMax());
+      measureMinValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMin());
     }
-  }
-
-  /**
-   * Below method will be used to update the min or max value
-   * by removing the length from it
-   *
-   * @return min max value without length
-   */
-  public static byte[] updateMinMaxForNoDictionary(byte[] valueWithLength) {
-    ByteBuffer buffer = ByteBuffer.wrap(valueWithLength);
-    byte[] actualValue = new byte[buffer.getShort()];
-    buffer.get(actualValue);
-    return actualValue;
   }
 
   public byte[][] getDimensionMinValue() {
@@ -124,7 +79,4 @@ public class TablePageStatistics {
     return measureMaxValue;
   }
 
-  public BitSet[] getNullBitSet() {
-    return nullBitSet;
-  }
 }

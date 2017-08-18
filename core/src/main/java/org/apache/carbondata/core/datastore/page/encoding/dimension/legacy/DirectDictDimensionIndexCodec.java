@@ -15,23 +15,25 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.encoding;
+package org.apache.carbondata.core.datastore.page.encoding.dimension.legacy;
 
-import org.apache.carbondata.core.datastore.DimensionType;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForInt;
-import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForInt;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForNoInvertedIndexForShort;
 import org.apache.carbondata.core.datastore.columnar.BlockIndexerStorageForShort;
 import org.apache.carbondata.core.datastore.columnar.IndexStorage;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.format.Encoding;
 
 public class DirectDictDimensionIndexCodec extends IndexStorageCodec {
 
-  DirectDictDimensionIndexCodec(boolean isSort, boolean isInvertedIndex, Compressor compressor) {
+  public DirectDictDimensionIndexCodec(boolean isSort, boolean isInvertedIndex,
+      Compressor compressor) {
     super(isSort, isInvertedIndex, compressor);
   }
 
@@ -41,26 +43,33 @@ public class DirectDictDimensionIndexCodec extends IndexStorageCodec {
   }
 
   @Override
-  public EncodedColumnPage encode(ColumnPage input) throws MemoryException {
-    IndexStorage indexStorage;
-    byte[][] data = input.getByteArrayPage();
-    if (isInvertedIndex) {
-      if (version == ColumnarFormatVersion.V3) {
-        indexStorage = new BlockIndexerStorageForShort(data, false, false, isSort);
-      } else {
-        indexStorage = new BlockIndexerStorageForInt(data, false, false, isSort);
+  public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
+    return new IndexStorageEncoder() {
+      @Override
+      void encodeIndexStorage(ColumnPage inputPage) {
+        IndexStorage indexStorage;
+        byte[][] data = inputPage.getByteArrayPage();
+        if (isInvertedIndex) {
+          indexStorage = new BlockIndexerStorageForShort(data, false, false, isSort);
+        } else {
+          indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
+        }
+        byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
+        super.compressedDataPage = compressor.compressByte(flattened);
+        super.indexStorage = indexStorage;
       }
-    } else {
-      if (version == ColumnarFormatVersion.V3) {
-        indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
-      } else {
-        indexStorage = new BlockIndexerStorageForNoInvertedIndexForInt(data);
+
+      @Override
+      protected List<Encoding> getEncodingList() {
+        List<Encoding> encodings = new ArrayList<>();
+        encodings.add(Encoding.DICTIONARY);
+        encodings.add(Encoding.RLE);
+        if (isInvertedIndex) {
+          encodings.add(Encoding.INVERTED_INDEX);
+        }
+        return encodings;
       }
-    }
-    byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
-    byte[] compressed = compressor.compressByte(flattened);
-    return new EncodedDimensionPage(input.getPageSize(), compressed, indexStorage,
-        DimensionType.GLOBAL_DICTIONARY);
+    };
   }
 
 }

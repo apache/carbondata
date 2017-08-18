@@ -21,9 +21,9 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -124,13 +124,13 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
               measureRawColumnChunk.getMinValues()[i], msrColumnExecutorInfo.getFilterKeys(),
               msrColumnEvaluatorInfo.getType())) {
             BitSet bitSet =
-                getFilteredIndexesForMeasures(measureRawColumnChunk.convertToMeasureColDataChunk(i),
+                getFilteredIndexesForMeasures(measureRawColumnChunk.convertToColumnPage(i),
                     measureRawColumnChunk.getRowCount()[i], msrType);
             bitSetGroup.setBitSet(bitSet, i);
           }
         } else {
           BitSet bitSet =
-              getFilteredIndexesForMeasures(measureRawColumnChunk.convertToMeasureColDataChunk(i),
+              getFilteredIndexesForMeasures(measureRawColumnChunk.convertToColumnPage(i),
                   measureRawColumnChunk.getRowCount()[i], msrType);
           bitSetGroup.setBitSet(bitSet, i);
         }
@@ -155,7 +155,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     }
   }
 
-  private BitSet getFilteredIndexesForMeasures(MeasureColumnDataChunk measureColumnDataChunk,
+  private BitSet getFilteredIndexesForMeasures(ColumnPage columnPage,
       int rowsInPage, DataType msrType) {
     // Here the algorithm is
     // Get the measure values from the chunk. compare sequentially with the
@@ -164,7 +164,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
 
     SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
-    BitSet nullBitSet = measureColumnDataChunk.getNullValueIndexHolder().getBitSet();
+    BitSet nullBitSet = columnPage.getNullBits();
     for (int i = 0; i < filterValues.length; i++) {
       if (filterValues[i] == null) {
         for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
@@ -176,7 +176,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
         if (!nullBitSet.get(startIndex)) {
           // Check if filterValue[i] matches with measure Values.
           Object msrValue = DataTypeUtil
-              .getMeasureObjectBasedOnDataType(measureColumnDataChunk.getColumnPage(), startIndex,
+              .getMeasureObjectBasedOnDataType(columnPage, startIndex,
                   msrType, msrColumnEvaluatorInfo.getMeasure());
 
           if (comparator.compare(msrValue, filterValues[i]) == 0) {

@@ -16,100 +16,39 @@
  */
 package org.apache.carbondata.core.util;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.statistics.TablePageStatistics;
-import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletBTreeIndex;
 import org.apache.carbondata.format.BlockletIndex;
-import org.apache.carbondata.format.BlockletInfo;
-import org.apache.carbondata.format.BlockletInfo2;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.ChunkCompressionMeta;
 import org.apache.carbondata.format.ColumnSchema;
 import org.apache.carbondata.format.CompressionCodec;
-import org.apache.carbondata.format.DataChunk;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 import org.apache.carbondata.format.Encoding;
-import org.apache.carbondata.format.FileFooter;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.format.FileHeader;
 import org.apache.carbondata.format.IndexHeader;
-import org.apache.carbondata.format.PresenceMeta;
 import org.apache.carbondata.format.SegmentInfo;
-import org.apache.carbondata.format.SortState;
 
 /**
  * Util class to convert to thrift metdata classes
  */
 public class CarbonMetadataUtil {
-
-  /**
-   * Attribute for Carbon LOGGER
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(CarbonMetadataUtil.class.getName());
-
-  /**
-   * It converts list of BlockletInfoColumnar to FileFooter thrift objects
-   *
-   * @param infoList
-   * @param cardinalities
-   * @return FileFooter
-   */
-  public static FileFooter convertFileFooter(List<BlockletInfoColumnar> infoList,
-      int[] cardinalities, List<ColumnSchema> columnSchemaList, SegmentProperties segmentProperties)
-      throws IOException {
-    FileFooter footer = getFileFooter(infoList, cardinalities, columnSchemaList);
-    for (BlockletInfoColumnar info : infoList) {
-      footer.addToBlocklet_info_list(getBlockletInfo(info, columnSchemaList, segmentProperties));
-    }
-    return footer;
-  }
-
-  /**
-   * Below method will be used to get the file footer object
-   *
-   * @param infoList         blocklet info
-   * @param cardinalities    cardinlaity of dimension columns
-   * @param columnSchemaList column schema list
-   * @return file footer
-   */
-  private static FileFooter getFileFooter(List<BlockletInfoColumnar> infoList, int[] cardinalities,
-      List<ColumnSchema> columnSchemaList) {
-    SegmentInfo segmentInfo = new SegmentInfo();
-    segmentInfo.setNum_cols(columnSchemaList.size());
-    segmentInfo.setColumn_cardinalities(CarbonUtil.convertToIntegerList(cardinalities));
-    ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
-    FileFooter footer = new FileFooter();
-    footer.setVersion(version.number());
-    footer.setNum_rows(getTotalNumberOfRows(infoList));
-    footer.setSegment_info(segmentInfo);
-    footer.setTable_columns(columnSchemaList);
-    for (BlockletInfoColumnar info : infoList) {
-      footer.addToBlocklet_index_list(getBlockletIndex(info));
-    }
-    return footer;
-  }
 
   /**
    * Below method prepares the file footer object for carbon data file version 3
@@ -153,29 +92,6 @@ public class CarbonMetadataUtil {
     return footer;
   }
 
-  /**
-   * Below method will be used to get the file footer object for
-   *
-   * @param infoList         blocklet info
-   * @param cardinalities    cardinality of each column
-   * @param columnSchemaList column schema list
-   * @param dataChunksOffset data chunks offsets
-   * @param dataChunksLength data chunks length
-   * @return filefooter thrift object
-   */
-  public static FileFooter convertFilterFooter2(List<BlockletInfoColumnar> infoList,
-      int[] cardinalities, List<ColumnSchema> columnSchemaList, List<List<Long>> dataChunksOffset,
-      List<List<Short>> dataChunksLength) {
-    FileFooter footer = getFileFooter(infoList, cardinalities, columnSchemaList);
-    int index = 0;
-    for (BlockletInfoColumnar info : infoList) {
-      footer.addToBlocklet_info_list2(
-          getBlockletInfo2(info, dataChunksOffset.get(index), dataChunksLength.get(index)));
-      index++;
-    }
-    return footer;
-  }
-
   private static BlockletIndex getBlockletIndex(
       org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex info) {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
@@ -199,45 +115,12 @@ public class CarbonMetadataUtil {
    * @param infoList
    * @return
    */
-  private static long getTotalNumberOfRows(List<BlockletInfoColumnar> infoList) {
-    long numberOfRows = 0;
-    for (BlockletInfoColumnar info : infoList) {
-      numberOfRows += info.getNumberOfKeys();
-    }
-    return numberOfRows;
-  }
-
-  /**
-   * Get total number of rows for the file.
-   *
-   * @param infoList
-   * @return
-   */
   private static long getNumberOfRowForFooter(List<BlockletInfo3> infoList) {
     long numberOfRows = 0;
     for (BlockletInfo3 info : infoList) {
       numberOfRows += info.num_rows;
     }
     return numberOfRows;
-  }
-
-  private static BlockletIndex getBlockletIndex(BlockletInfoColumnar info) {
-
-    BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
-    for (byte[] max : info.getColumnMaxData()) {
-      blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(max));
-    }
-    for (byte[] min : info.getColumnMinData()) {
-      blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
-    }
-    BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
-    blockletBTreeIndex.setStart_key(info.getStartKey());
-    blockletBTreeIndex.setEnd_key(info.getEndKey());
-
-    BlockletIndex blockletIndex = new BlockletIndex();
-    blockletIndex.setMin_max_index(blockletMinMaxIndex);
-    blockletIndex.setB_tree_index(blockletBTreeIndex);
-    return blockletIndex;
   }
 
   public static BlockletIndex getBlockletIndex(List<EncodedTablePage> encodedTablePageList,
@@ -248,6 +131,7 @@ public class CarbonMetadataUtil {
         encodedTablePageList.get(0).getMeasures());
     byte[][] minCol = stats.getDimensionMinValue().clone();
     byte[][] maxCol = stats.getDimensionMaxValue().clone();
+
     for (EncodedTablePage encodedTablePage : encodedTablePageList) {
       stats = new TablePageStatistics(encodedTablePage.getDimensions(),
           encodedTablePage.getMeasures());
@@ -312,112 +196,6 @@ public class CarbonMetadataUtil {
   }
 
   /**
-   * Below method will be used to get the blocklet info object for data version
-   * 2 file
-   *
-   * @param blockletInfoColumnar blocklet info
-   * @param dataChunkOffsets     data chunks offsets
-   * @param dataChunksLength     data chunks length
-   * @return blocklet info version 2
-   */
-  private static BlockletInfo2 getBlockletInfo2(BlockletInfoColumnar blockletInfoColumnar,
-      List<Long> dataChunkOffsets, List<Short> dataChunksLength) {
-    BlockletInfo2 blockletInfo = new BlockletInfo2();
-    blockletInfo.setNum_rows(blockletInfoColumnar.getNumberOfKeys());
-    blockletInfo.setColumn_data_chunks_length(dataChunksLength);
-    blockletInfo.setColumn_data_chunks_offsets(dataChunkOffsets);
-    return blockletInfo;
-  }
-
-  private static BlockletInfo getBlockletInfo(BlockletInfoColumnar blockletInfoColumnar,
-      List<ColumnSchema> columnSchema, SegmentProperties segmentProperties) throws IOException {
-
-    BlockletInfo blockletInfo = new BlockletInfo();
-    blockletInfo.setNum_rows(blockletInfoColumnar.getNumberOfKeys());
-
-    List<DataChunk> colDataChunks = new ArrayList<DataChunk>();
-    int j = 0;
-    int aggregateIndex = 0;
-    boolean[] isSortedKeyColumn = blockletInfoColumnar.getIsSortedKeyColumn();
-    boolean[] aggKeyBlock = blockletInfoColumnar.getAggKeyBlock();
-    for (int i = 0; i < blockletInfoColumnar.getKeyLengths().length; i++) {
-      DataChunk dataChunk = new DataChunk();
-      dataChunk.setChunk_meta(getSnappyChunkCompressionMeta());
-      List<Encoding> encodings = new ArrayList<Encoding>();
-      if (containsEncoding(i, Encoding.DICTIONARY, columnSchema, segmentProperties)) {
-        encodings.add(Encoding.DICTIONARY);
-      }
-      if (containsEncoding(i, Encoding.DIRECT_DICTIONARY, columnSchema, segmentProperties)) {
-        encodings.add(Encoding.DIRECT_DICTIONARY);
-      }
-      // TODO : Once schema PR is merged and information needs to be passed
-      // here.
-      dataChunk.setColumn_ids(new ArrayList<Integer>());
-      dataChunk.setData_page_length(blockletInfoColumnar.getKeyLengths()[i]);
-      dataChunk.setData_page_offset(blockletInfoColumnar.getKeyOffSets()[i]);
-      if (aggKeyBlock[i]) {
-        dataChunk.setRle_page_offset(blockletInfoColumnar.getDataIndexMapOffsets()[aggregateIndex]);
-        dataChunk.setRle_page_length(blockletInfoColumnar.getDataIndexMapLength()[aggregateIndex]);
-        encodings.add(Encoding.RLE);
-        aggregateIndex++;
-      }
-      dataChunk
-          .setSort_state(isSortedKeyColumn[i] ? SortState.SORT_EXPLICIT : SortState.SORT_NATIVE);
-
-      if (!isSortedKeyColumn[i]) {
-        dataChunk.setRowid_page_offset(blockletInfoColumnar.getKeyBlockIndexOffSets()[j]);
-        dataChunk.setRowid_page_length(blockletInfoColumnar.getKeyBlockIndexLength()[j]);
-        if (!encodings.contains(Encoding.INVERTED_INDEX)) {
-          encodings.add(Encoding.INVERTED_INDEX);
-        }
-        j++;
-      }
-
-      // TODO : Right now the encodings are happening at runtime. change as per
-      // this encoders.
-      dataChunk.setEncoders(encodings);
-
-      colDataChunks.add(dataChunk);
-    }
-
-    for (int i = 0; i < blockletInfoColumnar.getMeasureLength().length; i++) {
-      DataChunk dataChunk = new DataChunk();
-      dataChunk.setChunk_meta(getSnappyChunkCompressionMeta());
-      dataChunk.setRowMajor(false);
-      // TODO : Once schema PR is merged and information needs to be passed
-      // here.
-      dataChunk.setColumn_ids(new ArrayList<Integer>());
-      dataChunk.setData_page_length(blockletInfoColumnar.getMeasureLength()[i]);
-      dataChunk.setData_page_offset(blockletInfoColumnar.getMeasureOffset()[i]);
-      // TODO : Right now the encodings are happening at runtime. change as per
-      // this encoders.
-      List<Encoding> encodings = new ArrayList<Encoding>();
-      encodings.add(Encoding.DELTA);
-      dataChunk.setEncoders(encodings);
-      // TODO writing dummy presence meta need to set actual presence
-      // meta
-      PresenceMeta presenceMeta = new PresenceMeta();
-      presenceMeta.setPresent_bit_streamIsSet(true);
-      presenceMeta
-          .setPresent_bit_stream(blockletInfoColumnar.getMeasureNullValueIndex()[i].toByteArray());
-      dataChunk.setPresence(presenceMeta);
-      // TODO : PresenceMeta needs to be implemented and set here
-      // dataChunk.setPresence(new PresenceMeta());
-      // TODO : Need to write ValueCompression meta here.
-      List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
-      encoderMetaList.add(
-          ByteBuffer.wrap(
-              serializeEncoderMeta(
-                      blockletInfoColumnar.getEncodedTablePage().getMeasure(i).getMetaData())));
-      dataChunk.setEncoder_meta(encoderMetaList);
-      colDataChunks.add(dataChunk);
-    }
-    blockletInfo.setColumn_data_chunks(colDataChunks);
-
-    return blockletInfo;
-  }
-
-  /**
    * @param blockIndex
    * @param encoding
    * @param columnSchemas
@@ -439,31 +217,10 @@ public class CarbonMetadataUtil {
     return false;
   }
 
-  private static byte[] serializeEncoderMeta(ValueEncoderMeta encoderMeta) throws IOException {
-    // TODO : should remove the unnecessary fields.
-    ByteArrayOutputStream aos = new ByteArrayOutputStream();
-    ObjectOutputStream objStream = new ObjectOutputStream(aos);
-    objStream.writeObject(encoderMeta);
-    objStream.close();
-    return aos.toByteArray();
-  }
-
   /**
    * Right now it is set to default values. We may use this in future
    */
   public static ChunkCompressionMeta getSnappyChunkCompressionMeta() {
-    ChunkCompressionMeta chunkCompressionMeta = new ChunkCompressionMeta();
-    chunkCompressionMeta.setCompression_codec(CompressionCodec.SNAPPY);
-    chunkCompressionMeta.setTotal_compressed_size(0);
-    chunkCompressionMeta.setTotal_uncompressed_size(0);
-    return chunkCompressionMeta;
-  }
-
-
-  /**
-   * Right now it is set to default values. We may use this in future
-   */
-  private static ChunkCompressionMeta getChunkCompressionMeta() {
     ChunkCompressionMeta chunkCompressionMeta = new ChunkCompressionMeta();
     chunkCompressionMeta.setCompression_codec(CompressionCodec.SNAPPY);
     chunkCompressionMeta.setTotal_compressed_size(0);
@@ -522,89 +279,6 @@ public class CarbonMetadataUtil {
   }
 
   /**
-   * Below method will be used to get the data chunk object for all the columns
-   *
-   * @param blockletInfoColumnar blocklet info
-   * @param columnSchema        list of columns
-   * @param segmentProperties    segment properties
-   * @return list of data chunks
-   * @throws IOException
-   */
-  public static List<DataChunk2> getDatachunk2(BlockletInfoColumnar blockletInfoColumnar,
-      List<ColumnSchema> columnSchema, SegmentProperties segmentProperties) throws IOException {
-    List<DataChunk2> colDataChunks = new ArrayList<DataChunk2>();
-    int rowIdIndex = 0;
-    int aggregateIndex = 0;
-    boolean[] isSortedKeyColumn = blockletInfoColumnar.getIsSortedKeyColumn();
-    boolean[] aggKeyBlock = blockletInfoColumnar.getAggKeyBlock();
-    for (int i = 0; i < blockletInfoColumnar.getKeyLengths().length; i++) {
-      DataChunk2 dataChunk = new DataChunk2();
-      dataChunk.setChunk_meta(getChunkCompressionMeta());
-      List<Encoding> encodings = new ArrayList<Encoding>();
-      if (containsEncoding(i, Encoding.DICTIONARY, columnSchema, segmentProperties)) {
-        encodings.add(Encoding.DICTIONARY);
-      }
-      if (containsEncoding(i, Encoding.DIRECT_DICTIONARY, columnSchema, segmentProperties)) {
-        encodings.add(Encoding.DIRECT_DICTIONARY);
-      }
-      // TODO : Once schema PR is merged and information needs to be passed
-      // here.
-      dataChunk.setData_page_length(blockletInfoColumnar.getKeyLengths()[i]);
-      if (aggKeyBlock[i]) {
-        dataChunk.setRle_page_length(blockletInfoColumnar.getDataIndexMapLength()[aggregateIndex]);
-        encodings.add(Encoding.RLE);
-        aggregateIndex++;
-      }
-      dataChunk
-          .setSort_state(isSortedKeyColumn[i] ? SortState.SORT_EXPLICIT : SortState.SORT_NATIVE);
-
-      if (!isSortedKeyColumn[i]) {
-        dataChunk.setRowid_page_length(blockletInfoColumnar.getKeyBlockIndexLength()[rowIdIndex]);
-        encodings.add(Encoding.INVERTED_INDEX);
-        rowIdIndex++;
-      }
-
-      // TODO : Right now the encodings are happening at runtime. change as per
-      // this encoders.
-      dataChunk.setEncoders(encodings);
-
-      colDataChunks.add(dataChunk);
-    }
-
-    for (int i = 0; i < blockletInfoColumnar.getMeasureLength().length; i++) {
-      DataChunk2 dataChunk = new DataChunk2();
-      dataChunk.setChunk_meta(getChunkCompressionMeta());
-      dataChunk.setRowMajor(false);
-      // TODO : Once schema PR is merged and information needs to be passed
-      // here.
-      dataChunk.setData_page_length(blockletInfoColumnar.getMeasureLength()[i]);
-      // TODO : Right now the encodings are happening at runtime. change as per
-      // this encoders.
-      List<Encoding> encodings = new ArrayList<Encoding>();
-      encodings.add(Encoding.DELTA);
-      dataChunk.setEncoders(encodings);
-      // TODO writing dummy presence meta need to set actual presence
-      // meta
-      PresenceMeta presenceMeta = new PresenceMeta();
-      presenceMeta.setPresent_bit_streamIsSet(true);
-      presenceMeta.setPresent_bit_stream(CompressorFactory.getInstance().getCompressor()
-          .compressByte(blockletInfoColumnar.getMeasureNullValueIndex()[i].toByteArray()));
-      dataChunk.setPresence(presenceMeta);
-      // TODO : PresenceMeta needs to be implemented and set here
-      // dataChunk.setPresence(new PresenceMeta());
-      // TODO : Need to write ValueCompression meta here.
-      List<ByteBuffer> encoderMetaList = new ArrayList<ByteBuffer>();
-      encoderMetaList.add(
-          ByteBuffer.wrap(
-              serializeEncoderMeta(
-                      blockletInfoColumnar.getEncodedTablePage().getMeasure(i).getMetaData())));
-      dataChunk.setEncoder_meta(encoderMetaList);
-      colDataChunks.add(dataChunk);
-    }
-    return colDataChunks;
-  }
-
-  /**
    * return DataChunk3 that contains the input DataChunk2 list
    */
   public static DataChunk3 getDataChunk3(List<DataChunk2> dataChunksList) {
@@ -634,7 +308,7 @@ public class CarbonMetadataUtil {
       int columnIndex) throws IOException {
     List<DataChunk2> dataChunksList = new ArrayList<>(encodedTablePageList.size());
     for (EncodedTablePage encodedTablePage : encodedTablePageList) {
-      dataChunksList.add(encodedTablePage.getDimension(columnIndex).getDataChunk2());
+      dataChunksList.add(encodedTablePage.getDimension(columnIndex).getPageMetadata());
     }
     return CarbonMetadataUtil.getDataChunk3(dataChunksList);
   }
@@ -647,7 +321,7 @@ public class CarbonMetadataUtil {
       int columnIndex) throws IOException {
     List<DataChunk2> dataChunksList = new ArrayList<>(encodedTablePageList.size());
     for (EncodedTablePage encodedTablePage : encodedTablePageList) {
-      dataChunksList.add(encodedTablePage.getMeasure(columnIndex).getDataChunk2());
+      dataChunksList.add(encodedTablePage.getMeasure(columnIndex).getPageMetadata());
     }
     return CarbonMetadataUtil.getDataChunk3(dataChunksList);
   }

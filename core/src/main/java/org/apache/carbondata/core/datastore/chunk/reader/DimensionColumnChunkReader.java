@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.memory.MemoryException;
 
 /**
  * Interface for reading the data chunk
@@ -58,5 +59,5 @@ public interface DimensionColumnChunkReader {
    * @throws IOException
    */
   DimensionColumnDataChunk convertToDimensionChunk(DimensionRawColumnChunk dimensionRawColumnChunk,
-      int pageNumber) throws IOException;
+      int pageNumber) throws IOException, MemoryException;
 }

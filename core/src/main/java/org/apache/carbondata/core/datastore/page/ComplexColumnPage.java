@@ -43,7 +43,7 @@ public class ComplexColumnPage {
     this.depth = depth;
     complexColumnData = new ArrayList<>(depth);
     for (int i = 0; i < depth; i++) {
-      complexColumnData.add(new ArrayList<byte[]>(pageSize));
+      complexColumnData.add(new ArrayList<byte[]>());
     }
   }
 

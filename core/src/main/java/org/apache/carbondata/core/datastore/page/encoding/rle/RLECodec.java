@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.encoding;
+package org.apache.carbondata.core.datastore.page.encoding.rle;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -24,13 +24,16 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
-import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.CodecMetaFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.format.Encoding;
 
 /**
  * RLE encoding implementation for integral column page.
@@ -47,40 +50,20 @@ public class RLECodec implements ColumnPageCodec {
 
   enum RUN_STATE { INIT, START, REPEATED_RUN, NONREPEATED_RUN }
 
-  private DataType dataType;
-  private int pageSize;
-
-  /**
-   * New RLECodec
-   * @param dataType data type of the raw column page before encode
-   * @param pageSize page size of the raw column page before encode
-   */
-  RLECodec(DataType dataType, int pageSize) {
-    this.dataType = dataType;
-    this.pageSize = pageSize;
-  }
-
   @Override
   public String getName() {
     return "RLECodec";
   }
 
   @Override
-  public EncodedColumnPage encode(ColumnPage input) throws MemoryException, IOException {
-    Encoder encoder = new Encoder();
-    return encoder.encode(input);
+  public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
+    return new RLEEncoder();
   }
 
   @Override
-  public EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input) {
-    throw new UnsupportedOperationException("complex column does not support RLE encoding");
-  }
-
-  @Override
-  public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException,
-      IOException {
-    Decoder decoder = new Decoder(dataType, pageSize);
-    return decoder.decode(input, offset, length);
+  public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
+    RLEEncoderMeta codecMeta = (RLEEncoderMeta) meta;
+    return new RLEDecoder(codecMeta.getDataType(), codecMeta.getPageSize());
   }
 
   // This codec supports integral type only
@@ -96,7 +79,7 @@ public class RLECodec implements ColumnPageCodec {
     }
   }
 
-  private class Encoder {
+  private class RLEEncoder extends ColumnPageEncoder {
     // While encoding RLE, this class internally work as a state machine
     // INIT state is the initial state before any value comes
     // START state is the start for each run
@@ -120,7 +103,7 @@ public class RLECodec implements ColumnPageCodec {
     private ByteArrayOutputStream bao;
     private DataOutputStream stream;
 
-    private Encoder() {
+    private RLEEncoder() {
       this.runState = RUN_STATE.INIT;
       this.valueCount = 0;
       this.nonRepeatValues = new ArrayList<>();
@@ -128,7 +111,8 @@ public class RLECodec implements ColumnPageCodec {
       this.stream = new DataOutputStream(bao);
     }
 
-    private EncodedColumnPage encode(ColumnPage input) throws MemoryException, IOException {
+    @Override
+    protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
       validateDataType(input.getDataType());
       this.dataType = input.getDataType();
       switch (dataType) {
@@ -160,13 +144,20 @@ public class RLECodec implements ColumnPageCodec {
           throw new UnsupportedOperationException(input.getDataType() +
               " does not support RLE encoding");
       }
-      byte[] encoded = collectResult();
-      SimpleStatsResult stats = (SimpleStatsResult) input.getStatistics();
-      return new EncodedMeasurePage(
-          input.getPageSize(),
-          encoded,
-          CodecMetaFactory.createMeta(stats, input.getDataType()),
-          stats.getNullBits());
+      return collectResult();
+    }
+
+    @Override
+    protected List<Encoding> getEncodingList() {
+      List<Encoding> encodings = new ArrayList<>();
+      encodings.add(Encoding.RLE_INTEGRAL);
+      return encodings;
+    }
+
+    @Override
+    protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
+      return new RLEEncoderMeta(
+          inputPage.getDataType(), inputPage.getPageSize(), inputPage.getStatistics());
     }
 
     private void putValue(Object value) throws IOException {
@@ -297,19 +288,20 @@ public class RLECodec implements ColumnPageCodec {
 
   // It decodes data in one shot. It is suitable for scan query
   // TODO: add a on-the-fly decoder for filter query with high selectivity
-  private class Decoder {
+  private class RLEDecoder implements ColumnPageDecoder {
 
     // src data type
     private DataType dataType;
     private int pageSize;
 
-    private Decoder(DataType dataType, int pageSize) throws MemoryException {
+    private RLEDecoder(DataType dataType, int pageSize) {
       validateDataType(dataType);
       this.dataType = dataType;
       this.pageSize = pageSize;
     }
 
-    private ColumnPage decode(byte[] input, int offset, int length)
+    @Override
+    public ColumnPage decode(byte[] input, int offset, int length)
         throws MemoryException, IOException {
       DataInputStream in = new DataInputStream(new ByteArrayInputStream(input, offset, length));
       ColumnPage resultPage = ColumnPage.newPage(dataType, pageSize);
@@ -416,4 +408,5 @@ public class RLECodec implements ColumnPageCodec {
       } while (in.available() > 0);
     }
   }
+
 }

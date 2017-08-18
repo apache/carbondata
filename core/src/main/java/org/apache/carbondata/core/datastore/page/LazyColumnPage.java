@@ -29,35 +29,35 @@ public class LazyColumnPage extends ColumnPage {
   private ColumnPage columnPage;
 
   // encode that will apply to page data in getXXX
-  private PrimitiveCodec codec;
+  private ColumnPageValueConverter converter;
 
-  private LazyColumnPage(ColumnPage columnPage, PrimitiveCodec codec) {
+  private LazyColumnPage(ColumnPage columnPage, ColumnPageValueConverter converter) {
     super(columnPage.getDataType(), columnPage.getPageSize(), columnPage.scale,
         columnPage.precision);
     this.columnPage = columnPage;
-    this.codec = codec;
+    this.converter = converter;
   }
 
-  public static ColumnPage newPage(ColumnPage columnPage, PrimitiveCodec codec) {
+  public static ColumnPage newPage(ColumnPage columnPage, ColumnPageValueConverter codec) {
     return new LazyColumnPage(columnPage, codec);
   }
 
   @Override
   public String toString() {
-    return String.format("[encode: %s, data type: %s", codec, columnPage.getDataType());
+    return String.format("[converter: %s, data type: %s", converter, columnPage.getDataType());
   }
 
   @Override
   public long getLong(int rowId) {
     switch (columnPage.getDataType()) {
       case BYTE:
-        return codec.decodeLong(columnPage.getByte(rowId));
+        return converter.decodeLong(columnPage.getByte(rowId));
       case SHORT:
-        return codec.decodeLong(columnPage.getShort(rowId));
+        return converter.decodeLong(columnPage.getShort(rowId));
       case SHORT_INT:
-        return codec.decodeLong(columnPage.getShortInt(rowId));
+        return converter.decodeLong(columnPage.getShortInt(rowId));
       case INT:
-        return codec.decodeLong(columnPage.getInt(rowId));
+        return converter.decodeLong(columnPage.getInt(rowId));
       case LONG:
         return columnPage.getLong(rowId);
       default:
@@ -69,17 +69,17 @@ public class LazyColumnPage extends ColumnPage {
   public double getDouble(int rowId) {
     switch (columnPage.getDataType()) {
       case BYTE:
-        return codec.decodeDouble(columnPage.getByte(rowId));
+        return converter.decodeDouble(columnPage.getByte(rowId));
       case SHORT:
-        return codec.decodeDouble(columnPage.getShort(rowId));
+        return converter.decodeDouble(columnPage.getShort(rowId));
       case SHORT_INT:
-        return codec.decodeDouble(columnPage.getShortInt(rowId));
+        return converter.decodeDouble(columnPage.getShortInt(rowId));
       case INT:
-        return codec.decodeDouble(columnPage.getInt(rowId));
+        return converter.decodeDouble(columnPage.getInt(rowId));
       case LONG:
-        return codec.decodeDouble(columnPage.getLong(rowId));
+        return converter.decodeDouble(columnPage.getLong(rowId));
       case FLOAT:
-        return codec.decodeDouble(columnPage.getFloat(rowId));
+        return converter.decodeDouble(columnPage.getFloat(rowId));
       case DOUBLE:
         return columnPage.getDouble(rowId);
       default:
@@ -95,6 +95,11 @@ public class LazyColumnPage extends ColumnPage {
   @Override
   public BigDecimal getDecimal(int rowId) {
     return columnPage.getDecimal(rowId);
+  }
+
+  @Override
+  public byte[] getBytes(int rowId) {
+    return columnPage.getBytes(rowId);
   }
 
   @Override
@@ -153,7 +158,7 @@ public class LazyColumnPage extends ColumnPage {
   }
 
   @Override
-  public void encode(PrimitiveCodec codec) {
+  public void convertValue(ColumnPageValueConverter codec) {
     throw new UnsupportedOperationException("internal error");
   }
 

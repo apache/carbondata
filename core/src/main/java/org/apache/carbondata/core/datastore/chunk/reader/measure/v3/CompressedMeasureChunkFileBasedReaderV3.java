@@ -21,17 +21,16 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.ColumnPageCodecMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
+import org.apache.carbondata.format.Encoding;
 
 import org.apache.commons.lang.ArrayUtils;
 
@@ -115,8 +114,6 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     rawColumnChunk.setMaxValues(maxValueOfEachPage);
     rawColumnChunk.setMinValues(minValueOfEachPage);
     rawColumnChunk.setRowCount(eachPageLength);
-    rawColumnChunk.setLengths(ArrayUtils
-        .toPrimitive(dataChunk.page_length.toArray(new Integer[dataChunk.page_length.size()])));
     rawColumnChunk.setOffsets(ArrayUtils
         .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
     return rawColumnChunk;
@@ -184,8 +181,6 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
       measureRawColumnChunk.setMaxValues(maxValueOfEachPage);
       measureRawColumnChunk.setMinValues(minValueOfEachPage);
       measureRawColumnChunk.setRowCount(eachPageLength);
-      measureRawColumnChunk.setLengths(ArrayUtils
-          .toPrimitive(dataChunk.page_length.toArray(new Integer[dataChunk.page_length.size()])));
       measureRawColumnChunk.setOffsets(ArrayUtils
           .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
       measureDataChunk[index] = measureRawColumnChunk;
@@ -198,45 +193,38 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
   /**
    * Below method will be used to convert the compressed measure chunk raw data to actual data
    *
-   * @param measureRawColumnChunk measure raw chunk
+   * @param rawColumnPage measure raw chunk
    * @param pageNumber            number
    * @return DimensionColumnDataChunk
    */
   @Override
-  public MeasureColumnDataChunk convertToMeasureChunk(
-      MeasureRawColumnChunk measureRawColumnChunk, int pageNumber)
+  public ColumnPage convertToColumnPage(
+      MeasureRawColumnChunk rawColumnPage, int pageNumber)
       throws IOException, MemoryException {
-    MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();
     // data chunk of blocklet column
-    DataChunk3 dataChunk3 = measureRawColumnChunk.getDataChunkV3();
+    DataChunk3 dataChunk3 = rawColumnPage.getDataChunkV3();
     // data chunk of page
-    DataChunk2 measureColumnChunk = dataChunk3.getData_chunk_list().get(pageNumber);
+    DataChunk2 pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset
-    int copyPoint = measureRawColumnChunk.getOffSet() + measureColumnChunkLength
-        .get(measureRawColumnChunk.getBlockletId()) + dataChunk3.getPage_offset().get(pageNumber);
-    ColumnPage decodedPage = decodeMeasure(measureRawColumnChunk, measureColumnChunk, copyPoint);
-
-    // set the data chunk
-    datChunk.setColumnPage(decodedPage);
-    // set the null value indexes
-    datChunk.setNullValueIndexHolder(getPresenceMeta(measureColumnChunk.presence));
-    return datChunk;
+    int offset = rawColumnPage.getOffSet() +
+        measureColumnChunkLength.get(rawColumnPage.getBlockletId()) +
+        dataChunk3.getPage_offset().get(pageNumber);
+    ColumnPage decodedPage = decodeMeasure(pageMetadata, rawColumnPage.getRawData(), offset);
+    decodedPage.setNullBits(getNullBitSet(pageMetadata.presence));
+    return decodedPage;
   }
 
-  protected ColumnPage decodeMeasure(MeasureRawColumnChunk measureRawColumnChunk,
-      DataChunk2 measureColumnChunk, int copyPoint) throws MemoryException, IOException {
-    List<ByteBuffer> encoder_meta = measureColumnChunk.getEncoder_meta();
-    // for measure, it should have only one ValueEncoderMeta
-    assert (encoder_meta.size() > 0);
-    byte[] encodedMeta = encoder_meta.get(0).array();
-
-    ColumnPageCodecMeta meta = new ColumnPageCodecMeta();
-    meta.deserialize(encodedMeta);
-    ColumnPageCodec codec = strategy.newCodec(meta);
-    byte[] rawData = measureRawColumnChunk.getRawData().array();
-    return codec.decode(rawData, copyPoint, measureColumnChunk.data_page_length);
+  /**
+   * Decode measure column page with page header and raw data starting from offset
+   */
+  private ColumnPage decodeMeasure(DataChunk2 pageMetadata, ByteBuffer pageData, int offset)
+      throws MemoryException, IOException {
+    List<Encoding> encodings = pageMetadata.getEncoders();
+    List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
+    ColumnPageDecoder codec = strategy.createDecoder(encodings, encoderMetas);
+    return codec.decode(pageData.array(), offset, pageMetadata.data_page_length);
   }
 
 }

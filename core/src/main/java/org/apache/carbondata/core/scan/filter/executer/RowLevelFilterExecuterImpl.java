@@ -35,8 +35,8 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDataChunk;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -340,21 +340,21 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       }
 
       Object msrValue;
-      MeasureColumnDataChunk measureColumnDataChunk =
+      ColumnPage columnPage =
           blockChunkHolder.getMeasureRawDataChunk()[measureBlocksIndex[0]]
-              .convertToMeasureColDataChunk(pageIndex);
+              .convertToColumnPage(pageIndex);
       switch (msrType) {
         case SHORT:
-          msrValue = (short) measureColumnDataChunk.getColumnPage().getLong(index);
+          msrValue = (short) columnPage.getLong(index);
           break;
         case INT:
-          msrValue = (int) measureColumnDataChunk.getColumnPage().getLong(index);
+          msrValue = (int) columnPage.getLong(index);
           break;
         case LONG:
-          msrValue = measureColumnDataChunk.getColumnPage().getLong(index);
+          msrValue = columnPage.getLong(index);
           break;
         case DECIMAL:
-          BigDecimal bigDecimalValue = measureColumnDataChunk.getColumnPage().getDecimal(index);
+          BigDecimal bigDecimalValue = columnPage.getDecimal(index);
           if (null != bigDecimalValue &&
               msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale() >
                   bigDecimalValue.scale()) {
@@ -366,10 +366,10 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           msrValue = bigDecimalValue;
           break;
         default:
-          msrValue = measureColumnDataChunk.getColumnPage().getDouble(index);
+          msrValue = columnPage.getDouble(index);
       }
       record[msrColumnEvalutorInfo.getRowIndex()] =
-          measureColumnDataChunk.getNullValueIndexHolder().getBitSet().get(index) ? null : msrValue;
+          columnPage.getNullBits().get(index) ? null : msrValue;
     }
     row.setValues(record);
   }

@@ -44,10 +44,6 @@ import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
-import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
-import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
-import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
-import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
@@ -83,11 +79,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * file channel
    */
   protected FileChannel fileChannel;
-  /**
-   * this will be used for holding blocklet metadata
-   */
-  protected List<BlockletInfoColumnar> blockletInfoList;
-  protected boolean[] isNoDictionary;
   /**
    * The temp path of carbonData file used on executor
    */
@@ -166,8 +157,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
 
   public AbstractFactDataWriter(CarbonDataWriterVo dataWriterVo) {
     this.dataWriterVo = dataWriterVo;
-    this.blockletInfoList =
-        new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     blockIndexInfoList = new ArrayList<>();
     // get max file size;
     CarbonProperties propInstance = CarbonProperties.getInstance();
@@ -246,13 +235,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
   }
 
   /**
-   * @param isNoDictionary the isNoDictionary to set
-   */
-  public void setIsNoDictionary(boolean[] isNoDictionary) {
-    this.isNoDictionary = isNoDictionary;
-  }
-
-  /**
    * This method will be used to update the file channel with new file if exceeding block size
    * threshold, new file will be created once existing file reached the file size limit This
    * method will first check whether existing file size is exceeded the file
@@ -272,8 +254,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       // write meta data to end of the existing file
       writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
       this.currentFileSize = 0;
-      blockletInfoList =
-          new ArrayList<BlockletInfoColumnar>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
       this.dataChunksOffsets = new ArrayList<>();
       this.dataChunksLength = new ArrayList<>();
       this.blockletMetadata = new ArrayList<>();
@@ -407,41 +387,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    * @param carbonDataFileName The name of carbonData file
    * @param currentPosition current offset
    */
-  protected void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
-      long currentPosition) {
-
-    // as min-max will change for each blocklet and second blocklet min-max can be lesser than
-    // the first blocklet so we need to calculate the complete block level min-max by taking
-    // the min value of each column and max value of each column
-    byte[][] currentMinValue = blockletInfoList.get(0).getColumnMinData().clone();
-    byte[][] currentMaxValue = blockletInfoList.get(0).getColumnMaxData().clone();
-    byte[][] minValue = null;
-    byte[][] maxValue = null;
-    for (int i = 1; i < blockletInfoList.size(); i++) {
-      minValue = blockletInfoList.get(i).getColumnMinData();
-      maxValue = blockletInfoList.get(i).getColumnMaxData();
-      for (int j = 0; j < maxValue.length; j++) {
-        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMinValue[j], minValue[j]) > 0) {
-          currentMinValue[j] = minValue[j].clone();
-        }
-        if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMaxValue[j], maxValue[j]) < 0) {
-          currentMaxValue[j] = maxValue[j].clone();
-        }
-      }
-    }
-    // start and end key we can take based on first blocklet
-    // start key will be the block start key as
-    // it is the least key and end blocklet end key will be the block end key as it is the max key
-    BlockletBTreeIndex btree = new BlockletBTreeIndex(blockletInfoList.get(0).getStartKey(),
-        blockletInfoList.get(blockletInfoList.size() - 1).getEndKey());
-    BlockletMinMaxIndex minmax = new BlockletMinMaxIndex();
-    minmax.setMinValues(currentMinValue);
-    minmax.setMaxValues(currentMaxValue);
-    BlockletIndex blockletIndex = new BlockletIndex(btree, minmax);
-    BlockIndexInfo blockIndexInfo =
-        new BlockIndexInfo(numberOfRows, carbonDataFileName, currentPosition, blockletIndex);
-    blockIndexInfoList.add(blockIndexInfo);
-  }
+  protected abstract void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
+      long currentPosition);
 
   protected List<org.apache.carbondata.format.ColumnSchema> getColumnSchemaListAndCardinality(
       List<Integer> cardinality, int[] dictionaryColumnCardinality,
@@ -465,24 +412,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       }
     }
     return columnSchemaList;
-  }
-
-  /**
-   * Method will be used to close the open file channel
-   *
-   * @throws CarbonDataWriterException
-   */
-  public void closeWriter() throws CarbonDataWriterException {
-    if (this.blockletInfoList.size() > 0) {
-      commitCurrentFile(true);
-      try {
-        writeIndexFile();
-      } catch (IOException e) {
-        throw new CarbonDataWriterException("Problem while writing the index file", e);
-      }
-    }
-    CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
-    closeExecutorService();
   }
 
   /**
@@ -613,27 +542,6 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
       CarbonUtil.closeStream(dataInputStream);
       CarbonUtil.closeStream(dataOutputStream);
     }
-  }
-
-  /**
-   * Write leaf meta data to File.
-   *
-   * @throws CarbonDataWriterException
-   */
-  @Override public void writeFooterToFile() throws CarbonDataWriterException {
-    if (this.blockletInfoList.size() > 0) {
-      writeBlockletInfoToFile(fileChannel, carbonDataFileTempPath);
-    }
-  }
-
-  /**
-   * Below method will be used to update the min or max value
-   * by removing the length from it
-   *
-   * @return min max value without length
-   */
-  protected byte[] updateMinMaxForNoDictionary(byte[] valueWithLength) {
-    return valueWithLength;
   }
 
   /**

@@ -216,7 +216,8 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test check results of table with complex data type and bucketing") {
     sql("drop table if exists create_source")
-    sql("create table create_source(intField int, stringField string, complexField array<int>) USING org.apache.spark.sql.CarbonSource OPTIONS('bucketnumber'='1', 'bucketcolumns'='stringField', 'tableName'='create_source')")
+    sql("create table create_source(intField int, stringField string, complexField array<int>) " +
+        "USING org.apache.spark.sql.CarbonSource OPTIONS('bucketnumber'='1', 'bucketcolumns'='stringField', 'tableName'='create_source')")
     sql("""insert into create_source values(1,"source","1$2$3")""")
     checkAnswer(sql("select * from create_source"), Row(1,"source", mutable.WrappedArray.newBuilder[Int].+=(1,2,3)))
     sql("drop table if exists create_source")

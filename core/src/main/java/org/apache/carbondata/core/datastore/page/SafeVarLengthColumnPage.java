@@ -57,6 +57,11 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override
+  public byte[] getBytes(int rowId) {
+    return byteArrayData[rowId];
+  }
+
+  @Override
   public void setByteArrayPage(byte[][] byteArray) {
     byteArrayData = byteArray;
   }

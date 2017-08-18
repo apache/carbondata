@@ -17,13 +17,10 @@
 
 package org.apache.carbondata.core.datastore.page;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.columnar.IndexStorage;
+import java.io.IOException;
+
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedDimensionPage;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedMeasurePage;
 import org.apache.carbondata.core.datastore.page.key.TablePageKey;
-import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Table page that after encoding and compression.
@@ -31,10 +28,10 @@ import org.apache.carbondata.core.util.CarbonUtil;
 public class EncodedTablePage {
 
   // encoded data and metadata for each dimension column
-  private EncodedDimensionPage[] dimensions;
+  private EncodedColumnPage[] dimensionPages;
 
   // encoded data and metadata for each measure column
-  private EncodedMeasurePage[] measures;
+  private EncodedColumnPage[] measurePages;
 
   // key of this page
   private TablePageKey pageKey;
@@ -49,59 +46,40 @@ public class EncodedTablePage {
     EncodedTablePage page = new EncodedTablePage();
     page.pageSize = 0;
     page.encodedSize = 0;
-    page.measures = new EncodedMeasurePage[0];
-    page.dimensions = new EncodedDimensionPage[0];
+    page.dimensionPages = new EncodedColumnPage[0];
+    page.measurePages = new EncodedColumnPage[0];
     return page;
   }
 
   public static EncodedTablePage newInstance(int pageSize,
-      EncodedDimensionPage[] dimensions, EncodedMeasurePage[] measures,
-      TablePageKey tablePageKey) {
-    return new EncodedTablePage(pageSize, dimensions, measures, tablePageKey);
+      EncodedColumnPage[] dimensionPages, EncodedColumnPage[] measurePages,
+      TablePageKey tablePageKey) throws IOException {
+    return new EncodedTablePage(pageSize, dimensionPages, measurePages, tablePageKey);
   }
 
   private EncodedTablePage() {
   }
 
-  private EncodedTablePage(int pageSize, EncodedDimensionPage[] encodedDimensions,
-      EncodedMeasurePage[] encodedMeasures, TablePageKey tablePageKey) {
-    this.dimensions = encodedDimensions;
-    this.measures = encodedMeasures;
+  private EncodedTablePage(int pageSize,
+      EncodedColumnPage[] dimensionPages, EncodedColumnPage[] measurePages,
+      TablePageKey tablePageKey) throws IOException {
+    this.dimensionPages = dimensionPages;
+    this.measurePages = measurePages;
     this.pageSize = pageSize;
     this.pageKey = tablePageKey;
-    this.encodedSize = calculatePageSize(encodedDimensions, encodedMeasures);
+    this.encodedSize = calculatePageSize(dimensionPages, measurePages);
   }
 
   // return size in bytes of this encoded page
-  private int calculatePageSize(EncodedDimensionPage[] encodedDimensions,
-      EncodedMeasurePage[] encodedMeasures) {
+  private int calculatePageSize(EncodedColumnPage[] dimensionPages,
+      EncodedColumnPage[] measurePages) throws IOException {
     int size = 0;
-    int totalEncodedDimensionDataLength = 0;
-    int totalEncodedMeasuredDataLength = 0;
-    // add row id index length
-    for (EncodedDimensionPage dimension : dimensions) {
-      IndexStorage indexStorage = dimension.getIndexStorage();
-      if (!indexStorage.isAlreadySorted()) {
-        size += indexStorage.getRowIdPageLengthInBytes() +
-            indexStorage.getRowIdRlePageLengthInBytes() +
-            CarbonCommonConstants.INT_SIZE_IN_BYTE;
-      }
-      if (indexStorage.getDataRlePageLengthInBytes() > 0) {
-        size += indexStorage.getDataRlePageLengthInBytes();
-      }
-      totalEncodedDimensionDataLength += dimension.getEncodedData().length;
+    for (EncodedColumnPage dimensionPage : dimensionPages) {
+      size += dimensionPage.getTotalSerializedSize();
     }
-    for (EncodedColumnPage measure : measures) {
-      size += measure.getEncodedData().length;
+    for (EncodedColumnPage measurePage : measurePages) {
+      size += measurePage.getTotalSerializedSize();
     }
-
-    for (EncodedDimensionPage encodedDimension : encodedDimensions) {
-      size += CarbonUtil.getByteArray(encodedDimension.getDataChunk2()).length;
-    }
-    for (EncodedMeasurePage encodedMeasure : encodedMeasures) {
-      size += CarbonUtil.getByteArray(encodedMeasure.getDataChunk2()).length;
-    }
-    size += totalEncodedDimensionDataLength + totalEncodedMeasuredDataLength;
     return size;
   }
 
@@ -114,30 +92,30 @@ public class EncodedTablePage {
   }
 
   public int getNumDimensions() {
-    return dimensions.length;
+    return dimensionPages.length;
   }
 
   public int getNumMeasures() {
-    return measures.length;
+    return measurePages.length;
   }
 
   public TablePageKey getPageKey() {
     return pageKey;
   }
 
-  public EncodedMeasurePage getMeasure(int measureIndex) {
-    return measures[measureIndex];
+  public EncodedColumnPage getDimension(int dimensionIndex) {
+    return dimensionPages[dimensionIndex];
   }
 
-  public EncodedMeasurePage[] getMeasures() {
-    return measures;
+  public EncodedColumnPage getMeasure(int measureIndex) {
+    return measurePages[measureIndex];
   }
 
-  public EncodedDimensionPage getDimension(int dimensionIndex) {
-    return dimensions[dimensionIndex];
+  public EncodedColumnPage[] getDimensions() {
+    return dimensionPages;
   }
 
-  public EncodedDimensionPage[] getDimensions() {
-    return dimensions;
+  public EncodedColumnPage[] getMeasures() {
+    return measurePages;
   }
 }

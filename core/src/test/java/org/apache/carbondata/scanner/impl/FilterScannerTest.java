@@ -104,11 +104,11 @@ public class FilterScannerTest {
 //        return dimensionChunkAttributes;
 //      }
 //
-//      @Mock @SuppressWarnings("unused") MeasureColumnDataChunk[] getMeasureChunks(
+//      @Mock @SuppressWarnings("unused") ColumnPage[] getMeasureChunks(
 //          FileHolder fileReader, int[][] blockIndexes) {
 //
-//        MeasureColumnDataChunk[] measureColumnDataChunks = { new MeasureColumnDataChunk() };
-//        return measureColumnDataChunks;
+//        ColumnPage[] ColumnPages = { new ColumnPage() };
+//        return ColumnPages;
 //      }
 //    }.getMockInstance();
 //
@@ -120,10 +120,10 @@ public class FilterScannerTest {
 //    blocksChunkHolder.setDimensionRawDataChunk(new DimensionColumnDataChunk[]
 //
 //        { dimensionColumnDataChunk });
-//    MeasureColumnDataChunk measureColumnDataChunk = new MeasureColumnDataChunk();
-//    blocksChunkHolder.setMeasureDataChunk(new MeasureColumnDataChunk[]
+//    ColumnPage ColumnPage = new ColumnPage();
+//    blocksChunkHolder.setMeasureDataChunk(new ColumnPage[]
 //
-//        { measureColumnDataChunk });
+//        { ColumnPage });
 //    FileHolder fileHolder = new DFSFileHolderImpl();
 //    blocksChunkHolder.setFileReader(fileHolder);
 //    AbstractScannedResult abstractScannedResult = filterScanner.scanBlocklet(blocksChunkHolder);
