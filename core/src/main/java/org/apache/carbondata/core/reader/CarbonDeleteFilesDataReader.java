@@ -87,13 +87,7 @@ public class CarbonDeleteFilesDataReader {
     List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>();
     ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
     for (final String deltaFile : deltaFiles) {
-      taskSubmitList.add(executorService.submit(new Callable<DeleteDeltaBlockDetails>() {
-        @Override public DeleteDeltaBlockDetails call() throws IOException {
-          CarbonDeleteDeltaFileReaderImpl deltaFileReader =
-              new CarbonDeleteDeltaFileReaderImpl(deltaFile, FileFactory.getFileType(deltaFile));
-          return deltaFileReader.readJson();
-        }
-      }));
+      taskSubmitList.add(executorService.submit(new DeleteDeltaFileReaderCallable(deltaFile)));
     }
     try {
       executorService.shutdown();
@@ -136,13 +130,7 @@ public class CarbonDeleteFilesDataReader {
     List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>();
     ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
     for (final String deltaFile : deltaFiles) {
-      taskSubmitList.add(executorService.submit(new Callable<DeleteDeltaBlockDetails>() {
-        @Override public DeleteDeltaBlockDetails call() throws IOException {
-          CarbonDeleteDeltaFileReaderImpl deltaFileReader =
-              new CarbonDeleteDeltaFileReaderImpl(deltaFile, FileFactory.getFileType(deltaFile));
-          return deltaFileReader.readJson();
-        }
-      }));
+      taskSubmitList.add(executorService.submit(new DeleteDeltaFileReaderCallable(deltaFile)));
     }
     try {
       executorService.shutdown();
@@ -183,13 +171,7 @@ public class CarbonDeleteFilesDataReader {
     List<Future<DeleteDeltaBlockDetails>> taskSubmitList = new ArrayList<>(deltaFiles.size());
     ExecutorService executorService = Executors.newFixedThreadPool(thread_pool_size);
     for (final String deltaFile : deltaFiles) {
-      taskSubmitList.add(executorService.submit(new Callable<DeleteDeltaBlockDetails>() {
-        @Override public DeleteDeltaBlockDetails call() throws IOException {
-          CarbonDeleteDeltaFileReaderImpl deltaFileReader =
-              new CarbonDeleteDeltaFileReaderImpl(deltaFile, FileFactory.getFileType(deltaFile));
-          return deltaFileReader.readJson();
-        }
-      }));
+      taskSubmitList.add(executorService.submit(new DeleteDeltaFileReaderCallable(deltaFile)));
     }
     try {
       executorService.shutdown();
@@ -215,6 +197,17 @@ public class CarbonDeleteFilesDataReader {
       }
     }
     return deleteDeltaResultSet;
+  }
+  private static class DeleteDeltaFileReaderCallable implements Callable<DeleteDeltaBlockDetails> {
+    private String deltaFile;
+    DeleteDeltaFileReaderCallable(String deltaFile) {
+      this.deltaFile = deltaFile;
+    }
+    @Override public DeleteDeltaBlockDetails call() throws IOException {
+      CarbonDeleteDeltaFileReaderImpl deltaFileReader =
+          new CarbonDeleteDeltaFileReaderImpl(deltaFile, FileFactory.getFileType(deltaFile));
+      return deltaFileReader.readJson();
+    }
   }
 }
 

@@ -205,7 +205,7 @@ public final class CarbonDataMergerUtil {
     // Update the Compacted Blocks with Compacted Status.
     try {
       updatedDeltaFilesList = segmentUpdateStatusManager
-          .getUpdateDeltaFiles(loadsToMerge.get(0).getLoadName().toString());
+          .getUpdateDeltaFiles(loadsToMerge.get(0).getLoadName());
     } catch (Exception e) {
       LOGGER.error("Error while getting the Update Delta Blocks.");
       status = false;
@@ -935,10 +935,8 @@ public final class CarbonDataMergerUtil {
         for (String segName : deleteSegments) {
           List<String> tempSegments = getDeleteDeltaFilesInSeg(segName, segmentUpdateStatusManager,
               numberDeleteDeltaFilesThreshold);
-          if (tempSegments != null) {
-            for (String tempSeg : tempSegments) {
-              validSegments.add(tempSeg);
-            }
+          for (String tempSeg : tempSegments) {
+            validSegments.add(tempSeg);
           }
         }
       }
