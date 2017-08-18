@@ -17,8 +17,11 @@
 
 package org.apache.carbondata.processing.newflow.row;
 
+import java.util.NoSuchElementException;
+
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+
 
 /**
  * Batch of rows.
@@ -47,8 +50,12 @@ public class CarbonRowBatch extends CarbonIterator<CarbonRow> {
     return index < size;
   }
 
-  @Override public CarbonRow next() {
-    return rowBatch[index++];
+  @Override
+  public CarbonRow next() throws NoSuchElementException {
+    if (hasNext()) {
+      return rowBatch[index++];
+    }
+    throw new NoSuchElementException("no more elements to iterate");
   }
 
   @Override public void remove() {

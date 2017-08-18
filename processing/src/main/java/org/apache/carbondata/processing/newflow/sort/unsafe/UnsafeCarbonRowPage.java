@@ -157,6 +157,9 @@ public class UnsafeCarbonRowPage {
                     address + size, bigDecimalInBytes.length);
             size += bigDecimalInBytes.length;
             break;
+          default:
+            throw  new IllegalArgumentException("unsupported data type:" +
+                measureDataType[mesCount]);
         }
         set(nullSetWords, mesCount);
       } else {
@@ -240,6 +243,9 @@ public class UnsafeCarbonRowPage {
             size += bigDecimalInBytes.length;
             rowToFill[dimensionSize + mesCount] = DataTypeUtil.byteToBigDecimal(bigDecimalInBytes);
             break;
+          default:
+            throw new IllegalArgumentException("unsupported data type:" +
+                measureDataType[mesCount]);
         }
       } else {
         rowToFill[dimensionSize + mesCount] = null;
@@ -326,6 +332,9 @@ public class UnsafeCarbonRowPage {
             stream.writeShort(aShort);
             stream.write(bigDecimalInBytes);
             break;
+          default:
+            throw new IllegalArgumentException("unsupported data type:" +
+                measureDataType[mesCount]);
         }
       }
     }

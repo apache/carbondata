@@ -24,7 +24,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -198,27 +197,28 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
 
     for (final File tempFile : files) {
 
-      Callable<Void> runnable = new Callable<Void>() {
-        @Override public Void call() throws CarbonSortKeyAndGroupByException {
-          // create chunk holder
-          SortTempFileChunkHolder sortTempFileChunkHolder =
-              new SortTempFileChunkHolder(tempFile, dimensionCount, complexDimensionCount,
-                  measureCount, fileBufferSize, noDictionaryCount, measureDataType,
-                  isNoDictionaryColumn, isNoDictionarySortColumn);
+      Runnable runnable = new Runnable() {
+        @Override public void run() {
 
-          // initialize
-          sortTempFileChunkHolder.initialize();
-          sortTempFileChunkHolder.readRow();
+            // create chunk holder
+            SortTempFileChunkHolder sortTempFileChunkHolder =
+                new SortTempFileChunkHolder(tempFile, dimensionCount, complexDimensionCount,
+                    measureCount, fileBufferSize, noDictionaryCount, measureDataType,
+                    isNoDictionaryColumn, isNoDictionarySortColumn);
+          try {
+            // initialize
+            sortTempFileChunkHolder.initialize();
+            sortTempFileChunkHolder.readRow();
+          } catch (CarbonSortKeyAndGroupByException ex) {
+            LOGGER.error(ex);
+          }
 
           synchronized (LOCKOBJECT) {
             recordHolderHeapLocal.add(sortTempFileChunkHolder);
           }
-
-          // add to heap
-          return null;
         }
       };
-      service.submit(runnable);
+      service.execute(runnable);
     }
     service.shutdown();
 

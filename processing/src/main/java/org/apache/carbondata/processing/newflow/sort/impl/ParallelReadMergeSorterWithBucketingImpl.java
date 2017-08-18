@@ -18,7 +18,6 @@ package org.apache.carbondata.processing.newflow.sort.impl;
 
 import java.io.File;
 import java.util.Iterator;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -104,7 +103,7 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
     final int batchSize = CarbonProperties.getInstance().getBatchSize();
     try {
       for (int i = 0; i < iterators.length; i++) {
-        executorService.submit(new SortIteratorThread(iterators[i], sortDataRows, rowCounter,
+        executorService.execute(new SortIteratorThread(iterators[i], sortDataRows, rowCounter,
             this.threadStatusObserver));
       }
       executorService.shutdown();
@@ -197,7 +196,7 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
   /**
    * This thread iterates the iterator and adds the rows to @{@link SortDataRows}
    */
-  private static class SortIteratorThread implements Callable<Void> {
+  private static class SortIteratorThread implements Runnable {
 
     private Iterator<CarbonRowBatch> iterator;
 
@@ -215,7 +214,8 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
       this.threadStatusObserver = observer;
     }
 
-    @Override public Void call() throws CarbonDataLoadingException {
+    @Override
+    public void run() {
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
@@ -234,9 +234,7 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
       } catch (Exception e) {
         LOGGER.error(e);
         this.threadStatusObserver.notifyFailed(e);
-        throw new CarbonDataLoadingException(e);
       }
-      return null;
     }
 
   }
