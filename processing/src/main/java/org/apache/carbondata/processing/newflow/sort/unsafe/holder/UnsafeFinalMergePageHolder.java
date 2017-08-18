@@ -76,6 +76,23 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
     return comparator.compare(currentRow, o.getRow());
   }
 
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof UnsafeFinalMergePageHolder)) {
+      return false;
+    }
+
+    UnsafeFinalMergePageHolder o = (UnsafeFinalMergePageHolder) obj;
+    return this == o;
+  }
+
+  @Override public int hashCode() {
+    return super.hashCode();
+  }
+
   public int numberOfRows() {
     return actualSize;
   }

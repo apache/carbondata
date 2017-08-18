@@ -116,7 +116,7 @@ public class UnsafeIntermediateMerger {
             .nanoTime() + CarbonCommonConstants.MERGERD_EXTENSION);
     UnsafeIntermediateFileMerger merger =
         new UnsafeIntermediateFileMerger(parameters, intermediateFiles, file);
-    executorService.submit(merger);
+    executorService.execute(merger);
   }
 
   public void startInmemoryMergingIfPossible() throws CarbonSortKeyAndGroupByException {
@@ -149,7 +149,7 @@ public class UnsafeIntermediateMerger {
     UnsafeInMemoryIntermediateDataMerger merger =
         new UnsafeInMemoryIntermediateDataMerger(rowPages, totalRows);
     mergedPages.add(merger);
-    executorService.submit(merger);
+    executorService.execute(merger);
   }
 
   private int getTotalNumberOfRows(List<UnsafeCarbonRowPage> unsafeCarbonRowPages) {

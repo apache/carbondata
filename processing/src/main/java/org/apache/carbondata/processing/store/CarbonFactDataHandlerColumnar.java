@@ -190,14 +190,14 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       }
     }
     this.version = CarbonProperties.getInstance().getFormatVersion();
-    String noInvertedIdxCol = "";
+    StringBuffer noInvertedIdxCol = new StringBuffer();
     for (CarbonDimension cd : model.getSegmentProperties().getDimensions()) {
       if (!cd.isUseInvertedIndex()) {
-        noInvertedIdxCol += (cd.getColName() + ",");
+        noInvertedIdxCol.append(cd.getColName()).append(",");
       }
     }
 
-    LOGGER.info("Columns considered as NoInverted Index are " + noInvertedIdxCol);
+    LOGGER.info("Columns considered as NoInverted Index are " + noInvertedIdxCol.toString());
   }
 
   private void initParameters(CarbonFactDataHandlerModel model) {

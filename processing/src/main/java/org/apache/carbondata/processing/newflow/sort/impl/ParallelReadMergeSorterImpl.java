@@ -18,7 +18,6 @@ package org.apache.carbondata.processing.newflow.sort.impl;
 
 import java.io.File;
 import java.util.Iterator;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -100,7 +99,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
 
     try {
       for (int i = 0; i < iterators.length; i++) {
-        executorService.submit(
+        executorService.execute(
             new SortIteratorThread(iterators[i], sortDataRow, batchSize, rowCounter,
                 threadStatusObserver));
       }
@@ -183,7 +182,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
   /**
    * This thread iterates the iterator and adds the rows to @{@link SortDataRows}
    */
-  private static class SortIteratorThread implements Callable<Void> {
+  private static class SortIteratorThread implements Runnable {
 
     private Iterator<CarbonRowBatch> iterator;
 
@@ -206,7 +205,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
     }
 
     @Override
-    public Void call() throws CarbonDataLoadingException {
+    public void run() {
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
@@ -225,9 +224,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
       } catch (Exception e) {
         LOGGER.error(e);
         observer.notifyFailed(e);
-        throw new CarbonDataLoadingException(e);
       }
-      return null;
     }
 
   }

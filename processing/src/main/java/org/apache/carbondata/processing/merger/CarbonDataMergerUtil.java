@@ -169,8 +169,7 @@ public final class CarbonDataMergerUtil {
 
     String timestamp = "" + carbonLoadModel.getFactTimeStamp();
 
-    List<String> updatedDeltaFilesList =
-        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<String> updatedDeltaFilesList = null;
 
     // This routine updateLoadMetadataIUDCompactionMergeStatus is suppose to update
     // two files as it is only called during IUD_UPDDEL_DELTA_COMPACTION. Along with
@@ -259,23 +258,16 @@ public final class CarbonDataMergerUtil {
             }
           }
 
-          try {
-            segmentUpdateStatusManager
-                .writeLoadDetailsIntoFile(Arrays.asList(updateLists), timestamp);
-            segmentStatusManager
-                .writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath(), loadDetails);
-            status = true;
-          } catch (IOException e) {
-            LOGGER.error(
-                "Error while writing metadata. The metadata file path is " + carbonTablePath
-                    .getMetadataDirectoryPath());
-            status = false;
-          }
+          segmentUpdateStatusManager
+              .writeLoadDetailsIntoFile(Arrays.asList(updateLists), timestamp);
+          segmentStatusManager
+              .writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath(), loadDetails);
+          status = true;
         } else {
           LOGGER.error("Not able to acquire the lock.");
           status = false;
         }
-      } catch (Exception e) {
+      } catch (IOException e) {
         LOGGER.error("Error while updating metadata. The metadata file path is " + carbonTablePath
             .getMetadataDirectoryPath());
         status = false;
@@ -456,13 +448,7 @@ public final class CarbonDataMergerUtil {
       @Override public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
         double seg1Id = Double.parseDouble(seg1.getLoadName());
         double seg2Id = Double.parseDouble(seg2.getLoadName());
-        if (seg1Id - seg2Id < 0) {
-          return -1;
-        }
-        if (seg1Id - seg2Id > 0) {
-          return 1;
-        }
-        return 0;
+        return Double.compare(seg1Id, seg2Id);
       }
     });
   }
