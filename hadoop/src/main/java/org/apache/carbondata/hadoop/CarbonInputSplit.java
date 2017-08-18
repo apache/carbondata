@@ -307,6 +307,27 @@ public class CarbonInputSplit extends FileSplit
     return 0;
   }
 
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof CarbonInputSplit)) {
+      return false;
+    }
+    CarbonInputSplit other = (CarbonInputSplit) obj;
+    return 0 == this.compareTo(other);
+  }
+
+  @Override public int hashCode() {
+    int result = taskId.hashCode();
+    result = 31 * result + segmentId.hashCode();
+    result = 31 * result + bucketId.hashCode();
+    result = 31 * result + invalidSegments.hashCode();
+    result = 31 * result + numberOfBlocklets;
+    return result;
+  }
+
   @Override public String getBlockPath() {
     return getPath().getName();
   }

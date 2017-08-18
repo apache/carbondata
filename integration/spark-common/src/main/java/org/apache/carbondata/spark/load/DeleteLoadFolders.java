@@ -18,8 +18,6 @@
 package org.apache.carbondata.spark.load;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -129,8 +127,6 @@ public final class DeleteLoadFolders {
 
   public static boolean deleteLoadFoldersFromFileSystem(String dbName, String tableName,
       String storeLocation, boolean isForceDelete, LoadMetadataDetails[] details) {
-    List<LoadMetadataDetails> deletedLoads =
-        new ArrayList<LoadMetadataDetails>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     boolean isDeleted = false;
 
@@ -142,7 +138,6 @@ public final class DeleteLoadFolders {
           if (deletionStatus) {
             isDeleted = true;
             oneLoad.setVisibility("false");
-            deletedLoads.add(oneLoad);
             LOGGER.info("Info: Deleted the load " + oneLoad.getLoadName());
           }
         }

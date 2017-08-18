@@ -32,7 +32,6 @@ import java.util.Map;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
@@ -274,11 +273,6 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         invalidTimestampsList.add(updateStatusManager.getInvalidTimestampRange(invalidSegmentId));
       }
       if (invalidSegments.size() > 0) {
-        List<TableSegmentUniqueIdentifier> invalidSegmentsIds =
-            new ArrayList<>(invalidSegments.size());
-        for (String segId : invalidSegments) {
-          invalidSegmentsIds.add(new TableSegmentUniqueIdentifier(identifier, segId));
-        }
         blockletMap.clear(invalidSegments);
       }
     }
