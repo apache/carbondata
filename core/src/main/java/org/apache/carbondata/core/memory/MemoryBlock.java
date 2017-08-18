@@ -29,9 +29,15 @@ public class MemoryBlock extends MemoryLocation {
 
   private final long length;
 
+  /**
+   * whether freed or not
+   */
+  private boolean isFreed = false;
+
   public MemoryBlock(@Nullable Object obj, long offset, long length) {
     super(obj, offset);
     this.length = length;
+    this.isFreed = false;
   }
 
   /**
@@ -39,6 +45,14 @@ public class MemoryBlock extends MemoryLocation {
    */
   public long size() {
     return length;
+  }
+
+  public boolean isFreedStatus() {
+    return this.isFreed;
+  }
+
+  public void setFreedStatus(boolean freedStatus) {
+    this.isFreed = freedStatus;
   }
 
   /**

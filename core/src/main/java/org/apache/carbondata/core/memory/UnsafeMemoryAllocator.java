@@ -36,5 +36,6 @@ public class UnsafeMemoryAllocator implements MemoryAllocator {
     assert (memory.obj == null) :
       "baseObject not null; are you trying to use the off-heap allocator to free on-heap memory?";
     CarbonUnsafe.getUnsafe().freeMemory(memory.offset);
+    memory.setFreedStatus(true);
   }
 }
