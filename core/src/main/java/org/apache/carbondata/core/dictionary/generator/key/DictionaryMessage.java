@@ -55,7 +55,8 @@ public class DictionaryMessage {
   public void readData(ByteBuf byteBuf) {
     byte[] tableIdBytes = new byte[byteBuf.readInt()];
     byteBuf.readBytes(tableIdBytes);
-    tableUniqueId = new String(tableIdBytes);
+    tableUniqueId =
+        new String(tableIdBytes, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
 
     byte[] colBytes = new byte[byteBuf.readInt()];
     byteBuf.readBytes(colBytes);
@@ -79,7 +80,8 @@ public class DictionaryMessage {
     // Just reserve the bytes to add length of header at last.
     byteBuf.writeShort(Short.MAX_VALUE);
 
-    byte[] tableIdBytes = tableUniqueId.getBytes();
+    byte[] tableIdBytes =
+        tableUniqueId.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     byteBuf.writeInt(tableIdBytes.length);
     byteBuf.writeBytes(tableIdBytes);
 
