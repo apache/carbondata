@@ -20,7 +20,6 @@ import java.io.File;
 import java.util.Iterator;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -83,7 +82,7 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
 
     try {
       for (int i = 0; i < iterators.length; i++) {
-        executorService.submit(
+        executorService.execute(
             new SortIteratorThread(iterators[i], sortBatchHolder, batchSize, rowCounter,
                 this.threadStatusObserver));
       }
@@ -118,7 +117,7 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
   /**
    * This thread iterates the iterator and adds the rows
    */
-  private static class SortIteratorThread implements Callable<Void> {
+  private static class SortIteratorThread implements Runnable {
 
     private Iterator<CarbonRowBatch> iterator;
 
@@ -139,7 +138,8 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
       this.threadStatusObserver = threadStatusObserver;
     }
 
-    @Override public Void call() throws CarbonDataLoadingException {
+    @Override
+    public void run() {
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
@@ -164,11 +164,9 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
       } catch (Exception e) {
         LOGGER.error(e);
         this.threadStatusObserver.notifyFailed(e);
-        throw new CarbonDataLoadingException(e);
       } finally {
         sortDataRows.finishThread();
       }
-      return null;
     }
 
   }
@@ -283,7 +281,10 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
         // thread from waiting.
         if (finalMerger != null) {
           finalMerger.setStopProcess(true);
-          mergerQueue.offer(finalMerger);
+          boolean offered = mergerQueue.offer(finalMerger);
+          if (!offered) {
+            throw new CarbonDataLoadingException(e);
+          }
         }
         throw new CarbonDataLoadingException(e);
       }

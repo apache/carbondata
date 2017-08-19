@@ -78,6 +78,23 @@ public class UnsafeInmemoryMergeHolder implements Comparable<UnsafeInmemoryMerge
     return comparator.compare(currentRow, baseObject, o.getRow(), o.getBaseObject());
   }
 
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof UnsafeInmemoryMergeHolder)) {
+      return false;
+    }
+
+    UnsafeInmemoryMergeHolder o = (UnsafeInmemoryMergeHolder)obj;
+    return this == o;
+  }
+
+  @Override public int hashCode() {
+    return super.hashCode();
+  }
+
   public Object getBaseObject() {
     return baseObject;
   }

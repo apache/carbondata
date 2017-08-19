@@ -72,6 +72,24 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
     return comparator.compare(currentRow, o.getRow());
   }
 
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof UnsafeInmemoryHolder)) {
+      return false;
+    }
+
+    UnsafeInmemoryHolder o = (UnsafeInmemoryHolder)obj;
+
+    return this == o;
+  }
+
+  @Override public int hashCode() {
+    return super.hashCode();
+  }
+
   public int numberOfRows() {
     return actualSize;
   }

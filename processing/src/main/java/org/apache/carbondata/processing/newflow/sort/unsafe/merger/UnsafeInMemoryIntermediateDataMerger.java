@@ -19,7 +19,6 @@ package org.apache.carbondata.processing.newflow.sort.unsafe.merger;
 
 import java.util.AbstractQueue;
 import java.util.PriorityQueue;
-import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -28,7 +27,7 @@ import org.apache.carbondata.processing.newflow.sort.unsafe.holder.UnsafeCarbonR
 import org.apache.carbondata.processing.newflow.sort.unsafe.holder.UnsafeInmemoryMergeHolder;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 
-public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
+public class UnsafeInMemoryIntermediateDataMerger implements Runnable {
   /**
    * LOGGER
    */
@@ -68,7 +67,8 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
     this.entryCount = 0;
   }
 
-  @Override public Void call() throws Exception {
+  @Override
+  public void run() {
     long intermediateMergeStartTime = System.currentTimeMillis();
     int holderCounterConst = holderCounter;
     try {
@@ -83,7 +83,6 @@ public class UnsafeInMemoryIntermediateDataMerger implements Callable<Void> {
     } catch (Exception e) {
       LOGGER.error(e, "Problem while intermediate merging");
     }
-    return null;
   }
 
   /**
