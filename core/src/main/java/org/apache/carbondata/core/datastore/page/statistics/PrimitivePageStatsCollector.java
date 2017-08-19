@@ -249,12 +249,6 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     if (maxDouble < value) {
       maxDouble = value;
     }
-    int scale = BigDecimal.valueOf(value).scale();
-    if (scale < 0) {
-      decimal = scale;
-    } else {
-      decimal = Math.max(decimal, scale);
-    }
   }
 
   @Override
