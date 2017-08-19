@@ -190,14 +190,12 @@ public class CarbondataPageSource implements ConnectorPageSource {
   /**
    * Using the LazyBlockLoader
    */
-  private final class CarbonBlockLoader implements LazyBlockLoader<LazyBlock> {
+  private static final class CarbonBlockLoader implements LazyBlockLoader<LazyBlock> {
     private boolean loaded;
     private Block dataBlock;
-    private Type type;
 
     public CarbonBlockLoader(Block dataBlock, Type type) {
       this.dataBlock = dataBlock;
-      this.type = type;
     }
 
     @Override public void load(LazyBlock block) {

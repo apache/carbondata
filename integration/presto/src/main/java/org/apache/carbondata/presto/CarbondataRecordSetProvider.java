@@ -75,17 +75,18 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
         checkType(split, CarbondataSplit.class, "split is not class CarbondataSplit");
     checkArgument(carbondataSplit.getConnectorId().equals(connectorId), "split is not for this connector");
 
+    StringBuffer targetColsBuffer = new StringBuffer();
     String targetCols = "";
     // Convert all columns handles
     ImmutableList.Builder<CarbondataColumnHandle> handles = ImmutableList.builder();
     for (ColumnHandle handle : columns) {
       handles.add(checkType(handle, CarbondataColumnHandle.class, "handle"));
-      targetCols += ((CarbondataColumnHandle) handle).getColumnName() + ",";
+      targetColsBuffer.append(((CarbondataColumnHandle) handle).getColumnName()).append(",");
     }
 
     // Build column projection(check the column order)
-    if (targetCols.length() > 0) {
-      targetCols = targetCols.substring(0, targetCols.length() - 1);
+    if (targetColsBuffer.length() > 0) {
+      targetCols = targetColsBuffer.substring(0, targetCols.length() - 1);
     }
     else
     {
@@ -131,7 +132,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
       CarbondataColumnHandle cdch = (CarbondataColumnHandle) c;
       Type type = cdch.getColumnType();
 
-      DataType coltype = Spi2CarbondataTypeMapper(cdch);
+      DataType coltype = spi2CarbondataTypeMapper(cdch);
       Expression colExpression = new ColumnExpression(cdch.getColumnName(), coltype);
 
       domain = originalConstraint.getDomains().get().get(c);
@@ -151,7 +152,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
         } else {
           List<Expression> rangeConjuncts = new ArrayList<>();
           if (!range.getLow().isLowerUnbounded()) {
-            Object value = ConvertDataByType(range.getLow().getValue(), type);
+            Object value = convertDataByType(range.getLow().getValue(), type);
             switch (range.getLow().getBound()) {
               case ABOVE:
                 if (type == TimestampType.TIMESTAMP) {
@@ -175,7 +176,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
             }
           }
           if (!range.getHigh().isUpperUnbounded()) {
-            Object value = ConvertDataByType(range.getHigh().getValue(), type);
+            Object value = convertDataByType(range.getHigh().getValue(), type);
             switch (range.getHigh().getBound()) {
               case ABOVE:
                 throw new IllegalArgumentException("High marker should never use ABOVE bound");
@@ -211,7 +212,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
       } else if (singleValues.size() > 1) {
         ListExpression candidates = null;
         List<Expression> exs = singleValues.stream().map((a) -> {
-          return new LiteralExpression(ConvertDataByType(a, type), coltype);
+          return new LiteralExpression(convertDataByType(a, type), coltype);
         }).collect(Collectors.toList());
         candidates = new ListExpression(exs);
 
@@ -246,7 +247,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
         CarbonInputFormatUtil.resolveFilter(finalFilters, queryModel.getAbsoluteTableIdentifier()));
   }
 
-  public static DataType Spi2CarbondataTypeMapper(CarbondataColumnHandle carbondataColumnHandle) {
+  public static DataType spi2CarbondataTypeMapper(CarbondataColumnHandle carbondataColumnHandle) {
     Type colType = carbondataColumnHandle.getColumnType();
     if (colType == BooleanType.BOOLEAN) return DataType.BOOLEAN;
     else if (colType == SmallintType.SMALLINT) return DataType.SHORT;
@@ -261,8 +262,8 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     else return DataType.STRING;
   }
 
-  public Object ConvertDataByType(Object rawdata, Type type) {
-    if (type.equals(IntegerType.INTEGER)) return new Integer((rawdata.toString()));
+  public Object convertDataByType(Object rawdata, Type type) {
+    if (type.equals(IntegerType.INTEGER)) return Integer.valueOf(rawdata.toString());
     else if (type.equals(BigintType.BIGINT)) return (Long) rawdata;
     else if (type.equals(VarcharType.VARCHAR)) return ((Slice) rawdata).toStringUtf8();
     else if (type.equals(BooleanType.BOOLEAN)) return (Boolean) (rawdata);
