@@ -361,7 +361,6 @@ public class CarbonTableReader {
         tableCacheModel.carbonTable.getAbsoluteTableIdentifier();
     CacheClient cacheClient = new CacheClient(absoluteTableIdentifier.getStorePath());
     List<String> invalidSegments = new ArrayList<>();
-    List<UpdateVO> invalidTimestampsList = new ArrayList<>();
 
     // get all valid segments and set them into the configuration
     SegmentUpdateStatusManager updateStatusManager =
@@ -377,9 +376,6 @@ public class CarbonTableReader {
 
     // remove entry in the segment index if there are invalid segments
     invalidSegments.addAll(segments.getInvalidSegments());
-    for (String invalidSegmentId : invalidSegments) {
-      invalidTimestampsList.add(updateStatusManager.getInvalidTimestampRange(invalidSegmentId));
-    }
     if (invalidSegments.size() > 0) {
       List<TableSegmentUniqueIdentifier> invalidSegmentsIds =
           new ArrayList<>(invalidSegments.size());
@@ -536,8 +532,6 @@ public class CarbonTableReader {
     if (segmentIndexMap == null || isSegmentUpdated) {
 
       List<FileStatus> fileStatusList = new LinkedList<FileStatus>();
-      List<String> segs = new ArrayList<>();
-      segs.add(segmentId);
 
       FileSystem fs =
           getFileStatusOfSegments(new String[] { segmentId }, tablePath, fileStatusList);
@@ -556,7 +550,7 @@ public class CarbonTableReader {
 
       List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
       for (FileSplit inputSplit : carbonSplits) {
-        if ((null == updateDetails) || ((null != updateDetails) && isValidBlockBasedOnUpdateDetails(
+        if ((null == updateDetails) || (isValidBlockBasedOnUpdateDetails(
             taskKeys, inputSplit, updateDetails, updateStatusManager, segmentId))) {
 
           BlockletInfos blockletInfos = new BlockletInfos(0, 0,
