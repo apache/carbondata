@@ -123,7 +123,6 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     // getting the table absoluteTableIdentifier from the carbonTable
     // to avoid unnecessary deserialization
 
-    StringBuilder colNames = new StringBuilder();
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
 
     String projection = getProjection(configuration, carbonTable,

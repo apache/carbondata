@@ -166,7 +166,7 @@ class CarbonObjectInspector extends SettableStructObjectInspector {
     return hash;
   }
 
-  class StructFieldImpl implements StructField {
+  private static class StructFieldImpl implements StructField {
 
     private final String name;
     private final ObjectInspector inspector;
