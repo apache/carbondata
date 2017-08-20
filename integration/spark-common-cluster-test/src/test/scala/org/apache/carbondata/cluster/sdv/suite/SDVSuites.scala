@@ -113,6 +113,7 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
 
   val suites =      new AlterTableTestCase ::
                     new BatchSortLoad2TestCase ::
+                    new BucketingTestCase ::
                     new InvertedindexTestCase ::
                     new OffheapQuery1TestCase ::
                     new OffheapQuery2TestCase ::
