@@ -48,13 +48,8 @@ import org.junit.Test;
 public class DictionaryClientTest {
 
   private ColumnSchema empColumnSchema;
-  private CarbonDimension empDimension;
-  private ColumnSchema ageColumnSchema;
-  private CarbonDimension ageDimension;
-  private TableSchema tableSchema;
   private TableInfo tableInfo;
   private String storePath;
-  private DictionaryServer server;
 
   @Before public void setUp() throws Exception {
     // enable lru cache by setting cache size
@@ -67,17 +62,17 @@ public class DictionaryClientTest {
     empColumnSchema.setColumnUniqueId("empNameCol");
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
-    empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0, 0);
+    CarbonDimension empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0, 0);
 
-    ageColumnSchema = new ColumnSchema();
+    ColumnSchema ageColumnSchema = new ColumnSchema();
     ageColumnSchema.setColumnName("empNameCol");
     ageColumnSchema.setColumnUniqueId("empNameCol");
     ageColumnSchema.setDimensionColumn(true);
     ageColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
-    ageDimension = new CarbonDimension(ageColumnSchema, 0, 0, 0, 0, 0);
+    CarbonDimension ageDimension = new CarbonDimension(ageColumnSchema, 0, 0, 0, 0, 0);
 
     // Create a Table
-    tableSchema = new TableSchema();
+    TableSchema tableSchema = new TableSchema();
     tableSchema.setTableName("TestTable");
     tableSchema.setListOfColumns(Arrays.asList(empColumnSchema, ageColumnSchema));
     CarbonMetadata metadata = CarbonMetadata.getInstance();
@@ -94,7 +89,7 @@ public class DictionaryClientTest {
     metadata.addCarbonTable(carbonTable);
 
     // Start the server for testing the client
-    server = DictionaryServer.getInstance(5678);
+    DictionaryServer server = DictionaryServer.getInstance(5678);
   }
 
   @Test public void testClient() throws Exception {

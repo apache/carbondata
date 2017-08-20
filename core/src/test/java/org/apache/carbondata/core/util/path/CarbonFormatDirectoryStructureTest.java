@@ -31,13 +31,12 @@ import static junit.framework.TestCase.assertTrue;
  */
 public class CarbonFormatDirectoryStructureTest {
 
-  private final String CARBON_STORE = "/opt/carbonstore";
-
   /**
    * test table path methods
    */
   @Test public void testTablePathStructure() throws IOException {
     CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("d1", "t1", UUID.randomUUID().toString());
+    String CARBON_STORE = "/opt/carbonstore";
     CarbonStorePath carbonStorePath = new CarbonStorePath(CARBON_STORE);
     CarbonTablePath carbonTablePath = carbonStorePath.getCarbonTablePath(tableIdentifier);
     assertTrue(carbonTablePath.getPath().replace("\\", "/").equals(CARBON_STORE + "/d1/t1"));

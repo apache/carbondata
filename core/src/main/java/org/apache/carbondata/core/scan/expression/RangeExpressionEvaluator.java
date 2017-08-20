@@ -49,8 +49,6 @@ public class RangeExpressionEvaluator {
   private Expression expr;
   private Expression srcNode;
   private Expression srcParentNode;
-  private Expression tarNode;
-  private Expression tarParentNode;
 
   public RangeExpressionEvaluator(Expression expr) {
     this.expr = expr;
@@ -69,11 +67,11 @@ public class RangeExpressionEvaluator {
   }
 
   public void setTarNode(Expression expr) {
-    this.tarNode = expr;
+    Expression tarNode = expr;
   }
 
   public void setTarParentNode(Expression expr) {
-    this.tarParentNode = expr;
+    Expression tarParentNode = expr;
   }
 
   /**
@@ -276,7 +274,7 @@ public class RangeExpressionEvaluator {
   private boolean eligibleForRangeExpConv(Expression expChild) {
     for (Expression exp : expChild.getChildren()) {
       if (exp instanceof ColumnExpression) {
-        if (((ColumnExpression) exp).isDimension() == false) {
+        if (!((ColumnExpression) exp).isDimension()) {
           return false;
         }
         if ((((ColumnExpression) exp).getDimension().getDataType() == DataType.ARRAY) || (

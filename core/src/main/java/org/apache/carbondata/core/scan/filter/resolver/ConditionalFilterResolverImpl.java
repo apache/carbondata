@@ -46,7 +46,6 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
   private DimColumnResolvedFilterInfo dimColResolvedFilterInfo;
   private MeasureColumnResolvedFilterInfo msrColResolvedFilterInfo;
   private AbsoluteTableIdentifier tableIdentifier;
-  private boolean isMeasure;
 
   public ConditionalFilterResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier, boolean isMeasure) {
@@ -54,8 +53,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     this.isExpressionResolve = isExpressionResolve;
     this.isIncludeFilter = isIncludeFilter;
     this.tableIdentifier = tableIdentifier;
-    this.isMeasure = isMeasure;
-    if (isMeasure == false) {
+    boolean isMeasure1 = isMeasure;
+    if (!isMeasure) {
       this.dimColResolvedFilterInfo = new DimColumnResolvedFilterInfo();
     } else {
       this.msrColResolvedFilterInfo = new MeasureColumnResolvedFilterInfo();

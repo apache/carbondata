@@ -48,7 +48,7 @@ public class SortScopeOptions {
   }
 
   public enum SortScope {
-    NO_SORT, BATCH_SORT, LOCAL_SORT, GLOBAL_SORT;
+    NO_SORT, BATCH_SORT, LOCAL_SORT, GLOBAL_SORT
   }
 }
 

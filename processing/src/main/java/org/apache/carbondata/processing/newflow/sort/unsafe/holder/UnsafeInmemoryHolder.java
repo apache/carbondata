@@ -35,8 +35,6 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
 
   private Object[] currentRow;
 
-  private long address;
-
   private NewRowComparator comparator;
 
   private int columnSize;
@@ -59,7 +57,7 @@ public class UnsafeInmemoryHolder implements SortTempChunkHolder {
 
   public void readRow() {
     currentRow = new Object[columnSize];
-    address = rowPage.getBuffer().get(counter);
+    long address = rowPage.getBuffer().get(counter);
     rowPage.getRow(address + rowPage.getDataBlock().getBaseOffset(), currentRow);
     counter++;
   }

@@ -35,7 +35,6 @@ import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -159,8 +158,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     }
   }
 
-  public static void setTablePath(Configuration configuration, String tablePath)
-      throws IOException {
+  public static void setTablePath(Configuration configuration, String tablePath) {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
   }
 
@@ -229,8 +227,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     configuration.set(INPUT_FILES, CarbonUtil.getSegmentString(validFiles));
   }
 
-  private AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
-      throws IOException {
+  private AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration) {
     String dirs = configuration.get(INPUT_DIR, "");
     String[] inputPaths = StringUtils.split(dirs);
     if (inputPaths.length == 0) {
@@ -642,7 +639,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    * @throws KeyGenException
    */
   public BlockMappingVO getBlockRowCount(JobContext job, AbsoluteTableIdentifier identifier)
-      throws IOException, KeyGenException {
+      throws IOException {
     TableDataMap blockletMap = DataMapStoreManager.getInstance()
         .getDataMap(identifier, BlockletDataMap.NAME, BlockletDataMapFactory.class);
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);

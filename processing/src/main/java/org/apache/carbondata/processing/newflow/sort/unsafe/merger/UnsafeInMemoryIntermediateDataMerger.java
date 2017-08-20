@@ -91,8 +91,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Runnable {
    * @return sorted record sorted record
    * @throws CarbonSortKeyAndGroupByException
    */
-  private UnsafeCarbonRowForMerge getSortedRecordFromMemory()
-      throws CarbonSortKeyAndGroupByException {
+  private UnsafeCarbonRowForMerge getSortedRecordFromMemory() {
     UnsafeCarbonRowForMerge row = null;
 
     // poll the top object from heap
@@ -132,7 +131,7 @@ public class UnsafeInMemoryIntermediateDataMerger implements Runnable {
    *
    * @throws CarbonSortKeyAndGroupByException
    */
-  private void startSorting() throws CarbonSortKeyAndGroupByException {
+  private void startSorting() {
     LOGGER.info("Number of row pages in intermediate merger: " + this.holderCounter);
 
     // create record holder heap

@@ -121,8 +121,7 @@ public class CarbonMetadataUtil {
    * @return FileFooter
    */
   public static FileFooter3 convertFileFooterVersion3(List<BlockletInfo3> infoList,
-      List<BlockletIndex> blockletIndexs, int[] cardinalities, int numberOfColumns)
-      throws IOException {
+      List<BlockletIndex> blockletIndexs, int[] cardinalities, int numberOfColumns) {
     FileFooter3 footer = getFileFooter3(infoList, blockletIndexs, cardinalities, numberOfColumns);
     for (BlockletInfo3 info : infoList) {
       footer.addToBlocklet_info_list3(info);
@@ -631,7 +630,7 @@ public class CarbonMetadataUtil {
    * in `encodedTablePageList`
    */
   public static DataChunk3 getDimensionDataChunk3(List<EncodedTablePage> encodedTablePageList,
-      int columnIndex) throws IOException {
+      int columnIndex) {
     List<DataChunk2> dataChunksList = new ArrayList<>(encodedTablePageList.size());
     for (EncodedTablePage encodedTablePage : encodedTablePageList) {
       dataChunksList.add(encodedTablePage.getDimension(columnIndex).getDataChunk2());
@@ -644,7 +643,7 @@ public class CarbonMetadataUtil {
    * in `encodedTablePageList`
    */
   public static DataChunk3 getMeasureDataChunk3(List<EncodedTablePage> encodedTablePageList,
-      int columnIndex) throws IOException {
+      int columnIndex) {
     List<DataChunk2> dataChunksList = new ArrayList<>(encodedTablePageList.size());
     for (EncodedTablePage encodedTablePage : encodedTablePageList) {
       dataChunksList.add(encodedTablePage.getMeasure(columnIndex).getDataChunk2());

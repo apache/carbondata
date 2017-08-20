@@ -76,11 +76,7 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
       }
     }
 
-    if (!checkIfBatchIsProcessedCompletely(batch)) {
-      return true;
-    } else {
-      return false;
-    }
+    return !checkIfBatchIsProcessedCompletely(batch);
   }
 
   @Override public Object[] next() {

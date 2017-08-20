@@ -113,7 +113,7 @@ public class ViewFsCarbonFileTest {
         };
         new MockUp<ViewFileSystem>() {
             @Mock
-            public FileStatus[] listStatus(Path var1) throws IOException {
+            public FileStatus[] listStatus(Path var1) {
 
                 return null;
             }
@@ -121,7 +121,7 @@ public class ViewFsCarbonFileTest {
         };
         new MockUp<ViewFileSystem>() {
             @Mock
-            public boolean delete(Path var1, boolean var2) throws IOException {
+            public boolean delete(Path var1, boolean var2) {
 
                 return true;
             }
@@ -144,7 +144,7 @@ public class ViewFsCarbonFileTest {
         };
         new MockUp<ViewFileSystem>() {
             @Mock
-            public FileStatus[] listStatus(Path var1) throws IOException {
+            public FileStatus[] listStatus(Path var1) {
 
                 return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
@@ -215,7 +215,7 @@ public class ViewFsCarbonFileTest {
         };
         new MockUp<ViewFileSystem>() {
             @Mock
-            public FileStatus[] listStatus(Path var1) throws IOException {
+            public FileStatus[] listStatus(Path var1) {
 
                 return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
@@ -229,7 +229,7 @@ public class ViewFsCarbonFileTest {
     public void testGetParentFIle() {
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
@@ -251,7 +251,7 @@ public class ViewFsCarbonFileTest {
         };
         new MockUp<DistributedFileSystem>() {
             @Mock
-            public FileStatus getFileStatus(Path f) throws IOException {
+            public FileStatus getFileStatus(Path f) {
 
                 return new FileStatus(12L, true, 60, 120l, 180L, new Path(file.getAbsolutePath()));
             }
@@ -267,7 +267,7 @@ public class ViewFsCarbonFileTest {
         viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new WebHdfsFileSystem();
             }
 
@@ -286,8 +286,7 @@ public class ViewFsCarbonFileTest {
         };
         new MockUp<ViewFileSystem>() {
             @Mock
-            public boolean delete(Path f, boolean recursive) throws
-                    IOException {
+            public boolean delete(Path f, boolean recursive) {
                 return true;
 
             }
@@ -295,7 +294,7 @@ public class ViewFsCarbonFileTest {
         };
         new MockUp<ViewFileSystem>() {
             @Mock
-            public boolean rename(Path src, Path dst) throws IOException {
+            public boolean rename(Path src, Path dst) {
                 return true;
 
             }

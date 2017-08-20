@@ -134,7 +134,7 @@ public class DictionaryServer {
    *
    * @throws Exception
    */
-  public void shutdown() throws Exception {
+  public void shutdown() {
     LOGGER.info("Shutting down dictionary server");
     worker.shutdownGracefully();
     boss.shutdownGracefully();

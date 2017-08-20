@@ -65,8 +65,7 @@ public class ThriftReaderTest {
       }
     };
     new MockUp<ColumnDictionaryChunkMeta>() {
-      @Mock public void read(org.apache.thrift.protocol.TProtocol iprot)
-          throws org.apache.thrift.TException {
+      @Mock public void read(org.apache.thrift.protocol.TProtocol iprot) {
 
       }
 

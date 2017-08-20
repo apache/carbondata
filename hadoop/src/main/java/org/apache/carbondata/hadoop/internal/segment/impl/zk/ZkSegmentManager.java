@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.hadoop.internal.segment.impl.zk;
 
-import java.io.IOException;
-
 import org.apache.carbondata.hadoop.internal.segment.Segment;
 import org.apache.carbondata.hadoop.internal.segment.SegmentManager;
 
@@ -33,22 +31,22 @@ public class ZkSegmentManager implements SegmentManager {
   }
 
   @Override
-  public Segment openNewSegment() throws IOException {
+  public Segment openNewSegment() {
     return null;
   }
 
   @Override
-  public void commitSegment(Segment segment) throws IOException {
+  public void commitSegment(Segment segment) {
 
   }
 
   @Override
-  public void closeSegment(Segment segment) throws IOException {
+  public void closeSegment(Segment segment) {
 
   }
 
   @Override
-  public void deleteSegment(Segment segment) throws IOException {
+  public void deleteSegment(Segment segment) {
 
   }
 }

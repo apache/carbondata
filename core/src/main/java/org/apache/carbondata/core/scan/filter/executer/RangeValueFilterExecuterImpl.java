@@ -242,32 +242,32 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
     //         Filter Min <-----------------------------------------------> Filter Max
 
     if (isDimensionPresentInCurrentBlock) {
-      if (((lessThanExp == true) && (
+      if (((lessThanExp) && (
           ByteUtil.UnsafeComparer.INSTANCE.compareTo(blockMinValue, filterValues[1]) >= 0)) || (
-          (lessThanEqualExp == true) && (
+          (lessThanEqualExp) && (
               ByteUtil.UnsafeComparer.INSTANCE.compareTo(blockMinValue, filterValues[1]) > 0)) || (
-          (greaterThanExp == true) && (
+          (greaterThanExp) && (
               ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[0], blockMaxValue) >= 0)) || (
-          (greaterThanEqualExp == true) && (
+          (greaterThanEqualExp) && (
               ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[0], blockMaxValue) > 0))) {
         // completely out of block boundary
         isScanRequired = false;
       } else {
-        if (((greaterThanExp == true) && (
+        if (((greaterThanExp) && (
             ByteUtil.UnsafeComparer.INSTANCE.compareTo(blockMinValue, filterValues[0]) > 0)) || (
-            (greaterThanEqualExp == true) && (
+            (greaterThanEqualExp) && (
                 ByteUtil.UnsafeComparer.INSTANCE.compareTo(blockMinValue, filterValues[0]) >= 0))) {
           startBlockMinIsDefaultStart = true;
         }
 
-        if (((lessThanExp == true) && (
+        if (((lessThanExp) && (
             ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[1], blockMaxValue) > 0)) || (
-            (lessThanEqualExp == true) && (
+            (lessThanEqualExp) && (
                 ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[1], blockMaxValue) >= 0))) {
           endBlockMaxisDefaultEnd = true;
         }
 
-        if (startBlockMinIsDefaultStart == true && endBlockMaxisDefaultEnd == true) {
+        if (startBlockMinIsDefaultStart && endBlockMaxisDefaultEnd) {
           isRangeFullyCoverBlock = true;
         }
       }
@@ -303,7 +303,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
    * @throws IOException
    */
   public BitSetGroup applyNoAndDirectFilter(BlocksChunkHolder blockChunkHolder)
-      throws FilterUnsupportedException, IOException {
+      throws IOException {
 
     // In case of Alter Table Add and Delete Columns the isDimensionPresentInCurrentBlock can be
     // false, in that scenario the default values of the column should be shown.
@@ -330,7 +330,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
       if (rawColumnChunk.getMaxValues() != null) {
         if (isScanRequired(rawColumnChunk.getMinValues()[i], rawColumnChunk.getMaxValues()[i],
             this.filterRangesValues)) {
-          if (isRangeFullyCoverBlock == true) {
+          if (isRangeFullyCoverBlock) {
             // Set all the bits in this case as filter Min Max values cover the whole block.
             BitSet bitSet = new BitSet(rawColumnChunk.getRowCount()[i]);
             bitSet.flip(0, rawColumnChunk.getRowCount()[i]);
@@ -380,11 +380,11 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
     // For Range expression we expect two values. The First is the Min Value and Second is the
     // Max value.
     // Get the Min Value
-    if (startBlockMinIsDefaultStart == false) {
+    if (!startBlockMinIsDefaultStart) {
       start = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
               filterValues[0], greaterThanExp);
-      if (greaterThanExp == true && start >= 0) {
+      if (greaterThanExp && start >= 0) {
         start = CarbonUtil
             .nextGreaterValueToTarget(start, dimensionColumnDataChunk, filterValues[0],
                 numerOfRows);
@@ -410,12 +410,12 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
     }
 
     // Get the Max value
-    if (endBlockMaxisDefaultEnd == false) {
+    if (!endBlockMaxisDefaultEnd) {
       start = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
               filterValues[1], lessThanEqualExp);
 
-      if (lessThanExp == true && start >= 0) {
+      if (lessThanExp && start >= 0) {
         start =
             CarbonUtil.nextLesserValueToTarget(start, dimensionColumnDataChunk, filterValues[1]);
       }
@@ -481,13 +481,13 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
       int startIndex = 0;
       // For Range expression we expect two values. The First is the Min Value and Second is the
       // Max value.
-      if (startBlockMinIsDefaultStart == false) {
+      if (!startBlockMinIsDefaultStart) {
 
         start = CarbonUtil
             .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
                 filterValues[0], greaterThanExp);
 
-        if (greaterThanExp == true && start >= 0) {
+        if (greaterThanExp && start >= 0) {
           start = CarbonUtil
               .nextGreaterValueToTarget(start, dimensionColumnDataChunk, filterValues[0],
                   numerOfRows);
@@ -511,12 +511,12 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
         startMin = startIndex;
       }
 
-      if (endBlockMaxisDefaultEnd == false) {
+      if (!endBlockMaxisDefaultEnd) {
         start = CarbonUtil
             .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
                 filterValues[1], lessThanEqualExp);
 
-        if (lessThanExp == true && start >= 0) {
+        if (lessThanExp && start >= 0) {
           start =
               CarbonUtil.nextLesserValueToTarget(start, dimensionColumnDataChunk, filterValues[1]);
         }
@@ -651,7 +651,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
    * @throws IOException
    */
   @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
-    if (isDimensionPresentInCurrentBlock == true) {
+    if (isDimensionPresentInCurrentBlock) {
       int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
           .get(dimColEvaluatorInfo.getColumnIndex());
       if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {

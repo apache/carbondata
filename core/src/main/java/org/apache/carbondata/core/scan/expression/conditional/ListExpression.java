@@ -34,15 +34,12 @@ public class ListExpression extends Expression {
     this.children = children;
   }
 
-  @Override public ExpressionResult evaluate(RowIntf value) throws FilterUnsupportedException {
+  @Override public ExpressionResult evaluate(RowIntf value)
+      throws FilterUnsupportedException, FilterIllegalMemberException {
     List<ExpressionResult> listOfExprRes = new ArrayList<ExpressionResult>(10);
 
     for (Expression expr : children) {
-      try {
-        listOfExprRes.add(expr.evaluate(value));
-      } catch (FilterIllegalMemberException e) {
-        continue;
-      }
+      listOfExprRes.add(expr.evaluate(value));
     }
     return new ExpressionResult(listOfExprRes);
   }

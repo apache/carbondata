@@ -37,14 +37,6 @@ public class RangePartitioner implements Partitioner {
   private Object[] bounds;
   private SerializableComparator comparator;
 
-  private SimpleDateFormat timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
-
-  private SimpleDateFormat dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
-
   public RangePartitioner(PartitionInfo partitionInfo) {
     List<String> values = partitionInfo.getRangeInfo();
     DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
@@ -56,6 +48,12 @@ public class RangePartitioner implements Partitioner {
       }
     } else {
       for (int i = 0; i < numPartitions; i++) {
+        SimpleDateFormat dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+                CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
+        SimpleDateFormat timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
         bounds[i] = PartitionUtil.getDataBasedOnDataType(values.get(i), partitionColumnDataType,
             timestampFormatter, dateFormatter);
       }

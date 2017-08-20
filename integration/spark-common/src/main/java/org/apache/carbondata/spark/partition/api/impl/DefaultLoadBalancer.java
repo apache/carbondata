@@ -29,8 +29,6 @@ import org.apache.carbondata.spark.partition.api.Partition;
  * A sample load balancer to distribute the partitions to the available nodes in a round robin mode.
  */
 public class DefaultLoadBalancer {
-  private Map<String, List<Partition>> nodeToPartitonMap =
-      new HashMap<String, List<Partition>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   private Map<Partition, String> partitonToNodeMap =
       new HashMap<Partition, String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -44,6 +42,8 @@ public class DefaultLoadBalancer {
       int nodeindex = partitioner % nodeCount;
       String node = nodes.get(nodeindex);
 
+      Map<String, List<Partition>> nodeToPartitonMap =
+          new HashMap<String, List<Partition>>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
       List<Partition> oldList = nodeToPartitonMap.get(node);
       if (oldList == null) {
         oldList = new ArrayList<Partition>(CarbonCommonConstants.CONSTANT_SIZE_TEN);

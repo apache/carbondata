@@ -45,12 +45,8 @@ public class ColumnGroupDimensionDataChunkTest {
     byte[] data = new byte[keyGenerator.getKeySizeInBytes() * 3];
     int position = 0;
     for (int i = 1; i <= 3; i++) {
-      try {
-        System.arraycopy(keyGenerator.generateKey(new int[] { i, i, i }), 0, data, position,
-            keyGenerator.getKeySizeInBytes());
-      } catch (KeyGenException e) {
-        assertTrue(false);
-      }
+      System.arraycopy(keyGenerator.generateKey(new int[] { i, i, i }), 0, data, position,
+          keyGenerator.getKeySizeInBytes());
       position += keyGenerator.getKeySizeInBytes();
     }
     columnGroupDimensionDataChunk =

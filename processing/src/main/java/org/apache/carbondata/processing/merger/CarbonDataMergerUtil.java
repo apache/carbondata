@@ -245,7 +245,7 @@ public final class CarbonDataMergerUtil {
           }
 
           LoadMetadataDetails[] loadDetails =
-              segmentStatusManager.readLoadMetadata(metaDataFilepath);
+              SegmentStatusManager.readLoadMetadata(metaDataFilepath);
 
           for (LoadMetadataDetails loadDetail : loadDetails) {
             if (loadsToMerge.contains(loadDetail)) {
@@ -260,7 +260,7 @@ public final class CarbonDataMergerUtil {
 
           segmentUpdateStatusManager
               .writeLoadDetailsIntoFile(Arrays.asList(updateLists), timestamp);
-          segmentStatusManager
+          SegmentStatusManager
               .writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath(), loadDetails);
           status = true;
         } else {
@@ -1268,7 +1268,7 @@ public final class CarbonDataMergerUtil {
                         + " for table status updation");
 
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
-                segmentStatusManager.readLoadMetadata(metaDataFilepath);
+                SegmentStatusManager.readLoadMetadata(metaDataFilepath);
 
         for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
           if (loadMetadata.getLoadName().equalsIgnoreCase("0")) {
@@ -1277,7 +1277,7 @@ public final class CarbonDataMergerUtil {
           }
         }
         try {
-          segmentStatusManager
+          SegmentStatusManager
                   .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
         } catch (IOException e) {
           return false;
@@ -1315,7 +1315,7 @@ public final class CarbonDataMergerUtil {
     AbsoluteTableIdentifier absoluteTableIdentifier =
             model.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
-    LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metadataPath);
+    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metadataPath);
     List<LoadMetadataDetails> originalList = Arrays.asList(details);
     for (LoadMetadataDetails segment : changedSegDetails) {
       if (preservedSegment.contains(segment)) {
@@ -1339,7 +1339,7 @@ public final class CarbonDataMergerUtil {
                 .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
                         absoluteTableIdentifier.getCarbonTableIdentifier());
 
-        segmentStatusManager.writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath(),
+        SegmentStatusManager.writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath(),
                 originalList.toArray(new LoadMetadataDetails[originalList.size()]));
       } else {
         LOGGER.error(

@@ -190,8 +190,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       return this.carbonTable;
     }
   }
-  public static void setTablePath(Configuration configuration, String tablePath)
-      throws IOException {
+  public static void setTablePath(Configuration configuration, String tablePath) {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
   }
 
@@ -293,8 +292,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     configuration.set(CarbonInputFormat.INPUT_FILES, CarbonUtil.getSegmentString(validFiles));
   }
 
-  private AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
-      throws IOException {
+  private AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration) {
     String dirs = configuration.get(INPUT_DIR, "");
     String[] inputPaths = StringUtils.split(dirs);
     if (inputPaths.length == 0) {

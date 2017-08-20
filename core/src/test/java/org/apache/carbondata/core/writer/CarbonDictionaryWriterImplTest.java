@@ -64,10 +64,6 @@ public class CarbonDictionaryWriterImplTest {
 
   private CarbonTableIdentifier carbonTableIdentifier;
 
-  private String databaseName;
-
-  private String tableName;
-
   private String carbonStorePath;
 
   private ColumnIdentifier columnIdentifier;
@@ -92,8 +88,8 @@ public class CarbonDictionaryWriterImplTest {
 
   @Before public void setUp() throws Exception {
     init();
-    this.databaseName = props.getProperty("database", "testSchema");
-    this.tableName = props.getProperty("tableName", "carbon");
+    String databaseName = props.getProperty("database", "testSchema");
+    String tableName = props.getProperty("tableName", "carbon");
     this.carbonStorePath = props.getProperty("storePath", "carbonStore");
     this.columnIdentifier = new ColumnIdentifier("Name", null, null);
     carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());

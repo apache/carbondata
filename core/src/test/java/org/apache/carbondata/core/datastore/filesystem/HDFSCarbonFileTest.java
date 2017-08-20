@@ -120,7 +120,7 @@ public class HDFSCarbonFileTest {
 
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
@@ -146,14 +146,14 @@ public class HDFSCarbonFileTest {
     public void testListFilesForNullListStatus() {
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
         };
         new MockUp<DistributedFileSystem>() {
             @Mock
-            public FileStatus[] listStatus(Path var1) throws IOException {
+            public FileStatus[] listStatus(Path var1) {
 
                 return null;
             }
@@ -168,14 +168,14 @@ public class HDFSCarbonFileTest {
         hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
         };
         new MockUp<DistributedFileSystem>() {
             @Mock
-            public FileStatus[] listStatus(Path var1) throws IOException {
+            public FileStatus[] listStatus(Path var1) {
 
                 return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
@@ -234,7 +234,7 @@ public class HDFSCarbonFileTest {
 
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
@@ -249,7 +249,7 @@ public class HDFSCarbonFileTest {
         };
         new MockUp<DistributedFileSystem>() {
             @Mock
-            public FileStatus[] listStatus(Path var1) throws IOException {
+            public FileStatus[] listStatus(Path var1) {
 
                 return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
@@ -270,14 +270,14 @@ public class HDFSCarbonFileTest {
         };
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
         };
         new MockUp<DistributedFileSystem>() {
             @Mock
-            public FileStatus[] listStatus(Path var1) throws IOException {
+            public FileStatus[] listStatus(Path var1) {
 
                 return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
@@ -306,7 +306,7 @@ public class HDFSCarbonFileTest {
         };
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
@@ -327,7 +327,7 @@ public class HDFSCarbonFileTest {
     public void testGetParentFile() {
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
@@ -348,7 +348,7 @@ public class HDFSCarbonFileTest {
         };
         new MockUp<DistributedFileSystem>() {
             @Mock
-            public FileStatus getFileStatus(Path file) throws IOException {
+            public FileStatus getFileStatus(Path file) {
 
                 return new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName));
             }
@@ -364,7 +364,7 @@ public class HDFSCarbonFileTest {
         new HDFSCarbonFile(fileStatus);
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new WebHdfsFileSystem();
             }
 
@@ -376,14 +376,14 @@ public class HDFSCarbonFileTest {
     public void testrenameForceForDisributedSystem() {
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
         };
         new MockUp<DistributedFileSystem>() {
             @Mock
-            public void rename(Path src, Path dst, final Options.Rename... options) throws IOException {
+            public void rename(Path src, Path dst, final Options.Rename... options) {
 
             }
 

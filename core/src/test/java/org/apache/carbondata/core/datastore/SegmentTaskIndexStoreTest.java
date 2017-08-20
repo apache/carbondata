@@ -50,10 +50,8 @@ import static org.junit.Assert.assertNull;
 
 public class SegmentTaskIndexStoreTest {
 
-  private static short version = 1;
   private static String locations[] = { "/tmp" };
   private static SegmentTaskIndexStore taskIndexStore;
-  private static TableBlockInfo tableBlockInfo;
   private static AbsoluteTableIdentifier absoluteTableIdentifier;
 
   @BeforeClass public static void setUp() {
@@ -61,7 +59,8 @@ public class SegmentTaskIndexStoreTest {
     taskIndexStore = (SegmentTaskIndexStore) cacheProvider.
         <TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
             createCache(CacheType.DRIVER_BTREE, "");
-    tableBlockInfo = new TableBlockInfo("file", 0L, "SG100", locations, 10L,
+    short version = 1;
+    TableBlockInfo tableBlockInfo = new TableBlockInfo("file", 0L, "SG100", locations, 10L,
         ColumnarFormatVersion.valueOf(version), null);
     absoluteTableIdentifier = new AbsoluteTableIdentifier("/tmp",
         new CarbonTableIdentifier("testdatabase", "testtable", "TB100"));

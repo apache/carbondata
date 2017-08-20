@@ -47,11 +47,6 @@ public class LocalFileLock extends AbstractCarbonLock {
   private FileOutputStream fileOutputStream;
 
   /**
-   * channel is the FileChannel of the lock file.
-   */
-  private FileChannel channel;
-
-  /**
    * fileLock NIO FileLock Object
    */
   private FileLock fileLock;
@@ -113,7 +108,10 @@ public class LocalFileLock extends AbstractCarbonLock {
       }
 
       fileOutputStream = new FileOutputStream(lockFilePath);
-      channel = fileOutputStream.getChannel();
+      /*
+    channel is the FileChannel of the lock file.
+   */
+      FileChannel channel = fileOutputStream.getChannel();
       try {
         fileLock = channel.tryLock();
       } catch (OverlappingFileLockException e) {

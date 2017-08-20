@@ -27,7 +27,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
@@ -56,8 +55,6 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
   private int noDictWithComplextCount;
 
   private boolean[] isNoDictionaryDimensionColumn;
-
-  private DataType[] measureDataType;
 
   private int dimensionCount;
 
@@ -109,7 +106,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       dimensionCount = configuration.getDimensionCount() - noDictWithComplextCount;
       isNoDictionaryDimensionColumn =
           CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
-      measureDataType = configuration.getMeasureDataType();
+      DataType[] measureDataType = configuration.getMeasureDataType();
       CarbonFactDataHandlerModel dataHandlerModel = CarbonFactDataHandlerModel
           .createCarbonFactDataHandlerModel(configuration,
               getStoreLocation(tableIdentifier, String.valueOf(0)), 0, 0);
@@ -235,7 +232,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
    * @param row
    * @return
    */
-  private CarbonRow convertRow(CarbonRow row) throws KeyGenException {
+  private CarbonRow convertRow(CarbonRow row) {
     int dictIndex = 0;
     int nonDicIndex = 0;
     int[] dim = new int[this.dimensionCount];

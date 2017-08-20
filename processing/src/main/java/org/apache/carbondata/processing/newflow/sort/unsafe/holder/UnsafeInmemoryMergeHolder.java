@@ -37,8 +37,6 @@ public class UnsafeInmemoryMergeHolder implements Comparable<UnsafeInmemoryMerge
 
   private UnsafeCarbonRowForMerge currentRow;
 
-  private long address;
-
   private UnsafeRowComparator comparator;
 
   private Object baseObject;
@@ -63,7 +61,7 @@ public class UnsafeInmemoryMergeHolder implements Comparable<UnsafeInmemoryMerge
   }
 
   public void readRow() {
-    address = rowPage.getBuffer().get(counter);
+    long address = rowPage.getBuffer().get(counter);
     currentRow = new UnsafeCarbonRowForMerge();
     currentRow.address = address + rowPage.getDataBlock().getBaseOffset();
     currentRow.index = index;

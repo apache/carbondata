@@ -38,14 +38,12 @@ import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 
 public class CarbonDictionaryReaderImplTest {
-  private static CarbonTableIdentifier carbonTableIdentifier = null;
-  private static ColumnIdentifier columnIdentifier = null;
 
   private static CarbonDictionaryReaderImpl carbonDictionaryReaderImpl = null;
 
   @BeforeClass public static void setUp() throws Exception {
-    columnIdentifier = new ColumnIdentifier("1", null, null);
-    carbonTableIdentifier =
+    ColumnIdentifier columnIdentifier = new ColumnIdentifier("1", null, null);
+    CarbonTableIdentifier carbonTableIdentifier =
         new CarbonTableIdentifier("dbName", "tableName", UUID.randomUUID().toString());
     carbonDictionaryReaderImpl =
         new CarbonDictionaryReaderImpl("storePath", carbonTableIdentifier, columnIdentifier);
@@ -59,7 +57,7 @@ public class CarbonDictionaryReaderImplTest {
       }
     };
     new MockUp<CarbonDictionaryMetadataReaderImpl>() {
-      @Mock public List<CarbonDictionaryColumnMetaChunk> read() throws IOException {
+      @Mock public List<CarbonDictionaryColumnMetaChunk> read() {
         CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunks =
             new CarbonDictionaryColumnMetaChunk(1, 8, 60L, 120L, 20);
         List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunksList =
@@ -71,18 +69,18 @@ public class CarbonDictionaryReaderImplTest {
     };
 
     new MockUp<ThriftReader>() {
-      @Mock public void setReadOffset(long bytesToSkip) throws IOException {
+      @Mock public void setReadOffset(long bytesToSkip) {
 
       }
 
     };
     new MockUp<ThriftReader>() {
-      @Mock public void open() throws IOException {
+      @Mock public void open() {
       }
 
     };
     new MockUp<ThriftReader>() {
-      @Mock public boolean hasNext() throws IOException {
+      @Mock public boolean hasNext() {
         return true;
       }
 
@@ -93,7 +91,7 @@ public class CarbonDictionaryReaderImplTest {
       }
     };
     new MockUp<ThriftReader>() {
-      @Mock public TBase read() throws IOException {
+      @Mock public TBase read() {
         List<ByteBuffer> byteBufferList = new ArrayList<ByteBuffer>();
         ByteBuffer buf = ByteBuffer.allocate(2);
         byteBufferList.add(buf);

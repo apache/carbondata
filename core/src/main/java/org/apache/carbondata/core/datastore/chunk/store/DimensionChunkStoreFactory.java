@@ -84,6 +84,6 @@ public class DimensionChunkStoreFactory {
    * dimension store type enum
    */
   public enum DimensionStoreType {
-    FIXEDLENGTH, VARIABLELENGTH;
+    FIXEDLENGTH, VARIABLELENGTH
   }
 }

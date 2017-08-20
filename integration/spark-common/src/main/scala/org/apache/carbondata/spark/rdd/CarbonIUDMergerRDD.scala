@@ -123,7 +123,7 @@ class CarbonIUDMergerRDD[K, V](
                                                             .currentTimeMillis() - startTime)
     )
     resultSplits.foreach { partition =>
-      val cp = partition.asInstanceOf[CarbonSparkPartition]
+      val cp = partition
       logInfo(s"Node : " + cp.multiBlockSplit.getLocations.toSeq.mkString(",")
               + ", No.Of Blocks : " + cp.multiBlockSplit.getLength
       )

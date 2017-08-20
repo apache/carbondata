@@ -98,9 +98,7 @@ public final class DataLoadProcessBuilder {
     AbstractDataLoadProcessorStep converterProcessorStep =
         new DataConverterProcessorStepImpl(configuration, inputProcessorStep);
     // 3. Writes the sorted data in carbondata format.
-    AbstractDataLoadProcessorStep writerProcessorStep =
-        new CarbonRowDataWriterProcessorStepImpl(configuration, converterProcessorStep);
-    return writerProcessorStep;
+    return new CarbonRowDataWriterProcessorStepImpl(configuration, converterProcessorStep);
   }
 
   private AbstractDataLoadProcessorStep buildInternalForBatchSort(CarbonIterator[] inputIterators,
@@ -120,7 +118,7 @@ public final class DataLoadProcessBuilder {
   }
 
   private AbstractDataLoadProcessorStep buildInternalForBucketing(CarbonIterator[] inputIterators,
-      CarbonDataLoadConfiguration configuration) throws Exception {
+      CarbonDataLoadConfiguration configuration) {
     // 1. Reads the data input iterators and parses the data.
     AbstractDataLoadProcessorStep inputProcessorStep =
         new InputProcessorStepImpl(configuration, inputIterators);

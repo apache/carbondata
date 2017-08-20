@@ -130,8 +130,7 @@ public class TablePage {
   }
 
   // convert the input row object to columnar data and add to column pages
-  private void convertToColumnarAndAddToPages(int rowId, CarbonRow row, byte[] mdk)
-      throws KeyGenException {
+  private void convertToColumnarAndAddToPages(int rowId, CarbonRow row, byte[] mdk) {
     // 1. convert dictionary columns
     byte[][] keys = model.getSegmentProperties().getFixedLengthKeySplitter().splitKey(mdk);
     for (int i = 0; i < dictDimensionPages.length; i++) {
@@ -269,7 +268,7 @@ public class TablePage {
 
   // apply and compress each dimension, set encoded data in `encodedData`
   private EncodedDimensionPage[] encodeAndCompressDimensions()
-      throws KeyGenException, IOException, MemoryException {
+      throws IOException, MemoryException {
     List<EncodedDimensionPage> encodedDimensions = new ArrayList<>();
     List<EncodedDimensionPage> encodedComplexDimenions = new ArrayList<>();
     TableSpec tableSpec = model.getTableSpec();

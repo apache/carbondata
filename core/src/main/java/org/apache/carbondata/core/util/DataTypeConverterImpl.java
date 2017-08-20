@@ -26,8 +26,7 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
   private static final long serialVersionUID = -1718154403432354200L;
 
   public Object convertToDecimal(Object data) {
-    java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data.toString());
-    return javaDecVal;
+    return new java.math.BigDecimal(data.toString());
   }
 
   public Object convertFromByteToUTF8String(Object data) {

@@ -178,7 +178,6 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
         eachPageLength[j] = dataChunk.getData_chunk_list().get(j).getNumberOfRowsInpage();
       }
       measureRawColumnChunk.setDataChunkV3(dataChunk);
-      ;
       measureRawColumnChunk.setFileReader(fileReader);
       measureRawColumnChunk.setPagesCount(dataChunk.getPage_length().size());
       measureRawColumnChunk.setMaxValues(maxValueOfEachPage);

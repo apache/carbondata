@@ -23,7 +23,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -206,12 +205,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
         }
       }
     }
-    try {
-      dictionaryKeyArray = restructuredKeyGenerator.generateKey(keyArrayWithNewAddedColumns);
-    } catch (KeyGenException e) {
-      LOGGER.error(e, e.getMessage());
-    }
-    return dictionaryKeyArray;
+    return restructuredKeyGenerator.generateKey(keyArrayWithNewAddedColumns);
   }
 
   /**

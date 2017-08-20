@@ -23,7 +23,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
@@ -78,9 +77,8 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
     String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
-    CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
+    return CarbonFactDataHandlerModel
         .createCarbonFactDataHandlerModel(configuration, storeLocation, partitionId, 0);
-    return model;
   }
 
   @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
@@ -182,7 +180,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     rowCounter.getAndAdd(batch.getSize());
   }
 
-  public void processRow(CarbonRow row, CarbonFactHandler dataHandler) throws KeyGenException {
+  public void processRow(CarbonRow row, CarbonFactHandler dataHandler) {
     try {
       readCounter++;
       dataHandler.addDataToStore(row);

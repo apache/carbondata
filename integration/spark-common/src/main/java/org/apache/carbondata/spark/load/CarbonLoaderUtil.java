@@ -334,7 +334,7 @@ public final class CarbonLoaderUtil {
       } else {
         LOGGER.error("Not able to acquire the lock for Table status updation for table " + loadModel
             .getDatabaseName() + "." + loadModel.getTableName());
-      };
+      }
     } finally {
       if (carbonLock.unlock()) {
         LOGGER.info(

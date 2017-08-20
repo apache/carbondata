@@ -429,7 +429,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     while (counter < queryDimension.size()) {
       if (queryDimension.get(counter).getDimension().getNumberOfChild() > 0) {
         counter += queryDimension.get(counter).getDimension().getNumberOfChild();
-        continue;
       } else if (!CarbonUtil.hasEncoding(queryDimension.get(counter).getDimension().getEncoder(),
           Encoding.DICTIONARY)) {
         counter++;
@@ -462,7 +461,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
    * @return
    */
   private List<QueryMeasure> getCurrentBlockQueryMeasures(BlockExecutionInfo blockExecutionInfo,
-      QueryModel queryModel, AbstractIndex tableBlock) throws QueryExecutionException {
+      QueryModel queryModel, AbstractIndex tableBlock) {
     // getting the measure info which will be used while filling up measure data
     List<QueryMeasure> updatedQueryMeasures = RestructureUtil
         .createMeasureInfoAndGetCurrentBlockQueryMeasures(blockExecutionInfo,

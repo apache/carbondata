@@ -82,7 +82,7 @@ public class SegmentUpdateStatusManager {
     // current it is used only for read function scenarios, as file update always requires to work
     // on latest file status.
     segmentDetails =
-        segmentStatusManager.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
+        SegmentStatusManager.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
     updateDetails = readLoadMetadata();
     populateMap();
   }
@@ -481,7 +481,7 @@ public class SegmentUpdateStatusManager {
     long factTimeStamp = 0;
 
     LoadMetadataDetails[] segmentDetails =
-        segmentStatusManager.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
+        SegmentStatusManager.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
 
     for (LoadMetadataDetails eachSeg : segmentDetails) {
       if (eachSeg.getLoadName().equalsIgnoreCase(segmentId)) {
@@ -720,7 +720,7 @@ public class SegmentUpdateStatusManager {
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
     LoadMetadataDetails[] loadDetails =
-        ssm.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
+        SegmentStatusManager.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
     if (loadDetails.length == 0) {
       return null;
     }
@@ -837,7 +837,7 @@ public class SegmentUpdateStatusManager {
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
     LoadMetadataDetails[] segmentDetails =
-        ssm.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
+        SegmentStatusManager.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
     long timestampOfOriginalFacts = 0;
 
     String startTimestampOfUpdate = "" ;
