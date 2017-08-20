@@ -58,20 +58,8 @@ public class RangeExpressionEvaluator {
     return expr;
   }
 
-  public void setExpr(Expression expr) {
-    this.expr = expr;
-  }
-
-  public Expression getSrcNode() {
+  private Expression getSrcNode() {
     return srcNode;
-  }
-
-  public void setTarNode(Expression expr) {
-    Expression tarNode = expr;
-  }
-
-  public void setTarParentNode(Expression expr) {
-    Expression tarParentNode = expr;
   }
 
   /**
@@ -104,7 +92,7 @@ public class RangeExpressionEvaluator {
     filterExpressionMap.clear();
   }
 
-  public void replaceWithRangeExpression(
+  private void replaceWithRangeExpression(
       Map<String, List<FilterModificationNode>> filterExpressionMap) {
 
     List<FilterModificationNode> deleteExp = new ArrayList<>();
@@ -417,8 +405,6 @@ public class RangeExpressionEvaluator {
           .equals(tarColumnName)) && (srcExpType != ExpressionType.FALSE) && (tarExpType
           != ExpressionType.FALSE) && ((matchExpType(srcExpType, tarExpType)) && checkLiteralValue(
           this.getSrcNode(), currentNode))) {
-        this.setTarNode(currentNode);
-        this.setTarParentNode(parentNode);
         return parentNode;
       }
     }

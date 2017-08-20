@@ -24,7 +24,7 @@ public class HashPartitioner implements Partitioner {
 
   private int numPartitions = 0;
 
-  public HashPartitioner(int numPartitions) {
+  HashPartitioner(int numPartitions) {
     this.numPartitions = numPartitions;
   }
 
