@@ -28,6 +28,8 @@ import org.scalatest.BeforeAndAfterAll
 class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
   var threshold: Int = _
+  var timeformat = CarbonProperties.getInstance()
+    .getProperty("carbon.timestamp.format", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
 
   override def beforeAll {
     CarbonProperties.getInstance()
@@ -181,5 +183,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("DROP TABLE IF EXISTS bucket_table")
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", threshold.toString)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timeformat)
   }
 }
