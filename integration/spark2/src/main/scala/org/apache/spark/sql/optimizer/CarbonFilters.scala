@@ -20,11 +20,8 @@ package org.apache.carbondata.spark
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.CastExpressionOptimization
 import org.apache.spark.sql.optimizer.AttributeReferenceWrapper
-import org.apache.spark.sql.CarbonBoundReference
-import org.apache.spark.sql.CastExpr
-import org.apache.spark.sql.sources
+import org.apache.spark.sql.{CarbonBoundReference, CarbonEndsWith, CastExpr, sources}
 import org.apache.spark.sql.types._
-
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
@@ -105,6 +102,12 @@ object CarbonFilters {
           val r = new LessThanExpression(
             getCarbonExpression(name), getCarbonLiteralExpression(name, maxValueLimit))
           Some(new AndExpression(l, r))
+        case CarbonEndsWith(expr: Expression) =>
+          Some(new SparkUnknownExpression(expr.transform {
+            case AttributeReference(name, dataType,_, _) =>
+            CarbonBoundReference(new CarbonColumnExpression(name.toString,
+              CarbonScalaUtil.convertSparkToCarbonDataType(dataType)), dataType, expr.nullable)
+          }))
         case CastExpr(expr: Expression) =>
           Some(transformExpression(expr))
         case _ => None
@@ -235,6 +238,8 @@ object CarbonFilters {
           CastExpressionOptimization.checkIfCastCanBeRemove(c)
         case StartsWith(a: Attribute, Literal(v, t)) =>
           Some(sources.StringStartsWith(a.name, v.toString))
+        case c@EndsWith(a:  Attribute, Literal(v,t)) =>
+          Some(CarbonEndsWith(c))
         case c@Cast(a: Attribute, _) =>
           Some(CastExpr(c))
         case others =>
