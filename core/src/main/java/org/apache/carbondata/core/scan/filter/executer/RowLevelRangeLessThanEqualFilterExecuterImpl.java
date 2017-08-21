@@ -212,13 +212,13 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
           if (isScanRequired(rawColumnChunk.getMinValues()[i], this.msrFilterRangeValues,
               msrColEvalutorInfoList.get(0).getType())) {
             BitSet bitSet =
-                getFilteredIndexesForMeasures(rawColumnChunk.convertToMeasureColDataChunk(i),
+                getFilteredIndexesForMeasures(rawColumnChunk.convertToColumnPage(i),
                     rawColumnChunk.getRowCount()[i]);
             bitSetGroup.setBitSet(bitSet, i);
           }
         } else {
           BitSet bitSet =
-              getFilteredIndexesForMeasures(rawColumnChunk.convertToMeasureColDataChunk(i),
+              getFilteredIndexesForMeasures(rawColumnChunk.convertToColumnPage(i),
                   rawColumnChunk.getRowCount()[i]);
           bitSetGroup.setBitSet(bitSet, i);
         }

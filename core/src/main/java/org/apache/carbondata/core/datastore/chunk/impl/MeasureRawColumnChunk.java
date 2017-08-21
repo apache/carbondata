@@ -28,7 +28,7 @@ import org.apache.carbondata.core.memory.MemoryException;
 /**
  * Contains raw measure data
  * 1. The read uncompressed raw data of column chunk with all pages is stored in this instance.
- * 2. The raw data can be converted to processed chunk using convertToMeasureColDataChunk method
+ * 2. The raw data can be converted to processed chunk using convertToColumnPage method
  *  by specifying page number.
  */
 public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
@@ -66,25 +66,23 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
   }
 
   /**
-   * Convert raw data with specified page number processed to ColumnPage
-   * @param index
-   * @return
+   * Convert raw data with specified `columnIndex` processed to ColumnPage
    */
-  public ColumnPage convertToMeasureColDataChunk(int index) {
-    assert index < pagesCount;
+  public ColumnPage convertToColumnPage(int columnIndex) {
+    assert columnIndex < pagesCount;
     if (columnPages == null) {
       columnPages = new ColumnPage[pagesCount];
     }
 
     try {
-      if (columnPages[index] == null) {
-        columnPages[index] = chunkReader.convertToColumnPage(this, index);
+      if (columnPages[columnIndex] == null) {
+        columnPages[columnIndex] = chunkReader.convertToColumnPage(this, columnIndex);
       }
     } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);
     }
 
-    return columnPages[index];
+    return columnPages[columnIndex];
   }
 
   @Override public void freeMemory() {

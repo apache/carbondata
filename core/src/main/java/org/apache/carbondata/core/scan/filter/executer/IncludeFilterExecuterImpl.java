@@ -124,13 +124,13 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
               measureRawColumnChunk.getMinValues()[i], msrColumnExecutorInfo.getFilterKeys(),
               msrColumnEvaluatorInfo.getType())) {
             BitSet bitSet =
-                getFilteredIndexesForMeasures(measureRawColumnChunk.convertToMeasureColDataChunk(i),
+                getFilteredIndexesForMeasures(measureRawColumnChunk.convertToColumnPage(i),
                     measureRawColumnChunk.getRowCount()[i], msrType);
             bitSetGroup.setBitSet(bitSet, i);
           }
         } else {
           BitSet bitSet =
-              getFilteredIndexesForMeasures(measureRawColumnChunk.convertToMeasureColDataChunk(i),
+              getFilteredIndexesForMeasures(measureRawColumnChunk.convertToColumnPage(i),
                   measureRawColumnChunk.getRowCount()[i], msrType);
           bitSetGroup.setBitSet(bitSet, i);
         }

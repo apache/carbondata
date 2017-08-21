@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.core.datastore.chunk.reader.dimension.v3;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -32,10 +30,8 @@ import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
-import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
-import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingStrategy;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategy;
-import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressorEncoderMeta;
+import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategyFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -59,7 +55,7 @@ import org.apache.commons.lang.ArrayUtils;
  */
 public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkReaderV2V3Format {
 
-  private EncodingStrategy strategy = new DefaultEncodingStrategy();
+  private EncodingStrategy strategy = EncodingStrategyFactory.getStrategy();
 
   /**
    * end position of last dimension in carbon data file
@@ -227,24 +223,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       throws IOException, MemoryException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
-    assert (encodings.size() == 1);
-    assert (encoderMetas.size() == 1);
-    Encoding encoding = encodings.get(0);
-    ColumnPageEncoderMeta metadata = null;
-    ByteArrayInputStream stream = new ByteArrayInputStream(encoderMetas.get(0).array());
-    DataInputStream in = new DataInputStream(stream);
-    switch (encoding) {
-      case DIRECT_COMPRESS:
-        DirectCompressorEncoderMeta meta = new DirectCompressorEncoderMeta();
-        meta.readFields(in);
-        metadata = meta;
-        break;
-      case DIRECT_STRING:
-      // TODO: implement direct string codec for high cardinality column
-      default:
-        throw new UnsupportedOperationException("internal error");
-    }
-    ColumnPageDecoder decoder = strategy.createDecoder(encoding, metadata);
+    ColumnPageDecoder decoder = strategy.createDecoder(encodings, encoderMetas);
     ColumnPage decodedPage = decoder.decode(
         pageData.array(), offset, pageMetadata.data_page_length);
     return new ColumnPageWrapper(decodedPage);

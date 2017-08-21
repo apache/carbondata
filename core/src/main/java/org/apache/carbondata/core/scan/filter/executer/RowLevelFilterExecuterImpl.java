@@ -342,7 +342,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       Object msrValue;
       ColumnPage columnPage =
           blockChunkHolder.getMeasureRawDataChunk()[measureBlocksIndex[0]]
-              .convertToMeasureColDataChunk(pageIndex);
+              .convertToColumnPage(pageIndex);
       switch (msrType) {
         case SHORT:
           msrValue = (short) columnPage.getLong(index);

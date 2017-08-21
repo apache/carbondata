@@ -223,21 +223,21 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
                 .getMeasureObjectFromDataType(rawColumnChunk.getMinValues()[i],
                     msrColEvalutorInfoList.get(0).getType()));
             ColumnPage columnPage =
-                rawColumnChunk.convertToMeasureColDataChunk(i);
+                rawColumnChunk.convertToColumnPage(i);
             if (compare <= 0 && columnPage.getNullBits().isEmpty()) {
               BitSet bitSet = new BitSet(rawColumnChunk.getRowCount()[i]);
               bitSet.flip(0, rawColumnChunk.getRowCount()[i]);
               bitSetGroup.setBitSet(bitSet, i);
             } else {
               BitSet bitSet =
-                  getFilteredIndexesForMeasures(rawColumnChunk.convertToMeasureColDataChunk(i),
+                  getFilteredIndexesForMeasures(rawColumnChunk.convertToColumnPage(i),
                       rawColumnChunk.getRowCount()[i]);
               bitSetGroup.setBitSet(bitSet, i);
             }
           }
         } else {
           BitSet bitSet =
-              getFilteredIndexesForMeasures(rawColumnChunk.convertToMeasureColDataChunk(i),
+              getFilteredIndexesForMeasures(rawColumnChunk.convertToColumnPage(i),
                   rawColumnChunk.getRowCount()[i]);
           bitSetGroup.setBitSet(bitSet, i);
         }

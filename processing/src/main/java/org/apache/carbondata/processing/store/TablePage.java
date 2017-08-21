@@ -32,9 +32,9 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
-import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingStrategy;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategy;
+import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategyFactory;
 import org.apache.carbondata.core.datastore.page.key.TablePageKey;
 import org.apache.carbondata.core.datastore.page.statistics.KeyPageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.LVStringStatsCollector;
@@ -73,7 +73,7 @@ public class TablePage {
 
   private EncodedTablePage encodedTablePage;
 
-  private EncodingStrategy encodingStrategy = new DefaultEncodingStrategy();
+  private EncodingStrategy encodingStrategy = EncodingStrategyFactory.getStrategy();
 
   // true if it is last page of all input rows
   private boolean isLastPage;

@@ -282,7 +282,7 @@ public class FilterScanner extends AbstractBlockletScanner {
     for (int i = 0; i < measureRawColumnChunks.length; i++) {
       if (measureRawColumnChunks[i] != null) {
         for (int j = 0; j < indexesGroup.length; j++) {
-          columnPages[i][j] = measureRawColumnChunks[i].convertToMeasureColDataChunk(j);
+          columnPages[i][j] = measureRawColumnChunks[i].convertToColumnPage(j);
         }
       }
     }

@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.core.datastore.chunk.reader.measure.v3;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
@@ -27,12 +25,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
-import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveDeltaIntegralEncoderMeta;
-import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveIntegralEncoderMeta;
-import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressorEncoderMeta;
-import org.apache.carbondata.core.datastore.page.encoding.rle.RLEEncoderMeta;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
@@ -229,38 +222,8 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
   private ColumnPage decodeMeasure(DataChunk2 pageMetadata, ByteBuffer pageData, int offset)
       throws MemoryException, IOException {
     List<Encoding> encodings = pageMetadata.getEncoders();
-    assert (encodings.size() == 1);
-
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
-    // for measure, it should have only one ValueEncoderMeta
-    assert (encoderMetas.size() > 0);
-    byte[] encodedMeta = encoderMetas.get(0).array();
-    ByteArrayInputStream stream = new ByteArrayInputStream(encodedMeta);
-    DataInputStream in = new DataInputStream(stream);
-    ValueEncoderMeta meta;
-    Encoding encoding = encodings.get(0);
-    if (encoding == Encoding.DIRECT_COMPRESS) {
-      DirectCompressorEncoderMeta codecMeta = new DirectCompressorEncoderMeta();
-      codecMeta.readFields(in);
-      meta = codecMeta;
-    } else if (encoding == Encoding.ADAPTIVE_INTEGRAL) {
-      AdaptiveIntegralEncoderMeta codecMeta = new AdaptiveIntegralEncoderMeta();
-      codecMeta.readFields(in);
-      meta = codecMeta;
-    } else if (encoding == Encoding.ADAPTIVE_DELTA_INTEGRAL) {
-      AdaptiveDeltaIntegralEncoderMeta codecMeta = new AdaptiveDeltaIntegralEncoderMeta();
-      codecMeta.readFields(in);
-      meta = codecMeta;
-    } else if (encoding == Encoding.RLE_INTEGRAL) {
-      RLEEncoderMeta rleCodecMeta = new RLEEncoderMeta();
-      rleCodecMeta.readFields(in);
-      meta = rleCodecMeta;
-    } else {
-      // read as ValueEncoderMeta for backward compatible
-      meta = CarbonUtil.deserializeEncoderMetaV3(encodedMeta);
-    }
-
-    ColumnPageDecoder codec = strategy.createDecoder(encoding, meta);
+    ColumnPageDecoder codec = strategy.createDecoder(encodings, encoderMetas);
     return codec.decode(pageData.array(), offset, pageMetadata.data_page_length);
   }
 
