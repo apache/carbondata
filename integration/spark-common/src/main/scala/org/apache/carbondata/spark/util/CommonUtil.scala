@@ -167,7 +167,7 @@ object CommonUtil {
 
   /**
    * 1. If partitioned by clause exists, then partition_type should be defined
-   * 2. If partition_type is Hash, then number_of_partitions should be defined
+   * 2. If partition_type is Hash, then num_partitions should be defined
    * 3. If partition_type is List, then list_info should be defined
    * 4. If partition_type is Range, then range_info should be defined
    * 5. Only support single level partition for now
@@ -366,6 +366,13 @@ object CommonUtil {
           sys.error(s"The partition $newElement is already exist! Please check again!")
         }
       }
+    }
+  }
+
+  def validateListInfo(listInfo: List[List[String]]): Unit = {
+    val list = listInfo.flatten
+    if (list.distinct.size != list.size) {
+      sys.error("Duplicate elements defined in LIST_INFO!")
     }
   }
 

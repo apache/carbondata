@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.partition
 
-import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
@@ -116,6 +115,20 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     assert(partitionInfo.getListInfo.get(2).size == 2)
     assert(partitionInfo.getListInfo.get(2).get(0).equals("2"))
     assert(partitionInfo.getListInfo.get(2).get(1).equals("3"))
+  }
+
+  test("create partition table: list partition with duplicate value") {
+    intercept[Exception] { sql(
+      """
+        | CREATE TABLE default.listTableError (empno int, empname String, designation String, doj Timestamp,
+        |  workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (workgroupcategory string)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('PARTITION_TYPE'='LIST',
+        |  'LIST_INFO'='0, 1, (2, 3, 1)')
+      """.stripMargin) }
   }
 
   test("test exception if partition column is dropped") {
