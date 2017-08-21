@@ -35,7 +35,7 @@ object CarbonPartitionExample {
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val metastoredb = s"$rootPath/examples/spark2/target"
-    val testData = s"$rootPath/examples/spark2/src/main/resources/partition_data.csv"
+    val testData = s"$rootPath/integration/spark-common-test/src/test/resources/partition_data.csv"
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
@@ -51,11 +51,32 @@ object CarbonPartitionExample {
 
     spark.sparkContext.setLogLevel("WARN")
 
-    // none partition table
+    // range partition with bucket defined
     spark.sql("DROP TABLE IF EXISTS t0")
     spark.sql("""
                 | CREATE TABLE IF NOT EXISTS t0
                 | (
+                | id Int,
+                | vin String,
+                | phonenumber Long,
+                | country String,
+                | area String,
+                | salary Int
+                | )
+                | PARTITIONED BY (logdate Timestamp)
+                | STORED BY 'carbondata'
+                | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
+                | 'RANGE_INFO'='2014/01/01, 2015/01/01, 2016/01/01',
+                | 'BUCKETNUMBER'='3',
+                | 'BUCKETCOLUMNS'='vin')
+              """.stripMargin)
+
+    // none partition table
+    spark.sql("DROP TABLE IF EXISTS t1")
+    spark.sql("""
+                | CREATE TABLE IF NOT EXISTS t1
+                | (
+                | id Int,
                 | vin String,
                 | logdate Timestamp,
                 | phonenumber Long,
@@ -65,20 +86,22 @@ object CarbonPartitionExample {
                 | STORED BY 'carbondata'
               """.stripMargin)
 
-    // range partition
-    spark.sql("DROP TABLE IF EXISTS t1")
+    // list partition
+    spark.sql("DROP TABLE IF EXISTS t2")
     spark.sql("""
-                | CREATE TABLE IF NOT EXISTS t1
+                | CREATE TABLE IF NOT EXISTS t2
                 | (
+                | id Int,
                 | vin String,
+                | logdate Timestamp,
                 | phonenumber Long,
                 | country String,
-                | area String
+                | salary Int
                 | )
-                | PARTITIONED BY (logdate Timestamp)
+                | PARTITIONED BY (area String)
                 | STORED BY 'carbondata'
-                | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-                | 'RANGE_INFO'='2014/01/01, 2015/01/01, 2016/01/01')
+                | TBLPROPERTIES('PARTITION_TYPE'='LIST',
+                | 'LIST_INFO'='Asia, America, Europe', 'DICTIONARY_EXCLUDE' ='area')
               """.stripMargin)
 
     // hash partition
@@ -86,10 +109,12 @@ object CarbonPartitionExample {
     spark.sql("""
                 | CREATE TABLE IF NOT EXISTS t3
                 | (
+                | id Int,
                 | logdate Timestamp,
                 | phonenumber Long,
                 | country String,
-                | area String
+                | area String,
+                | salary Int
                 | )
                 | PARTITIONED BY (vin String)
                 | STORED BY 'carbondata'
@@ -101,16 +126,39 @@ object CarbonPartitionExample {
     spark.sql("""
        | CREATE TABLE IF NOT EXISTS t5
        | (
+       | id Int,
        | vin String,
        | logdate Timestamp,
        | phonenumber Long,
-       | area String
+       | area String,
+       | salary Int
        |)
        | PARTITIONED BY (country String)
        | STORED BY 'carbondata'
        | TBLPROPERTIES('PARTITION_TYPE'='LIST',
-       | 'LIST_INFO'='(China,United States),UK ,japan,(Canada,Russia), South Korea ')
+       | 'LIST_INFO'='(China, US),UK ,Japan,(Canada,Russia, Good, NotGood), Korea ')
        """.stripMargin)
+
+    // load data into partition table
+    spark.sql(s"""
+       LOAD DATA LOCAL INPATH '$testData' into table t0 options('BAD_RECORDS_ACTION'='FORCE')
+       """)
+    spark.sql(s"""
+       LOAD DATA LOCAL INPATH '$testData' into table t5 options('BAD_RECORDS_ACTION'='FORCE')
+       """)
+
+    // alter list partition table t5 to add a partition
+    spark.sql(s"""Alter table t5 add partition ('OutSpace')""".stripMargin)
+    // alter list partition table t5 to split partition 4 into 3 independent partition
+    spark.sql(
+      s"""
+         Alter table t5 split partition(4) into ('Canada', 'Russia', '(Good, NotGood)')
+       """.stripMargin)
+
+    spark.sql("""select * from t5 where country = 'Good' """).show(100, false)
+
+    spark.sql("select * from t0 order by salary ").show(100, false)
+    spark.sql("select * from t5 order by salary ").show(100, false)
 
     // hive partition table
     spark.sql("DROP TABLE IF EXISTS t7")
@@ -130,6 +178,7 @@ object CarbonPartitionExample {
     spark.sql(s"CREATE DATABASE partitionDB")
     spark.sql(s"""
                 | CREATE TABLE IF NOT EXISTS partitionDB.t9(
+                | id Int,
                 | logdate Timestamp,
                 | phonenumber Int,
                 | country String,
@@ -145,11 +194,11 @@ object CarbonPartitionExample {
 
     // show partitions
     try {
-      spark.sql("""SHOW PARTITIONS t0""").show(100, false)
+      spark.sql("""SHOW PARTITIONS t1""").show(100, false)
     } catch {
       case ex: AnalysisException => LOGGER.error(ex.getMessage())
     }
-    spark.sql("""SHOW PARTITIONS t1""").show(100, false)
+    spark.sql("""SHOW PARTITIONS t0""").show(100, false)
     spark.sql("""SHOW PARTITIONS t3""").show(100, false)
     spark.sql("""SHOW PARTITIONS t5""").show(100, false)
     spark.sql("""SHOW PARTITIONS t7""").show(100, false)

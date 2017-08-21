@@ -14,23 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.indexstore;
 
-import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
+package org.apache.carbondata.spark.partition;
+
+import java.util.concurrent.Callable;
+
+import org.apache.carbondata.spark.rdd.PartitionSplitter;
+
+import org.apache.spark.sql.execution.command.SplitPartitionCallableModel;
 
 /**
- * Datamap type
+ * Callable class which is used to split the partition in a separate callable.
  */
-public enum DataMapType {
-  BLOCKLET(BlockletDataMapFactory.class);
+public class SplitPartitionCallable implements Callable<Void> {
 
-  private Class<? extends DataMapFactory> classObject;
+  private final SplitPartitionCallableModel splitPartitionCallableModel;
 
-  DataMapType(Class<? extends DataMapFactory> classObject) {
-    this.classObject = classObject;
+  public SplitPartitionCallable(SplitPartitionCallableModel splitPartitionCallableModel) {
+    this.splitPartitionCallableModel = splitPartitionCallableModel;
   }
 
-  public Class<? extends DataMapFactory> getClassObject() {
-    return classObject;
+  @Override public Void call() {
+    PartitionSplitter.triggerPartitionSplit(splitPartitionCallableModel);
+    return null;
   }
 }

@@ -139,7 +139,7 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   private int generateDirectSurrogateKeyForNonTimestampType(String memberStr) {
     long timeValue = -1;
     try {
-      timeValue = Long.valueOf(memberStr) / 1000;
+      timeValue = Long.parseLong(memberStr) / 1000;
     } catch (NumberFormatException e) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(

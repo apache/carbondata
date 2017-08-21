@@ -92,16 +92,16 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
           invertedIndex.length * CarbonCommonConstants.INT_SIZE_IN_BYTE;
     }
     // copy the data to memory
-    CarbonUnsafe.unsafe
+    CarbonUnsafe.getUnsafe()
         .copyMemory(data, CarbonUnsafe.BYTE_ARRAY_OFFSET, dataPageMemoryBlock.getBaseObject(),
             dataPageMemoryBlock.getBaseOffset(), this.dataLength);
     // if inverted index is present then copy the inverted index
     // and reverse inverted index to memory
     if (isExplicitSorted) {
-      CarbonUnsafe.unsafe.copyMemory(invertedIndex, CarbonUnsafe.INT_ARRAY_OFFSET,
+      CarbonUnsafe.getUnsafe().copyMemory(invertedIndex, CarbonUnsafe.INT_ARRAY_OFFSET,
           dataPageMemoryBlock.getBaseObject(), dataPageMemoryBlock.getBaseOffset() + dataLength,
           invertedIndex.length * CarbonCommonConstants.INT_SIZE_IN_BYTE);
-      CarbonUnsafe.unsafe.copyMemory(invertedIndexReverse, CarbonUnsafe.INT_ARRAY_OFFSET,
+      CarbonUnsafe.getUnsafe().copyMemory(invertedIndexReverse, CarbonUnsafe.INT_ARRAY_OFFSET,
           dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset,
           invertedIndexReverse.length * CarbonCommonConstants.INT_SIZE_IN_BYTE);
@@ -129,8 +129,8 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    * @return inverted index based on row id passed
    */
   @Override public int getInvertedIndex(int rowId) {
-    return CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
-        dataPageMemoryBlock.getBaseOffset() + dataLength + (rowId
+    return CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
+        dataPageMemoryBlock.getBaseOffset() + dataLength + ((long)rowId
             * CarbonCommonConstants.INT_SIZE_IN_BYTE));
   }
 

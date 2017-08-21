@@ -88,6 +88,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         instance.scale = meta.getScale();
         instance.precision = meta.getPrecision();
         break;
+      default:
+        throw new UnsupportedOperationException(
+            "unsupported data type for stats collection: " + meta.getSrcDataType());
     }
     return instance;
   }
@@ -125,6 +128,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         instance.scale = -1;
         instance.precision = -1;
         break;
+      default:
+        throw new UnsupportedOperationException(
+            "unsupported data type for Stats collection: " + meta.getType());
     }
     return instance;
   }
@@ -159,6 +165,10 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         decimal = scale;
         this.scale = scale;
         this.precision = precision;
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            "unsupported data type for Stats collection: " + dataType);
     }
   }
 
@@ -192,6 +202,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
           minDecimal = (minDecimal.compareTo(zeroDecimal) < 0) ? minDecimal : zeroDecimal;
         }
         break;
+      default:
+        throw new UnsupportedOperationException(
+            "unsupported data type for Stats collection: " + dataType);
     }
   }
 

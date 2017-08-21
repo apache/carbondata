@@ -28,7 +28,6 @@ import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
@@ -72,11 +71,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   private String columnId;
 
   /**
-   * dimension ordinal of primitive type column
-   */
-  private int dimensionOrdinal;
-
-  /**
    * key size
    */
   private int keySize;
@@ -106,7 +100,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     this.name = name;
     this.parentname = parentname;
     this.columnId = columnId;
-    this.dimensionOrdinal = dimensionOrdinal;
   }
 
   /**

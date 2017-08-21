@@ -20,10 +20,12 @@ import com.facebook.presto.spi.ErrorCode;
 import com.facebook.presto.spi.ErrorCodeSupplier;
 import com.facebook.presto.spi.ErrorType;
 
+import static com.facebook.presto.spi.ErrorType.EXTERNAL;
 import static com.facebook.presto.spi.ErrorType.INTERNAL_ERROR;
 
 public enum CarbondataErrorCode implements ErrorCodeSupplier {
-  CARBON_NOT_SUPPORT_TYPE(1, INTERNAL_ERROR);
+  CARBON_NOT_SUPPORT_TYPE(1, INTERNAL_ERROR), CARBON_INVALID_TYPE_VALUE(2, EXTERNAL);
+
   private final ErrorCode errorCode;
 
   CarbondataErrorCode(int code, ErrorType type) {

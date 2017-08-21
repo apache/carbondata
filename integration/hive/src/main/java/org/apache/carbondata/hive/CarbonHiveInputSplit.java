@@ -223,10 +223,10 @@ public class CarbonHiveInputSplit extends FileSplit
 
     double seg1 = Double.parseDouble(segmentId);
     double seg2 = Double.parseDouble(other.getSegmentId());
-    if (seg1 - seg2 < 0) {
+    if (Double.compare(seg1, seg2) < 0) {
       return -1;
     }
-    if (seg1 - seg2 > 0) {
+    if (Double.compare(seg1, seg2) > 0) {
       return 1;
     }
 
@@ -260,6 +260,28 @@ public class CarbonHiveInputSplit extends FileSplit
       return compareResult;
     }
     return 0;
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof CarbonHiveInputSplit)) {
+      return false;
+    }
+
+    CarbonHiveInputSplit other = (CarbonHiveInputSplit) obj;
+    return 0 == this.compareTo(other);
+  }
+
+  @Override public int hashCode() {
+    int result = taskId.hashCode();
+    result = 31 * result + segmentId.hashCode();
+    result = 31 * result + bucketId.hashCode();
+    result = 31 * result + invalidSegments.hashCode();
+    result = 31 * result + numberOfBlocklets;
+    return result;
   }
 
   @Override public String getBlockPath() {

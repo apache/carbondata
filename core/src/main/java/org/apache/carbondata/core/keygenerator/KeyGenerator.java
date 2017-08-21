@@ -89,15 +89,6 @@ public interface KeyGenerator extends Serializable, Comparator<byte[]> {
    */
   int getKeySizeInBytes();
 
-  /**
-   * It gets the specified index and size from the single key aka byte aray
-   *
-   * @param key
-   * @param index
-   * @param size
-   * @return
-   */
-  long[] getSubKeyArray(byte[] key, int index, int size);
 
   /**
    * returns key bytes offset

@@ -99,19 +99,17 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
     CarbonTableCacheModel cache = carbonTableReader.getCarbonCache(key);
     Expression filters = parseFilterExpression(layoutHandle.getConstraint(), cache.carbonTable);
 
-    if (cache != null) {
-      try {
-        List<CarbonLocalInputSplit> splits = carbonTableReader.getInputSplits2(cache, filters);
+    try {
+      List<CarbonLocalInputSplit> splits = carbonTableReader.getInputSplits2(cache, filters);
 
-        ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
-        for (CarbonLocalInputSplit split : splits) {
-          cSplits.add(new CarbondataSplit(connectorId, tableHandle.getSchemaTableName(),
-              layoutHandle.getConstraint(), split, rebuildConstraints));
-        }
-        return new FixedSplitSource(cSplits.build());
-      } catch (Exception ex) {
-        System.out.println(ex.toString());
+      ImmutableList.Builder<ConnectorSplit> cSplits = ImmutableList.builder();
+      for (CarbonLocalInputSplit split : splits) {
+        cSplits.add(new CarbondataSplit(connectorId, tableHandle.getSchemaTableName(),
+            layoutHandle.getConstraint(), split, rebuildConstraints));
       }
+      return new FixedSplitSource(cSplits.build());
+    } catch (Exception ex) {
+      System.out.println(ex.toString());
     }
     return null;
   }
@@ -182,7 +180,9 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
         } else {
           List<Expression> rangeConjuncts = new ArrayList<>();
           if (!range.getLow().isLowerUnbounded()) {
+
             Object value = CarbondataType.getDataByType(range.getLow().getValue(), type);
+
             switch (range.getLow().getBound()) {
               case ABOVE:
                 if (type == TimestampType.TIMESTAMP) {
@@ -206,7 +206,9 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
             }
           }
           if (!range.getHigh().isUpperUnbounded()) {
+
             Object value = CarbondataType.getDataByType(range.getHigh().getValue(), type);
+
             switch (range.getHigh().getBound()) {
               case ABOVE:
                 throw new IllegalArgumentException("High marker should never use ABOVE bound");
@@ -239,7 +241,8 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
       } else if (singleValues.size() > 1) {
         ListExpression candidates = null;
         List<Expression> exs = singleValues.stream().map((a) -> {
-          return new LiteralExpression(CarbondataType.getDataByType(a, type), coltype);
+
+        return new LiteralExpression(CarbondataType.getDataByType(a, type), coltype);
         }).collect(Collectors.toList());
         candidates = new ListExpression(exs);
 
@@ -279,7 +282,7 @@ public class CarbondataSplitManager implements ConnectorSplitManager {
    * @param colType
    * @return
    */
-  public static DataType Spi2CarbondataTypeMapper(Type colType) {
+  public static DataType spi2CarbondataTypeMapper(Type colType) {
     if (colType == BooleanType.BOOLEAN) return DataType.BOOLEAN;
     else if (colType == SmallintType.SMALLINT) return DataType.SHORT;
     else if (colType == IntegerType.INTEGER) return DataType.INT;

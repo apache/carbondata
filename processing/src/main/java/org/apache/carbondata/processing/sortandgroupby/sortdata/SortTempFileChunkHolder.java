@@ -359,6 +359,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
               stream.readFully(buff);
               measures[index++] = DataTypeUtil.byteToBigDecimal(buff);
               break;
+            default:
+              throw new IllegalArgumentException("unsupported data type:" + aggType[i]);
           }
         } else {
           measures[index++] = null;
@@ -448,14 +450,16 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   }
 
   @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+
     if (!(obj instanceof SortTempFileChunkHolder)) {
       return false;
     }
     SortTempFileChunkHolder o = (SortTempFileChunkHolder) obj;
 
-
-
-    return o.compareTo(o) == 0;
+    return this == o;
   }
 
   @Override public int hashCode() {

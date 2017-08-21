@@ -83,17 +83,18 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
         checkType(split, CarbondataSplit.class, "split is not class CarbondataSplit");
     checkArgument(carbondataSplit.getConnectorId().equals(connectorId), "split is not for this connector");
 
+    StringBuffer targetColsBuffer = new StringBuffer();
     String targetCols = "";
     // Convert all columns handles
     ImmutableList.Builder<CarbondataColumnHandle> handles = ImmutableList.builder();
     for (ColumnHandle handle : columns) {
       handles.add(checkType(handle, CarbondataColumnHandle.class, "handle"));
-      targetCols += ((CarbondataColumnHandle) handle).getColumnName() + ",";
+      targetColsBuffer.append(((CarbondataColumnHandle) handle).getColumnName()).append(",");
     }
 
     // Build column projection(check the column order)
-    if (targetCols.length() > 0) {
-      targetCols = targetCols.substring(0, targetCols.length() - 1);
+    if (targetColsBuffer.length() > 0) {
+      targetCols = targetColsBuffer.substring(0, targetCols.length() - 1);
     }
     else
     {
@@ -140,6 +141,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
       Type type = cdch.getColumnType();
 
       DataType coltype = CarbondataType.toCarbonType(cdch);
+
       Expression colExpression = new ColumnExpression(cdch.getColumnName(), coltype);
 
       domain = originalConstraint.getDomains().get().get(c);
@@ -159,7 +161,9 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
         } else {
           List<Expression> rangeConjuncts = new ArrayList<>();
           if (!range.getLow().isLowerUnbounded()) {
+
             Object value = CarbondataType.getDataByType(range.getLow().getValue(), type);
+
             switch (range.getLow().getBound()) {
               case ABOVE:
                 if (type == TimestampType.TIMESTAMP) {
@@ -183,7 +187,9 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
             }
           }
           if (!range.getHigh().isUpperUnbounded()) {
+
             Object value = CarbondataType.getDataByType(range.getHigh().getValue(), type);
+
             switch (range.getHigh().getBound()) {
               case ABOVE:
                 throw new IllegalArgumentException("High marker should never use ABOVE bound");
@@ -219,7 +225,8 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
       } else if (singleValues.size() > 1) {
         ListExpression candidates = null;
         List<Expression> exs = singleValues.stream().map((a) -> {
-          return new LiteralExpression(CarbondataType.getDataByType(a, type), coltype);
+
+        return new LiteralExpression(CarbondataType.getDataByType(a, type), coltype);
         }).collect(Collectors.toList());
         candidates = new ListExpression(exs);
 

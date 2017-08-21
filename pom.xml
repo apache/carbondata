@@ -101,6 +101,7 @@
     <module>hadoop</module>
     <module>integration/spark-common</module>
     <module>integration/spark-common-test</module>
+    <module>integration/hive</module>
     <module>assembly</module>
   </modules>
 
@@ -421,7 +422,7 @@
           <plugin>
             <groupId>org.codehaus.mojo</groupId>
             <artifactId>findbugs-maven-plugin</artifactId>
-            <version>3.0.0</version>
+            <version>3.0.4</version>
             <configuration>
               <excludeFilterFile>${dev.path}/findbugs-exclude.xml</excludeFilterFile>
               <failOnError>true</failOnError>

@@ -48,13 +48,18 @@ public class ListExpression extends Expression {
   }
 
   @Override public ExpressionType getFilterExpressionType() {
-    // TODO Auto-generated method stub
     return ExpressionType.LIST;
   }
 
   @Override public String getString() {
-    // TODO Auto-generated method stub
-    return null;
+    StringBuffer value = new StringBuffer();
+    value.append("ListExpression(");
+    for (Expression expr : children) {
+      value.append(expr.getString()).append(";");
+    }
+    value.append(')');
+
+    return  value.toString();
   }
 
   @Override public void findAndSetChild(Expression oldExpr, Expression newExpr) {

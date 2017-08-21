@@ -14,12 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.indexstore;
+package org.apache.carbondata.core.datamap.dev;
 
+import java.io.IOException;
 import java.util.List;
 
+import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.datamap.DataMapMeta;
+import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.events.ChangeEvent;
-import org.apache.carbondata.core.indexstore.schema.FilterType;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
 /**
@@ -28,45 +31,24 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 public interface DataMapFactory {
 
   /**
-   * Initialization of Datamap factory
-   * @param identifier
-   * @param dataMapName
+   * Initialization of Datamap factory with the identifier and datamap name
    */
   void init(AbsoluteTableIdentifier identifier, String dataMapName);
+
   /**
-   * Get the datamap writer for each segmentid.
-   *
-   * @param identifier
-   * @param segmentId
-   * @return
+   * Return a new write for this datamap
    */
-  DataMapWriter getDataMapWriter(AbsoluteTableIdentifier identifier,
-      String segmentId);
+  DataMapWriter createWriter(String segmentId);
 
   /**
    * Get the datamap for segmentid
-   *
-   * @param segmentId
-   * @return
    */
-  List<DataMap> getDataMaps(String segmentId);
+  List<DataMap> getDataMaps(String segmentId) throws IOException;
 
   /**
    * Get datamap for distributable object.
-   *
-   * @param distributable
-   * @return
    */
   DataMap getDataMap(DataMapDistributable distributable);
-
-  /**
-   * This method checks whether the columns and the type of filters supported
-   * for this datamap or not
-   *
-   * @param filterType
-   * @return
-   */
-  boolean isFiltersSupported(FilterType filterType);
 
   /**
    *
@@ -84,4 +66,8 @@ public interface DataMapFactory {
    */
   void clear();
 
+  /**
+   * Return metadata of this datamap
+   */
+  DataMapMeta getMeta();
 }

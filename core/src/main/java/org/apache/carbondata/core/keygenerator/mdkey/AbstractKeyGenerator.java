@@ -66,10 +66,6 @@ public abstract class AbstractKeyGenerator implements KeyGenerator {
     return 0;
   }
 
-  @Override public int[] getKeyByteOffsets(int index) {
-    return null;
-  }
-
   @Override public int getDimCount() {
     return 0;
   }

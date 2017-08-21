@@ -47,7 +47,8 @@ object ResourceRegisterAndCopier {
     if (!file.exists()) {
       sys.error(s"""Provided path $hdfsPath does not exist""")
     }
-    val lock = new HdfsFileLock("", "resource.lock")
+    LOGGER.audit("Try downloading resource data")
+    val lock = new HdfsFileLock(hdfsPath + "/resource.lock")
     var bool = false
     try {
       bool = lockWithRetries(lock)
@@ -58,7 +59,9 @@ object ResourceRegisterAndCopier {
           val rsFile = FileFactory.getCarbonFile(hdfsDataPath, fileType)
           if (!rsFile.exists()) {
             val target = resourcePath + "/" + file
-            new File(resourcePath + "/" + file.substring(0, file.lastIndexOf("/"))).mkdirs()
+            if (file.lastIndexOf("/") > -1) {
+              new File(resourcePath + "/" + file.substring(0, file.lastIndexOf("/"))).mkdirs()
+            }
             downloadFile(link, file, target)
             // copy it
             copyLocalFile(hdfsDataPath, target)

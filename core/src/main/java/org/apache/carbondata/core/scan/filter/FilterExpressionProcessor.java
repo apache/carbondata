@@ -163,18 +163,17 @@ public class FilterExpressionProcessor implements FilterProcessor {
   }
 
   private String joinByteArray(byte[] bytes, char delimiter) {
-    String byteArrayAsString = "";
+    StringBuffer byteArrayAsString = new StringBuffer();
+    byteArrayAsString.append("");
     if (null != bytes) {
       for (int i = 0; i < bytes.length; i++) {
-        byteArrayAsString = byteArrayAsString + delimiter + bytes[i];
+        byteArrayAsString.append(delimiter).append(bytes[i]);
       }
       if (byteArrayAsString.length() > 0) {
-        byteArrayAsString = byteArrayAsString.substring(1);
+        return byteArrayAsString.substring(1);
       }
-    } else {
-      byteArrayAsString = null;
     }
-    return byteArrayAsString;
+    return null;
   }
 
   /**
@@ -357,11 +356,6 @@ public class FilterExpressionProcessor implements FilterProcessor {
     BinaryExpression currentExpression = null;
     switch (filterExpressionType) {
       case OR:
-        currentExpression = (BinaryExpression) expressionTree;
-        return new LogicalFilterResolverImpl(
-            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier),
-            createFilterResolverTree(currentExpression.getRight(), tableIdentifier),
-            currentExpression);
       case AND:
         currentExpression = (BinaryExpression) expressionTree;
         return new LogicalFilterResolverImpl(
@@ -544,9 +538,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
             if ((condExpression.getColumnList().get(0).getCarbonColumn()
                 .hasEncoding(Encoding.DICTIONARY) && !condExpression.getColumnList().get(0)
                 .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY))
-                || (currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure())) {
+                || (condExpression.getColumnList().get(0).getCarbonColumn().isMeasure())) {
               return new ConditionalFilterResolverImpl(expression, true, true, tableIdentifier,
-                  currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
+                  condExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
             }
           }
         }

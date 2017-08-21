@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Random;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -127,7 +126,7 @@ public class SortDataRows {
       Object[][] recordHolderListLocal = recordHolderList;
       try {
         semaphore.acquire();
-        dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(recordHolderListLocal));
+        dataSorterAndWriterExecutorService.execute(new DataSorterAndWriter(recordHolderListLocal));
       } catch (InterruptedException e) {
         LOGGER.error(
             "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
@@ -163,7 +162,8 @@ public class SortDataRows {
         }
         try {
           semaphore.acquire();
-          dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(recordHolderListLocal));
+          dataSorterAndWriterExecutorService
+              .execute(new DataSorterAndWriter(recordHolderListLocal));
         } catch (Exception e) {
           LOGGER.error(
               "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
@@ -310,6 +310,8 @@ public class SortDataRows {
                 stream.writeInt(bigDecimalInBytes.length);
                 stream.write(bigDecimalInBytes);
                 break;
+              default:
+                throw new IllegalArgumentException("unsupported data type:" + type[mesCount]);
             }
           } else {
             stream.write((byte) 0);
@@ -389,14 +391,15 @@ public class SortDataRows {
    * This class is responsible for sorting and writing the object
    * array which holds the records equal to given array size
    */
-  private class DataSorterAndWriter implements Callable<Void> {
+  private class DataSorterAndWriter implements Runnable {
     private Object[][] recordHolderArray;
 
     public DataSorterAndWriter(Object[][] recordHolderArray) {
       this.recordHolderArray = recordHolderArray;
     }
 
-    @Override public Void call() throws Exception {
+    @Override
+    public void run() {
       try {
         long startTime = System.currentTimeMillis();
         if (parameters.getNumberOfNoDictSortColumns() > 0) {
@@ -420,11 +423,14 @@ public class SortDataRows {
         LOGGER.info("Time taken to sort and write sort temp file " + sortTempFile + " is: " + (
             System.currentTimeMillis() - startTime));
       } catch (Throwable e) {
-        threadStatusObserver.notifyFailed(e);
+        try {
+          threadStatusObserver.notifyFailed(e);
+        } catch (CarbonSortKeyAndGroupByException ex) {
+          LOGGER.error(ex);
+        }
       } finally {
         semaphore.release();
       }
-      return null;
     }
   }
 }

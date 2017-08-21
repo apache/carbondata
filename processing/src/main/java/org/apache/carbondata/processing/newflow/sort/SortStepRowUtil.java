@@ -58,12 +58,7 @@ public class SortStepRowUtil {
 
       // read measure values
       for (int i = 0; i < measureCount; i++) {
-        if (needConvertDecimalToByte) {
-          measures[index++] = data[allCount];
-        } else {
-          measures[index++] = data[allCount];
-        }
-
+        measures[index++] = data[allCount];
         allCount++;
       }
 

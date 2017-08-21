@@ -45,7 +45,7 @@ public class HdfsFileLock extends AbstractCarbonLock {
 
   private DataOutputStream dataOutputStream;
 
-  public static String tmpPath;
+  private static String tmpPath;
 
   static {
     Configuration conf = new Configuration(true);
@@ -69,6 +69,14 @@ public class HdfsFileLock extends AbstractCarbonLock {
     this.location = tmpPath + CarbonCommonConstants.FILE_SEPARATOR + lockFileLocation
         + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
     LOGGER.info("HDFS lock path:" + this.location);
+    initRetry();
+  }
+
+  /**
+   * @param lockFilePath
+   */
+  public HdfsFileLock(String lockFilePath) {
+    this.location = lockFilePath;
     initRetry();
   }
 

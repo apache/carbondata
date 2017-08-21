@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Random;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -102,7 +101,7 @@ public class UnsafeSortDataRows {
     this.threadStatusObserver = new ThreadStatusObserver();
     this.taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
     this.inMemoryChunkSize = inMemoryChunkSize;
-    this.inMemoryChunkSize = inMemoryChunkSize * 1024 * 1024;
+    this.inMemoryChunkSize = inMemoryChunkSize * 1024L * 1024L;
     enableInMemoryIntermediateMerge = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT,
             CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT_DEFAULT));
@@ -186,7 +185,7 @@ public class UnsafeSortDataRows {
           }
           unsafeInMemoryIntermediateFileMerger.startFileMergingIfPossible();
           semaphore.acquire();
-          dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(rowPage));
+          dataSorterAndWriterExecutorService.execute(new DataSorterAndWriter(rowPage));
           MemoryBlock memoryBlock =
               UnsafeMemoryManager.allocateMemoryWithRetry(this.taskId, inMemoryChunkSize);
           boolean saveToDisk =
@@ -342,14 +341,15 @@ public class UnsafeSortDataRows {
    * This class is responsible for sorting and writing the object
    * array which holds the records equal to given array size
    */
-  private class DataSorterAndWriter implements Callable<Void> {
+  private class DataSorterAndWriter implements Runnable {
     private UnsafeCarbonRowPage page;
 
     public DataSorterAndWriter(UnsafeCarbonRowPage rowPage) {
       this.page = rowPage;
     }
 
-    @Override public Void call() throws Exception {
+    @Override
+    public void run() {
       try {
         long startTime = System.currentTimeMillis();
         TimSort<UnsafeCarbonRow, IntPointerBuffer> timSort = new TimSort<>(
@@ -383,7 +383,7 @@ public class UnsafeSortDataRows {
           MemoryBlock newMemoryBlock = UnsafeSortMemoryManager.INSTANCE
               .allocateMemoryLazy(taskId, page.getDataBlock().size());
           // copying data from working memory manager to sortmemory manager
-          CarbonUnsafe.unsafe
+          CarbonUnsafe.getUnsafe()
               .copyMemory(page.getDataBlock().getBaseObject(), page.getDataBlock().getBaseOffset(),
                   newMemoryBlock.getBaseObject(), newMemoryBlock.getBaseOffset(),
                   page.getDataBlock().size());
@@ -399,11 +399,14 @@ public class UnsafeSortDataRows {
                   + (System.currentTimeMillis() - startTime));
         }
       } catch (Throwable e) {
-        threadStatusObserver.notifyFailed(e);
+        try {
+          threadStatusObserver.notifyFailed(e);
+        } catch (CarbonSortKeyAndGroupByException ex) {
+          LOGGER.error(e);
+        }
       } finally {
         semaphore.release();
       }
-      return null;
     }
   }
 }

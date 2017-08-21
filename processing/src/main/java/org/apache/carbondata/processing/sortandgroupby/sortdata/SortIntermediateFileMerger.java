@@ -91,7 +91,7 @@ public class SortIntermediateFileMerger {
         chosenTempDir + File.separator + parameters.getTableName() + System
             .nanoTime() + CarbonCommonConstants.MERGERD_EXTENSION);
     IntermediateFileMerger merger = new IntermediateFileMerger(parameters, intermediateFiles, file);
-    executorService.submit(merger);
+    executorService.execute(merger);
   }
 
   public void finish() throws CarbonSortKeyAndGroupByException {

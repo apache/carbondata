@@ -65,6 +65,8 @@ public class MeasureFieldConverterImpl implements FieldConverter {
     if (value == null || isNull) {
       String message = logHolder.getColumnMessageMap().get(measure.getColName());
       if (null == message) {
+        message = CarbonDataProcessorUtil
+            .prepareFailureReason(measure.getColName(), measure.getDataType());
         logHolder.getColumnMessageMap().put(measure.getColName(), message);
       }
       row.update(null, index);

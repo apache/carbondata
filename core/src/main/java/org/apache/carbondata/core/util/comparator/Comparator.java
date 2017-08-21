@@ -120,13 +120,7 @@ class DoubleSerializableComparator implements SerializableComparator {
     } else if (key2 == null) {
       return 1;
     }
-    if ((double) key1 < (double) key2) {
-      return -1;
-    } else if ((double) key1 > (double) key2) {
-      return 1;
-    } else {
-      return 0;
-    }
+    return ((Double)key1).compareTo((Double)key2);
   }
 }
 

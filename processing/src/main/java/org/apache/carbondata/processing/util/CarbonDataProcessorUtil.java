@@ -34,7 +34,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.DimensionType;
-import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -50,6 +49,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
+import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
@@ -181,9 +181,11 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static String[] getLocalDataFolderLocation(String databaseName, String tableName,
-      String taskId, String partitionId, String segmentId, boolean isCompactionFlow) {
+      String taskId, String partitionId, String segmentId, boolean isCompactionFlow,
+      boolean isAltPartitionFlow) {
     String tempLocationKey =
-        getTempStoreLocationKey(databaseName, tableName, segmentId, taskId, isCompactionFlow);
+        getTempStoreLocationKey(databaseName, tableName, segmentId, taskId, isCompactionFlow,
+            isAltPartitionFlow);
     String baseTempStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey);
     if (baseTempStorePath == null) {
@@ -221,12 +223,16 @@ public final class CarbonDataProcessorUtil {
    * @return
    */
   public static String getTempStoreLocationKey(String databaseName, String tableName,
-      String segmentId, String taskId, boolean isCompactionFlow) {
+      String segmentId, String taskId, boolean isCompactionFlow, boolean isAltPartitionFlow) {
     String tempLocationKey = databaseName + CarbonCommonConstants.UNDERSCORE + tableName
         + CarbonCommonConstants.UNDERSCORE + segmentId + CarbonCommonConstants.UNDERSCORE + taskId;
     if (isCompactionFlow) {
       tempLocationKey = CarbonCommonConstants.COMPACTION_KEY_WORD + CarbonCommonConstants.UNDERSCORE
           + tempLocationKey;
+    }
+    if (isAltPartitionFlow) {
+      tempLocationKey = CarbonCommonConstants.ALTER_PARTITION_KEY_WORD +
+          CarbonCommonConstants.UNDERSCORE + tempLocationKey;
     }
     return tempLocationKey;
   }

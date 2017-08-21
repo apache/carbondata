@@ -25,16 +25,16 @@ import java.util.Map;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
+import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.datamap.DataMapMeta;
+import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.events.ChangeEvent;
-import org.apache.carbondata.core.indexstore.DataMap;
-import org.apache.carbondata.core.indexstore.DataMapDistributable;
-import org.apache.carbondata.core.indexstore.DataMapFactory;
-import org.apache.carbondata.core.indexstore.DataMapWriter;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
-import org.apache.carbondata.core.indexstore.schema.FilterType;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
 /**
@@ -44,21 +44,25 @@ public class BlockletDataMapFactory implements DataMapFactory {
 
   private AbsoluteTableIdentifier identifier;
 
+  // segmentId -> list of index file
   private Map<String, List<TableBlockIndexUniqueIdentifier>> segmentMap = new HashMap<>();
 
   private Cache<TableBlockIndexUniqueIdentifier, DataMap> cache;
 
+  @Override
   public void init(AbsoluteTableIdentifier identifier, String dataMapName) {
     this.identifier = identifier;
     cache = CacheProvider.getInstance()
         .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP, identifier.getStorePath());
   }
 
-  public DataMapWriter getDataMapWriter(AbsoluteTableIdentifier identifier, String segmentId) {
-    return null;
+  @Override
+  public DataMapWriter createWriter(String segmentId) {
+    throw new UnsupportedOperationException("not implemented");
   }
 
-  public List<DataMap> getDataMaps(String segmentId) {
+  @Override
+  public List<DataMap> getDataMaps(String segmentId) throws IOException {
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         segmentMap.get(segmentId);
     if (tableBlockIndexUniqueIdentifiers == null) {
@@ -77,17 +81,10 @@ public class BlockletDataMapFactory implements DataMapFactory {
       }
     }
 
-    try {
-      return cache.getAll(tableBlockIndexUniqueIdentifiers);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
+    return cache.getAll(tableBlockIndexUniqueIdentifiers);
   }
 
-  @Override public boolean isFiltersSupported(FilterType filterType) {
-    return true;
-  }
-
+  @Override
   public void clear(String segmentId) {
     List<TableBlockIndexUniqueIdentifier> blockIndexes = segmentMap.remove(segmentId);
     if (blockIndexes != null) {
@@ -99,17 +96,26 @@ public class BlockletDataMapFactory implements DataMapFactory {
     }
   }
 
-  @Override public void clear() {
+  @Override
+  public void clear() {
     for (String segmentId: segmentMap.keySet()) {
       clear(segmentId);
     }
   }
 
-  @Override public DataMap getDataMap(DataMapDistributable distributable) {
+  @Override
+  public DataMap getDataMap(DataMapDistributable distributable) {
     return null;
   }
 
-  @Override public void fireEvent(ChangeEvent event) {
+  @Override
+  public void fireEvent(ChangeEvent event) {
 
+  }
+
+  @Override
+  public DataMapMeta getMeta() {
+    // TODO: pass SORT_COLUMNS into this class
+    return null;
   }
 }

@@ -27,7 +27,7 @@ public class RangeFilterOptmizer extends FilterOptimizerImpl {
   RangeExpressionEvaluator rangeExpEvaluator;
 
   public RangeFilterOptmizer(FilterOptimizer filterOptimizer, Expression filterExpression) {
-    super(filterOptimizer, filterExpression);
+    super(filterExpression);
     this.rangeExpEvaluator = new RangeExpressionEvaluator(filterExpression);
 
   }

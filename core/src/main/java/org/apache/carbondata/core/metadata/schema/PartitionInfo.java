@@ -29,6 +29,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
  */
 public class PartitionInfo implements Serializable {
 
+  private static final long serialVersionUID = -0L;
+
   private List<ColumnSchema> columnSchemaList;
 
   private PartitionType partitionType;
@@ -63,6 +65,31 @@ public class PartitionInfo implements Serializable {
     this.columnSchemaList = columnSchemaList;
     this.partitionType = partitionType;
     this.partitionIds = new ArrayList<>();
+  }
+
+  /**
+   * add partition means split default partition, add in last directly
+   */
+  public void  addPartition(int addPartitionCount) {
+    for (int i = 0; i < addPartitionCount; i++) {
+      partitionIds.add(++MAX_PARTITION);
+      numPartitions++;
+    }
+  }
+
+  /**
+   * e.g. original partition[0,1,2,3,4,5]
+   * split partition 2 to partition 6,7,8 (will not reuse 2)
+   * then sourcePartitionId is 2, newPartitionNumbers is 3
+   * @param sourcePartitionIndex
+   * @param newPartitionNumbers
+   */
+  public void splitPartition(int sourcePartitionIndex, int newPartitionNumbers) {
+    partitionIds.remove(sourcePartitionIndex);
+    for (int i = 0; i < newPartitionNumbers; i++) {
+      partitionIds.add(sourcePartitionIndex + i, ++MAX_PARTITION);
+    }
+    numPartitions = numPartitions - 1 + newPartitionNumbers;
   }
 
   public List<ColumnSchema> getColumnSchemaList() {

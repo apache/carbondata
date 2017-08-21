@@ -29,6 +29,8 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
  */
 public class ValueEncoderMeta implements Serializable {
 
+  private static final long serialVersionUID = -0L;
+
   /**
    * maxValue
    */

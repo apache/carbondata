@@ -231,7 +231,7 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       case SHORT:
         return new ShortWritable((Short) obj);
       case DATE:
-        return new DateWritable(new Date((Integer) obj));
+        return new DateWritable(new Date((long) obj));
       case TIMESTAMP:
         return new TimestampWritable(new Timestamp((long) obj));
       case STRING:
@@ -239,8 +239,9 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       case DECIMAL:
         return new HiveDecimalWritable(
             HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
+      default:
+        throw new IOException("unsupported data type:" + dataType);
     }
-    throw new IOException("Unknown primitive : " + dataType.getName());
   }
 
   /**
@@ -282,6 +283,9 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       case DECIMAL:
         ((HiveDecimalWritable) writable)
             .set(HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
+        break;
+      default:
+        throw new IOException("unsupported data type:" + dataType);
     }
   }
 

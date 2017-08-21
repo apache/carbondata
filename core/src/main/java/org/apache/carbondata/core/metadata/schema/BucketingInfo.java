@@ -27,6 +27,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
  */
 public class BucketingInfo implements Serializable {
 
+  private static final long serialVersionUID = -0L;
+
   private List<ColumnSchema> listOfColumns;
 
   private int numberOfBuckets;

@@ -14,37 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.indexstore;
 
-import java.io.DataOutput;
+package org.apache.carbondata.core.datamap;
 
-/**
- * Data Map writer
- */
-public interface DataMapWriter<T> {
+import java.util.List;
 
-  /**
-   * Initialize the data map writer with output stream
-   *
-   * @param outStream
-   */
-  void init(DataOutput outStream);
+import org.apache.carbondata.core.indexstore.schema.FilterType;
 
-  /**
-   * Add the index row to the in-memory store.
-   */
-  void writeData(T data);
+public class DataMapMeta {
 
-  /**
-   * Get the added row count
-   *
-   * @return
-   */
-  int getRowCount();
+  private List<String> indexedColumns;
 
-  /**
-   * Finish writing of data map table, otherwise it will not be allowed to read.
-   */
-  void finish();
+  private FilterType optimizedOperation;
 
+  public DataMapMeta(List<String> indexedColumns, FilterType optimizedOperation) {
+    this.indexedColumns = indexedColumns;
+    this.optimizedOperation = optimizedOperation;
+  }
+
+  public List<String> getIndexedColumns() {
+    return indexedColumns;
+  }
+
+  public FilterType getOptimizedOperation() {
+    return optimizedOperation;
+  }
 }

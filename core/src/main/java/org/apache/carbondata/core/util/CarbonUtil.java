@@ -304,8 +304,9 @@ public final class CarbonUtil {
    */
   private static void deleteRecursive(File f) throws IOException {
     if (f.isDirectory()) {
-      if (f.listFiles() != null) {
-        for (File c : f.listFiles()) {
+      File[] files = f.listFiles();
+      if (null != files) {
+        for (File c : files) {
           deleteRecursive(c);
         }
       }
@@ -950,6 +951,7 @@ public final class CarbonUtil {
           fileReader.finish();
         } catch (IOException e) {
           // ignore the exception as nothing we can do about it
+          fileReader = null;
         }
       }
     }
@@ -1438,7 +1440,8 @@ public final class CarbonUtil {
     return valueEncoderMeta;
   }
 
-  public static byte[] serializeEncodeMetaUsingByteBuffer(ValueEncoderMeta valueEncoderMeta) {
+  public static byte[] serializeEncodeMetaUsingByteBuffer(ValueEncoderMeta valueEncoderMeta)
+      throws IOException {
     ByteBuffer buffer = null;
     switch (valueEncoderMeta.getType()) {
       case LONG:
@@ -1463,6 +1466,8 @@ public final class CarbonUtil {
         buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + 3);
         buffer.putChar(valueEncoderMeta.getTypeInChar());
         break;
+      default:
+        throw new IOException("Unsupported datatype: " + valueEncoderMeta.getType());
     }
     buffer.putInt(0); // decimal point, not used
     buffer.put(valueEncoderMeta.getDataTypeSelected());
@@ -1714,6 +1719,34 @@ public final class CarbonUtil {
   }
 
   /**
+   * validate the storage level
+   * @param storageLevel
+   * @return boolean
+   */
+  public static boolean isValidStorageLevel(String storageLevel) {
+    if (null == storageLevel || storageLevel.trim().equals("")) {
+      return false;
+    }
+    switch (storageLevel.toUpperCase()) {
+      case "DISK_ONLY":
+      case "DISK_ONLY_2":
+      case "MEMORY_ONLY":
+      case "MEMORY_ONLY_2":
+      case "MEMORY_ONLY_SER":
+      case "MEMORY_ONLY_SER_2":
+      case "MEMORY_AND_DISK":
+      case "MEMORY_AND_DISK_2":
+      case "MEMORY_AND_DISK_SER":
+      case "MEMORY_AND_DISK_SER_2":
+      case "OFF_HEAP":
+      case "NONE":
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  /**
    * validate teh batch size
    *
    * @param value
@@ -1920,6 +1953,12 @@ public final class CarbonUtil {
         return new byte[8];
       default:
         throw new IllegalArgumentException("Invalid data type: " + meta.getType());
+    }
+  }
+
+  public static void requireNotNull(Object obj) {
+    if (obj == null) {
+      throw new IllegalArgumentException("parameter not be null");
     }
   }
 }

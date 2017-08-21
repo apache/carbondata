@@ -153,7 +153,8 @@ class CarbonMergerRDD[K, V](
             carbonLoadModel.getTableName,
             carbonLoadModel.getSegmentId,
             carbonLoadModel.getTaskNo,
-            true)
+            true,
+            false)
         CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
         LOGGER.info(s"Temp storeLocation taken is $storeLocation")
         // get destination segment properties as sent from driver which is of last segment.
@@ -196,7 +197,8 @@ class CarbonMergerRDD[K, V](
           carbonLoadModel.getTaskNo,
           "0",
           mergeNumber,
-          true
+          true,
+          false
         )
 
         carbonLoadModel.setPartitionId("0")
@@ -231,7 +233,7 @@ class CarbonMergerRDD[K, V](
         try {
           val isCompactionFlow = true
           CarbonLoaderUtil
-            .deleteLocalDataLoadFolderLocation(carbonLoadModel, isCompactionFlow)
+            .deleteLocalDataLoadFolderLocation(carbonLoadModel, isCompactionFlow, false)
         } catch {
           case e: Exception =>
             LOGGER.error(e)

@@ -131,6 +131,10 @@ public abstract class ColumnPage {
     }
   }
 
+  public static ColumnPage newPage(DataType dataType, int pageSize) throws MemoryException {
+    return newPage(dataType, pageSize, 0, 0);
+  }
+
   /**
    * Create a new page of dataType and number of row = pageSize
    */
@@ -406,6 +410,8 @@ public abstract class ColumnPage {
       case DECIMAL:
         putDecimal(rowId, BigDecimal.ZERO);
         break;
+      default:
+        throw new IllegalArgumentException("unsupported data type: " + dataType);
     }
   }
 

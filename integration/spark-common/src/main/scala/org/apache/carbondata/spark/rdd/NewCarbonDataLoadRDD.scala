@@ -267,7 +267,7 @@ class NewCarbonDataLoadRDD[K, V](
           throw e
       } finally {
         // clean up the folders and files created locally for data load operation
-        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false)
+        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
         if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
@@ -453,7 +453,7 @@ class NewDataFrameLoaderRDD[K, V](
           throw e
       } finally {
         // clean up the folders and files created locally for data load operation
-        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false)
+        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
         if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
@@ -638,7 +638,7 @@ class PartitionTableDataLoaderRDD[K, V](
           throw e
       } finally {
         // clean up the folders and files created locally for data load operation
-        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false)
+        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
         if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE

@@ -143,8 +143,8 @@ public final class ByteUtil {
        * 32-bit. On the other hand, it is substantially faster on 64-bit.
        */
       for (int i = 0; i < minWords * SIZEOF_LONG; i += SIZEOF_LONG) {
-        long lw = CarbonUnsafe.unsafe.getLong(buffer1, offset1Adj + (long) i);
-        long rw = CarbonUnsafe.unsafe.getLong(buffer2, offset2Adj + (long) i);
+        long lw = CarbonUnsafe.getUnsafe().getLong(buffer1, offset1Adj + (long) i);
+        long rw = CarbonUnsafe.getUnsafe().getLong(buffer2, offset2Adj + (long) i);
         long diff = lw ^ rw;
 
         if (diff != 0) {
@@ -209,8 +209,10 @@ public final class ByteUtil {
       if (minLength > 7) {
         minWords = minLength / SIZEOF_LONG;
         for (int i = 0; i < minWords * SIZEOF_LONG; i += SIZEOF_LONG) {
-          long lw = CarbonUnsafe.unsafe.getLong(buffer1, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i);
-          long rw = CarbonUnsafe.unsafe.getLong(buffer2, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i);
+          long lw =
+              CarbonUnsafe.getUnsafe().getLong(buffer1, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i);
+          long rw =
+              CarbonUnsafe.getUnsafe().getLong(buffer2, CarbonUnsafe.BYTE_ARRAY_OFFSET + (long) i);
           long diff = lw ^ rw;
 
           if (diff != 0) {
@@ -252,6 +254,7 @@ public final class ByteUtil {
       }
       return len1 - len2;
     }
+
     public boolean equals(byte[] buffer1, byte[] buffer2) {
       if (buffer1.length != buffer2.length) {
         return false;
@@ -259,8 +262,8 @@ public final class ByteUtil {
       int len = buffer1.length / 8;
       long currentOffset = CarbonUnsafe.BYTE_ARRAY_OFFSET;
       for (int i = 0; i < len; i++) {
-        long lw = CarbonUnsafe.unsafe.getLong(buffer1, currentOffset);
-        long rw = CarbonUnsafe.unsafe.getLong(buffer2, currentOffset);
+        long lw = CarbonUnsafe.getUnsafe().getLong(buffer1, currentOffset);
+        long rw = CarbonUnsafe.getUnsafe().getLong(buffer2, currentOffset);
         if (lw != rw) {
           return false;
         }
@@ -269,8 +272,8 @@ public final class ByteUtil {
       len = buffer1.length % 8;
       if (len > 0) {
         for (int i = 0; i < len; i += 1) {
-          long lw = CarbonUnsafe.unsafe.getByte(buffer1, currentOffset);
-          long rw = CarbonUnsafe.unsafe.getByte(buffer2, currentOffset);
+          long lw = CarbonUnsafe.getUnsafe().getByte(buffer1, currentOffset);
+          long rw = CarbonUnsafe.getUnsafe().getByte(buffer2, currentOffset);
           if (lw != rw) {
             return false;
           }
@@ -288,8 +291,8 @@ public final class ByteUtil {
       int len = length1 / 8;
       long currentOffset = CarbonUnsafe.BYTE_ARRAY_OFFSET;
       for (int i = 0; i < len; i++) {
-        long lw = CarbonUnsafe.unsafe.getLong(buffer1, currentOffset + offset1);
-        long rw = CarbonUnsafe.unsafe.getLong(buffer2, currentOffset + offset2);
+        long lw = CarbonUnsafe.getUnsafe().getLong(buffer1, currentOffset + offset1);
+        long rw = CarbonUnsafe.getUnsafe().getLong(buffer2, currentOffset + offset2);
         if (lw != rw) {
           return false;
         }
@@ -298,8 +301,8 @@ public final class ByteUtil {
       len = buffer1.length % 8;
       if (len > 0) {
         for (int i = 0; i < len; i += 1) {
-          long lw = CarbonUnsafe.unsafe.getByte(buffer1, currentOffset + offset1);
-          long rw = CarbonUnsafe.unsafe.getByte(buffer2, currentOffset + offset2);
+          long lw = CarbonUnsafe.getUnsafe().getByte(buffer1, currentOffset + offset1);
+          long rw = CarbonUnsafe.getUnsafe().getByte(buffer2, currentOffset + offset2);
           if (lw != rw) {
             return false;
           }
@@ -426,12 +429,12 @@ public final class ByteUtil {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_SHORT);
     }
     short n = 0;
-    if (CarbonUnsafe.unsafe != null) {
+    if (CarbonUnsafe.getUnsafe() != null) {
       if (CarbonUnsafe.ISLITTLEENDIAN) {
         n = Short.reverseBytes(
-            CarbonUnsafe.unsafe.getShort(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
+            CarbonUnsafe.getUnsafe().getShort(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
       } else {
-        n = CarbonUnsafe.unsafe.getShort(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
+        n = CarbonUnsafe.getUnsafe().getShort(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
       }
     } else {
 
@@ -497,12 +500,12 @@ public final class ByteUtil {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_INT);
     }
     int n = 0;
-    if (CarbonUnsafe.unsafe != null) {
+    if (CarbonUnsafe.getUnsafe() != null) {
       if (CarbonUnsafe.ISLITTLEENDIAN) {
         n = Integer.reverseBytes(
-            CarbonUnsafe.unsafe.getInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
+            CarbonUnsafe.getUnsafe().getInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
       } else {
-        n = CarbonUnsafe.unsafe.getInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
+        n = CarbonUnsafe.getUnsafe().getInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
       }
     } else {
       for (int i = offset; i < (offset + length); i++) {
@@ -550,12 +553,12 @@ public final class ByteUtil {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_LONG);
     }
     long l = 0;
-    if (CarbonUnsafe.unsafe != null) {
+    if (CarbonUnsafe.getUnsafe() != null) {
       if (CarbonUnsafe.ISLITTLEENDIAN) {
         l = Long.reverseBytes(
-            CarbonUnsafe.unsafe.getLong(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
+            CarbonUnsafe.getUnsafe().getLong(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET));
       } else {
-        l = CarbonUnsafe.unsafe.getLong(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
+        l = CarbonUnsafe.getUnsafe().getLong(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET);
       }
     } else {
       for (int i = offset; i < offset + length; i++) {
@@ -594,11 +597,11 @@ public final class ByteUtil {
           "Not enough room to put an int at" + " offset " + offset + " in a " + bytes.length
               + " byte array");
     }
-    if (CarbonUnsafe.unsafe != null) {
+    if (CarbonUnsafe.getUnsafe() != null) {
       if (CarbonUnsafe.ISLITTLEENDIAN) {
         val = Integer.reverseBytes(val);
       }
-      CarbonUnsafe.unsafe.putInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET, val);
+      CarbonUnsafe.getUnsafe().putInt(bytes, offset + CarbonUnsafe.BYTE_ARRAY_OFFSET, val);
       return offset + ByteUtil.SIZEOF_INT;
     } else {
       for (int i = offset + 3; i > offset; i--) {

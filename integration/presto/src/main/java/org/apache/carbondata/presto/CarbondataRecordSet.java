@@ -49,10 +49,6 @@ import static org.apache.carbondata.presto.Types.checkType;
 
 public class CarbondataRecordSet implements RecordSet {
 
-  private CarbonTable carbonTable;
-  private TupleDomain<ColumnHandle> originalConstraint;
-  private Expression carbonConstraint;
-  private List<CarbondataColumnConstraint> rebuildConstraints;
   private QueryModel queryModel;
   private CarbondataSplit split;
   private List<CarbondataColumnHandle> columns;
@@ -62,10 +58,7 @@ public class CarbondataRecordSet implements RecordSet {
 
   public CarbondataRecordSet(CarbonTable carbonTable, ConnectorSession session,
       ConnectorSplit split, List<CarbondataColumnHandle> columns, QueryModel queryModel) {
-    this.carbonTable = carbonTable;
     this.split = checkType(split, CarbondataSplit.class, "connectorSplit");
-    this.originalConstraint = this.split.getConstraints();
-    this.rebuildConstraints = this.split.getRebuildConstraints();
     this.queryModel = queryModel;
     this.columns = columns;
     this.readSupport = new CarbonDictionaryDecodeReaderSupport();

@@ -175,10 +175,10 @@ public class RestructureUtil {
     // 2.  If default value is not specified then its surrogate key will be
     // 1 which is for member default value null
     if (isDefaultValueNull(defaultValue)) {
-      dictionaryDefaultValue = new Integer(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+      dictionaryDefaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY;
     } else {
       dictionaryDefaultValue =
-          new Integer(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY + 1);
+          CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY + 1;
     }
     return dictionaryDefaultValue;
   }

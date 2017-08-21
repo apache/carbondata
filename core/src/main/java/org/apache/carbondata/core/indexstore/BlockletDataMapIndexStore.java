@@ -26,8 +26,8 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
-import org.apache.carbondata.core.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
+import org.apache.carbondata.core.memory.MemoryException;
 
 /**
  * Class to handle loading, unloading,clearing,storing of the table
@@ -73,10 +73,9 @@ public class BlockletDataMapIndexStore
     if (dataMap == null) {
       try {
         dataMap = loadAndGetDataMap(tableSegmentUniqueIdentifier);
-      } catch (IndexBuilderException e) {
-        throw new IOException(e.getMessage(), e);
-      } catch (Throwable e) {
-        throw new IOException("Problem in loading segment block.", e);
+      } catch (MemoryException e) {
+        LOGGER.error("memory exception when loading datamap: " + e.getMessage());
+        throw new RuntimeException(e.getMessage(), e);
       }
     }
     return dataMap;
@@ -93,6 +92,7 @@ public class BlockletDataMapIndexStore
       for (BlockletDataMap dataMap : blockletDataMaps) {
         dataMap.clear();
       }
+      e.printStackTrace();
       throw new IOException("Problem in loading segment blocks.", e);
     }
     return blockletDataMaps;
@@ -130,7 +130,8 @@ public class BlockletDataMapIndexStore
    * @throws IOException
    */
   private BlockletDataMap loadAndGetDataMap(
-      TableBlockIndexUniqueIdentifier tableSegmentUniqueIdentifier) throws IOException {
+      TableBlockIndexUniqueIdentifier tableSegmentUniqueIdentifier)
+      throws IOException, MemoryException {
     String uniqueTableSegmentIdentifier =
         tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier();
     Object lock = segmentLockMap.get(uniqueTableSegmentIdentifier);

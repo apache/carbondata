@@ -14,10 +14,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.indexstore;
+package org.apache.carbondata.core.datamap.dev;
 
+import java.io.IOException;
 import java.util.List;
 
+import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
@@ -26,16 +30,9 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 public interface DataMap {
 
   /**
-   * Give the writer to write the data.
-   *
-   * @return
-   */
-  DataMapWriter getWriter();
-
-  /**
    * It is called to load the data map to memory or to initialize it.
    */
-  void init(String path);
+  void init(String path) throws MemoryException, IOException;
 
   /**
    * Prune the datamap with filter expression. It returns the list of

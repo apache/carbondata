@@ -24,6 +24,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Comparator;
 import java.util.List;
@@ -31,14 +32,14 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cacheable;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.DataMapDistributable;
+import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
-import org.apache.carbondata.core.indexstore.DataMap;
-import org.apache.carbondata.core.indexstore.DataMapDistributable;
-import org.apache.carbondata.core.indexstore.DataMapWriter;
 import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
@@ -64,6 +65,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BlockletDataMap.class.getName());
 
+  public static final String NAME = "clustered.btree.blocklet";
+
   private static int KEY_INDEX = 0;
 
   private static int MIN_VALUES_INDEX = 1;
@@ -88,31 +91,23 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private int[] columnCardinality;
 
-  @Override public DataMapWriter getWriter() {
-    return null;
-  }
-
-  @Override public void init(String path) {
+  @Override public void init(String path) throws IOException, MemoryException {
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
-    try {
-      List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(path);
-      for (DataFileFooter fileFooter : indexInfo) {
-        List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
-        if (segmentProperties == null) {
-          columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
-          segmentProperties = new SegmentProperties(columnInTable, columnCardinality);
-          createSchema(segmentProperties);
-        }
-        TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
-        fileFooter = CarbonUtil.readMetadatFile(blockInfo);
+    List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(path);
+    for (DataFileFooter fileFooter : indexInfo) {
+      List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
+      if (segmentProperties == null) {
+        columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
+        segmentProperties = new SegmentProperties(columnInTable, columnCardinality);
+        createSchema(segmentProperties);
+      }
+      TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
+      fileFooter = CarbonUtil.readMetadatFile(blockInfo);
 
-        loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath());
-      }
-      if (unsafeMemoryDMStore != null) {
-        unsafeMemoryDMStore.finishWriting();
-      }
-    } catch (Exception e) {
-      throw new RuntimeException(e);
+      loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath());
+    }
+    if (unsafeMemoryDMStore != null) {
+      unsafeMemoryDMStore.finishWriting();
     }
   }
 
@@ -138,7 +133,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
       row.setInt(blockletInfo.getNumberOfRows(), ordinal++);
 
       // add file path
-      byte[] filePathBytes = filePath.getBytes();
+      byte[] filePathBytes =
+          filePath.getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
       row.setByteArray(filePathBytes, ordinal++);
 
       // add pages
@@ -251,10 +247,11 @@ public class BlockletDataMap implements DataMap, Cacheable {
     }
     if (LOGGER.isDebugEnabled()) {
       LOGGER.debug(
-          "Successfully retrieved the start and end key" + "Dictionary Start Key: " + searchStartKey
-              .getDictionaryKeys() + "No Dictionary Start Key " + searchStartKey
-              .getNoDictionaryKeys() + "Dictionary End Key: " + searchEndKey.getDictionaryKeys()
-              + "No Dictionary End Key " + searchEndKey.getNoDictionaryKeys());
+          "Successfully retrieved the start and end key" + "Dictionary Start Key: " + Arrays
+              .toString(searchStartKey.getDictionaryKeys()) + "No Dictionary Start Key " + Arrays
+              .toString(searchStartKey.getNoDictionaryKeys()) + "Dictionary End Key: " + Arrays
+              .toString(searchEndKey.getDictionaryKeys()) + "No Dictionary End Key " + Arrays
+              .toString(searchEndKey.getNoDictionaryKeys()));
     }
     if (filterExp == null) {
       int rowCount = unsafeMemoryDMStore.getRowCount();
@@ -291,8 +288,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
   }
 
   private Blocklet createBlocklet(DataMapRow row, int blockletId) {
-    Blocklet blocklet =
-        new Blocklet(new String(row.getByteArray(FILE_PATH_INDEX)), blockletId + "");
+    Blocklet blocklet = new Blocklet(
+        new String(row.getByteArray(FILE_PATH_INDEX), CarbonCommonConstants.DEFAULT_CHARSET_CLASS),
+        blockletId + "");
     BlockletDetailInfo detailInfo = new BlockletDetailInfo();
     detailInfo.setRowCount(row.getInt(ROW_COUNT_INDEX));
     detailInfo.setPagesCount(row.getShort(PAGE_COUNT_INDEX));

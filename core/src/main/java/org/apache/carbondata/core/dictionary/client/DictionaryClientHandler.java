@@ -59,7 +59,7 @@ public class DictionaryClientHandler extends ChannelInboundHandlerAdapter {
       DictionaryMessage key = new DictionaryMessage();
       key.readData(data);
       data.release();
-      responseMsgQueue.offer(key);
+      responseMsgQueue.add(key);
     } catch (Exception e) {
       LOGGER.error(e);
       throw e;

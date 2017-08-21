@@ -44,9 +44,9 @@ public class UnsafeRowComparatorForNormalDIms implements Comparator<UnsafeCarbon
     int sizeA = 0;
     int sizeB = 0;
     for (int i = 0; i < numberOfSortColumns; i++) {
-      int dimFieldA = CarbonUnsafe.unsafe.getInt(baseObject, rowA + sizeA);
+      int dimFieldA = CarbonUnsafe.getUnsafe().getInt(baseObject, rowA + sizeA);
       sizeA += 4;
-      int dimFieldB = CarbonUnsafe.unsafe.getInt(baseObject, rowB + sizeB);
+      int dimFieldB = CarbonUnsafe.getUnsafe().getInt(baseObject, rowB + sizeB);
       sizeB += 4;
       diff = dimFieldA - dimFieldB;
       if (diff != 0) {

@@ -41,10 +41,7 @@ import org.apache.carbondata.core.util.ObjectSizeCalculator;
  */
 public abstract class AbstractBlockIndexStoreCache<K, V>
     implements Cache<TableBlockUniqueIdentifier, AbstractIndex> {
-  /**
-   * carbon store path
-   */
-  protected String carbonStorePath;
+
   /**
    * CarbonLRU cache
    */
@@ -70,8 +67,7 @@ public abstract class AbstractBlockIndexStoreCache<K, V>
    */
   protected Map<String, Object> segmentIDLock;
 
-  public AbstractBlockIndexStoreCache(String carbonStorePath, CarbonLRUCache lruCache) {
-    this.carbonStorePath = carbonStorePath;
+  public AbstractBlockIndexStoreCache(CarbonLRUCache lruCache) {
     this.lruCache = lruCache;
     blockInfoLock = new ConcurrentHashMap<BlockInfo, Object>();
     segmentIDLock = new ConcurrentHashMap<String, Object>();

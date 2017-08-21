@@ -84,7 +84,7 @@ scala>carbon.sql("CREATE TABLE
 ###### Loading Data to a Table
 
 ```
-scala>carbon.sql("LOAD DATA INPATH 'sample.csv file path'
+scala>carbon.sql("LOAD DATA INPATH '/path/to/sample.csv'
                   INTO TABLE test_table")
 ```
 **NOTE**: Please provide the real file path of `sample.csv` for the above script.
@@ -108,8 +108,7 @@ Start Spark shell by running the following command in the Spark directory:
 ```
 ./bin/spark-shell --jars <carbondata assembly jar path>
 ```
-**NOTE**: Assembly jar will be available after [building CarbonData](https://github.com/apache/carbondata/
-blob/master/build/README.md) and can be copied from `./assembly/target/scala-2.1x/carbondata_xxx.jar`
+**NOTE**: Assembly jar will be available after [building CarbonData](https://github.com/apache/carbondata/blob/master/build/README.md) and can be copied from `./assembly/target/scala-2.1x/carbondata_xxx.jar`
 
 **NOTE**: In this shell, SparkContext is readily available as `sc`.
 
@@ -153,7 +152,7 @@ scala>cc.sql("LOAD DATA INPATH 'sample.csv file path'
 ```
 **NOTE**: Please provide the real file path of `sample.csv` for the above script.
 
-###### Query Data from a Table
+###### Querying Data from a Table
 
 ```
 scala>cc.sql("SELECT * FROM test_table").show()

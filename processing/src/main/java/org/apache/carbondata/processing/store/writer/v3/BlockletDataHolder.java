@@ -20,22 +20,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.processing.store.TablePage;
 
-public class DataWriterHolder {
+public class BlockletDataHolder {
   private List<EncodedTablePage> encodedTablePage;
+  private List<TablePage> rawTablePages;
   private long currentSize;
 
-  public DataWriterHolder() {
-    this.encodedTablePage = new ArrayList<EncodedTablePage>();
+  public BlockletDataHolder() {
+    this.encodedTablePage = new ArrayList<>();
+    this.rawTablePages = new ArrayList<>();
   }
 
   public void clear() {
     encodedTablePage.clear();
+    rawTablePages.clear();
     currentSize = 0;
   }
 
-  public void addPage(EncodedTablePage encodedTablePage) {
+  public void addPage(TablePage rawTablePage) {
+    EncodedTablePage encodedTablePage = rawTablePage.getEncodedTablePage();
     this.encodedTablePage.add(encodedTablePage);
+    this.rawTablePages.add(rawTablePage);
     currentSize += encodedTablePage.getEncodedSize();
   }
 
@@ -58,5 +64,9 @@ public class DataWriterHolder {
 
   public List<EncodedTablePage> getEncodedTablePages() {
     return encodedTablePage;
+  }
+
+  public List<TablePage> getRawTablePages() {
+    return rawTablePages;
   }
 }

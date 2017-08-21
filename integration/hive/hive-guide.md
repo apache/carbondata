@@ -41,10 +41,17 @@ mvn -DskipTests -Pspark-2.1 -Phadoop-2.7.2 clean package
 $HADOOP_HOME/bin/hadoop fs -put sample.csv <hdfs store path>/sample.csv
 ```
 
+* Add the following params to $SPARK_CONF_DIR/conf/hive-site.xml
+```xml
+<property>
+  <name>hive.metastore.pre.event.listeners</name>
+  <value>org.apache.carbondata.hive.CarbonHiveMetastoreListener</value>
+</property>
+```
 * Start Spark shell by running the following command in the Spark directory
 
 ```
-./bin/spark-shell --jars <carbondata assembly jar path>
+./bin/spark-shell --jars <carbondata assembly jar path, carbon hive jar path>
 ```
 
 ```
@@ -69,6 +76,7 @@ mkdir hive/auxlibs/
 cp carbondata/assembly/target/scala-2.11/carbondata_2.11*.jar hive/auxlibs/
 cp carbondata/integration/hive/target/carbondata-hive-*.jar hive/auxlibs/
 cp $SPARK_HOME/jars/spark-catalyst*.jar hive/auxlibs/
+cp $SPARK_HOME/jars/scala*.jar hive/auxlibs/
 export HIVE_AUX_JARS_PATH=hive/auxlibs/
 ```
 ### Fix snappy issue
@@ -80,22 +88,10 @@ export HADOOP_OPTS="-Dorg.xerial.snappy.lib.path=/Library/Java/Extensions -Dorg.
 ### Start hive client
 $HIVE_HOME/bin/hive
 
-### Initialize schema in hive
-```
-create table in hive:
-CREATE TABLE IF NOT EXISTS hive_carbon(id int, name string, scale decimal, country string, salary double) row format delimited fields terminated by ',' stored as textfile;
-
-alter table hive_carbon set FILEFORMAT
-INPUTFORMAT "org.apache.carbondata.hive.MapredCarbonInputFormat"
-OUTPUTFORMAT "org.apache.carbondata.hive.MapredCarbonOutputFormat"
-SERDE "org.apache.carbondata.hive.CarbonHiveSerDe";
-
-alter table hive_carbon set LOCATION '<hdfs store path>/carbon/store/default/hive_carbon';
-```
-
 ### Query data from hive table
 
 ```
+alter table hive_carbon set location '<hdfs store path>/hive_carbon';
 set hive.mapred.supports.subdirectories=true;
 set mapreduce.input.fileinputformat.input.dir.recursive=true;
 

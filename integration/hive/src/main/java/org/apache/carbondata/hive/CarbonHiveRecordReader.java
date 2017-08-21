@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
@@ -45,9 +44,7 @@ import org.apache.hadoop.hive.serde2.objectinspector.ObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.PrimitiveObjectInspector;
 import org.apache.hadoop.hive.serde2.objectinspector.StructField;
 import org.apache.hadoop.hive.serde2.objectinspector.StructObjectInspector;
-import org.apache.hadoop.hive.serde2.typeinfo.StructTypeInfo;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfo;
-import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoFactory;
 import org.apache.hadoop.hive.serde2.typeinfo.TypeInfoUtils;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
@@ -61,7 +58,6 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     implements org.apache.hadoop.mapred.RecordReader<Void, ArrayWritable> {
 
   private ArrayWritable valueObj = null;
-  private CarbonObjectInspector objInspector;
   private long recordReaderCounter = 0;
   private int[] columnIds;
 
@@ -95,14 +91,8 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     List<TypeInfo> columnTypes;
     // Get column names and sort order
     final String colIds = conf.get("hive.io.file.readcolumn.ids");
-    final String columnNameProperty = conf.get(serdeConstants.LIST_COLUMNS);
     final String columnTypeProperty = conf.get(serdeConstants.LIST_COLUMN_TYPES);
 
-    if (columnNameProperty.length() == 0) {
-      columnNames = new ArrayList<String>();
-    } else {
-      columnNames = Arrays.asList(columnNameProperty.split(","));
-    }
     if (columnTypeProperty.length() == 0) {
       columnTypes = new ArrayList<TypeInfo>();
     } else {
@@ -115,7 +105,6 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
 
     if (!colIds.equals("")) {
       String[] arraySelectedColId = colIds.split(",");
-      List<TypeInfo> reqColTypes = new ArrayList<TypeInfo>();
       columnIds = new int[arraySelectedColId.length];
       int columnId = 0;
       for (int j = 0; j < arraySelectedColId.length; j++) {
@@ -124,8 +113,6 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
       }
     }
 
-    rowTypeInfo = TypeInfoFactory.getStructTypeInfo(columnNames, columnTypes);
-    this.objInspector = new CarbonObjectInspector((StructTypeInfo) rowTypeInfo);
   }
 
   @Override public boolean next(Void aVoid, ArrayWritable value) throws IOException {
