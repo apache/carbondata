@@ -984,10 +984,8 @@ public class SegmentUpdateStatusManager {
       }
 
       // get carbon index files of the block.
-      String taskNum = CarbonTablePath.DataFileUtil.getTaskNo(actualBlockName);
-      // String indexFileEndsWith = timestamp + CarbonTablePath.getCarbonIndexExtension();
-      if (eachFile.getName().endsWith(CarbonTablePath.getCarbonIndexExtension()) && eachFile
-          .getName().startsWith(taskNum)) {
+      String indexFileName = CarbonTablePath.getCarbonIndexFileName(actualBlockName);
+      if (eachFile.getName().equalsIgnoreCase(indexFileName)) {
         files.add(eachFile);
       }
 
