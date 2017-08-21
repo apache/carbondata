@@ -733,4 +733,9 @@ public class CarbonTablePath extends Path {
   public static String addSegmentPrefix(String value) {
     return SEGMENT_PREFIX + value;
   }
+
+  public static String getCarbonIndexFileName(String actualBlockName) {
+    return DataFileUtil.getTaskNo(actualBlockName) + "-" + DataFileUtil.getBucketNo(actualBlockName)
+        + "-" + DataFileUtil.getTimeStampFromFileName(actualBlockName) + INDEX_FILE_EXT;
+  }
 }
