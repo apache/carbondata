@@ -165,8 +165,8 @@ public final class CarbonProperties {
         .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX))
         && !CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS.equalsIgnoreCase(lockTypeConfigured)) {
       LOGGER.warn("The value \"" + lockTypeConfigured + "\" configured for key "
-          + CarbonCommonConstants.LOCK_TYPE + "\" is invalid for current file system. "
-              + "Will use the default value \"" + CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS + " instead");
+          + CarbonCommonConstants.LOCK_TYPE + " is invalid for current file system. "
+              + "Use the default value \"" + CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS + " instead.");
       carbonProperties.setProperty(CarbonCommonConstants.LOCK_TYPE,
           CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS);
     } else if (null != defaultFs && defaultFs.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX)
@@ -174,8 +174,8 @@ public final class CarbonProperties {
       carbonProperties.setProperty(CarbonCommonConstants.LOCK_TYPE,
           CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL);
       LOGGER.warn("The value \"" + lockTypeConfigured + "\" configured for key "
-          + CarbonCommonConstants.LOCK_TYPE + "\" is invalid for current file system. "
-          + "Will use the default value \"" + CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL + " instead");
+          + CarbonCommonConstants.LOCK_TYPE + " is invalid for current file system. "
+          + "Use the default value \"" + CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL + " instead.");
     }
   }
 
