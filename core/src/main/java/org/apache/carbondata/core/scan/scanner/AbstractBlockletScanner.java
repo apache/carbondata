@@ -97,7 +97,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
         new ColumnPage[measureRawColumnChunks.length][];
     for (int i = 0; i < measureRawColumnChunks.length; i++) {
       if (measureRawColumnChunks[i] != null) {
-        columnPages[i] = measureRawColumnChunks[i].convertToMeasureColDataChunks();
+        columnPages[i] = measureRawColumnChunks[i].convertToColumnPage();
       }
     }
     scannedResult.setMeasureChunks(columnPages);

@@ -104,7 +104,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       MeasureRawColumnChunk measureRawColumnChunk =
           blockChunkHolder.getMeasureRawDataChunk()[blockIndex];
       ColumnPage[] ColumnPages =
-          measureRawColumnChunk.convertToMeasureColDataChunks();
+          measureRawColumnChunk.convertToColumnPage();
       BitSetGroup bitSetGroup = new BitSetGroup(measureRawColumnChunk.getPagesCount());
       DataType msrType = getMeasureDataType(msrColumnEvaluatorInfo);
       for (int i = 0; i < ColumnPages.length; i++) {

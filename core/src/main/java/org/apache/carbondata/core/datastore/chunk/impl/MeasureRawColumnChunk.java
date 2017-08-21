@@ -33,7 +33,7 @@ import org.apache.carbondata.core.memory.MemoryException;
  */
 public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
 
-  private ColumnPage[] dataChunks;
+  private ColumnPage[] columnPages;
 
   private MeasureColumnChunkReader chunkReader;
 
@@ -47,23 +47,22 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
 
   /**
    * Convert all raw data with all pages to processed ColumnPage
-   * @return
    */
-  public ColumnPage[] convertToMeasureColDataChunks() {
-    if (dataChunks == null) {
-      dataChunks = new ColumnPage[pagesCount];
+  public ColumnPage[] convertToColumnPage() {
+    if (columnPages == null) {
+      columnPages = new ColumnPage[pagesCount];
     }
     for (int i = 0; i < pagesCount; i++) {
       try {
-        if (dataChunks[i] == null) {
-          dataChunks[i] = chunkReader.convertToColumnPage(this, i);
+        if (columnPages[i] == null) {
+          columnPages[i] = chunkReader.convertToColumnPage(this, i);
         }
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
     }
 
-    return dataChunks;
+    return columnPages;
   }
 
   /**
@@ -73,26 +72,26 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
    */
   public ColumnPage convertToMeasureColDataChunk(int index) {
     assert index < pagesCount;
-    if (dataChunks == null) {
-      dataChunks = new ColumnPage[pagesCount];
+    if (columnPages == null) {
+      columnPages = new ColumnPage[pagesCount];
     }
 
     try {
-      if (dataChunks[index] == null) {
-        dataChunks[index] = chunkReader.convertToColumnPage(this, index);
+      if (columnPages[index] == null) {
+        columnPages[index] = chunkReader.convertToColumnPage(this, index);
       }
     } catch (IOException | MemoryException e) {
       throw new RuntimeException(e);
     }
 
-    return dataChunks[index];
+    return columnPages[index];
   }
 
   @Override public void freeMemory() {
-    if (null != dataChunks) {
-      for (int i = 0; i < dataChunks.length; i++) {
-        if (dataChunks[i] != null) {
-          dataChunks[i].freeMemory();
+    if (null != columnPages) {
+      for (int i = 0; i < columnPages.length; i++) {
+        if (columnPages[i] != null) {
+          columnPages[i].freeMemory();
         }
       }
     }
