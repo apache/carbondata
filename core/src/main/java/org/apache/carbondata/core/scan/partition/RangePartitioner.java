@@ -44,7 +44,7 @@ public class RangePartitioner implements Partitioner {
       .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
           CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
 
-  RangePartitioner(PartitionInfo partitionInfo) {
+  public RangePartitioner(PartitionInfo partitionInfo) {
     List<String> values = partitionInfo.getRangeInfo();
     DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
     numPartitions = values.size();

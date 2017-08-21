@@ -38,7 +38,7 @@ public class ListPartitioner implements Partitioner {
 
   private int numPartitions;
 
-  ListPartitioner(PartitionInfo partitionInfo) {
+  public ListPartitioner(PartitionInfo partitionInfo) {
     List<List<String>> values = partitionInfo.getListInfo();
     DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
     numPartitions = values.size();
