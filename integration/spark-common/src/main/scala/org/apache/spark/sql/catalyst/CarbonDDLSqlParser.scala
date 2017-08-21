@@ -394,6 +394,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
         val originListInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO).get
         listInfo = PartitionUtils.getListInfo(originListInfo)
+        CommonUtil.validateListInfo(listInfo)
       }
       val cols : ArrayBuffer[ColumnSchema] = new ArrayBuffer[ColumnSchema]()
       partitionCols.foreach(partition_col => {
