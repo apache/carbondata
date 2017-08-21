@@ -121,13 +121,13 @@ public class CacheProvider {
       cacheObject =
           new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonStorePath,
               carbonLRUCache);
-    } else if (cacheType.equals(cacheType.EXECUTOR_BTREE)) {
+    } else if (cacheType.equals(CacheType.EXECUTOR_BTREE)) {
       cacheObject = new BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex>(carbonStorePath,
           carbonLRUCache);
-    } else if (cacheType.equals(cacheType.DRIVER_BTREE)) {
+    } else if (cacheType.equals(CacheType.DRIVER_BTREE)) {
       cacheObject =
           new SegmentTaskIndexStore(carbonStorePath, carbonLRUCache);
-    } else if (cacheType.equals(cacheType.DRIVER_BLOCKLET_DATAMAP)) {
+    } else if (cacheType.equals(CacheType.DRIVER_BLOCKLET_DATAMAP)) {
       cacheObject = new BlockletDataMapIndexStore(carbonStorePath, carbonLRUCache);
     }
     cacheTypeToCacheMap.put(cacheType, cacheObject);

@@ -69,7 +69,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
       CarbonMeasure measure = this.msrColEvalutorInfoList.get(0).getMeasure();
       comparator = Comparator.getComparatorByDataTypeForMeasure(measure.getDataType());
     }
-    if (isDimensionPresentInCurrentBlock[0] == true) {
+    if (isDimensionPresentInCurrentBlock[0]) {
       isNaturalSorted = dimColEvaluatorInfoList.get(0).getDimension().isUseInvertedIndex()
           && dimColEvaluatorInfoList.get(0).getDimension().isSortColumn();
     }

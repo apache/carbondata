@@ -128,7 +128,7 @@ public class RLECodec implements ColumnPageCodec {
       this.stream = new DataOutputStream(bao);
     }
 
-    private EncodedColumnPage encode(ColumnPage input) throws MemoryException, IOException {
+    private EncodedColumnPage encode(ColumnPage input) throws IOException {
       validateDataType(input.getDataType());
       this.dataType = input.getDataType();
       switch (dataType) {
@@ -303,7 +303,7 @@ public class RLECodec implements ColumnPageCodec {
     private DataType dataType;
     private int pageSize;
 
-    private Decoder(DataType dataType, int pageSize) throws MemoryException {
+    private Decoder(DataType dataType, int pageSize) {
       validateDataType(dataType);
       this.dataType = dataType;
       this.pageSize = pageSize;

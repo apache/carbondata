@@ -39,7 +39,7 @@ public class CarbonIndexFileReaderTest {
   @BeforeClass public static void setUp() throws IOException {
     carbonIndexFileReader = new CarbonIndexFileReader();
     new MockUp<ThriftReader>() {
-      @Mock public void open() throws IOException {
+      @Mock public void open() {
 
       }
 
@@ -53,7 +53,7 @@ public class CarbonIndexFileReaderTest {
 
   @Test public void testreadIndexHeader() throws IOException {
     new MockUp<ThriftReader>() {
-      @Mock public TBase read(ThriftReader.TBaseCreator creator) throws IOException {
+      @Mock public TBase read(ThriftReader.TBaseCreator creator) {
         return new IndexHeader();
 
       }
@@ -65,7 +65,7 @@ public class CarbonIndexFileReaderTest {
 
   @Test public void testHasNext() throws IOException {
     new MockUp<ThriftReader>() {
-      @Mock public boolean hasNext() throws IOException {
+      @Mock public boolean hasNext() {
 
         return true;
 
@@ -77,7 +77,7 @@ public class CarbonIndexFileReaderTest {
 
   @Test public void testReadBlockInfo() throws IOException {
     new MockUp<ThriftReader>() {
-      @Mock public TBase read(ThriftReader.TBaseCreator creator) throws IOException {
+      @Mock public TBase read(ThriftReader.TBaseCreator creator) {
         return new org.apache.carbondata.format.BlockIndex();
 
       }

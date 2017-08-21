@@ -247,14 +247,14 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
-    if (isDimensionPresentInCurrentBlock == true) {
+    if (isDimensionPresentInCurrentBlock) {
       int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
           .get(dimColEvaluatorInfo.getColumnIndex());
       if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
         blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
             .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
       }
-    } else if (isMeasurePresentInCurrentBlock == true) {
+    } else if (isMeasurePresentInCurrentBlock) {
       int blockIndex = segmentProperties.getMeasuresOrdinalToBlockMapping()
           .get(msrColumnEvaluatorInfo.getColumnIndex());
       if (null == blockChunkHolder.getMeasureRawDataChunk()[blockIndex]) {

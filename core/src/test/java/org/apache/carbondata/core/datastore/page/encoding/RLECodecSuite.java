@@ -38,7 +38,7 @@ public class RLECodecSuite {
     private ColumnPage inputBytePage;
     private byte[] expectedEncodedByteData;
 
-    TestData(byte[] inputByteData, byte[] expectedEncodedByteData) throws IOException, MemoryException {
+    TestData(byte[] inputByteData, byte[] expectedEncodedByteData) throws MemoryException {
       this.inputByteData = inputByteData;
       inputBytePage = ColumnPage.newPage(DataType.BYTE, inputByteData.length);
       inputBytePage.setStatsCollector(PrimitivePageStatsCollector.newInstance(DataType.BYTE, inputByteData.length, 0, 0));

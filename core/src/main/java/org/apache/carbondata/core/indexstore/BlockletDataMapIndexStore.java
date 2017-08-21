@@ -106,9 +106,8 @@ public class BlockletDataMapIndexStore
    */
   @Override public BlockletDataMap getIfPresent(
       TableBlockIndexUniqueIdentifier tableSegmentUniqueIdentifier) {
-    BlockletDataMap dataMap = (BlockletDataMap) lruCache
+    return (BlockletDataMap) lruCache
         .get(tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier());
-    return dataMap;
   }
 
   /**

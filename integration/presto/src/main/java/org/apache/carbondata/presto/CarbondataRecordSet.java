@@ -52,7 +52,6 @@ public class CarbondataRecordSet implements RecordSet {
   private QueryModel queryModel;
   private CarbondataSplit split;
   private List<CarbondataColumnHandle> columns;
-  private QueryExecutor queryExecutor;
 
   private CarbonDictionaryDecodeReaderSupport readSupport;
 
@@ -87,7 +86,7 @@ public class CarbondataRecordSet implements RecordSet {
         ColumnarFormatVersion.valueOf(split.getLocalInputSplit().getVersion()), null));
     queryModel.setTableBlockInfos(tableBlockInfoList);
 
-    queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
+    QueryExecutor queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
 
     try {
 
@@ -95,9 +94,7 @@ public class CarbondataRecordSet implements RecordSet {
           .initialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
       CarbonIterator<Object[]> carbonIterator =
           new ChunkRowIterator((CarbonIterator<BatchResult>) queryExecutor.execute(queryModel));
-      RecordCursor rc =
-          new CarbondataRecordCursor(readSupport, carbonIterator, columns, split, dict);
-      return rc;
+      return new CarbondataRecordCursor(readSupport, carbonIterator, columns, split, dict);
     } catch (QueryExecutionException e) {
       throw new RuntimeException(e.getMessage(), e);
     } catch (Exception ex) {

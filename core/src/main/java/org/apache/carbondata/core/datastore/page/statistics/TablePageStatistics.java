@@ -30,9 +30,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 // Statistics of dimension and measure column in a TablePage
 public class TablePageStatistics {
 
-  // number of dimension after complex column expanded
-  private int numDimensionsExpanded;
-
   // min of each dimension column
   private byte[][] dimensionMinValue;
 
@@ -50,7 +47,7 @@ public class TablePageStatistics {
 
   public TablePageStatistics(EncodedDimensionPage[] dimensions,
       EncodedMeasurePage[] measures) {
-    this.numDimensionsExpanded = dimensions.length;
+    int numDimensionsExpanded = dimensions.length;
     int numMeasures = measures.length;
     this.dimensionMinValue = new byte[numDimensionsExpanded][];
     this.dimensionMaxValue = new byte[numDimensionsExpanded][];

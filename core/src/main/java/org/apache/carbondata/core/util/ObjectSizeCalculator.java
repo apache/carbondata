@@ -33,11 +33,6 @@ public final class ObjectSizeCalculator {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(ObjectSizeCalculator.class.getName());
 
-  /**
-   * Class of spark to invoke
-   */
-  private static String className = "org.apache.spark.util.SizeEstimator";
-
   private static Method estimateMethod = null;
 
   private static boolean methodAccessible = true;
@@ -53,6 +48,10 @@ public final class ObjectSizeCalculator {
     try {
       if (methodAccessible) {
         if (null == estimateMethod) {
+          /*
+    Class of spark to invoke
+   */
+          String className = "org.apache.spark.util.SizeEstimator";
           estimateMethod = Class.forName(className).getMethod("estimate", Object.class);
           estimateMethod.setAccessible(true);
         }

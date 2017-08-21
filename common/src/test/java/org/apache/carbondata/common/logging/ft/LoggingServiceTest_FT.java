@@ -80,7 +80,7 @@ public class LoggingServiceTest_FT extends TestCase {
       }
     } catch (FileNotFoundException e) {
       e.printStackTrace();
-      Assert.assertTrue(!false);
+      Assert.assertTrue(true);
     } catch (IOException e) {
       e.printStackTrace();
       Assert.assertTrue(false);

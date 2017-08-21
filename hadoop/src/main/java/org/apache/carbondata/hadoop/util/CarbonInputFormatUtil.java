@@ -88,7 +88,7 @@ public class CarbonInputFormatUtil {
   public static <V> CarbonTableInputFormat<V> createCarbonTableInputFormat(
       AbsoluteTableIdentifier identifier, List<String> partitionId, Job job) throws IOException {
     CarbonTableInputFormat<V> carbonTableInputFormat = new CarbonTableInputFormat<>();
-    carbonTableInputFormat.setPartitionIdList(job.getConfiguration(), partitionId);
+    CarbonTableInputFormat.setPartitionIdList(job.getConfiguration(), partitionId);
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
     return carbonTableInputFormat;
   }

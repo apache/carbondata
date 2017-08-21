@@ -113,14 +113,13 @@ public class HDFSLeaseUtils {
    */
   private static boolean recoverLeaseOnFile(String filePath, Path path, DistributedFileSystem fs)
       throws IOException {
-    DistributedFileSystem dfs = fs;
     int maxAttempts = getLeaseRecoveryRetryCount();
     int retryInterval = getLeaseRecoveryRetryInterval();
     boolean leaseRecovered = false;
     IOException ioException = null;
     for (int retryCount = 1; retryCount <= maxAttempts; retryCount++) {
       try {
-        leaseRecovered = dfs.recoverLease(path);
+        leaseRecovered = fs.recoverLease(path);
         if (!leaseRecovered) {
           try {
             LOGGER.info(

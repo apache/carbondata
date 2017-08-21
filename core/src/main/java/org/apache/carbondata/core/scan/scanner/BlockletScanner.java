@@ -34,7 +34,7 @@ public interface BlockletScanner {
    * @return
    * @throws IOException
    */
-  boolean isScanRequired(BlocksChunkHolder blocksChunkHolder) throws IOException;
+  boolean isScanRequired(BlocksChunkHolder blocksChunkHolder);
 
   /**
    * Below method will used to process the block data and get the scanned result

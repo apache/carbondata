@@ -745,16 +745,12 @@ public final class FilterUtil {
       int[] rangesForMaskedByte =
           getRangesForMaskedByte(keyOrdinalOfDimensionFromCurrentBlock, blockLevelKeyGenerator);
       for (Integer surrogate : columnFilterInfo.getFilterList()) {
-        try {
-          if (surrogate <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
-            keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
-            filterValuesList
-                .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
-          } else {
-            break;
-          }
-        } catch (KeyGenException e) {
-          LOGGER.error(e.getMessage());
+        if (surrogate <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
+          keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
+          filterValuesList
+              .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
+        } else {
+          break;
         }
       }
 
@@ -775,17 +771,11 @@ public final class FilterUtil {
       KeyGenerator blockLevelKeyGenerator) {
 
     int[] keys = new int[blockLevelKeyGenerator.getDimCount()];
-    byte[] maskedKey = null;
     Arrays.fill(keys, 0);
     int[] rangesForMaskedByte =
         getRangesForMaskedByte((carbonDimension.getKeyOrdinal()), blockLevelKeyGenerator);
-    try {
-      keys[carbonDimension.getKeyOrdinal()] = surrogate;
-      maskedKey = getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys));
-    } catch (KeyGenException e) {
-      LOGGER.error(e.getMessage());
-    }
-    return maskedKey;
+    keys[carbonDimension.getKeyOrdinal()] = surrogate;
+    return getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys));
   }
 
   /**
@@ -1102,14 +1092,7 @@ public final class FilterUtil {
 
   public static IndexKey createIndexKeyFromResolvedFilterVal(long[] startOrEndKey,
       KeyGenerator keyGenerator, byte[] startOrEndKeyForNoDictDimension) {
-    IndexKey indexKey = null;
-    try {
-      indexKey =
-          new IndexKey(keyGenerator.generateKey(startOrEndKey), startOrEndKeyForNoDictDimension);
-    } catch (KeyGenException e) {
-      LOGGER.error(e.getMessage());
-    }
-    return indexKey;
+    return new IndexKey(keyGenerator.generateKey(startOrEndKey), startOrEndKeyForNoDictDimension);
   }
 
   /**

@@ -88,6 +88,6 @@ public abstract class Segment {
    * implementation should load indices if required
    * @param job job context
    */
-  public abstract void setupForRead(JobContext job) throws IOException;
+  public abstract void setupForRead(JobContext job);
 
 }

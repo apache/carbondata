@@ -28,12 +28,11 @@ import static junit.framework.TestCase.assertTrue;
  */
 public class CarbonFormatSharedDictionaryTest {
 
-  private final String CARBON_STORE = "/opt/carbonstore";
-
   /**
    * test shared dictionary location
    */
   @Test public void testSharedDimentionLocation() throws IOException {
+    String CARBON_STORE = "/opt/carbonstore";
     assertTrue(CarbonSharedDictionaryPath.getDictionaryFilePath(CARBON_STORE, "d1", "shared_c1").replace("\\", "/")
         .equals(CARBON_STORE + "/d1/SharedDictionary/shared_c1.dict"));
     assertTrue(CarbonSharedDictionaryPath.getDictionaryMetaFilePath(CARBON_STORE, "d1", "shared_c1").replace("\\", "/")

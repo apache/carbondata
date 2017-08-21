@@ -43,7 +43,6 @@ public class CarbonDictionarySortIndexWriterImplTest {
 
   private String storePath;
   private CarbonTableIdentifier carbonTableIdentifier = null;
-  private ColumnIdentifier columnIdentifier = null;
   private CarbonDictionaryWriter dictionaryWriter = null;
   private CarbonDictionarySortIndexWriter dictionarySortIndexWriter = null;
   private CarbonDictionarySortIndexReader carbonDictionarySortIndexReader = null;
@@ -52,7 +51,7 @@ public class CarbonDictionarySortIndexWriterImplTest {
     storePath = "target/carbonStore";
     carbonTableIdentifier =
         new CarbonTableIdentifier("testSchema", "carbon", UUID.randomUUID().toString());
-    columnIdentifier = new ColumnIdentifier("Name", null, null);
+    ColumnIdentifier columnIdentifier = new ColumnIdentifier("Name", null, null);
     dictionaryWriter =
         new CarbonDictionaryWriterImpl(storePath, carbonTableIdentifier, columnIdentifier);
     dictionarySortIndexWriter =

@@ -105,14 +105,14 @@ public class AlluxioCarbonFileTest {
         alluxioCarbonFile = new AlluxioCarbonFile(fileStatusWithOutDirectoryPermission);
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
         };
         new MockUp<DistributedFileSystem>() {
             @Mock
-            public FileStatus[] listStatus(Path var1) throws IOException {
+            public FileStatus[] listStatus(Path var1) {
 
                 return null;
             }
@@ -127,14 +127,14 @@ public class AlluxioCarbonFileTest {
         alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
         };
         new MockUp<DistributedFileSystem>() {
             @Mock
-            public FileStatus[] listStatus(Path var1) throws IOException {
+            public FileStatus[] listStatus(Path var1) {
 
                 return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
@@ -198,14 +198,14 @@ public class AlluxioCarbonFileTest {
         };
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
         };
         new MockUp<DistributedFileSystem>() {
             @Mock
-            public FileStatus[] listStatus(Path var1) throws IOException {
+            public FileStatus[] listStatus(Path var1) {
 
                 return new FileStatus[]{new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName))};
             }
@@ -219,7 +219,7 @@ public class AlluxioCarbonFileTest {
     public void testGetParentFile() {
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
@@ -241,7 +241,7 @@ public class AlluxioCarbonFileTest {
         };
         new MockUp<DistributedFileSystem>() {
             @Mock
-            public FileStatus getFileStatus(Path path) throws IOException {
+            public FileStatus getFileStatus(Path path) {
 
                 return new FileStatus(12L, true, 60, 120l, 180L, new Path(file.getAbsolutePath()));
             }
@@ -257,7 +257,7 @@ public class AlluxioCarbonFileTest {
         alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new WebHdfsFileSystem();
             }
 
@@ -269,14 +269,14 @@ public class AlluxioCarbonFileTest {
     public void testrenameForceForDisributedSystem() {
         new MockUp<Path>() {
             @Mock
-            public FileSystem getFileSystem(Configuration conf) throws IOException {
+            public FileSystem getFileSystem(Configuration conf) {
                 return new DistributedFileSystem();
             }
 
         };
         new MockUp<DistributedFileSystem>() {
             @Mock
-            public void rename(Path src, Path dst, final Options.Rename... options) throws IOException {
+            public void rename(Path src, Path dst, final Options.Rename... options) {
 
             }
 

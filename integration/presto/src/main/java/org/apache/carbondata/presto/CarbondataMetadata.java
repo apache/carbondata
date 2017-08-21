@@ -43,8 +43,6 @@ public class CarbondataMetadata implements ConnectorMetadata {
   private CarbonTableReader carbonTableReader;
   private ClassLoader classLoader;
 
-  private Map<String, ColumnHandle> columnHandleMap;
-
   @Inject public CarbondataMetadata(CarbondataConnectorId connectorId, CarbonTableReader reader) {
     this.connectorId = requireNonNull(connectorId, "connectorId is null").toString();
     this.carbonTableReader = requireNonNull(reader, "client is null");
@@ -169,7 +167,7 @@ public class CarbondataMetadata implements ConnectorMetadata {
     }
 
     //should i cache it?
-    columnHandleMap = columnHandles.build();
+    Map<String, ColumnHandle> columnHandleMap = columnHandles.build();
 
     return columnHandleMap;
   }

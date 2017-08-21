@@ -54,8 +54,6 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
 
   private Dictionary dictionary;
 
-  private DictionaryMessage dictionaryMessage;
-
   private boolean isEmptyBadRecord;
 
   public DictionaryFieldConverterImpl(DataField dataField,
@@ -76,7 +74,7 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
       if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
         dictionary = cache.get(identifier);
       }
-      dictionaryMessage = new DictionaryMessage();
+      DictionaryMessage dictionaryMessage = new DictionaryMessage();
       dictionaryMessage.setColumnName(dataField.getColumn().getColName());
       dictionaryMessage.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
       // for table initialization

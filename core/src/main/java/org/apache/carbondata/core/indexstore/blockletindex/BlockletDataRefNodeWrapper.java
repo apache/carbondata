@@ -100,17 +100,16 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
     return measureColumnChunkReader.readRawMeasureChunk(fileReader, blockIndex);
   }
 
-  private DimensionColumnChunkReader getDimensionColumnChunkReader() throws IOException {
+  private DimensionColumnChunkReader getDimensionColumnChunkReader() {
     ColumnarFormatVersion version =
         ColumnarFormatVersion.valueOf(blockInfos.get(index).getDetailInfo().getVersionNumber());
-    DimensionColumnChunkReader dimensionColumnChunkReader = CarbonDataReaderFactory.getInstance()
+    return CarbonDataReaderFactory.getInstance()
         .getDimensionColumnChunkReader(version,
             blockInfos.get(index).getDetailInfo().getBlockletInfo(), dimensionLens,
             blockInfos.get(index).getFilePath());
-    return dimensionColumnChunkReader;
   }
 
-  private MeasureColumnChunkReader getMeasureColumnChunkReader() throws IOException {
+  private MeasureColumnChunkReader getMeasureColumnChunkReader() {
     ColumnarFormatVersion version =
         ColumnarFormatVersion.valueOf(blockInfos.get(index).getDetailInfo().getVersionNumber());
     return CarbonDataReaderFactory.getInstance().getMeasureColumnChunkReader(version,

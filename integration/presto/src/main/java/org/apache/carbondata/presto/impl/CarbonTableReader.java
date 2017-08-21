@@ -195,9 +195,7 @@ public class CarbonTableReader {
     updateCarbonFile();
 
     if (carbonFileList != null) {
-      List<String> schemaList =
-          Stream.of(carbonFileList.listFiles()).map(a -> a.getName()).collect(Collectors.toList());
-      return schemaList;
+      return Stream.of(carbonFileList.listFiles()).map(a -> a.getName()).collect(Collectors.toList());
     } else return ImmutableList.of();
   }
 
@@ -238,9 +236,8 @@ public class CarbonTableReader {
     }
 
     requireNonNull(schemaTableName, "schemaTableName is null");
-    CarbonTable table = loadTableMetadata(schemaTableName);
 
-    return table;
+    return loadTableMetadata(schemaTableName);
   }
 
   /**
@@ -622,54 +619,48 @@ public class CarbonTableReader {
 
     List<InputSplit> splits = new ArrayList<>();
 
-    while (true) {
-      while (true) {
-        while (split.hasNext()) {
-          // file is a carbondata file
-          FileStatus file = (FileStatus) split.next();
-          Path path = file.getPath();
-          long length = file.getLen();
-          if (length != 0L) {
-            BlockLocation[] blkLocations;
-            if (file instanceof LocatedFileStatus) {
-              blkLocations = ((LocatedFileStatus) file).getBlockLocations();
-            } else {
-              blkLocations = targetSystem.getFileBlockLocations(file, 0L, length);
-            }
-
-            if (this.isSplitable()) {
-              long blockSize1 = file.getBlockSize();
-              long splitSize = this.computeSplitSize(blockSize1, 1, Long.MAX_VALUE);
-
-              long bytesRemaining;
-              int blkIndex;
-              for (
-                  bytesRemaining = length;
-                  (double) bytesRemaining / (double) splitSize > 1.1D;// when there are more than one splits left.
-                  bytesRemaining -= splitSize) {
-                blkIndex = this.getBlockIndex(blkLocations, length - bytesRemaining);
-                splits.add(this.makeSplit(path, length - bytesRemaining, splitSize,
-                    blkLocations[blkIndex].getHosts()));
-              }
-
-              if (bytesRemaining != 0L) {
-                blkIndex = this.getBlockIndex(blkLocations, length - bytesRemaining);
-                splits.add(this.makeSplit(path, length - bytesRemaining, bytesRemaining,
-                    blkLocations[blkIndex].getHosts()));
-              }
-            } else {
-              splits.add(new org.apache.hadoop.mapreduce.lib.input.FileSplit(path, 0L, length,
-                  blkLocations[0].getHosts()));
-            }
-          } else {
-            splits.add(new org.apache.hadoop.mapreduce.lib.input.FileSplit(path, 0L, length,
-                new String[0]));
-          }
+    while (split.hasNext()) {
+      // file is a carbondata file
+      FileStatus file = (FileStatus) split.next();
+      Path path = file.getPath();
+      long length = file.getLen();
+      if (length != 0L) {
+        BlockLocation[] blkLocations;
+        if (file instanceof LocatedFileStatus) {
+          blkLocations = ((LocatedFileStatus) file).getBlockLocations();
+        } else {
+          blkLocations = targetSystem.getFileBlockLocations(file, 0L, length);
         }
-        return splits;
+
+        if (this.isSplitable()) {
+          long blockSize1 = file.getBlockSize();
+          long splitSize = this.computeSplitSize(blockSize1, 1, Long.MAX_VALUE);
+
+          long bytesRemaining;
+          int blkIndex;
+          for (
+              bytesRemaining = length; (double) bytesRemaining / (double) splitSize > 1.1D;// when there are more than one splits left.
+              bytesRemaining -= splitSize) {
+            blkIndex = this.getBlockIndex(blkLocations, length - bytesRemaining);
+            splits.add(this.makeSplit(path, length - bytesRemaining, splitSize,
+                blkLocations[blkIndex].getHosts()));
+          }
+
+          if (bytesRemaining != 0L) {
+            blkIndex = this.getBlockIndex(blkLocations, length - bytesRemaining);
+            splits.add(this.makeSplit(path, length - bytesRemaining, bytesRemaining,
+                blkLocations[blkIndex].getHosts()));
+          }
+        } else {
+          splits.add(new org.apache.hadoop.mapreduce.lib.input.FileSplit(path, 0L, length,
+              blkLocations[0].getHosts()));
+        }
+      } else {
+        splits.add(new org.apache.hadoop.mapreduce.lib.input.FileSplit(path, 0L, length,
+            new String[0]));
       }
     }
-
+    return splits;
   }
 
   private String[] getValidPartitions() {
@@ -829,52 +820,4 @@ public class CarbonTableReader {
         fileLength + ")");
   }
 
-  /**
-   * get total number of rows. for count(*)
-   *
-   * @throws IOException
-   * @throws IndexBuilderException
-   */
-  public long getRowCount() throws IOException, IndexBuilderException {
-    long rowCount = 0;
-        /*AbsoluteTableIdentifier absoluteTableIdentifier = this.carbonTable.getAbsoluteTableIdentifier();
-
-        // no of core to load the blocks in driver
-        //addSegmentsIfEmpty(job, absoluteTableIdentifier);
-        int numberOfCores = CarbonCommonConstants.NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT_DEFAULT_VALUE;
-        try {
-            numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT));
-        } catch (NumberFormatException e) {
-            numberOfCores = CarbonCommonConstants.NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT_DEFAULT_VALUE;
-        }
-        // creating a thread pool
-        ExecutorService threadPool = Executors.newFixedThreadPool(numberOfCores);
-        List<Future<Map<String, AbstractIndex>>> loadedBlocks =
-                new ArrayList<Future<Map<String, AbstractIndex>>>();
-        //for each segment fetch blocks matching filter in Driver BTree
-        for (String segmentNo : this.segmentList) {
-            // submitting the task
-            loadedBlocks
-                    .add(threadPool.submit(new BlocksLoaderThread(*//*job,*//* absoluteTableIdentifier, segmentNo)));
-        }
-        threadPool.shutdown();
-        try {
-            threadPool.awaitTermination(1, TimeUnit.HOURS);
-        } catch (InterruptedException e) {
-            throw new IndexBuilderException(e);
-        }
-        try {
-            // adding all the rows of the blocks to get the total row
-            // count
-            for (Future<Map<String, AbstractIndex>> block : loadedBlocks) {
-                for (AbstractIndex abstractIndex : block.get().values()) {
-                    rowCount += abstractIndex.getTotalNumberOfRows();
-                }
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            throw new IndexBuilderException(e);
-        }*/
-    return rowCount;
-  }
 }

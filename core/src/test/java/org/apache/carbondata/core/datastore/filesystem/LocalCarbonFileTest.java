@@ -40,9 +40,8 @@ public class LocalCarbonFileTest {
     private static LocalCarbonFile localCarbonFile;
     private static File file;
     private static File dir;
-    private static FileOutputStream oFile;
 
-    @BeforeClass
+  @BeforeClass
     static public void setUp() {
         file = new File("Test.carbondata");
         dir = new File("Testdir.carbondata");
@@ -54,7 +53,7 @@ public class LocalCarbonFileTest {
                 e.printStackTrace();
             }
         try {
-            oFile = new FileOutputStream(file, true);
+          FileOutputStream oFile = new FileOutputStream(file, true);
 
 
             byte[] bytes = "core java api".getBytes();
@@ -154,7 +153,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public boolean isFileExist(String filePath, FileFactory.FileType fileType) throws IOException {
+            public boolean isFileExist(String filePath, FileFactory.FileType fileType) {
                 {
                     return true;
                 }
@@ -168,7 +167,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public boolean createNewFile(String filePath, FileFactory.FileType fileType) throws IOException {
+            public boolean createNewFile(String filePath, FileFactory.FileType fileType) {
                 {
                     return true;
                 }
@@ -191,7 +190,7 @@ public class LocalCarbonFileTest {
 
         new MockUp<FileChannelImpl>() {
             @Mock
-            public long transferFrom(ReadableByteChannel var1, long var2, long var4) throws IOException {
+            public long transferFrom(ReadableByteChannel var1, long var2, long var4) {
                 if (counter[0] == 0) {
                     counter[0] = counter[0] + 1;
                     return 0L;
@@ -223,7 +222,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public boolean isFileExist(String filePath, FileFactory.FileType fileType) throws IOException {
+            public boolean isFileExist(String filePath, FileFactory.FileType fileType) {
                 {
                     return true;
                 }
@@ -381,7 +380,7 @@ public class LocalCarbonFileTest {
 
         new MockUp<File>() {
             @Mock
-            public String getCanonicalPath() throws IOException {
+            public String getCanonicalPath() {
                 return "testFile";
             }
 

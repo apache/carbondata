@@ -71,7 +71,7 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       comparator = Comparator.getComparatorByDataTypeForMeasure(measure.getDataType());
     }
     ifDefaultValueMatchesFilter();
-    if (isDimensionPresentInCurrentBlock[0] == true) {
+    if (isDimensionPresentInCurrentBlock[0]) {
       isNaturalSorted = dimColEvaluatorInfoList.get(0).getDimension().isUseInvertedIndex()
           && dimColEvaluatorInfoList.get(0).getDimension().isSortColumn();
     }

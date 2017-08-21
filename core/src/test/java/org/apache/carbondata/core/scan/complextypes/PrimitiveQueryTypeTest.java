@@ -44,7 +44,6 @@ public class PrimitiveQueryTypeTest {
       primitiveQueryTypeForLong, primitiveQueryTypeForDouble, primitiveQueryTypeForBoolean,
       primitiveQueryTypeForTimeStamp, primitiveQueryTypeForTimeStampForIsDictionaryFalse;
   private static Dictionary dictionary;
-  private boolean isDirectDictionary = false;
 
   @BeforeClass public static void setUp() {
     String name = "test";
@@ -139,6 +138,7 @@ public class PrimitiveQueryTypeTest {
     Bits bit = new Bits(new int[] { keySize * 8 });
     int surrgateValue = (int) bit.getKeyArray(data, 0)[0];
     Object actualData = null;
+    boolean isDirectDictionary = false;
     if (isDirectDictionary) {
       DirectDictionaryGenerator directDictionaryGenerator =
           DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataType.TIMESTAMP);

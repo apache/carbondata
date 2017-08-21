@@ -49,10 +49,6 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
 
   private FileFactory.FileType fileType;
 
-  private DataInputStream dataInputStream = null;
-
-  private InputStreamReader inputStream = null;
-
   private static final int DEFAULT_BUFFER_SIZE = 258;
 
   /**
@@ -78,8 +74,8 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
     // Configure Buffer based on our requirement
     char[] buffer = new char[DEFAULT_BUFFER_SIZE];
     StringWriter sw = new StringWriter();
-    dataInputStream = FileFactory.getDataInputStream(filePath, fileType);
-    inputStream = new InputStreamReader(dataInputStream,
+    DataInputStream dataInputStream = FileFactory.getDataInputStream(filePath, fileType);
+    InputStreamReader inputStream = new InputStreamReader(dataInputStream,
         CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT);
     int n = 0;
     while (-1 != (n = inputStream.read(buffer))) {
@@ -93,7 +89,7 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
    * @return DeleteDeltaBlockDetails
    * @throws IOException
    */
-  @Override public DeleteDeltaBlockDetails readJson() throws IOException {
+  @Override public DeleteDeltaBlockDetails readJson() {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;

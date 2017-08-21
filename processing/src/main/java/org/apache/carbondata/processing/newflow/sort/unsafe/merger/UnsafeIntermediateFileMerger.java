@@ -273,7 +273,7 @@ public class UnsafeIntermediateFileMerger implements Runnable {
    *
    * @throws CarbonSortKeyAndGroupByException problem while writing
    */
-  private void writeDataTofile(Object[] row) throws CarbonSortKeyAndGroupByException, IOException {
+  private void writeDataTofile(Object[] row) throws IOException {
     int dimCount = 0;
     int size = 0;
     DataType[] type = mergerParameters.getMeasureDataType();

@@ -843,7 +843,6 @@ public class QueryUtil {
       } else {
         filterMeasure.add((CarbonMeasure) ((ColumnExpression) expression).getCarbonColumn());
       }
-      return;
     } else if (null != expression) {
       for (Expression child : expression.getChildren()) {
         addColumnDimensions(child, filterDimensions, filterMeasure);

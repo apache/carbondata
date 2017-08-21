@@ -71,7 +71,7 @@ public class ServerDictionaryGenerator implements DictionaryGenerator<Integer, D
     return generator.size(key);
   }
 
-  public void writeDictionaryData() throws Exception {
+  public void writeDictionaryData() {
     final Iterator<Map.Entry<String, TableDictionaryGenerator>> iterator =
         tableMap.entrySet().iterator();
     String tableUniqueName;
@@ -84,7 +84,7 @@ public class ServerDictionaryGenerator implements DictionaryGenerator<Integer, D
     }
   }
 
-  public void writeTableDictionaryData(String tableUniqueName) throws Exception {
+  public void writeTableDictionaryData(String tableUniqueName) {
     TableDictionaryGenerator generator = tableMap.get(tableUniqueName);
     if (generator != null) {
       generator.writeDictionaryData(tableUniqueName);

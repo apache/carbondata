@@ -60,7 +60,7 @@ public class IndexedSegment extends Segment {
   }
 
   @Override
-  public void setupForRead(JobContext job) throws IOException {
+  public void setupForRead(JobContext job) {
 
   }
 

@@ -200,20 +200,16 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     int numMeasures = encodedTablePageList.get(0).getNumMeasures();
     int measureStartIndex = numDimensions;
     // calculate the size of data chunks
-    try {
-      for (int i = 0; i < numDimensions; i++) {
-        dataChunkBytes[i] = CarbonUtil.getByteArray(
-            CarbonMetadataUtil.getDimensionDataChunk3(encodedTablePageList, i));
-        size += dataChunkBytes[i].length;
-      }
-      for (int i = 0; i < numMeasures; i++) {
-        dataChunkBytes[measureStartIndex] = CarbonUtil.getByteArray(
-            CarbonMetadataUtil.getMeasureDataChunk3(encodedTablePageList, i));
-        size += dataChunkBytes[measureStartIndex].length;
-        measureStartIndex++;
-      }
-    } catch (IOException e) {
-      throw new CarbonDataWriterException("Problem while getting the data chunks", e);
+    for (int i = 0; i < numDimensions; i++) {
+      dataChunkBytes[i] = CarbonUtil.getByteArray(
+          CarbonMetadataUtil.getDimensionDataChunk3(encodedTablePageList, i));
+      size += dataChunkBytes[i].length;
+    }
+    for (int i = 0; i < numMeasures; i++) {
+      dataChunkBytes[measureStartIndex] = CarbonUtil.getByteArray(
+          CarbonMetadataUtil.getMeasureDataChunk3(encodedTablePageList, i));
+      size += dataChunkBytes[measureStartIndex].length;
+      measureStartIndex++;
     }
     return size;
   }

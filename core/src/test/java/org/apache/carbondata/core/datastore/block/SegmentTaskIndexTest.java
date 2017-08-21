@@ -41,7 +41,6 @@ public class SegmentTaskIndexTest {
   private static DataFileFooter footer;
   private static ColumnSchema columnSchema;
   private static BlockletInfo blockletInfo;
-  private static BlockletIndex blockletIndex;
   private static List<DataFileFooter> footerList = new ArrayList<DataFileFooter>();
   private static List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
 
@@ -50,7 +49,7 @@ public class SegmentTaskIndexTest {
     footer = new DataFileFooter();
     columnSchema = new ColumnSchema();
     blockletInfo = new BlockletInfo();
-    blockletIndex = new BlockletIndex();
+    BlockletIndex blockletIndex = new BlockletIndex();
   }
 
   @Test public void testBuild() {

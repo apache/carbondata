@@ -31,7 +31,6 @@ import org.junit.Test;
  * Unit test case for the TimeStampDirectDictionaryGenerator
  */
 public class TimeStampDirectDictionaryGeneratorTest {
-  private String memberString = "2015-10-20 12:30:01";
   private int surrogateKey = -1;
 
   @Before public void setUp() throws Exception {
@@ -69,6 +68,7 @@ public class TimeStampDirectDictionaryGeneratorTest {
             CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
     timeParser.setLenient(false);
     String actualValue = timeParser.format(date);
+    String memberString = "2015-10-20 12:30:01";
     Assert.assertEquals(memberString, actualValue);
   }
 

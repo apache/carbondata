@@ -47,7 +47,6 @@ public class TableDictionaryGeneratorTest {
   private CarbonDimension empDimension;
   private ColumnSchema ageColumnSchema;
   private CarbonDimension ageDimension;
-  private TableSchema tableSchema;
   private TableInfo tableInfo;
   private String storePath;
 
@@ -72,7 +71,7 @@ public class TableDictionaryGeneratorTest {
     ageDimension = new CarbonDimension(ageColumnSchema, 0, 0, 0, 0, 0);
 
     // Create a Table
-    tableSchema = new TableSchema();
+    TableSchema tableSchema = new TableSchema();
     tableSchema.setTableName("TestTable");
     tableSchema.setListOfColumns(Arrays.asList(empColumnSchema, ageColumnSchema));
     CarbonMetadata metadata = CarbonMetadata.getInstance();

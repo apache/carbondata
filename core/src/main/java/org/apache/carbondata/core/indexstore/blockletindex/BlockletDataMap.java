@@ -69,22 +69,6 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private static int KEY_INDEX = 0;
 
-  private static int MIN_VALUES_INDEX = 1;
-
-  private static int MAX_VALUES_INDEX = 2;
-
-  private static int ROW_COUNT_INDEX = 3;
-
-  private static int FILE_PATH_INDEX = 4;
-
-  private static int PAGE_COUNT_INDEX = 5;
-
-  private static int VERSION_INDEX = 6;
-
-  private static int SCHEMA_UPADATED_TIME_INDEX = 7;
-
-  private static int BLOCK_INFO_INDEX = 8;
-
   private UnsafeMemoryDMStore unsafeMemoryDMStore;
 
   private SegmentProperties segmentProperties;
@@ -266,6 +250,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
           FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
       while (startIndex <= endIndex) {
         DataMapRow unsafeRow = unsafeMemoryDMStore.getUnsafeRow(startIndex);
+        int MAX_VALUES_INDEX = 2;
+        int MIN_VALUES_INDEX = 1;
         BitSet bitSet = filterExecuter.isScanRequired(getMinMaxValue(unsafeRow, MAX_VALUES_INDEX),
             getMinMaxValue(unsafeRow, MIN_VALUES_INDEX));
         if (!bitSet.isEmpty()) {
@@ -288,17 +274,23 @@ public class BlockletDataMap implements DataMap, Cacheable {
   }
 
   private Blocklet createBlocklet(DataMapRow row, int blockletId) {
+    int FILE_PATH_INDEX = 4;
     Blocklet blocklet = new Blocklet(
         new String(row.getByteArray(FILE_PATH_INDEX), CarbonCommonConstants.DEFAULT_CHARSET_CLASS),
         blockletId + "");
     BlockletDetailInfo detailInfo = new BlockletDetailInfo();
+    int ROW_COUNT_INDEX = 3;
     detailInfo.setRowCount(row.getInt(ROW_COUNT_INDEX));
+    int PAGE_COUNT_INDEX = 5;
     detailInfo.setPagesCount(row.getShort(PAGE_COUNT_INDEX));
+    int VERSION_INDEX = 6;
     detailInfo.setVersionNumber(row.getShort(VERSION_INDEX));
     detailInfo.setDimLens(columnCardinality);
+    int SCHEMA_UPADATED_TIME_INDEX = 7;
     detailInfo.setSchemaUpdatedTimeStamp(row.getLong(SCHEMA_UPADATED_TIME_INDEX));
     BlockletInfo blockletInfo = new BlockletInfo();
     try {
+      int BLOCK_INFO_INDEX = 8;
       byte[] byteArray = row.getByteArray(BLOCK_INFO_INDEX);
       ByteArrayInputStream stream = new ByteArrayInputStream(byteArray);
       DataInputStream inputStream = new DataInputStream(stream);

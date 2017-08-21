@@ -133,7 +133,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
     }
   }
 
-  private void processBatch(CarbonRowBatch batch, CarbonFactHandler dataHandler) throws Exception {
+  private void processBatch(CarbonRowBatch batch, CarbonFactHandler dataHandler) {
     int batchSize = 0;
     while (batch.hasNext()) {
       CarbonRow row = batch.next();

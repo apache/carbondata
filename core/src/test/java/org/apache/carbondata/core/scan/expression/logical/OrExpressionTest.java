@@ -67,8 +67,7 @@ public class OrExpressionTest {
     rowImpl.setValues(new Boolean[] { true });
     final ExpressionResult expressionResult = new ExpressionResult(DataType.STRING, "test");
     new MockUp<ColumnExpression>() {
-      @Mock public ExpressionResult evaluate(RowIntf value)
-          throws FilterUnsupportedException, FilterIllegalMemberException {
+      @Mock public ExpressionResult evaluate(RowIntf value) {
         return expressionResult;
       }
     };

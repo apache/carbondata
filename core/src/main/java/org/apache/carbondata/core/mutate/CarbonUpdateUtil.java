@@ -140,7 +140,7 @@ public class CarbonUpdateUtil {
           if (index != -1) {
             // update the element in existing list.
             SegmentUpdateDetails blockDetail = oldList.get(index);
-            if (blockDetail.getDeleteDeltaStartTimestamp().isEmpty() || (isCompaction == true)) {
+            if (blockDetail.getDeleteDeltaStartTimestamp().isEmpty() || (isCompaction)) {
               blockDetail
                   .setDeleteDeltaStartTimestamp(newBlockEntry.getDeleteDeltaStartTimestamp());
             }
@@ -211,7 +211,7 @@ public class CarbonUpdateUtil {
                         + " for table status updation");
 
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
-                segmentStatusManager.readLoadMetadata(metaDataFilepath);
+                SegmentStatusManager.readLoadMetadata(metaDataFilepath);
 
         for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
 
@@ -247,7 +247,7 @@ public class CarbonUpdateUtil {
         }
 
         try {
-          segmentStatusManager
+          SegmentStatusManager
                   .writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetailsArray);
         } catch (IOException e) {
           return false;
@@ -494,7 +494,8 @@ public class CarbonUpdateUtil {
             .getCarbonTablePath(table.getAbsoluteTableIdentifier().getStorePath(),
                     table.getAbsoluteTableIdentifier().getCarbonTableIdentifier());
 
-    LoadMetadataDetails[] details = ssm.readLoadMetadata(table.getMetaDataFilepath());
+    LoadMetadataDetails[] details =
+        SegmentStatusManager.readLoadMetadata(table.getMetaDataFilepath());
 
     String validUpdateStatusFile = "";
 

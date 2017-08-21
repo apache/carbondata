@@ -380,9 +380,6 @@ public final class CarbonUtil {
         }
       }
     }
-    if (f.exists() && !f.delete()) {
-      return;
-    }
   }
 
   public static void deleteFiles(File[] intermediateFiles) throws IOException {
@@ -1842,8 +1839,7 @@ public final class CarbonUtil {
       }
       builder.append(part);
     }
-    TableInfo tableInfo = gson.fromJson(builder.toString(), TableInfo.class);
-    return tableInfo;
+    return gson.fromJson(builder.toString(), TableInfo.class);
   }
 
   /**

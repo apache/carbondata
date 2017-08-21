@@ -73,11 +73,11 @@ public class Blocklet implements Serializable {
     length = fileStatus.getLen();
   }
 
-  public String[] getLocations() throws IOException {
+  public String[] getLocations() {
     return location;
   }
 
-  public long getLength() throws IOException {
+  public long getLength() {
     return length;
   }
 

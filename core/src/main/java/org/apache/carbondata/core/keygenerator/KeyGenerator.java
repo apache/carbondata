@@ -33,7 +33,7 @@ public interface KeyGenerator extends Serializable, Comparator<byte[]> {
    * @return byte array
    * @throws KeyGenException
    */
-  byte[] generateKey(long[] keys) throws KeyGenException;
+  byte[] generateKey(long[] keys);
 
   /**
    * It generates the single key aka byte array from multiple keys.
@@ -42,7 +42,7 @@ public interface KeyGenerator extends Serializable, Comparator<byte[]> {
    * @return
    * @throws KeyGenException
    */
-  byte[] generateKey(int[] keys) throws KeyGenException;
+  byte[] generateKey(int[] keys);
 
   /**
    * It gets array of keys out of single key aka byte array

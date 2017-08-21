@@ -55,8 +55,6 @@ public class UnsafeIntermediateMerger {
 
   private final Object lockObject = new Object();
 
-  private boolean offHeap;
-
   private List<File> procFiles;
 
   public UnsafeIntermediateMerger(SortParameters parameters) {
@@ -65,7 +63,7 @@ public class UnsafeIntermediateMerger {
     this.rowPages = new ArrayList<UnsafeCarbonRowPage>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     this.mergedPages = new ArrayList<>();
     this.executorService = Executors.newFixedThreadPool(parameters.getNumberOfCores());
-    this.offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
+    boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
             CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
     this.procFiles = new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
@@ -144,8 +142,7 @@ public class UnsafeIntermediateMerger {
    *
    * @param rowPages
    */
-  private void startIntermediateMerging(UnsafeCarbonRowPage[] rowPages, int totalRows)
-      throws CarbonSortKeyAndGroupByException {
+  private void startIntermediateMerging(UnsafeCarbonRowPage[] rowPages, int totalRows) {
     UnsafeInMemoryIntermediateDataMerger merger =
         new UnsafeInMemoryIntermediateDataMerger(rowPages, totalRows);
     mergedPages.add(merger);

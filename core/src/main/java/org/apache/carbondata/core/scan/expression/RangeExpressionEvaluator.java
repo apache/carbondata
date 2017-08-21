@@ -49,8 +49,6 @@ public class RangeExpressionEvaluator {
   private Expression expr;
   private Expression srcNode;
   private Expression srcParentNode;
-  private Expression tarNode;
-  private Expression tarParentNode;
 
   public RangeExpressionEvaluator(Expression expr) {
     this.expr = expr;
@@ -60,20 +58,8 @@ public class RangeExpressionEvaluator {
     return expr;
   }
 
-  public void setExpr(Expression expr) {
-    this.expr = expr;
-  }
-
-  public Expression getSrcNode() {
+  private Expression getSrcNode() {
     return srcNode;
-  }
-
-  public void setTarNode(Expression expr) {
-    this.tarNode = expr;
-  }
-
-  public void setTarParentNode(Expression expr) {
-    this.tarParentNode = expr;
   }
 
   /**
@@ -106,7 +92,7 @@ public class RangeExpressionEvaluator {
     filterExpressionMap.clear();
   }
 
-  public void replaceWithRangeExpression(
+  private void replaceWithRangeExpression(
       Map<String, List<FilterModificationNode>> filterExpressionMap) {
 
     List<FilterModificationNode> deleteExp = new ArrayList<>();
@@ -276,7 +262,7 @@ public class RangeExpressionEvaluator {
   private boolean eligibleForRangeExpConv(Expression expChild) {
     for (Expression exp : expChild.getChildren()) {
       if (exp instanceof ColumnExpression) {
-        if (((ColumnExpression) exp).isDimension() == false) {
+        if (!((ColumnExpression) exp).isDimension()) {
           return false;
         }
         if ((((ColumnExpression) exp).getDimension().getDataType() == DataType.ARRAY) || (
@@ -419,8 +405,6 @@ public class RangeExpressionEvaluator {
           .equals(tarColumnName)) && (srcExpType != ExpressionType.FALSE) && (tarExpType
           != ExpressionType.FALSE) && ((matchExpType(srcExpType, tarExpType)) && checkLiteralValue(
           this.getSrcNode(), currentNode))) {
-        this.setTarNode(currentNode);
-        this.setTarParentNode(parentNode);
         return parentNode;
       }
     }

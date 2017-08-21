@@ -83,7 +83,7 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public void setLoadEndTime(long timestamp) {
-    this.timestamp = getTimeStampConvertion(timestamp);;
+    this.timestamp = getTimeStampConvertion(timestamp);
   }
 
   public String getLoadStatus() {
