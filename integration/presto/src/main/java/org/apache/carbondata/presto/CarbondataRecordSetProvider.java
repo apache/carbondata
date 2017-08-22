@@ -17,9 +17,33 @@
 
 package org.apache.carbondata.presto;
 
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import javax.inject.Inject;
+
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.scan.expression.ColumnExpression;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.expression.LiteralExpression;
+import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.GreaterThanEqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpression;
+import org.apache.carbondata.core.scan.expression.conditional.InExpression;
+import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
+import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression;
+import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
+import org.apache.carbondata.core.scan.expression.logical.OrExpression;
+import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
+import org.apache.carbondata.core.scan.model.QueryModel;
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.presto.impl.CarbonTableCacheModel;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
+
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorSplit;
@@ -29,31 +53,15 @@ import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
 import com.facebook.presto.spi.predicate.Domain;
 import com.facebook.presto.spi.predicate.Range;
 import com.facebook.presto.spi.predicate.TupleDomain;
-import com.facebook.presto.spi.type.*;
+import com.facebook.presto.spi.type.TimestampType;
+import com.facebook.presto.spi.type.Type;
 import com.google.common.collect.ImmutableList;
 import io.airlift.slice.Slice;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.scan.expression.ColumnExpression;
-import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.expression.LiteralExpression;
-import org.apache.carbondata.core.scan.expression.conditional.*;
-import org.apache.carbondata.core.scan.expression.logical.AndExpression;
-import org.apache.carbondata.core.scan.expression.logical.OrExpression;
-import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
-import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 
-import javax.inject.Inject;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static org.apache.carbondata.presto.Types.checkType;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkNotNull;
-import static com.google.common.base.Preconditions.checkState;
 import static java.util.Objects.requireNonNull;
+import static org.apache.carbondata.presto.Types.checkType;
 
 public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
 
@@ -132,7 +140,8 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
       CarbondataColumnHandle cdch = (CarbondataColumnHandle) c;
       Type type = cdch.getColumnType();
 
-      DataType coltype = spi2CarbondataTypeMapper(cdch);
+      DataType coltype = CarbondataType.toCarbonType(cdch);
+
       Expression colExpression = new ColumnExpression(cdch.getColumnName(), coltype);
 
       domain = originalConstraint.getDomains().get().get(c);
@@ -152,7 +161,9 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
         } else {
           List<Expression> rangeConjuncts = new ArrayList<>();
           if (!range.getLow().isLowerUnbounded()) {
-            Object value = convertDataByType(range.getLow().getValue(), type);
+
+            Object value = CarbondataType.getDataByType(range.getLow().getValue(), type);
+
             switch (range.getLow().getBound()) {
               case ABOVE:
                 if (type == TimestampType.TIMESTAMP) {
@@ -176,7 +187,9 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
             }
           }
           if (!range.getHigh().isUpperUnbounded()) {
-            Object value = convertDataByType(range.getHigh().getValue(), type);
+
+            Object value = CarbondataType.getDataByType(range.getHigh().getValue(), type);
+
             switch (range.getHigh().getBound()) {
               case ABOVE:
                 throw new IllegalArgumentException("High marker should never use ABOVE bound");
@@ -212,7 +225,8 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
       } else if (singleValues.size() > 1) {
         ListExpression candidates = null;
         List<Expression> exs = singleValues.stream().map((a) -> {
-          return new LiteralExpression(convertDataByType(a, type), coltype);
+
+        return new LiteralExpression(CarbondataType.getDataByType(a, type), coltype);
         }).collect(Collectors.toList());
         candidates = new ListExpression(exs);
 
@@ -247,27 +261,4 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
         CarbonInputFormatUtil.resolveFilter(finalFilters, queryModel.getAbsoluteTableIdentifier()));
   }
 
-  public static DataType spi2CarbondataTypeMapper(CarbondataColumnHandle carbondataColumnHandle) {
-    Type colType = carbondataColumnHandle.getColumnType();
-    if (colType == BooleanType.BOOLEAN) return DataType.BOOLEAN;
-    else if (colType == SmallintType.SMALLINT) return DataType.SHORT;
-    else if (colType == IntegerType.INTEGER) return DataType.INT;
-    else if (colType == BigintType.BIGINT) return DataType.LONG;
-    else if (colType == DoubleType.DOUBLE) return DataType.DOUBLE;
-    else if (colType == VarcharType.VARCHAR) return DataType.STRING;
-    else if (colType == DateType.DATE) return DataType.DATE;
-    else if (colType == TimestampType.TIMESTAMP) return DataType.TIMESTAMP;
-    else if (colType == DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
-        carbondataColumnHandle.getScale())) return DataType.DECIMAL;
-    else return DataType.STRING;
-  }
-
-  public Object convertDataByType(Object rawdata, Type type) {
-    if (type.equals(IntegerType.INTEGER)) return Integer.valueOf(rawdata.toString());
-    else if (type.equals(BigintType.BIGINT)) return (Long) rawdata;
-    else if (type.equals(VarcharType.VARCHAR)) return ((Slice) rawdata).toStringUtf8();
-    else if (type.equals(BooleanType.BOOLEAN)) return (Boolean) (rawdata);
-
-    return rawdata;
-  }
 }
