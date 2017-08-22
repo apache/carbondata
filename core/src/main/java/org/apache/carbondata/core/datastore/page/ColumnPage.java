@@ -74,37 +74,38 @@ public abstract class ColumnPage {
     return dataType;
   }
 
+  private static final SimpleStatsResult statsForComplexType = new SimpleStatsResult() {
+    @Override public Object getMin() {
+      return new byte[0];
+    }
+
+    @Override public Object getMax() {
+      return new byte[0];
+    }
+
+    @Override public int getDecimalPoint() {
+      return 0;
+    }
+
+    @Override public DataType getDataType() {
+      return BYTE_ARRAY;
+    }
+
+    @Override public int getScale() {
+      return 0;
+    }
+
+    @Override public int getPrecision() {
+      return 0;
+    }
+  };
+
   public SimpleStatsResult getStatistics() {
     if (statsCollector != null) {
       return statsCollector.getPageStats();
     } else {
-      // return a dummy result, for complex column
-      return new SimpleStatsResult() {
-        @Override public Object getMin() {
-          return new byte[0];
-        }
-
-        @Override public Object getMax() {
-          return new byte[0];
-        }
-
-        @Override public int getDecimalPoint() {
-          return 0;
-        }
-
-        @Override public DataType getDataType() {
-          assert (dataType == BYTE_ARRAY);
-          return dataType;
-        }
-
-        @Override public int getScale() {
-          return 0;
-        }
-
-        @Override public int getPrecision() {
-          return 0;
-        }
-      };
+      // TODO: for sub column of complex type, there no stats yet, return a dummy result
+      return statsForComplexType;
     }
   }
 
