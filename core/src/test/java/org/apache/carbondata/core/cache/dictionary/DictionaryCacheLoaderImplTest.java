@@ -29,6 +29,7 @@ import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.reader.CarbonDictionaryReaderImpl;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.format.ColumnDictionaryChunk;
 
 import mockit.Mock;
@@ -43,10 +44,19 @@ public class DictionaryCacheLoaderImplTest {
   private static DictionaryCacheLoaderImpl dictionaryCacheLoader;
   private static DictionaryInfo dictionaryInfo;
   private static ColumnIdentifier columnIdentifier;
+  private static DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier;
 
   @BeforeClass public static void setUp() {
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("db", "table1", "1");
-    dictionaryCacheLoader = new DictionaryCacheLoaderImpl(carbonTableIdentifier, "/tmp/");
+    Map<String, String> columnProperties = new HashMap<>();
+    columnProperties.put("prop1", "value1");
+    columnProperties.put("prop2", "value2");
+    columnIdentifier = new ColumnIdentifier("1", columnProperties, DataType.STRING);
+    dictionaryColumnUniqueIdentifier =
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
+            columnIdentifier.getDataType(), CarbonStorePath.getCarbonTablePath("/tmp", carbonTableIdentifier));
+    dictionaryCacheLoader = new DictionaryCacheLoaderImpl(carbonTableIdentifier, "/tmp/",
+        dictionaryColumnUniqueIdentifier);
     dictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
     new MockUp<CarbonDictionaryReaderImpl>() {
       @Mock @SuppressWarnings("unused") Iterator<byte[]> read(long startOffset, long endOffset)
@@ -68,10 +78,6 @@ public class DictionaryCacheLoaderImplTest {
         return Arrays.asList(1, 2);
       }
     };
-    Map<String, String> columnProperties = new HashMap<>();
-    columnProperties.put("prop1", "value1");
-    columnProperties.put("prop2", "value2");
-    columnIdentifier = new ColumnIdentifier("1", columnProperties, DataType.STRING);
   }
 
   @Test public void testToLoad() throws IOException {

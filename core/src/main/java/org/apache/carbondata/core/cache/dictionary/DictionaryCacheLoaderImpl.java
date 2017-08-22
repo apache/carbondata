@@ -41,6 +41,8 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    */
   private CarbonTableIdentifier carbonTableIdentifier;
 
+  private DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier;
+
   /**
    * carbon store path
    */
@@ -51,9 +53,10 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    * @param carbonStorePath       hdfs store path
    */
   public DictionaryCacheLoaderImpl(CarbonTableIdentifier carbonTableIdentifier,
-      String carbonStorePath) {
+      String carbonStorePath, DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.carbonStorePath = carbonStorePath;
+    this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
   }
 
   /**
@@ -74,9 +77,10 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
       long dictionaryChunkStartOffset, long dictionaryChunkEndOffset, boolean loadSortIndex)
       throws IOException {
     Iterator<byte[]> columnDictionaryChunkWrapper =
-        load(columnIdentifier, dictionaryChunkStartOffset, dictionaryChunkEndOffset);
+        load(dictionaryColumnUniqueIdentifier, dictionaryChunkStartOffset,
+            dictionaryChunkEndOffset);
     if (loadSortIndex) {
-      readSortIndexFile(dictionaryInfo, columnIdentifier);
+      readSortIndexFile(dictionaryInfo, dictionaryColumnUniqueIdentifier);
     }
     fillDictionaryValuesAndAddToDictionaryChunks(dictionaryInfo, columnDictionaryChunkWrapper);
   }
@@ -118,15 +122,15 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
   /**
    * This method will load the dictionary data between a given start and end offset
    *
-   * @param columnIdentifier column unique identifier
+   * @param dictionaryColumnUniqueIdentifier column unique identifier
    * @param startOffset      start offset of dictionary file
    * @param endOffset        end offset of dictionary file
    * @return iterator over dictionary values
    * @throws IOException
    */
-  private Iterator<byte[]> load(ColumnIdentifier columnIdentifier, long startOffset, long endOffset)
-      throws IOException {
-    CarbonDictionaryReader dictionaryReader = getDictionaryReader(columnIdentifier);
+  private Iterator<byte[]> load(DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
+      long startOffset, long endOffset) throws IOException {
+    CarbonDictionaryReader dictionaryReader = getDictionaryReader(dictionaryColumnUniqueIdentifier);
     try {
       return dictionaryReader.read(startOffset, endOffset);
     } finally {
@@ -138,12 +142,13 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    * This method will read the sort index file and load into memory
    *
    * @param dictionaryInfo
-   * @param columnIdentifier
+   * @param dictionaryColumnUniqueIdentifier
    * @throws IOException
    */
-  private void readSortIndexFile(DictionaryInfo dictionaryInfo, ColumnIdentifier columnIdentifier)
-      throws IOException {
-    CarbonDictionarySortIndexReader sortIndexReader = getSortIndexReader(columnIdentifier);
+  private void readSortIndexFile(DictionaryInfo dictionaryInfo,
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) throws IOException {
+    CarbonDictionarySortIndexReader sortIndexReader =
+        getSortIndexReader(dictionaryColumnUniqueIdentifier);
     try {
       dictionaryInfo.setSortOrderIndex(sortIndexReader.readSortIndex());
       dictionaryInfo.setSortReverseOrderIndex(sortIndexReader.readInvertedSortIndex());
@@ -155,22 +160,25 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
   /**
    * This method will create a dictionary reader instance to read the dictionary file
    *
-   * @param columnIdentifier unique column identifier
+   * @param dictionaryColumnUniqueIdentifier unique column identifier
    * @return carbon dictionary reader instance
    */
-  private CarbonDictionaryReader getDictionaryReader(ColumnIdentifier columnIdentifier) {
+  private CarbonDictionaryReader getDictionaryReader(
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
-    return dictService
-        .getDictionaryReader(carbonTableIdentifier, columnIdentifier, carbonStorePath);
+    return dictService.getDictionaryReader(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
+        carbonStorePath);
   }
 
   /**
-   * @param columnIdentifier unique column identifier
+   * @param dictionaryColumnUniqueIdentifier unique column identifier
    * @return sort index reader instance
    */
-  private CarbonDictionarySortIndexReader getSortIndexReader(ColumnIdentifier columnIdentifier) {
+  private CarbonDictionarySortIndexReader getSortIndexReader(
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
     return dictService
-        .getDictionarySortIndexReader(carbonTableIdentifier, columnIdentifier, carbonStorePath);
+        .getDictionarySortIndexReader(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
+            carbonStorePath);
   }
 }

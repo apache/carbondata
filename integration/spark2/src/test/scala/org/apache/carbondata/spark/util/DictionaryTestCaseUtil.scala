@@ -23,6 +23,7 @@ import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
 /**
@@ -41,7 +42,8 @@ object DictionaryTestCaseUtil {
     val dimension = table.getDimensionByName(table.getFactTableName, columnName)
     val tableIdentifier = new CarbonTableIdentifier(table.getDatabaseName, table.getFactTableName, "uniqueid")
     val columnIdentifier = new DictionaryColumnUniqueIdentifier(tableIdentifier,
-      dimension.getColumnIdentifier, dimension.getDataType
+      dimension.getColumnIdentifier, dimension.getDataType,
+      CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier)
     )
     val dict = CarbonLoaderUtil.getDictionary(columnIdentifier, TestQueryExecutor.storeLocation)
     assert(dict.getSurrogateKey(value) != CarbonCommonConstants.INVALID_SURROGATE_KEY)

@@ -19,6 +19,7 @@ package org.apache.carbondata.core.scan.filter.resolver.resolverinfo;
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolverImpl;
 
@@ -32,8 +33,8 @@ public class TrueConditionalResolverImpl extends ConditionalFilterResolverImpl {
     super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier, false);
   }
 
-  @Override
-  public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier) {
+  @Override public void resolve(AbsoluteTableIdentifier absoluteTableIdentifier,
+      TableProvider tableProvider) {
   }
 
   /**

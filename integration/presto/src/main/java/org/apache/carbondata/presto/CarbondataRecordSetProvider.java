@@ -40,6 +40,8 @@ import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.*;
 import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.expression.logical.OrExpression;
+import org.apache.carbondata.core.scan.filter.SingleTableProvider;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
@@ -241,10 +243,11 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     } else if (tmp.size() == 1) finalFilters = tmp.get(0);
     else return;
 
+    TableProvider tableProvider = new SingleTableProvider(carbonTable);
     // todo set into QueryModel
     CarbonInputFormatUtil.processFilterExpression(finalFilters, carbonTable);
-    queryModel.setFilterExpressionResolverTree(
-        CarbonInputFormatUtil.resolveFilter(finalFilters, queryModel.getAbsoluteTableIdentifier()));
+    queryModel.setFilterExpressionResolverTree(CarbonInputFormatUtil
+        .resolveFilter(finalFilters, queryModel.getAbsoluteTableIdentifier(), tableProvider));
   }
 
   public static DataType spi2CarbondataTypeMapper(CarbondataColumnHandle carbondataColumnHandle) {

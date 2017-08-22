@@ -25,11 +25,11 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
@@ -77,7 +77,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   /**
    * column identifier
    */
-  protected ColumnIdentifier columnIdentifier;
+  protected DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier;
 
   /**
    * carbon dictionary data store path
@@ -132,12 +132,12 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    *
    * @param storePath             carbon dictionary data store path
    * @param carbonTableIdentifier table identifier which will give table name and database name
-   * @param columnIdentifier      column unique identifier
+   * @param dictionaryColumnUniqueIdentifier      column unique identifier
    */
-  public CarbonDictionaryWriterImpl(String storePath,
-      CarbonTableIdentifier carbonTableIdentifier, ColumnIdentifier columnIdentifier) {
+  public CarbonDictionaryWriterImpl(String storePath, CarbonTableIdentifier carbonTableIdentifier,
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     this.carbonTableIdentifier = carbonTableIdentifier;
-    this.columnIdentifier = columnIdentifier;
+    this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
     this.storePath = storePath;
     this.isFirstTime = true;
   }
@@ -254,11 +254,13 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
   protected void initPaths() {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(
-            this.storePath, carbonTableIdentifier);
-    this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
-    this.dictionaryMetaFilePath =
-        carbonTablePath.getDictionaryMetaFilePath(columnIdentifier.getColumnId());
+    CarbonTablePath carbonTablePath = pathService
+        .getCarbonTablePath(this.storePath, carbonTableIdentifier,
+            dictionaryColumnUniqueIdentifier);
+    this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(
+        dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
+    this.dictionaryMetaFilePath = carbonTablePath.getDictionaryMetaFilePath(
+        dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
   }
 
   /**
@@ -290,17 +292,19 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
     int bytesToTruncate = 0;
     if (null != chunkMetaObjectForLastSegmentEntry) {
       bytesToTruncate =
-              (int) (chunk_start_offset - chunkMetaObjectForLastSegmentEntry.getEnd_offset());
+          (int) (chunk_start_offset - chunkMetaObjectForLastSegmentEntry.getEnd_offset());
     }
     if (bytesToTruncate > 0) {
-      LOGGER.info("some inconsistency in dictionary file for column " + this.columnIdentifier);
+      LOGGER.info("some inconsistency in dictionary file for column "
+          + this.dictionaryColumnUniqueIdentifier.getColumnIdentifier());
       // truncate the dictionary data till chunk meta end offset
       FileFactory.FileType fileType = FileFactory.getFileType(this.dictionaryFilePath);
       CarbonFile carbonFile = FileFactory.getCarbonFile(this.dictionaryFilePath, fileType);
       boolean truncateSuccess = carbonFile
           .truncate(this.dictionaryFilePath, chunkMetaObjectForLastSegmentEntry.getEnd_offset());
       if (!truncateSuccess) {
-        LOGGER.info("Diction file not truncated successfully for column " + this.columnIdentifier);
+        LOGGER.info("Diction file not truncated successfully for column "
+            + this.dictionaryColumnUniqueIdentifier.getColumnIdentifier());
       }
     }
   }
@@ -344,7 +348,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
       // write dictionary metadata file
       writeThriftObject(dictionaryChunkMeta);
       LOGGER.info("Dictionary metadata file written successfully for column "
-          + this.columnIdentifier + " at path " + this.dictionaryMetaFilePath);
+          + this.dictionaryColumnUniqueIdentifier.getColumnIdentifier() + " at path "
+          + this.dictionaryMetaFilePath);
     } finally {
       closeThriftWriter();
     }
@@ -426,7 +431,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    */
   protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
     return new CarbonDictionaryMetadataReaderImpl(storePath, carbonTableIdentifier,
-        columnIdentifier);
+        dictionaryColumnUniqueIdentifier);
   }
 
   @Override public void commit() throws IOException {

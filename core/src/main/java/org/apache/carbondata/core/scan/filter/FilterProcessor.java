@@ -41,7 +41,8 @@ public interface FilterProcessor {
    * @throws FilterUnsupportedException
    */
   FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException, IOException;
+      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider)
+      throws FilterUnsupportedException, IOException;
 
   /**
    * This API is exposed inorder to get the required block reference node
