@@ -168,7 +168,7 @@ public class IncludeColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl
   private byte[] getMinMaxData(int[] colGrpColumns, byte[] minMaxData, int columnIndex) {
     int startIndex = 0;
     int endIndex = 0;
-    if (null != colGrpColumns) {
+    if (null != colGrpColumns && colGrpColumns.length > 0) {
       for (int i = 0; i < colGrpColumns.length; i++) {
         int colGrpId = getColumnGroupId(colGrpColumns[i]);
         int mdKeyOrdinal = getMdkeyOrdinal(colGrpColumns[i], colGrpId);
@@ -202,7 +202,7 @@ public class IncludeColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl
         return colGroups[i];
       }
     }
-    return null;
+    return  new int[0];
   }
 
   private int getMdkeyOrdinal(int ordinal, int colGrpId) {

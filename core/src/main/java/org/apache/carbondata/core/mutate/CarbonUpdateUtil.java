@@ -127,7 +127,6 @@ public class CarbonUpdateUtil {
       lockStatus = updateLock.lockWithRetries();
       if (lockStatus) {
 
-        AbsoluteTableIdentifier absoluteTableIdentifier = table.getAbsoluteTableIdentifier();
 
         // read the existing file if present and update the same.
         SegmentUpdateDetails[] oldDetails = segmentUpdateStatusManager
