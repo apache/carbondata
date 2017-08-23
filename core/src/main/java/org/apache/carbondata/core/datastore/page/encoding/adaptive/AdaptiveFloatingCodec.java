@@ -96,6 +96,7 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
 
   @Override
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
+    assert meta instanceof AdaptiveFloatingEncoderMeta;
     AdaptiveFloatingEncoderMeta codecMeta = (AdaptiveFloatingEncoderMeta) meta;
     final Compressor compressor = CompressorFactory.getInstance().getCompressor(
         codecMeta.getCompressorName());

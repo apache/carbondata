@@ -29,6 +29,8 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
  */
 public class DictionaryColumnUniqueIdentifier implements Serializable {
 
+  private static final long serialVersionUID = -1231234567L;
+
   /**
    * table fully qualified name
    */

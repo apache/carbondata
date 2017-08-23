@@ -60,12 +60,13 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
   @Override
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
+    assert meta instanceof DirectCompressorEncoderMeta;
     DirectCompressorEncoderMeta codecMeta = (DirectCompressorEncoderMeta) meta;
     return new DirectDecompressor(codecMeta.getCompressorName(),
         codecMeta.getScale(), codecMeta.getPrecision());
   }
 
-  private class DirectCompressor extends ColumnPageEncoder {
+  private static class DirectCompressor extends ColumnPageEncoder {
 
     private Compressor compressor;
 

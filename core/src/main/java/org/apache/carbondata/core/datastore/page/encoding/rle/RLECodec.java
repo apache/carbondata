@@ -62,6 +62,7 @@ public class RLECodec implements ColumnPageCodec {
 
   @Override
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
+    assert meta instanceof RLEEncoderMeta;
     RLEEncoderMeta codecMeta = (RLEEncoderMeta) meta;
     return new RLEDecoder(codecMeta.getDataType(), codecMeta.getPageSize());
   }
