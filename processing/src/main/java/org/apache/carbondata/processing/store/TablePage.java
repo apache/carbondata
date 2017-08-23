@@ -307,6 +307,9 @@ public class TablePage {
               complexDimensionPages[complexDimIndex++]);
           encodedComplexDimenions.addAll(Arrays.asList(encodedPages));
           break;
+        default:
+          throw new IllegalArgumentException("unsupported dimension type:" + spec
+              .getDimensionType());
       }
     }
 

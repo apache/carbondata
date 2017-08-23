@@ -1107,10 +1107,13 @@ public final class FilterUtil {
    */
   public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
       CarbonDimension carbonDimension, TableProvider tableProvider) throws IOException {
-    CarbonTable carbonTable =
-        tableProvider.getCarbonTable(tableIdentifier.getCarbonTableIdentifier());
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
+    CarbonTablePath carbonTablePath = null;
+    if (null != tableProvider) {
+      CarbonTable carbonTable =
+          tableProvider.getCarbonTable(tableIdentifier.getCarbonTableIdentifier());
+      carbonTablePath =
+          CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
+    }
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(tableIdentifier.getCarbonTableIdentifier(),
             carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(), carbonTablePath);

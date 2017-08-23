@@ -33,7 +33,6 @@ public class CarbonTableCacheModel {
 
   public TableInfo tableInfo;
   public CarbonTable carbonTable;
-  public String[] segments;
 
   public boolean isValid() {
     if (carbonTable != null && carbonTablePath != null && carbonTableIdentifier != null)

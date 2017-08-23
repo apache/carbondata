@@ -86,6 +86,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
   @Override
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
+    assert meta instanceof AdaptiveIntegralEncoderMeta;
     AdaptiveIntegralEncoderMeta codecMeta = (AdaptiveIntegralEncoderMeta) meta;
     final Compressor compressor = CompressorFactory.getInstance().getCompressor(
         codecMeta.getCompressorName());

@@ -41,10 +41,10 @@ public class TaskMetricsMap {
    * In this map we are maintaining all spawned child threads callback info for each parent thread
    * here key = parent thread id & values =  list of spawned child threads callbacks
    */
-  public static Map<Long, List<CarbonFSBytesReadOnThreadCallback>> metricMap =
+  public static final Map<Long, List<CarbonFSBytesReadOnThreadCallback>> metricMap =
       new ConcurrentHashMap<>();
 
-  public static TaskMetricsMap taskMetricsMap = new TaskMetricsMap();
+  public static final TaskMetricsMap taskMetricsMap = new TaskMetricsMap();
 
   public static TaskMetricsMap getInstance() {
     return taskMetricsMap;

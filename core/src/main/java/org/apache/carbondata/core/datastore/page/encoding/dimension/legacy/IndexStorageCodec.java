@@ -21,11 +21,8 @@ import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
-import org.apache.carbondata.core.util.CarbonProperties;
 
 public abstract class IndexStorageCodec implements ColumnPageCodec {
-  protected ColumnarFormatVersion version = CarbonProperties.getInstance().getFormatVersion();
   protected Compressor compressor;
   protected boolean isSort;
   protected boolean isInvertedIndex;

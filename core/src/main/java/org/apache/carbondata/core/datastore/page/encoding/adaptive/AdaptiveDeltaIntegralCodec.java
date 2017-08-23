@@ -112,6 +112,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
 
   @Override
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
+    assert meta instanceof AdaptiveDeltaIntegralEncoderMeta;
     AdaptiveDeltaIntegralEncoderMeta codecMeta = (AdaptiveDeltaIntegralEncoderMeta) meta;
     final Compressor compressor = CompressorFactory.getInstance().getCompressor(
         codecMeta.getCompressorName());

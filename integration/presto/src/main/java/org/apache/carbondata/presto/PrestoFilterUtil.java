@@ -205,7 +205,8 @@ public class PrestoFilterUtil {
   }
 
   private static Object ConvertDataByType(Object rawdata, Type type) {
-    if (type.equals(IntegerType.INTEGER)) return new Integer((rawdata.toString()));
+    if (type.equals(IntegerType.INTEGER)) return Integer.valueOf(rawdata.toString());
+    // new Integer((rawdata.toString()));
     else if (type.equals(BigintType.BIGINT)) return rawdata;
     else if (type.equals(VarcharType.VARCHAR)) {
       if (rawdata instanceof Slice) {

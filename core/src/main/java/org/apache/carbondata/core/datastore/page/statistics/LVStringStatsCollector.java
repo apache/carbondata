@@ -81,7 +81,7 @@ public class LVStringStatsCollector implements ColumnPageStatsCollector {
       }
       return;
     }
-    int length = (value[0] << 8) + value[1];
+    int length = (value[0] << 8) + (value[1] & 0xff);
     assert (length > 0);
     byte[] v = new byte[value.length - 2];
     System.arraycopy(value, 2, v, 0, v.length);

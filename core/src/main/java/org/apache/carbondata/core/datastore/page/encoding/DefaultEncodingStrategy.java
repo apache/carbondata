@@ -51,6 +51,7 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
       if (newWay) {
         return createEncoderForDimension((TableSpec.DimensionSpec) columnSpec, inputPage);
       } else {
+        assert columnSpec instanceof TableSpec.DimensionSpec;
         return createEncoderForDimensionLegacy((TableSpec.DimensionSpec) columnSpec);
       }
     }
