@@ -20,53 +20,36 @@ package org.apache.spark.rdd
 import scala.reflect.ClassTag
 
 import org.apache.spark._
-import org.apache.spark.rdd.{CoalescedRDDPartition, DataLoadPartitionCoalescer, RDD}
 
 import org.apache.carbondata.spark.rdd.CarbonRDD
 
-// This RDD distributes previous RDD data based on number of nodes. i.e., one partition for one node
 
-class UpdateCoalescedRDD[T: ClassTag](
+case class DataLoadPartitionWrap[T: ClassTag](rdd: RDD[T], partition: Partition)
+
+class DataLoadCoalescedRDD[T: ClassTag](
     @transient var prev: RDD[T],
     nodeList: Array[String])
-  extends CarbonRDD[T](prev.context, Nil) {
+  extends CarbonRDD[DataLoadPartitionWrap[T]](prev.context, Nil) {
 
   override def getPartitions: Array[Partition] = {
     new DataLoadPartitionCoalescer(prev, nodeList).run
   }
 
   override def internalCompute(split: Partition,
-      context: TaskContext): Iterator[T] = {
-    // This iterator combines data from all the parent partitions
-    new Iterator[T] {
-      val parentPartitionIter = split.asInstanceOf[CoalescedRDDPartition].parents.iterator
-      var currentDataIter: Iterator[T] = null
-      val prevRdd = firstParent[T]
-
-      def hasNext: Boolean = {
-        while ((currentDataIter == null || currentDataIter.hasNext == false) &&
-               parentPartitionIter.hasNext) {
-          val currentPartition = parentPartitionIter.next()
-          currentDataIter = prevRdd.compute(currentPartition, context)
-        }
-        if (currentDataIter == null) {
-          false
-        } else {
-          currentDataIter.hasNext
-        }
-      }
-
-      def next: T = {
-        currentDataIter.next()
+      context: TaskContext): Iterator[DataLoadPartitionWrap[T]] = {
+    new Iterator[DataLoadPartitionWrap[T]] {
+      val iter = split.asInstanceOf[CoalescedRDDPartition].parents.iterator
+      def hasNext = iter.hasNext
+      def next: DataLoadPartitionWrap[T] = {
+        DataLoadPartitionWrap(firstParent[T], iter.next())
       }
     }
   }
 
   override def getDependencies: Seq[Dependency[_]] = {
     Seq(new NarrowDependency(prev) {
-      def getParents(id: Int): Seq[Int] = {
+      def getParents(id: Int): Seq[Int] =
         partitions(id).asInstanceOf[CoalescedRDDPartition].parentsIndices
-      }
     })
   }
 
@@ -78,7 +61,6 @@ class UpdateCoalescedRDD[T: ClassTag](
   /**
    * Returns the preferred machine for the partition. If split is of type CoalescedRDDPartition,
    * then the preferred machine will be one which most parent splits prefer too.
-   *
    * @param partition
    * @return the machine most preferred by split
    */

@@ -82,15 +82,15 @@ public class ZooKeeperLockingTest {
       throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException,
       SecurityException {
 
-    final CarbonProperties cp = CarbonProperties.getInstance();
-    new NonStrictExpectations(cp) {
-      {
-        cp.getProperty("/CarbonLocks");
-        result = "/carbontests";
-        cp.getProperty("spark.deploy.zookeeper.url");
-        result = "127.0.0.1:" + freePort;
-      }
-    };
+//    final CarbonProperties cp = CarbonProperties.getInstance();
+//    new NonStrictExpectations(cp) {
+//      {
+//        cp.getProperty("/CarbonLocks");
+//        result = "/carbontests";
+//        cp.getProperty("spark.deploy.zookeeper.url");
+//        result = "127.0.0.1:" + freePort;
+//      }
+//    };
 
     ZookeeperInit zki = ZookeeperInit.getInstance("127.0.0.1:" + freePort);
 

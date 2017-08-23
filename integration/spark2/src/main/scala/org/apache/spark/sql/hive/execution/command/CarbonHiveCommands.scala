@@ -19,7 +19,7 @@ package org.apache.spark.sql.hive.execution.command
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.{CarbonDropTableCommand, DropDatabaseCommand, ResetCommand, RunnableCommand, SetCommand}
+import org.apache.spark.sql.execution.command._
 
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 

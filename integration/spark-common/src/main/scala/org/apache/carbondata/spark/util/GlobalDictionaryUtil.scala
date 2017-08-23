@@ -316,7 +316,7 @@ object GlobalDictionaryUtil {
     }
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(hdfsLocation, table)
     val primDimensions = primDimensionsBuffer.map { x => x }.toArray
-    val dictDetail = CarbonSparkFactory.getDictionaryDetailService().
+    val dictDetail = CarbonSparkFactory.getDictionaryDetailService.
       getDictionaryDetail(dictfolderPath, primDimensions, table, hdfsLocation)
     val dictFilePaths = dictDetail.dictFilePaths
     val dictFileExists = dictDetail.dictFileExists
