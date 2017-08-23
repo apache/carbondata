@@ -131,15 +131,15 @@ object Compactor {
       } else {
         logger.audit(s"Compaction request completed for table " +
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-        logger.info(s"Compaction request completed for table ${ carbonLoadModel.getDatabaseName } " +
-                    s".${ carbonLoadModel.getTableName }")
+        logger.info(s"Compaction request completed for table " +
+                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       }
     } else {
-      logger.audit(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName } " +
-                   s".${ carbonLoadModel.getTableName }"
+      logger.audit(s"Compaction request failed for table " +
+                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }"
       )
-      logger.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName } " +
-                   s".${ carbonLoadModel.getTableName }")
+      logger.error(s"Compaction request failed for table " +
+                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       throw new Exception("Compaction Failure in Merger Rdd.")
     }
   }
