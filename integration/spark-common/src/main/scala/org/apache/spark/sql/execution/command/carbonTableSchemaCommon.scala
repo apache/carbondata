@@ -231,7 +231,7 @@ class AlterTableColumnSchemaGenerator(
       sys.error(s"Duplicate column found with name: $name")
     })
 
-    val columnValidator = CarbonSparkFactory.getCarbonColumnValidator()
+    val columnValidator = CarbonSparkFactory.getCarbonColumnValidator
     columnValidator.validateColumns(allColumns)
 
     // populate table properties map
@@ -488,7 +488,7 @@ class TableNewProcessor(cm: TableModel) {
       columnSchema.setInvisible(true)
       allColumns :+= columnSchema
     }
-    val columnValidator = CarbonSparkFactory.getCarbonColumnValidator()
+    val columnValidator = CarbonSparkFactory.getCarbonColumnValidator
     columnValidator.validateColumns(allColumns)
 
     val tableInfo = new TableInfo()

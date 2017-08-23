@@ -15,13 +15,13 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark
+package org.apache.spark.sql.optimizer
 
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.CastExpressionOptimization
-import org.apache.spark.sql.optimizer.AttributeReferenceWrapper
 import org.apache.spark.sql.CarbonBoundReference
 import org.apache.spark.sql.CastExpr
+import org.apache.spark.sql.SparkUnknownExpression
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonContainsWith
@@ -33,6 +33,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
+import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 

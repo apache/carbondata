@@ -172,14 +172,6 @@
                 <version>2.18</version>
                 <!-- Note config is repeated in scalatest config -->
                 <configuration>
-                    <includes>
-                        <include>**/*.java</include>
-                        <include>**/*.scala</include>
-                        <include>**/Test*.java</include>
-                        <include>**/*Test.java</include>
-                        <include>**/*TestCase.java</include>
-                        <include>**/*Suite.java</include>
-                    </includes>
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <argLine>-Xmx3g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m</argLine>
                     <systemProperties>
