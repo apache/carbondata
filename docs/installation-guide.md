@@ -21,7 +21,7 @@
 This tutorial guides you through the installation and configuration of CarbonData in the following two modes :
 
 * [Installing and Configuring CarbonData on Standalone Spark Cluster](#installing-and-configuring-carbondata-on-standalone-spark-cluster)
-* [Installing and Configuring CarbonData on “Spark on YARN” Cluster](#installing-and-configuring-carbondata-on-spark-on-yarn-cluster)
+* [Installing and Configuring CarbonData on Spark on YARN Cluster](#installing-and-configuring-carbondata-on-spark-on-yarn-cluster)
 
 followed by :
 
@@ -77,7 +77,7 @@ followed by :
 
 To get started with CarbonData : [Quick Start](quick-start-guide.md), [DDL Operations on CarbonData](ddl-operation-on-carbondata.md)
 
-## Installing and Configuring CarbonData on "Spark on YARN" Cluster
+## Installing and Configuring CarbonData on Spark on YARN Cluster
 
    This section provides the procedure to install CarbonData on "Spark on YARN" cluster.
 
