@@ -181,7 +181,27 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   @Override
   public BigDecimal getDecimal(int rowId) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+    long value;
+    switch (dataType) {
+      case BYTE:
+        value = getByte(rowId);
+        break;
+      case SHORT:
+        value = getShort(rowId);
+        break;
+      case SHORT_INT:
+        value = getShortInt(rowId);
+        break;
+      case INT:
+        value = getInt(rowId);
+        break;
+      case LONG:
+        value = getLong(rowId);
+        break;
+      default:
+        throw new UnsupportedOperationException("invalid data type: " + dataType);
+    }
+    return decimalConverter.getDecimal(value);
   }
 
   @Override

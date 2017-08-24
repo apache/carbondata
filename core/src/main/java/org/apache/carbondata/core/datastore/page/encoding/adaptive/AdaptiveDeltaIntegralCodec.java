@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page.encoding.adaptive;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -64,6 +65,9 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
         break;
       case DOUBLE:
         this.max = (long) (double) stats.getMax();
+        break;
+      case DECIMAL:
+        this.max = ((BigDecimal) stats.getMax()).unscaledValue().longValue();
         break;
       default:
         // this codec is for integer type only
@@ -113,12 +117,13 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
 
   @Override
   public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
+  final AdaptiveDeltaIntegralEncoderMeta codecMeta = (AdaptiveDeltaIntegralEncoderMeta) meta;
     return new ColumnPageDecoder() {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
         ColumnPage page = ColumnPage.decompress(meta, input, offset, length);
-        return LazyColumnPage.newPage(page, converter);
+        return LazyColumnPage.newPage(page, converter, codecMeta);
       }
     };
   }

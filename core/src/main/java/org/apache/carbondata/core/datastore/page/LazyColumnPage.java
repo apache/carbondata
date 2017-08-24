@@ -19,6 +19,10 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
+
 /**
  * This is a decorator of column page, it performs decoding lazily (when caller calls getXXX
  * method to get the value from the page)
@@ -37,8 +41,30 @@ public class LazyColumnPage extends ColumnPage {
     this.converter = converter;
   }
 
+  private LazyColumnPage(ColumnPage columnPage, ColumnPageValueConverter converter,
+      ColumnPageEncoderMeta encoderMeta) {
+    this(columnPage, converter);
+    this.columnPage = columnPage;
+    this.converter = converter;
+    if (encoderMeta.getDataType() == DataType.DECIMAL) {
+      initDecimalConverter(encoderMeta.getPrecision(), encoderMeta.getScale());
+    }
+  }
+
+  private void initDecimalConverter(int precision, int scale) {
+    if (null == columnPage.getDecimalConverter()) {
+      columnPage.setDecimalConverter(
+          DecimalConverterFactory.INSTANCE.getDecimalConverter(precision, scale));
+    }
+  }
+
   public static ColumnPage newPage(ColumnPage columnPage, ColumnPageValueConverter codec) {
     return new LazyColumnPage(columnPage, codec);
+  }
+
+  public static ColumnPage newPage(ColumnPage columnPage, ColumnPageValueConverter codec,
+      ColumnPageEncoderMeta encoderMeta) {
+    return new LazyColumnPage(columnPage, codec, encoderMeta);
   }
 
   @Override
@@ -93,7 +119,25 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public BigDecimal getDecimal(int rowId) {
-    return columnPage.getDecimal(rowId);
+    switch (columnPage.getDataType()) {
+      case BYTE:
+        return columnPage.getDecimalConverter()
+            .getDecimal(converter.decodeLong(columnPage.getByte(rowId)));
+      case SHORT:
+        return columnPage.getDecimalConverter()
+            .getDecimal(converter.decodeLong(columnPage.getShort(rowId)));
+      case SHORT_INT:
+        return columnPage.getDecimalConverter()
+            .getDecimal(converter.decodeLong(columnPage.getShortInt(rowId)));
+      case INT:
+        return columnPage.getDecimalConverter()
+            .getDecimal(converter.decodeLong(columnPage.getInt(rowId)));
+      case LONG:
+      case DECIMAL:
+        return columnPage.getDecimal(rowId);
+      default:
+        throw new RuntimeException("internal error: " + this.toString());
+    }
   }
 
   @Override

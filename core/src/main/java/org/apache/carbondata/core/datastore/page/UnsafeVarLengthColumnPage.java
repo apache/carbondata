@@ -31,6 +31,9 @@ import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 // decimal)
 public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
+  private static final int intBits = DataType.INT.getSizeBits();
+  private static final int longBits = DataType.LONG.getSizeBits();
+
   // memory allocated by Unsafe
   private MemoryBlock memoryBlock;
 
@@ -128,7 +131,21 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override public void putDecimal(int rowId, BigDecimal decimal) {
-    putBytes(rowId, decimalConverter.convert(decimal));
+    long offset = 0L;
+    switch (decimalConverter.getDecimalConverterType()) {
+      case DECIMAL_INT:
+        offset = rowId << intBits;
+        CarbonUnsafe.getUnsafe()
+            .putInt(baseAddress, baseOffset + offset, (int) decimalConverter.convert(decimal));
+        break;
+      case DECIMAL_LONG:
+        offset = rowId << longBits;
+        CarbonUnsafe.getUnsafe()
+            .putLong(baseAddress, baseOffset + offset, (long) decimalConverter.convert(decimal));
+        break;
+      default:
+        putBytes(rowId, (byte[]) decimalConverter.convert(decimal));
+    }
   }
 
   @Override
@@ -167,6 +184,42 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
     CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
         dest, CarbonUnsafe.BYTE_ARRAY_OFFSET + destOffset, length);
+  }
+
+  /**
+   * apply encoding to page data
+   *
+   * @param codec type of transformation
+   */
+  @Override public void convertValue(ColumnPageValueConverter codec) {
+    switch (dataType) {
+      case DECIMAL:
+        convertValueForDecimalType(codec);
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            "not support value conversion on " + dataType + " page");
+    }
+  }
+
+  private void convertValueForDecimalType(ColumnPageValueConverter codec) {
+    switch (decimalConverter.getDecimalConverterType()) {
+      case DECIMAL_INT:
+        for (int i = 0; i < pageSize; i++) {
+          long offset = i << intBits;
+          codec.encode(i, CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset));
+        }
+        break;
+      case DECIMAL_LONG:
+        for (int i = 0; i < pageSize; i++) {
+          long offset = i << longBits;
+          codec.encode(i, CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset));
+        }
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            "not support value conversion on " + dataType + " page");
+    }
   }
 
 }

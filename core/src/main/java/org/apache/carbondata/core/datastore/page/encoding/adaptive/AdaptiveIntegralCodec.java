@@ -88,12 +88,13 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
   @Override
   public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
+  final AdaptiveDeltaIntegralEncoderMeta codecMeta = (AdaptiveDeltaIntegralEncoderMeta) meta;
     return new ColumnPageDecoder() {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
         ColumnPage page = ColumnPage.decompress(meta, input, offset, length);
-        return LazyColumnPage.newPage(page, converter);
+        return LazyColumnPage.newPage(page, converter, codecMeta);
       }
     };
   }
@@ -150,6 +151,9 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           break;
         case INT:
           encodedPage.putInt(rowId, (int) value);
+          break;
+        case LONG:
+          encodedPage.putLong(rowId, (long) value);
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());

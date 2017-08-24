@@ -29,6 +29,8 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   // for string and decimal data
   private byte[][] byteArrayData;
+  private int[] intData;
+  private long[] longData;
 
   SafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
     super(columnSpec, dataType, pageSize);
@@ -51,7 +53,22 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override public void putDecimal(int rowId, BigDecimal decimal) {
-    putBytes(rowId, decimalConverter.convert(decimal));
+    switch (decimalConverter.getDecimalConverterType()) {
+      case DECIMAL_INT:
+        if (null == intData) {
+          intData = new int[pageSize];
+        }
+        putInt(rowId, (int) decimalConverter.convert(decimal));
+        break;
+      case DECIMAL_LONG:
+        if (null == longData) {
+          longData = new long[pageSize];
+        }
+        putLong(rowId, (long) decimalConverter.convert(decimal));
+        break;
+      default:
+        putBytes(rowId, (byte[]) decimalConverter.convert(decimal));
+    }
   }
 
   @Override
@@ -89,6 +106,56 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
     System.arraycopy(byteArrayData[rowId], 0, dest, destOffset, length);
+  }
+
+  /**
+   * Set integer value at rowId
+   */
+  @Override
+  public void putInt(int rowId, int value) {
+    intData[rowId] = value;
+  }
+
+  /**
+   * Set long value at rowId
+   */
+  @Override
+  public void putLong(int rowId, long value) {
+    longData[rowId] = value;
+  }
+
+  /**
+   * apply encoding to page data
+   *
+   * @param codec type of transformation
+   */
+  @Override public void convertValue(ColumnPageValueConverter codec) {
+    switch (dataType) {
+      case DECIMAL:
+        convertValueForDecimalType(codec);
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            "not support value conversion on " + dataType + " page");
+    }
+  }
+
+  private void convertValueForDecimalType(ColumnPageValueConverter codec) {
+    switch (decimalConverter.getDecimalConverterType()) {
+      case DECIMAL_INT:
+        for (int i = 0; i < pageSize; i++) {
+          codec.encode(i, intData[i]);
+        }
+        break;
+      case DECIMAL_LONG:
+        for (int i = 0; i < pageSize; i++) {
+          codec.encode(i, longData[i]);
+        }
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            "not support value conversion on " + dataType + " page");
+    }
   }
 
 }
