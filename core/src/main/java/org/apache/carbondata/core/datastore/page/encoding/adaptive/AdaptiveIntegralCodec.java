@@ -92,7 +92,14 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
-        ColumnPage page = ColumnPage.decompress(meta, input, offset, length);
+        ColumnPage page = null;
+        switch (meta.getSchemaDataType()) {
+          case DECIMAL:
+            page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
+            break;
+          default:
+            page = ColumnPage.decompress(meta, input, offset, length);
+        }
         return LazyColumnPage.newPage(page, converter);
       }
     };
@@ -150,6 +157,9 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
           break;
         case INT:
           encodedPage.putInt(rowId, (int) value);
+          break;
+        case LONG:
+          encodedPage.putLong(rowId, (long) value);
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());

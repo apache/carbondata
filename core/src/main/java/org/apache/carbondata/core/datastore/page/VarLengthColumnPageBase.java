@@ -22,14 +22,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.memory.CarbonUnsafe;
+import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
+import static org.apache.carbondata.core.metadata.datatype.DataType.BYTE;
 import static org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL;
 
 public abstract class VarLengthColumnPageBase extends ColumnPage {
+
+  static final int byteBits = BYTE.getSizeBits();
+  static final int shortBits = DataType.SHORT.getSizeBits();
+  static final int intBits = DataType.INT.getSizeBits();
+  static final int longBits = DataType.LONG.getSizeBits();
+  // default size for each row, grows as needed
+  static final int DEFAULT_ROW_SIZE = 8;
+
+  static final double FACTOR = 1.25;
+
+  final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+
+  // memory allocated by Unsafe
+  MemoryBlock memoryBlock;
+
+  // base address of memoryBlock
+  Object baseAddress;
 
   // the offset of row in the unsafe memory, its size is pageSize + 1
   int[] rowOffset;
@@ -37,6 +59,11 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   // the length of bytes added in the page
   int totalLength;
 
+  // base offset of memoryBlock
+  long baseOffset;
+
+  // size of the allocated memory, in bytes
+  int capacity;
   VarLengthColumnPageBase(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
     super(columnSpec, dataType, pageSize);
     rowOffset = new int[pageSize + 1];
@@ -116,9 +143,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
     VarLengthColumnPageBase page;
     if (unsafe) {
-      page = new UnsafeVarLengthColumnPage(columnSpec, DECIMAL, rowId);
+      page = new UnsafeDecimalColumnPage(columnSpec, DECIMAL, rowId);
     } else {
-      page = new SafeVarLengthColumnPage(columnSpec, DECIMAL, rowId);
+      page = new SafeDecimalColumnPage(columnSpec, DECIMAL, rowId);
     }
 
     // set total length and rowOffset in page
@@ -159,9 +186,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     VarLengthColumnPageBase page;
     int inputDataLength = offset;
     if (unsafe) {
-      page = new UnsafeVarLengthColumnPage(columnSpec, DECIMAL, numRows, inputDataLength);
+      page = new UnsafeDecimalColumnPage(columnSpec, DECIMAL, numRows, inputDataLength);
     } else {
-      page = new SafeVarLengthColumnPage(columnSpec, dataType, numRows);
+      page = new SafeDecimalColumnPage(columnSpec, dataType, numRows);
     }
 
     // set total length and rowOffset in page
@@ -329,5 +356,22 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   @Override
   public void convertValue(ColumnPageValueConverter codec) {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  /**
+   * reallocate memory if capacity length than current size + request size
+   */
+  protected void ensureMemory(int requestSize) throws MemoryException {
+    if (totalLength + requestSize > capacity) {
+      int newSize = 2 * capacity;
+      MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, newSize);
+      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset,
+          newBlock.getBaseObject(), newBlock.getBaseOffset(), capacity);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
+      memoryBlock = newBlock;
+      baseAddress = newBlock.getBaseObject();
+      baseOffset = newBlock.getBaseOffset();
+      capacity = newSize;
+    }
   }
 }

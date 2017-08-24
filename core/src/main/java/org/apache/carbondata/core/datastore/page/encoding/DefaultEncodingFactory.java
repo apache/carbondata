@@ -17,10 +17,13 @@
 
 package org.apache.carbondata.core.datastore.page.encoding;
 
+import java.math.BigDecimal;
+
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.DecimalColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveDeltaIntegralCodec;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveFloatingCodec;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveIntegralCodec;
@@ -31,6 +34,7 @@ import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.Direc
 import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.HighCardDictDimensionIndexCodec;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 
 /**
  * Default factory will select encoding base on column page data type and statistics
@@ -113,14 +117,28 @@ public class DefaultEncodingFactory extends EncodingFactory {
       case INT:
       case LONG:
         return selectCodecByAlgorithmForIntegral(stats).createEncoder(null);
+      case DECIMAL:
+        return createEncoderForDecimalDataTypeMeasure(columnPage);
       case FLOAT:
       case DOUBLE:
         return selectCodecByAlgorithmForFloating(stats).createEncoder(null);
-      case DECIMAL:
       case BYTE_ARRAY:
         return new DirectCompressCodec(columnPage.getDataType()).createEncoder(null);
       default:
         throw new RuntimeException("unsupported data type: " + stats.getDataType());
+    }
+  }
+
+  private ColumnPageEncoder createEncoderForDecimalDataTypeMeasure(ColumnPage columnPage) {
+    DecimalConverterFactory.DecimalConverterType decimalConverterType =
+        ((DecimalColumnPage) columnPage).getDecimalConverter().getDecimalConverterType();
+    switch (decimalConverterType) {
+      case DECIMAL_INT:
+      case DECIMAL_LONG:
+        return selectCodecByAlgorithmForDecimal(columnPage.getStatistics(), decimalConverterType)
+            .createEncoder(null);
+      default:
+        return new DirectCompressCodec(columnPage.getDataType()).createEncoder(null);
     }
   }
 
@@ -155,6 +173,35 @@ public class DefaultEncodingFactory extends EncodingFactory {
     }
   }
 
+  private static DataType fitMinMaxForDecimalType(DataType dataType, Object max, Object min,
+      DecimalConverterFactory.DecimalConverterType decimalConverterType) {
+    long maxValue = ((BigDecimal) max).unscaledValue().longValue();
+    long minValue = ((BigDecimal) min).unscaledValue().longValue();
+    switch (decimalConverterType) {
+      case DECIMAL_INT:
+        return fitLongMinMax((int) maxValue, (int) minValue);
+      case DECIMAL_LONG:
+        return fitLongMinMax(maxValue, minValue);
+      default:
+        throw new RuntimeException("internal error: " + dataType);
+    }
+  }
+
+  private static DataType fitDeltaForDecimalType(DataType dataType, Object max, Object min,
+      DecimalConverterFactory.DecimalConverterType decimalConverterType) {
+    long maxValue = ((BigDecimal) max).unscaledValue().longValue();
+    long minValue = ((BigDecimal) min).unscaledValue().longValue();
+    switch (decimalConverterType) {
+      case DECIMAL_INT:
+        long value = maxValue - minValue;
+        return compareMinMaxAndSelectDataType(value);
+      case DECIMAL_LONG:
+        return DataType.LONG;
+      default:
+        throw new RuntimeException("internal error: " + dataType);
+    }
+  }
+
   // fit the long input value into minimum data type
   private static DataType fitDelta(DataType dataType, Object max, Object min) {
     // use long data type to calculate delta to avoid overflow
@@ -177,6 +224,10 @@ public class DefaultEncodingFactory extends EncodingFactory {
       default:
         throw new RuntimeException("internal error: " + dataType);
     }
+    return compareMinMaxAndSelectDataType(value);
+  }
+
+  private static DataType compareMinMaxAndSelectDataType(long value) {
     if (value <= Byte.MAX_VALUE && value >= Byte.MIN_VALUE) {
       return DataType.BYTE;
     } else if (value <= Short.MAX_VALUE && value >= Short.MIN_VALUE) {
@@ -204,8 +255,10 @@ public class DefaultEncodingFactory extends EncodingFactory {
     } else {
       deltaDataType = fitDelta(stats.getDataType(), stats.getMax(), stats.getMin());
     }
-    if (Math.min(adaptiveDataType.getSizeInBytes(), deltaDataType.getSizeInBytes()) ==
-        srcDataType.getSizeInBytes()) {
+    // in case of decimal data type check if the decimal converter type is Int or Long and based on
+    // that get size in bytes
+    if (Math.min(adaptiveDataType.getSizeInBytes(), deltaDataType.getSizeInBytes()) == srcDataType
+        .getSizeInBytes()) {
       // no effect to use adaptive or delta, use compression only
       return new DirectCompressCodec(stats.getDataType());
     }
@@ -244,6 +297,40 @@ public class DefaultEncodingFactory extends EncodingFactory {
       } else {
         return new DirectCompressCodec(DataType.DOUBLE);
       }
+    }
+  }
+
+  /**
+   * choose between adaptive encoder or delta adaptive encoder, based on whose target data type
+   * size is smaller for decimal data type
+   */
+  static ColumnPageCodec selectCodecByAlgorithmForDecimal(SimpleStatsResult stats,
+      DecimalConverterFactory.DecimalConverterType decimalConverterType) {
+    DataType srcDataType = stats.getDataType();
+    DataType adaptiveDataType =
+        fitMinMaxForDecimalType(stats.getDataType(), stats.getMax(), stats.getMin(),
+            decimalConverterType);
+    DataType deltaDataType;
+
+    if (adaptiveDataType == DataType.LONG) {
+      deltaDataType = DataType.LONG;
+    } else {
+      deltaDataType = fitDeltaForDecimalType(stats.getDataType(), stats.getMax(), stats.getMin(),
+          decimalConverterType);
+    }
+    // in case of decimal data type check if the decimal converter type is Int or Long and based on
+    // that get size in bytes
+    if (Math.min(adaptiveDataType.getSizeInBytes(), deltaDataType.getSizeInBytes()) == srcDataType
+        .getSizeInBytes()) {
+      // no effect to use adaptive or delta, use compression only
+      return new DirectCompressCodec(stats.getDataType());
+    }
+    if (adaptiveDataType.getSizeInBytes() <= deltaDataType.getSizeInBytes()) {
+      // choose adaptive encoding
+      return new AdaptiveIntegralCodec(stats.getDataType(), adaptiveDataType, stats);
+    } else {
+      // choose delta adaptive encoding
+      return new AdaptiveDeltaIntegralCodec(stats.getDataType(), deltaDataType, stats);
     }
   }
 

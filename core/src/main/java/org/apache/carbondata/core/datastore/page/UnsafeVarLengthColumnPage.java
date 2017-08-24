@@ -21,34 +21,14 @@ import java.math.BigDecimal;
 
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
-import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
-// This extension uses unsafe memory to store page data, for variable length data type (string,
-// decimal)
+/**
+ * This extension uses unsafe memory to store page data, for variable length data type (string)
+ */
 public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
-
-  // memory allocated by Unsafe
-  private MemoryBlock memoryBlock;
-
-  // base address of memoryBlock
-  private Object baseAddress;
-
-  // base offset of memoryBlock
-  private long baseOffset;
-
-  // size of the allocated memory, in bytes
-  private int capacity;
-
-  // default size for each row, grows as needed
-  private static final int DEFAULT_ROW_SIZE = 8;
-
-  private static final double FACTOR = 1.25;
-
-  private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
   /**
    * create a page
@@ -84,23 +64,6 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
     }
   }
 
-  /**
-   * reallocate memory if capacity length than current size + request size
-   */
-  private void ensureMemory(int requestSize) throws MemoryException {
-    if (totalLength + requestSize > capacity) {
-      int newSize = 2 * capacity;
-      MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, newSize);
-      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset,
-          newBlock.getBaseObject(), newBlock.getBaseOffset(), capacity);
-      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
-      memoryBlock = newBlock;
-      baseAddress = newBlock.getBaseObject();
-      baseOffset = newBlock.getBaseOffset();
-      capacity = newSize;
-    }
-  }
-
   @Override
   public void putBytesAtRow(int rowId, byte[] bytes) {
     putBytes(rowId, bytes, 0, bytes.length);
@@ -128,17 +91,12 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override public void putDecimal(int rowId, BigDecimal decimal) {
-    putBytes(rowId, decimalConverter.convert(decimal));
+
   }
 
   @Override
   public BigDecimal getDecimal(int rowId) {
-    int length = rowOffset[rowId + 1] - rowOffset[rowId];
-    byte[] bytes = new byte[length];
-    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
-        bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
-
-    return decimalConverter.getDecimal(bytes);
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
   @Override

@@ -22,7 +22,6 @@ import java.math.BigDecimal;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -31,7 +30,6 @@ import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsColle
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import static org.apache.carbondata.core.metadata.datatype.DataType.BYTE;
@@ -61,8 +59,6 @@ public abstract class ColumnPage {
   // statistics collector for this column page
   private ColumnPageStatsCollector statsCollector;
 
-  DecimalConverterFactory.DecimalConverter decimalConverter;
-
   protected static final boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
           CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT));
@@ -75,12 +71,6 @@ public abstract class ColumnPage {
     this.dataType = dataType;
     this.pageSize = pageSize;
     this.nullBitSet = new BitSet(pageSize);
-    if (dataType == DECIMAL) {
-      assert (columnSpec.getColumnType() == ColumnType.MEASURE);
-      int precision = columnSpec.getPrecision();
-      int scale = columnSpec.getScale();
-      decimalConverter = DecimalConverterFactory.INSTANCE.getDecimalConverter(precision, scale);
-    }
   }
 
   public DataType getDataType() {
@@ -130,6 +120,19 @@ public abstract class ColumnPage {
     this.statsCollector = statsCollector;
   }
 
+  private static ColumnPage createDecimalPage(TableSpec.ColumnSpec columnSpec, DataType dataType,
+      int pageSize) {
+    if (unsafe) {
+      try {
+        return new UnsafeDecimalColumnPage(columnSpec, dataType, pageSize);
+      } catch (MemoryException e) {
+        throw new RuntimeException(e);
+      }
+    } else {
+      return new SafeDecimalColumnPage(columnSpec, dataType, pageSize);
+    }
+  }
+
   private static ColumnPage createVarLengthPage(TableSpec.ColumnSpec columnSpec, DataType dataType,
       int pageSize) {
     if (unsafe) {
@@ -158,7 +161,9 @@ public abstract class ColumnPage {
 
   private static ColumnPage createPage(TableSpec.ColumnSpec columnSpec, DataType dataType,
       int pageSize) {
-    if (dataType.equals(BYTE_ARRAY) || dataType.equals(DECIMAL)) {
+    if (dataType.equals(DECIMAL)) {
+      return createDecimalPage(columnSpec, dataType, pageSize);
+    } else if (dataType.equals(BYTE_ARRAY)) {
       return createVarLengthPage(columnSpec, dataType, pageSize);
     } else {
       return createFixLengthPage(columnSpec, dataType, pageSize);
@@ -189,6 +194,8 @@ public abstract class ColumnPage {
           instance = new UnsafeFixLengthColumnPage(columnSpec, dataType, pageSize);
           break;
         case DECIMAL:
+          instance = new UnsafeDecimalColumnPage(columnSpec, dataType, pageSize);
+          break;
         case STRING:
         case BYTE_ARRAY:
           instance =
@@ -631,14 +638,43 @@ public abstract class ColumnPage {
   }
 
   /**
-   * Decompress decimal data and create a column page
+   * Decompress data and create a decimal column page using the decompressed data
    */
   public static ColumnPage decompressDecimalPage(ColumnPageEncoderMeta meta, byte[] compressedData,
       int offset, int length) throws MemoryException {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
-    byte[] lvEncodedBytes = compressor.unCompressByte(compressedData, offset, length);
-    return newDecimalPage(columnSpec, lvEncodedBytes);
+    ColumnPage decimalPage = null;
+    switch (meta.getStoreDataType()) {
+      case BYTE:
+        byte[] byteData = compressor.unCompressByte(compressedData, offset, length);
+        decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), byteData.length);
+        decimalPage.setBytePage(byteData);
+        return decimalPage;
+      case SHORT:
+        short[] shortData = compressor.unCompressShort(compressedData, offset, length);
+        decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), shortData.length);
+        decimalPage.setShortPage(shortData);
+        return decimalPage;
+      case SHORT_INT:
+        byte[] shortIntData = compressor.unCompressByte(compressedData, offset, length);
+        decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), shortIntData.length);
+        decimalPage.setShortIntPage(shortIntData);
+        return decimalPage;
+      case INT:
+        int[] intData = compressor.unCompressInt(compressedData, offset, length);
+        decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), intData.length);
+        decimalPage.setIntPage(intData);
+        return decimalPage;
+      case LONG:
+        long[] longData = compressor.unCompressLong(compressedData, offset, length);
+        decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), longData.length);
+        decimalPage.setLongPage(longData);
+        return decimalPage;
+      default:
+        byte[] lvEncodedBytes = compressor.unCompressByte(compressedData, offset, length);
+        return newDecimalPage(columnSpec, lvEncodedBytes);
+    }
   }
 
   public BitSet getNullBits() {
