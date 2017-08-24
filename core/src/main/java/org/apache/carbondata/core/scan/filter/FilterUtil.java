@@ -1205,7 +1205,7 @@ public final class FilterUtil {
       startPoint++;
     }
     for (int i = 0; i < numberOfNoDictionaryDimension; i++) {
-      noDictionaryEndKeyBuffer.put((byte) 127);
+      noDictionaryEndKeyBuffer.put((byte) 0xFF);
     }
     return noDictionaryEndKeyBuffer.array();
   }
@@ -1460,7 +1460,7 @@ public final class FilterUtil {
         continue;
       }
       if (null == setOfStartKeyByteArray.get(dimension.getOrdinal())) {
-        setOfStartKeyByteArray.put(dimension.getOrdinal(), new byte[] { 127 });
+        setOfStartKeyByteArray.put(dimension.getOrdinal(), new byte[] { (byte) 0xFF });
       }
 
     }
@@ -1492,7 +1492,7 @@ public final class FilterUtil {
       if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
         continue;
       }
-      setOfEndKeyByteArray.put(dimension.getOrdinal(), new byte[] { 127 });
+      setOfEndKeyByteArray.put(dimension.getOrdinal(), new byte[] { (byte) 0xFF });
     }
   }
 
