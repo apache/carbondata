@@ -39,7 +39,7 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   test("select empno from integertypetableAgg") {
     checkAnswer(
       sql("select empno from integertypetableAgg"),
-      Seq(Row(11), Row(12), Row(13), Row(14), Row(15), Row(16), Row(17), Row(18), Row(19), Row(20)))
+      Seq(Row(111), Row(122), Row(133), Row(14), Row(15), Row(16), Row(17), Row(18), Row(19), Row(20)))
   }
 
   test("short int table boundary test, safe column page") {
