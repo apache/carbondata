@@ -270,7 +270,7 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     else if (type.equals(BigintType.BIGINT)) return (Long) rawdata;
     else if (type.equals(VarcharType.VARCHAR)) return ((Slice) rawdata).toStringUtf8();
     else if (type.equals(BooleanType.BOOLEAN)) return (Boolean) (rawdata);
-
+    else if(type.equals(TimestampType.TIMESTAMP)) return (Long) rawdata * 1000;
     return rawdata;
   }
 }
