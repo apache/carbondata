@@ -59,7 +59,10 @@ public class AlluxioCarbonFileTest {
             }
         try {
             FileOutputStream oFile = new FileOutputStream(file, true);
+            oFile.close();
         } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
             e.printStackTrace();
         }
 

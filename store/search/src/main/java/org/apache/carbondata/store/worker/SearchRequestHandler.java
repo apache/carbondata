@@ -128,11 +128,12 @@ public class SearchRequestHandler {
     // In search mode, reader will read multiple blocks by using a thread pool
     CarbonRecordReader<CarbonRow> reader =
         new CarbonRecordReader<>(queryModel, new CarbonRowReadSupport());
-    reader.initialize(mbSplit, null);
 
     // read all rows by the reader
     List<CarbonRow> rows = new LinkedList<>();
     try {
+      reader.initialize(mbSplit, null);
+
       // loop to read required number of rows.
       // By default, if user does not specify the limit value, limit is Long.MaxValue
       while (reader.nextKeyValue() && rowCount < limit) {
@@ -144,8 +145,8 @@ public class SearchRequestHandler {
     } finally {
       reader.close();
     }
-    LOG.info(String.format("[SearchId:%d] scan completed, return %d rows",
-        request.searchId(), rows.size()));
+    LOG.info(String
+        .format("[SearchId:%d] scan completed, return %d rows", request.searchId(), rows.size()));
     return rows;
   }
 

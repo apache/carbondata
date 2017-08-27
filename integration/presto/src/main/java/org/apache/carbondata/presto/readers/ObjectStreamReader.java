@@ -41,32 +41,26 @@ public class ObjectStreamReader  extends AbstractStreamReader {
    * @return
    * @throws IOException
    */
-  public Block readBlock(Type type)
-      throws IOException
-  {
+  public Block readBlock(Type type) throws IOException {
     int numberOfRows = 0;
     BlockBuilder builder = null;
-    if(isVectorReader) {
+    if (isVectorReader) {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
-        for(int i = 0; i < numberOfRows ; i++ ){
+        for (int i = 0; i < numberOfRows; i++) {
           type.writeObject(builder, columnVector.getData(i));
         }
       }
-
     } else {
       numberOfRows = streamData.length;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      if (streamData != null) {
-        for(int i = 0; i < numberOfRows ; i++ ){
-          type.writeObject(builder, streamData[i]);
-        }
+      for (int i = 0; i < numberOfRows; i++) {
+        type.writeObject(builder, streamData[i]);
       }
     }
 
     return builder.build();
-
   }
 
 }

@@ -19,10 +19,10 @@ package org.apache.carbondata.core.cache.dictionary;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -51,7 +51,7 @@ public class ForwardDictionaryCache<K extends
       LogServiceFactory.getLogService(ForwardDictionaryCache.class.getName());
 
   private static final Map<DictionaryColumnUniqueIdentifier, Object> DICTIONARY_LOCK_OBJECT =
-      new HashMap<>();
+      new ConcurrentHashMap<>();
 
   private static final long sizeOfEmptyDictChunks =
       ObjectSizeCalculator.estimate(new ArrayList<byte[]>(CarbonUtil.getDictionaryChunkSize()), 16);

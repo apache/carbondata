@@ -24,6 +24,8 @@ import java.util.List;
 import java.util.Objects;
 
 import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -48,6 +50,9 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
  */
 @InterfaceAudience.Internal
 class LocalCarbonStore extends MetaCachedCarbonStore {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(LocalCarbonStore.class.getName());
 
   @Override
   public Iterator<CarbonRow> scan(String path, String[] projectColumns) throws IOException {
@@ -101,6 +106,11 @@ class LocalCarbonStore extends MetaCachedCarbonStore {
       for (RecordReader<Void, Object> reader : readers) {
         while (reader.nextKeyValue()) {
           rows.add((CarbonRow)reader.getCurrentValue());
+        }
+        try {
+          reader.close();
+        } catch (IOException e) {
+          LOGGER.error(e);
         }
       }
     } catch (InterruptedException e) {

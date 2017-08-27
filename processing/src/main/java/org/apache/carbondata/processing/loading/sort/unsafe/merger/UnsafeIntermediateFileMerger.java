@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.AbstractQueue;
+import java.util.NoSuchElementException;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
@@ -238,7 +239,12 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException
    */
   private IntermediateSortTempRow next() throws CarbonSortKeyAndGroupByException {
-    return getSortedRecordFromFile();
+    if (hasNext()) {
+      return getSortedRecordFromFile();
+    } else {
+      throw new NoSuchElementException("No more elements to return");
+    }
+
   }
 
   /**

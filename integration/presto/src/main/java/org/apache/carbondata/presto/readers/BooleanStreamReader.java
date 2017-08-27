@@ -62,10 +62,8 @@ public class BooleanStreamReader extends AbstractStreamReader {
     } else {
       numberOfRows = streamData.length;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      if (streamData != null) {
-        for (int i = 0; i < numberOfRows; i++) {
-          type.writeBoolean(builder, byteToBoolean(streamData[i]));
-        }
+      for (int i = 0; i < numberOfRows; i++) {
+        type.writeBoolean(builder, byteToBoolean(streamData[i]));
       }
     }
 

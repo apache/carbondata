@@ -48,6 +48,7 @@ import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
 import org.apache.carbondata.hadoop.InputMetricsStats;
 import org.apache.carbondata.spark.util.CarbonScalaUtil;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.spark.memory.MemoryMode;
@@ -144,14 +145,10 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       }
       throw new InterruptedException(e.getMessage());
     } catch (Exception e) {
-      Throwable ext = e;
-      while (ext != null) {
-        if (ext instanceof FileNotFoundException) {
-          LOGGER.error(e);
-          throw new InterruptedException(
-              "Insert overwrite may be in progress.Please check " + e.getMessage());
-        }
-        ext = ext.getCause();
+      if (ExceptionUtils.hasCause(e, FileNotFoundException.class)) {
+        LOGGER.error(e);
+        throw new InterruptedException(
+            "Insert overwrite may be in progress.Please check " + e.getMessage());
       }
       throw e;
     }

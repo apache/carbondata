@@ -196,12 +196,15 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       if (carbonColumn.isDimension() && carbonColumn.getColumnSchema().getNumberOfChild() > 0) {
         childCarbonDimensions = ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       }
-      Writable[] arr = new Writable[objArray.length];
-      for (int i = 0; i < objArray.length; i++) {
 
-        arr[i] = createWritableObject(objArray[i], childCarbonDimensions.get(i));
+      if (null != childCarbonDimensions) {
+        Writable[] arr = new Writable[objArray.length];
+        for (int i = 0; i < objArray.length; i++) {
+
+          arr[i] = createWritableObject(objArray[i], childCarbonDimensions.get(i));
+        }
+        return new ArrayWritable(Writable.class, arr);
       }
-      return new ArrayWritable(Writable.class, arr);
     }
     throw new IOException("DataType not supported in Carbondata");
   }

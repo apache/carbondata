@@ -348,32 +348,37 @@ public class SegmentUpdateStatusManager {
   private List<String> getFilePaths(CarbonFile blockDir, final String blockNameFromTuple,
       final String extension, List<String> deleteFileList, final long deltaStartTimestamp,
       final long deltaEndTimeStamp) {
-    CarbonFile[] files = blockDir.getParentFile().listFiles(new CarbonFileFilter() {
+    if (null != blockDir.getParentFile()) {
+      CarbonFile[] files = blockDir.getParentFile().listFiles(new CarbonFileFilter() {
 
-      @Override public boolean accept(CarbonFile pathName) {
-        String fileName = pathName.getName();
-        if (fileName.endsWith(extension) && pathName.getSize() > 0) {
-          String firstPart = fileName.substring(0, fileName.indexOf('.'));
-          String blockName =
-              firstPart.substring(0, firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN));
-          long timestamp = Long.parseLong(firstPart
-              .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
-                  firstPart.length()));
-          if (blockNameFromTuple.equals(blockName) && (
-              (Long.compare(timestamp, deltaEndTimeStamp) <= 0) && (
-                  Long.compare(timestamp, deltaStartTimestamp) >= 0))) {
-            return true;
+        @Override
+        public boolean accept(CarbonFile pathName) {
+          String fileName = pathName.getName();
+          if (fileName.endsWith(extension) && pathName.getSize() > 0) {
+            String firstPart = fileName.substring(0, fileName.indexOf('.'));
+            String blockName =
+                    firstPart.substring(0, firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN));
+            long timestamp = Long.parseLong(firstPart
+                    .substring(firstPart.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
+                            firstPart.length()));
+            if (blockNameFromTuple.equals(blockName) && (
+                    (Long.compare(timestamp, deltaEndTimeStamp) <= 0) && (
+                            Long.compare(timestamp, deltaStartTimestamp) >= 0))) {
+              return true;
+            }
           }
+          return false;
         }
-        return false;
-      }
-    });
+      });
 
-    for (CarbonFile cfile : files) {
-      if (null == deleteFileList) {
-        deleteFileList = new ArrayList<String>(files.length);
+      for (CarbonFile cfile : files) {
+        if (null == deleteFileList) {
+          deleteFileList = new ArrayList<String>(files.length);
+        }
+        deleteFileList.add(cfile.getCanonicalPath());
       }
-      deleteFileList.add(cfile.getCanonicalPath());
+    } else {
+      deleteFileList = new ArrayList<String>(0);
     }
     return deleteFileList;
   }

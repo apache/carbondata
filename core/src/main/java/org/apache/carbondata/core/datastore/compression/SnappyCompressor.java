@@ -59,7 +59,7 @@ public class SnappyCompressor implements Compressor {
       return Snappy.rawCompress(unCompInput, unCompInput.length);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
-      return null;
+      throw new RuntimeException(e);
     }
   }
 
@@ -68,7 +68,7 @@ public class SnappyCompressor implements Compressor {
       return Snappy.rawCompress(unCompInput, byteSize);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
-      return null;
+      throw new RuntimeException(e);
     }
   }
 
@@ -77,19 +77,20 @@ public class SnappyCompressor implements Compressor {
       return Snappy.uncompress(compInput);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
-    return compInput;
   }
 
   @Override public byte[] unCompressByte(byte[] compInput, int offset, int length) {
     int uncompressedLength = 0;
-    byte[] data = null;
+    byte[] data;
     try {
       uncompressedLength = Snappy.uncompressedLength(compInput, offset, length);
       data = new byte[uncompressedLength];
       Snappy.uncompress(compInput, offset, length, data, 0);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
     return data;
   }
@@ -99,7 +100,7 @@ public class SnappyCompressor implements Compressor {
       return Snappy.compress(unCompInput);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
-      return null;
+      throw new RuntimeException(e);
     }
   }
 
@@ -108,8 +109,8 @@ public class SnappyCompressor implements Compressor {
       return Snappy.uncompressShortArray(compInput);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override public short[] unCompressShort(byte[] compInput, int offset, int lenght) {
@@ -117,8 +118,8 @@ public class SnappyCompressor implements Compressor {
       return Snappy.uncompressShortArray(compInput, offset, lenght);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override public byte[] compressInt(int[] unCompInput) {
@@ -126,7 +127,7 @@ public class SnappyCompressor implements Compressor {
       return Snappy.compress(unCompInput);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
-      return null;
+      throw new RuntimeException(e);
     }
   }
 
@@ -135,8 +136,8 @@ public class SnappyCompressor implements Compressor {
       return Snappy.uncompressIntArray(compInput);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override public int[] unCompressInt(byte[] compInput, int offset, int length) {
@@ -144,8 +145,8 @@ public class SnappyCompressor implements Compressor {
       return Snappy.uncompressIntArray(compInput, offset, length);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override public byte[] compressLong(long[] unCompInput) {
@@ -153,17 +154,17 @@ public class SnappyCompressor implements Compressor {
       return Snappy.compress(unCompInput);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
-      return null;
+      throw new RuntimeException(e);
     }
   }
 
-  @Override public long[] unCompressLong(byte[] compInput) {
+  @Override public long[] uncompresslong(byte[] compinput) {
     try {
-      return Snappy.uncompressLongArray(compInput);
+      return Snappy.uncompressLongArray(compinput);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override public long[] unCompressLong(byte[] compInput, int offset, int length) {
@@ -171,8 +172,8 @@ public class SnappyCompressor implements Compressor {
       return Snappy.uncompressLongArray(compInput, offset, length);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override public byte[] compressFloat(float[] unCompInput) {
@@ -180,7 +181,7 @@ public class SnappyCompressor implements Compressor {
       return Snappy.compress(unCompInput);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
-      return null;
+      throw new RuntimeException(e);
     }
   }
 
@@ -189,8 +190,8 @@ public class SnappyCompressor implements Compressor {
       return Snappy.uncompressFloatArray(compInput);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override public float[] unCompressFloat(byte[] compInput, int offset, int length) {
@@ -198,8 +199,8 @@ public class SnappyCompressor implements Compressor {
       return Snappy.uncompressFloatArray(compInput, offset, length);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override public byte[] compressDouble(double[] unCompInput) {
@@ -207,7 +208,7 @@ public class SnappyCompressor implements Compressor {
       return Snappy.compress(unCompInput);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
-      return null;
+      throw new RuntimeException(e);
     }
   }
 
@@ -216,8 +217,8 @@ public class SnappyCompressor implements Compressor {
       return Snappy.uncompressDoubleArray(compInput);
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override public double[] unCompressDouble(byte[] compInput, int offset, int length) {
@@ -228,8 +229,8 @@ public class SnappyCompressor implements Compressor {
       return result;
     } catch (IOException e) {
       LOGGER.error(e, e.getMessage());
+      throw new RuntimeException(e);
     }
-    return null;
   }
 
   @Override
