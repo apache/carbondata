@@ -197,7 +197,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
         if (CarbonUtil.hasEncoding(actualQueryDimensions[i].getDimension().getEncoder(),
             Encoding.DICTIONARY)) {
           // if dimension exists then add the key array value else add the default value
-          if (dimensionInfo.getDimensionExists()[i]) {
+          if (dimensionInfo.getDimensionExists()[i] && null != keyArray && 0 != keyArray.length) {
             keyArrayWithNewAddedColumns[newKeyArrayIndex++] =
                 keyArray[existingColumnKeyArrayIndex++];
           } else {

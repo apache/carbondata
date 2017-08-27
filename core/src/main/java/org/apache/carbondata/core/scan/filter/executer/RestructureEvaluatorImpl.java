@@ -134,5 +134,4 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
     }
     return isDefaultValuePresentInFilterValues;
   }
-
 }

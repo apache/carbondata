@@ -74,9 +74,7 @@ public class SearchModeVectorDetailQueryExecutor extends AbstractQueryExecutor<O
   public CarbonIterator<Object> execute(QueryModel queryModel)
       throws QueryExecutionException, IOException {
     List<BlockExecutionInfo> blockExecutionInfoList = getBlockExecutionInfos(queryModel);
-    if (executorService == null) {
-      initThreadPool();
-    }
+
     this.queryIterator = new SearchModeVectorResultIterator(
         blockExecutionInfoList,
         queryModel,

@@ -17,11 +17,7 @@
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
@@ -169,9 +165,11 @@ public class BlockletDataMapFactory extends CoarseGrainDataMapFactory
       return false;
     }
     for (int i = 0; i < tableColumnList.size(); i++) {
-      return indexFileColumnList.get(i).equalsWithStrictCheck(tableColumnList.get(i));
+      if (!indexFileColumnList.get(i).equalsWithStrictCheck(tableColumnList.get(i))) {
+        return false;
+      }
     }
-    return false;
+    return true;
   }
 
   /**

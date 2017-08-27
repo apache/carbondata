@@ -230,7 +230,13 @@ public class LoadMetadataDetails implements Serializable {
    * @return
    */
   public long getLoadStartTimeAsLong() {
-    return (!loadStartTime.isEmpty()) ? getTimeStamp(loadStartTime) : 0;
+    if (!loadStartTime.isEmpty()) {
+      Long time = getTimeStamp(loadStartTime);
+      if (null != time) {
+        return time;
+      }
+    }
+    return 0;
   }
 
   /**

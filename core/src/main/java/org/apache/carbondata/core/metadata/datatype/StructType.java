@@ -33,6 +33,31 @@ public class StructType extends DataType {
     return true;
   }
 
+  @Override
+  public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (!(obj instanceof StructType)) {
+      return false;
+    }
+    if (!this.getName().equalsIgnoreCase(((StructType) obj).getName())) {
+      return false;
+    }
+    return true;
+  }
+
+  @Override
+  public int hashCode() {
+    final int prime = 31;
+    int result = 1;
+    result = prime * result + getName().hashCode();
+    return result;
+  }
+
   public List<StructField> getFields() {
     return fields;
   }

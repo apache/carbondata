@@ -17,9 +17,7 @@
 
 package org.apache.spark.sql.common.util
 
-import java.io.{FileInputStream, ObjectInputStream, ObjectOutputStream}
-import java.math
-import java.math.RoundingMode
+import java.io.{ObjectInputStream, ObjectOutputStream}
 import java.util.{Locale, TimeZone}
 
 import org.apache.carbondata.common.logging.LogServiceFactory

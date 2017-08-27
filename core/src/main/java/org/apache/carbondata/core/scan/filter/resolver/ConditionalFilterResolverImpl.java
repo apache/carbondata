@@ -303,7 +303,6 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
           this.dimColResolvedFilterInfo.getDimension(), segmentProperties, false);
     }
     return null;
-
   }
 
 

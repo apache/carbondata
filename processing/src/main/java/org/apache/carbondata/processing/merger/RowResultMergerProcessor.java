@@ -138,21 +138,23 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
       // if record holder is not empty then iterator the slice holder from
       // heap
       iterator = this.recordHolderHeap.poll();
-      while (true) {
-        Object[] convertedRow = iterator.next();
-        if (null == convertedRow) {
-          iterator.close();
-          break;
-        }
-        // do it only once
-        if (!isDataPresent) {
-          dataHandler.initialise();
-          isDataPresent = true;
-        }
-        addRow(convertedRow);
-        // check if leaf contains no record
-        if (!iterator.hasNext()) {
-          break;
+      if (null != iterator) {
+        while (true) {
+          Object[] convertedRow = iterator.next();
+          if (null == convertedRow) {
+            iterator.close();
+            break;
+          }
+          // do it only once
+          if (!isDataPresent) {
+            dataHandler.initialise();
+            isDataPresent = true;
+          }
+          addRow(convertedRow);
+          // check if leaf contains no record
+          if (!iterator.hasNext()) {
+            break;
+          }
         }
       }
       if (isDataPresent)

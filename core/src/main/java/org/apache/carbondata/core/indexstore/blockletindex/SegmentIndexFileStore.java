@@ -282,12 +282,15 @@ public class SegmentIndexFileStore {
     DataInputStream dataInputStream =
         FileFactory.getDataInputStream(indexFilePath, FileFactory.getFileType(indexFilePath));
     byte[] bytes = new byte[(int) indexFile.getSize()];
-    dataInputStream.readFully(bytes);
-    carbonIndexMap.put(indexFile.getName(), bytes);
-    carbonIndexMapWithFullPath.put(
-        indexFile.getParentFile().getAbsolutePath() + CarbonCommonConstants.FILE_SEPARATOR
-            + indexFile.getName(), bytes);
-    dataInputStream.close();
+    try {
+      dataInputStream.readFully(bytes);
+      carbonIndexMap.put(indexFile.getName(), bytes);
+      carbonIndexMapWithFullPath.put(
+          indexFile.getParentFile().getAbsolutePath() + CarbonCommonConstants.FILE_SEPARATOR
+              + indexFile.getName(), bytes);
+    } finally {
+      dataInputStream.close();
+    }
   }
 
   private MergedBlockIndexHeader readMergeBlockIndexHeader(ThriftReader thriftReader)

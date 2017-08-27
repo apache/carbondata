@@ -370,7 +370,7 @@ public class CarbonMetadataUtil {
     } else if (DataTypes.isDecimal(dataType)) {
       return DataTypeUtil.byteToBigDecimal(first).compareTo(DataTypeUtil.byteToBigDecimal(second));
     } else {
-      throw new IllegalArgumentException("Invalid data type");
+      throw new IllegalArgumentException("Invalid data type:" + dataType);
     }
   }
 
