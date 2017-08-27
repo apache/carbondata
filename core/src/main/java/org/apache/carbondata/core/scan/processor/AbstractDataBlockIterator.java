@@ -78,13 +78,13 @@ public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Obje
 
   protected AbstractScannedResult scannedResult;
 
-  private BlockExecutionInfo blockExecutionInfo;
+  protected BlockExecutionInfo blockExecutionInfo;
 
-  private FileHolder fileReader;
+  protected FileHolder fileReader;
 
-  private AtomicBoolean nextBlock;
+  protected AtomicBoolean nextBlock;
 
-  private AtomicBoolean nextRead;
+  protected AtomicBoolean nextRead;
 
   public AbstractDataBlockIterator(BlockExecutionInfo blockExecutionInfo, FileHolder fileReader,
       int batchSize, QueryStatisticsModel queryStatisticsModel, ExecutorService executorService) {

@@ -83,11 +83,11 @@ public abstract class AbstractDetailQueryResultIterator<E> extends CarbonIterato
   /**
    * number of cores which can be used
    */
-  private int batchSize;
+  protected int batchSize;
   /**
    * queryStatisticsModel to store query statistics object
    */
-  private QueryStatisticsModel queryStatisticsModel;
+  protected QueryStatisticsModel queryStatisticsModel;
 
   public AbstractDetailQueryResultIterator(List<BlockExecutionInfo> infos, QueryModel queryModel,
       ExecutorService execService) {

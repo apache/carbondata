@@ -14,11 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.carbondata.presto.scan.executor;
 
-package org.apache.carbondata.presto;
+import org.apache.carbondata.core.scan.executor.QueryExecutor;
+import org.apache.carbondata.presto.scan.executor.impl.ColumnDetailQueryExecutor;
+import org.apache.carbondata.core.scan.model.QueryModel;
 
-import com.facebook.presto.spi.connector.ConnectorTransactionHandle;
+/**
+ * Factory class to get the query executor from RDD
+ * This will return the executor based on query type
+ */
+public class QueryExecutorFactory {
 
-enum CarbondataTransactionHandle implements ConnectorTransactionHandle {
-  INSTANCE
+  public static QueryExecutor getQueryExecutor(QueryModel queryModel) {
+    return new ColumnDetailQueryExecutor();
+
+  }
 }

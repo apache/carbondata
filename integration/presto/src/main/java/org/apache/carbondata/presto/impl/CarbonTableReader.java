@@ -20,7 +20,9 @@ package org.apache.carbondata.presto.impl;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -42,7 +44,6 @@ import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
@@ -54,6 +55,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
+import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.mutate.UpdateVO;
@@ -73,6 +75,7 @@ import org.apache.carbondata.hadoop.CacheClient;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 
 import com.facebook.presto.spi.SchemaTableName;
+import com.facebook.presto.spi.TableNotFoundException;
 import com.facebook.presto.spi.classloader.ThreadContextClassLoader;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
@@ -90,35 +93,36 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.thrift.TBase;
 
 import static java.util.Objects.requireNonNull;
-import com.facebook.presto.spi.TableNotFoundException;
 
-/** CarbonTableReader will be a facade of these utils
- *
+/**
+ * CarbonTableReader will be a facade of these utils
  * 1:CarbonMetadata,(logic table)
  * 2:FileFactory, (physic table file)
  * 3:CarbonCommonFactory, (offer some )
  * 4:DictionaryFactory, (parse dictionary util)
- *
  * Currently, it is mainly used to parse metadata of tables under
  * the configured carbondata-store path and filter the relevant
  * input splits with given query predicates.
  */
 public class CarbonTableReader {
 
+  // default PathFilter, accepts files in carbondata format (with .carbondata extension).
+  private static final PathFilter DefaultFilter = new PathFilter() {
+    @Override public boolean accept(Path path) {
+      return CarbonTablePath.isCarbonDataFile(path.getName());
+    }
+  };
   private CarbonTableConfig config;
-
   /**
    * The names of the tables under the schema (this.carbonFileList).
    */
   private List<SchemaTableName> tableList;
-
   /**
    * carbonFileList represents the store path of the schema, which is configured as carbondata-store
    * in the CarbonData catalog file ($PRESTO_HOME$/etc/catalog/carbondata.properties).
    */
   private CarbonFile carbonFileList;
   private FileFactory.FileType fileType;
-
   /**
    * A cache for Carbon reader, with this cache,
    * metadata of a table is only read from file system once.
@@ -132,11 +136,12 @@ public class CarbonTableReader {
 
   /**
    * For presto worker node to initialize the metadata cache of a table.
+   *
    * @param table the name of the table and schema.
    * @return
    */
   public CarbonTableCacheModel getCarbonCache(SchemaTableName table) {
-    if (!cc.containsKey(table)) {
+    if (!cc.containsKey(table) || cc.get(table) == null) {
       // if this table is not cached, try to read the metadata of the table and cache it.
       try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(
           FileFactory.class.getClassLoader())) {
@@ -153,31 +158,29 @@ public class CarbonTableReader {
       parseCarbonMetadata(table);
     }
 
-    if (cc.containsKey(table)) return cc.get(table);
-    else return null;
+    if (cc.containsKey(table)) {
+      return cc.get(table);
+    } else {
+      return null;
+    }
   }
 
   /**
    * Return the schema names under a schema store path (this.carbonFileList).
+   *
    * @return
    */
   public List<String> getSchemaNames() {
     return updateSchemaList();
   }
 
-  // default PathFilter, accepts files in carbondata format (with .carbondata extension).
-  private static final PathFilter DefaultFilter = new PathFilter() {
-    @Override public boolean accept(Path path) {
-      return CarbonTablePath.isCarbonDataFile(path.getName());
-    }
-  };
-
   /**
    * Get the CarbonFile instance which represents the store path in the configuration, and assign it to
    * this.carbonFileList.
+   *
    * @return
    */
-  public boolean updateCarbonFile() {
+  private boolean updateCarbonFile() {
     if (carbonFileList == null) {
       fileType = FileFactory.getFileType(config.getStorePath());
       try {
@@ -191,20 +194,20 @@ public class CarbonTableReader {
 
   /**
    * Return the schema names under a schema store path (this.carbonFileList).
+   *
    * @return
    */
-  public List<String> updateSchemaList() {
+  private List<String> updateSchemaList() {
     updateCarbonFile();
 
     if (carbonFileList != null) {
-      List<String> schemaList =
-          Stream.of(carbonFileList.listFiles()).map(a -> a.getName()).collect(Collectors.toList());
-      return schemaList;
+      return Stream.of(carbonFileList.listFiles()).map(CarbonFile::getName).collect(Collectors.toList());
     } else return ImmutableList.of();
   }
 
   /**
    * Get the names of the tables in the given schema.
+   *
    * @param schema name of the schema
    * @return
    */
@@ -215,20 +218,23 @@ public class CarbonTableReader {
 
   /**
    * Get the names of the tables in the given schema.
+   *
    * @param schemaName name of the schema
    * @return
    */
-  public Set<String> updateTableList(String schemaName) {
-    List<CarbonFile> schema = Stream.of(carbonFileList.listFiles()).filter(a -> schemaName.equals(a.getName()))
-        .collect(Collectors.toList());
+  private Set<String> updateTableList(String schemaName) {
+    List<CarbonFile> schema =
+        Stream.of(carbonFileList.listFiles()).filter(a -> schemaName.equals(a.getName()))
+            .collect(Collectors.toList());
     if (schema.size() > 0) {
-      return Stream.of((schema.get(0)).listFiles()).map(a -> a.getName())
+      return Stream.of((schema.get(0)).listFiles()).map(CarbonFile::getName)
           .collect(Collectors.toSet());
     } else return ImmutableSet.of();
   }
 
   /**
    * Get the CarbonTable instance of the given table.
+   *
    * @param schemaTableName name of the given table.
    * @return
    */
@@ -250,7 +256,7 @@ public class CarbonTableReader {
    * and cache all the table names in this.tableList. Notice that whenever this method
    * is called, it clears this.tableList and populate the list by reading the files.
    */
-  public void updateSchemaTables() {
+  private void updateSchemaTables() {
     // update logic determine later
     if (carbonFileList == null) {
       updateSchemaList();
@@ -268,6 +274,7 @@ public class CarbonTableReader {
   /**
    * Find the table with the given name and build a CarbonTable instance for it.
    * This method should be called after this.updateSchemaTables().
+   *
    * @param schemaTableName name of the given table.
    * @return
    */
@@ -282,10 +289,11 @@ public class CarbonTableReader {
 
   /**
    * Read the metadata of the given table and cache it in this.cc (CarbonTableReader cache).
+   *
    * @param table name of the given table.
    * @return the CarbonTable instance which contains all the needed metadata for a table.
    */
-  public CarbonTable parseCarbonMetadata(SchemaTableName table) {
+  private CarbonTable parseCarbonMetadata(SchemaTableName table) {
     CarbonTable result = null;
     try {
       CarbonTableCacheModel cache = cc.getOrDefault(table, new CarbonTableCacheModel());
@@ -295,14 +303,14 @@ public class CarbonTableReader {
 
       // Step 1: get store path of the table and cache it.
       String storePath = config.getStorePath();
-        // create table identifier. the table id is randomly generated.
+      // create table identifier. the table id is randomly generated.
       cache.carbonTableIdentifier =
           new CarbonTableIdentifier(table.getSchemaName(), table.getTableName(),
               UUID.randomUUID().toString());
-        // get the store path of the table.
-      cache.carbonTablePath = PathFactory.getInstance()
-          .getCarbonTablePath(storePath, cache.carbonTableIdentifier, null);
-        // cache the table
+      // get the store path of the table.
+      cache.carbonTablePath =
+          PathFactory.getInstance().getCarbonTablePath(storePath, cache.carbonTableIdentifier, null);
+      // cache the table
       cc.put(table, cache);
 
       //Step 2: read the metadata (tableInfo) of the table.
@@ -323,7 +331,7 @@ public class CarbonTableReader {
 
       // Step 3: convert format level TableInfo to code level TableInfo
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-        // wrapperTableInfo is the code level information of a table in carbondata core, different from the Thrift TableInfo.
+      // wrapperTableInfo is the code level information of a table in carbondata core, different from the Thrift TableInfo.
       TableInfo wrapperTableInfo = schemaConverter
           .fromExternalToWrapperTableInfo(tableInfo, table.getSchemaName(), table.getTableName(),
               storePath);
@@ -346,8 +354,9 @@ public class CarbonTableReader {
 
   /**
    * Apply filters to the table and get valid input splits of the table.
+   *
    * @param tableCacheModel the table
-   * @param filters the filters
+   * @param filters         the filters
    * @return
    * @throws Exception
    */
@@ -359,8 +368,9 @@ public class CarbonTableReader {
     UpdateVO invalidBlockVOForSegmentId = null;
     Boolean IUDTable = false;
 
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-        tableCacheModel.carbonTable.getAbsoluteTableIdentifier();
+    CarbonTable carbonTable = tableCacheModel.carbonTable;
+
+    AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     CacheClient cacheClient = new CacheClient(absoluteTableIdentifier.getStorePath());
     List<String> invalidSegments = new ArrayList<>();
 
@@ -387,13 +397,28 @@ public class CarbonTableReader {
       cacheClient.getSegmentAccessClient().invalidateAll(invalidSegmentsIds);
     }
 
-    TableProvider tableProvider = new SingleTableProvider(tableCacheModel.carbonTable);
-
     // get filter for segment
     CarbonInputFormatUtil.processFilterExpression(filters, tableCacheModel.carbonTable);
+
+    BitSet matchedPartitions = null;
+    PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
+    if (partitionInfo != null) {
+      // prune partitions for filter query on partition table
+      matchedPartitions = setMatchedPartitions(null, carbonTable, filters, partitionInfo);
+      if (matchedPartitions != null) {
+        if (matchedPartitions.cardinality() == 0) {
+          // no partition is required
+          return new ArrayList<CarbonLocalInputSplit>();
+        } else if (matchedPartitions.cardinality() == partitionInfo.getNumPartitions()) {
+          // all partitions are required, no need to prune partitions
+          matchedPartitions = null;
+        }
+      }
+    }
+
+    TableProvider tableProvider = new SingleTableProvider(tableCacheModel.carbonTable);
     FilterResolverIntf filterInterface = CarbonInputFormatUtil
-        .resolveFilter(filters, tableCacheModel.carbonTable.getAbsoluteTableIdentifier(),
-            tableProvider);
+        .resolveFilter(filters, carbonTable.getAbsoluteTableIdentifier(), tableProvider);
 
     IUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
     List<CarbonLocalInputSplit> result = new ArrayList<>();
@@ -402,15 +427,14 @@ public class CarbonTableReader {
 
       if (IUDTable) {
         // update not being performed on this table.
-        invalidBlockVOForSegmentId =
-            updateStatusManager.getInvalidTimestampRange(segmentNo);
+        invalidBlockVOForSegmentId = updateStatusManager.getInvalidTimestampRange(segmentNo);
       }
 
       try {
         List<DataRefNode> dataRefNodes =
             getDataBlocksOfSegment(filterExpressionProcessor, absoluteTableIdentifier,
-                tableCacheModel.carbonTablePath, filterInterface, segmentNo, cacheClient,
-                updateStatusManager);
+                tableCacheModel.carbonTablePath, filterInterface, matchedPartitions, segmentNo,
+                cacheClient, updateStatusManager, partitionInfo);
         for (DataRefNode dataRefNode : dataRefNodes) {
           BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
           TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
@@ -429,73 +453,105 @@ public class CarbonTableReader {
               tableBlockInfo.getVersion().number()));
         }
       } catch (Exception ex) {
-        throw new RuntimeException(ex);
+        ex.printStackTrace();
       }
     }
     cacheClient.close();
     return result;
   }
 
+  private BitSet setMatchedPartitions(String partitionIds, CarbonTable carbonTable,
+      Expression filter, PartitionInfo partitionInfo) {
+    BitSet matchedPartitions = null;
+    if (null != partitionIds) {
+      String[] partList = partitionIds.replace("[", "").replace("]", "").split(",");
+      matchedPartitions = new BitSet(Integer.parseInt(partList[0]));
+      for (String partitionId : partList) {
+        matchedPartitions.set(Integer.parseInt(partitionId));
+      }
+    } else {
+      if (null != filter) {
+        matchedPartitions =
+            new FilterExpressionProcessor().getFilteredPartitions(filter, partitionInfo);
+      }
+    }
+    return matchedPartitions;
+  }
+
   /**
-   * Get all the data blocks of a given segment.
-   * @param filterExpressionProcessor
-   * @param absoluteTableIdentifier
-   * @param tablePath
-   * @param resolver
-   * @param segmentId
-   * @param cacheClient
-   * @param updateStatusManager
-   * @return
-   * @throws IOException
+   * get data blocks of given segment
    */
   private List<DataRefNode> getDataBlocksOfSegment(
       FilterExpressionProcessor filterExpressionProcessor,
       AbsoluteTableIdentifier absoluteTableIdentifier, CarbonTablePath tablePath,
-      FilterResolverIntf resolver, String segmentId, CacheClient cacheClient,
-      SegmentUpdateStatusManager updateStatusManager) throws IOException {
-    //DriverQueryStatisticsRecorder recorder = CarbonTimeStatisticsFactory.getQueryStatisticsRecorderInstance();
-    //QueryStatistic statistic = new QueryStatistic();
+      FilterResolverIntf resolver, BitSet matchedPartitions, String segmentId,
+      CacheClient cacheClient, SegmentUpdateStatusManager updateStatusManager,
+      PartitionInfo partitionInfo) throws IOException {
+    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
+    try {
+      segmentIndexMap =
+          getSegmentAbstractIndexs(absoluteTableIdentifier, tablePath, segmentId, cacheClient,
+              updateStatusManager);
+      List<DataRefNode> resultFilterredBlocks = new LinkedList<DataRefNode>();
+      int partitionIndex = -1;
+      List<Integer> partitionIdList = new ArrayList<>();
+      if (partitionInfo != null) {
+        partitionIdList = partitionInfo.getPartitionIds();
+      }
+      if (null != segmentIndexMap) {
+        for (Map.Entry<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> entry : segmentIndexMap
+            .entrySet()) {
+          SegmentTaskIndexStore.TaskBucketHolder taskHolder = entry.getKey();
+          int taskId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskHolder.taskNo);
+          if (partitionInfo != null) {
+            partitionIndex = partitionIdList.indexOf(taskId);
+          }
+          // matchedPartitions variable will be null in two cases as follows
+          // 1. the table is not a partition table
+          // 2. the table is a partition table, and all partitions are matched by query
+          // for partition table, the task id could map to partition id.
+          // if this partition is not required, here will skip it.
 
-    // read segment index
-    Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap =
-        getSegmentAbstractIndexs(absoluteTableIdentifier, tablePath, segmentId, cacheClient,
-            updateStatusManager);
-
-    List<DataRefNode> resultFilterredBlocks = new LinkedList<DataRefNode>();
-
-    if (null != segmentIndexMap) {
-      // build result
-      for (AbstractIndex abstractIndex : segmentIndexMap.values()) {
-        List<DataRefNode> filterredBlocks;
-        // if no filter is given, get all blocks from Btree Index
-        if (null == resolver) {
-          filterredBlocks = getDataBlocksOfIndex(abstractIndex);
-        } else {
-          // apply filter and get matching blocks
-          filterredBlocks = filterExpressionProcessor
-              .getFilterredBlocks(abstractIndex.getDataRefNode(), resolver, abstractIndex,
-                  absoluteTableIdentifier);
+          if (matchedPartitions == null || matchedPartitions.get(partitionIndex)) {
+            AbstractIndex abstractIndex = entry.getValue();
+            List<DataRefNode> filterredBlocks;
+            // if no filter is given get all blocks from Btree Index
+            if (null == resolver) {
+              filterredBlocks = getDataBlocksOfIndex(abstractIndex);
+            } else {
+              // apply filter and get matching blocks
+              filterredBlocks = filterExpressionProcessor
+                  .getFilterredBlocks(abstractIndex.getDataRefNode(), resolver, abstractIndex,
+                      absoluteTableIdentifier);
+            }
+            resultFilterredBlocks.addAll(filterredBlocks);
+          }
         }
-        resultFilterredBlocks.addAll(filterredBlocks);
+      }
+
+      return resultFilterredBlocks;
+    } finally {
+      // clean up the access count for a segment as soon as its usage is complete so that in
+      // low memory systems the same memory can be utilized efficiently
+      if (null != segmentIndexMap) {
+        List<TableSegmentUniqueIdentifier> tableSegmentUniqueIdentifiers = new ArrayList<>(1);
+        tableSegmentUniqueIdentifiers
+            .add(new TableSegmentUniqueIdentifier(absoluteTableIdentifier, segmentId));
+        cacheClient.getSegmentAccessClient().clearAccessCount(tableSegmentUniqueIdentifiers);
       }
     }
-    //statistic.addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER, System.currentTimeMillis());
-    //recorder.recordStatisticsForDriver(statistic, "123456"/*job.getConfiguration().get("query.id")*/);
-    return resultFilterredBlocks;
   }
 
   private boolean isSegmentUpdate(SegmentTaskIndexWrapper segmentTaskIndexWrapper,
       UpdateVO updateDetails) {
     Long refreshedTime = segmentTaskIndexWrapper.getRefreshedTimeStamp();
     Long updateTime = updateDetails.getLatestUpdateTimestamp();
-    if (null != refreshedTime && null != updateTime && updateTime > refreshedTime) {
-      return true;
-    }
-    return false;
+    return null != refreshedTime && null != updateTime && updateTime > refreshedTime;
   }
 
   /**
    * Build and load the B-trees of the segment.
+   *
    * @param absoluteTableIdentifier
    * @param tablePath
    * @param segmentId
@@ -504,11 +560,11 @@ public class CarbonTableReader {
    * @return
    * @throws IOException
    */
-  private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getSegmentAbstractIndexs(/*JobContext job,*/
+  private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getSegmentAbstractIndexs(
       AbsoluteTableIdentifier absoluteTableIdentifier, CarbonTablePath tablePath, String segmentId,
       CacheClient cacheClient, SegmentUpdateStatusManager updateStatusManager) throws IOException {
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
-    SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
+    SegmentTaskIndexWrapper segmentTaskIndexWrapper;
     UpdateVO updateDetails = null;
     boolean isSegmentUpdated = false;
     Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys = null;
@@ -536,6 +592,8 @@ public class CarbonTableReader {
     // if segment tree is not loaded, load the segment tree
     if (segmentIndexMap == null || isSegmentUpdated) {
 
+      Set<SegmentTaskIndexStore.TaskBucketHolder> validTaskKeys =
+          new HashSet<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
       List<FileStatus> fileStatusList = new LinkedList<FileStatus>();
 
       FileSystem fs =
@@ -545,8 +603,7 @@ public class CarbonTableReader {
       List<FileSplit> carbonSplits = new ArrayList<>();
       for (InputSplit inputSplit : splits) {
         FileSplit fileSplit = (FileSplit) inputSplit;
-        String segId = CarbonTablePath.DataPathUtil
-            .getSegmentId(fileSplit.getPath().toString());//这里的seperator应该怎么加？？
+        String segId = CarbonTablePath.DataPathUtil.getSegmentId(fileSplit.getPath().toString());
         if (segId.equals(CarbonCommonConstants.INVALID_SEGMENT_ID)) {
           continue;
         }
@@ -555,8 +612,8 @@ public class CarbonTableReader {
 
       List<TableBlockInfo> tableBlockInfoList = new ArrayList<>();
       for (FileSplit inputSplit : carbonSplits) {
-        if ((null == updateDetails) || (isValidBlockBasedOnUpdateDetails(
-            taskKeys, inputSplit, updateDetails, updateStatusManager, segmentId))) {
+        if ((null == updateDetails) || (isValidBlockBasedOnUpdateDetails(taskKeys, inputSplit,
+            updateDetails, updateStatusManager, segmentId))) {
 
           BlockletInfos blockletInfos = new BlockletInfos(0, 0,
               0);//this level we do not need blocklet info!!!! Is this a trick?
@@ -564,7 +621,7 @@ public class CarbonTableReader {
               new TableBlockInfo(inputSplit.getPath().toString(), inputSplit.getStart(), segmentId,
                   inputSplit.getLocations(), inputSplit.getLength(), blockletInfos,
                   ColumnarFormatVersion
-                      .valueOf(CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION), null/*new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE)*/));//这里的null是否会异常？
+                      .valueOf(CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION), null/*new HashMap<>(PrestoCommonConstants.DEFAULT_COLLECTION_SIZE)*/));//这里的null是否会异常？
         }
       }
 
@@ -583,7 +640,7 @@ public class CarbonTableReader {
   private boolean isValidBlockBasedOnUpdateDetails(
       Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys, FileSplit carbonInputSplit,
       UpdateVO updateDetails, SegmentUpdateStatusManager updateStatusManager, String segmentId) {
-    String taskID = null;
+    String taskID;
     if (null != carbonInputSplit) {
       if (!updateStatusManager.isBlockValid(segmentId, carbonInputSplit.getPath().getName())) {
         return false;
@@ -615,8 +672,9 @@ public class CarbonTableReader {
 
   /**
    * Get the input splits of a set of carbondata files.
+   *
    * @param fileStatusList the file statuses of the set of carbondata files.
-   * @param targetSystem hdfs FileSystem
+   * @param targetSystem   hdfs FileSystem
    * @return
    * @throws IOException
    */
@@ -649,8 +707,8 @@ public class CarbonTableReader {
               long bytesRemaining;
               int blkIndex;
               for (
-                  bytesRemaining = length;
-                  (double) bytesRemaining / (double) splitSize > 1.1D;// when there are more than one splits left.
+                  bytesRemaining = length; (double) bytesRemaining / (double) splitSize
+                  > 1.1D;// when there are more than one splits left.
                   bytesRemaining -= splitSize) {
                 blkIndex = this.getBlockIndex(blkLocations, length - bytesRemaining);
                 splits.add(this.makeSplit(path, length - bytesRemaining, splitSize,
@@ -685,6 +743,7 @@ public class CarbonTableReader {
   /**
    * Get all file statuses of the carbondata files with a segmentId in segmentsToConsider
    * under the tablePath, and add them to the result.
+   *
    * @param segmentsToConsider
    * @param tablePath
    * @param result
@@ -700,18 +759,9 @@ public class CarbonTableReader {
 
     FileSystem fs = null;
 
-    //PathFilter inputFilter = getDataFileFilter(job);
-
-    // get tokens for all the required FileSystem for table path
-        /*TokenCache.obtainTokensForNamenodes(job.getCredentials(), new Path[] { tablePath },
-                job.getConfiguration());*/
-
     //get all data files of valid partitions and segments
-    for (int i = 0; i < partitionsToConsider.length; ++i) {
-      String partition = partitionsToConsider[i];
-
-      for (int j = 0; j < segmentsToConsider.length; ++j) {
-        String segmentId = segmentsToConsider[j];
+    for (String partition : partitionsToConsider) {
+      for (String segmentId : segmentsToConsider) {
         Path segmentPath = new Path(tablePath.getCarbonDataDirectoryPath(partition, segmentId));
 
         try {
@@ -741,13 +791,14 @@ public class CarbonTableReader {
   /**
    * Get the FileStatus of all carbondata files under the path recursively,
    * and add the file statuses into the result
+   *
    * @param result
    * @param fs
    * @param path
    * @param inputFilter the filter used to determinate whether a path is a carbondata file
    * @throws IOException
    */
-  protected void addInputPathRecursively(List<FileStatus> result, FileSystem fs, Path path,
+  private void addInputPathRecursively(List<FileStatus> result, FileSystem fs, Path path,
       PathFilter inputFilter) throws IOException {
     RemoteIterator iter = fs.listLocatedStatus(path);
 
@@ -767,6 +818,7 @@ public class CarbonTableReader {
   /**
    * Get the data blocks of a b tree. the root node of the b tree is abstractIndex.dataRefNode.
    * BTreeNode is a sub class of DataRefNode.
+   *
    * @param abstractIndex
    * @return
    */
@@ -829,57 +881,8 @@ public class CarbonTableReader {
     }
     BlockLocation last = blkLocations[blkLocations.length - 1];
     long fileLength = last.getOffset() + last.getLength() - 1;
-    throw new IllegalArgumentException("Offset " + offset +
-        " is outside of file (0.." +
-        fileLength + ")");
+    throw new IllegalArgumentException(
+        "Offset " + offset + " is outside of file (0.." + fileLength + ")");
   }
 
-  /**
-   * get total number of rows. for count(*)
-   *
-   * @throws IOException
-   * @throws IndexBuilderException
-   */
-  public long getRowCount() throws IOException, IndexBuilderException {
-    long rowCount = 0;
-        /*AbsoluteTableIdentifier absoluteTableIdentifier = this.carbonTable.getAbsoluteTableIdentifier();
-
-        // no of core to load the blocks in driver
-        //addSegmentsIfEmpty(job, absoluteTableIdentifier);
-        int numberOfCores = CarbonCommonConstants.NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT_DEFAULT_VALUE;
-        try {
-            numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-                    .getProperty(CarbonCommonConstants.NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT));
-        } catch (NumberFormatException e) {
-            numberOfCores = CarbonCommonConstants.NUMBER_OF_CORE_TO_LOAD_DRIVER_SEGMENT_DEFAULT_VALUE;
-        }
-        // creating a thread pool
-        ExecutorService threadPool = Executors.newFixedThreadPool(numberOfCores);
-        List<Future<Map<String, AbstractIndex>>> loadedBlocks =
-                new ArrayList<Future<Map<String, AbstractIndex>>>();
-        //for each segment fetch blocks matching filter in Driver BTree
-        for (String segmentNo : this.segmentList) {
-            // submitting the task
-            loadedBlocks
-                    .add(threadPool.submit(new BlocksLoaderThread(*//*job,*//* absoluteTableIdentifier, segmentNo)));
-        }
-        threadPool.shutdown();
-        try {
-            threadPool.awaitTermination(1, TimeUnit.HOURS);
-        } catch (InterruptedException e) {
-            throw new IndexBuilderException(e);
-        }
-        try {
-            // adding all the rows of the blocks to get the total row
-            // count
-            for (Future<Map<String, AbstractIndex>> block : loadedBlocks) {
-                for (AbstractIndex abstractIndex : block.get().values()) {
-                    rowCount += abstractIndex.getTotalNumberOfRows();
-                }
-            }
-        } catch (InterruptedException | ExecutionException e) {
-            throw new IndexBuilderException(e);
-        }*/
-    return rowCount;
-  }
 }

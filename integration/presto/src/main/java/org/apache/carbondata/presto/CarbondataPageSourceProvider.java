@@ -32,19 +32,20 @@ import static java.util.Objects.requireNonNull;
 /**
  * Provider Class for Carbondata Page Source class.
  */
-public class CarbondataPageSourceProvider implements ConnectorPageSourceProvider {
+class CarbondataPageSourceProvider implements ConnectorPageSourceProvider {
 
   private CarbondataRecordSetProvider carbondataRecordSetProvider;
 
   @Inject
-  public CarbondataPageSourceProvider(CarbondataRecordSetProvider carbondataRecordSetProvider)
-  {
-    this.carbondataRecordSetProvider = requireNonNull(carbondataRecordSetProvider, "recordSetProvider is null");
+  public CarbondataPageSourceProvider(CarbondataRecordSetProvider carbondataRecordSetProvider) {
+    this.carbondataRecordSetProvider =
+        requireNonNull(carbondataRecordSetProvider, "recordSetProvider is null");
   }
 
   @Override
   public ConnectorPageSource createPageSource(ConnectorTransactionHandle transactionHandle,
       ConnectorSession session, ConnectorSplit split, List<ColumnHandle> columns) {
-    return new CarbondataPageSource(carbondataRecordSetProvider.getRecordSet(transactionHandle, session, split, columns));
+    return new CarbondataPageSource(
+        carbondataRecordSetProvider.getRecordSet(transactionHandle, session, split, columns));
   }
 }
