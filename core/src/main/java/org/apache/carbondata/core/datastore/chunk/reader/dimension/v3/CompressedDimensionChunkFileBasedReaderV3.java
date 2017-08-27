@@ -244,8 +244,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset) {
     byte[] dataPage;
     int[] rlePage;
-    int[] invertedIndexes = null;
-    int[] invertedIndexesReverse = null;
+    int[] invertedIndexes = new int[0];
+    int[] invertedIndexesReverse = new int[0];
     dataPage = COMPRESSOR.unCompressByte(pageData.array(), offset, pageMetadata.data_page_length);
     offset += pageMetadata.data_page_length;
     // if row id block is present then read the row id chunk and uncompress it

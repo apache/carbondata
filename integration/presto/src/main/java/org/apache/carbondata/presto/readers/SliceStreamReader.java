@@ -72,7 +72,7 @@ public class SliceStreamReader extends AbstractStreamReader {
           }
           return new DictionaryBlock(batchSize, dictionarySliceArrayBlock, values);
         } else {
-          if(columnVector.anyNullsSet()) {
+          if (columnVector.anyNullsSet()) {
             handleNullInVector(type, numberOfRows, builder);
           } else {
             populateVector(type, numberOfRows, builder);
@@ -82,10 +82,8 @@ public class SliceStreamReader extends AbstractStreamReader {
     } else {
       numberOfRows = streamData.length;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
-      if (streamData != null) {
-        for (int i = 0; i < numberOfRows; i++) {
-          type.writeSlice(builder, utf8Slice(streamData[i].toString()));
-        }
+      for (int i = 0; i < numberOfRows; i++) {
+        type.writeSlice(builder, utf8Slice(streamData[i].toString()));
       }
     }
 

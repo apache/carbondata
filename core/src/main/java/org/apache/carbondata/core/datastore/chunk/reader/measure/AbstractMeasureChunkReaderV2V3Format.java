@@ -103,11 +103,14 @@ public abstract class AbstractMeasureChunkReaderV2V3Format extends AbstractMeasu
    * @param presentMetadataThrift
    * @return wrapper presence meta
    */
-  protected BitSet getNullBitSet(
-      org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
+  protected BitSet getNullBitSet(org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
     Compressor compressor = CompressorFactory.getInstance().getCompressor();
-    return BitSet.valueOf(
-        compressor.unCompressByte(presentMetadataThrift.getPresent_bit_stream()));
+    if (null != presentMetadataThrift.getPresent_bit_stream()) {
+      return BitSet
+          .valueOf(compressor.unCompressByte(presentMetadataThrift.getPresent_bit_stream()));
+    } else {
+      return new BitSet(1);
+    }
   }
 
   /**

@@ -39,17 +39,18 @@ public class ThreadStatusObserver {
     // should assign the throwable object else the actual cause for failure can be overridden as
     // all the running threads will throw interrupted exception on calling shutdownNow and
     // will override the throwable object
-    if (null == this.throwable) {
-      synchronized (lock) {
-        if (null == this.throwable) {
-          executorService.shutdownNow();
-          this.throwable = throwable;
-        }
+    synchronized (lock) {
+      if (null == this.throwable) {
+        executorService.shutdownNow();
+        this.throwable = throwable;
       }
     }
   }
 
   public Throwable getThrowable() {
-    return throwable;
+
+    synchronized (lock) {
+      return throwable;
+    }
   }
 }

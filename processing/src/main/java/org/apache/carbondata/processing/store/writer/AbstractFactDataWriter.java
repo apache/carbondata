@@ -43,7 +43,6 @@ import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.CarbonMergerUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
@@ -55,8 +54,6 @@ import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
-
-import org.apache.commons.lang3.ArrayUtils;
 
 public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
 
@@ -168,13 +165,13 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
             CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT));
     this.blockSizeThreshold =
         fileSizeInBytes - (fileSizeInBytes * spaceReservedForBlockMetaSize) / 100;
-    LOGGER.info("Total file size: " + fileSizeInBytes + " and dataBlock Size: " +
-        blockSizeThreshold);
+    LOGGER
+        .info("Total file size: " + fileSizeInBytes + " and dataBlock Size: " + blockSizeThreshold);
 
     // whether to directly write fact data to HDFS
-    String directlyWriteData2Hdfs = propInstance.getProperty(
-        CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS,
-        CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS_DEFAULT);
+    String directlyWriteData2Hdfs = propInstance
+        .getProperty(CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS,
+            CarbonLoadOptionConstants.ENABLE_CARBON_LOAD_DIRECT_WRITE_HDFS_DEFAULT);
     this.enableDirectlyWriteData2Hdfs = "TRUE".equalsIgnoreCase(directlyWriteData2Hdfs);
     if (enableDirectlyWriteData2Hdfs) {
       LOGGER.info("Carbondata will directly write fact data to HDFS.");
@@ -188,22 +185,9 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     // in case of compaction we will pass the cardinality.
     this.localCardinality = this.model.getColCardinality();
 
-    //TODO: We should delete the levelmetadata file after reading here.
-    // so only data loading flow will need to read from cardinality file.
-    if (null == this.localCardinality) {
-      this.localCardinality = CarbonMergerUtil
-          .getCardinalityFromLevelMetadata(this.model.getStoreLocation(),
-              this.model.getTableName());
-      List<Integer> cardinalityList = new ArrayList<Integer>();
-      thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
-          this.model.getWrapperColumnSchema());
-      localCardinality =
-          ArrayUtils.toPrimitive(cardinalityList.toArray(new Integer[cardinalityList.size()]));
-    } else { // for compaction case
-      List<Integer> cardinalityList = new ArrayList<Integer>();
-      thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
-          this.model.getWrapperColumnSchema());
-    }
+    List<Integer> cardinalityList = new ArrayList<Integer>();
+    thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
+        this.model.getWrapperColumnSchema());
     this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));

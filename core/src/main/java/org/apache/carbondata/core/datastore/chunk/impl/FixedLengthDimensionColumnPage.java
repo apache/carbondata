@@ -41,11 +41,12 @@ public class FixedLengthDimensionColumnPage extends AbstractDimensionColumnPage 
    */
   public FixedLengthDimensionColumnPage(byte[] dataChunk, int[] invertedIndex,
       int[] invertedIndexReverse, int numberOfRows, int columnValueSize) {
-    long totalSize = null != invertedIndex ?
+    boolean isExplicitSorted = isExplicitSorted(invertedIndex);
+    long totalSize = isExplicitSorted ?
         dataChunk.length + (2 * numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE) :
         dataChunk.length;
     dataChunkStore = DimensionChunkStoreFactory.INSTANCE
-        .getDimensionChunkStore(columnValueSize, null != invertedIndex, numberOfRows, totalSize,
+        .getDimensionChunkStore(columnValueSize, isExplicitSorted, numberOfRows, totalSize,
             DimensionStoreType.FIXEDLENGTH);
     dataChunkStore.putArray(invertedIndex, invertedIndexReverse, dataChunk);
   }

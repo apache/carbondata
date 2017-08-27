@@ -21,7 +21,6 @@ import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnPage;
-import org.apache.carbondata.core.datastore.chunk.impl.ColumnGroupDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionColumnPage;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionColumnPage;
@@ -118,8 +117,8 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
   public DimensionColumnPage decodeColumnPage(
       DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber) throws IOException {
     byte[] dataPage = null;
-    int[] invertedIndexes = null;
-    int[] invertedIndexesReverse = null;
+    int[] invertedIndexes = new int[0];
+    int[] invertedIndexesReverse = new int[0];
     int[] rlePage = null;
     DataChunk2 dimensionColumnChunk = null;
     int copySourcePoint = (int) dimensionRawColumnChunk.getOffSet();
@@ -171,14 +170,9 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
     // fill chunk attributes
     DimensionColumnPage columnDataChunk = null;
 
-    if (dimensionColumnChunk.isRowMajor()) {
-      // to store fixed length column chunk values
-      columnDataChunk = new ColumnGroupDimensionColumnPage(
-          dataPage, eachColumnValueSize[blockIndex], numberOfRows);
-    }
     // if no dictionary column then first create a no dictionary column chunk
     // and set to data chunk instance
-    else if (!hasEncoding(dimensionColumnChunk.encoders, Encoding.DICTIONARY)) {
+    if (!hasEncoding(dimensionColumnChunk.encoders, Encoding.DICTIONARY)) {
       columnDataChunk =
           new VariableLengthDimensionColumnPage(dataPage, invertedIndexes, invertedIndexesReverse,
               numberOfRows);

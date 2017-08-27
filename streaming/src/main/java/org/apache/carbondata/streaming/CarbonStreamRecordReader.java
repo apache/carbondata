@@ -414,9 +414,6 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
 
   private boolean isScanRequired(BlockletHeader header) {
     // TODO require to implement min-max index
-    if (null == filter) {
-      return true;
-    }
     return true;
   }
 
