@@ -33,6 +33,8 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.scan.result.BatchResult;
 import org.apache.carbondata.core.scan.result.iterator.ChunkRowIterator;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
+import org.apache.carbondata.presto.impl.CarbonLocalInputSplit;
 
 import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSession;
@@ -77,18 +79,12 @@ public class CarbondataRecordSet implements RecordSet {
    * get data blocks via Carbondata QueryModel API
    */
   @Override public RecordCursor cursor() {
-    List<TableBlockInfo> tableBlockInfoList = new ArrayList<TableBlockInfo>();
-
-    tableBlockInfoList.add(new TableBlockInfo(split.getLocalInputSplit().getPath().toString(),
-        split.getLocalInputSplit().getStart(), split.getLocalInputSplit().getSegmentId(),
-        split.getLocalInputSplit().getLocations().toArray(new String[0]),
-        split.getLocalInputSplit().getLength(), new BlockletInfos(),
-        //blockletInfos,
-        ColumnarFormatVersion.valueOf(split.getLocalInputSplit().getVersion()), null));
+    CarbonLocalInputSplit carbonLocalInputSplit = split.getLocalInputSplit();
+    List<CarbonInputSplit> splitList = new ArrayList<>(1);
+    splitList.add(CarbonLocalInputSplit.convertSplit(carbonLocalInputSplit));
+    List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
-
     queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
-
     try {
 
       Tuple3[] dict = readSupport
