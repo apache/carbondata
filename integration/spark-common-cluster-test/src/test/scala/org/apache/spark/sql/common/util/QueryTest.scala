@@ -40,8 +40,6 @@ class QueryTest extends PlanTest with Suite {
 
   val DOLLAR = "$"
 
-  // Timezone is fixed to America/Los_Angeles for those timezone sensitive tests (timestamp_*)
-  TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"))
   // Add Locale setting
   Locale.setDefault(Locale.US)
 
