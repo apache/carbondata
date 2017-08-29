@@ -141,7 +141,7 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
       case LONG:
         return fitLongMinMax((long) max, (long) min);
       case DOUBLE:
-        return fitLongMinMax((long) max, (long) min);
+        return fitLongMinMax((long) (double) max, (long) (double) min);
       default:
         throw new RuntimeException("internal error: " + dataType);
     }
@@ -220,11 +220,13 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
 
     //Here we should use the Max abs as max to getDatatype, let's say -1 and -10000000, -1 is max,
     //but we can't use -1 to getDatatype, we should use -10000000.
-    double absMaxValue = Math.abs(maxValue) >= Math.abs(minValue) ? maxValue : minValue;
+    double absMaxValue = Math.max(Math.abs(maxValue), Math.abs(minValue));
 
     if (decimalCount == 0) {
       // short, int, long
       return selectCodecByAlgorithmForIntegral(stats);
+    } else if (decimalCount < 0) {
+      return new DirectCompressCodec(DataType.DOUBLE);
     } else {
       // double
       long max = (long) (Math.pow(10, decimalCount) * absMaxValue);

@@ -34,7 +34,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   private BigDecimal minDecimal, maxDecimal;
   private int scale, precision;
 
-  // scale of the double value
+  // scale of the double value, apply adaptive encoding if this is positive
   private int decimal;
 
   private boolean isFirst = true;
@@ -150,9 +150,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         maxLong = Long.MIN_VALUE;
         break;
       case DOUBLE:
-        minDouble = Double.MAX_VALUE;
-        maxDouble = Double.MIN_VALUE;
-        decimal = scale;
+        minDouble = Double.POSITIVE_INFINITY;
+        maxDouble = Double.NEGATIVE_INFINITY;
+        decimal = 0;
         break;
       case DECIMAL:
         this.zeroDecimal = BigDecimal.ZERO;
@@ -263,7 +263,16 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     if (maxDouble < value) {
       maxDouble = value;
     }
-    decimal = getDecimalCount(value);
+    if (decimal >= 0) {
+      int decimalCount = getDecimalCount(value);
+      if (decimalCount > 5) {
+        // If deciaml count is too big, we do not do adaptive encoding.
+        // So set decimal to negative value
+        decimal = -1;
+      } else if (decimalCount > decimal) {
+        this.decimal = decimalCount;
+      }
+    }
   }
 
   @Override
