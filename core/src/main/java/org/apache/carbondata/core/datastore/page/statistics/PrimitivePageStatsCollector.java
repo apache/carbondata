@@ -152,7 +152,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       case DOUBLE:
         minDouble = Double.MAX_VALUE;
         maxDouble = Double.MIN_VALUE;
-        decimal = 0;
+        decimal = scale;
         break;
       case DECIMAL:
         this.zeroDecimal = BigDecimal.ZERO;
@@ -241,6 +241,20 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     }
   }
 
+  /**
+   * Return number of digit after decimal point
+   * TODO: it operation is costly, optimize for performance
+   */
+  private int getDecimalCount(double value) {
+    String strValue = BigDecimal.valueOf(Math.abs(value)).toPlainString();
+    int integerPlaces = strValue.indexOf('.');
+    int decimalPlaces = 0;
+    if (-1 != integerPlaces) {
+      decimalPlaces = strValue.length() - integerPlaces - 1;
+    }
+    return decimalPlaces;
+  }
+
   @Override
   public void update(double value) {
     if (minDouble > value) {
@@ -249,6 +263,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     if (maxDouble < value) {
       maxDouble = value;
     }
+    decimal = getDecimalCount(value);
   }
 
   @Override
@@ -328,7 +343,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   }
 
   @Override
-  public int getDecimalPoint() {
+  public int getDecimalCount() {
     return decimal;
   }
 

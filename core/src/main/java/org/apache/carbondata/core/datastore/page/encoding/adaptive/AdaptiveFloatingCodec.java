@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page.encoding.adaptive;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,7 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ColumnPageValueConverter;
 import org.apache.carbondata.core.datastore.page.LazyColumnPage;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
@@ -36,52 +38,35 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.format.Encoding;
 
 /**
- * Codec for integer (byte, short, int, long) data type and floating data type (in case of
- * scale is 0).
- * This codec will calculate delta of page max value and page value,
- * and do type casting of the diff to make storage minimum.
+ * Codec for floating point (float, double) data type page.
+ * This codec will upscale the diff from page max value to integer value,
+ * and do type casting to make storage minimum.
  */
-public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
+public class AdaptiveFloatingCodec extends AdaptiveCodec {
 
   private ColumnPage encodedPage;
-  private long max;
+  private BigDecimal factor;
 
-  public AdaptiveDeltaIntegralCodec(DataType srcDataType, DataType targetDataType,
+  public static ColumnPageCodec newInstance(DataType srcDataType, DataType targetDataType,
+      SimpleStatsResult stats) {
+    return new AdaptiveFloatingCodec(srcDataType, targetDataType, stats);
+  }
+
+  public AdaptiveFloatingCodec(DataType srcDataType, DataType targetDataType,
       SimpleStatsResult stats) {
     super(srcDataType, targetDataType, stats);
-    switch (srcDataType) {
-      case BYTE:
-        this.max = (byte) stats.getMax();
-        break;
-      case SHORT:
-        this.max = (short) stats.getMax();
-        break;
-      case INT:
-        this.max = (int) stats.getMax();
-        break;
-      case LONG:
-        this.max = (long) stats.getMax();
-        break;
-      case DOUBLE:
-        this.max = (long) (double) stats.getMax();
-        break;
-      default:
-        // this codec is for integer type only
-        throw new UnsupportedOperationException(
-            "unsupported data type for Delta compress: " + srcDataType);
-    }
+    this.factor = BigDecimal.valueOf(Math.pow(10, stats.getDecimalCount()));
   }
 
   @Override
   public String getName() {
-    return "DeltaIntegralCodec";
+    return "AdaptiveFloatingCodec";
   }
 
   @Override
   public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
+    final Compressor compressor = CompressorFactory.getInstance().getCompressor();
     return new ColumnPageEncoder() {
-      final Compressor compressor = CompressorFactory.getInstance().getCompressor();
-
       @Override
       protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
         if (encodedPage != null) {
@@ -95,16 +80,15 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
       }
 
       @Override
-      protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
-        return new AdaptiveDeltaIntegralEncoderMeta(
-            compressor.getName(), targetDataType, inputPage.getStatistics());
+      protected List<Encoding> getEncodingList() {
+        List<Encoding> encodings = new ArrayList<Encoding>();
+        encodings.add(Encoding.ADAPTIVE_FLOATING);
+        return encodings;
       }
 
       @Override
-      protected List<Encoding> getEncodingList() {
-        List<Encoding> encodings = new ArrayList<>();
-        encodings.add(Encoding.ADAPTIVE_DELTA_INTEGRAL);
-        return encodings;
+      protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
+        return new AdaptiveFloatingEncoderMeta(targetDataType, stats, compressor.getName());
       }
 
     };
@@ -112,9 +96,10 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
 
   @Override
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
-    AdaptiveDeltaIntegralEncoderMeta codecMeta = (AdaptiveDeltaIntegralEncoderMeta) meta;
+    AdaptiveFloatingEncoderMeta codecMeta = (AdaptiveFloatingEncoderMeta) meta;
     final Compressor compressor = CompressorFactory.getInstance().getCompressor(
         codecMeta.getCompressorName());
+    final DataType targetDataType = codecMeta.getTargetDataType();
     return new ColumnPageDecoder() {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length)
@@ -125,95 +110,57 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
     };
   }
 
+  // encoded value = (10 power of decimal) * (page value)
   private ColumnPageValueConverter converter = new ColumnPageValueConverter() {
     @Override
     public void encode(int rowId, byte value) {
-      switch (targetDataType) {
-        case BYTE:
-          encodedPage.putByte(rowId, (byte)(max - value));
-          break;
-        default:
-          throw new RuntimeException("internal error");
-      }
+      // this codec is for floating point type only
+      throw new RuntimeException("internal error: " + debugInfo());
     }
 
     @Override
     public void encode(int rowId, short value) {
-      switch (targetDataType) {
-        case BYTE:
-          encodedPage.putByte(rowId, (byte)(max - value));
-          break;
-        case SHORT:
-          encodedPage.putShort(rowId, (short)(max - value));
-          break;
-        default:
-          throw new RuntimeException("internal error");
-      }
+      // this codec is for floating point type only
+      throw new RuntimeException("internal error: " + debugInfo());
     }
 
     @Override
     public void encode(int rowId, int value) {
-      switch (targetDataType) {
-        case BYTE:
-          encodedPage.putByte(rowId, (byte)(max - value));
-          break;
-        case SHORT:
-          encodedPage.putShort(rowId, (short)(max - value));
-          break;
-        case SHORT_INT:
-          encodedPage.putShortInt(rowId, (int)(max - value));
-          break;
-        case INT:
-          encodedPage.putInt(rowId, (int)(max - value));
-          break;
-        default:
-          throw new RuntimeException("internal error");
-      }
+      // this codec is for floating point type only
+      throw new RuntimeException("internal error: " + debugInfo());
     }
 
     @Override
     public void encode(int rowId, long value) {
-      switch (targetDataType) {
-        case BYTE:
-          encodedPage.putByte(rowId, (byte)(max - value));
-          break;
-        case SHORT:
-          encodedPage.putShort(rowId, (short)(max - value));
-          break;
-        case SHORT_INT:
-          encodedPage.putShortInt(rowId, (int)(max - value));
-          break;
-        case INT:
-          encodedPage.putInt(rowId, (int)(max - value));
-          break;
-        case LONG:
-          encodedPage.putLong(rowId, max - value);
-          break;
-        default:
-          throw new RuntimeException("internal error");
-      }
+      // this codec is for floating point type only
+      throw new RuntimeException("internal error: " + debugInfo());
     }
 
     @Override
     public void encode(int rowId, float value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId, (byte)(max - value));
+          encodedPage.putByte(rowId,
+              BigDecimal.valueOf(value).multiply(factor).byteValue());
           break;
         case SHORT:
-          encodedPage.putShort(rowId, (short)(max - value));
+          encodedPage.putShort(rowId,
+              BigDecimal.valueOf(value).multiply(factor).shortValue());
           break;
         case SHORT_INT:
-          encodedPage.putShortInt(rowId, (int)(max - value));
+          encodedPage.putShortInt(rowId,
+              BigDecimal.valueOf(value).multiply(factor).intValue());
           break;
         case INT:
-          encodedPage.putInt(rowId, (int)(max - value));
+          encodedPage.putInt(rowId,
+              BigDecimal.valueOf(value).multiply(factor).intValue());
           break;
         case LONG:
-          encodedPage.putLong(rowId, (long)(max - value));
+          encodedPage.putLong(rowId,
+              BigDecimal.valueOf(value).multiply(factor).longValue());
           break;
         default:
-          throw new RuntimeException("internal error");
+          throw new RuntimeException("internal error: " + debugInfo());
       }
     }
 
@@ -221,70 +168,76 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
     public void encode(int rowId, double value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId, (byte)(max - value));
+          encodedPage.putByte(rowId,
+              BigDecimal.valueOf(value).multiply(factor).byteValue());
           break;
         case SHORT:
-          encodedPage.putShort(rowId, (short)(max - value));
+          encodedPage.putShort(rowId,
+              BigDecimal.valueOf(value).multiply(factor).shortValue());
           break;
         case SHORT_INT:
-          encodedPage.putShortInt(rowId, (int)(max - value));
+          encodedPage.putShortInt(rowId,
+              BigDecimal.valueOf(value).multiply(factor).intValue());
           break;
         case INT:
-          encodedPage.putInt(rowId, (int)(max - value));
+          encodedPage.putInt(rowId,
+              BigDecimal.valueOf(value).multiply(factor).intValue());
           break;
         case LONG:
-          encodedPage.putLong(rowId, (long)(max - value));
+          encodedPage.putLong(rowId,
+              BigDecimal.valueOf(value).multiply(factor).longValue());
+          break;
+        case DOUBLE:
+          encodedPage.putDouble(rowId, value);
           break;
         default:
-          throw new RuntimeException("internal error");
+          throw new RuntimeException("internal error: " + debugInfo());
       }
     }
 
     @Override
     public long decodeLong(byte value) {
-      return max - value;
+      throw new RuntimeException("internal error: " + debugInfo());
     }
 
     @Override
     public long decodeLong(short value) {
-      return max - value;
+      throw new RuntimeException("internal error: " + debugInfo());
     }
 
     @Override
     public long decodeLong(int value) {
-      return max - value;
+      throw new RuntimeException("internal error: " + debugInfo());
     }
 
     @Override
     public double decodeDouble(byte value) {
-      return max - value;
+      return BigDecimal.valueOf(value).divide(factor).doubleValue();
     }
 
     @Override
     public double decodeDouble(short value) {
-      return max - value;
+      return BigDecimal.valueOf(value).divide(factor).doubleValue();
     }
 
     @Override
     public double decodeDouble(int value) {
-      return max - value;
+      return BigDecimal.valueOf(value).divide(factor).doubleValue();
     }
 
     @Override
     public double decodeDouble(long value) {
-      return max - value;
+      return BigDecimal.valueOf(value).divide(factor).doubleValue();
     }
 
     @Override
     public double decodeDouble(float value) {
-      // this codec is for integer type only
-      throw new RuntimeException("internal error");
+      throw new RuntimeException("internal error: " + debugInfo());
     }
 
     @Override
     public double decodeDouble(double value) {
-      // this codec is for integer type only
-      throw new RuntimeException("internal error");
+      throw new RuntimeException("internal error: " + debugInfo());
     }
   };
 }

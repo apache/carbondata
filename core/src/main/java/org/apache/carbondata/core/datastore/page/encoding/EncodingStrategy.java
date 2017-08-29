@@ -27,6 +27,8 @@ import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveDeltaIntegralCodec;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveDeltaIntegralEncoderMeta;
+import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveFloatingCodec;
+import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveFloatingEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveIntegralCodec;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveIntegralEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressCodec;
@@ -40,6 +42,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.Encoding;
 
 import static org.apache.carbondata.format.Encoding.ADAPTIVE_DELTA_INTEGRAL;
+import static org.apache.carbondata.format.Encoding.ADAPTIVE_FLOATING;
 import static org.apache.carbondata.format.Encoding.ADAPTIVE_INTEGRAL;
 import static org.apache.carbondata.format.Encoding.DIRECT_COMPRESS;
 import static org.apache.carbondata.format.Encoding.RLE_INTEGRAL;
@@ -86,6 +89,12 @@ public abstract class EncodingStrategy {
       RLEEncoderMeta metadata = new RLEEncoderMeta();
       metadata.readFields(in);
       return new RLECodec().createDecoder(metadata);
+    } else if (encoding == ADAPTIVE_FLOATING) {
+      AdaptiveFloatingEncoderMeta metadata = new AdaptiveFloatingEncoderMeta();
+      metadata.readFields(in);
+      SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
+      return new AdaptiveFloatingCodec(metadata.getDataType(), metadata.getTargetDataType(),
+          stats).createDecoder(metadata);
     } else {
       // for backward compatibility
       ValueEncoderMeta metadata = CarbonUtil.deserializeEncoderMetaV3(encoderMeta);
@@ -103,9 +112,10 @@ public abstract class EncodingStrategy {
       case SHORT:
       case INT:
       case LONG:
-        return DefaultEncodingStrategy.selectCodecByAlgorithm(stats).createDecoder(null);
+        return DefaultEncodingStrategy.selectCodecByAlgorithmForIntegral(stats).createDecoder(null);
       case FLOAT:
       case DOUBLE:
+        return DefaultEncodingStrategy.selectCodecByAlgorithmForFloating(stats).createDecoder(null);
       case DECIMAL:
       case BYTE_ARRAY:
         // no dictionary dimension

@@ -63,7 +63,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     setType(convertType(dataType));
     if (stats != null) {
       assert (stats.getDataType() == dataType);
-      setDecimal(stats.getDecimalPoint());
+      setDecimal(stats.getDecimalCount());
       setMaxValue(stats.getMax());
       setMinValue(stats.getMin());
       this.scale = stats.getScale();

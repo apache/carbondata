@@ -22,6 +22,7 @@ import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveDeltaIntegralCodec;
+import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveFloatingCodec;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveIntegralCodec;
 import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressCodec;
 import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.ComplexDimensionIndexCodec;
@@ -103,9 +104,10 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
       case SHORT:
       case INT:
       case LONG:
-        return selectCodecByAlgorithm(stats).createEncoder(null);
+        return selectCodecByAlgorithmForIntegral(stats).createEncoder(null);
       case FLOAT:
       case DOUBLE:
+        return selectCodecByAlgorithmForFloating(stats).createEncoder(null);
       case DECIMAL:
       case BYTE_ARRAY:
         return new DirectCompressCodec(columnPage.getDataType()).createEncoder(null);
@@ -139,7 +141,7 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
       case LONG:
         return fitLongMinMax((long) max, (long) min);
       case DOUBLE:
-        return DataType.DOUBLE;
+        return fitLongMinMax((long) max, (long) min);
       default:
         throw new RuntimeException("internal error: " + dataType);
     }
@@ -162,6 +164,8 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
       case LONG:
         // TODO: add overflow detection and return delta type
         return DataType.LONG;
+      case DOUBLE:
+        return DataType.LONG;
       default:
         throw new RuntimeException("internal error: " + dataType);
     }
@@ -182,7 +186,7 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
    * choose between adaptive encoder or delta adaptive encoder, based on whose target data type
    * size is smaller
    */
-  static ColumnPageCodec selectCodecByAlgorithm(SimpleStatsResult stats) {
+  static ColumnPageCodec selectCodecByAlgorithmForIntegral(SimpleStatsResult stats) {
     DataType srcDataType = stats.getDataType();
     DataType adaptiveDataType = fitMinMax(stats.getDataType(), stats.getMax(), stats.getMin());
     DataType deltaDataType;
@@ -203,6 +207,33 @@ public class DefaultEncodingStrategy extends EncodingStrategy {
     } else {
       // choose delta adaptive encoding
       return new AdaptiveDeltaIntegralCodec(stats.getDataType(), deltaDataType, stats);
+    }
+  }
+
+  // choose between upscale adaptive encoder or upscale delta adaptive encoder,
+  // based on whose target data type size is smaller
+  static ColumnPageCodec selectCodecByAlgorithmForFloating(SimpleStatsResult stats) {
+    DataType srcDataType = stats.getDataType();
+    double maxValue = (double) stats.getMax();
+    double minValue = (double) stats.getMin();
+    int decimalCount = stats.getDecimalCount();
+
+    //Here we should use the Max abs as max to getDatatype, let's say -1 and -10000000, -1 is max,
+    //but we can't use -1 to getDatatype, we should use -10000000.
+    double absMaxValue = Math.abs(maxValue) >= Math.abs(minValue) ? maxValue : minValue;
+
+    if (decimalCount == 0) {
+      // short, int, long
+      return selectCodecByAlgorithmForIntegral(stats);
+    } else {
+      // double
+      long max = (long) (Math.pow(10, decimalCount) * absMaxValue);
+      DataType adaptiveDataType = fitLongMinMax(max, 0);
+      if (adaptiveDataType.getSizeInBytes() < DataType.DOUBLE.getSizeInBytes()) {
+        return new AdaptiveFloatingCodec(srcDataType, adaptiveDataType, stats);
+      } else {
+        return new DirectCompressCodec(DataType.DOUBLE);
+      }
     }
   }
 

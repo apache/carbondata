@@ -25,12 +25,12 @@ import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 
-public class AdaptiveIntegralEncoderMeta extends AdaptiveEncoderMeta implements Writable {
+public class AdaptiveFloatingEncoderMeta extends AdaptiveEncoderMeta implements Writable {
 
-  public AdaptiveIntegralEncoderMeta() {
+  public AdaptiveFloatingEncoderMeta() {
   }
 
-  AdaptiveIntegralEncoderMeta(DataType targetDataType, SimpleStatsResult stats,
+  AdaptiveFloatingEncoderMeta(DataType targetDataType, SimpleStatsResult stats,
       String compressorName) {
     super(targetDataType, stats, compressorName);
   }
