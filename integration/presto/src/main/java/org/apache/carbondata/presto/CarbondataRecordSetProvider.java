@@ -44,7 +44,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapred.TaskAttemptContextImpl;
 import org.apache.hadoop.mapred.TaskAttemptID;
-import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.TaskType;
 
 import static com.google.common.base.Preconditions.checkArgument;
@@ -88,7 +87,8 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     // Build Query Model
     CarbonTable targetTable = tableCacheModel.carbonTable;
 
-    QueryModel queryModel = null;
+    QueryModel queryModel ;
+    TaskAttemptContextImpl hadoopAttemptContext;
     try {
       Configuration conf = new Configuration();
       conf.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
@@ -100,18 +100,19 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
       JobConf jobConf = new JobConf(conf);
       CarbonTableInputFormat carbonTableInputFormat =
           createInputFormat(jobConf, tableCacheModel.carbonTable,
-              PrestoFilterUtil.getFilters(targetTable.getFactTableName().hashCode()),
+              PrestoFilterUtil.parseFilterExpression(carbondataSplit.getConstraints()),
               carbonProjection);
-      TaskAttemptContextImpl hadoopAttemptContext =
+      hadoopAttemptContext =
           new TaskAttemptContextImpl(jobConf, new TaskAttemptID("", 1, TaskType.MAP, 0, 0));
       CarbonInputSplit carbonInputSplit =
           CarbonLocalInputSplit.convertSplit(carbondataSplit.getLocalInputSplit());
       queryModel = carbonTableInputFormat.getQueryModel(carbonInputSplit, hadoopAttemptContext);
+      queryModel.setVectorReader(true);
     } catch (IOException e) {
       throw new RuntimeException("Unable to get the Query Model ", e);
     }
     return new CarbondataRecordSet(targetTable, session, carbondataSplit, handles.build(),
-        queryModel);
+        queryModel, hadoopAttemptContext);
   }
 
   private CarbonTableInputFormat<Object> createInputFormat(Configuration conf,
