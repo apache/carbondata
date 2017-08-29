@@ -25,7 +25,7 @@ public interface SimpleStatsResult {
 
   Object getMax();
 
-  int getDecimalPoint();
+  int getDecimalCount();
 
   DataType getDataType();
 

@@ -1462,7 +1462,7 @@ public final class CarbonUtil {
         valueEncoderMeta.setUniqueValue(buffer.getLong());
         break;
       default:
-        throw new IllegalArgumentException("invalid measure type");
+        throw new IllegalArgumentException("invalid measure type: " + measureType);
     }
     valueEncoderMeta.setDecimal(buffer.getInt());
     valueEncoderMeta.setDataTypeSelected(buffer.get());

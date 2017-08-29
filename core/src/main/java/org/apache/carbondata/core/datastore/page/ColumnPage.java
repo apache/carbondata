@@ -83,7 +83,7 @@ public abstract class ColumnPage {
       return new byte[0];
     }
 
-    @Override public int getDecimalPoint() {
+    @Override public int getDecimalCount() {
       return 0;
     }
 

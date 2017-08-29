@@ -54,8 +54,8 @@ class TestCreateTableWithDouble extends QueryTest with BeforeAndAfterAll {
       case e : Throwable => fail(e)
     }
     // assert that load and query is successful
-    assertResult(countNum)(Array(Row(3)))
-    assertResult(doubleField)(Array(Row(1.5), Row(2.0), Row(3.0)))
+    assertResult(Array(Row(3)))(countNum)
+    assertResult(Array(Row(1.5), Row(2.0), Row(3.0)))(doubleField)
   }
 
   test("test creating carbon table with double as dimension") {
