@@ -136,8 +136,10 @@ public class UnsafeSortMemoryManager {
 
   public synchronized void freeMemory(long taskId, MemoryBlock memoryBlock) {
     if (taskIdToMemoryBlockMap.containsKey(taskId)) {
-      allocator.free(memoryBlock);
       taskIdToMemoryBlockMap.get(taskId).remove(memoryBlock);
+    }
+    if (!memoryBlock.isFreedStatus()) {
+      allocator.free(memoryBlock);
       memoryUsed -= memoryBlock.size();
       memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
       if (LOGGER.isDebugEnabled()) {
@@ -163,8 +165,10 @@ public class UnsafeSortMemoryManager {
       MemoryBlock memoryBlock = null;
       while (iterator.hasNext()) {
         memoryBlock = iterator.next();
-        occuppiedMemory += memoryBlock.size();
-        allocator.free(memoryBlock);
+        if (!memoryBlock.isFreedStatus()) {
+          occuppiedMemory += memoryBlock.size();
+          allocator.free(memoryBlock);
+        }
       }
     }
     memoryUsed -= occuppiedMemory;
