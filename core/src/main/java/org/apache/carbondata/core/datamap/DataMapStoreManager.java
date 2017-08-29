@@ -56,15 +56,15 @@ public final class DataMapStoreManager {
    * @param factoryClass
    * @return
    */
-  public TableDataMap getDataMap(AbsoluteTableIdentifier identifier, String dataMapName,
-      Class<? extends DataMapFactory> factoryClass) {
+  public synchronized TableDataMap getDataMap(AbsoluteTableIdentifier identifier,
+      String dataMapName, String factoryClass) {
     String table = identifier.uniqueName();
     List<TableDataMap> tableDataMaps = allDataMaps.get(table);
     TableDataMap dataMap;
     if (tableDataMaps == null) {
       dataMap = createAndRegisterDataMap(identifier, factoryClass, dataMapName);
     } else {
-      dataMap = getAbstractTableDataMap(dataMapName, tableDataMaps);
+      dataMap = getTableDataMap(dataMapName, tableDataMaps);
     }
     if (dataMap == null) {
       throw new RuntimeException("Datamap does not exist");
@@ -77,22 +77,24 @@ public final class DataMapStoreManager {
    * The datamap is created using datamap name, datamap factory class and table identifier.
    */
   public TableDataMap createAndRegisterDataMap(AbsoluteTableIdentifier identifier,
-      Class<? extends DataMapFactory> factoryClass, String dataMapName) {
+      String factoryClassName, String dataMapName) {
     String table = identifier.uniqueName();
     List<TableDataMap> tableDataMaps = allDataMaps.get(table);
     if (tableDataMaps == null) {
       tableDataMaps = new ArrayList<>();
       allDataMaps.put(table, tableDataMaps);
     }
-    TableDataMap dataMap = getAbstractTableDataMap(dataMapName, tableDataMaps);
+    TableDataMap dataMap = getTableDataMap(dataMapName, tableDataMaps);
     if (dataMap != null) {
       throw new RuntimeException("Already datamap exists in that path with type " + dataMapName);
     }
 
     try {
+      Class<? extends DataMapFactory> factoryClass =
+          (Class<? extends DataMapFactory>) Class.forName(factoryClassName);
       DataMapFactory dataMapFactory = factoryClass.newInstance();
       dataMapFactory.init(identifier, dataMapName);
-      dataMap = new TableDataMap(dataMapName, dataMapFactory);
+      dataMap = new TableDataMap(identifier, dataMapName, dataMapFactory);
     } catch (Exception e) {
       LOGGER.error(e);
       throw new RuntimeException(e);
@@ -101,7 +103,7 @@ public final class DataMapStoreManager {
     return dataMap;
   }
 
-  private TableDataMap getAbstractTableDataMap(String dataMapName,
+  private TableDataMap getTableDataMap(String dataMapName,
       List<TableDataMap> tableDataMaps) {
     TableDataMap dataMap = null;
     for (TableDataMap tableDataMap: tableDataMaps) {

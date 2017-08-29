@@ -14,38 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.datamap.dev;
+package org.apache.carbondata.hadoop.api;
 
-import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 
 import org.apache.carbondata.core.indexstore.Blocklet;
-import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
- * Datamap is an entity which can store and retrieve index data.
+ * Distributable datamap job to execute the #DistributableDataMapFormat in cluster. it prunes the
+ * datamaps distributably and returns the final blocklet list
  */
-public interface DataMap {
+public interface DataMapJob extends Serializable {
 
-  /**
-   * It is called to load the data map to memory or to initialize it.
-   */
-  void init(String filePath) throws MemoryException, IOException;
-
-  /**
-   * Prune the datamap with filter expression. It returns the list of
-   * blocklets where these filters can exist.
-   *
-   * @param filterExp
-   * @return
-   */
-  List<Blocklet> prune(FilterResolverIntf filterExp);
-
-
-  /**
-   * Clear complete index table and release memory.
-   */
-  void clear();
+  List<Blocklet> execute(DistributableDataMapFormat dataMapFormat, FilterResolverIntf resolverIntf);
 
 }

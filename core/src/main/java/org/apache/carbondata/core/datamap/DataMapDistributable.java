@@ -16,18 +16,28 @@
  */
 package org.apache.carbondata.core.datamap;
 
+import java.io.IOException;
+import java.io.Serializable;
+
 import org.apache.carbondata.core.datastore.block.Distributable;
+
+import org.apache.hadoop.mapreduce.InputSplit;
 
 /**
  * Distributable class for datamap.
  */
-public abstract class DataMapDistributable implements Distributable {
+public abstract class DataMapDistributable extends InputSplit
+    implements Distributable, Serializable {
 
   private String tablePath;
 
   private String segmentId;
 
   private String dataMapName;
+
+  private String[] locations;
+
+  private String dataMapFactoryClass;
 
   public String getTablePath() {
     return tablePath;
@@ -53,4 +63,30 @@ public abstract class DataMapDistributable implements Distributable {
     this.dataMapName = dataMapName;
   }
 
+  public String getDataMapFactoryClass() {
+    return dataMapFactoryClass;
+  }
+
+  public void setDataMapFactoryClass(String dataMapFactoryClass) {
+    this.dataMapFactoryClass = dataMapFactoryClass;
+  }
+
+  public void setLocations(String[] locations) {
+    this.locations = locations;
+  }
+
+  @Override
+  public String[] getLocations() throws IOException {
+    return locations;
+  }
+
+  @Override
+  public int compareTo(Distributable o) {
+    return 0;
+  }
+
+  @Override
+  public long getLength() throws IOException, InterruptedException {
+    return 0;
+  }
 }

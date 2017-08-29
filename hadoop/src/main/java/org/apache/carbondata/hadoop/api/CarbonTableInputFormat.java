@@ -21,13 +21,7 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
@@ -109,6 +103,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String TABLE_INFO = "mapreduce.input.carboninputformat.tableinfo";
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
   private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
+  private static final String DATA_MAP_DSTR = "mapreduce.input.carboninputformat.datamapdstr";
 
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
@@ -168,6 +163,24 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
   public static void setPartitionIdList(Configuration configuration, List<String> partitionIds) {
     configuration.set(ALTER_PARTITION_ID, partitionIds.toString());
+  }
+
+
+  public static void setDataMapJob(Configuration configuration, DataMapJob dataMapJob)
+      throws IOException {
+    if (dataMapJob != null) {
+      String toString = ObjectSerializationUtil.convertObjectToString(dataMapJob);
+      configuration.set(DATA_MAP_DSTR, toString);
+    }
+  }
+
+  private static DataMapJob getDataMapJob(Configuration configuration) throws IOException {
+    String jobString = configuration.get(DATA_MAP_DSTR);
+    if (jobString != null) {
+      DataMapJob dataMapJob = (DataMapJob) ObjectSerializationUtil.convertStringToObject(jobString);
+      return dataMapJob;
+    }
+    return null;
   }
 
   /**
@@ -254,7 +267,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
     TableDataMap blockletMap =
         DataMapStoreManager.getInstance().getDataMap(identifier, BlockletDataMap.NAME,
-            BlockletDataMapFactory.class);
+            BlockletDataMapFactory.class.getName());
     List<String> invalidSegments = new ArrayList<>();
     List<UpdateVO> invalidTimestampsList = new ArrayList<>();
     List<String> validSegments = Arrays.asList(getSegmentsToAccess(job));
@@ -486,8 +499,18 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         new Path[] { new Path(absoluteTableIdentifier.getTablePath()) }, job.getConfiguration());
 
     TableDataMap blockletMap = DataMapStoreManager.getInstance()
-        .getDataMap(absoluteTableIdentifier, BlockletDataMap.NAME, BlockletDataMapFactory.class);
-    List<Blocklet> prunedBlocklets = blockletMap.prune(segmentIds, resolver);
+        .getDataMap(absoluteTableIdentifier, BlockletDataMap.NAME,
+            BlockletDataMapFactory.class.getName());
+    DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
+    List<Blocklet> prunedBlocklets;
+    if (dataMapJob != null) {
+      DistributableDataMapFormat datamapDstr =
+          new DistributableDataMapFormat(absoluteTableIdentifier, BlockletDataMap.NAME,
+              segmentIds, BlockletDataMapFactory.class.getName());
+      prunedBlocklets = dataMapJob.execute(datamapDstr, resolver);
+    } else {
+      prunedBlocklets = blockletMap.prune(segmentIds, resolver);
+    }
 
     List<org.apache.carbondata.hadoop.CarbonInputSplit> resultFilterredBlocks = new ArrayList<>();
     int partitionIndex = 0;
@@ -531,7 +554,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     blocklet.updateLocations();
     org.apache.carbondata.hadoop.CarbonInputSplit split =
         org.apache.carbondata.hadoop.CarbonInputSplit.from(blocklet.getSegmentId(),
-            new FileSplit(blocklet.getPath(), 0, blocklet.getLength(), blocklet.getLocations()),
+            new FileSplit(new Path(blocklet.getPath()), 0, blocklet.getLength(),
+                blocklet.getLocations()),
             ColumnarFormatVersion.valueOf((short) blocklet.getDetailInfo().getVersionNumber()));
     split.setDetailInfo(blocklet.getDetailInfo());
     return split;
@@ -652,7 +676,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   public BlockMappingVO getBlockRowCount(JobContext job, AbsoluteTableIdentifier identifier)
       throws IOException, KeyGenException {
     TableDataMap blockletMap = DataMapStoreManager.getInstance()
-        .getDataMap(identifier, BlockletDataMap.NAME, BlockletDataMapFactory.class);
+        .getDataMap(identifier, BlockletDataMap.NAME, BlockletDataMapFactory.class.getName());
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments =
         new SegmentStatusManager(identifier).getValidAndInvalidSegments();

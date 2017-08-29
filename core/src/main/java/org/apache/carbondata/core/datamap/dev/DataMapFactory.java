@@ -51,6 +51,12 @@ public interface DataMapFactory {
   DataMap getDataMap(DataMapDistributable distributable);
 
   /**
+   * Get all distributable objects of a segmentid
+   * @return
+   */
+  List<DataMapDistributable> toDistributable(String segmentId);
+
+  /**
    *
    * @param event
    */

@@ -48,8 +48,8 @@ public class Blocklet implements Serializable {
     this.blockletId = blockletId;
   }
 
-  public Path getPath() {
-    return new Path(path);
+  public String getPath() {
+    return path;
   }
 
   public String getBlockletId() {
@@ -65,9 +65,9 @@ public class Blocklet implements Serializable {
   }
 
   public void updateLocations() throws IOException {
-    Path fspath = new Path(path);
-    FileSystem fs = fspath.getFileSystem(FileFactory.getConfiguration());
-    RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(fspath);
+    Path path = new Path(this.path);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(path);
     LocatedFileStatus fileStatus = iter.next();
     location = fileStatus.getBlockLocations()[0].getHosts();
     length = fileStatus.getLen();
