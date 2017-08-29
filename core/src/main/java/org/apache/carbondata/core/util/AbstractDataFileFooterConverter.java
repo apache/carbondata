@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.block.BlockInfo;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
@@ -150,8 +151,9 @@ public abstract class AbstractDataFileFooterConverter {
         dataFileFooter = new DataFileFooter();
         TableBlockInfo tableBlockInfo = new TableBlockInfo();
         tableBlockInfo.setBlockOffset(readBlockIndexInfo.getOffset());
-        tableBlockInfo.setVersion(
-            ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion()));
+        ColumnarFormatVersion version =
+            ColumnarFormatVersion.valueOf((short) readIndexHeader.getVersion());
+        tableBlockInfo.setVersion(version);
         int blockletSize = getBlockletSize(readBlockIndexInfo);
         tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
         tableBlockInfo.setFilePath(parentPath + "/" + readBlockIndexInfo.file_name);
@@ -160,6 +162,16 @@ public abstract class AbstractDataFileFooterConverter {
         dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
         dataFileFooter.setBlockInfo(new BlockInfo(tableBlockInfo));
         dataFileFooter.setSegmentInfo(segmentInfo);
+        dataFileFooter.setVersionId(version);
+        if (readBlockIndexInfo.isSetBlocklet_info()) {
+          List<BlockletInfo> blockletInfoList = new ArrayList<BlockletInfo>();
+          BlockletInfo blockletInfo = new DataFileFooterConverterV3()
+              .getBlockletInfo(readBlockIndexInfo.getBlocklet_info(),
+                  CarbonUtil.getNumberOfDimensionColumns(columnSchemaList));
+          blockletInfo.setBlockletIndex(blockletIndex);
+          blockletInfoList.add(blockletInfo);
+          dataFileFooter.setBlockletList(blockletInfoList);
+        }
         dataFileFooters.add(dataFileFooter);
       }
     } finally {

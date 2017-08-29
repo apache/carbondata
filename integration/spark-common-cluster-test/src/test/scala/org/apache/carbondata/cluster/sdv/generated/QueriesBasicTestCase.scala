@@ -5857,8 +5857,8 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
   //TC_025
   test("TC_025", Include) {
 
-    checkAnswer(s"""select channelsId, sum(channelsId+channelsId) Total from Carbon_automation group by  channelsId order by Total""",
-      s"""select channelsId, sum(channelsId+channelsId) Total from Carbon_automation_hive group by  channelsId order by Total""", "QueriesBasicTestCase_TC_025")
+    checkAnswer(s"""select channelsId, sum(channelsId+channelsId) Total from Carbon_automation group by  channelsId order by channelsId,Total""",
+      s"""select channelsId, sum(channelsId+channelsId) Total from Carbon_automation_hive group by  channelsId order by channelsId,Total""", "QueriesBasicTestCase_TC_025")
 
   }
 
@@ -7894,15 +7894,6 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
     checkAnswer(s"""select ActiveOperatorId, sum(imeiupdown) as total, count(distinct AMSize) as AMSize_count from (select AMSize, t1.gamePointId+t1.contractNumber as imeiupdown, if((t1.gamePointId+t1.contractNumber)>100, '>50', if((t1.gamePointId+t1.contractNumber)>100,'50~10',if((t1.gamePointId+t1.contractNumber)>100, '10~1','<1'))) as ActiveOperatorId from Carbon_automation t1) t2 group by ActiveOperatorId""",
       s"""select ActiveOperatorId, sum(imeiupdown) as total, count(distinct AMSize) as AMSize_count from (select AMSize, t1.gamePointId+t1.contractNumber as imeiupdown, if((t1.gamePointId+t1.contractNumber)>100, '>50', if((t1.gamePointId+t1.contractNumber)>100,'50~10',if((t1.gamePointId+t1.contractNumber)>100, '10~1','<1'))) as ActiveOperatorId from Carbon_automation_hive t1) t2 group by ActiveOperatorId""", "QueriesBasicTestCase_TC_312")
-
-  }
-
-
-  //TC_313
-  test("TC_313", Include) {
-
-    checkAnswer(s"""select ActiveOperatorId, sum(imeiupdown) as total, count(distinct AMSize) as AMSize_count from (select AMSize, t1.gamePointId+ t1.contractNumber as imeiupdown, if((t1.gamePointId+ t1.contractNumber)>100, '>50', if((t1.gamePointId+t1.contractNumber)>100,'50~10',if((t1.gamePointId+t1.contractNumber)>100, '10~1','<1'))) as ActiveOperatorId from Carbon_automation t1) t2 group by ActiveOperatorId""",
-      s"""select ActiveOperatorId, sum(imeiupdown) as total, count(distinct AMSize) as AMSize_count from (select AMSize, t1.gamePointId+ t1.contractNumber as imeiupdown, if((t1.gamePointId+ t1.contractNumber)>100, '>50', if((t1.gamePointId+t1.contractNumber)>100,'50~10',if((t1.gamePointId+t1.contractNumber)>100, '10~1','<1'))) as ActiveOperatorId from Carbon_automation_hive t1) t2 group by ActiveOperatorId""", "QueriesBasicTestCase_TC_313")
 
   }
 

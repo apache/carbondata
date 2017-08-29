@@ -52,6 +52,15 @@ class C2DataMapFactory() extends DataMapFactory {
   override def createWriter(segmentId: String): DataMapWriter = DataMapWriterSuite.dataMapWriterC2Mock
 
   override def getMeta: DataMapMeta = new DataMapMeta(List("c2").asJava, FilterType.EQUALTO)
+
+  /**
+   * Get all distributable objects of a segmentid
+   *
+   * @return
+   */
+  override def toDistributable(segmentId: String): util.List[DataMapDistributable] = {
+    ???
+  }
 }
 
 class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
@@ -76,7 +85,7 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
     // register datamap writer
     DataMapStoreManager.getInstance().createAndRegisterDataMap(
       AbsoluteTableIdentifier.from(storeLocation, "default", "carbon1"),
-      classOf[C2DataMapFactory],
+      classOf[C2DataMapFactory].getName,
       "test")
 
     val df = buildTestData(33000)
@@ -103,7 +112,7 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
     // register datamap writer
     DataMapStoreManager.getInstance().createAndRegisterDataMap(
       AbsoluteTableIdentifier.from(storeLocation, "default", "carbon2"),
-      classOf[C2DataMapFactory],
+      classOf[C2DataMapFactory].getName,
       "test")
 
     CarbonProperties.getInstance()
