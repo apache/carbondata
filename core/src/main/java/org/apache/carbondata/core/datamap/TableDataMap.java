@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.events.EventListener;
 import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
@@ -33,6 +34,8 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
  */
 public final class TableDataMap implements EventListener {
 
+  private AbsoluteTableIdentifier identifier;
+
   private String dataMapName;
 
   private DataMapFactory dataMapFactory;
@@ -40,8 +43,9 @@ public final class TableDataMap implements EventListener {
   /**
    * It is called to initialize and load the required table datamap metadata.
    */
-  public TableDataMap(String dataMapName,
-      DataMapFactory dataMapFactory) {
+  public TableDataMap(AbsoluteTableIdentifier identifier,
+      String dataMapName, DataMapFactory dataMapFactory) {
+    this.identifier = identifier;
     this.dataMapName = dataMapName;
     this.dataMapFactory = dataMapFactory;
   }
@@ -83,10 +87,14 @@ public final class TableDataMap implements EventListener {
   public List<DataMapDistributable> toDistributable(List<String> segmentIds) throws IOException {
     List<DataMapDistributable> distributables = new ArrayList<>();
     for (String segmentsId : segmentIds) {
-      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentsId);
-      for (DataMap dataMap : dataMaps) {
-        distributables.add(dataMap.toDistributable());
+      List<DataMapDistributable> list = dataMapFactory.toDistributable(segmentsId);
+      for (DataMapDistributable distributable: list) {
+        distributable.setDataMapName(dataMapName);
+        distributable.setSegmentId(segmentsId);
+        distributable.setTablePath(identifier.getTablePath());
+        distributable.setDataMapFactoryClass(dataMapFactory.getClass().getName());
       }
+      distributables.addAll(list);
     }
     return distributables;
   }
@@ -100,7 +108,11 @@ public final class TableDataMap implements EventListener {
    * @return
    */
   public List<Blocklet> prune(DataMapDistributable distributable, FilterResolverIntf filterExp) {
-    return dataMapFactory.getDataMap(distributable).prune(filterExp);
+    List<Blocklet> blocklets = dataMapFactory.getDataMap(distributable).prune(filterExp);
+    for (Blocklet blocklet: blocklets) {
+      blocklet.setSegmentId(distributable.getSegmentId());
+    }
+    return blocklets;
   }
 
   @Override public void fireEvent(ChangeEvent event) {

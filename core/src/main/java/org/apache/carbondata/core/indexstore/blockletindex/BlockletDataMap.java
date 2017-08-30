@@ -33,7 +33,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -91,9 +90,11 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private int[] columnCardinality;
 
-  @Override public void init(String path) throws IOException, MemoryException {
+  @Override
+  public void init(String filePath) throws IOException, MemoryException {
+    long startTime = System.currentTimeMillis();
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
-    List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(path);
+    List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(filePath);
     for (DataFileFooter fileFooter : indexInfo) {
       List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
       if (segmentProperties == null) {
@@ -102,13 +103,19 @@ public class BlockletDataMap implements DataMap, Cacheable {
         createSchema(segmentProperties);
       }
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
-      fileFooter = CarbonUtil.readMetadatFile(blockInfo);
+      if (fileFooter.getBlockletList() == null || fileFooter.getBlockletList().size() == 0) {
+        LOGGER
+            .info("Reading carbondata file footer to get blocklet info " + blockInfo.getFilePath());
+        fileFooter = CarbonUtil.readMetadatFile(blockInfo);
+      }
 
       loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath());
     }
     if (unsafeMemoryDMStore != null) {
       unsafeMemoryDMStore.finishWriting();
     }
+    LOGGER.info("Time taken to load blocklet datamap from file : " + filePath + "is " +
+        (System.currentTimeMillis() - startTime));
   }
 
   private void loadToUnsafe(DataFileFooter fileFooter, SegmentProperties segmentProperties,
@@ -215,7 +222,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
         new UnsafeMemoryDMStore(indexSchemas.toArray(new DataMapSchema[indexSchemas.size()]));
   }
 
-  @Override public List<Blocklet> prune(FilterResolverIntf filterExp) {
+  @Override
+  public List<Blocklet> prune(FilterResolverIntf filterExp) {
 
     // getting the start and end index key based on filter for hitting the
     // selected block reference nodes based on filter resolver tree.
@@ -419,26 +427,26 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return dataMapRow;
   }
 
-  @Override public void clear() {
+  @Override
+  public void clear() {
     unsafeMemoryDMStore.freeMemory();
     unsafeMemoryDMStore = null;
     segmentProperties = null;
   }
 
-  @Override public long getFileTimeStamp() {
+  @Override
+  public long getFileTimeStamp() {
     return 0;
   }
 
-  @Override public int getAccessCount() {
+  @Override
+  public int getAccessCount() {
     return 0;
   }
 
-  @Override public long getMemorySize() {
+  @Override
+  public long getMemorySize() {
     return unsafeMemoryDMStore.getMemoryUsed();
   }
 
-  @Override public DataMapDistributable toDistributable() {
-    // TODO
-    return null;
-  }
 }

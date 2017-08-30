@@ -3068,8 +3068,8 @@ class QueriesIncludeDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
   //VMALL_DICTIONARY_INCLUDE_371
   test("VMALL_DICTIONARY_INCLUDE_371", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_INCLUDE where  Latest_DAY  not like '1234567890123480.0000000000' order by deviceInformationId limit 5""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_INCLUDE_hive where  Latest_DAY  not like '1234567890123480.0000000000' order by deviceInformationId limit 5""", "QueriesIncludeDictionaryTestCase_VMALL_DICTIONARY_INCLUDE_371")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_INCLUDE where  Latest_DAY  not like '1234567890123480.0000000000' order by imei,deviceInformationId limit 5""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_INCLUDE_hive where  Latest_DAY  not like '1234567890123480.0000000000' order by imei,deviceInformationId limit 5""", "QueriesIncludeDictionaryTestCase_VMALL_DICTIONARY_INCLUDE_371")
 
   }
 

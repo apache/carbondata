@@ -14,38 +14,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.datamap.dev;
+package org.apache.carbondata.core.indexstore.blockletindex;
 
-import java.io.IOException;
-import java.util.List;
-
-import org.apache.carbondata.core.indexstore.Blocklet;
-import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.datamap.DataMapDistributable;
 
 /**
- * Datamap is an entity which can store and retrieve index data.
+ * This class contains required information to make the Blocklet datamap distributable.
+ * Each distributable object can represents one datamap.
+ * Using this object job like spark/MR can be launched and execute each distributable object as
+ * one datamap task.
  */
-public interface DataMap {
+public class BlockletDataMapDistributable extends DataMapDistributable {
 
   /**
-   * It is called to load the data map to memory or to initialize it.
+   * Relative file path from the segment folder.
    */
-  void init(String filePath) throws MemoryException, IOException;
+  private String filePath;
 
-  /**
-   * Prune the datamap with filter expression. It returns the list of
-   * blocklets where these filters can exist.
-   *
-   * @param filterExp
-   * @return
-   */
-  List<Blocklet> prune(FilterResolverIntf filterExp);
+  public BlockletDataMapDistributable(String indexFileName) {
+    this.filePath = indexFileName;
+  }
 
-
-  /**
-   * Clear complete index table and release memory.
-   */
-  void clear();
-
+  public String getFilePath() {
+    return filePath;
+  }
 }

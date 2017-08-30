@@ -273,9 +273,23 @@ public class CarbonMetadataUtil {
       blockIndex.setOffset(blockIndexInfo.getOffset());
       blockIndex.setFile_name(blockIndexInfo.getFileName());
       blockIndex.setBlock_index(getBlockletIndex(blockIndexInfo.getBlockletIndex()));
+      if (blockIndexInfo.getBlockletInfo() != null) {
+        blockIndex.setBlocklet_info(getBlocletInfo3(blockIndexInfo.getBlockletInfo()));
+      }
       thriftBlockIndexList.add(blockIndex);
     }
     return thriftBlockIndexList;
+  }
+
+  private static BlockletInfo3 getBlocletInfo3(
+      org.apache.carbondata.core.metadata.blocklet.BlockletInfo blockletInfo) {
+    List<Long> dimensionChunkOffsets = blockletInfo.getDimensionChunkOffsets();
+    dimensionChunkOffsets.addAll(blockletInfo.getMeasureChunkOffsets());
+    List<Integer> dimensionChunksLength = blockletInfo.getDimensionChunksLength();
+    dimensionChunksLength.addAll(blockletInfo.getMeasureChunksLength());
+    return new BlockletInfo3(blockletInfo.getNumberOfRows(), dimensionChunkOffsets,
+        dimensionChunksLength, blockletInfo.getDimensionOffset(), blockletInfo.getMeasureOffsets(),
+        blockletInfo.getNumberOfPages());
   }
 
   /**

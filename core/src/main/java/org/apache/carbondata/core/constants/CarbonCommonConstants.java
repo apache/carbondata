@@ -1347,6 +1347,10 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_UPDATE_SEGMENT_PARALLELISM_DEFAULT = "1";
 
+  public static final String USE_DISTRIBUTED_DATAMAP = "carbon.enable.distributed.datamap";
+
+  public static final String USE_DISTRIBUTED_DATAMAP_DEFAULT = "false";
+
   private CarbonCommonConstants() {
   }
 }
