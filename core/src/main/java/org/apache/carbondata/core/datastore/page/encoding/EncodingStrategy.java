@@ -112,10 +112,41 @@ public abstract class EncodingStrategy {
       case SHORT:
       case INT:
       case LONG:
-        return DefaultEncodingStrategy.selectCodecByAlgorithmForIntegral(stats).createDecoder(null);
+        // create the codec based on algorithm and create decoder by recovering the metadata
+        ColumnPageCodec codec = DefaultEncodingStrategy.selectCodecByAlgorithmForIntegral(stats);
+        if (codec instanceof AdaptiveIntegralCodec) {
+          AdaptiveIntegralCodec adaptiveCodec = (AdaptiveIntegralCodec) codec;
+          AdaptiveIntegralEncoderMeta meta = new AdaptiveIntegralEncoderMeta(
+              adaptiveCodec.getTargetDataType(), stats, "snappy");
+          return codec.createDecoder(meta);
+        } else if (codec instanceof AdaptiveDeltaIntegralCodec) {
+          AdaptiveDeltaIntegralCodec adaptiveCodec = (AdaptiveDeltaIntegralCodec) codec;
+          AdaptiveDeltaIntegralEncoderMeta meta = new AdaptiveDeltaIntegralEncoderMeta(
+              "snappy", adaptiveCodec.getTargetDataType(), stats);
+          return codec.createDecoder(meta);
+        } else if (codec instanceof DirectCompressCodec) {
+          DirectCompressorEncoderMeta meta = new DirectCompressorEncoderMeta(
+              "snappy", metadata.getType(), stats);
+          return codec.createDecoder(meta);
+        } else {
+          throw new RuntimeException("internal error");
+        }
       case FLOAT:
       case DOUBLE:
-        return DefaultEncodingStrategy.selectCodecByAlgorithmForFloating(stats).createDecoder(null);
+        // create the codec based on algorithm and create decoder by recovering the metadata
+        codec = DefaultEncodingStrategy.selectCodecByAlgorithmForFloating(stats);
+        if (codec instanceof AdaptiveFloatingCodec) {
+          AdaptiveFloatingCodec adaptiveCodec = (AdaptiveFloatingCodec) codec;
+          AdaptiveFloatingEncoderMeta meta = new AdaptiveFloatingEncoderMeta(
+              adaptiveCodec.getTargetDataType(), stats, "snappy");
+          return codec.createDecoder(meta);
+        } else if (codec instanceof DirectCompressCodec) {
+          DirectCompressorEncoderMeta meta = new DirectCompressorEncoderMeta(
+              "snappy", metadata.getType(), stats);
+          return codec.createDecoder(meta);
+        } else {
+          throw new RuntimeException("internal error");
+        }
       case DECIMAL:
       case BYTE_ARRAY:
         // no dictionary dimension

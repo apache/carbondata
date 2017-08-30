@@ -30,7 +30,7 @@ public class AdaptiveDeltaIntegralEncoderMeta extends AdaptiveEncoderMeta implem
   public AdaptiveDeltaIntegralEncoderMeta() {
   }
 
-  AdaptiveDeltaIntegralEncoderMeta(String compressorName, DataType targetDataType,
+  public AdaptiveDeltaIntegralEncoderMeta(String compressorName, DataType targetDataType,
       SimpleStatsResult stats) {
     super(targetDataType, stats, compressorName);
   }
