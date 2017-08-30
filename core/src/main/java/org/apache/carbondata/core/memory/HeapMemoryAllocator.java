@@ -53,6 +53,8 @@ public class HeapMemoryAllocator implements MemoryAllocator {
             final MemoryBlock memory = blockReference.get();
             if (memory != null) {
               assert (memory.size() == size);
+              // reuse this MemoryBlock
+              memory.setFreedStatus(false);
               return memory;
             }
           }
@@ -76,5 +78,6 @@ public class HeapMemoryAllocator implements MemoryAllocator {
         pool.add(new WeakReference<>(memory));
       }
     }
+    memory.setFreedStatus(true);
   }
 }
