@@ -30,8 +30,8 @@ public class AdaptiveIntegralEncoderMeta extends AdaptiveEncoderMeta implements 
   public AdaptiveIntegralEncoderMeta() {
   }
 
-  AdaptiveIntegralEncoderMeta(DataType targetDataType, SimpleStatsResult stats,
-      String compressorName) {
+  public AdaptiveIntegralEncoderMeta(String compressorName, DataType targetDataType,
+      SimpleStatsResult stats) {
     super(targetDataType, stats, compressorName);
   }
 
