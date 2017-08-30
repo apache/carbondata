@@ -46,14 +46,14 @@ object CarbonSparkFactory {
    /**
     * @return column validator
     */
-  def getCarbonColumnValidator(): ColumnValidator = {
+  def getCarbonColumnValidator: ColumnValidator = {
     new CarbonColumnValidator
   }
 
   /**
    * @return dictionary helper
    */
-  def getDictionaryDetailService(): DictionaryDetailService = {
+  def getDictionaryDetailService: DictionaryDetailService = {
     new DictionaryDetailHelper
   }
 }

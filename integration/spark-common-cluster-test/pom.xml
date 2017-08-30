@@ -117,12 +117,6 @@
         <version>2.18</version>
         <!-- Note config is repeated in scalatest config -->
         <configuration>
-          <includes>
-            <include>**/Test*.java</include>
-            <include>**/*Test.java</include>
-            <include>**/*TestCase.java</include>
-            <include>**/*Suite.java</include>
-          </includes>
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <argLine>-Xmx6g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m</argLine>
           <systemProperties>
@@ -141,7 +135,7 @@
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <junitxml>.</junitxml>
           <filereports>CarbonTestSuite.txt</filereports>
-          <argLine>-ea -Xmx5g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
+          <argLine> ${argLine} -ea -Xmx5g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
           </argLine>
           <stderr />
           <environmentVariables>

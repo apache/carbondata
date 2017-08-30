@@ -35,7 +35,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
-import org.apache.carbondata.spark.{CarbonAliasDecoderRelation, CarbonFilters}
+import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 
 /**
