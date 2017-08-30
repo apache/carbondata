@@ -136,9 +136,9 @@ object CarbonMetaStoreFactory {
   def createCarbonMetaStore(conf: RuntimeConfig): CarbonMetaStore = {
     val readSchemaFromHiveMetaStore = readSchemaFromHive(conf)
     if (readSchemaFromHiveMetaStore) {
-      new CarbonHiveMetaStore(conf)
+      new CarbonHiveMetaStore()
     } else {
-      new CarbonFileMetastore(conf)
+      new CarbonFileMetastore()
     }
   }
 
