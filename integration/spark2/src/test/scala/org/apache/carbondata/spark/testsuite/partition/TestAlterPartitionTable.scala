@@ -386,6 +386,55 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     checkAnswer(result_after5, result_origin5)
   }
 
+  test("Alter table split partition with different List Sequence: List Partition") {
+    sql("""ALTER TABLE list_table_country ADD PARTITION ('(Part1, Part2, Part3, Part4)')""".stripMargin)
+    sql("""ALTER TABLE list_table_country SPLIT PARTITION(9) INTO ('Part4', 'Part2', '(Part1, Part3)')""".stripMargin)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_list_table_country")
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionIds = partitionInfo.getPartitionIds
+    val list_info = partitionInfo.getListInfo
+    assert(partitionIds == List(0, 1, 2, 3, 6, 7, 8, 5, 10, 11, 12).map(Integer.valueOf(_)).asJava)
+    assert(partitionInfo.getMAX_PARTITION == 12)
+    assert(partitionInfo.getNumPartitions == 11)
+    assert(list_info.get(0).get(0) == "China")
+    assert(list_info.get(0).get(1) == "US")
+    assert(list_info.get(1).get(0) == "UK")
+    assert(list_info.get(2).get(0) == "Japan")
+    assert(list_info.get(3).get(0) == "Canada")
+    assert(list_info.get(4).get(0) == "Russia")
+    assert(list_info.get(5).get(0) == "Good")
+    assert(list_info.get(5).get(1) == "NotGood")
+    assert(list_info.get(6).get(0) == "Korea")
+    assert(list_info.get(7).get(0) == "Part4")
+    assert(list_info.get(8).get(0) == "Part2")
+    assert(list_info.get(9).get(0) == "Part1")
+    assert(list_info.get(9).get(1) == "Part3")
+    validateDataFiles("default_list_table_country", "0", Seq(0, 1, 2, 3, 8))
+    val result_after = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country""")
+    val result_origin = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin""")
+    checkAnswer(result_after, result_origin)
+
+    val result_after1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country < 'NotGood' """)
+    val result_origin1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country < 'NotGood' """)
+    checkAnswer(result_after1, result_origin1)
+
+    val result_after2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country <= 'NotGood' """)
+    val result_origin2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country <= 'NotGood' """)
+    checkAnswer(result_after2, result_origin2)
+
+    val result_after3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country = 'NotGood' """)
+    val result_origin3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country = 'NotGood' """)
+    checkAnswer(result_after3, result_origin3)
+
+    val result_after4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country >= 'NotGood' """)
+    val result_origin4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country >= 'NotGood' """)
+    checkAnswer(result_after4, result_origin4)
+
+    val result_after5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country where country > 'NotGood' """)
+    val result_origin5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin where country > 'NotGood' """)
+    checkAnswer(result_after5, result_origin5)
+  }
+
   test("Alter table split partition: Range Partition") {
     sql("""ALTER TABLE range_table_logdate_split SPLIT PARTITION(4) INTO ('2017/01/01', '2018/01/01')""")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_range_table_logdate_split")
