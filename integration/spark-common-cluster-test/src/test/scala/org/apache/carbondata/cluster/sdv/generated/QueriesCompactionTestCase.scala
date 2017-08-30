@@ -6800,6 +6800,38 @@ class QueriesCompactionTestCase extends QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("Compaction_Bug_JIRA_1422") {
+
+    sql("DROP TABLE IF EXISTS minortest")
+
+    // Create table
+    sql(
+      s"""
+         CREATE TABLE minortest (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ("TABLE_BLOCKSIZE"= "256 MB")
+       """.stripMargin)
+
+    sql(
+      s"""
+        LOAD DATA inpath '$resourcesPath/Data/uniqdata/2000_UniqData.csv' INTO table minortest OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')
+      """.stripMargin).show()
+
+    sql(
+      s"""
+        LOAD DATA inpath '$resourcesPath/Data/uniqdata/2000_UniqData.csv' INTO table minortest OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')
+      """.stripMargin).show()
+    sql(
+      s"""
+        LOAD DATA inpath '$resourcesPath/Data/uniqdata/2000_UniqData.csv' INTO table minortest OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')
+      """.stripMargin).show()
+    sql(
+      s"""
+        LOAD DATA inpath '$resourcesPath/Data/uniqdata/2000_UniqData.csv' INTO table minortest OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')
+      """.stripMargin).show()
+
+    sql("""alter table minortest compact 'minor'""")
+    sql("DROP TABLE IF EXISTS minortest")
+  }
+
   override def afterAll {
   sql("drop table if exists Comp_VMALL_DICTIONARY_INCLUDE")
   sql("drop table if exists Comp_VMALL_DICTIONARY_INCLUDE_hive")
