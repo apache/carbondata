@@ -390,6 +390,20 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test show segment after updating data : JIRA-1411,1414"){
+    sql("""drop table if exists iud.show_segment""").show
+    sql("""create table iud.show_segment (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.show_segment""")
+    val before_update = sql("""show segments for table iud.show_segment""").toDF()
+    sql("""update iud.show_segment d set (d.c3, d.c5 ) = (select s.c33,s.c55 from iud.source2 s where d.c1 = s.c11) where 1 = 1""").show()
+    val after_update = sql("""show segments for table iud.show_segment""").toDF()
+    checkAnswer(
+      before_update,
+      after_update
+    )
+    sql("""drop table if exists iud.show_segment""").show
+  }
+
   test("Failure of update operation due to bad record with proper error message") {
     try {
       CarbonProperties.getInstance()
