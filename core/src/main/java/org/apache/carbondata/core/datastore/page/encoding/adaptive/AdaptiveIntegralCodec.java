@@ -78,7 +78,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
       @Override
       protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
-        return new AdaptiveIntegralEncoderMeta(targetDataType, stats, compressor.getName());
+        return new AdaptiveIntegralEncoderMeta(compressor.getName(), targetDataType, stats);
       }
 
     };

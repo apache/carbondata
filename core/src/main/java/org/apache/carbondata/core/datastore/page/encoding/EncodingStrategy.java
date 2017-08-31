@@ -117,7 +117,7 @@ public abstract class EncodingStrategy {
         if (codec instanceof AdaptiveIntegralCodec) {
           AdaptiveIntegralCodec adaptiveCodec = (AdaptiveIntegralCodec) codec;
           AdaptiveIntegralEncoderMeta meta = new AdaptiveIntegralEncoderMeta(
-              adaptiveCodec.getTargetDataType(), stats, "snappy");
+              "snappy", adaptiveCodec.getTargetDataType(), stats);
           return codec.createDecoder(meta);
         } else if (codec instanceof AdaptiveDeltaIntegralCodec) {
           AdaptiveDeltaIntegralCodec adaptiveCodec = (AdaptiveDeltaIntegralCodec) codec;
@@ -138,7 +138,7 @@ public abstract class EncodingStrategy {
         if (codec instanceof AdaptiveFloatingCodec) {
           AdaptiveFloatingCodec adaptiveCodec = (AdaptiveFloatingCodec) codec;
           AdaptiveFloatingEncoderMeta meta = new AdaptiveFloatingEncoderMeta(
-              adaptiveCodec.getTargetDataType(), stats, "snappy");
+              "snappy", adaptiveCodec.getTargetDataType(), stats);
           return codec.createDecoder(meta);
         } else if (codec instanceof DirectCompressCodec) {
           DirectCompressorEncoderMeta meta = new DirectCompressorEncoderMeta(

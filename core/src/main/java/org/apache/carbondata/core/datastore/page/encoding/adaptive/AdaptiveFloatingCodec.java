@@ -88,7 +88,7 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
 
       @Override
       protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
-        return new AdaptiveFloatingEncoderMeta(targetDataType, stats, compressor.getName());
+        return new AdaptiveFloatingEncoderMeta(compressor.getName(), targetDataType, stats);
       }
 
     };
