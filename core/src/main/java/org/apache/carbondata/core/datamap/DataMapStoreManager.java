@@ -73,7 +73,7 @@ public final class DataMapStoreManager {
     } else {
       dataMap = getTableDataMap(dataMapName, tableDataMaps);
     }
-    
+
     if (dataMap == null) {
       throw new RuntimeException("Datamap does not exist");
     }
