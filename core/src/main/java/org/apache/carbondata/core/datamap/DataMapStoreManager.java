@@ -56,16 +56,24 @@ public final class DataMapStoreManager {
    * @param factoryClass
    * @return
    */
-  public synchronized TableDataMap getDataMap(AbsoluteTableIdentifier identifier,
+  public TableDataMap getDataMap(AbsoluteTableIdentifier identifier,
       String dataMapName, String factoryClass) {
     String table = identifier.uniqueName();
     List<TableDataMap> tableDataMaps = allDataMaps.get(table);
     TableDataMap dataMap;
     if (tableDataMaps == null) {
-      dataMap = createAndRegisterDataMap(identifier, factoryClass, dataMapName);
+      synchronized (table.intern()) {
+        tableDataMaps = allDataMaps.get(table);
+        if (tableDataMaps == null) {
+          dataMap = createAndRegisterDataMap(identifier, factoryClass, dataMapName);
+        } else {
+          dataMap = getTableDataMap(dataMapName, tableDataMaps);
+        }
+      }
     } else {
       dataMap = getTableDataMap(dataMapName, tableDataMaps);
     }
+    
     if (dataMap == null) {
       throw new RuntimeException("Datamap does not exist");
     }
@@ -82,7 +90,6 @@ public final class DataMapStoreManager {
     List<TableDataMap> tableDataMaps = allDataMaps.get(table);
     if (tableDataMaps == null) {
       tableDataMaps = new ArrayList<>();
-      allDataMaps.put(table, tableDataMaps);
     }
     TableDataMap dataMap = getTableDataMap(dataMapName, tableDataMaps);
     if (dataMap != null) {
@@ -100,6 +107,7 @@ public final class DataMapStoreManager {
       throw new RuntimeException(e);
     }
     tableDataMaps.add(dataMap);
+    allDataMaps.put(table, tableDataMaps);
     return dataMap;
   }
 
