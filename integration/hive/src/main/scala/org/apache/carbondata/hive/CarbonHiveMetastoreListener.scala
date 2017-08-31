@@ -58,8 +58,28 @@ class CarbonHiveMetastoreListener(conf: Configuration) extends MetaStorePreEvent
             }
           }
         }
+      case ALTER_TABLE =>
+        val table = preEventContext.asInstanceOf[PreAlterTableEvent].getNewTable
+        val tableProps = table.getParameters
+        if (tableProps != null &&
+            tableProps.get("spark.sql.sources.provider") == "org.apache.spark.sql.CarbonSource") {
+          val numSchemaParts = tableProps.get("spark.sql.sources.schema.numParts")
+          if (numSchemaParts != null && !numSchemaParts.isEmpty) {
+            val schemaParts = (0 until numSchemaParts.toInt).map { index =>
+              val schemaPart = tableProps.get(s"spark.sql.sources.schema.part.$index")
+              if (schemaPart == null) {
+                throw new MetaException(s"spark.sql.sources.schema.part.$index is missing!")
+              }
+              schemaPart
+            }
+            // Stick all schemaParts back to a single schema string.
+            val schema = DataType.fromJson(schemaParts.mkString).asInstanceOf[StructType]
+            val hiveSchema = schema.map(toHiveColumn).asJava
+            table.getSd.setCols(hiveSchema)
+          }
+        }
       case _ =>
-        // do nothing
+      // do nothing
     }
   }
 
