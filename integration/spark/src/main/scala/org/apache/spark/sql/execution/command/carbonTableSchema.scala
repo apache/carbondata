@@ -561,10 +561,15 @@ case class LoadTable(
         val dimensions = carbonTable.getDimensionByTableName(
           carbonTable.getFactTableName).asScala.toArray
         // add the start entry for the new load in the table status file
-        CommonUtil.
-          readAndUpdateLoadProgressInTableMeta(carbonLoadModel, storePath, isOverwriteExist)
+        if (!updateModel.isDefined) {
+          CommonUtil.
+            readAndUpdateLoadProgressInTableMeta(carbonLoadModel, storePath, isOverwriteExist)
+        }
         if (isOverwriteExist) {
           LOGGER.info(s"Overwrite is in progress for carbon table with $dbName.$tableName")
+        }
+        if (null == carbonLoadModel.getLoadMetadataDetails) {
+          CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
         }
         if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
             StringUtils.isEmpty(columnDict) && StringUtils.isEmpty(allDictionaryPath)) {
