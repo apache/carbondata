@@ -390,7 +390,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test show segment after updating data : JIRA-1411,1414"){
+  test("test show segment after updating data : JIRA-1411,JIRA-1414") {
     sql("""drop table if exists iud.show_segment""").show
     sql("""create table iud.show_segment (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud.show_segment""")
