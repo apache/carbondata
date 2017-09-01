@@ -1803,10 +1803,31 @@ public final class CarbonUtil {
     return !(null == badRecordsLocation || badRecordsLocation.length() == 0);
   }
 
+  /**
+   * Converts Tableinfo object to json multi string objects of size 4000
+   * @param tableInfo
+   * @param seperator separator between each string
+   * @param quote Quote to be used for string
+   * @param prefix Prefix to be added before generated string
+   * @return
+   */
   public static String convertToMultiGsonStrings(TableInfo tableInfo, String seperator,
       String quote, String prefix) {
     Gson gson = new Gson();
     String schemaString = gson.toJson(tableInfo);
+    return splitSchemaStringToMultiString(seperator, quote, prefix, schemaString);
+  }
+
+  /**
+   * Converts Json String to multi string objects of size 4000
+   * @param schemaString Json string
+   * @param seperator separator between each string
+   * @param quote Quote to be used for string
+   * @param prefix Prefix to be added before generated string
+   * @return
+   */
+  public static String splitSchemaStringToMultiString(String seperator, String quote,
+      String prefix, String schemaString) {
     int schemaLen = schemaString.length();
     int splitLen = 4000;
     int parts = schemaLen / splitLen;
@@ -1817,10 +1838,12 @@ public final class CarbonUtil {
         new StringBuilder(prefix).append(quote).append("carbonSchemaPartsNo").append(quote)
             .append(seperator).append("'").append(parts).append("',");
     int runningLen = 0;
-    int endLen = splitLen;
+    int endLen = schemaLen > splitLen ? splitLen : schemaLen;
     for (int i = 0; i < parts; i++) {
       if (i == parts - 1) {
-        endLen = schemaLen % splitLen;
+        if (schemaLen % splitLen > 0) {
+          endLen = schemaLen % splitLen;
+        }
       }
       builder.append(quote).append("carbonSchema").append(i).append(quote).append(seperator);
       builder.append("'").append(schemaString.substring(runningLen, runningLen + endLen))
@@ -1833,10 +1856,25 @@ public final class CarbonUtil {
     return builder.toString();
   }
 
+  /**
+   * Converts Tableinfo object to json multi string objects  of size 4000 and stored in map
+   * @param tableInfo
+   * @return
+   */
   public static Map<String, String> convertToMultiStringMap(TableInfo tableInfo) {
-    Map<String, String> map = new HashMap<>();
     Gson gson = new Gson();
     String schemaString = gson.toJson(tableInfo);
+    return splitSchemaStringToMap(schemaString);
+  }
+
+  /**
+   * Converts Json string to multi string objects  of size 4000 and stored in map
+   *
+   * @param schemaString
+   * @return
+   */
+  public static Map<String, String> splitSchemaStringToMap(String schemaString) {
+    Map<String, String> map = new HashMap<>();
     int schemaLen = schemaString.length();
     int splitLen = 4000;
     int parts = schemaLen / splitLen;
@@ -1845,17 +1883,18 @@ public final class CarbonUtil {
     }
     map.put("carbonSchemaPartsNo", parts + "");
     int runningLen = 0;
-    int endLen = splitLen;
+    int endLen = schemaLen > splitLen ? splitLen : schemaLen;
     for (int i = 0; i < parts; i++) {
       if (i == parts - 1) {
-        endLen = schemaLen % splitLen;
+        if (schemaLen % splitLen > 0) {
+          endLen = schemaLen % splitLen;
+        }
       }
       map.put("carbonSchema" + i, schemaString.substring(runningLen, runningLen + endLen));
       runningLen += splitLen;
     }
     return map;
   }
-
 
   public static TableInfo convertGsonToTableInfo(Map<String, String> properties) {
     Gson gson = new Gson();
