@@ -106,7 +106,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
       "alter table restructure add columns(strfld string, datefld date, tptfld timestamp, " +
       "shortFld smallInt, " +
       "intFld int, longFld bigint, dblFld double,dcml decimal(5,4))TBLPROPERTIES" +
-      "('DICTIONARY_INCLUDE'='datefld,shortFld,intFld,longFld,dblFld,dcml', 'DEFAULT.VALUE" +
+      "('DICTIONARY_INCLUDE'='shortFld,intFld,longFld,dblFld,dcml', 'DEFAULT.VALUE" +
       ".dblFld'= '12345')")
     checkAnswer(sql("select distinct(dblFld) from restructure"),
       Row(java.lang.Double.parseDouble("12345")))

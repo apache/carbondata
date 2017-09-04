@@ -61,9 +61,9 @@ class AllDataTypesTestCaseJoin extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table1")
     sql("DROP TABLE IF EXISTS carbon_table2")
 
-    sql("CREATE TABLE carbon_table1(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')")
+    sql("CREATE TABLE carbon_table1(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='charField')")
 
-    sql("CREATE TABLE carbon_table2(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='dateField, charField')")
+    sql("CREATE TABLE carbon_table2(shortField smallint,intField int,bigintField bigint,doubleField double,stringField string,timestampField timestamp,decimalField decimal(18,2),dateField date,charField char(5),floatField float) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='charField')")
 
     val path1 = s"$resourcesPath/join/data1.csv"
     val path2 = s"$resourcesPath/join/data2.csv"
