@@ -39,9 +39,10 @@ import org.codehaus.jackson.map.ObjectMapper
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
+import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.encoder.Encoding
@@ -172,6 +173,14 @@ case class CreateTable(cm: TableModel) extends RunnableCommand {
     LOGGER.audit(s"Creating Table with Database name [$dbName] and Table name [$tbName]")
 
     val tableInfo: TableInfo = TableNewProcessor(cm)
+
+    // Add validation for sort scope when create table
+    val sortScope = tableInfo.getFactTable.getTableProperties
+      .getOrDefault("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+    if (!CarbonUtil.isValidSortOption(sortScope)) {
+      throw new InvalidConfigurationException(s"Passing invalid SORT_SCOPE '$sortScope'," +
+        s" valid SORT_SCOPE are 'NO_SORT', 'BATCH_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT' ")
+    }
 
     if (tableInfo.getFactTable.getListOfColumns.isEmpty) {
       sys.error("No Dimensions found. Table should have at least one dimesnion !")
@@ -433,10 +442,25 @@ case class LoadTable(
       val dateFormat = options.getOrElse("dateformat", null)
       ValidateUtil.validateDateFormat(dateFormat, table, tableName)
       val maxColumns = options.getOrElse("maxcolumns", null)
-      val sortScope = options.getOrElse("sort_scope", null)
+      val tableProperties = table.getTableInfo.getFactTable.getTableProperties
+      val sortScopeDefault = CarbonProperties.getInstance().
+        getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
+          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+            CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
+      val sortScope = if (null == tableProperties) {
+        sortScopeDefault
+      } else {
+        tableProperties.getOrDefault("sort_scope", sortScopeDefault)
+      }
+
       ValidateUtil.validateSortScope(table, sortScope)
-      val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb", null)
-      val globalSortPartitions = options.getOrElse("global_sort_partitions", null)
+      val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
+      val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb", carbonProperty
+        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB,
+        carbonProperty.getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
+          CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT)))
+      val globalSortPartitions = options.getOrElse("global_sort_partitions", carbonProperty
+        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS, null))
       ValidateUtil.validateGlobalSortPartitions(globalSortPartitions)
 
       // if there isn't file header in csv file and load sql doesn't provide FILEHEADER option,
@@ -884,6 +908,9 @@ private[sql] case class DescribeCommandFormatted(
     results ++= Seq(("CARBON Store Path: ", relation.tableMeta.storePath, ""))
     val carbonTable = relation.tableMeta.carbonTable
     results ++= Seq(("Table Block Size : ", carbonTable.getBlockSizeInMB + " MB", ""))
+    results ++= Seq(("SORT_SCOPE", carbonTable.getTableInfo.getFactTable
+      .getTableProperties.getOrDefault("sort_scope", CarbonCommonConstants
+      .LOAD_SORT_SCOPE_DEFAULT), CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {
       results ++= Seq((colPropStr, "", ""))

@@ -43,11 +43,10 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       " workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
       "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties" +
-      "('dictionary_exclude'='empno','sort_columns'='empno')")
+      "('dictionary_exclude'='empno','sort_columns'='empno', 'SORT_SCOPE'='BATCH_SORT')")
     sql(
       s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable1a OPTIONS
-         |('DELIMITER'= ',', 'QUOTECHAR'= '\"','SORT_SCOPE'='BATCH_SORT',
-         |'batch_sort_size_inmb'='64')""".stripMargin)
+         |('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'batch_sort_size_inmb'='64')""".stripMargin)
     checkAnswer(sql("select empname from sorttable1a"),
       sql("select empname from origintable1 order by empname"))
   }
@@ -61,11 +60,11 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
       " workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
       "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
       "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties" +
-      "('dictionary_exclude'='empno,empname,workgroupcategoryname','sort_columns'='empno,empname')")
+      "('dictionary_exclude'='empno,empname,workgroupcategoryname','sort_columns'='empno,empname'," +
+      "'SORT_SCOPE'='BATCH_SORT')")
     sql(
       s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable1b OPTIONS
-          |('DELIMITER'= ',', 'QUOTECHAR'= '\"','SORT_SCOPE'='BATCH_SORT',
-          |'batch_sort_size_inmb'='64')""".stripMargin)
+          |('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'batch_sort_size_inmb'='64')""".stripMargin)
     checkAnswer(sql("select empname from sorttable1b"),
       sql("select empname from origintable1 order by empname"))
   }
