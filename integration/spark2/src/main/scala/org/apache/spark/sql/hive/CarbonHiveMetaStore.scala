@@ -18,7 +18,7 @@ package org.apache.spark.sql.hive
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{RuntimeConfig, SparkSession}
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
@@ -36,7 +36,7 @@ import org.apache.carbondata.spark.util.CarbonSparkUtil
 /**
  * Metastore to store carbonschema in hive
  */
-class CarbonHiveMetaStore(conf: RuntimeConfig) extends CarbonFileMetastore(conf) {
+class CarbonHiveMetaStore extends CarbonFileMetastore {
 
   override def isReadFromHiveMetaStore: Boolean = true
 
