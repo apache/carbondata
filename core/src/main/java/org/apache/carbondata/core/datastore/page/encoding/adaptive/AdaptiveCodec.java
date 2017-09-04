@@ -51,6 +51,10 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
     throw new UnsupportedOperationException("internal error");
   }
 
+  public DataType getTargetDataType() {
+    return targetDataType;
+  }
+
   @Override
   public String toString() {
     return String.format("%s[src type: %s, target type: %s, stats(%s)]",

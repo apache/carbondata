@@ -30,8 +30,8 @@ public class AdaptiveFloatingEncoderMeta extends AdaptiveEncoderMeta implements 
   public AdaptiveFloatingEncoderMeta() {
   }
 
-  AdaptiveFloatingEncoderMeta(DataType targetDataType, SimpleStatsResult stats,
-      String compressorName) {
+  public AdaptiveFloatingEncoderMeta(String compressorName, DataType targetDataType,
+      SimpleStatsResult stats) {
     super(targetDataType, stats, compressorName);
   }
 
