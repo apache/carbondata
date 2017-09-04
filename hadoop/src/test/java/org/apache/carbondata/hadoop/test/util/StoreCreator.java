@@ -144,7 +144,7 @@ public class StoreCreator {
       loadModel.setDateFormat(null);
       loadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
           CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS));
       loadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
           CarbonCommonConstants.CARBON_DATE_FORMAT,
           CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
@@ -495,7 +495,7 @@ public class StoreCreator {
   }
 
   public static String readCurrentTime() {
-    SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
+    SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
     String date = null;
 
     date = sdf.format(new Date());
