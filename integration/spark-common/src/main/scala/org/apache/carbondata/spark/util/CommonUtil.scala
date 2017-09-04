@@ -242,11 +242,13 @@ object CommonUtil {
         value.matches(pattern)
       case "timestamptype" =>
         val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT))
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
         scala.util.Try(timeStampFormat.parse(value)).isSuccess
       case "datetype" =>
         val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT))
+          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
         scala.util.Try(dateFormat.parse(value)).isSuccess
       case others =>
        if (others != null && others.startsWith("char")) {
@@ -303,8 +305,15 @@ object CommonUtil {
       case _ =>
         validateTypeConvertForSpark2(partitionerField, value)
     }
-    result
+
+    if(!result) {
+      throw new MalformedCarbonCommandException(s"Invalid Partition Values for partition " +
+        s"column: ${partitionerField.partitionColumn}")
+    } else {
+      result
+    }
   }
+
   /**
    * To verify the range info is in correct order
    * @param rangeInfo
