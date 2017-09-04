@@ -305,8 +305,15 @@ object CommonUtil {
       case _ =>
         validateTypeConvertForSpark2(partitionerField, value)
     }
-    result
+
+    if(!result) {
+      throw new IllegalArgumentException(s"Invalid Partition Values for partition" +
+        s"column: ${partitionerField.partitionColumn}")
+    } else {
+      result
+    }
   }
+
   /**
    * To verify the range info is in correct order
    * @param rangeInfo
