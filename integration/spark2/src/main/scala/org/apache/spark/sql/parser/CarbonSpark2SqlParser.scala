@@ -341,11 +341,13 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
               throw new MalformedCarbonCommandException(
                 s"Unsupported Table property in add column: ${ f._1 }")
             } else if (f._1.toLowerCase.startsWith("default.value.")) {
-               if(fields.filter(field => checkFieldDefaultValue(field.column, f._1.toLowerCase)).size == 1) {
+              if (fields.count(field => checkFieldDefaultValue(field.column,
+                f._1.toLowerCase)) == 1) {
                  f._1 -> f._2
             } else {
                  throw new MalformedCarbonCommandException(
-                s"Default.value property does not matches with the columns in ALTER command. Column name in property is: ${ f._1}")
+                   s"Default.value property does not matches with the columns in ALTER command. " +
+                     s"Column name in property is: ${ f._1}")
                }
             } else {
               f._1 -> f._2.toLowerCase
@@ -374,7 +376,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   private def checkFieldDefaultValue(fieldName: String, defaultValueColumnName: String): Boolean = {
-    defaultValueColumnName.equalsIgnoreCase("default.value."+fieldName)
+    defaultValueColumnName.equalsIgnoreCase("default.value." + fieldName)
   }
 
   private def convertFieldNamesToLowercase(field: Field): Field = {
