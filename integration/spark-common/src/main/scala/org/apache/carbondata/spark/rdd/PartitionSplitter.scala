@@ -23,7 +23,7 @@ import org.apache.spark.sql.execution.command.SplitPartitionCallableModel
 import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.spark.{PartitionFactory, SplitResultImpl}
+import org.apache.carbondata.spark.{AlterPartitionResultImpl, PartitionFactory}
 
 object PartitionSplitter {
 
@@ -63,8 +63,8 @@ object PartitionSplitter {
          carbonLoadModel
        ).partitionBy(partitioner).map(_._2)
 
-       val splitStatus = new AlterTableSplitPartitionRDD(sc,
-         new SplitResultImpl(),
+       val splitStatus = new AlterTableLoadPartitionRDD(sc,
+         new AlterPartitionResultImpl(),
          Seq(partitionId),
          segmentId,
          bucketId,

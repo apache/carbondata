@@ -133,6 +133,15 @@ case class SplitPartitionCallableModel(storePath: String,
     oldPartitionIdList: List[Int],
     sqlContext: SQLContext)
 
+case class DropPartitionCallableModel(storePath: String,
+    carbonLoadModel: CarbonLoadModel,
+    segmentId: String,
+    partitionId: String,
+    oldPartitionIds: List[Int],
+    dropWithData: Boolean,
+    carbonTable: CarbonTable,
+    sqlContext: SQLContext)
+
 case class DataTypeInfo(dataType: String, precision: Int = 0, scale: Int = 0)
 
 case class AlterTableDataTypeChangeModel(dataTypeInfo: DataTypeInfo,
@@ -160,7 +169,8 @@ case class AlterTableDropColumnModel(databaseName: Option[String],
 
 case class AlterTableDropPartitionModel(databaseName: Option[String],
     tableName: String,
-    partitionId: String)
+    partitionId: String,
+    dropWithData: Boolean)
 
 case class AlterTableSplitPartitionModel(databaseName: Option[String],
     tableName: String,

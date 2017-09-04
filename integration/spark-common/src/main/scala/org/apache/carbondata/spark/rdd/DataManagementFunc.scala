@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.execution.command.{CompactionCallableModel, CompactionModel, SplitPartitionCallableModel}
+import org.apache.spark.sql.execution.command.{CompactionCallableModel, CompactionModel, DropPartitionCallableModel, SplitPartitionCallableModel}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -39,7 +39,7 @@ import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadM
 import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.compaction.CompactionCallable
 import org.apache.carbondata.spark.load._
-import org.apache.carbondata.spark.partition.SplitPartitionCallable
+import org.apache.carbondata.spark.partition.{DropPartitionCallable, SplitPartitionCallable}
 import org.apache.carbondata.spark.util.{CommonUtil, LoadMetadataUtil}
 
 /**
@@ -303,6 +303,27 @@ object DataManagementFunc {
 
     val future: Future[Void] = executor.submit(new SplitPartitionCallable(splitModel))
     futureList.add(future)
+  }
+
+  def executeDroppingPartition(sqlContext: SQLContext,
+      carbonLoadModel: CarbonLoadModel,
+      executor: ExecutorService,
+      storePath: String,
+      segmentId: String,
+      partitionId: String,
+      dropWithData: Boolean,
+      oldPartitionIds: List[Int]): Unit = {
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    val model = new DropPartitionCallableModel(storePath, carbonLoadModel,
+      segmentId, partitionId, oldPartitionIds, dropWithData, carbonTable, sqlContext)
+    val future: Future[Void] = executor.submit(new DropPartitionCallable(model))
+    try {
+        future.get
+    } catch {
+      case e: Exception =>
+        LOGGER.error(e, s"Exception in partition drop thread ${ e.getMessage }")
+        throw e
+    }
   }
 
   def prepareCarbonLoadModel(storePath: String,

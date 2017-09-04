@@ -19,7 +19,7 @@ package org.apache.carbondata.processing.spliter.exception;
 
 import java.util.Locale;
 
-public class SliceSpliterException extends Exception {
+public class AlterPartitionSliceException extends Exception {
 
   /**
    * default serial version ID.
@@ -36,7 +36,7 @@ public class SliceSpliterException extends Exception {
    *
    * @param msg The error message for this exception.
    */
-  public SliceSpliterException(String msg) {
+  public AlterPartitionSliceException(String msg) {
     super(msg);
     this.msg = msg;
   }
@@ -46,7 +46,7 @@ public class SliceSpliterException extends Exception {
    *
    * @param msg The error message for this exception.
    */
-  public SliceSpliterException(String msg, Throwable t) {
+  public AlterPartitionSliceException(String msg, Throwable t) {
     super(msg, t);
     this.msg = msg;
   }

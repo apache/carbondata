@@ -306,7 +306,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     // prune partitions for filter query on partition table
     BitSet matchedPartitions = null;
     if (partitionInfo != null) {
-      matchedPartitions = setMatchedPartitions(null, filter, partitionInfo);
+      matchedPartitions = setMatchedPartitions(null, filter, partitionInfo, null);
       if (matchedPartitions != null) {
         if (matchedPartitions.cardinality() == 0) {
           return new ArrayList<InputSplit>();
@@ -366,9 +366,11 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       TableProvider tableProvider = new SingleTableProvider(carbonTable);
       // prune partitions for filter query on partition table
       String partitionIds = job.getConfiguration().get(ALTER_PARTITION_ID);
+      // matchedPartitions records partitionIndex, not partitionId
       BitSet matchedPartitions = null;
       if (partitionInfo != null) {
-        matchedPartitions = setMatchedPartitions(partitionIds, filter, partitionInfo);
+        matchedPartitions =
+            setMatchedPartitions(partitionIds, filter, partitionInfo, oldPartitionIdList);
         if (matchedPartitions != null) {
           if (matchedPartitions.cardinality() == 0) {
             return new ArrayList<InputSplit>();
@@ -396,15 +398,24 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     }
   }
 
+  /**
+   * set the matched partition indices into a BitSet
+   * @param partitionIds  from alter table command, for normal query, it's null
+   * @param filter   from query
+   * @param partitionInfo
+   * @param oldPartitionIdList  only used in alter table command
+   * @return
+   */
   private BitSet setMatchedPartitions(String partitionIds, Expression filter,
-      PartitionInfo partitionInfo) {
+      PartitionInfo partitionInfo, List<Integer> oldPartitionIdList) {
     BitSet matchedPartitions = null;
     if (null != partitionIds) {
       String[] partList = partitionIds.replace("[", "").replace("]", "").split(",");
-      // only one partitionId in current alter table statement
-      matchedPartitions = new BitSet(Integer.parseInt(partList[0]));
+      // partList[0] -> use the first element to initiate BitSet, will auto expand later
+      matchedPartitions = new BitSet(Integer.parseInt(partList[0].trim()));
       for (String partitionId : partList) {
-        matchedPartitions.set(Integer.parseInt(partitionId));
+        Integer index = oldPartitionIdList.indexOf(Integer.parseInt(partitionId.trim()));
+        matchedPartitions.set(index);
       }
     } else {
       if (null != filter) {
