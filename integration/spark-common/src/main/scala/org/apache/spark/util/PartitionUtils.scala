@@ -80,12 +80,16 @@ object PartitionUtils {
       dateFormatter: SimpleDateFormat): Unit = {
     val columnDataType = partitionInfo.getColumnSchemaList.get(0).getDataType
     val index = partitionIdList.indexOf(partitionId)
+    if (index < 0) {
+      throw new IllegalArgumentException("Invalid Partition Id " + partitionId +
+        "\n Use show partitions table_name to get the list of valid partitions")
+    }
     if (partitionInfo.getPartitionType == PartitionType.RANGE) {
       val rangeInfo = partitionInfo.getRangeInfo.asScala.toList
       val newRangeInfo = partitionId match {
         case 0 => rangeInfo ++ splitInfo
         case _ => rangeInfo.take(index - 1) ++ splitInfo ++
-                  rangeInfo.takeRight(rangeInfo.size - index)
+          rangeInfo.takeRight(rangeInfo.size - index)
       }
       CommonUtil.validateRangeInfo(newRangeInfo, columnDataType,
         timestampFormatter, dateFormatter)
@@ -102,7 +106,7 @@ object PartitionUtils {
       val newListInfo = partitionId match {
         case 0 => originList ++ addListInfo
         case _ => originList.take(index - 1) ++ addListInfo ++
-                  originList.takeRight(originList.size - index)
+          originList.takeRight(originList.size - index)
       }
       partitionInfo.setListInfo(newListInfo.map(_.asJava).asJava)
     }
