@@ -72,7 +72,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     alterTableModifyDataType | alterTableDropColumn | alterTableAddColumns
 
   protected lazy val alterPartition: Parser[LogicalPlan] =
-    alterAddPartition | alterSplitPartition
+    alterAddPartition | alterSplitPartition | alterDropPartition
 
   protected lazy val alterAddPartition: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> PARTITION ~>
@@ -94,6 +94,20 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         }
         AlterTableSplitPartitionCommand(alterTableSplitPartitionModel)
     }
+
+  protected lazy val alterDropPartition: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (DROP ~> PARTITION ~>
+      "(" ~> numericLit <~ ")") ~ (WITH ~> DATA).? <~ opt(";") ^^ {
+      case dbName ~ table ~ partitionId ~ withData =>
+        val dropWithData = withData.getOrElse("NO") match {
+          case "NO" => false
+          case _ => true
+        }
+        val alterTableDropPartitionModel =
+          AlterTableDropPartitionModel(dbName, table, partitionId, dropWithData)
+        AlterTableDropPartition(alterTableDropPartitionModel)
+    }
+
 
   protected lazy val alterTable: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) <~ opt(";")  ^^ {

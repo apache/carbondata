@@ -22,42 +22,39 @@ import scala.util.Random
 
 import org.apache.spark.{Partition, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.execution.command.AlterPartitionModel
 import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.schema.PartitionInfo
-import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.spliter.RowResultSpliterProcessor
+import org.apache.carbondata.processing.spliter.RowResultProcessor
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
-import org.apache.carbondata.spark.SplitResult
+import org.apache.carbondata.spark.AlterPartitionResult
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
-class AlterTableSplitPartitionRDD[K, V](
-    sc: SparkContext,
-    result: SplitResult[K, V],
+class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
+    result: AlterPartitionResult[K, V],
     partitionIds: Seq[String],
-    segmentId: String,
     bucketId: Int,
-    carbonLoadModel: CarbonLoadModel,
     identifier: AbsoluteTableIdentifier,
-    storePath: String,
-    oldPartitionIdList: List[Int],
     prev: RDD[Array[AnyRef]]) extends RDD[(K, V)](prev) {
 
-    sc.setLocalProperty("spark.scheduler.pool", "DDL")
-    sc.setLocalProperty("spark.job.interruptOnCancel", "true")
-
     var storeLocation: String = null
-    var splitResult: String = null
+    val carbonLoadModel = alterPartitionModel.carbonLoadModel
+    val segmentId = alterPartitionModel.segmentId
+    val oldPartitionIds = alterPartitionModel.oldPartitionIds
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val databaseName = carbonTable.getDatabaseName
     val factTableName = carbonTable.getFactTableName
     val partitionInfo = carbonTable.getPartitionInfo(factTableName)
 
-    override protected def getPartitions: Array[Partition] = firstParent[Array[AnyRef]].partitions
+    override protected def getPartitions: Array[Partition] = {
+        val sc = alterPartitionModel.sqlContext.sparkContext
+        sc.setLocalProperty("spark.scheduler.pool", "DDL")
+        sc.setLocalProperty("spark.job.interruptOnCancel", "true")
+        firstParent[Array[AnyRef]].partitions
+    }
 
     override def compute(split: Partition, context: TaskContext): Iterator[(K, V)] = {
         val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -104,20 +101,19 @@ class AlterTableSplitPartitionRDD[K, V](
                 true
             )
 
-            val splitStatus = if (rows.isEmpty) {
+            val loadStatus = if (rows.isEmpty) {
                 LOGGER.info("After repartition this split, NO target rows to write back.")
                 true
             } else {
+                val segmentProperties = PartitionUtils.getSegmentProperties(identifier,
+                    segmentId, partitionIds.toList, oldPartitionIds, partitionInfo)
+                val processor = new RowResultProcessor(
+                    carbonTable,
+                    carbonLoadModel,
+                    segmentProperties,
+                    tempStoreLoc,
+                    bucketId)
                 try {
-                    val segmentProperties = PartitionUtils.getSegmentProperties(identifier,
-                        segmentId, partitionIds.toList, oldPartitionIdList, partitionInfo)
-                    val processor = new RowResultSpliterProcessor(
-                        carbonTable,
-                        carbonLoadModel,
-                        segmentProperties,
-                        tempStoreLoc,
-                        bucketId
-                    )
                     processor.execute(rows)
                 } catch {
                     case e: Exception =>
@@ -126,10 +122,9 @@ class AlterTableSplitPartitionRDD[K, V](
                     CarbonLoaderUtil
                       .deleteLocalDataLoadFolderLocation(carbonLoadModel, false, true)
                 }
-
             }
 
-            val splitResult = segmentId
+            val loadResult = segmentId
             var finished = false
 
             override def hasNext: Boolean = {
@@ -138,7 +133,7 @@ class AlterTableSplitPartitionRDD[K, V](
 
             override def next(): (K, V) = {
                 finished = true
-                result.getKey(splitResult, splitStatus)
+                result.getKey(loadResult, loadStatus)
             }
         }
         iter

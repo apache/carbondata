@@ -593,7 +593,7 @@ case class LoadTable(
           LOGGER.info(s"Overwrite is in progress for carbon table with $dbName.$tableName")
         }
         if (null == carbonLoadModel.getLoadMetadataDetails) {
-          CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+          CommonUtil.readLoadMetadataDetails(carbonLoadModel)
         }
         if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
             StringUtils.isEmpty(columnDict) && StringUtils.isEmpty(allDictionaryPath)) {

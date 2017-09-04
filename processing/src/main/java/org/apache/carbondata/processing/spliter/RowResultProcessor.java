@@ -26,23 +26,23 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
-import org.apache.carbondata.processing.spliter.exception.SliceSpliterException;
+import org.apache.carbondata.processing.spliter.exception.AlterPartitionSliceException;
 import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerColumnar;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
-public class RowResultSpliterProcessor {
+public class RowResultProcessor {
 
   private CarbonFactHandler dataHandler;
   private SegmentProperties segmentProperties;
 
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(RowResultSpliterProcessor.class.getName());
+      LogServiceFactory.getLogService(RowResultProcessor.class.getName());
 
 
-  public RowResultSpliterProcessor(CarbonTable carbonTable, CarbonLoadModel loadModel,
+  public RowResultProcessor(CarbonTable carbonTable, CarbonLoadModel loadModel,
       SegmentProperties segProp, String[] tempStoreLocation, Integer bucketId) {
     CarbonDataProcessorUtil.createLocations(tempStoreLocation);
     this.segmentProperties = segProp;
@@ -61,7 +61,7 @@ public class RowResultSpliterProcessor {
   }
 
   public boolean execute(List<Object[]> resultList) {
-    boolean splitStatus;
+    boolean processStatus;
     boolean isDataPresent = false;
 
     try {
@@ -76,30 +76,30 @@ public class RowResultSpliterProcessor {
       {
         this.dataHandler.finish();
       }
-      splitStatus = true;
-    } catch (SliceSpliterException e) {
+      processStatus = true;
+    } catch (AlterPartitionSliceException e) {
       LOGGER.error(e, e.getMessage());
-      LOGGER.error("Exception in split partition" + e.getMessage());
-      splitStatus = false;
+      LOGGER.error("Exception in executing RowResultProcessor" + e.getMessage());
+      processStatus = false;
     } finally {
       try {
         if (isDataPresent) {
           this.dataHandler.closeHandler();
         }
       } catch (Exception e) {
-        LOGGER.error("Exception while closing the handler in partition spliter" + e.getMessage());
-        splitStatus = false;
+        LOGGER.error("Exception while closing the handler in RowResultProcessor" + e.getMessage());
+        processStatus = false;
       }
     }
-    return splitStatus;
+    return processStatus;
   }
 
-  private void addRow(Object[] carbonTuple) throws SliceSpliterException {
+  private void addRow(Object[] carbonTuple) throws AlterPartitionSliceException {
     CarbonRow row = WriteStepRowUtil.fromMergerRow(carbonTuple, segmentProperties);
     try {
       this.dataHandler.addDataToStore(row);
     } catch (CarbonDataWriterException e) {
-      throw new SliceSpliterException("Problem in writing rows when add/split the partition", e);
+      throw new AlterPartitionSliceException("Exception in adding rows in RowResultProcessor", e);
     }
   }
 }
