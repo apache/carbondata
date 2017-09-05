@@ -269,8 +269,8 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //SmartPCC_CreateCube_TC_001
-  test("SmartPCC_CreateCube_TC_001", Include) {
+  //Sample_CreateCube_TC_001
+  test("Sample_CreateCube_TC_001", Include) {
     sql(s"""drop table if exists traffic_2g_3g_4g""").collect
 
     sql(s"""create table IF NOT EXISTS traffic_2g_3g_4g (SOURCE_INFO String ,APP_CATEGORY_ID String ,APP_CATEGORY_NAME String ,APP_SUB_CATEGORY_ID String ,APP_SUB_CATEGORY_NAME String ,RAT_NAME String ,IMSI String ,OFFER_MSISDN String ,OFFER_ID String ,OFFER_OPTION_1 String ,OFFER_OPTION_2 String ,OFFER_OPTION_3 String ,MSISDN String ,PACKAGE_TYPE String ,PACKAGE_PRICE String ,TAG_IMSI String ,TAG_MSISDN String ,PROVINCE String ,CITY String ,AREA_CODE String ,TAC String ,IMEI String ,TERMINAL_TYPE String ,TERMINAL_BRAND String ,TERMINAL_MODEL String ,PRICE_LEVEL String ,NETWORK String ,SHIPPED_OS String ,WIFI String ,WIFI_HOTSPOT String ,GSM String ,WCDMA String ,TD_SCDMA String ,LTE_FDD String ,LTE_TDD String ,CDMA String ,SCREEN_SIZE String ,SCREEN_RESOLUTION String ,HOST_NAME String ,WEBSITE_NAME String ,OPERATOR String ,SRV_TYPE_NAME String ,TAG_HOST String ,CGI String ,CELL_NAME String ,COVERITY_TYPE1 String ,COVERITY_TYPE2 String ,COVERITY_TYPE3 String ,COVERITY_TYPE4 String ,COVERITY_TYPE5 String ,LATITUDE String ,LONGITUDE String ,AZIMUTH String ,TAG_CGI String ,APN String ,USER_AGENT String ,DAY String ,HOUR String ,MIN String ,IS_DEFAULT_BEAR int ,EPS_BEARER_ID String ,QCI int ,USER_FILTER String ,ANALYSIS_PERIOD String, UP_THROUGHPUT double,DOWN_THROUGHPUT double,UP_PKT_NUM double,DOWN_PKT_NUM double,APP_REQUEST_NUM double,PKT_NUM_LEN_1_64 double,PKT_NUM_LEN_64_128 double,PKT_NUM_LEN_128_256 double,PKT_NUM_LEN_256_512 double,PKT_NUM_LEN_512_768 double,PKT_NUM_LEN_768_1024 double,PKT_NUM_LEN_1024_ALL double,IP_FLOW_MARK double) STORED BY 'org.apache.carbondata.format'""").collect
@@ -280,8 +280,8 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //CMBC_CreateCube_1
-  test("CMBC_CreateCube_1", Include) {
+  //Sample1_CreateCube_1
+  test("Sample1_CreateCube_1", Include) {
     sql(s"""drop table if exists cmb""").collect
     sql(s"""drop table if exists cmb_hive""").collect
 
@@ -292,8 +292,8 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //CMBC_Query_1
-  test("CMBC_Query_1", Include) {
+  //Sample1_Query_1
+  test("Sample1_Query_1", Include) {
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/cmb/data.csv'  INTO table cmb OPTIONS ('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='Cust_UID,year,month,companyAddress,companyNumber,company,occupation,certicardValidTime,race,CerticardCity,birthday,VIPLevel,ageRange,familyaddress,familyadNumber,dimension16,SubsidaryBank,AccountCreationTime,dimension19,dimension20,DemandDeposits,TimeDeposits,financial,TreasuryBonds,fund,incomeOneyear,outcomeOneyear,insurance,Goldaccount,dollarDeposits,euroDeposits,euroDeposits1,euroDeposits2,yenDeposits,wonDeposits,rupeeDeposits,HongKongDeposits,numberoftransactions,measure19,measure20,measure21,measure22,measure23,measure24,measure25,measure26,measure27,measure28,measure29,measure30,measure31,measure32,measure33,measure34,measure35,measure36,measure37,measure38,measure39,measure40,measure41,measure42,measure43,measure44,measure45,measure46,measure47,measure48,measure49,measure50,measure51,measure52,measure53')""").collect
 
@@ -303,191 +303,191 @@ class QueriesNormalTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //CMBC_Query_2
-  test("CMBC_Query_2", Include) {
+  //Sample1_Query_2
+  test("Sample1_Query_2", Include) {
 
     checkAnswer(s"""select count(*) from cmb""",
-      s"""select count(*) from cmb_hive""", "QueriesNormalTestCase_CMBC_Query_2")
+      s"""select count(*) from cmb_hive""", "QueriesNormalTestCase_Sample1_Query_2")
 
   }
 
 
-  //CMBC_Query_3
-  test("CMBC_Query_3", Include) {
+  //Sample1_Query_3
+  test("Sample1_Query_3", Include) {
 
     checkAnswer(s"""select COUNT(DISTINCT Cust_UID) from cmb""",
-      s"""select COUNT(DISTINCT Cust_UID) from cmb_hive""", "QueriesNormalTestCase_CMBC_Query_3")
+      s"""select COUNT(DISTINCT Cust_UID) from cmb_hive""", "QueriesNormalTestCase_Sample1_Query_3")
 
   }
 
 
-  //CMBC_Query_4
-  test("CMBC_Query_4", Include) {
+  //Sample1_Query_4
+  test("Sample1_Query_4", Include) {
 
     checkAnswer(s"""SELECT `year`, `month`, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY WHERE `year` = "2015" GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""",
-      s"""SELECT `year`, `month`, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE `year` = "2015" GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""", "QueriesNormalTestCase_CMBC_Query_4")
+      s"""SELECT `year`, `month`, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE `year` = "2015" GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""", "QueriesNormalTestCase_Sample1_Query_4")
 
   }
 
 
-  //CMBC_Query_5
-  test("CMBC_Query_5", Include) {
+  //Sample1_Query_5
+  test("Sample1_Query_5", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, occupation, VIPLevel, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY WHERE ( ( occupation = "Administrative Support") AND ( SubsidaryBank = "ABN AMRO")) AND ( SubsidaryBank = "ABN AMRO") GROUP BY SubsidaryBank, occupation, VIPLevel ORDER BY SubsidaryBank ASC, occupation ASC, VIPLevel ASC""",
-      s"""SELECT SubsidaryBank, occupation, VIPLevel, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE ( ( occupation = "Administrative Support") AND ( SubsidaryBank = "ABN AMRO")) AND ( SubsidaryBank = "ABN AMRO") GROUP BY SubsidaryBank, occupation, VIPLevel ORDER BY SubsidaryBank ASC, occupation ASC, VIPLevel ASC""", "QueriesNormalTestCase_CMBC_Query_5")
+      s"""SELECT SubsidaryBank, occupation, VIPLevel, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE ( ( occupation = "Administrative Support") AND ( SubsidaryBank = "ABN AMRO")) AND ( SubsidaryBank = "ABN AMRO") GROUP BY SubsidaryBank, occupation, VIPLevel ORDER BY SubsidaryBank ASC, occupation ASC, VIPLevel ASC""", "QueriesNormalTestCase_Sample1_Query_5")
 
   }
 
 
-  //CMBC_Query_6
-  test("CMBC_Query_6", Include) {
+  //Sample1_Query_6
+  test("Sample1_Query_6", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""",
-      s"""SELECT SubsidaryBank, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""", "QueriesNormalTestCase_CMBC_Query_6")
+      s"""SELECT SubsidaryBank, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""", "QueriesNormalTestCase_Sample1_Query_6")
 
   }
 
 
-  //CMBC_Query_7
-  test("CMBC_Query_7", Include) {
+  //Sample1_Query_7
+  test("Sample1_Query_7", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY WHERE SubsidaryBank IN ("ABN AMRO","Bank Sepah") GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""",
-      s"""SELECT SubsidaryBank, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE SubsidaryBank IN ("ABN AMRO","Bank Sepah") GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""", "QueriesNormalTestCase_CMBC_Query_7")
+      s"""SELECT SubsidaryBank, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE SubsidaryBank IN ("ABN AMRO","Bank Sepah") GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""", "QueriesNormalTestCase_Sample1_Query_7")
 
   }
 
 
-  //CMBC_Query_8
-  test("CMBC_Query_8", Include) {
+  //Sample1_Query_8
+  test("Sample1_Query_8", Include) {
 
     checkAnswer(s"""SELECT company, CerticardCity, VIPLevel, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY WHERE ( company IN ("Agricultural Bank of China","COSCO1")) AND ( CerticardCity IN ("Beijing1","Huangyan1","Yakeshi1","Korla1")) GROUP BY company, CerticardCity, VIPLevel ORDER BY company ASC, CerticardCity ASC, VIPLevel ASC""",
-      s"""SELECT company, CerticardCity, VIPLevel, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE ( company IN ("Agricultural Bank of China","COSCO1")) AND ( CerticardCity IN ("Beijing1","Huangyan1","Yakeshi1","Korla1")) GROUP BY company, CerticardCity, VIPLevel ORDER BY company ASC, CerticardCity ASC, VIPLevel ASC""", "QueriesNormalTestCase_CMBC_Query_8")
+      s"""SELECT company, CerticardCity, VIPLevel, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE ( company IN ("Agricultural Bank of China","COSCO1")) AND ( CerticardCity IN ("Beijing1","Huangyan1","Yakeshi1","Korla1")) GROUP BY company, CerticardCity, VIPLevel ORDER BY company ASC, CerticardCity ASC, VIPLevel ASC""", "QueriesNormalTestCase_Sample1_Query_8")
 
   }
 
 
-  //CMBC_Query_9
-  test("CMBC_Query_9", Include) {
+  //Sample1_Query_9
+  test("Sample1_Query_9", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, ageRange, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY WHERE ( ageRange IN ("(1-3)","(100-105)")) AND ( SubsidaryBank IN ("ABN AMRO","Busan Bank","Huaxia Bank")) GROUP BY SubsidaryBank, ageRange ORDER BY SubsidaryBank ASC, ageRange ASC""",
-      s"""SELECT SubsidaryBank, ageRange, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE ( ageRange IN ("(1-3)","(100-105)")) AND ( SubsidaryBank IN ("ABN AMRO","Busan Bank","Huaxia Bank")) GROUP BY SubsidaryBank, ageRange ORDER BY SubsidaryBank ASC, ageRange ASC""", "QueriesNormalTestCase_CMBC_Query_9")
+      s"""SELECT SubsidaryBank, ageRange, COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE ( ageRange IN ("(1-3)","(100-105)")) AND ( SubsidaryBank IN ("ABN AMRO","Busan Bank","Huaxia Bank")) GROUP BY SubsidaryBank, ageRange ORDER BY SubsidaryBank ASC, ageRange ASC""", "QueriesNormalTestCase_Sample1_Query_9")
 
   }
 
 
-  //CMBC_Query_10
-  test("CMBC_Query_10", Include) {
+  //Sample1_Query_10
+  test("Sample1_Query_10", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, SUM(incomeOneyear) AS Sum_incomeOneyear, SUM(numberoftransactions) AS Sum_numberoftransactions FROM (select * from cmb) SUB_QRY WHERE SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank","Real-Estate Bank") GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""",
-      s"""SELECT SubsidaryBank, SUM(incomeOneyear) AS Sum_incomeOneyear, SUM(numberoftransactions) AS Sum_numberoftransactions FROM (select * from cmb_hive) SUB_QRY WHERE SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank","Real-Estate Bank") GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""", "QueriesNormalTestCase_CMBC_Query_10")
+      s"""SELECT SubsidaryBank, SUM(incomeOneyear) AS Sum_incomeOneyear, SUM(numberoftransactions) AS Sum_numberoftransactions FROM (select * from cmb_hive) SUB_QRY WHERE SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank","Real-Estate Bank") GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""", "QueriesNormalTestCase_Sample1_Query_10")
 
   }
 
 
-  //CMBC_Query_11
-  test("CMBC_Query_11", Include) {
+  //Sample1_Query_11
+  test("Sample1_Query_11", Include) {
 
     checkAnswer(s"""SELECT `year`, `month`, SUM(DemandDeposits) AS Sum_DemandDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb) SUB_QRY WHERE ( SubsidaryBank = "CMB Financial Leasing Ltd") AND ( Cust_UID = "CMB0000000000000000000000") GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""",
-      s"""SELECT `year`, `month`, SUM(DemandDeposits) AS Sum_DemandDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb_hive) SUB_QRY WHERE ( SubsidaryBank = "CMB Financial Leasing Ltd") AND ( Cust_UID = "CMB0000000000000000000000") GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""", "QueriesNormalTestCase_CMBC_Query_11")
+      s"""SELECT `year`, `month`, SUM(DemandDeposits) AS Sum_DemandDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb_hive) SUB_QRY WHERE ( SubsidaryBank = "CMB Financial Leasing Ltd") AND ( Cust_UID = "CMB0000000000000000000000") GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""", "QueriesNormalTestCase_Sample1_Query_11")
 
   }
 
 
-  //CMBC_Query_12
-  test("CMBC_Query_12", Include) {
+  //Sample1_Query_12
+  test("Sample1_Query_12", Include) {
 
     checkAnswer(s"""SELECT `year`, `month`, SUM(yenDeposits) AS Sum_yenDeposits, SUM(HongKongDeposits) AS Sum_HongKongDeposits, SUM(dollarDeposits) AS Sum_dollarDeposits, SUM(euroDeposits) AS Sum_euroDeposits FROM (select * from cmb) SUB_QRY WHERE ( SubsidaryBank = "Credit Suisse") AND ( `month` IN ("1","2","3")) GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""",
-      s"""SELECT `year`, `month`, SUM(yenDeposits) AS Sum_yenDeposits, SUM(HongKongDeposits) AS Sum_HongKongDeposits, SUM(dollarDeposits) AS Sum_dollarDeposits, SUM(euroDeposits) AS Sum_euroDeposits FROM (select * from cmb_hive) SUB_QRY WHERE ( SubsidaryBank = "Credit Suisse") AND ( `month` IN ("1","2","3")) GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""", "QueriesNormalTestCase_CMBC_Query_12")
+      s"""SELECT `year`, `month`, SUM(yenDeposits) AS Sum_yenDeposits, SUM(HongKongDeposits) AS Sum_HongKongDeposits, SUM(dollarDeposits) AS Sum_dollarDeposits, SUM(euroDeposits) AS Sum_euroDeposits FROM (select * from cmb_hive) SUB_QRY WHERE ( SubsidaryBank = "Credit Suisse") AND ( `month` IN ("1","2","3")) GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""", "QueriesNormalTestCase_Sample1_Query_12")
 
   }
 
 
-  //CMBC_Query_13
-  test("CMBC_Query_13", Include) {
+  //Sample1_Query_13
+  test("Sample1_Query_13", Include) {
 
     checkAnswer(s"""SELECT Cust_UID, `month`, `year`, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb) SUB_QRY WHERE Cust_UID IN ("CMB0000000000000000000119","CMB0000000000000000000308") and month="1" GROUP BY Cust_UID, `month`, `year` ORDER BY Cust_UID ASC, `month` ASC, `year` ASC""",
-      s"""SELECT Cust_UID, `month`, `year`, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb_hive) SUB_QRY WHERE Cust_UID IN ("CMB0000000000000000000119","CMB0000000000000000000308") and month="1" GROUP BY Cust_UID, `month`, `year` ORDER BY Cust_UID ASC, `month` ASC, `year` ASC""", "QueriesNormalTestCase_CMBC_Query_13")
+      s"""SELECT Cust_UID, `month`, `year`, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb_hive) SUB_QRY WHERE Cust_UID IN ("CMB0000000000000000000119","CMB0000000000000000000308") and month="1" GROUP BY Cust_UID, `month`, `year` ORDER BY Cust_UID ASC, `month` ASC, `year` ASC""", "QueriesNormalTestCase_Sample1_Query_13")
 
   }
 
 
-  //CMBC_Query_14
-  test("CMBC_Query_14", Include) {
+  //Sample1_Query_14
+  test("Sample1_Query_14", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, COUNT(DISTINCT Cust_UID) AS DistinctCount_Cust_UID FROM (select * from cmb) SUB_QRY WHERE SubsidaryBank = "Daegu Bank" GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""",
-      s"""SELECT SubsidaryBank, COUNT(DISTINCT Cust_UID) AS DistinctCount_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE SubsidaryBank = "Daegu Bank" GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""", "QueriesNormalTestCase_CMBC_Query_14")
+      s"""SELECT SubsidaryBank, COUNT(DISTINCT Cust_UID) AS DistinctCount_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE SubsidaryBank = "Daegu Bank" GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""", "QueriesNormalTestCase_Sample1_Query_14")
 
   }
 
 
-  //CMBC_Query_15
-  test("CMBC_Query_15", Include) {
+  //Sample1_Query_15
+  test("Sample1_Query_15", Include) {
 
     checkAnswer(s"""SELECT COUNT(Cust_UID) AS Count_Cust_UID, SUM(dollarDeposits) AS Sum_dollarDeposits FROM (select * from cmb) SUB_QRY WHERE ( SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank","Minsheng Bank - First private bank in China")) AND ( dollarDeposits > 0)""",
-      s"""SELECT COUNT(Cust_UID) AS Count_Cust_UID, SUM(dollarDeposits) AS Sum_dollarDeposits FROM (select * from cmb_hive) SUB_QRY WHERE ( SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank","Minsheng Bank - First private bank in China")) AND ( dollarDeposits > 0)""", "QueriesNormalTestCase_CMBC_Query_15")
+      s"""SELECT COUNT(Cust_UID) AS Count_Cust_UID, SUM(dollarDeposits) AS Sum_dollarDeposits FROM (select * from cmb_hive) SUB_QRY WHERE ( SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank","Minsheng Bank - First private bank in China")) AND ( dollarDeposits > 0)""", "QueriesNormalTestCase_Sample1_Query_15")
 
   }
 
 
-  //CMBC_Query_16
-  test("CMBC_Query_16", Include) {
+  //Sample1_Query_16
+  test("Sample1_Query_16", Include) {
 
     checkAnswer(s"""SELECT SubsidaryBank, SUM(numberoftransactions) AS Sum_numberoftransactions FROM (select * from cmb) SUB_QRY WHERE SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank") and month="1" GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""",
-      s"""SELECT SubsidaryBank, SUM(numberoftransactions) AS Sum_numberoftransactions FROM (select * from cmb_hive) SUB_QRY WHERE SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank") and month="1" GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""", "QueriesNormalTestCase_CMBC_Query_16")
+      s"""SELECT SubsidaryBank, SUM(numberoftransactions) AS Sum_numberoftransactions FROM (select * from cmb_hive) SUB_QRY WHERE SubsidaryBank IN ("Bank Bumiputera Indonesia","Daegu Bank") and month="1" GROUP BY SubsidaryBank ORDER BY SubsidaryBank ASC""", "QueriesNormalTestCase_Sample1_Query_16")
 
   }
 
 
-  //CMBC_Query_17
-  test("CMBC_Query_17", Include) {
+  //Sample1_Query_17
+  test("Sample1_Query_17", Include) {
 
     checkAnswer(s"""SELECT COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb) SUB_QRY WHERE ( SubsidaryBank = "ABC") AND ( numberoftransactions > 90.0)""",
-      s"""SELECT COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE ( SubsidaryBank = "ABC") AND ( numberoftransactions > 90.0)""", "QueriesNormalTestCase_CMBC_Query_17")
+      s"""SELECT COUNT(Cust_UID) AS Count_Cust_UID FROM (select * from cmb_hive) SUB_QRY WHERE ( SubsidaryBank = "ABC") AND ( numberoftransactions > 90.0)""", "QueriesNormalTestCase_Sample1_Query_17")
 
   }
 
 
-  //CMBC_Query_18
-  test("CMBC_Query_18", Include) {
+  //Sample1_Query_18
+  test("Sample1_Query_18", Include) {
 
     checkAnswer(s"""SELECT VIPLevel, COUNT(DISTINCT Cust_UID) AS DistinctCount_Cust_UID FROM (select * from cmb) SUB_QRY GROUP BY VIPLevel ORDER BY VIPLevel ASC""",
-      s"""SELECT VIPLevel, COUNT(DISTINCT Cust_UID) AS DistinctCount_Cust_UID FROM (select * from cmb_hive) SUB_QRY GROUP BY VIPLevel ORDER BY VIPLevel ASC""", "QueriesNormalTestCase_CMBC_Query_18")
+      s"""SELECT VIPLevel, COUNT(DISTINCT Cust_UID) AS DistinctCount_Cust_UID FROM (select * from cmb_hive) SUB_QRY GROUP BY VIPLevel ORDER BY VIPLevel ASC""", "QueriesNormalTestCase_Sample1_Query_18")
 
   }
 
 
-  //CMBC_Query_19
-  test("CMBC_Query_19", Include) {
+  //Sample1_Query_19
+  test("Sample1_Query_19", Include) {
 
     checkAnswer(s"""SELECT CerticardCity, COUNT(DISTINCT Cust_UID) AS DistinctCount_Cust_UID FROM (select * from cmb) SUB_QRY GROUP BY CerticardCity ORDER BY CerticardCity ASC""",
-      s"""SELECT CerticardCity, COUNT(DISTINCT Cust_UID) AS DistinctCount_Cust_UID FROM (select * from cmb_hive) SUB_QRY GROUP BY CerticardCity ORDER BY CerticardCity ASC""", "QueriesNormalTestCase_CMBC_Query_19")
+      s"""SELECT CerticardCity, COUNT(DISTINCT Cust_UID) AS DistinctCount_Cust_UID FROM (select * from cmb_hive) SUB_QRY GROUP BY CerticardCity ORDER BY CerticardCity ASC""", "QueriesNormalTestCase_Sample1_Query_19")
 
   }
 
 
-  //CMBC_Query_20
-  test("CMBC_Query_20", Include) {
+  //Sample1_Query_20
+  test("Sample1_Query_20", Include) {
 
     checkAnswer(s"""SELECT VIPLevel, SUM(yenDeposits) AS Sum_yenDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(dollarDeposits) AS Sum_dollarDeposits FROM (select * from cmb) SUB_QRY GROUP BY VIPLevel ORDER BY VIPLevel ASC""",
-      s"""SELECT VIPLevel, SUM(yenDeposits) AS Sum_yenDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(dollarDeposits) AS Sum_dollarDeposits FROM (select * from cmb_hive) SUB_QRY GROUP BY VIPLevel ORDER BY VIPLevel ASC""", "QueriesNormalTestCase_CMBC_Query_20")
+      s"""SELECT VIPLevel, SUM(yenDeposits) AS Sum_yenDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(dollarDeposits) AS Sum_dollarDeposits FROM (select * from cmb_hive) SUB_QRY GROUP BY VIPLevel ORDER BY VIPLevel ASC""", "QueriesNormalTestCase_Sample1_Query_20")
 
   }
 
 
-  //CMBC_Query_21
-  test("CMBC_Query_21", Include) {
+  //Sample1_Query_21
+  test("Sample1_Query_21", Include) {
 
     checkAnswer(s"""SELECT CerticardCity, SUM(yenDeposits) AS Sum_yenDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(dollarDeposits) AS Sum_dollarDeposits FROM (select * from cmb) SUB_QRY GROUP BY CerticardCity ORDER BY CerticardCity ASC""",
-      s"""SELECT CerticardCity, SUM(yenDeposits) AS Sum_yenDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(dollarDeposits) AS Sum_dollarDeposits FROM (select * from cmb_hive) SUB_QRY GROUP BY CerticardCity ORDER BY CerticardCity ASC""", "QueriesNormalTestCase_CMBC_Query_21")
+      s"""SELECT CerticardCity, SUM(yenDeposits) AS Sum_yenDeposits, SUM(numberoftransactions) AS Sum_numberoftransactions, SUM(dollarDeposits) AS Sum_dollarDeposits FROM (select * from cmb_hive) SUB_QRY GROUP BY CerticardCity ORDER BY CerticardCity ASC""", "QueriesNormalTestCase_Sample1_Query_21")
 
   }
 
 
-  //CMBC_Query_22
-  test("CMBC_Query_22", Include) {
+  //Sample1_Query_22
+  test("Sample1_Query_22", Include) {
 
     checkAnswer(s"""SELECT `year`, `month`, COUNT(Cust_UID) AS Count_Cust_UID, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb) SUB_QRY WHERE ( `month` = "1") AND ( numberoftransactions > 90.0) GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""",
-      s"""SELECT `year`, `month`, COUNT(Cust_UID) AS Count_Cust_UID, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb_hive) SUB_QRY WHERE ( `month` = "1") AND ( numberoftransactions > 90.0) GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""", "QueriesNormalTestCase_CMBC_Query_22")
+      s"""SELECT `year`, `month`, COUNT(Cust_UID) AS Count_Cust_UID, SUM(yenDeposits) AS Sum_yenDeposits FROM (select * from cmb_hive) SUB_QRY WHERE ( `month` = "1") AND ( numberoftransactions > 90.0) GROUP BY `year`, `month` ORDER BY `year` ASC, `month` ASC""", "QueriesNormalTestCase_Sample1_Query_22")
 
   }
 
