@@ -33,41 +33,41 @@ class TimestamptypesTestCase extends QueryTest with BeforeAndAfterAll {
          
 
   //timestamp in yyyy.MMM.dd HH:mm:ss
-  test("DataSight_Carbon_TimeStampType_001", Include) {
+  test("TimeStampType_001", Include) {
      sql(s""" create table if not exists ddMMMyyyy (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId int,productionDate Timestamp,deliveryDate timestamp,deliverycharge decimal(10,2)) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s""" LOAD DATA INPATH '$resourcesPath/Data/vardhandaterestructddMMMyyyy.csv' INTO TABLE ddMMMyyyy OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
     checkAnswer(s"""select count(*) from ddMMMyyyy""",
-      Seq(Row(99)), "timestamptypesTestCase_DataSight_Carbon_TimeStampType_001")
+      Seq(Row(99)), "timestamptypesTestCase_TimeStampType_001")
      sql(s"""drop table ddMMMyyyy""").collect
   }
 
 
   //timestamp in dd.MM.yyyy HH:mm:ss
-  ignore("DataSight_Carbon_TimeStampType_002", Include) {
+  ignore("TimeStampType_002", Include) {
      sql(s""" create table if not exists ddMMyyyy (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId int,productionDate Timestamp,deliveryDate timestamp,deliverycharge decimal(10,2)) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s""" LOAD DATA INPATH '$resourcesPath/Data/vardhandaterestructddMMyyyy.csv' INTO TABLE ddMMyyyy OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
     checkAnswer(s"""select count(*) from ddMMyyyy""",
-      Seq(Row(99)), "timestamptypesTestCase_DataSight_Carbon_TimeStampType_002")
+      Seq(Row(99)), "timestamptypesTestCase_TimeStampType_002")
      sql(s"""drop table ddMMyyyy""").collect
   }
 
 
   //timestamp in yyyy.MM.dd HH:mm:ss
-  ignore("DataSight_Carbon_TimeStampType_003", Include) {
+  ignore("TimeStampType_003", Include) {
      sql(s""" create table if not exists yyyyMMdd (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId int,productionDate Timestamp,deliveryDate timestamp,deliverycharge decimal(10,2)) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s""" LOAD DATA INPATH '$resourcesPath/Data/vardhandaterestructyyyyMMdd.csv' INTO TABLE yyyyMMdd OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
     checkAnswer(s"""select count(*) from yyyyMMdd""",
-      Seq(Row(99)), "timestamptypesTestCase_DataSight_Carbon_TimeStampType_003")
+      Seq(Row(99)), "timestamptypesTestCase_TimeStampType_003")
      sql(s"""drop table yyyyMMdd""").collect
   }
 
 
   //timestamp in dd.MMM.yyyy HH:mm:ss
-  test("DataSight_Carbon_TimeStampType_004", Include) {
+  test("TimeStampType_004", Include) {
      sql(s""" create table if not exists yyyyMMMdd (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId int,productionDate Timestamp,deliveryDate timestamp,deliverycharge decimal(10,2)) STORED BY 'org.apache.carbondata.format'""").collect
    sql(s""" LOAD DATA INPATH '$resourcesPath/Data/vardhandaterestructyyyyMMMdd.csv' INTO TABLE yyyyMMMdd OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
     checkAnswer(s"""select count(*) from yyyyMMMdd""",
-      Seq(Row(99)), "timestamptypesTestCase_DataSight_Carbon_TimeStampType_004")
+      Seq(Row(99)), "timestamptypesTestCase_TimeStampType_004")
      sql(s"""drop table yyyyMMMdd""").collect
   }
 
