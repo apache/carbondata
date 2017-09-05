@@ -460,21 +460,22 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       for (DataRefNode dataRefNode : dataRefNodes) {
         BlockBTreeLeafNode leafNode = (BlockBTreeLeafNode) dataRefNode;
         TableBlockInfo tableBlockInfo = leafNode.getTableBlockInfo();
+        String[] deleteDeltaFilePath = null;
         if (isIUDTable) {
           // In case IUD is not performed in this table avoid searching for
           // invalidated blocks.
           if (CarbonUtil
-              .isInvalidTableBlock(tableBlockInfo.getSegmentId(), tableBlockInfo.getFilePath(),
-                  invalidBlockVOForSegmentId, updateStatusManager)) {
+                  .isInvalidTableBlock(tableBlockInfo.getSegmentId(), tableBlockInfo.getFilePath(),
+                          invalidBlockVOForSegmentId, updateStatusManager)) {
             continue;
           }
-        }
-        String[] deleteDeltaFilePath = null;
-        try {
-          deleteDeltaFilePath =
-              updateStatusManager.getDeleteDeltaFilePath(tableBlockInfo.getFilePath());
-        } catch (Exception e) {
-          throw new IOException(e);
+          // When iud is done then only get delete delta files for a block
+          try {
+            deleteDeltaFilePath =
+                    updateStatusManager.getDeleteDeltaFilePath(tableBlockInfo.getFilePath());
+          } catch (Exception e) {
+            throw new IOException(e);
+          }
         }
         result.add(new CarbonInputSplit(segmentNo, new Path(tableBlockInfo.getFilePath()),
             tableBlockInfo.getBlockOffset(), tableBlockInfo.getBlockLength(),
