@@ -44,6 +44,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t8")
     sql("DROP TABLE IF EXISTS t9")
     sql("DROP TABLE IF EXISTS t10")
+    sql("DROP TABLE IF EXISTS t11")
   }
 
   test("test create table with buckets") {
@@ -84,6 +85,29 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
            USING org.apache.spark.sql.CarbonSource
            OPTIONS("bucketnumber"="-1", "bucketcolumns"="name", "tableName"="t9")
         """)
+      assert(false)
+    }
+    catch {
+      case malformedCarbonCommandException: MalformedCarbonCommandException => assert(true)
+    }
+  }
+
+  test("must unable to create table if number of buckets is 0") {
+    try{
+      sql(
+        """
+          |CREATE TABLE t11
+          |(ID Int,
+          | date Timestamp,
+          | country String,
+          | name String,
+          | phonetype String,
+          | serialname String,
+          | salary Int)
+          | STORED BY 'CARBONDATA'
+          | TBLPROPERTIES('bucketnumber'='0', 'bucketcolumns'='name')
+        """.stripMargin
+      )
       assert(false)
     }
     catch {

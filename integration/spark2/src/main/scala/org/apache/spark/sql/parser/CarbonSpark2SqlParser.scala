@@ -431,7 +431,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
     if (options.isBucketingEnabled) {
       if (options.bucketNumber.toString.contains("-") ||
-          options.bucketNumber.toString.contains("+")) {
+          options.bucketNumber.toString.contains("+") ||  options.bucketNumber == 0) {
         throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED")
       }
       else {
