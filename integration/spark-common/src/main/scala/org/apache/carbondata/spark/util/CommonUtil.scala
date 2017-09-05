@@ -323,6 +323,10 @@ object CommonUtil {
    */
   def validateRangeInfo(rangeInfo: List[String], columnDataType: DataType,
       timestampFormatter: SimpleDateFormat, dateFormatter: SimpleDateFormat): Unit = {
+    if (rangeInfo.size <= 1) {
+      throw new
+         MalformedCarbonCommandException("Range info must define a valid range.Please check again!")
+    }
     val comparator = Comparator.getComparator(columnDataType)
     var head = columnDataType match {
       case DataType.STRING => ByteUtil.toBytes(rangeInfo.head)
