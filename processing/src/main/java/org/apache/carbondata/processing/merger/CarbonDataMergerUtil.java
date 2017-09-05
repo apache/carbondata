@@ -1047,24 +1047,25 @@ public final class CarbonDataMergerUtil {
     for (final String blockName : blockNameList) {
 
       CarbonFile[] deleteDeltaFiles =
-          segmentUpdateStatusManager.getDeleteDeltaFilesList(seg, blockName);
+              segmentUpdateStatusManager.getDeleteDeltaFilesList(seg, blockName);
+      if (null != deleteDeltaFiles) {
+        // The Delete Delta files may have Spill over blocks. Will consider multiple spill over
+        // blocks as one. Currently DeleteDeltaFiles array contains Delete Delta Block name which
+        // lies within Delete Delta Start TimeStamp and End TimeStamp. In order to eliminate
+        // Spill Over Blocks will choose files with unique taskID.
+        for (CarbonFile blocks : deleteDeltaFiles) {
+          // Get Task ID and the Timestamp from the Block name for e.g.
+          // part-0-3-1481084721319.carbondata => "3-1481084721319"
+          String task = CarbonTablePath.DataFileUtil.getTaskNo(blocks.getName());
+          String timestamp =
+                  CarbonTablePath.DataFileUtil.getTimeStampFromDeleteDeltaFile(blocks.getName());
+          String taskAndTimeStamp = task + "-" + timestamp;
+          uniqueBlocks.add(taskAndTimeStamp);
+        }
 
-      // The Delete Delta files may have Spill over blocks. Will consider multiple spill over
-      // blocks as one. Currently DeleteDeltaFiles array contains Delete Delta Block name which
-      // lies within Delete Delta Start TimeStamp and End TimeStamp. In order to eliminate
-      // Spill Over Blocks will choose files with unique taskID.
-      for (CarbonFile blocks : deleteDeltaFiles) {
-        // Get Task ID and the Timestamp from the Block name for e.g.
-        // part-0-3-1481084721319.carbondata => "3-1481084721319"
-        String task = CarbonTablePath.DataFileUtil.getTaskNo(blocks.getName());
-        String timestamp =
-            CarbonTablePath.DataFileUtil.getTimeStampFromDeleteDeltaFile(blocks.getName());
-        String taskAndTimeStamp = task + "-" + timestamp;
-        uniqueBlocks.add(taskAndTimeStamp);
-      }
-
-      if (uniqueBlocks.size() > numberDeltaFilesThreshold) {
-        return true;
+        if (uniqueBlocks.size() > numberDeltaFilesThreshold) {
+          return true;
+        }
       }
     }
     return false;
@@ -1091,7 +1092,7 @@ public final class CarbonDataMergerUtil {
       CarbonFile[] deleteDeltaFiles =
           segmentUpdateStatusManager.getDeleteDeltaFilesList(seg, blockName);
 
-      if (deleteDeltaFiles.length > numberDeltaFilesThreshold) {
+      if (null != deleteDeltaFiles && (deleteDeltaFiles.length > numberDeltaFilesThreshold)) {
         blockLists.add(seg + "/" + blockName);
       }
     }
@@ -1140,31 +1141,34 @@ public final class CarbonDataMergerUtil {
 
     String destFileName =
         blockName + "-" + timestamp.toString() + CarbonCommonConstants.DELETE_DELTA_FILE_EXT;
-    String fullBlockFilePath = deleteDeltaFiles[0].getParentFile().getCanonicalPath()
-        + CarbonCommonConstants.FILE_SEPARATOR + destFileName;
 
     List<String> deleteFilePathList = new ArrayList<String>();
-    for (CarbonFile cFile : deleteDeltaFiles) {
-      deleteFilePathList.add(cFile.getCanonicalPath());
-    }
 
-    CarbonDataMergerUtilResult blockDetails = new CarbonDataMergerUtilResult();
-    blockDetails.setBlockName(blockName);
-    blockDetails.setSegmentName(seg);
-    blockDetails.setDeleteDeltaStartTimestamp(timestamp.toString());
-    blockDetails.setDeleteDeltaEndTimestamp(timestamp.toString());
-
-    try {
-      if (startCompactionDeleteDeltaFiles(deleteFilePathList, blockName, fullBlockFilePath)) {
-        blockDetails.setCompactionStatus(true);
-      } else {
-        blockDetails.setCompactionStatus(false);
+    if (null != deleteDeltaFiles) {
+      String fullBlockFilePath = deleteDeltaFiles[0].getParentFile().getCanonicalPath()
+              + CarbonCommonConstants.FILE_SEPARATOR + destFileName;
+      for (CarbonFile cFile : deleteDeltaFiles) {
+        deleteFilePathList.add(cFile.getCanonicalPath());
       }
-      resultList.add(blockDetails);
-    } catch (IOException e) {
-      LOGGER.error("Compaction of Delete Delta Files failed. The complete file path is "
-          + fullBlockFilePath);
-      throw new IOException();
+
+      CarbonDataMergerUtilResult blockDetails = new CarbonDataMergerUtilResult();
+      blockDetails.setBlockName(blockName);
+      blockDetails.setSegmentName(seg);
+      blockDetails.setDeleteDeltaStartTimestamp(timestamp.toString());
+      blockDetails.setDeleteDeltaEndTimestamp(timestamp.toString());
+
+      try {
+        if (startCompactionDeleteDeltaFiles(deleteFilePathList, blockName, fullBlockFilePath)) {
+          blockDetails.setCompactionStatus(true);
+        } else {
+          blockDetails.setCompactionStatus(false);
+        }
+        resultList.add(blockDetails);
+      } catch (IOException e) {
+        LOGGER.error("Compaction of Delete Delta Files failed. The complete file path is "
+                + fullBlockFilePath);
+        throw new IOException();
+      }
     }
     return resultList;
   }
