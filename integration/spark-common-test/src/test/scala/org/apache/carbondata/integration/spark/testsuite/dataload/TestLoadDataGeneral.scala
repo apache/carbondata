@@ -18,11 +18,14 @@
 package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import java.math.BigDecimal
+import java.nio.file.Files
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
@@ -32,6 +35,10 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("DROP TABLE IF EXISTS loadtest")
+    sql("drop table if exists loadtemptable1")
+    sql("drop table if exists loadtemptable2")
+    sql("drop table if exists loadtemptable3")
+    sql("DROP DATABASE IF EXISTS temptablecheckDB cascade")
     sql(
       """
         | CREATE TABLE loadtest(id int, name string, city string, age int)
@@ -140,6 +147,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
       case ex: Exception =>
         assert(false)
     }
+
     checkAnswer(
       sql("SELECT id,name FROM load_test_singlepass where name='eason'"),
       Seq(Row(2,"eason"))
@@ -147,8 +155,78 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE load_test_singlepass")
   }
 
+  test("test data loading in temporary table"){
+    val testData = s"$resourcesPath/invalidMeasures.csv"
+    val sample = s"$resourcesPath/sample_withDelimiter017.csv"
+    val tempLocation = Files.createTempDirectory("loadtemptable2")
+    try{
+      sql(
+        "CREATE temporary TABLE loadtemptable1(country String,salary double,age decimal(10,2)) " +
+        "using parquet options(path='/tmp')")
+      sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtemptable1 options " +
+          s"('Fileheader'='country,salary,age')")
+      assert(false)
+    }
+    catch{
+      case _:Exception =>
+        assert(true)
+    }
+    try{
+      sql("drop table if exists loadtemptable1")
+      sql(
+        """CREATE TABLE loadtemptable1(id int, name string,city string,age int) STORED BY
+          |'carbondata'"""
+          .stripMargin)
+      sql(s"LOAD DATA LOCAL INPATH '$sample' into table loadtemptable1 options " +
+          s"('delimiter'='\\017')")
+      assert(true)
+    }
+    catch{
+      case _:Exception =>
+        assert(false)
+    }finally {
+      sql("USE default")
+      FileUtils.deleteQuietly(tempLocation.toFile)
+    }
+
+  }
+
+  test("test load temp table when a carbon table of same name exists"){
+    val testData = s"$resourcesPath/invalidMeasures.csv"
+    val sample = s"$resourcesPath/sample_withDelimiter017.csv"
+    val tempLocation = Files.createTempDirectory("loadtemptable2")
+    sql(s"CREATE DATABASE if not exists temptablecheckDB")
+    sql("USE temptablecheckDB")
+    sql("drop table if exists loadtemptable2")
+    try{
+      sql(
+        "CREATE temporary TABLE loadtemptable2(id int,name string,city string,age int) " +
+        s" USING parquet options(path='$tempLocation')")
+      sql(
+        """CREATE TABLE loadtemptable2(id int, name string,city string,age int) STORED BY
+          |'carbondata'"""
+          .stripMargin)
+      sql(s"LOAD DATA LOCAL INPATH '$sample' into table loadtemptable2 options " +
+          s"('delimiter'='\\017')")
+      assert(false)
+      }
+    catch{
+      case _:Exception =>
+        assert(true)
+    } finally {
+      sql("USE default")
+      FileUtils.deleteQuietly(tempLocation.toFile)
+    }
+  }
+
+
   override def afterAll {
     sql("DROP TABLE if exists loadtest")
     sql("drop table if exists invalidMeasures")
+    sql("drop table if exists loadtemptable1")
+    sql("drop table if exists loadtemptable2")
+    sql("drop table if exists loadtemptable3")
+    sql("DROP database if exists temptablecheckDB cascade")
+
   }
 }

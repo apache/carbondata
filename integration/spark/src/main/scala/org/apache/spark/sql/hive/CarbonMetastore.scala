@@ -148,12 +148,12 @@ class CarbonMetastore(hiveContext: HiveContext, val storePath: String,
   }
 
   def tableExists(identifier: TableIdentifier)(sqlContext: SQLContext): Boolean = {
-    checkSchemasModifiedTimeAndReloadTables()
-    val database = identifier.database.getOrElse(getDB.getDatabaseName(None, sqlContext))
-    val tables = metadata.tablesMeta.filter(
-      c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
-           c.carbonTableIdentifier.getTableName.equalsIgnoreCase(identifier.table))
-    tables.nonEmpty
+      checkSchemasModifiedTimeAndReloadTables()
+      val database = identifier.database.getOrElse(getDB.getDatabaseName(None, sqlContext))
+      val tables = metadata.tablesMeta.filter(
+        c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
+             c.carbonTableIdentifier.getTableName.equalsIgnoreCase(identifier.table))
+      tables.nonEmpty
   }
 
   def loadMetadata(metadataPath: String): MetaData = {

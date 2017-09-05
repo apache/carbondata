@@ -249,90 +249,95 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
   }
 
   object DDLStrategies extends Strategy {
-    def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
-      case DropTable(tableName, ifNotExists)
-        if CarbonEnv.get.carbonMetastore
-            .isTablePathExists(toTableIdentifier(tableName.toLowerCase))(sqlContext) =>
-        val identifier = toTableIdentifier(tableName.toLowerCase)
-        ExecutedCommand(DropTableCommand(ifNotExists, identifier.database, identifier.table)) :: Nil
-      case ShowLoadsCommand(databaseName, table, limit) =>
-        ExecutedCommand(ShowLoads(databaseName, table, limit, plan.output)) :: Nil
-      case LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
-      options, isOverwriteExist, inputSqlString, dataFrame, _) =>
-        val isCarbonTable = CarbonEnv.get.carbonMetastore
+    def apply(plan: LogicalPlan): Seq[SparkPlan] = {
+      plan match {
+        case DropTable(tableName, ifNotExists)
+          if (CarbonEnv.get.carbonMetastore
+            .tableExists(toTableIdentifier(tableName.toLowerCase))(sqlContext)) &&
+             (CarbonEnv.get.carbonMetastore
+               .isTablePathExists(toTableIdentifier(tableName.toLowerCase))(sqlContext)) =>
+      val identifier = toTableIdentifier (tableName.toLowerCase)
+      ExecutedCommand (DropTableCommand (ifNotExists, identifier.database, identifier.table) ) ::
+      Nil
+        case ShowLoadsCommand(databaseName, table, limit) =>
+          ExecutedCommand(ShowLoads(databaseName, table, limit, plan.output)) :: Nil
+        case LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
+        options, isOverwriteExist, inputSqlString, dataFrame, _) =>
+          val isCarbonTable = CarbonEnv.get.carbonMetastore
             .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
-        if (isCarbonTable || options.nonEmpty) {
-          ExecutedCommand(LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
-            options, isOverwriteExist, inputSqlString, dataFrame)) :: Nil
-        } else {
-          ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil
-        }
-      case alterTable@AlterTableCompaction(altertablemodel) =>
-        val isCarbonTable = CarbonEnv.get.carbonMetastore
+          if (isCarbonTable || options.nonEmpty) {
+            ExecutedCommand(LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
+              options, isOverwriteExist, inputSqlString, dataFrame)) :: Nil
+          } else {
+            ExecutedCommand(HiveNativeCommand(inputSqlString)) :: Nil
+          }
+        case alterTable@AlterTableCompaction(altertablemodel) =>
+          val isCarbonTable = CarbonEnv.get.carbonMetastore
             .tableExists(TableIdentifier(altertablemodel.tableName,
-                 altertablemodel.dbName))(sqlContext)
-        if (isCarbonTable) {
-          if (altertablemodel.compactionType.equalsIgnoreCase("minor") ||
-              altertablemodel.compactionType.equalsIgnoreCase("major")) {
-            ExecutedCommand(alterTable) :: Nil
-          } else {
-            throw new MalformedCarbonCommandException(
+              altertablemodel.dbName))(sqlContext)
+          if (isCarbonTable) {
+            if (altertablemodel.compactionType.equalsIgnoreCase("minor") ||
+                altertablemodel.compactionType.equalsIgnoreCase("major")) {
+              ExecutedCommand(alterTable) :: Nil
+            } else {
+              throw new MalformedCarbonCommandException(
                 "Unsupported alter operation on carbon table")
-          }
-        } else {
-          ExecutedCommand(HiveNativeCommand(altertablemodel.alterSql)) :: Nil
-        }
-      case CreateDatabase(dbName, sql) =>
-        ExecutedCommand(CreateDatabaseCommand(dbName, HiveNativeCommand(sql))) :: Nil
-      case DropDatabase(dbName, isCascade, sql) =>
-        if (isCascade) {
-          ExecutedCommand(DropDatabaseCascadeCommand(dbName, HiveNativeCommand(sql))) :: Nil
-        } else {
-          ExecutedCommand(DropDatabaseCommand(dbName, HiveNativeCommand(sql))) :: Nil
-        }
-      case UseDatabase(sql) =>
-        ExecutedCommand(HiveNativeCommand(sql)) :: Nil
-      case d: HiveNativeCommand =>
-        try {
-          val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).optimizedPlan
-          planLater(resolvedTable) :: Nil
-        } catch {
-          case ce: MalformedCarbonCommandException =>
-            throw ce
-          case ae: AnalysisException =>
-            throw ae
-          case e: Exception => ExecutedCommand(d) :: Nil
-        }
-      case DescribeFormattedCommand(sql, tblIdentifier) =>
-        val isTable = CarbonEnv.get.carbonMetastore
-            .tableExists(tblIdentifier)(sqlContext)
-        if (isTable) {
-          val describe =
-            LogicalDescribeCommand(UnresolvedRelation(tblIdentifier, None), isExtended = false)
-          val resolvedTable = sqlContext.executePlan(describe.table).analyzed
-          val resultPlan = sqlContext.executePlan(resolvedTable).executedPlan
-          ExecutedCommand(DescribeCommandFormatted(resultPlan, plan.output, tblIdentifier)) :: Nil
-        } else {
-          ExecutedCommand(HiveNativeCommand(sql)) :: Nil
-        }
-      case ShowPartitions(t) =>
-        val isCarbonTable = CarbonEnv.get.carbonMetastore
-          .tableExists(t)(sqlContext)
-        if (isCarbonTable) {
-          ExecutedCommand(ShowCarbonPartitionsCommand(t)) :: Nil
-        } else {
-          var tableName = t.table
-          var database = t.database
-          var sql: String = null
-          if (database.isEmpty) {
-            sql = s"show partitions $tableName"
+            }
           } else {
-            sql = s"show partitions $database.$tableName"
+            ExecutedCommand(HiveNativeCommand(altertablemodel.alterSql)) :: Nil
           }
+        case CreateDatabase(dbName, sql) =>
+          ExecutedCommand(CreateDatabaseCommand(dbName, HiveNativeCommand(sql))) :: Nil
+        case DropDatabase(dbName, isCascade, sql) =>
+          if (isCascade) {
+            ExecutedCommand(DropDatabaseCascadeCommand(dbName, HiveNativeCommand(sql))) :: Nil
+          } else {
+            ExecutedCommand(DropDatabaseCommand(dbName, HiveNativeCommand(sql))) :: Nil
+          }
+        case UseDatabase(sql) =>
           ExecutedCommand(HiveNativeCommand(sql)) :: Nil
-        }
-      case _ =>
-        Nil
+        case d: HiveNativeCommand =>
+          try {
+            val resolvedTable = sqlContext.executePlan(CarbonHiveSyntax.parse(d.sql)).optimizedPlan
+            planLater(resolvedTable) :: Nil
+          } catch {
+            case ce: MalformedCarbonCommandException =>
+              throw ce
+            case ae: AnalysisException =>
+              throw ae
+            case e: Exception => ExecutedCommand(d) :: Nil
+          }
+        case DescribeFormattedCommand(sql, tblIdentifier) =>
+          val isTable = CarbonEnv.get.carbonMetastore
+            .tableExists(tblIdentifier)(sqlContext)
+          if (isTable) {
+            val describe =
+              LogicalDescribeCommand(UnresolvedRelation(tblIdentifier, None), isExtended = false)
+            val resolvedTable = sqlContext.executePlan(describe.table).analyzed
+            val resultPlan = sqlContext.executePlan(resolvedTable).executedPlan
+            ExecutedCommand(DescribeCommandFormatted(resultPlan, plan.output, tblIdentifier)) :: Nil
+          } else {
+            ExecutedCommand(HiveNativeCommand(sql)) :: Nil
+          }
+        case ShowPartitions(t) =>
+          val isCarbonTable = CarbonEnv.get.carbonMetastore
+            .tableExists(t)(sqlContext)
+          if (isCarbonTable) {
+            ExecutedCommand(ShowCarbonPartitionsCommand(t)) :: Nil
+          } else {
+            var tableName = t.table
+            var database = t.database
+            var sql: String = null
+            if (database.isEmpty) {
+              sql = s"show partitions $tableName"
+            } else {
+              sql = s"show partitions $database.$tableName"
+            }
+            ExecutedCommand(HiveNativeCommand(sql)) :: Nil
+          }
+        case _ =>
+          Nil
+      }
     }
 
     def toTableIdentifier(name: String): TableIdentifier = {

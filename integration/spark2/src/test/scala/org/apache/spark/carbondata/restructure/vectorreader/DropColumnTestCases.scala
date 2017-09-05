@@ -30,6 +30,9 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("DROP TABLE IF EXISTS dropcolumntest")
     sql("DROP TABLE IF EXISTS hivetable")
+    sql("DROP TABLE IF EXISTS dropcolumntemptable")
+    sql("DROP TABLE IF EXISTS dropcolumntemptable1")
+    sql("drop DATABASE IF EXISTS vectorreaderDB cascade")
   }
 
   test("test drop column and insert into hive table") {
@@ -98,9 +101,58 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     test_drop_and_compaction()
   }
 
+  test("alter table drop columns for temp table") {
+    try {
+      sql(
+        "CREATE temporary table dropcolumntemptable(intField int,stringField string,charField " +
+        "string) using parquet")
+      checkAnswer(sql("desc dropcolumntemptable"),
+        Seq(Row("intField", "int", null),
+          Row("stringField", "string", null),
+          Row("charField", "string", null)))
+      sql("Alter table dropcolumntemptable drop columns(charField)")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("Unsupported alter operation"))
+    }
+  }
+
+  test("alter table drop columns for temp table when carbon table exists") {
+    sql("CREATE DATABASE if not exists vectorreaderDB")
+    try {
+      sql(
+        "CREATE temporary TABLE dropcolumntemptable1(intField int, stringField string,charField " +
+        "string) using parquet")
+      sql(
+        "CREATE TABLE vectorreaderDB.dropcolumntemptable1(intField int,stringField string, " +
+        "charField string) STORED BY 'carbondata'")
+      checkAnswer(sql("desc dropcolumntemptable1"),
+        Seq(Row("intField", "int", null),
+          Row("stringField", "string", null),
+          Row("charField", "string", null)))
+      sql("Alter table dropcolumntemptable1 drop columns(charField)")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("Unsupported alter operation"))
+    }
+    try {
+      sql("ALTER table vectorreaderDB.dropcolumntemptable1 drop columns(charField)")
+      checkAnswer(sql("desc vectorreaderDB.dropcolumntemptable1"),
+        Seq(Row("intfield", "int", null), Row("stringfield", "string", null)))
+    } catch {
+      case _: Exception =>
+        assert(false)
+    }
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS dropcolumntest")
     sql("DROP TABLE IF EXISTS hivetable")
+    sql("DROP TABLE IF EXISTS dropcolumntemptable")
+    sql("DROP TABLE IF EXISTS dropcolumntemptable1")
+    sql("DROP DATABASE IF EXISTS vectorreaderDB cascade")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
   }
 }

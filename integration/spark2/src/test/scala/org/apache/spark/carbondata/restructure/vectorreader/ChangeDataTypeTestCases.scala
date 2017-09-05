@@ -19,6 +19,7 @@ package org.apache.spark.carbondata.restructure.vectorreader
 
 import java.math.BigDecimal
 
+import org.apache.calcite.plan.RelOptQuery
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -28,6 +29,9 @@ class ChangeDataTypeTestCases extends Spark2QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("DROP TABLE IF EXISTS changedatatypetest")
     sql("DROP TABLE IF EXISTS hivetable")
+    sql("DROP TABLE IF EXISTS changeDatatemptable")
+    sql("DROP TABLE IF EXISTS changeDatatemptable1")
+    sql("DROP DATABASE IF EXISTS changeDataDB cascade")
   }
 
   test("test change datatype on existing column and load data, insert into hive table") {
@@ -147,9 +151,63 @@ class ChangeDataTypeTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     test_change_int_to_long()
   }
 
+  test("alter table change data type for temp table") {
+    try {
+      sql(
+        "CREATE temporary TABLE changeDatatemptable(intField int,stringField string,charField " +
+        "string) using parquet")
+      checkAnswer(sql("desc changeDatatemptable"),
+        Seq(Row("intField", "int", null),
+          Row("stringField", "string", null),
+          Row("charField", "string", null)))
+      sql("Alter table changeDatatemptable change intField intField long")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("Unsupported alter operation"))
+    }
+  }
+
+  test("alter table change data type for temp table when carbon table exists") {
+    sql("create DATABASE changeDataDB")
+    sql("USE changeDataDB")
+    try {
+      sql(
+        "CREATE temporary TABLE changeDatatemptable1(intField int,stringField string,charField " +
+        "string) using parquet")
+      sql(
+        "CREATE TABLE changeDatatemptable1(intField int,stringField string,charField string) " +
+        "stored by 'carbondata'")
+      checkAnswer(sql("desc changeDatatemptable1"),
+        Seq(Row("intField", "int", null),
+          Row("stringField", "string", null),
+          Row("charField", "string", null)))
+      sql("ALTER table changeDatatemptable1 change intField intField long")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("Unsupported alter operation"))
+    }
+    try {
+      sql("Alter table changeDataDB.changeDatatemptable1 change intField intField long")
+      checkAnswer(sql("desc changeDataDB.changeDatatemptable1"),
+        Seq(Row("intfield", "bigint", null),
+          Row("stringfield", "string", null),
+          Row("charfield", "string", null)))
+    } catch {
+      case _: Exception =>
+        assert(false)
+    } finally{
+      sql("USE default")
+    }
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS changedatatypetest")
     sql("DROP TABLE IF EXISTS hivetable")
+    sql("DROP TABLE IF EXISTS changeDatatemptable")
+    sql("DROP TABLE IF EXISTS changeDatatemptable1")
+    sql("DROP DATABASE IF EXISTS changeDataDB cascade")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
   }
 }

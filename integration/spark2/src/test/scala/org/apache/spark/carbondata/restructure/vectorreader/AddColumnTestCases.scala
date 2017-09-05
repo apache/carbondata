@@ -46,6 +46,13 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE addcolumntest " +
         s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql("CREATE TABLE hivetable STORED AS PARQUET SELECT * FROM addcolumntest")
+    sql("DROP TABLE IF EXISTS addcolumntemptable")
+    sql("DROP TABLE IF EXISTS addcolumntemptable1")
+    sql("DROP TABLE IF EXISTS addcolumntemptable1_test")
+    sql("DROP TABLE IF EXISTS addcolumntemptable_test")
+    sql("DROP TABLE IF EXISTS altertablecompacttion2")
+    sql("DROP TABLE IF EXISTS altertablecompacttion1")
+    sql("DROP DATABASE IF EXISTS addColumnDB cascade")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyy")
   }
 
@@ -596,6 +603,162 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("alter table add columns for temp table") {
+    try {
+      sql(
+        "CREATE temporary TABLE addcolumntemptable(intField int,stringField string,charField " +
+        "string) using parquet")
+      checkAnswer(sql("desc addcolumntemptable"),
+        Seq(Row("intField", "int", null),
+          Row("stringField", "string", null),
+          Row("charField", "string", null)))
+      sql("Alter table addcolumntemptable add columns(extraField string)")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("Unsupported alter operation"))
+    }
+  }
+
+  test("alter table drop columns for temp table when carbon table exists") {
+    sql("create DATABASE if not exists addcolumndb")
+    try {
+      sql(
+        "create  temporary table dropcolumntemptable1(intField int,stringField string,charField " +
+        "string) using parquet")
+      sql(
+        "create table addcolumndb.dropcolumntemptable1(intField int,stringField string,charField " +
+        "string) stored by 'carbondata'")
+      checkAnswer(sql("desc dropcolumntemptable1"),
+        Seq(Row("intField", "int", null),
+          Row("stringField", "string", null),
+          Row("charField", "string", null)))
+      sql("Alter table dropcolumntemptable1 drop columns(charField)")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("Unsupported alter operation"))
+    }
+    try {
+      sql("desc addcolumndb.dropcolumntemptable1").show(200, false)
+      sql("Alter table addcolumndb.dropcolumntemptable1 drop columns(charField)")
+      checkAnswer(sql("desc addcolumndb.dropcolumntemptable1"),
+        Seq(Row("intfield", "int", null), Row("stringfield", "string", null)))
+    } catch {
+      case _: Exception =>
+        assert(false)
+    }
+  }
+
+  test("alter table rename table for temp table") {
+    try {
+      sql(
+        "create temporary table addcolumntemptable(intField int,stringField string,charField " +
+        "string) using parquet")
+      checkAnswer(sql("desc addcolumntemptable"),
+        Seq(Row("intField", "int", null),
+          Row("stringField", "string", null),
+          Row("charField", "string", null)))
+      sql("Alter table addcolumntemptable rename to addcolumntemptable_test")
+      checkAnswer(sql("desc addcolumntemptable_test"),
+        Seq(Row("intField", "int", null),
+          Row("stringField", "string", null),
+          Row("charField", "string", null)))
+    } catch {
+      case _: Exception =>
+        assert(false)
+    }
+  }
+
+  test("alter table rename table for temp table when carbon table exists") {
+    sql("create DATABASE if not exists addcolumndb")
+    try {
+      sql(
+        "CREATE temporary table addcolumntemptable1(intfield int,stringfield string, charfield " +
+        "string) using parquet")
+      sql(
+        "CREATE table addcolumndb.addcolumntemptable1(intfield int,stringfield string,charfield " +
+        "string) STORED BY 'carbondata'")
+      checkAnswer(sql("desc addcolumntemptable1"),
+        Seq(Row("intfield", "int", null),
+          Row("stringfield", "string", null),
+          Row("charfield", "string", null)))
+      sql("Alter table addcolumntemptable1 rename to addcolumntemptable1_test")
+    } catch {
+      case _: Exception =>
+        assert(false)
+    }
+    try {
+      sql(
+        "Alter table addcolumndb.addcolumntemptable1 rename to addcolumndb" +
+        ".addcolumntemptable_test1")
+      checkAnswer(sql("desc addcolumndb.addcolumntemptable_test1"),
+        Seq(Row("intfield", "int", null),
+          Row("stringfield", "string", null),
+          Row("charfield", "string", null)))
+    }
+    catch {
+      case e: Exception =>
+        assert(false)
+    }
+  }
+
+  test("test show loadss for temp table") {
+    try {
+      sql(
+        "create temporary table showloadstemptable(intField int,stringField string,charField " +
+        "string) using parquet")
+      checkAnswer(sql("DESC showloadstemptable"),
+        Seq(Row("intField", "int", null),
+          Row("stringField", "string", null),
+          Row("charField", "string", null)))
+      sql("show segments for table showloadstemptable")
+      assert(false)
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage
+          .contains("table None.showloadstemptable not found"))
+    }
+  }
+
+  test("alter table compaction for temp table") {
+    try {
+      sql(
+        "CREATE temporary table altertablecompacttion1(intField int,stringField string,charField " +
+        "string) using parquet")
+      sql("Alter table altertablecompacttion1 compact 'major'")
+    }
+    catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("Operation not allowed"))
+    }
+  }
+
+  test("alter table compaction for temp table when carbon table exists") {
+    sql("create DATABASE if not exists addcolumndb")
+    try {
+      sql(
+        "CREATE temporary table altertablecompacttion2(intField int,stringField string,charField " +
+        "string) using parquet")
+      sql(
+        "CREATE table addcolumndb.altertablecompacttion2(intField int,stringField " +
+        "string,charField string) stored by 'carbondata'")
+      sql("ALTER table altertablecompacttion2 compact 'major'")
+    } catch {
+      case e: Exception =>
+        assert(e.getMessage.contains("Operation not allowed"))
+    }
+    try {
+      sql("Alter table addcolumndb.altertablecompacttion2 compact 'major'")
+    } catch {
+      case _: Exception =>
+        assert(false)
+    }
+  }
+
+
+
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("DROP TABLE IF EXISTS hivetable")
@@ -609,6 +772,17 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_dict")
     sql("DROP TABLE IF EXISTS alter_sort_columns")
     sql("DROP TABLE IF EXISTS alter_no_dict")
+    sql("DROP TABLE IF EXISTS addcolumntemptable")
+    sql("DROP TABLE IF EXISTS addcolumntemptable1")
+    sql("DROP TABLE IF EXISTS addcolumntemptable2")
+    sql("DROP TABLE IF EXISTS addcolumntemptable3")
+    sql("DROP TABLE IF EXISTS addcolumntemptable_test")
+    sql("DROP TABLE IF EXISTS addcolumntemptable1_test")
+    sql("DROP TABLE IF EXISTS addcolumntemptable1_test1")
+    sql("DROP TABLE IF EXISTS showloadstemptable")
+    sql("DROP TABLE IF EXISTS altertablecompacttion2")
+    sql("DROP TABLE IF EXISTS altertablecompacttion1")
+    sql("DROP DATABASE IF EXISTS addColumndb cascade")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
       CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
