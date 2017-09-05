@@ -307,7 +307,7 @@ object CommonUtil {
     }
 
     if(!result) {
-      throw new IllegalArgumentException(s"Invalid Partition Values for partition" +
+      throw new IllegalArgumentException(s"Invalid Partition Values for partition " +
         s"column: ${partitionerField.partitionColumn}")
     } else {
       result
