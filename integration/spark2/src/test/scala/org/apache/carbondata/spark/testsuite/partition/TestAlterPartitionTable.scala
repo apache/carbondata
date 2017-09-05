@@ -109,7 +109,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (logdate Timestamp)
         | STORED BY 'carbondata'
         | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-        | 'RANGE_INFO'='2014/01/01, 2015/01/01, 2016/01/01')
+        | 'RANGE_INFO'='2014/01/01, 2015/01/01, 2016/01/01', 'DICTIONARY_INCLUDE'='logdate')
       """.stripMargin)
 
     /**
@@ -183,7 +183,8 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
         | PARTITIONED BY (logdate Timestamp)
         | STORED BY 'carbondata'
         | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-        | 'RANGE_INFO'='2014/01/01, 2015/01/01, 2016/01/01, 2018/01/01')
+        | 'RANGE_INFO'='2014/01/01, 2015/01/01, 2016/01/01, 2018/01/01',
+        | 'DICTIONARY_INCLUDE'='logdate')
       """.stripMargin)
 
     /**
@@ -223,6 +224,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'carbondata'
         | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
         | 'RANGE_INFO'='2014/01/01, 2015/01/01, 2016/01/01, 2018/01/01',
+        | 'DICTIONARY_INCLUDE'='logdate',
         | 'BUCKETNUMBER'='3',
         | 'BUCKETCOLUMNS'='country')
       """.stripMargin)

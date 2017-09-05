@@ -37,6 +37,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -54,9 +55,11 @@ public final class DataTypeUtil {
 
   private static final ThreadLocal<DateFormat> timeStampformatter = new ThreadLocal<DateFormat>() {
     @Override protected DateFormat initialValue() {
-      return new SimpleDateFormat(CarbonProperties.getInstance()
+      DateFormat dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
               CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+      dateFormat.setLenient(false);
+      return dateFormat;
     }
   };
 
@@ -367,7 +370,7 @@ public final class DataTypeUtil {
   }
 
   public static byte[] getBytesBasedOnDataTypeForNoDictionaryColumn(String dimensionValue,
-      DataType actualDataType) {
+      DataType actualDataType, String dateFormat) {
     switch (actualDataType) {
       case STRING:
         return ByteUtil.toBytes(dimensionValue);
@@ -379,6 +382,20 @@ public final class DataTypeUtil {
         return ByteUtil.toBytes(Integer.parseInt(dimensionValue));
       case LONG:
         return ByteUtil.toBytes(Long.parseLong(dimensionValue));
+      case TIMESTAMP:
+        Date dateToStr = null;
+        DateFormat dateFormatter = null;
+        try {
+          if (null != dateFormat) {
+            dateFormatter = new SimpleDateFormat(dateFormat);
+          } else {
+            dateFormatter = timeStampformatter.get();
+          }
+          dateToStr = dateFormatter.parse(dimensionValue);
+          return ByteUtil.toBytes(dateToStr.getTime());
+        } catch (ParseException e) {
+          throw new NumberFormatException(e.getMessage());
+        }
       default:
         return ByteUtil.toBytes(dimensionValue);
     }
@@ -411,6 +428,8 @@ public final class DataTypeUtil {
           return ByteUtil.toInt(dataInBytes, 0, dataInBytes.length);
         case LONG:
           return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length);
+        case TIMESTAMP:
+          return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length) * 1000L;
         default:
           return ByteUtil.toString(dataInBytes, 0, dataInBytes.length);
       }
@@ -679,12 +698,30 @@ public final class DataTypeUtil {
           return String.valueOf(Long.parseLong(data))
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         case DATE:
-        case TIMESTAMP:
           DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(columnSchema.getDataType());
           int value = directDictionaryGenerator.generateDirectSurrogateKey(data);
           return String.valueOf(value)
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        case TIMESTAMP:
+          if (columnSchema.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            DirectDictionaryGenerator directDictionaryGenerator1 =
+                DirectDictionaryKeyGeneratorFactory
+                    .getDirectDictionaryGenerator(columnSchema.getDataType());
+            int value1 = directDictionaryGenerator1.generateDirectSurrogateKey(data);
+            return String.valueOf(value1)
+                .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          } else {
+            try {
+              Date dateToStr = timeStampformatter.get().parse(data);
+              return ByteUtil.toBytes(dateToStr.getTime());
+            } catch (ParseException e) {
+              LOGGER.error(
+                  "Cannot convert value to Time/Long type value. Value is considered as null" + e
+                      .getMessage());
+              return null;
+            }
+          }
         case DECIMAL:
           String parsedValue = parseStringToBigDecimal(data, columnSchema);
           if (null == parsedValue) {

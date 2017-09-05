@@ -30,6 +30,7 @@ import org.apache.spark.sql.types.IntegerType;
 import org.apache.spark.sql.types.LongType;
 import org.apache.spark.sql.types.ShortType;
 import org.apache.spark.sql.types.StringType;
+import org.apache.spark.sql.types.TimestampType;
 
 /**
  * Below class is responsible to store variable length dimension data chunk in
@@ -167,11 +168,11 @@ public class UnsafeVariableLengthDimesionDataChunkStore
 
   @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
     byte[] value = getRow(rowId);
-    if (ByteUtil.UnsafeComparer.INSTANCE
+    DataType dt = vector.getType();
+    if ((!(dt instanceof StringType) && value.length == 0) || ByteUtil.UnsafeComparer.INSTANCE
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, value)) {
       vector.putNull(vectorRow);
     } else {
-      DataType dt = vector.getType();
       if (dt instanceof StringType) {
         vector.putBytes(vectorRow, 0, value.length, value);
       } else if (dt instanceof BooleanType) {
@@ -182,6 +183,8 @@ public class UnsafeVariableLengthDimesionDataChunkStore
         vector.putInt(vectorRow, ByteUtil.toInt(value, 0, value.length));
       } else if (dt instanceof LongType) {
         vector.putLong(vectorRow, ByteUtil.toLong(value, 0, value.length));
+      } else if (dt instanceof TimestampType) {
+        vector.putLong(vectorRow, ByteUtil.toLong(value, 0, value.length) * 1000L);
       }
     }
   }

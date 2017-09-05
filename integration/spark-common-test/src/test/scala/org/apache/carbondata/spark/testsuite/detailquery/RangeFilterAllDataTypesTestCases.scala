@@ -656,6 +656,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists NO_DICTIONARY_CARBON_1")
     sql("drop table if exists NO_DICTIONARY_CARBON_2")
     sql("drop table if exists NO_DICTIONARY_HIVE_6")
+    sql("drop table if exists directdictionarytable")
     sql("drop table if exists dictionary_hive_6")
     sql("drop table if exists NO_DICTIONARY_HIVE_7")
     sql("drop table if exists NO_DICTIONARY_CARBON_6")

@@ -877,8 +877,7 @@ private[sql] case class DescribeCommandFormatted(
             .append(mapper.writeValueAsString(dimension.getColumnProperties))
             .append(",")
         }
-        if (dimension.hasEncoding(Encoding.DICTIONARY) &&
-            !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        if (dimension.hasEncoding(Encoding.DICTIONARY)) {
           "DICTIONARY, KEY COLUMN" + (dimension.hasEncoding(Encoding.INVERTED_INDEX) match {
                       case false => ",NOINVERTEDINDEX"
                       case _ => ""

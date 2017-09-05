@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -453,7 +454,8 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
   private void updateForNoDictionaryColumn(int start, int end, DimensionColumnDataChunk dataChunk,
       BitSet bitset) {
     for (int j = start; j <= end; j++) {
-      if (dataChunk.compareTo(j, CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY) == 0) {
+      if (dataChunk.compareTo(j, CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY) == 0
+          || dataChunk.compareTo(j, CarbonCommonConstants.EMPTY_BYTE_ARRAY) == 0) {
         bitset.flip(j);
       }
     }
@@ -562,7 +564,11 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
           defaultValue = ByteUtil.toBytes(key);
         }
       } else {
-        defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+        if (dimColEvaluatorInfo.getDimension().getDataType() == DataType.STRING) {
+          defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+        } else {
+          defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
+        }
       }
       // evaluate result for lower range value first and then perform and operation in the
       // upper range value in order to compute the final result
