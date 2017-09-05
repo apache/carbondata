@@ -450,11 +450,16 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check add column with option default value is given for an existing column
   test("ARID_AddColumn_001_14", Include) {
-    sql(s"""drop table if exists test1""").collect
-     sql(s"""create table test1 (name string) stored by 'carbondata'""").collect
-   sql(s"""insert into test1 select 'xx'""").collect
-    sql(s"""ALTER TABLE test1 ADD COLUMNS (Id int) TBLPROPERTIES('DICTIONARY_INCLUDE'='id','default.value.name'='yy')""").collect
-     sql(s"""drop table if exists test1""").collect
+    try {
+      sql(s"""drop table if exists test1""").collect
+      sql(s"""create table test1 (name string) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx'""").collect
+      sql(s"""ALTER TABLE test1 ADD COLUMNS (Id int) TBLPROPERTIES('DICTIONARY_INCLUDE'='id','default.value.name'='yy')""").collect
+      assert(false)
+      sql(s"""drop table if exists test1""").collect
+    } catch {
+      case _ => assert(true)
+    }
   }
 
 
