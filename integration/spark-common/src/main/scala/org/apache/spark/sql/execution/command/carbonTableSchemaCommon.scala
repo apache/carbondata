@@ -286,7 +286,10 @@ class AlterTableColumnSchemaGenerator(
     if (alterTableModel.highCardinalityDims.contains(colName)) {
       encoders.remove(Encoding.DICTIONARY)
     }
-    if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
+    if (dataType == DataType.DATE) {
+      encoders.add(Encoding.DIRECT_DICTIONARY)
+    }
+    if (dataType == DataType.TIMESTAMP && !alterTableModel.highCardinalityDims.contains(colName)) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     val colPropMap = new java.util.HashMap[String, String]()
@@ -351,7 +354,10 @@ class TableNewProcessor(cm: TableModel) {
     if (highCardinalityDims.contains(colName)) {
       encoders.remove(Encoding.DICTIONARY)
     }
-    if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
+    if (dataType == DataType.DATE) {
+      encoders.add(Encoding.DIRECT_DICTIONARY)
+    }
+    if (dataType == DataType.TIMESTAMP && !highCardinalityDims.contains(colName)) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     columnSchema.setEncodingList(encoders)
