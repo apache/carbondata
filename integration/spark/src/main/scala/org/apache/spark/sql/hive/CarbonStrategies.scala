@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions
-import org.apache.spark.sql.catalyst.expressions.{AttributeSet, _}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSet, ScalaUDF, _}
 import org.apache.spark.sql.catalyst.planning.{PhysicalOperation, QueryPlanner}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter => LogicalFilter, LogicalPlan}
 import org.apache.spark.sql.execution.{ExecutedCommand, Filter, Project, SparkPlan}
@@ -34,9 +34,8 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDescribeCommand, LogicalRelation}
 import org.apache.spark.sql.hive.execution.{DropTable, HiveNativeCommand}
 import org.apache.spark.sql.hive.execution.command._
-import org.apache.spark.sql.optimizer.{CarbonDecoderRelation}
-import org.apache.spark.sql.types.IntegerType
-import org.apache.spark.sql.types.StringType
+import org.apache.spark.sql.optimizer.CarbonDecoderRelation
+import org.apache.spark.sql.types.{IntegerType, StringType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -100,15 +99,23 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           case CustomDeterministicExpression(exp) => exp
         }
       }.asInstanceOf[Seq[NamedExpression]]
-      val newProjectList = projectList.map { element =>
-        element match {
-          case a@Alias(s: ScalaUDF, name)
-            if (name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
-                name.equalsIgnoreCase(
-                  CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)) =>
-            AttributeReference(name, StringType, true)().withExprId(a.exprId)
-          case other => other
-        }
+      val newProjectList = projectList.map {
+        case a@Alias(s: ScalaUDF, name)
+          if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
+             name.equalsIgnoreCase(
+               CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
+          AttributeReference(name, StringType, true)().withExprId(a.exprId)
+        case a@Alias(s: ScalaUDF, name)
+          if name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_SEGMENTID) =>
+          val reference =
+            AttributeReference(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID,
+              StringType, true)().withExprId(a.exprId)
+          val alias = a.transform {
+            case s: ScalaUDF =>
+              ScalaUDF(s.function, s.dataType, Seq(reference), s.inputTypes)
+          }.asInstanceOf[Alias]
+          Alias(alias.child, alias.name)(alias.exprId, alias.qualifiers, alias.explicitMetadata)
+        case other => other
       }
       val projectSet = AttributeSet(newProjectList.flatMap(_.references))
       val filterSet = AttributeSet(predicates.flatMap(_.references))

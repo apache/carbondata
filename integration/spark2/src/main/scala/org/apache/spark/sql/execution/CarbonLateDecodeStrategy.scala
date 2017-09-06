@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partitioning, UnknownPartitioning}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.optimizer.{CarbonDecoderRelation}
+import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types.{AtomicType, IntegerType, StringType}
 
@@ -58,8 +58,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           projects,
           filters,
           (a, f, needDecoder) => toCatalystRDD(l, a, relation.buildScan(
-            a.map(_.name).toArray, f), needDecoder)) ::
-        Nil
+            a.map(_.name).toArray, f), needDecoder)) :: Nil
       case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
         if ((profile.isInstanceOf[IncludeProfile] && profile.isEmpty) ||
             !CarbonDictionaryDecoder.
@@ -250,13 +249,23 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
       var newProjectList: Seq[Attribute] = Seq.empty
       val updatedProjects = projects.map {
-        case a@Alias(s: ScalaUDF, name)
-          if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
-             name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
-          val reference = AttributeReference(name, StringType, true)().withExprId(a.exprId)
-          newProjectList :+= reference
-          reference
-        case other => other
+          case a@Alias(s: ScalaUDF, name)
+            if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
+                name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
+            val reference = AttributeReference(name, StringType, true)().withExprId(a.exprId)
+            newProjectList :+= reference
+            reference
+          case a@Alias(s: ScalaUDF, name)
+            if name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_SEGMENTID) =>
+            val reference =
+              AttributeReference(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID,
+                StringType, true)().withExprId(a.exprId)
+            newProjectList :+= reference
+            a.transform {
+              case s: ScalaUDF =>
+                ScalaUDF(s.function, s.dataType, Seq(reference), s.inputTypes)
+            }
+          case other => other
       }
       // Don't request columns that are only referenced by pushed filters.
       val requestedColumns =
