@@ -351,7 +351,7 @@ object CommonUtil {
     if (tempList.length != originListInfo.size) {
       sys.error("The total number of elements in new list must equal to original list!")
     }
-    if (!originListInfo.sameElements(tempList)) {
+    if (!(tempList diff originListInfo).isEmpty) {
       sys.error("The elements in new list must exist in original list")
     }
   }
