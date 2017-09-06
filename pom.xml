@@ -366,8 +366,8 @@
               <append>true</append>
               <excludes>
                 <exclude>**/*SparkUnknownExpression*.class</exclude>
-                <exclude>**/org/apache/carbondata/cluster/sdv/generated/*</exclude>
                 <exclude>**/org.apache.carbondata.cluster.sdv.generated.*</exclude>
+                <exclude>**/org/apache/carbondata/cluster/sdv/generated/*</exclude>
               </excludes>
               <includes>
                 <include>**/org.apache.*</include>
