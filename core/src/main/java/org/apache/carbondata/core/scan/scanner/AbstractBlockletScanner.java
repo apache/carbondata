@@ -32,16 +32,11 @@ import org.apache.carbondata.core.scan.result.impl.NonFilterQueryScannedResult;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
-import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Blocklet scanner class to process the block
  */
 public abstract class AbstractBlockletScanner implements BlockletScanner {
-
-  private static final int NUMBER_OF_ROWS_PER_PAGE = Integer.parseInt(CarbonProperties.getInstance()
-      .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
-          CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT));
 
   /**
    * block execution info
@@ -121,9 +116,12 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     if (numberOfRows == null) {
       numberOfRows = new int[blocksChunkHolder.getDataBlock().numberOfPages()];
       for (int i = 0; i < numberOfRows.length; i++) {
-        numberOfRows[i] = NUMBER_OF_ROWS_PER_PAGE;
+        numberOfRows[i] =
+            CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
       }
-      int lastPageSize = blocksChunkHolder.getDataBlock().nodeSize() % NUMBER_OF_ROWS_PER_PAGE;
+      int lastPageSize = blocksChunkHolder.getDataBlock().nodeSize()
+          % CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+      ;
       if (lastPageSize > 0) {
         numberOfRows[numberOfRows.length - 1] = lastPageSize;
       }
