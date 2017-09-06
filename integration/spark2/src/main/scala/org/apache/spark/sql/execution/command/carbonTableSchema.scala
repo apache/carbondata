@@ -878,7 +878,8 @@ case class LoadTable(
 
             // extract tupleId field which will be used as a key
             val segIdColumn = getSegIdUDF(new Column(UnresolvedAttribute
-                .quotedString(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))).as("segId")
+                .quotedString(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))).
+              as(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_SEGMENTID)
             // use dataFrameWithoutTupleId as dictionaryDataFrame
             val dataFrameWithoutTupleId = dataFrame.get.select(otherFields: _*)
             otherFields = otherFields :+ segIdColumn
