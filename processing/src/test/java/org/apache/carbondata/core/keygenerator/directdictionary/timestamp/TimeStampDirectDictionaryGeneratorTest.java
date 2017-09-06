@@ -23,6 +23,7 @@ import java.util.TimeZone;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import mockit.Deencapsulation;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -70,6 +71,31 @@ public class TimeStampDirectDictionaryGeneratorTest {
     timeParser.setLenient(false);
     String actualValue = timeParser.format(date);
     Assert.assertEquals(memberString, actualValue);
+  }
+
+  /**
+   * The memberString should be retrieved from the actual surrogate key
+   *
+   * @throws Exception
+   */
+  @Test public void getSurrogateWithCutoff() throws Exception {
+    SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+    timeParser.setLenient(false);
+    TimeStampDirectDictionaryGenerator generator = new TimeStampDirectDictionaryGenerator();
+    long cutOffValue = timeParser.parse("1500-01-01 00:00:00").getTime();
+    //setting cutoff time to 1500-01-01 00:00:00 , so we can load data from this time
+    Deencapsulation.setField(generator, "cutOffTimeStamp", cutOffValue);
+    int surrogateFromValue = generator.generateDirectSurrogateKey("1500-01-01 00:00:01");
+    long valueFromSurrogate = (long) generator.getValueFromSurrogate(surrogateFromValue);
+    Date date = new Date(valueFromSurrogate / 1000);
+    Assert.assertEquals("1500-01-01 00:00:01", timeParser.format(date));
+    surrogateFromValue = generator.generateDirectSurrogateKey("1499-12-12 00:00:00");
+    //1499-12-12 00:00:00 is a value before cut off, so it is a bad record and surrogate should be 1
+    Assert.assertEquals(1, surrogateFromValue);
+    //re setting the value to default
+    Deencapsulation.setField(generator, "cutOffTimeStamp", 0L);
   }
 
   /**
