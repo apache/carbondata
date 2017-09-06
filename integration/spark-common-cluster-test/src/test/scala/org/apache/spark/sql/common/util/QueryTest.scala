@@ -40,8 +40,6 @@ class QueryTest extends PlanTest with Suite {
 
   val DOLLAR = "$"
 
-  // Timezone is fixed to America/Los_Angeles for those timezone sensitive tests (timestamp_*)
-  TimeZone.setDefault(TimeZone.getTimeZone("America/Los_Angeles"))
   // Add Locale setting
   Locale.setDefault(Locale.US)
 
@@ -84,20 +82,32 @@ class QueryTest extends PlanTest with Suite {
     checkAnswer(df, expectedAnswer.collect())
   }
 
-  protected def checkAnswer(carbon: String, hive: String, uniqueIdentifier:String): Unit = {
-    val path = TestQueryExecutor.hiveresultpath + "/"+uniqueIdentifier
+  protected def checkAnswer(carbon: String, hive: String, uniqueIdentifier: String): Unit = {
+    val path = TestQueryExecutor.hiveresultpath + "/" + uniqueIdentifier
     if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
-      val objinp = new ObjectInputStream(FileFactory.getDataInputStream(path, FileFactory.getFileType(path)))
+      val objinp = new ObjectInputStream(FileFactory
+        .getDataInputStream(path, FileFactory.getFileType(path)))
       val rows = objinp.readObject().asInstanceOf[Array[Row]]
       objinp.close()
-      checkAnswer(sql(carbon), rows)
+      QueryTest.checkAnswer(sql(carbon), rows) match {
+        case Some(errorMessage) => {
+          FileFactory.deleteFile(path, FileFactory.getFileType(path))
+          writeAndCheckAnswer(carbon, hive, path)
+        }
+        case None =>
+      }
     } else {
-      val rows = sql(hive).collect()
-      val obj = new ObjectOutputStream(FileFactory.getDataOutputStream(path, FileFactory.getFileType(path)))
-      obj.writeObject(rows)
-      obj.close()
-      checkAnswer(sql(carbon), rows)
+      writeAndCheckAnswer(carbon, hive, path)
     }
+  }
+
+  private def writeAndCheckAnswer(carbon: String, hive: String, path: String): Unit = {
+    val rows = sql(hive).collect()
+    val obj = new ObjectOutputStream(FileFactory.getDataOutputStream(path, FileFactory
+      .getFileType(path)))
+    obj.writeObject(rows)
+    obj.close()
+    checkAnswer(sql(carbon), rows)
   }
 
   protected def checkAnswer(carbon: String, expectedAnswer: Seq[Row], uniqueIdentifier:String): Unit = {
