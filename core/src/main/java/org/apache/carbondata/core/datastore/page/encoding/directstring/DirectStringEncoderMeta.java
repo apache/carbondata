@@ -15,48 +15,60 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datastore.page.encoding.adaptive;
+package org.apache.carbondata.core.datastore.page.encoding.directstring;
 
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
-import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 
-/**
- * Metadata for AdaptiveIntegralCodec and DeltaIntegralCodec
- */
-public class AdaptiveEncoderMeta extends ColumnPageEncoderMeta implements Writable {
+public class DirectStringEncoderMeta extends ColumnPageEncoderMeta implements Writable {
 
+  private short[] lengthOfString;
   private String compressorName;
 
-  AdaptiveEncoderMeta() {
-
+  public DirectStringEncoderMeta() {
   }
 
-  AdaptiveEncoderMeta(TableSpec.ColumnSpec columnSpec, String compressorName,
-      DataType storeDataType, SimpleStatsResult stats) {
-    super(columnSpec, storeDataType, stats);
+  public DirectStringEncoderMeta(TableSpec.ColumnSpec columnSpec, short[] lengthOfString,
+      String compressorName) {
+    super(columnSpec, columnSpec.getSchemaDataType(), null);
+    this.lengthOfString = lengthOfString;
     this.compressorName = compressorName;
+  }
+
+  public short[] getLengthOfString() {
+    return lengthOfString;
+  }
+
+  public String getCompressorName() {
+    return compressorName;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
     super.write(out);
+    // TODO: use RLE to compress lengthOfString instead of compressor
+    Compressor compressor = CompressorFactory.getInstance().getCompressor();
+    byte[] compressed = compressor.compressShort(lengthOfString);
+    out.writeInt(compressed.length);
+    out.write(compressed);
     out.writeUTF(compressorName);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
     super.readFields(in);
+    int length = in.readInt();
+    byte[] compressed = new byte[length];
+    in.readFully(compressed);
     this.compressorName = in.readUTF();
-  }
-
-  String getCompressorName() {
-    return compressorName;
+    Compressor compressor = CompressorFactory.getInstance().getCompressor(compressorName);
+    this.lengthOfString = compressor.unCompressShort(compressed);
   }
 }

@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page.statistics;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -39,22 +40,21 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   private boolean isFirst = true;
   private BigDecimal zeroDecimal;
+  private ColumnType columnType;
 
   // this is for encode flow
-  public static PrimitivePageStatsCollector newInstance(DataType dataType,
+  public static PrimitivePageStatsCollector newInstance(ColumnType columnType, DataType dataType,
       int scale, int precision) {
-    switch (dataType) {
-      default:
-        return new PrimitivePageStatsCollector(dataType, scale, precision);
-    }
+    return new PrimitivePageStatsCollector(columnType, dataType, scale, precision);
   }
 
   // this is for decode flow, create stats from encoder meta in carbondata file
   public static PrimitivePageStatsCollector newInstance(ColumnPageEncoderMeta meta) {
     PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(meta.getDataType(), meta.getScale(), meta.getPrecision());
+        new PrimitivePageStatsCollector(meta.getColumnSpec().getColumnType(),
+            meta.getSchemaDataType(), meta.getScale(), meta.getPrecision());
     // set min max from meta
-    switch (meta.getDataType()) {
+    switch (meta.getSchemaDataType()) {
       case BYTE:
         instance.minByte = (byte) meta.getMinValue();
         instance.maxByte = (byte) meta.getMaxValue();
@@ -63,6 +63,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         instance.minShort = (short) meta.getMinValue();
         instance.maxShort = (short) meta.getMaxValue();
         break;
+      case TIMESTAMP:
+      case DATE:
+      case SHORT_INT:
       case INT:
         instance.minInt = (int) meta.getMinValue();
         instance.maxInt = (int) meta.getMaxValue();
@@ -85,14 +88,14 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         break;
       default:
         throw new UnsupportedOperationException(
-            "unsupported data type for stats collection: " + meta.getDataType());
+            "unsupported data type for stats collection: " + meta.getSchemaDataType());
     }
     return instance;
   }
 
   public static PrimitivePageStatsCollector newInstance(ValueEncoderMeta meta) {
     PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(meta.getType(), -1, -1);
+        new PrimitivePageStatsCollector(ColumnType.MEASURE, meta.getType(), -1, -1);
     // set min max from meta
     switch (meta.getType()) {
       case BYTE:
@@ -103,6 +106,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         instance.minShort = (short) meta.getMinValue();
         instance.maxShort = (short) meta.getMaxValue();
         break;
+      case TIMESTAMP:
+      case DATE:
+      case SHORT_INT:
       case INT:
         instance.minInt = (int) meta.getMinValue();
         instance.maxInt = (int) meta.getMaxValue();
@@ -130,7 +136,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     return instance;
   }
 
-  private PrimitivePageStatsCollector(DataType dataType, int scale, int precision) {
+  private PrimitivePageStatsCollector(ColumnType columnType, DataType dataType, int scale,
+      int precision) {
+    this.columnType = columnType;
     this.dataType = dataType;
     switch (dataType) {
       case BYTE:
@@ -141,6 +149,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         minShort = Short.MAX_VALUE;
         maxShort = Short.MIN_VALUE;
         break;
+      case TIMESTAMP:
+      case DATE:
+      case SHORT_INT:
       case INT:
         minInt = Integer.MAX_VALUE;
         maxInt = Integer.MIN_VALUE;
@@ -168,19 +179,22 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   @Override
   public void updateNull(int rowId) {
-    long value = 0;
+    long nullValue = columnType == ColumnType.MEASURE ? 0 : 1;
     switch (dataType) {
       case BYTE:
-        update((byte) value);
+        update((byte) nullValue);
         break;
       case SHORT:
-        update((short) value);
+        update((short) nullValue);
         break;
+      case TIMESTAMP:
+      case DATE:
+      case SHORT_INT:
       case INT:
-        update((int) value);
+        update((int) nullValue);
         break;
       case LONG:
-        update(value);
+        update(nullValue);
         break;
       case DOUBLE:
         update(0d);
@@ -303,6 +317,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         return String.format("min: %s, max: %s, decimal: %s ", minByte, maxByte, decimal);
       case SHORT:
         return String.format("min: %s, max: %s, decimal: %s ", minShort, maxShort, decimal);
+      case TIMESTAMP:
+      case DATE:
+      case SHORT_INT:
       case INT:
         return String.format("min: %s, max: %s, decimal: %s ", minInt, maxInt, decimal);
       case LONG:
@@ -320,6 +337,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         return minByte;
       case SHORT:
         return minShort;
+      case TIMESTAMP:
+      case DATE:
+      case SHORT_INT:
       case INT:
         return minInt;
       case LONG:
@@ -339,6 +359,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         return maxByte;
       case SHORT:
         return maxShort;
+      case TIMESTAMP:
+      case DATE:
+      case SHORT_INT:
       case INT:
         return maxInt;
       case LONG:

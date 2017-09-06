@@ -20,8 +20,8 @@ package org.apache.carbondata.core.metadata.datatype;
 public enum DataType {
 
   STRING(0, "STRING", -1),
-  DATE(1, "DATE", -1),
-  TIMESTAMP(2, "TIMESTAMP", -1),
+  DATE(1, "DATE", 4),
+  TIMESTAMP(2, "TIMESTAMP", 4),
   BOOLEAN(1, "BOOLEAN", 1),
   SHORT(2, "SMALLINT", 2),
   INT(3, "INT", 4),

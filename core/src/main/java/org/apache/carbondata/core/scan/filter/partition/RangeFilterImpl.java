@@ -64,7 +64,7 @@ public class RangeFilterImpl implements PartitionFilterIntf {
             literal.getLiteralExpValue().toString(),
             partitionInfo.getColumnSchemaList().get(0).getDataType());
         if (filterValueOfList instanceof String) {
-          filterValueOfList = ByteUtil.toBytes((String)filterValueOfList);
+          filterValueOfList = ByteUtil.toBytesForPlainValue((String)filterValueOfList);
         }
         return PartitionFilterUtil.getPartitionMapForRangeFilter(partitionInfo,
             (ListPartitioner) partitioner, filterValueOfList, isGreaterThan, isEqualTo,
@@ -74,7 +74,7 @@ public class RangeFilterImpl implements PartitionFilterIntf {
             literal.getLiteralExpValue().toString(),
             partitionInfo.getColumnSchemaList().get(0).getDataType());
         if (filterValueOfRange instanceof String) {
-          filterValueOfRange = ByteUtil.toBytes((String)filterValueOfRange);
+          filterValueOfRange = ByteUtil.toBytesForPlainValue((String)filterValueOfRange);
         }
         return PartitionFilterUtil.getPartitionMapForRangeFilter(partitionInfo,
             (RangePartitioner) partitioner, filterValueOfRange, isGreaterThan, isEqualTo,

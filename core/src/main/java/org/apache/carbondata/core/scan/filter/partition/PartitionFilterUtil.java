@@ -64,7 +64,7 @@ public class PartitionFilterUtil {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
             if (listValue instanceof String) {
-              listValue = ByteUtil.toBytes((String)listValue);
+              listValue = ByteUtil.toBytesForPlainValue((String)listValue);
             }
             if (comparator.compare(listValue, filterValue) >= 0) {
               partitionMap.set(i + 1);
@@ -80,7 +80,7 @@ public class PartitionFilterUtil {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
             if (listValue instanceof String) {
-              listValue = ByteUtil.toBytes((String)listValue);
+              listValue = ByteUtil.toBytesForPlainValue((String)listValue);
             }
             if (comparator.compare(listValue, filterValue) > 0) {
               partitionMap.set(i + 1);
@@ -98,7 +98,7 @@ public class PartitionFilterUtil {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
             if (listValue instanceof String) {
-              listValue = ByteUtil.toBytes((String)listValue);
+              listValue = ByteUtil.toBytesForPlainValue((String)listValue);
             }
             if (comparator.compare(listValue, filterValue) <= 0) {
               partitionMap.set(i + 1);
@@ -114,7 +114,7 @@ public class PartitionFilterUtil {
             Object listValue = PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
                 timestampFormatter, dateFormatter);
             if (listValue instanceof String) {
-              listValue = ByteUtil.toBytes((String)listValue);
+              listValue = ByteUtil.toBytesForPlainValue((String)listValue);
             }
             if (comparator.compare(listValue, filterValue) < 0) {
               partitionMap.set(i + 1);
@@ -158,7 +158,7 @@ public class PartitionFilterUtil {
       Object value = PartitionUtil.getDataBasedOnDataType(
           values.get(partitionIndex), partitionColumnDataType, timestampFormatter, dateFormatter);
       if (value instanceof String) {
-        value = ByteUtil.toBytes((String)value);
+        value = ByteUtil.toBytesForPlainValue((String)value);
       }
       result = comparator.compare(filterValue, value);
       if (result <= 0) {

@@ -121,7 +121,7 @@ public abstract class SafeAbsractDimensionDataChunkStore implements DimensionDat
     throw new UnsupportedOperationException("Operation not supported");
   }
 
-  @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+  @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRowId) {
     throw new UnsupportedOperationException("Operation not supported");
   }
 }

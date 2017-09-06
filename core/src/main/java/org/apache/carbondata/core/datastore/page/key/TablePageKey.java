@@ -63,7 +63,7 @@ public class TablePageKey {
   }
 
   /** update all keys based on the input row */
-  public void update(int rowId, CarbonRow row, byte[] mdk) throws KeyGenException {
+  public void update(int rowId, CarbonRow row) throws KeyGenException {
     if (hasNoDictionary) {
       currentNoDictionaryKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
     }

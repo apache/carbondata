@@ -24,10 +24,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.conditional.GreaterThanEqualToExpression;
@@ -548,18 +545,6 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
         updateForNoDictionaryColumn(startMin, endMax, dimensionColumnDataChunk, bitSet);
       }
     } else {
-      byte[] defaultValue = null;
-      if (dimColEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-        DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
-            .getDirectDictionaryGenerator(dimColEvaluatorInfo.getDimension().getDataType());
-        int key = directDictionaryGenerator.generateDirectSurrogateKey(null) + 1;
-        CarbonDimension currentBlockDimension =
-            segmentProperties.getDimensions().get(dimensionBlocksIndex);
-        defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
-            this.segmentProperties.getSortColumnsGenerator());
-      } else {
-        defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
-      }
       // evaluate result for lower range value first and then perform and operation in the
       // upper range value in order to compute the final result
       bitSet = evaluateGreaterThanFilterForUnsortedColumn(dimensionColumnDataChunk, filterValues[0],
@@ -568,7 +553,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
           evaluateLessThanFilterForUnsortedColumn(dimensionColumnDataChunk, filterValues[1],
               numerOfRows);
       bitSet.and(upperRangeBitSet);
-      FilterUtil.removeNullValues(dimensionColumnDataChunk, bitSet, defaultValue);
+      FilterUtil.removeNullValues(dimensionColumnDataChunk, bitSet);
     }
     return bitSet;
   }

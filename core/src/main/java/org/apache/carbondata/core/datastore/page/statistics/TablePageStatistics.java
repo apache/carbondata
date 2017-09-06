@@ -50,16 +50,20 @@ public class TablePageStatistics {
   private void updateDimensionMinMax(EncodedColumnPage[] dimensions) {
     for (int i = 0; i < dimensions.length; i++) {
       SimpleStatsResult stats = dimensions[i].getStats();
-      dimensionMaxValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMax());
-      dimensionMinValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMin());
+      dimensionMaxValue[i] = CarbonUtil.getValueAsBytes(
+          dimensions[i].getColumnType(), stats.getDataType(), stats.getMax());
+      dimensionMinValue[i] = CarbonUtil.getValueAsBytes(
+          dimensions[i].getColumnType(), stats.getDataType(), stats.getMin());
     }
   }
 
   private void updateMeasureMinMax(EncodedColumnPage[] measures) {
     for (int i = 0; i < measures.length; i++) {
       SimpleStatsResult stats = measures[i].getStats();
-      measureMaxValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMax());
-      measureMinValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMin());
+      measureMaxValue[i] = CarbonUtil.getValueAsBytes(
+          measures[i].getColumnType(), stats.getDataType(), stats.getMax());
+      measureMinValue[i] = CarbonUtil.getValueAsBytes(
+          measures[i].getColumnType(), stats.getDataType(), stats.getMin());
     }
   }
 

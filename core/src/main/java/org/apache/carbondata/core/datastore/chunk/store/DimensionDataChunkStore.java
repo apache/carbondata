@@ -48,7 +48,7 @@ public interface DimensionDataChunkStore {
    * based on row id passed
    *
    */
-  void fillRow(int rowId, CarbonColumnVector vector, int vectorRow);
+  void fillRow(int rowId, CarbonColumnVector vector, int vectorRowId);
 
   /**
    * Below method will be used to fill the row values to buffer array

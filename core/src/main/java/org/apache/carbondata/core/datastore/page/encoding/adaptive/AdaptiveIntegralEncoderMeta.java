@@ -21,6 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
@@ -30,9 +31,9 @@ public class AdaptiveIntegralEncoderMeta extends AdaptiveEncoderMeta implements 
   public AdaptiveIntegralEncoderMeta() {
   }
 
-  public AdaptiveIntegralEncoderMeta(String compressorName, DataType targetDataType,
-      SimpleStatsResult stats) {
-    super(targetDataType, stats, compressorName);
+  public AdaptiveIntegralEncoderMeta(TableSpec.ColumnSpec columnSpec, String compressorName,
+      DataType storeDataType, SimpleStatsResult stats) {
+    super(columnSpec, compressorName, storeDataType, stats);
   }
 
   @Override

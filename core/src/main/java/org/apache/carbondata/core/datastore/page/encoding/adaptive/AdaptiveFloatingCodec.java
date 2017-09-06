@@ -44,7 +44,7 @@ import org.apache.carbondata.format.Encoding;
  */
 public class AdaptiveFloatingCodec extends AdaptiveCodec {
 
-  private ColumnPage encodedPage;
+  private ColumnPage convertedPage;
   private BigDecimal factor;
 
   public static ColumnPageCodec newInstance(DataType srcDataType, DataType targetDataType,
@@ -69,13 +69,14 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
     return new ColumnPageEncoder() {
       @Override
       protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
-        if (encodedPage != null) {
+        if (convertedPage != null) {
           throw new IllegalStateException("already encoded");
         }
-        encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
+        convertedPage =
+            ColumnPage.newPage(input.getColumnSpec(), targetDataType, input.getPageSize());
         input.convertValue(converter);
-        byte[] result = encodedPage.compress(compressor);
-        encodedPage.freeMemory();
+        byte[] result = convertedPage.compress(compressor);
+        convertedPage.freeMemory();
         return result;
       }
 
@@ -88,25 +89,27 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
 
       @Override
       protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
-        return new AdaptiveFloatingEncoderMeta(compressor.getName(), targetDataType, stats);
+        return new AdaptiveFloatingEncoderMeta(inputPage.getColumnSpec(),
+            compressor.getName(), targetDataType, stats);
       }
 
     };
   }
 
   @Override
-  public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
+  public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     assert meta instanceof AdaptiveFloatingEncoderMeta;
     AdaptiveFloatingEncoderMeta codecMeta = (AdaptiveFloatingEncoderMeta) meta;
     final Compressor compressor = CompressorFactory.getInstance().getCompressor(
         codecMeta.getCompressorName());
-    final DataType targetDataType = codecMeta.getTargetDataType();
+    final DataType targetDataType = codecMeta.getStoreDataType();
     return new ColumnPageDecoder() {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
-        ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
-        return LazyColumnPage.newPage(page, converter);
+        ColumnPage page = ColumnPage.decompress(
+            meta.getColumnSpec(), compressor, targetDataType, input, offset, length);
+        return LazyColumnPage.newPage(srcDataType, page, converter);
       }
     };
   }
@@ -141,23 +144,23 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
     public void encode(int rowId, float value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId,
+          convertedPage.putByte(rowId,
               BigDecimal.valueOf(value).multiply(factor).byteValue());
           break;
         case SHORT:
-          encodedPage.putShort(rowId,
+          convertedPage.putShort(rowId,
               BigDecimal.valueOf(value).multiply(factor).shortValue());
           break;
         case SHORT_INT:
-          encodedPage.putShortInt(rowId,
+          convertedPage.putShortInt(rowId,
               BigDecimal.valueOf(value).multiply(factor).intValue());
           break;
         case INT:
-          encodedPage.putInt(rowId,
+          convertedPage.putInt(rowId,
               BigDecimal.valueOf(value).multiply(factor).intValue());
           break;
         case LONG:
-          encodedPage.putLong(rowId,
+          convertedPage.putLong(rowId,
               BigDecimal.valueOf(value).multiply(factor).longValue());
           break;
         default:
@@ -169,27 +172,27 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
     public void encode(int rowId, double value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId,
+          convertedPage.putByte(rowId,
               BigDecimal.valueOf(value).multiply(factor).byteValue());
           break;
         case SHORT:
-          encodedPage.putShort(rowId,
+          convertedPage.putShort(rowId,
               BigDecimal.valueOf(value).multiply(factor).shortValue());
           break;
         case SHORT_INT:
-          encodedPage.putShortInt(rowId,
+          convertedPage.putShortInt(rowId,
               BigDecimal.valueOf(value).multiply(factor).intValue());
           break;
         case INT:
-          encodedPage.putInt(rowId,
+          convertedPage.putInt(rowId,
               BigDecimal.valueOf(value).multiply(factor).intValue());
           break;
         case LONG:
-          encodedPage.putLong(rowId,
+          convertedPage.putLong(rowId,
               BigDecimal.valueOf(value).multiply(factor).longValue());
           break;
         case DOUBLE:
-          encodedPage.putDouble(rowId, value);
+          convertedPage.putDouble(rowId, value);
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());

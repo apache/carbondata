@@ -19,9 +19,9 @@ package org.apache.carbondata.core.util;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
@@ -188,8 +188,8 @@ public class CarbonMetadataUtilTest {
 
     SegmentProperties segmentProperties = new SegmentProperties(columnSchemaList, cardinality);
 
-    final EncodedColumnPage measure = new EncodedColumnPage(new DataChunk2(), new byte[]{0,1},
-        PrimitivePageStatsCollector.newInstance(
+    final EncodedColumnPage measure = new EncodedColumnPage(null, new DataChunk2(), new byte[]{0,1},
+        PrimitivePageStatsCollector.newInstance(ColumnType.MEASURE,
         org.apache.carbondata.core.metadata.datatype.DataType.BYTE, 0, 0));
     new MockUp<EncodedTablePage>() {
       @SuppressWarnings("unused") @Mock

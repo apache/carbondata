@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -286,8 +285,7 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
       bitSet = setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows);
     }
     if (dimensionColumnDataChunk.isNoDicitionaryColumn()) {
-      FilterUtil.removeNullValues(dimensionColumnDataChunk, bitSet,
-          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+      FilterUtil.removeNullValues(dimensionColumnDataChunk, bitSet);
     }
     return bitSet;
   }
@@ -366,7 +364,7 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
     BitSet bitSet = new BitSet(numerOfRows);
     byte[][] filterValues = this.filterRangeValues;
     // binary search can only be applied if column is sorted
-    if (isNaturalSorted) {
+    if (isNaturalSorted && !dimensionColumnDataChunk.isNoDicitionaryColumn()) {
       int start = 0;
       int last = 0;
       int startIndex = 0;

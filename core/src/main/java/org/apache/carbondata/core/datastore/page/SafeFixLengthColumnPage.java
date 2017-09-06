@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil;
 
@@ -36,8 +37,9 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   private double[] doubleData;
   private byte[] shortIntData;
 
-  SafeFixLengthColumnPage(DataType dataType, int pageSize, int scale, int precision) {
-    super(dataType, pageSize, scale, precision);
+  SafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      int scale, int precision) {
+    super(columnSpec, dataType, pageSize, scale, precision);
   }
 
   /**
@@ -240,7 +242,12 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
-  public byte[] getFlattenedBytePage() {
+  public byte[] getLVFlattenedBytePage() {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
+  public byte[] getDirectFlattenedBytePage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 

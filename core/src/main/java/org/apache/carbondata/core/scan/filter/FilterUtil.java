@@ -1623,15 +1623,14 @@ public final class FilterUtil {
   /**
    * This method will compare the selected data against null values and
    * flip the bitSet if any null value is found
-   *
-   * @param dimensionColumnDataChunk
+   *  @param dimensionColumnDataChunk
    * @param bitSet
    */
   public static void removeNullValues(DimensionColumnDataChunk dimensionColumnDataChunk,
-      BitSet bitSet, byte[] defaultValue) {
+      BitSet bitSet) {
     if (!bitSet.isEmpty()) {
       for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
-        if (dimensionColumnDataChunk.compareTo(i, defaultValue) == 0) {
+        if (dimensionColumnDataChunk.isNull(i)) {
           bitSet.flip(i);
         }
       }

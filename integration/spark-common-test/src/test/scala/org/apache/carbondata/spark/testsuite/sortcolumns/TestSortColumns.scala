@@ -27,7 +27,12 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     dropTable
 
-    sql("CREATE TABLE origintable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE origintable1 " +
+        "(empno int, empname String, designation String, doj Timestamp, " +
+        "workgroupcategory int, workgroupcategoryname String, deptno int," +
+        " deptname String, projectcode int, projectjoindate Timestamp, " +
+        "projectenddate Timestamp,attendance int,utilization int,salary int) " +
+        "STORED BY 'org.apache.carbondata.format'")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE origintable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
   }
 
@@ -56,6 +61,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     "create table with no dictionary sort_columns where NumberOfNoDictSortColumns < " +
     "NoDictionaryCount")
   {
+    sql("DROP TABLE IF EXISTS sorttable1b")
     sql(
       "CREATE TABLE sorttable1b (empno String, empname String, designation String, doj Timestamp," +
       " workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
@@ -97,10 +103,16 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     try {
       setLoadingProperties("true", "true", "false")
       sql(
-        "CREATE TABLE sorttable4_offheap_unsafe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='workgroupcategory, empname')")
-      sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE sorttable4_offheap_unsafe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
-      checkAnswer(sql("select workgroupcategory, empname from sorttable4_offheap_unsafe"),
-        sql("select workgroupcategory, empname from origintable1 order by workgroupcategory"))
+        "CREATE TABLE sorttable4_offheap_unsafe " +
+        "(workgroupcategory Int)" +
+        " STORED BY 'org.apache.carbondata.format' " +
+        "tblproperties('sort_columns'='workgroupcategory')")
+      sql(
+        s"""LOAD DATA local inpath '$resourcesPath/data.csv'
+           |INTO TABLE sorttable4_offheap_unsafe
+           |OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
+      checkAnswer(sql("select workgroupcategory from sorttable4_offheap_unsafe"),
+        sql("select workgroupcategory from origintable1 order by workgroupcategory"))
     } finally {
       defaultLoadingProperties
     }

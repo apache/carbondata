@@ -22,19 +22,19 @@ import java.math.BigDecimal;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil;
 
-public class KeyPageStatsCollector implements ColumnPageStatsCollector {
-
-  private DataType dataType;
+/**
+ * It stores min and max value for UTF8 string
+ */
+public class StringStatsCollector implements ColumnPageStatsCollector {
 
   private byte[] min, max;
 
-  public static KeyPageStatsCollector newInstance(DataType dataType) {
-    assert (dataType == DataType.BYTE_ARRAY);
-    return new KeyPageStatsCollector(dataType);
+  public static StringStatsCollector newInstance() {
+    return new StringStatsCollector();
   }
 
-  private KeyPageStatsCollector(DataType dataType) {
-    this.dataType = dataType;
+  private StringStatsCollector() {
+
   }
 
   @Override
@@ -104,7 +104,7 @@ public class KeyPageStatsCollector implements ColumnPageStatsCollector {
       }
 
       @Override public DataType getDataType() {
-        return dataType;
+        return DataType.STRING;
       }
 
       @Override public int getScale() {

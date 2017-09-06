@@ -316,14 +316,14 @@ object CommonUtil {
       timestampFormatter: SimpleDateFormat, dateFormatter: SimpleDateFormat): Unit = {
     val comparator = Comparator.getComparator(columnDataType)
     var head = columnDataType match {
-      case DataType.STRING => ByteUtil.toBytes(rangeInfo.head)
+      case DataType.STRING => ByteUtil.toBytesForPlainValue(rangeInfo.head)
       case _ => PartitionUtil.getDataBasedOnDataType(rangeInfo.head, columnDataType,
         timestampFormatter, dateFormatter)
     }
     val iterator = rangeInfo.tail.toIterator
     while(iterator.hasNext) {
       val next = columnDataType match {
-        case DataType.STRING => ByteUtil.toBytes(iterator.next())
+        case DataType.STRING => ByteUtil.toBytesForPlainValue(iterator.next())
         case _ => PartitionUtil.getDataBasedOnDataType(iterator.next(), columnDataType,
           timestampFormatter, dateFormatter)
       }

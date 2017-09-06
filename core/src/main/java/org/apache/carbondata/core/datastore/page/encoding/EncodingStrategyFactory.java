@@ -24,9 +24,9 @@ package org.apache.carbondata.core.datastore.page.encoding;
  */
 public class EncodingStrategyFactory {
 
-  private static EncodingStrategy defaultStrategy = new DefaultEncodingStrategy();
+  private static EncodingFactory defaultStrategy = new DefaultEncodingFactory();
 
-  public static EncodingStrategy getStrategy() {
+  public static EncodingFactory getStrategy() {
     // TODO: make it configurable after added new strategy
     return defaultStrategy;
   }

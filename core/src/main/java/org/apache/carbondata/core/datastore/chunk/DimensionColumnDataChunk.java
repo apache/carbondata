@@ -70,7 +70,7 @@ public interface DimensionColumnDataChunk {
    *
    * @return chunk
    */
-  byte[] getChunkData(int columnIndex);
+  byte[] getChunkData(int rowId);
 
   /**
    * @return inverted index
@@ -95,11 +95,16 @@ public interface DimensionColumnDataChunk {
   /**
    * to compare the data
    *
-   * @param index        row index to be compared
+   * @param rowId        row index to be compared
    * @param compareValue value to compare
    * @return compare result
    */
-  int compareTo(int index, byte[] compareValue);
+  int compareTo(int rowId, byte[] compareValue);
+
+  /**
+   * return true is data is not present at rowId
+   */
+  boolean isNull(int rowId);
 
   /**
    * below method will be used to free the allocated memory
