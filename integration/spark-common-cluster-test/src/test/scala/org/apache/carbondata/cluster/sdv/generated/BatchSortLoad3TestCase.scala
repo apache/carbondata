@@ -31,8 +31,8 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists uniqdata20c""").collect
     sql(s"""drop table if exists uniqdata19c""").collect
   }
-//PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_020
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_020", Include) {
+//Batch_sort_Loading_001-01-01-01_001-TC_020
+  test("Batch_sort_Loading_001-01-01-01_001-TC_020", Include) {
     sql(
       s"""CREATE TABLE uniqdata20c (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string,
          |DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,
@@ -55,8 +55,8 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_046
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_046", Include) {
+  //Batch_sort_Loading_001-01-01-01_001-TC_046
+  test("Batch_sort_Loading_001-01-01-01_001-TC_046", Include) {
     sql(
       s"""CREATE TABLE uniqdata19c (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string,
         DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,
@@ -78,8 +78,8 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_053
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_053", Include) {
+  //Batch_sort_Loading_001-01-01-01_001-TC_053
+  test("Batch_sort_Loading_001-01-01-01_001-TC_053", Include) {
     sql(
       s"""drop table if exists t3""").collect
     sql(
@@ -96,8 +96,8 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_054
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_054", Include) {
+  //Batch_sort_Loading_001-01-01-01_001-TC_054
+  test("Batch_sort_Loading_001-01-01-01_001-TC_054", Include) {
     sql(s"""drop table if exists t3""").collect
     sql(
       s"""CREATE TABLE t3 (ID Int, country String, name String, phonetype String,
@@ -113,8 +113,8 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_056
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_056", Include) {
+  //Batch_sort_Loading_001-01-01-01_001-TC_056
+  test("Batch_sort_Loading_001-01-01-01_001-TC_056", Include) {
     sql(s"""drop table if exists uniqdata20a""").collect
     sql(s"""CREATE TABLE uniqdata20a (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/batchsort/1000_UniqData.csv' into table uniqdata20a OPTIONS('DELIMITER'=',' ,'SORT_SCOPE'='LOCAL_SORT','QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -130,8 +130,8 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_057
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_057", Include) {
+  //Batch_sort_Loading_001-01-01-01_001-TC_057
+  test("Batch_sort_Loading_001-01-01-01_001-TC_057", Include) {
     sql(s"""drop table if exists uniqdata20a""").collect
     sql(s"""CREATE TABLE uniqdata20a (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/batchsort/1000_UniqData.csv' into table uniqdata20a OPTIONS('DELIMITER'=',' ,'SORT_SCOPE'='BATCH_SORT','QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -145,8 +145,8 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_058
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_058", Include) {
+  //Batch_sort_Loading_001-01-01-01_001-TC_058
+  test("Batch_sort_Loading_001-01-01-01_001-TC_058", Include) {
     sql(s"""drop table if exists uniqdata20a""").collect
     sql(s"""CREATE TABLE uniqdata20a (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
@@ -158,8 +158,8 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_059
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_059", Include) {
+  //Batch_sort_Loading_001-01-01-01_001-TC_059
+  test("Batch_sort_Loading_001-01-01-01_001-TC_059", Include) {
     sql(s"""drop table if exists uniqdata20a""").collect
     intercept[Exception] {
       sql(s"""CREATE TABLE uniqdata20a (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
@@ -170,8 +170,8 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists  uniqdata20a""").collect
   }
 
-  //PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_060
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_060", Include) {
+  //Batch_sort_Loading_001-01-01-01_001-TC_060
+  test("Batch_sort_Loading_001-01-01-01_001-TC_060", Include) {
     sql(s"""drop table if exists uniqdata20b""").collect
     sql(s"""drop table if exists uniqdata20c""").collect
     sql(s"""CREATE TABLE uniqdata20b (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
@@ -183,8 +183,8 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_061
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_061", Include) {
+  //Batch_sort_Loading_001-01-01-01_001-TC_061
+  test("Batch_sort_Loading_001-01-01-01_001-TC_061", Include) {
     sql(s"""drop TABLE if exists uniqdata_h""").collect
     sql(s"""drop TABLE if exists uniqdata_c""").collect
     sql(s"""CREATE TABLE uniqdata_h (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
@@ -196,8 +196,8 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
   }
 
 
-  //PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_064
-//  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_064", Include) {
+  //Batch_sort_Loading_001-01-01-01_001-TC_064
+//  test("Batch_sort_Loading_001-01-01-01_001-TC_064", Include) {
 //    sql(s"""drop table if exists uniqdata""").collect
 //    sql(s"""CREATE TABLE uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (DOJ timestamp)STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='20160302,20150302')""").collect
 //    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata OPTIONS('DELIMITER'=',','QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
