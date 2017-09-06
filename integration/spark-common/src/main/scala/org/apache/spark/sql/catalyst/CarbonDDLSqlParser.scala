@@ -603,7 +603,20 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           throw new MalformedCarbonCommandException(errormsg)
         }
       }
+
+      // Dictionary include columns must not contain date and timestamp
+      if (fields
+            .filter(column => dictIncludeCols
+              .exists(x => x.equalsIgnoreCase(column.name.get))) exists
+          (column => column.dataType.get.equals("timestamp") ||
+                     column.dataType.get.equals("date"))) {
+        val errormsg = "DICTIONARY_INCLUDE columns can not contain date or timestamp." +
+                       "Please check create table statement."
+        throw new MalformedCarbonCommandException(errormsg)
+      }
+
     }
+
 
     // include cols should not contain exclude cols
     dictExcludeCols.foreach { dicExcludeCol =>
