@@ -101,7 +101,7 @@ class CarbonMergerRDD[K, V](
       } else {
         storeLocation = System.getProperty("java.io.tmpdir")
       }
-      storeLocation = storeLocation + '/' + System.nanoTime() + '/' + theSplit.index
+      storeLocation = storeLocation + '/' + System.nanoTime() + '_' + theSplit.index
       var mergeStatus = false
       var mergeNumber = ""
       var exec: CarbonCompactionExecutor = null
