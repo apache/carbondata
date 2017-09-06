@@ -92,6 +92,7 @@ public final class CarbonProperties {
     }
 
     validateBlockletSize();
+    validateOffHeapSortChunkSize();
     validateNumCores();
     validateNumCoresBlockSort();
     validateSortSize();
@@ -366,6 +367,33 @@ public final class CarbonProperties {
           + CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
       carbonProperties.setProperty(CarbonCommonConstants.BLOCKLET_SIZE,
           CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
+    }
+  }
+
+  /**
+   * This method validates the chunk size
+   */
+  private void validateOffHeapSortChunkSize() {
+    String chunkSizeStr = carbonProperties
+        .getProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB,
+            CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT);
+    try {
+      int parsedChunkSize = Integer.parseInt(chunkSizeStr);
+
+      if (parsedChunkSize < CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_MIN
+          || parsedChunkSize > CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_MAX) {
+        LOGGER.info(
+            "The chunk size value \"" + chunkSizeStr + "\" is invalid. Using the default value \""
+                + CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT);
+        carbonProperties.setProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB,
+            CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.info(
+          "The chunk size value \"" + chunkSizeStr + "\" is invalid. Using the default value \""
+              + CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT);
+      carbonProperties.setProperty(CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB,
+          CarbonCommonConstants.OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT);
     }
   }
 
