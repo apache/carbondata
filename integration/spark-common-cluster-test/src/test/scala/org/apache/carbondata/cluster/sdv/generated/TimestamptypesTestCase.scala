@@ -43,9 +43,9 @@ class TimestamptypesTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //timestamp in dd.MM.yyyy HH:mm:ss
-  ignore("DataSight_Carbon_TimeStampType_002", Include) {
+  test("DataSight_Carbon_TimeStampType_002", Include) {
      sql(s""" create table if not exists ddMMyyyy (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId int,productionDate Timestamp,deliveryDate timestamp,deliverycharge decimal(10,2)) STORED BY 'org.apache.carbondata.format'""").collect
-   sql(s""" LOAD DATA INPATH '$resourcesPath/Data/vardhandaterestructddMMyyyy.csv' INTO TABLE ddMMyyyy OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
+   sql(s""" LOAD DATA INPATH '$resourcesPath/Data/vardhandaterestructddMMMyyyy.csv' INTO TABLE ddMMyyyy OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
     checkAnswer(s"""select count(*) from ddMMyyyy""",
       Seq(Row(99)), "timestamptypesTestCase_DataSight_Carbon_TimeStampType_002")
      sql(s"""drop table ddMMyyyy""").collect
@@ -53,9 +53,9 @@ class TimestamptypesTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //timestamp in yyyy.MM.dd HH:mm:ss
-  ignore("DataSight_Carbon_TimeStampType_003", Include) {
+  test("DataSight_Carbon_TimeStampType_003", Include) {
      sql(s""" create table if not exists yyyyMMdd (imei string,AMSize string,channelsId string,ActiveCountry string, Activecity string,gamePointId double,deviceInformationId int,productionDate Timestamp,deliveryDate timestamp,deliverycharge decimal(10,2)) STORED BY 'org.apache.carbondata.format'""").collect
-   sql(s""" LOAD DATA INPATH '$resourcesPath/Data/vardhandaterestructyyyyMMdd.csv' INTO TABLE yyyyMMdd OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
+   sql(s""" LOAD DATA INPATH '$resourcesPath/Data/vardhandaterestructyyyyMMMdd.csv' INTO TABLE yyyyMMdd OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '"', 'FILEHEADER'= 'imei,deviceInformationId,AMSize,channelsId,ActiveCountry,Activecity,gamePointId,productionDate,deliveryDate,deliverycharge')""").collect
     checkAnswer(s"""select count(*) from yyyyMMdd""",
       Seq(Row(99)), "timestamptypesTestCase_DataSight_Carbon_TimeStampType_003")
      sql(s"""drop table yyyyMMdd""").collect

@@ -45,6 +45,7 @@ object getDB {
 
   def getDatabaseName(dbName: Option[String], sqlContext: SQLContext): String = {
     dbName.getOrElse(sqlContext.asInstanceOf[HiveContext].catalog.client.currentDatabase)
+      .toLowerCase
   }
 
 }

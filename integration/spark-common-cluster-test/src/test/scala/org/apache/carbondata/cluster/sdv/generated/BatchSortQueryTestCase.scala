@@ -29,19 +29,25 @@ import org.apache.carbondata.core.util.CarbonProperties
  */
 
 class BatchSortQueryTestCase extends QueryTest with BeforeAndAfterAll {
-         
+
 
   //To check select query with limit
-  test("PTS-AR-Batch_sort_Querying_001-01-01-01_001-TC_001", Include) {
-     sql(s"""drop table if exists uniqdataquery1""").collect
-   sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
+  override def beforeAll() {
+    sql(s"""drop table if exists uniqdataquery1""").collect
+    sql(s"""drop table if exists uniqdataquery11""").collect
 
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdataquery1 OPTIONS('DELIMITER'=',' , 'SORT_SCOPE'='BATCH_SORT','QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-    sql(s"""select * from uniqdataquery1 limit 100""").collect
+    sql(s"""CREATE TABLE uniqdataquery1 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
+    sql(s"""CREATE TABLE uniqdataquery11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdataquery1 OPTIONS('DELIMITER'=',' , 'SORT_SCOPE'='BATCH_SORT','QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
+    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdataquery11 OPTIONS('DELIMITER'=',' , 'SORT_SCOPE'='BATCH_SORT','QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
   }
 
+  test("PTS-AR-Batch_sort_Querying_001-01-01-01_001-TC_084", Include) {
+    sql(s"""select * from uniqdataquery1 limit 100""").collect
+    sql(s"""select uniqdataquery1.CUST_ID from uniqdataquery1 join uniqdataquery11 where uniqdataquery1.CUST_ID > 10700 and uniqdataquery11.CUST_ID > 10500""").collect
 
+  }
   //To check select query with limit as string
   test("PTS-AR-Batch_sort_Querying_001-01-01-01_001-TC_002", Include) {
     try {
@@ -906,18 +912,11 @@ class BatchSortQueryTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Join query
-  test("PTS-AR-Batch_sort_Querying_001-01-01-01_001-TC_084", Include) {
-     sql(s"""drop table if exists uniqdataquery11""").collect
-   sql(s"""CREATE TABLE uniqdataquery11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
-   sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdataquery11 OPTIONS('DELIMITER'=',' , 'SORT_SCOPE'='BATCH_SORT','QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
-    sql(s"""select uniqdataquery1.CUST_ID from uniqdataquery1 join uniqdataquery11 where uniqdataquery1.CUST_ID > 10700 and uniqdataquery11.CUST_ID > 10500""").collect
 
-
-  }
 
 
   //To check Left join with where clause
-  ignore("PTS-AR-Batch_sort_Querying_001-01-01-01_001-TC_085", Include) {
+  test("PTS-AR-Batch_sort_Querying_001-01-01-01_001-TC_085", Include) {
 
     sql(s"""select uniqdataquery1.CUST_ID from uniqdataquery1 LEFT join uniqdataquery11 where uniqdataquery1.CUST_ID > 10000""").collect
 
@@ -940,7 +939,7 @@ class BatchSortQueryTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Broadcast join
-  ignore("PTS-AR-Batch_sort_Querying_001-01-01-01_001-TC_087", Include) {
+  test("PTS-AR-Batch_sort_Querying_001-01-01-01_001-TC_087", Include) {
 
     sql(s"""select broadcast.cust_id from uniqdataquery1 broadcast join uniqdataquery11 where broadcast.cust_id > 10900""").collect
 
