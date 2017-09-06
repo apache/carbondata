@@ -224,8 +224,8 @@ public abstract class AbstractDataFileFooterConverter {
     blockletIndex.setBtreeIndex(blockletBTreeIndex);
     byte[][] currentMinValue = blockletIndexList.get(0).getMinMaxIndex().getMinValues().clone();
     byte[][] currentMaxValue = blockletIndexList.get(0).getMinMaxIndex().getMaxValues().clone();
-    byte[][] minValue = null;
-    byte[][] maxValue = null;
+    byte[][] minValue;
+    byte[][] maxValue;
     for (int i = 1; i < blockletIndexList.size(); i++) {
       minValue = blockletIndexList.get(i).getMinMaxIndex().getMinValues();
       maxValue = blockletIndexList.get(i).getMinMaxIndex().getMaxValues();

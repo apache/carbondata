@@ -313,7 +313,7 @@ public final class CarbonDataProcessorUtil {
   // TODO: need to simplify it. Not required create string first.
   public static Map<String, GenericDataType> getComplexTypesMap(DataField[] dataFields) {
     String complexTypeString = getComplexTypeString(dataFields);
-    if (null == complexTypeString || complexTypeString.equals("")) {
+    if (complexTypeString.equals("")) {
       return new LinkedHashMap<>();
     }
     Map<String, GenericDataType> complexTypesMap = new LinkedHashMap<String, GenericDataType>();

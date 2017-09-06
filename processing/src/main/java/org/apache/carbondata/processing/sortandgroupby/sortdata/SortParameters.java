@@ -34,6 +34,8 @@ import org.apache.commons.lang3.StringUtils;
 
 public class SortParameters implements Serializable {
 
+  private static final long serialVersionUID = 0L;
+
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(SortParameters.class.getName());
   /**

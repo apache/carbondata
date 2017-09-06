@@ -41,7 +41,7 @@ public class CarbonDataWriterVo {
 
   private boolean[] isComplexType;
 
-  private int NoDictionaryCount;
+  private int noDictionaryCount;
 
   private CarbonDataFileAttributes carbonDataFileAttributes;
 
@@ -155,14 +155,14 @@ public class CarbonDataWriterVo {
    * @return the noDictionaryCount
    */
   public int getNoDictionaryCount() {
-    return NoDictionaryCount;
+    return noDictionaryCount;
   }
 
   /**
-   * @param noDictionaryCount the noDictionaryCount to set
+   * @param no_DictionaryCount the noDictionaryCount to set
    */
-  public void setNoDictionaryCount(int noDictionaryCount) {
-    NoDictionaryCount = noDictionaryCount;
+  public void setNoDictionaryCount(int no_DictionaryCount) {
+    noDictionaryCount = no_DictionaryCount;
   }
 
   /**
