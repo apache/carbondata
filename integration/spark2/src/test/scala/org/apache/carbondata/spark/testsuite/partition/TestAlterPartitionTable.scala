@@ -435,6 +435,49 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     checkAnswer(result_after5, result_origin5)
   }
 
+  test("Alter table split partition with extra space in New SubList: List Partition") {
+    sql("""ALTER TABLE list_table_area ADD PARTITION ('(One,Two, Three, Four)')""".stripMargin)
+    sql("""ALTER TABLE list_table_area SPLIT PARTITION(4) INTO ('One', '(Two, Three )', 'Four')""".stripMargin)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_list_table_area")
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionIds = partitionInfo.getPartitionIds
+    val list_info = partitionInfo.getListInfo
+    assert(partitionIds == List(0, 1, 2, 3, 5, 6, 7).map(Integer.valueOf(_)).asJava)
+    assert(partitionInfo.getMAX_PARTITION == 7)
+    assert(partitionInfo.getNumPartitions == 7)
+    assert(list_info.get(0).get(0) == "Asia")
+    assert(list_info.get(1).get(0) == "America")
+    assert(list_info.get(2).get(0) == "Europe")
+    assert(list_info.get(3).get(0) == "One")
+    assert(list_info.get(4).get(0) == "Two")
+    assert(list_info.get(4).get(1) == "Three")
+    assert(list_info.get(5).get(0) == "Four")
+    validateDataFiles("default_list_table_area", "0", Seq(0, 1, 2))
+    val result_after = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area""")
+    val result_origin = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin""")
+    checkAnswer(result_after, result_origin)
+
+    val result_after1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area < 'Four' """)
+    val result_origin1 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area < 'Four' """)
+    checkAnswer(result_after1, result_origin1)
+
+    val result_after2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area <= 'Four' """)
+    val result_origin2 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area <= 'Four' """)
+    checkAnswer(result_after2, result_origin2)
+
+    val result_after3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area = 'Four' """)
+    val result_origin3 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area = 'Four' """)
+    checkAnswer(result_after3, result_origin3)
+
+    val result_after4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area >= 'Four' """)
+    val result_origin4 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area >= 'Four' """)
+    checkAnswer(result_after4, result_origin4)
+
+    val result_after5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area where area > 'Four' """)
+    val result_origin5 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area > 'Four' """)
+    checkAnswer(result_after5, result_origin5)
+  }
+
   test("Alter table split partition: Range Partition") {
     sql("""ALTER TABLE range_table_logdate_split SPLIT PARTITION(4) INTO ('2017/01/01', '2018/01/01')""")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_range_table_logdate_split")
