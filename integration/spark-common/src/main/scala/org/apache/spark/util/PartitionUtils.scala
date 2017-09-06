@@ -80,8 +80,11 @@ object PartitionUtils {
       dateFormatter: SimpleDateFormat): Unit = {
     val columnDataType = partitionInfo.getColumnSchemaList.get(0).getDataType
     val index = partitionIdList.indexOf(partitionId)
-    if (index >= 0) {
-        if (partitionInfo.getPartitionType == PartitionType.RANGE) {
+    if (index < 0) {
+      throw new IllegalArgumentException("Invalid Partition Id "+ partitionId + "\n Use show partitions table_name to get the list of valid partitions")
+    }
+    else {
+      if (partitionInfo.getPartitionType == PartitionType.RANGE) {
         val rangeInfo = partitionInfo.getRangeInfo.asScala.toList
         val newRangeInfo = partitionId match {
           case 0 => rangeInfo ++ splitInfo
@@ -113,9 +116,6 @@ object PartitionUtils {
       } else {
         partitionInfo.splitPartition(index, splitInfo.size)
       }
-    }
-    else {
-      throw new IllegalArgumentException("Invalid Partition Id")
     }
   }
 
