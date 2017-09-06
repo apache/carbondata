@@ -28,3850 +28,3850 @@ import org.scalatest.BeforeAndAfterAll
 class QueriesExcludeDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
 
 
-  //VMALL_DICTIONARY_EXCLUDE_CreateCube
-  test("VMALL_DICTIONARY_EXCLUDE_CreateCube", Include) {
-    sql(s"""drop table if exists VMALL_DICTIONARY_EXCLUDE""").collect
-    sql(s"""drop table if exists VMALL_DICTIONARY_EXCLUDE1_hive""").collect
+  //DICTIONARY_EXCLUDE_CreateCube
+  test("Queries_DICTIONARY_EXCLUDE_CreateCube", Include) {
+    sql(s"""drop table if exists TABLE_DICTIONARY_EXCLUDE""").collect
+    sql(s"""drop table if exists TABLE_DICTIONARY_EXCLUDE1_hive""").collect
 
-    sql(s"""create table  VMALL_DICTIONARY_EXCLUDE (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY Decimal(30,10), Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointDescription string,gamePointId double,contractNumber BigInt)  STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='imei')""").collect
+    sql(s"""create table  TABLE_DICTIONARY_EXCLUDE (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY Decimal(30,10), Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointDescription string,gamePointId double,contractNumber BigInt)  STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='imei')""").collect
 
-    sql(s"""create table  VMALL_DICTIONARY_EXCLUDE1_hive (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string,deliveryTime string,channelsId string,channelsName string,deliveryAreaId string,deliveryCountry string,deliveryProvince string,deliveryCity string,deliveryDistrict string,deliveryStreet string,oxSingleNumber string,contractNumber BigInt,ActiveCheckTime string,ActiveAreaId string,ActiveCountry string,ActiveProvince string,Activecity string,ActiveDistrict string,ActiveStreet string,ActiveOperatorId string,Active_releaseId string,Active_EMUIVersion string,Active_operaSysVersion string,Active_BacVerNumber string,Active_BacFlashVer string,Active_webUIVersion string,Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string,Active_operatorsVersion string,Active_phonePADPartitionedVersions string,Latest_YEAR int,Latest_MONTH int,Latest_DAY Decimal(30,10),Latest_HOUR string,Latest_areaId string,Latest_country string,Latest_province string,Latest_city string,Latest_district string,Latest_street string,Latest_releaseId string,Latest_EMUIVersion string,Latest_operaSysVersion string,Latest_BacVerNumber string,Latest_BacFlashVer string,Latest_webUIVersion string,Latest_webUITypeCarrVer string,Latest_webTypeDataVerNumber string,Latest_operatorsVersion string,Latest_phonePADPartitionedVersions string,Latest_operatorId string,gamePointId double,gamePointDescription string) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
+    sql(s"""create table  TABLE_DICTIONARY_EXCLUDE1_hive (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string,deliveryTime string,channelsId string,channelsName string,deliveryAreaId string,deliveryCountry string,deliveryProvince string,deliveryCity string,deliveryDistrict string,deliveryStreet string,oxSingleNumber string,contractNumber BigInt,ActiveCheckTime string,ActiveAreaId string,ActiveCountry string,ActiveProvince string,Activecity string,ActiveDistrict string,ActiveStreet string,ActiveOperatorId string,Active_releaseId string,Active_EMUIVersion string,Active_operaSysVersion string,Active_BacVerNumber string,Active_BacFlashVer string,Active_webUIVersion string,Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string,Active_operatorsVersion string,Active_phonePADPartitionedVersions string,Latest_YEAR int,Latest_MONTH int,Latest_DAY Decimal(30,10),Latest_HOUR string,Latest_areaId string,Latest_country string,Latest_province string,Latest_city string,Latest_district string,Latest_street string,Latest_releaseId string,Latest_EMUIVersion string,Latest_operaSysVersion string,Latest_BacVerNumber string,Latest_BacFlashVer string,Latest_webUIVersion string,Latest_webUITypeCarrVer string,Latest_webTypeDataVerNumber string,Latest_operatorsVersion string,Latest_phonePADPartitionedVersions string,Latest_operatorId string,gamePointId double,gamePointDescription string) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
 
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_CreateCube_count
-  test("VMALL_DICTIONARY_EXCLUDE_CreateCube_count", Include) {
+  //DICTIONARY_EXCLUDE_CreateCube_count
+  test("Queries_DICTIONARY_EXCLUDE_CreateCube_count", Include) {
 
-    sql(s"""select count(*) from VMALL_DICTIONARY_EXCLUDE""").collect
+    sql(s"""select count(*) from TABLE_DICTIONARY_EXCLUDE""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_DataLoad
-  test("VMALL_DICTIONARY_EXCLUDE_DataLoad", Include) {
+  //DICTIONARY_EXCLUDE_DataLoad
+  test("Queries_DICTIONARY_EXCLUDE_DataLoad", Include) {
 
-    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/100_olap_C20.csv' INTO table VMALL_DICTIONARY_EXCLUDE options ('DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')""").collect
+    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/100_olap_C20.csv' INTO table TABLE_DICTIONARY_EXCLUDE options ('DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')""").collect
 
-    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/100_olap_C20.csv' INTO table VMALL_DICTIONARY_EXCLUDE1_hive """).collect
+    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/100_olap_C20.csv' INTO table TABLE_DICTIONARY_EXCLUDE1_hive """).collect
 
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_CreateCube1
-  test("VMALL_DICTIONARY_EXCLUDE_CreateCube1", Include) {
-    sql(s"""drop table if exists VMALL_DICTIONARY_EXCLUDE1""").collect
+  //DICTIONARY_EXCLUDE_CreateCube1
+  test("Queries_DICTIONARY_EXCLUDE_CreateCube1", Include) {
+    sql(s"""drop table if exists TABLE_DICTIONARY_EXCLUDE1""").collect
 
-    sql(s"""create table  VMALL_DICTIONARY_EXCLUDE1 (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY Decimal(30,10), Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointDescription string,gamePointId double,contractNumber BigInt)  STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='imei')""").collect
+    sql(s"""create table  TABLE_DICTIONARY_EXCLUDE1 (imei string,deviceInformationId int,MAC string,deviceColor string,device_backColor string,modelId string,marketName string,AMSize string,ROMSize string,CUPAudit string,CPIClocked string,series string,productionDate timestamp,bomCode string,internalModels string, deliveryTime string, channelsId string, channelsName string , deliveryAreaId string, deliveryCountry string, deliveryProvince string, deliveryCity string,deliveryDistrict string, deliveryStreet string, oxSingleNumber string, ActiveCheckTime string, ActiveAreaId string, ActiveCountry string, ActiveProvince string, Activecity string, ActiveDistrict string, ActiveStreet string, ActiveOperatorId string, Active_releaseId string, Active_EMUIVersion string, Active_operaSysVersion string, Active_BacVerNumber string, Active_BacFlashVer string, Active_webUIVersion string, Active_webUITypeCarrVer string,Active_webTypeDataVerNumber string, Active_operatorsVersion string, Active_phonePADPartitionedVersions string, Latest_YEAR int, Latest_MONTH int, Latest_DAY Decimal(30,10), Latest_HOUR string, Latest_areaId string, Latest_country string, Latest_province string, Latest_city string, Latest_district string, Latest_street string, Latest_releaseId string, Latest_EMUIVersion string, Latest_operaSysVersion string, Latest_BacVerNumber string, Latest_BacFlashVer string, Latest_webUIVersion string, Latest_webUITypeCarrVer string, Latest_webTypeDataVerNumber string, Latest_operatorsVersion string, Latest_phonePADPartitionedVersions string, Latest_operatorId string, gamePointDescription string,gamePointId double,contractNumber BigInt)  STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('DICTIONARY_EXCLUDE'='imei')""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_DataLoad1
-  test("VMALL_DICTIONARY_EXCLUDE_DataLoad1", Include) {
+  //DICTIONARY_EXCLUDE_DataLoad1
+  test("Queries_DICTIONARY_EXCLUDE_DataLoad1", Include) {
 
-    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/100_olap_C20.csv' INTO table VMALL_DICTIONARY_EXCLUDE1 options ('DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')""").collect
+    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/100_olap_C20.csv' INTO table TABLE_DICTIONARY_EXCLUDE1 options ('DELIMITER'=',', 'QUOTECHAR'='"', 'BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='imei,deviceInformationId,MAC,deviceColor,device_backColor,modelId,marketName,AMSize,ROMSize,CUPAudit,CPIClocked,series,productionDate,bomCode,internalModels,deliveryTime,channelsId,channelsName,deliveryAreaId,deliveryCountry,deliveryProvince,deliveryCity,deliveryDistrict,deliveryStreet,oxSingleNumber,contractNumber,ActiveCheckTime,ActiveAreaId,ActiveCountry,ActiveProvince,Activecity,ActiveDistrict,ActiveStreet,ActiveOperatorId,Active_releaseId,Active_EMUIVersion,Active_operaSysVersion,Active_BacVerNumber,Active_BacFlashVer,Active_webUIVersion,Active_webUITypeCarrVer,Active_webTypeDataVerNumber,Active_operatorsVersion,Active_phonePADPartitionedVersions,Latest_YEAR,Latest_MONTH,Latest_DAY,Latest_HOUR,Latest_areaId,Latest_country,Latest_province,Latest_city,Latest_district,Latest_street,Latest_releaseId,Latest_EMUIVersion,Latest_operaSysVersion,Latest_BacVerNumber,Latest_BacFlashVer,Latest_webUIVersion,Latest_webUITypeCarrVer,Latest_webTypeDataVerNumber,Latest_operatorsVersion,Latest_phonePADPartitionedVersions,Latest_operatorId,gamePointId,gamePointDescription')""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_001
-  test("VMALL_DICTIONARY_EXCLUDE_001", Include) {
+  //DICTIONARY_EXCLUDE_001
+  test("Queries_DICTIONARY_EXCLUDE_001", Include) {
 
-    checkAnswer(s"""Select count(imei) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""Select count(imei) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_001")
+    checkAnswer(s"""Select count(imei) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""Select count(imei) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_001")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_002
-  test("VMALL_DICTIONARY_EXCLUDE_002", Include) {
+  //DICTIONARY_EXCLUDE_002
+  test("Queries_DICTIONARY_EXCLUDE_002", Include) {
 
-    checkAnswer(s"""select count(DISTINCT imei) as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(DISTINCT imei) as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_002")
+    checkAnswer(s"""select count(DISTINCT imei) as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(DISTINCT imei) as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_002")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_003
-  test("VMALL_DICTIONARY_EXCLUDE_003", Include) {
+  //DICTIONARY_EXCLUDE_003
+  test("Queries_DICTIONARY_EXCLUDE_003", Include) {
 
-    checkAnswer(s"""select sum(Latest_month)+10 as a ,imei  from VMALL_DICTIONARY_EXCLUDE group by imei order by imei""",
-      s"""select sum(Latest_month)+10 as a ,imei  from VMALL_DICTIONARY_EXCLUDE1_hive group by imei order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_003")
+    checkAnswer(s"""select sum(Latest_month)+10 as a ,imei  from TABLE_DICTIONARY_EXCLUDE group by imei order by imei""",
+      s"""select sum(Latest_month)+10 as a ,imei  from TABLE_DICTIONARY_EXCLUDE1_hive group by imei order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_003")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_004
-  test("VMALL_DICTIONARY_EXCLUDE_004", Include) {
+  //DICTIONARY_EXCLUDE_004
+  test("Queries_DICTIONARY_EXCLUDE_004", Include) {
 
-    checkAnswer(s"""select max(imei),min(imei) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select max(imei),min(imei) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_004")
+    checkAnswer(s"""select max(imei),min(imei) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select max(imei),min(imei) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_004")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_005
-  test("VMALL_DICTIONARY_EXCLUDE_005", Include) {
+  //DICTIONARY_EXCLUDE_005
+  test("Queries_DICTIONARY_EXCLUDE_005", Include) {
 
-    checkAnswer(s"""select min(imei), max(imei) Total from VMALL_DICTIONARY_EXCLUDE group by  channelsId order by Total""",
-      s"""select min(imei), max(imei) Total from VMALL_DICTIONARY_EXCLUDE1_hive group by  channelsId order by Total""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_005")
+    checkAnswer(s"""select min(imei), max(imei) Total from TABLE_DICTIONARY_EXCLUDE group by  channelsId order by Total""",
+      s"""select min(imei), max(imei) Total from TABLE_DICTIONARY_EXCLUDE1_hive group by  channelsId order by Total""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_005")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_006
-  test("VMALL_DICTIONARY_EXCLUDE_006", Include) {
+  //DICTIONARY_EXCLUDE_006
+  test("Queries_DICTIONARY_EXCLUDE_006", Include) {
 
-    sql(s"""select last(imei) a from VMALL_DICTIONARY_EXCLUDE  group by imei order by imei limit 1""").collect
+    sql(s"""select last(imei) a from TABLE_DICTIONARY_EXCLUDE  group by imei order by imei limit 1""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_007
-  test("VMALL_DICTIONARY_EXCLUDE_007", Include) {
+  //DICTIONARY_EXCLUDE_007
+  test("Queries_DICTIONARY_EXCLUDE_007", Include) {
 
-    sql(s"""select FIRST(imei) a from VMALL_DICTIONARY_EXCLUDE group by imei order by imei limit 1""").collect
+    sql(s"""select FIRST(imei) a from TABLE_DICTIONARY_EXCLUDE group by imei order by imei limit 1""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_008
-  test("VMALL_DICTIONARY_EXCLUDE_008", Include) {
+  //DICTIONARY_EXCLUDE_008
+  test("Queries_DICTIONARY_EXCLUDE_008", Include) {
 
-    checkAnswer(s"""select imei,count(imei) a from VMALL_DICTIONARY_EXCLUDE group by imei order by imei""",
-      s"""select imei,count(imei) a from VMALL_DICTIONARY_EXCLUDE1_hive group by imei order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_008")
+    checkAnswer(s"""select imei,count(imei) a from TABLE_DICTIONARY_EXCLUDE group by imei order by imei""",
+      s"""select imei,count(imei) a from TABLE_DICTIONARY_EXCLUDE1_hive group by imei order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_008")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_009
-  test("VMALL_DICTIONARY_EXCLUDE_009", Include) {
+  //DICTIONARY_EXCLUDE_009
+  test("Queries_DICTIONARY_EXCLUDE_009", Include) {
 
-    checkAnswer(s"""select Lower(imei) a  from VMALL_DICTIONARY_EXCLUDE order by imei""",
-      s"""select Lower(imei) a  from VMALL_DICTIONARY_EXCLUDE1_hive order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_009")
+    checkAnswer(s"""select Lower(imei) a  from TABLE_DICTIONARY_EXCLUDE order by imei""",
+      s"""select Lower(imei) a  from TABLE_DICTIONARY_EXCLUDE1_hive order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_009")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_010
-  test("VMALL_DICTIONARY_EXCLUDE_010", Include) {
+  //DICTIONARY_EXCLUDE_010
+  test("Queries_DICTIONARY_EXCLUDE_010", Include) {
 
-    checkAnswer(s"""select distinct imei from VMALL_DICTIONARY_EXCLUDE order by imei""",
-      s"""select distinct imei from VMALL_DICTIONARY_EXCLUDE1_hive order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_010")
+    checkAnswer(s"""select distinct imei from TABLE_DICTIONARY_EXCLUDE order by imei""",
+      s"""select distinct imei from TABLE_DICTIONARY_EXCLUDE1_hive order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_010")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_011
-  test("VMALL_DICTIONARY_EXCLUDE_011", Include) {
+  //DICTIONARY_EXCLUDE_011
+  test("Queries_DICTIONARY_EXCLUDE_011", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE order by imei limit 101 """,
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive order by imei limit 101 """, "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_011")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE order by imei limit 101 """,
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive order by imei limit 101 """, "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_011")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_012
-  test("VMALL_DICTIONARY_EXCLUDE_012", Include) {
+  //DICTIONARY_EXCLUDE_012
+  test("Queries_DICTIONARY_EXCLUDE_012", Include) {
 
-    sql(s"""select imei as a from VMALL_DICTIONARY_EXCLUDE  order by a asc limit 10""").collect
+    sql(s"""select imei as a from TABLE_DICTIONARY_EXCLUDE  order by a asc limit 10""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_013
-  test("VMALL_DICTIONARY_EXCLUDE_013", Include) {
+  //DICTIONARY_EXCLUDE_013
+  test("Queries_DICTIONARY_EXCLUDE_013", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where  (contractNumber == 9223372047700) and (imei=='1AA100004')""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where  (contractNumber == 9223372047700) and (imei=='1AA100004')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_013")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where  (contractNumber == 9223372047700) and (imei=='1AA100004')""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where  (contractNumber == 9223372047700) and (imei=='1AA100004')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_013")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_014
-  test("VMALL_DICTIONARY_EXCLUDE_014", Include) {
+  //DICTIONARY_EXCLUDE_014
+  test("Queries_DICTIONARY_EXCLUDE_014", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei !='1AA100064' order by imei""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei !='1AA100064' order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_014")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei !='1AA100064' order by imei""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei !='1AA100064' order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_014")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_015
-  test("VMALL_DICTIONARY_EXCLUDE_015", Include) {
+  //DICTIONARY_EXCLUDE_015
+  test("Queries_DICTIONARY_EXCLUDE_015", Include) {
 
-    checkAnswer(s"""select imei  from VMALL_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""",
-      s"""select imei  from VMALL_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_015")
+    checkAnswer(s"""select imei  from TABLE_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""",
+      s"""select imei  from TABLE_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_015")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_016
-  test("VMALL_DICTIONARY_EXCLUDE_016", Include) {
+  //DICTIONARY_EXCLUDE_016
+  test("Queries_DICTIONARY_EXCLUDE_016", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei !='1AA100012' order by imei""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei !='1AA100012' order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_016")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei !='1AA100012' order by imei""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei !='1AA100012' order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_016")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_017
-  test("VMALL_DICTIONARY_EXCLUDE_017", Include) {
+  //DICTIONARY_EXCLUDE_017
+  test("Queries_DICTIONARY_EXCLUDE_017", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei >'1AA100012' order by imei""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei >'1AA100012' order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_017")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei >'1AA100012' order by imei""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei >'1AA100012' order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_017")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_018
-  test("VMALL_DICTIONARY_EXCLUDE_018", Include) {
+  //DICTIONARY_EXCLUDE_018
+  test("Queries_DICTIONARY_EXCLUDE_018", Include) {
 
-    checkAnswer(s"""select imei  from VMALL_DICTIONARY_EXCLUDE where imei<>imei""",
-      s"""select imei  from VMALL_DICTIONARY_EXCLUDE1_hive where imei<>imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_018")
+    checkAnswer(s"""select imei  from TABLE_DICTIONARY_EXCLUDE where imei<>imei""",
+      s"""select imei  from TABLE_DICTIONARY_EXCLUDE1_hive where imei<>imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_018")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_019
-  test("VMALL_DICTIONARY_EXCLUDE_019", Include) {
+  //DICTIONARY_EXCLUDE_019
+  test("Queries_DICTIONARY_EXCLUDE_019", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei != Latest_areaId order by imei""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei != Latest_areaId order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_019")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei != Latest_areaId order by imei""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei != Latest_areaId order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_019")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_020
-  test("VMALL_DICTIONARY_EXCLUDE_020", Include) {
+  //DICTIONARY_EXCLUDE_020
+  test("Queries_DICTIONARY_EXCLUDE_020", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where Latest_areaId<imei order by imei""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_areaId<imei order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_020")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where Latest_areaId<imei order by imei""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_areaId<imei order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_020")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_021
-  test("VMALL_DICTIONARY_EXCLUDE_021", Include) {
+  //DICTIONARY_EXCLUDE_021
+  test("Queries_DICTIONARY_EXCLUDE_021", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where Latest_DAY<=imei order by imei""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY<=imei order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_021")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where Latest_DAY<=imei order by imei""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY<=imei order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_021")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_022
-  test("VMALL_DICTIONARY_EXCLUDE_022", Include) {
+  //DICTIONARY_EXCLUDE_022
+  test("Queries_DICTIONARY_EXCLUDE_022", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei <'1AA10002' order by imei""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei <'1AA10002' order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_022")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei <'1AA10002' order by imei""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei <'1AA10002' order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_022")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_023
-  test("VMALL_DICTIONARY_EXCLUDE_023", Include) {
+  //DICTIONARY_EXCLUDE_023
+  test("Queries_DICTIONARY_EXCLUDE_023", Include) {
 
-    checkAnswer(s"""select Latest_day  from VMALL_DICTIONARY_EXCLUDE where imei IS NULL""",
-      s"""select Latest_day  from VMALL_DICTIONARY_EXCLUDE1_hive where imei IS NULL""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_023")
+    checkAnswer(s"""select Latest_day  from TABLE_DICTIONARY_EXCLUDE where imei IS NULL""",
+      s"""select Latest_day  from TABLE_DICTIONARY_EXCLUDE1_hive where imei IS NULL""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_023")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_024
-  test("VMALL_DICTIONARY_EXCLUDE_024", Include) {
+  //DICTIONARY_EXCLUDE_024
+  test("Queries_DICTIONARY_EXCLUDE_024", Include) {
 
-    checkAnswer(s"""select Latest_day  from VMALL_DICTIONARY_EXCLUDE where imei IS NOT NULL order by Latest_day""",
-      s"""select Latest_day  from VMALL_DICTIONARY_EXCLUDE1_hive where imei IS NOT NULL order by Latest_day""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_024")
+    checkAnswer(s"""select Latest_day  from TABLE_DICTIONARY_EXCLUDE where imei IS NOT NULL order by Latest_day""",
+      s"""select Latest_day  from TABLE_DICTIONARY_EXCLUDE1_hive where imei IS NOT NULL order by Latest_day""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_024")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_025
-  test("VMALL_DICTIONARY_EXCLUDE_025", Include) {
+  //DICTIONARY_EXCLUDE_025
+  test("Queries_DICTIONARY_EXCLUDE_025", Include) {
 
-    checkAnswer(s"""Select count(imei),min(imei) from VMALL_DICTIONARY_EXCLUDE """,
-      s"""Select count(imei),min(imei) from VMALL_DICTIONARY_EXCLUDE1_hive """, "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_025")
+    checkAnswer(s"""Select count(imei),min(imei) from TABLE_DICTIONARY_EXCLUDE """,
+      s"""Select count(imei),min(imei) from TABLE_DICTIONARY_EXCLUDE1_hive """, "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_025")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_026
-  test("VMALL_DICTIONARY_EXCLUDE_026", Include) {
+  //DICTIONARY_EXCLUDE_026
+  test("Queries_DICTIONARY_EXCLUDE_026", Include) {
 
-    checkAnswer(s"""select count(DISTINCT imei,latest_day) as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(DISTINCT imei,latest_day) as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_026")
+    checkAnswer(s"""select count(DISTINCT imei,latest_day) as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(DISTINCT imei,latest_day) as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_026")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_027
-  test("VMALL_DICTIONARY_EXCLUDE_027", Include) {
+  //DICTIONARY_EXCLUDE_027
+  test("Queries_DICTIONARY_EXCLUDE_027", Include) {
 
-    checkAnswer(s"""select max(imei),min(imei),count(imei) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select max(imei),min(imei),count(imei) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_027")
+    checkAnswer(s"""select max(imei),min(imei),count(imei) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select max(imei),min(imei),count(imei) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_027")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_028
-  test("VMALL_DICTIONARY_EXCLUDE_028", Include) {
+  //DICTIONARY_EXCLUDE_028
+  test("Queries_DICTIONARY_EXCLUDE_028", Include) {
 
-    checkAnswer(s"""select sum(imei),avg(imei),count(imei) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(imei),avg(imei),count(imei) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_028")
+    checkAnswer(s"""select sum(imei),avg(imei),count(imei) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(imei),avg(imei),count(imei) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_028")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_029
-  test("VMALL_DICTIONARY_EXCLUDE_029", Include) {
+  //DICTIONARY_EXCLUDE_029
+  test("Queries_DICTIONARY_EXCLUDE_029", Include) {
 
-    sql(s"""select last(imei),Min(imei),max(imei)  a from VMALL_DICTIONARY_EXCLUDE  order by a""").collect
+    sql(s"""select last(imei),Min(imei),max(imei)  a from TABLE_DICTIONARY_EXCLUDE  order by a""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_030
-  test("VMALL_DICTIONARY_EXCLUDE_030", Include) {
+  //DICTIONARY_EXCLUDE_030
+  test("Queries_DICTIONARY_EXCLUDE_030", Include) {
 
-    sql(s"""select FIRST(imei),Last(imei) a from VMALL_DICTIONARY_EXCLUDE group by imei order by imei limit 1""").collect
+    sql(s"""select FIRST(imei),Last(imei) a from TABLE_DICTIONARY_EXCLUDE group by imei order by imei limit 1""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_031
-  test("VMALL_DICTIONARY_EXCLUDE_031", Include) {
+  //DICTIONARY_EXCLUDE_031
+  test("Queries_DICTIONARY_EXCLUDE_031", Include) {
 
-    checkAnswer(s"""select imei,count(imei) a from VMALL_DICTIONARY_EXCLUDE group by imei order by imei""",
-      s"""select imei,count(imei) a from VMALL_DICTIONARY_EXCLUDE1_hive group by imei order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_031")
+    checkAnswer(s"""select imei,count(imei) a from TABLE_DICTIONARY_EXCLUDE group by imei order by imei""",
+      s"""select imei,count(imei) a from TABLE_DICTIONARY_EXCLUDE1_hive group by imei order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_031")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_032
-  test("VMALL_DICTIONARY_EXCLUDE_032", Include) {
+  //DICTIONARY_EXCLUDE_032
+  test("Queries_DICTIONARY_EXCLUDE_032", Include) {
 
-    checkAnswer(s"""select Lower(imei),upper(imei)  a  from VMALL_DICTIONARY_EXCLUDE order by imei""",
-      s"""select Lower(imei),upper(imei)  a  from VMALL_DICTIONARY_EXCLUDE1_hive order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_032")
+    checkAnswer(s"""select Lower(imei),upper(imei)  a  from TABLE_DICTIONARY_EXCLUDE order by imei""",
+      s"""select Lower(imei),upper(imei)  a  from TABLE_DICTIONARY_EXCLUDE1_hive order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_032")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_033
-  test("VMALL_DICTIONARY_EXCLUDE_033", Include) {
+  //DICTIONARY_EXCLUDE_033
+  test("Queries_DICTIONARY_EXCLUDE_033", Include) {
 
-    checkAnswer(s"""select imei as a from VMALL_DICTIONARY_EXCLUDE  order by a asc limit 10""",
-      s"""select imei as a from VMALL_DICTIONARY_EXCLUDE1_hive  order by a asc limit 10""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_033")
+    checkAnswer(s"""select imei as a from TABLE_DICTIONARY_EXCLUDE  order by a asc limit 10""",
+      s"""select imei as a from TABLE_DICTIONARY_EXCLUDE1_hive  order by a asc limit 10""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_033")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_034
-  test("VMALL_DICTIONARY_EXCLUDE_034", Include) {
+  //DICTIONARY_EXCLUDE_034
+  test("Queries_DICTIONARY_EXCLUDE_034", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where  (contractNumber == 9223372047700) and (imei=='1AA100012')""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where  (contractNumber == 9223372047700) and (imei=='1AA100012')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_034")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where  (contractNumber == 9223372047700) and (imei=='1AA100012')""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where  (contractNumber == 9223372047700) and (imei=='1AA100012')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_034")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_035
-  test("VMALL_DICTIONARY_EXCLUDE_035", Include) {
+  //DICTIONARY_EXCLUDE_035
+  test("Queries_DICTIONARY_EXCLUDE_035", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei !='8imei' order by imei""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei !='8imei' order by imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_035")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei !='8imei' order by imei""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei !='8imei' order by imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_035")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_036
-  test("VMALL_DICTIONARY_EXCLUDE_036", Include) {
+  //DICTIONARY_EXCLUDE_036
+  test("Queries_DICTIONARY_EXCLUDE_036", Include) {
 
-    checkAnswer(s"""select imei  from VMALL_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""",
-      s"""select imei  from VMALL_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_036")
+    checkAnswer(s"""select imei  from TABLE_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""",
+      s"""select imei  from TABLE_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_036")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_037
-  test("VMALL_DICTIONARY_EXCLUDE_037", Include) {
+  //DICTIONARY_EXCLUDE_037
+  test("Queries_DICTIONARY_EXCLUDE_037", Include) {
 
-    checkAnswer(s"""Select count(contractNumber) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""Select count(contractNumber) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_037")
+    checkAnswer(s"""Select count(contractNumber) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""Select count(contractNumber) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_037")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_038
-  test("VMALL_DICTIONARY_EXCLUDE_038", Include) {
+  //DICTIONARY_EXCLUDE_038
+  test("Queries_DICTIONARY_EXCLUDE_038", Include) {
 
-    checkAnswer(s"""select count(DISTINCT contractNumber) as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(DISTINCT contractNumber) as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_038")
+    checkAnswer(s"""select count(DISTINCT contractNumber) as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(DISTINCT contractNumber) as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_038")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_039
-  test("VMALL_DICTIONARY_EXCLUDE_039", Include) {
+  //DICTIONARY_EXCLUDE_039
+  test("Queries_DICTIONARY_EXCLUDE_039", Include) {
 
-    checkAnswer(s"""select sum(contractNumber)+10 as a ,contractNumber  from VMALL_DICTIONARY_EXCLUDE group by contractNumber""",
-      s"""select sum(contractNumber)+10 as a ,contractNumber  from VMALL_DICTIONARY_EXCLUDE1_hive group by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_039")
+    checkAnswer(s"""select sum(contractNumber)+10 as a ,contractNumber  from TABLE_DICTIONARY_EXCLUDE group by contractNumber""",
+      s"""select sum(contractNumber)+10 as a ,contractNumber  from TABLE_DICTIONARY_EXCLUDE1_hive group by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_039")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_040
-  test("VMALL_DICTIONARY_EXCLUDE_040", Include) {
+  //DICTIONARY_EXCLUDE_040
+  test("Queries_DICTIONARY_EXCLUDE_040", Include) {
 
-    checkAnswer(s"""select max(contractNumber),min(contractNumber) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select max(contractNumber),min(contractNumber) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_040")
+    checkAnswer(s"""select max(contractNumber),min(contractNumber) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select max(contractNumber),min(contractNumber) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_040")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_041
-  test("VMALL_DICTIONARY_EXCLUDE_041", Include) {
+  //DICTIONARY_EXCLUDE_041
+  test("Queries_DICTIONARY_EXCLUDE_041", Include) {
 
-    checkAnswer(s"""select sum(contractNumber) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(contractNumber) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_041")
+    checkAnswer(s"""select sum(contractNumber) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(contractNumber) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_041")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_042
-  test("VMALL_DICTIONARY_EXCLUDE_042", Include) {
+  //DICTIONARY_EXCLUDE_042
+  test("Queries_DICTIONARY_EXCLUDE_042", Include) {
 
-    checkAnswer(s"""select avg(contractNumber) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select avg(contractNumber) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_042")
+    checkAnswer(s"""select avg(contractNumber) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select avg(contractNumber) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_042")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_043
-  test("VMALL_DICTIONARY_EXCLUDE_043", Include) {
+  //DICTIONARY_EXCLUDE_043
+  test("Queries_DICTIONARY_EXCLUDE_043", Include) {
 
-    checkAnswer(s"""select min(contractNumber) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select min(contractNumber) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_043")
+    checkAnswer(s"""select min(contractNumber) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select min(contractNumber) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_043")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_044
-  test("VMALL_DICTIONARY_EXCLUDE_044", Include) {
+  //DICTIONARY_EXCLUDE_044
+  test("Queries_DICTIONARY_EXCLUDE_044", Include) {
 
-    sql(s"""select variance(contractNumber) as a   from (select contractNumber from VMALL_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
+    sql(s"""select variance(contractNumber) as a   from (select contractNumber from TABLE_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_045
-  ignore("VMALL_DICTIONARY_EXCLUDE_045", Include) {
+  //DICTIONARY_EXCLUDE_045
+  ignore("Queries_DICTIONARY_EXCLUDE_045", Include) {
 
-    checkAnswer(s"""select var_pop(contractNumber) as a from (select * from VMALL_DICTIONARY_EXCLUDE order by contractNumber) t""",
-      s"""select var_pop(contractNumber) as a from (select * from VMALL_DICTIONARY_EXCLUDE1_hive order by contractNumber) t""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_045")
+    checkAnswer(s"""select var_pop(contractNumber) as a from (select * from TABLE_DICTIONARY_EXCLUDE order by contractNumber) t""",
+      s"""select var_pop(contractNumber) as a from (select * from TABLE_DICTIONARY_EXCLUDE1_hive order by contractNumber) t""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_045")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_046
-  ignore("VMALL_DICTIONARY_EXCLUDE_046", Include) {
+  //DICTIONARY_EXCLUDE_046
+  ignore("Queries_DICTIONARY_EXCLUDE_046", Include) {
 
-    checkAnswer(s"""select var_samp(contractNumber) as a from (select * from VMALL_DICTIONARY_EXCLUDE order by contractNumber) t""",
-      s"""select var_samp(contractNumber) as a from (select * from VMALL_DICTIONARY_EXCLUDE1_hive order by contractNumber) t""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_046")
+    checkAnswer(s"""select var_samp(contractNumber) as a from (select * from TABLE_DICTIONARY_EXCLUDE order by contractNumber) t""",
+      s"""select var_samp(contractNumber) as a from (select * from TABLE_DICTIONARY_EXCLUDE1_hive order by contractNumber) t""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_046")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_047
-  test("VMALL_DICTIONARY_EXCLUDE_047", Include) {
+  //DICTIONARY_EXCLUDE_047
+  test("Queries_DICTIONARY_EXCLUDE_047", Include) {
 
-    sql(s"""select stddev_pop(contractNumber) as a  from (select contractNumber from VMALL_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
+    sql(s"""select stddev_pop(contractNumber) as a  from (select contractNumber from TABLE_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_048
-  test("VMALL_DICTIONARY_EXCLUDE_048", Include) {
+  //DICTIONARY_EXCLUDE_048
+  test("Queries_DICTIONARY_EXCLUDE_048", Include) {
 
-    sql(s"""select stddev_samp(contractNumber)  as a from (select contractNumber from VMALL_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
+    sql(s"""select stddev_samp(contractNumber)  as a from (select contractNumber from TABLE_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_049
-  test("VMALL_DICTIONARY_EXCLUDE_049", Include) {
+  //DICTIONARY_EXCLUDE_049
+  test("Queries_DICTIONARY_EXCLUDE_049", Include) {
 
-    sql(s"""select covar_pop(contractNumber,contractNumber) as a  from (select contractNumber from VMALL_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
+    sql(s"""select covar_pop(contractNumber,contractNumber) as a  from (select contractNumber from TABLE_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_050
-  test("VMALL_DICTIONARY_EXCLUDE_050", Include) {
+  //DICTIONARY_EXCLUDE_050
+  test("Queries_DICTIONARY_EXCLUDE_050", Include) {
 
-    sql(s"""select covar_samp(contractNumber,contractNumber) as a  from (select contractNumber from VMALL_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
+    sql(s"""select covar_samp(contractNumber,contractNumber) as a  from (select contractNumber from TABLE_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_051
-  test("VMALL_DICTIONARY_EXCLUDE_051", Include) {
+  //DICTIONARY_EXCLUDE_051
+  test("Queries_DICTIONARY_EXCLUDE_051", Include) {
 
-    checkAnswer(s"""select corr(contractNumber,contractNumber)  as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select corr(contractNumber,contractNumber)  as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_051")
+    checkAnswer(s"""select corr(contractNumber,contractNumber)  as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select corr(contractNumber,contractNumber)  as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_051")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_052
-  test("VMALL_DICTIONARY_EXCLUDE_052", Include) {
+  //DICTIONARY_EXCLUDE_052
+  test("Queries_DICTIONARY_EXCLUDE_052", Include) {
 
-    sql(s"""select percentile_approx(contractNumber,0.2) as a  from (select contractNumber from VMALL_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
+    sql(s"""select percentile_approx(contractNumber,0.2) as a  from (select contractNumber from TABLE_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_053
-  test("VMALL_DICTIONARY_EXCLUDE_053", Include) {
+  //DICTIONARY_EXCLUDE_053
+  test("Queries_DICTIONARY_EXCLUDE_053", Include) {
 
-    sql(s"""select percentile_approx(contractNumber,0.2,5) as a  from (select contractNumber from VMALL_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
+    sql(s"""select percentile_approx(contractNumber,0.2,5) as a  from (select contractNumber from TABLE_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_054
-  test("VMALL_DICTIONARY_EXCLUDE_054", Include) {
+  //DICTIONARY_EXCLUDE_054
+  test("Queries_DICTIONARY_EXCLUDE_054", Include) {
 
-    sql(s"""select percentile_approx(contractNumber,array(0.2,0.3,0.99))  as a from (select contractNumber from VMALL_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
+    sql(s"""select percentile_approx(contractNumber,array(0.2,0.3,0.99))  as a from (select contractNumber from TABLE_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_055
-  test("VMALL_DICTIONARY_EXCLUDE_055", Include) {
+  //DICTIONARY_EXCLUDE_055
+  test("Queries_DICTIONARY_EXCLUDE_055", Include) {
 
-    sql(s"""select percentile_approx(contractNumber,array(0.2,0.3,0.99),5) as a from (select contractNumber from VMALL_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
+    sql(s"""select percentile_approx(contractNumber,array(0.2,0.3,0.99),5) as a from (select contractNumber from TABLE_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_056
-  test("VMALL_DICTIONARY_EXCLUDE_056", Include) {
+  //DICTIONARY_EXCLUDE_056
+  test("Queries_DICTIONARY_EXCLUDE_056", Include) {
 
-    sql(s"""select histogram_numeric(contractNumber,2)  as a from (select contractNumber from VMALL_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
+    sql(s"""select histogram_numeric(contractNumber,2)  as a from (select contractNumber from TABLE_DICTIONARY_EXCLUDE order by contractNumber) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_057
-  test("VMALL_DICTIONARY_EXCLUDE_057", Include) {
+  //DICTIONARY_EXCLUDE_057
+  test("Queries_DICTIONARY_EXCLUDE_057", Include) {
 
-    checkAnswer(s"""select contractNumber+ 10 as a  from VMALL_DICTIONARY_EXCLUDE order by a""",
-      s"""select contractNumber+ 10 as a  from VMALL_DICTIONARY_EXCLUDE1_hive order by a""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_057")
+    checkAnswer(s"""select contractNumber+ 10 as a  from TABLE_DICTIONARY_EXCLUDE order by a""",
+      s"""select contractNumber+ 10 as a  from TABLE_DICTIONARY_EXCLUDE1_hive order by a""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_057")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_058
-  test("VMALL_DICTIONARY_EXCLUDE_058", Include) {
+  //DICTIONARY_EXCLUDE_058
+  test("Queries_DICTIONARY_EXCLUDE_058", Include) {
 
-    checkAnswer(s"""select min(contractNumber), max(contractNumber+ 10) Total from VMALL_DICTIONARY_EXCLUDE group by  channelsId order by Total""",
-      s"""select min(contractNumber), max(contractNumber+ 10) Total from VMALL_DICTIONARY_EXCLUDE1_hive group by  channelsId order by Total""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_058")
+    checkAnswer(s"""select min(contractNumber), max(contractNumber+ 10) Total from TABLE_DICTIONARY_EXCLUDE group by  channelsId order by Total""",
+      s"""select min(contractNumber), max(contractNumber+ 10) Total from TABLE_DICTIONARY_EXCLUDE1_hive group by  channelsId order by Total""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_058")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_059
-  test("VMALL_DICTIONARY_EXCLUDE_059", Include) {
+  //DICTIONARY_EXCLUDE_059
+  test("Queries_DICTIONARY_EXCLUDE_059", Include) {
 
-    sql(s"""select last(contractNumber) a from VMALL_DICTIONARY_EXCLUDE  order by a""").collect
+    sql(s"""select last(contractNumber) a from TABLE_DICTIONARY_EXCLUDE  order by a""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_060
-  test("VMALL_DICTIONARY_EXCLUDE_060", Include) {
+  //DICTIONARY_EXCLUDE_060
+  test("Queries_DICTIONARY_EXCLUDE_060", Include) {
 
-    sql(s"""select FIRST(contractNumber) a from VMALL_DICTIONARY_EXCLUDE order by a""").collect
+    sql(s"""select FIRST(contractNumber) a from TABLE_DICTIONARY_EXCLUDE order by a""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_061
-  test("VMALL_DICTIONARY_EXCLUDE_061", Include) {
+  //DICTIONARY_EXCLUDE_061
+  test("Queries_DICTIONARY_EXCLUDE_061", Include) {
 
-    checkAnswer(s"""select contractNumber,count(contractNumber) a from VMALL_DICTIONARY_EXCLUDE group by contractNumber order by contractNumber""",
-      s"""select contractNumber,count(contractNumber) a from VMALL_DICTIONARY_EXCLUDE1_hive group by contractNumber order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_061")
+    checkAnswer(s"""select contractNumber,count(contractNumber) a from TABLE_DICTIONARY_EXCLUDE group by contractNumber order by contractNumber""",
+      s"""select contractNumber,count(contractNumber) a from TABLE_DICTIONARY_EXCLUDE1_hive group by contractNumber order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_061")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_062
-  test("VMALL_DICTIONARY_EXCLUDE_062", Include) {
+  //DICTIONARY_EXCLUDE_062
+  test("Queries_DICTIONARY_EXCLUDE_062", Include) {
 
-    checkAnswer(s"""select Lower(contractNumber) a  from VMALL_DICTIONARY_EXCLUDE order by contractNumber""",
-      s"""select Lower(contractNumber) a  from VMALL_DICTIONARY_EXCLUDE1_hive order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_062")
+    checkAnswer(s"""select Lower(contractNumber) a  from TABLE_DICTIONARY_EXCLUDE order by contractNumber""",
+      s"""select Lower(contractNumber) a  from TABLE_DICTIONARY_EXCLUDE1_hive order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_062")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_063
-  test("VMALL_DICTIONARY_EXCLUDE_063", Include) {
+  //DICTIONARY_EXCLUDE_063
+  test("Queries_DICTIONARY_EXCLUDE_063", Include) {
 
-    checkAnswer(s"""select distinct contractNumber from VMALL_DICTIONARY_EXCLUDE order by contractNumber""",
-      s"""select distinct contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_063")
+    checkAnswer(s"""select distinct contractNumber from TABLE_DICTIONARY_EXCLUDE order by contractNumber""",
+      s"""select distinct contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_063")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_064
-  test("VMALL_DICTIONARY_EXCLUDE_064", Include) {
+  //DICTIONARY_EXCLUDE_064
+  test("Queries_DICTIONARY_EXCLUDE_064", Include) {
 
-    checkAnswer(s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE order by contractNumber limit 101""",
-      s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive order by contractNumber limit 101""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_064")
+    checkAnswer(s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE order by contractNumber limit 101""",
+      s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive order by contractNumber limit 101""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_064")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_065
-  test("VMALL_DICTIONARY_EXCLUDE_065", Include) {
+  //DICTIONARY_EXCLUDE_065
+  test("Queries_DICTIONARY_EXCLUDE_065", Include) {
 
-    checkAnswer(s"""select contractNumber as a from VMALL_DICTIONARY_EXCLUDE  order by a asc limit 10""",
-      s"""select contractNumber as a from VMALL_DICTIONARY_EXCLUDE1_hive  order by a asc limit 10""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_065")
+    checkAnswer(s"""select contractNumber as a from TABLE_DICTIONARY_EXCLUDE  order by a asc limit 10""",
+      s"""select contractNumber as a from TABLE_DICTIONARY_EXCLUDE1_hive  order by a asc limit 10""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_065")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_066
-  test("VMALL_DICTIONARY_EXCLUDE_066", Include) {
+  //DICTIONARY_EXCLUDE_066
+  test("Queries_DICTIONARY_EXCLUDE_066", Include) {
 
-    checkAnswer(s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE where  (contractNumber == 9223372047700) and (imei=='1AA100012')""",
-      s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive where  (contractNumber == 9223372047700) and (imei=='1AA100012')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_066")
+    checkAnswer(s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE where  (contractNumber == 9223372047700) and (imei=='1AA100012')""",
+      s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive where  (contractNumber == 9223372047700) and (imei=='1AA100012')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_066")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_067
-  test("VMALL_DICTIONARY_EXCLUDE_067", Include) {
+  //DICTIONARY_EXCLUDE_067
+  test("Queries_DICTIONARY_EXCLUDE_067", Include) {
 
-    checkAnswer(s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE where contractNumber !=9223372047700 order by contractNumber""",
-      s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive where contractNumber !=9223372047700 order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_067")
+    checkAnswer(s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE where contractNumber !=9223372047700 order by contractNumber""",
+      s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive where contractNumber !=9223372047700 order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_067")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_068
-  test("VMALL_DICTIONARY_EXCLUDE_068", Include) {
+  //DICTIONARY_EXCLUDE_068
+  test("Queries_DICTIONARY_EXCLUDE_068", Include) {
 
-    checkAnswer(s"""select contractNumber  from VMALL_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color') order by contractNumber""",
-      s"""select contractNumber  from VMALL_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color') order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_068")
+    checkAnswer(s"""select contractNumber  from TABLE_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color') order by contractNumber""",
+      s"""select contractNumber  from TABLE_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color') order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_068")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_069
-  test("VMALL_DICTIONARY_EXCLUDE_069", Include) {
+  //DICTIONARY_EXCLUDE_069
+  test("Queries_DICTIONARY_EXCLUDE_069", Include) {
 
-    checkAnswer(s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE where contractNumber !=9223372047700 order by contractNumber""",
-      s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive where contractNumber !=9223372047700 order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_069")
+    checkAnswer(s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE where contractNumber !=9223372047700 order by contractNumber""",
+      s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive where contractNumber !=9223372047700 order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_069")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_070
-  test("VMALL_DICTIONARY_EXCLUDE_070", Include) {
+  //DICTIONARY_EXCLUDE_070
+  test("Queries_DICTIONARY_EXCLUDE_070", Include) {
 
-    checkAnswer(s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE where contractNumber >9223372047700 order by contractNumber""",
-      s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive where contractNumber >9223372047700 order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_070")
+    checkAnswer(s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE where contractNumber >9223372047700 order by contractNumber""",
+      s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive where contractNumber >9223372047700 order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_070")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_071
-  test("VMALL_DICTIONARY_EXCLUDE_071", Include) {
+  //DICTIONARY_EXCLUDE_071
+  test("Queries_DICTIONARY_EXCLUDE_071", Include) {
 
-    checkAnswer(s"""select contractNumber  from VMALL_DICTIONARY_EXCLUDE where contractNumber<>contractNumber""",
-      s"""select contractNumber  from VMALL_DICTIONARY_EXCLUDE1_hive where contractNumber<>contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_071")
+    checkAnswer(s"""select contractNumber  from TABLE_DICTIONARY_EXCLUDE where contractNumber<>contractNumber""",
+      s"""select contractNumber  from TABLE_DICTIONARY_EXCLUDE1_hive where contractNumber<>contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_071")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_072
-  test("VMALL_DICTIONARY_EXCLUDE_072", Include) {
+  //DICTIONARY_EXCLUDE_072
+  test("Queries_DICTIONARY_EXCLUDE_072", Include) {
 
-    checkAnswer(s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE where contractNumber != Latest_areaId order by contractNumber""",
-      s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive where contractNumber != Latest_areaId order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_072")
+    checkAnswer(s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE where contractNumber != Latest_areaId order by contractNumber""",
+      s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive where contractNumber != Latest_areaId order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_072")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_073
-  test("VMALL_DICTIONARY_EXCLUDE_073", Include) {
+  //DICTIONARY_EXCLUDE_073
+  test("Queries_DICTIONARY_EXCLUDE_073", Include) {
 
-    checkAnswer(s"""select contractNumber, contractNumber from VMALL_DICTIONARY_EXCLUDE where Latest_areaId<contractNumber order by contractNumber""",
-      s"""select contractNumber, contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_areaId<contractNumber order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_073")
+    checkAnswer(s"""select contractNumber, contractNumber from TABLE_DICTIONARY_EXCLUDE where Latest_areaId<contractNumber order by contractNumber""",
+      s"""select contractNumber, contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_areaId<contractNumber order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_073")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_074
-  test("VMALL_DICTIONARY_EXCLUDE_074", Include) {
+  //DICTIONARY_EXCLUDE_074
+  test("Queries_DICTIONARY_EXCLUDE_074", Include) {
 
-    checkAnswer(s"""select contractNumber, contractNumber from VMALL_DICTIONARY_EXCLUDE where Latest_DAY<=contractNumber order by contractNumber""",
-      s"""select contractNumber, contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY<=contractNumber order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_074")
+    checkAnswer(s"""select contractNumber, contractNumber from TABLE_DICTIONARY_EXCLUDE where Latest_DAY<=contractNumber order by contractNumber""",
+      s"""select contractNumber, contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY<=contractNumber order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_074")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_075
-  test("VMALL_DICTIONARY_EXCLUDE_075", Include) {
+  //DICTIONARY_EXCLUDE_075
+  test("Queries_DICTIONARY_EXCLUDE_075", Include) {
 
-    checkAnswer(s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE where contractNumber <1000 order by contractNumber""",
-      s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive where contractNumber <1000 order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_075")
+    checkAnswer(s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE where contractNumber <1000 order by contractNumber""",
+      s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive where contractNumber <1000 order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_075")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_076
-  test("VMALL_DICTIONARY_EXCLUDE_076", Include) {
+  //DICTIONARY_EXCLUDE_076
+  test("Queries_DICTIONARY_EXCLUDE_076", Include) {
 
-    checkAnswer(s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE where contractNumber >1000 order by contractNumber""",
-      s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive where contractNumber >1000 order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_076")
+    checkAnswer(s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE where contractNumber >1000 order by contractNumber""",
+      s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive where contractNumber >1000 order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_076")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_077
-  test("VMALL_DICTIONARY_EXCLUDE_077", Include) {
+  //DICTIONARY_EXCLUDE_077
+  test("Queries_DICTIONARY_EXCLUDE_077", Include) {
 
-    checkAnswer(s"""select contractNumber  from VMALL_DICTIONARY_EXCLUDE where contractNumber IS NULL order by contractNumber""",
-      s"""select contractNumber  from VMALL_DICTIONARY_EXCLUDE1_hive where contractNumber IS NULL order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_077")
+    checkAnswer(s"""select contractNumber  from TABLE_DICTIONARY_EXCLUDE where contractNumber IS NULL order by contractNumber""",
+      s"""select contractNumber  from TABLE_DICTIONARY_EXCLUDE1_hive where contractNumber IS NULL order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_077")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_078
-  test("VMALL_DICTIONARY_EXCLUDE_078", Include) {
+  //DICTIONARY_EXCLUDE_078
+  test("Queries_DICTIONARY_EXCLUDE_078", Include) {
 
-    checkAnswer(s"""select contractNumber  from VMALL_DICTIONARY_EXCLUDE where Latest_DAY IS NOT NULL order by contractNumber""",
-      s"""select contractNumber  from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY IS NOT NULL order by contractNumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_078")
+    checkAnswer(s"""select contractNumber  from TABLE_DICTIONARY_EXCLUDE where Latest_DAY IS NOT NULL order by contractNumber""",
+      s"""select contractNumber  from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY IS NOT NULL order by contractNumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_078")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_079
-  test("VMALL_DICTIONARY_EXCLUDE_079", Include) {
+  //DICTIONARY_EXCLUDE_079
+  test("Queries_DICTIONARY_EXCLUDE_079", Include) {
 
-    checkAnswer(s"""Select count(Latest_DAY) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""Select count(Latest_DAY) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_079")
+    checkAnswer(s"""Select count(Latest_DAY) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""Select count(Latest_DAY) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_079")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_080
-  test("VMALL_DICTIONARY_EXCLUDE_080", Include) {
+  //DICTIONARY_EXCLUDE_080
+  test("Queries_DICTIONARY_EXCLUDE_080", Include) {
 
-    checkAnswer(s"""select count(DISTINCT Latest_DAY) as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(DISTINCT Latest_DAY) as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_080")
+    checkAnswer(s"""select count(DISTINCT Latest_DAY) as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(DISTINCT Latest_DAY) as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_080")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_081
-  test("VMALL_DICTIONARY_EXCLUDE_081", Include) {
+  //DICTIONARY_EXCLUDE_081
+  test("Queries_DICTIONARY_EXCLUDE_081", Include) {
 
-    checkAnswer(s"""select sum(Latest_DAY)+10 as a ,Latest_DAY  from VMALL_DICTIONARY_EXCLUDE group by Latest_DAY order by a""",
-      s"""select sum(Latest_DAY)+10 as a ,Latest_DAY  from VMALL_DICTIONARY_EXCLUDE1_hive group by Latest_DAY order by a""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_081")
+    checkAnswer(s"""select sum(Latest_DAY)+10 as a ,Latest_DAY  from TABLE_DICTIONARY_EXCLUDE group by Latest_DAY order by a""",
+      s"""select sum(Latest_DAY)+10 as a ,Latest_DAY  from TABLE_DICTIONARY_EXCLUDE1_hive group by Latest_DAY order by a""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_081")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_082
-  test("VMALL_DICTIONARY_EXCLUDE_082", Include) {
+  //DICTIONARY_EXCLUDE_082
+  test("Queries_DICTIONARY_EXCLUDE_082", Include) {
 
-    checkAnswer(s"""select max(Latest_DAY),min(Latest_DAY) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select max(Latest_DAY),min(Latest_DAY) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_082")
+    checkAnswer(s"""select max(Latest_DAY),min(Latest_DAY) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select max(Latest_DAY),min(Latest_DAY) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_082")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_083
-  test("VMALL_DICTIONARY_EXCLUDE_083", Include) {
+  //DICTIONARY_EXCLUDE_083
+  test("Queries_DICTIONARY_EXCLUDE_083", Include) {
 
-    checkAnswer(s"""select sum(Latest_DAY) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(Latest_DAY) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_083")
+    checkAnswer(s"""select sum(Latest_DAY) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(Latest_DAY) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_083")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_084
-  test("VMALL_DICTIONARY_EXCLUDE_084", Include) {
+  //DICTIONARY_EXCLUDE_084
+  test("Queries_DICTIONARY_EXCLUDE_084", Include) {
 
-    checkAnswer(s"""select avg(Latest_DAY) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select avg(Latest_DAY) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_084")
+    checkAnswer(s"""select avg(Latest_DAY) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select avg(Latest_DAY) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_084")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_085
-  test("VMALL_DICTIONARY_EXCLUDE_085", Include) {
+  //DICTIONARY_EXCLUDE_085
+  test("Queries_DICTIONARY_EXCLUDE_085", Include) {
 
-    checkAnswer(s"""select min(Latest_DAY) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select min(Latest_DAY) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_085")
+    checkAnswer(s"""select min(Latest_DAY) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select min(Latest_DAY) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_085")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_086
-  test("VMALL_DICTIONARY_EXCLUDE_086", Include) {
+  //DICTIONARY_EXCLUDE_086
+  test("Queries_DICTIONARY_EXCLUDE_086", Include) {
 
-    sql(s"""select variance(Latest_DAY) as a   from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select variance(Latest_DAY) as a   from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_087
-  test("VMALL_DICTIONARY_EXCLUDE_087", Include) {
+  //DICTIONARY_EXCLUDE_087
+  test("Queries_DICTIONARY_EXCLUDE_087", Include) {
 
-    sql(s"""select var_pop(Latest_DAY)  as a from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select var_pop(Latest_DAY)  as a from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_088
-  test("VMALL_DICTIONARY_EXCLUDE_088", Include) {
+  //DICTIONARY_EXCLUDE_088
+  test("Queries_DICTIONARY_EXCLUDE_088", Include) {
 
-    sql(s"""select var_samp(Latest_DAY) as a  from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select var_samp(Latest_DAY) as a  from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_089
-  test("VMALL_DICTIONARY_EXCLUDE_089", Include) {
+  //DICTIONARY_EXCLUDE_089
+  test("Queries_DICTIONARY_EXCLUDE_089", Include) {
 
-    sql(s"""select stddev_pop(Latest_DAY) as a  from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select stddev_pop(Latest_DAY) as a  from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_090
-  test("VMALL_DICTIONARY_EXCLUDE_090", Include) {
+  //DICTIONARY_EXCLUDE_090
+  test("Queries_DICTIONARY_EXCLUDE_090", Include) {
 
-    sql(s"""select stddev_samp(Latest_DAY)  as a from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select stddev_samp(Latest_DAY)  as a from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_091
-  test("VMALL_DICTIONARY_EXCLUDE_091", Include) {
+  //DICTIONARY_EXCLUDE_091
+  test("Queries_DICTIONARY_EXCLUDE_091", Include) {
 
-    sql(s"""select covar_pop(Latest_DAY,Latest_DAY) as a  from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select covar_pop(Latest_DAY,Latest_DAY) as a  from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_092
-  test("VMALL_DICTIONARY_EXCLUDE_092", Include) {
+  //DICTIONARY_EXCLUDE_092
+  test("Queries_DICTIONARY_EXCLUDE_092", Include) {
 
-    sql(s"""select covar_samp(Latest_DAY,Latest_DAY) as a  from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select covar_samp(Latest_DAY,Latest_DAY) as a  from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_093
-  test("VMALL_DICTIONARY_EXCLUDE_093", Include) {
+  //DICTIONARY_EXCLUDE_093
+  test("Queries_DICTIONARY_EXCLUDE_093", Include) {
 
-    checkAnswer(s"""select corr(Latest_DAY,Latest_DAY)  as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select corr(Latest_DAY,Latest_DAY)  as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_093")
+    checkAnswer(s"""select corr(Latest_DAY,Latest_DAY)  as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select corr(Latest_DAY,Latest_DAY)  as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_093")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_094
-  test("VMALL_DICTIONARY_EXCLUDE_094", Include) {
+  //DICTIONARY_EXCLUDE_094
+  test("Queries_DICTIONARY_EXCLUDE_094", Include) {
 
-    sql(s"""select percentile_approx(Latest_DAY,0.2) as a  from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select percentile_approx(Latest_DAY,0.2) as a  from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_095
-  test("VMALL_DICTIONARY_EXCLUDE_095", Include) {
+  //DICTIONARY_EXCLUDE_095
+  test("Queries_DICTIONARY_EXCLUDE_095", Include) {
 
-    sql(s"""select percentile_approx(Latest_DAY,0.2,5) as a  from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select percentile_approx(Latest_DAY,0.2,5) as a  from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_096
-  test("VMALL_DICTIONARY_EXCLUDE_096", Include) {
+  //DICTIONARY_EXCLUDE_096
+  test("Queries_DICTIONARY_EXCLUDE_096", Include) {
 
-    sql(s"""select percentile_approx(Latest_DAY,array(0.2,0.3,0.99))  as a from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select percentile_approx(Latest_DAY,array(0.2,0.3,0.99))  as a from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_097
-  test("VMALL_DICTIONARY_EXCLUDE_097", Include) {
+  //DICTIONARY_EXCLUDE_097
+  test("Queries_DICTIONARY_EXCLUDE_097", Include) {
 
-    sql(s"""select percentile_approx(Latest_DAY,array(0.2,0.3,0.99),5) as a from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select percentile_approx(Latest_DAY,array(0.2,0.3,0.99),5) as a from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_098
-  test("VMALL_DICTIONARY_EXCLUDE_098", Include) {
+  //DICTIONARY_EXCLUDE_098
+  test("Queries_DICTIONARY_EXCLUDE_098", Include) {
 
-    sql(s"""select histogram_numeric(Latest_DAY,2)  as a from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select histogram_numeric(Latest_DAY,2)  as a from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_099
-  test("VMALL_DICTIONARY_EXCLUDE_099", Include) {
+  //DICTIONARY_EXCLUDE_099
+  test("Queries_DICTIONARY_EXCLUDE_099", Include) {
 
-    checkAnswer(s"""select Latest_DAY, Latest_DAY+ 10 as a  from VMALL_DICTIONARY_EXCLUDE order by a""",
-      s"""select Latest_DAY, Latest_DAY+ 10 as a  from VMALL_DICTIONARY_EXCLUDE1_hive order by a""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_099")
+    checkAnswer(s"""select Latest_DAY, Latest_DAY+ 10 as a  from TABLE_DICTIONARY_EXCLUDE order by a""",
+      s"""select Latest_DAY, Latest_DAY+ 10 as a  from TABLE_DICTIONARY_EXCLUDE1_hive order by a""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_099")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_100
-  test("VMALL_DICTIONARY_EXCLUDE_100", Include) {
+  //DICTIONARY_EXCLUDE_100
+  test("Queries_DICTIONARY_EXCLUDE_100", Include) {
 
-    checkAnswer(s"""select min(Latest_DAY) d, max(Latest_DAY+ 10) Total from VMALL_DICTIONARY_EXCLUDE group by  channelsId order by d, Total""",
-      s"""select min(Latest_DAY) d, max(Latest_DAY+ 10) Total from VMALL_DICTIONARY_EXCLUDE1_hive group by  channelsId order by d,Total""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_100")
+    checkAnswer(s"""select min(Latest_DAY) d, max(Latest_DAY+ 10) Total from TABLE_DICTIONARY_EXCLUDE group by  channelsId order by d, Total""",
+      s"""select min(Latest_DAY) d, max(Latest_DAY+ 10) Total from TABLE_DICTIONARY_EXCLUDE1_hive group by  channelsId order by d,Total""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_100")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_101
-  test("VMALL_DICTIONARY_EXCLUDE_101", Include) {
+  //DICTIONARY_EXCLUDE_101
+  test("Queries_DICTIONARY_EXCLUDE_101", Include) {
 
-    sql(s"""select last(Latest_DAY) a from VMALL_DICTIONARY_EXCLUDE order by a""").collect
+    sql(s"""select last(Latest_DAY) a from TABLE_DICTIONARY_EXCLUDE order by a""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_102
-  test("VMALL_DICTIONARY_EXCLUDE_102", Include) {
+  //DICTIONARY_EXCLUDE_102
+  test("Queries_DICTIONARY_EXCLUDE_102", Include) {
 
-    sql(s"""select FIRST(Latest_DAY) a from (select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
+    sql(s"""select FIRST(Latest_DAY) a from (select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_103
-  test("VMALL_DICTIONARY_EXCLUDE_103", Include) {
+  //DICTIONARY_EXCLUDE_103
+  test("Queries_DICTIONARY_EXCLUDE_103", Include) {
 
-    checkAnswer(s"""select Latest_DAY,count(Latest_DAY) a from VMALL_DICTIONARY_EXCLUDE group by Latest_DAY order by Latest_DAY""",
-      s"""select Latest_DAY,count(Latest_DAY) a from VMALL_DICTIONARY_EXCLUDE1_hive group by Latest_DAY order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_103")
+    checkAnswer(s"""select Latest_DAY,count(Latest_DAY) a from TABLE_DICTIONARY_EXCLUDE group by Latest_DAY order by Latest_DAY""",
+      s"""select Latest_DAY,count(Latest_DAY) a from TABLE_DICTIONARY_EXCLUDE1_hive group by Latest_DAY order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_103")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_104
-  test("VMALL_DICTIONARY_EXCLUDE_104", Include) {
+  //DICTIONARY_EXCLUDE_104
+  test("Queries_DICTIONARY_EXCLUDE_104", Include) {
 
-    checkAnswer(s"""select Lower(Latest_DAY) a  from VMALL_DICTIONARY_EXCLUDE order by a""",
-      s"""select Lower(Latest_DAY) a  from VMALL_DICTIONARY_EXCLUDE1_hive order by a""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_104")
+    checkAnswer(s"""select Lower(Latest_DAY) a  from TABLE_DICTIONARY_EXCLUDE order by a""",
+      s"""select Lower(Latest_DAY) a  from TABLE_DICTIONARY_EXCLUDE1_hive order by a""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_104")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_105
-  test("VMALL_DICTIONARY_EXCLUDE_105", Include) {
+  //DICTIONARY_EXCLUDE_105
+  test("Queries_DICTIONARY_EXCLUDE_105", Include) {
 
-    checkAnswer(s"""select distinct Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY""",
-      s"""select distinct Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_105")
+    checkAnswer(s"""select distinct Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY""",
+      s"""select distinct Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_105")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_106
-  test("VMALL_DICTIONARY_EXCLUDE_106", Include) {
+  //DICTIONARY_EXCLUDE_106
+  test("Queries_DICTIONARY_EXCLUDE_106", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE order by Latest_DAY limit 101""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive order by Latest_DAY limit 101""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_106")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE order by Latest_DAY limit 101""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive order by Latest_DAY limit 101""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_106")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_107
-  test("VMALL_DICTIONARY_EXCLUDE_107", Include) {
+  //DICTIONARY_EXCLUDE_107
+  test("Queries_DICTIONARY_EXCLUDE_107", Include) {
 
-    checkAnswer(s"""select Latest_DAY as a from VMALL_DICTIONARY_EXCLUDE  order by a asc limit 10""",
-      s"""select Latest_DAY as a from VMALL_DICTIONARY_EXCLUDE1_hive  order by a asc limit 10""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_107")
+    checkAnswer(s"""select Latest_DAY as a from TABLE_DICTIONARY_EXCLUDE  order by a asc limit 10""",
+      s"""select Latest_DAY as a from TABLE_DICTIONARY_EXCLUDE1_hive  order by a asc limit 10""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_107")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_108
-  test("VMALL_DICTIONARY_EXCLUDE_108", Include) {
+  //DICTIONARY_EXCLUDE_108
+  test("Queries_DICTIONARY_EXCLUDE_108", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where  (Latest_DAY == 1234567890123450.0000000000)  and (imei=='1AA1')""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where  (Latest_DAY == 1234567890123450.0000000000)  and (imei=='1AA1')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_108")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where  (Latest_DAY == 1234567890123450.0000000000)  and (imei=='1AA1')""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where  (Latest_DAY == 1234567890123450.0000000000)  and (imei=='1AA1')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_108")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_109
-  test("VMALL_DICTIONARY_EXCLUDE_109", Include) {
+  //DICTIONARY_EXCLUDE_109
+  test("Queries_DICTIONARY_EXCLUDE_109", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY !=1234567890123450.0000000000  order by Latest_DAY""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY !=1234567890123450.0000000000  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_109")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY !=1234567890123450.0000000000  order by Latest_DAY""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY !=1234567890123450.0000000000  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_109")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_110
-  test("VMALL_DICTIONARY_EXCLUDE_110", Include) {
+  //DICTIONARY_EXCLUDE_110
+  test("Queries_DICTIONARY_EXCLUDE_110", Include) {
 
-    checkAnswer(s"""select Latest_DAY  from VMALL_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""",
-      s"""select Latest_DAY  from VMALL_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_110")
+    checkAnswer(s"""select Latest_DAY  from TABLE_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""",
+      s"""select Latest_DAY  from TABLE_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_110")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_111
-  test("VMALL_DICTIONARY_EXCLUDE_111", Include) {
+  //DICTIONARY_EXCLUDE_111
+  test("Queries_DICTIONARY_EXCLUDE_111", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY !=1234567890123450.0000000000  order by Latest_DAY""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY !=1234567890123450.0000000000  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_111")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY !=1234567890123450.0000000000  order by Latest_DAY""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY !=1234567890123450.0000000000  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_111")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_112
-  test("VMALL_DICTIONARY_EXCLUDE_112", Include) {
+  //DICTIONARY_EXCLUDE_112
+  test("Queries_DICTIONARY_EXCLUDE_112", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY >1234567890123450.0000000000  order by Latest_DAY""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY >1234567890123450.0000000000  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_112")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY >1234567890123450.0000000000  order by Latest_DAY""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY >1234567890123450.0000000000  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_112")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_113
-  test("VMALL_DICTIONARY_EXCLUDE_113", Include) {
+  //DICTIONARY_EXCLUDE_113
+  test("Queries_DICTIONARY_EXCLUDE_113", Include) {
 
-    checkAnswer(s"""select Latest_DAY  from VMALL_DICTIONARY_EXCLUDE where Latest_DAY<>Latest_DAY""",
-      s"""select Latest_DAY  from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY<>Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_113")
+    checkAnswer(s"""select Latest_DAY  from TABLE_DICTIONARY_EXCLUDE where Latest_DAY<>Latest_DAY""",
+      s"""select Latest_DAY  from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY<>Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_113")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_114
-  test("VMALL_DICTIONARY_EXCLUDE_114", Include) {
+  //DICTIONARY_EXCLUDE_114
+  test("Queries_DICTIONARY_EXCLUDE_114", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY != Latest_areaId order by Latest_DAY""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY != Latest_areaId order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_114")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY != Latest_areaId order by Latest_DAY""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY != Latest_areaId order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_114")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_115
-  test("VMALL_DICTIONARY_EXCLUDE_115", Include) {
+  //DICTIONARY_EXCLUDE_115
+  test("Queries_DICTIONARY_EXCLUDE_115", Include) {
 
-    checkAnswer(s"""select Latest_DAY, Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_areaId<Latest_DAY order by Latest_DAY""",
-      s"""select Latest_DAY, Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_areaId<Latest_DAY order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_115")
+    checkAnswer(s"""select Latest_DAY, Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_areaId<Latest_DAY order by Latest_DAY""",
+      s"""select Latest_DAY, Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_areaId<Latest_DAY order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_115")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_116
-  test("VMALL_DICTIONARY_EXCLUDE_116", Include) {
+  //DICTIONARY_EXCLUDE_116
+  test("Queries_DICTIONARY_EXCLUDE_116", Include) {
 
-    checkAnswer(s"""select Latest_DAY, Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY<=Latest_DAY  order by Latest_DAY""",
-      s"""select Latest_DAY, Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY<=Latest_DAY  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_116")
+    checkAnswer(s"""select Latest_DAY, Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY<=Latest_DAY  order by Latest_DAY""",
+      s"""select Latest_DAY, Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY<=Latest_DAY  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_116")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_117
-  test("VMALL_DICTIONARY_EXCLUDE_117", Include) {
+  //DICTIONARY_EXCLUDE_117
+  test("Queries_DICTIONARY_EXCLUDE_117", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY <1000  order by Latest_DAY""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY <1000  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_117")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY <1000  order by Latest_DAY""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY <1000  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_117")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_118
-  test("VMALL_DICTIONARY_EXCLUDE_118", Include) {
+  //DICTIONARY_EXCLUDE_118
+  test("Queries_DICTIONARY_EXCLUDE_118", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY >1000  order by Latest_DAY""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY >1000  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_118")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY >1000  order by Latest_DAY""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY >1000  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_118")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_119
-  test("VMALL_DICTIONARY_EXCLUDE_119", Include) {
+  //DICTIONARY_EXCLUDE_119
+  test("Queries_DICTIONARY_EXCLUDE_119", Include) {
 
-    checkAnswer(s"""select Latest_DAY  from VMALL_DICTIONARY_EXCLUDE where Latest_DAY IS NULL  order by Latest_DAY""",
-      s"""select Latest_DAY  from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY IS NULL  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_119")
+    checkAnswer(s"""select Latest_DAY  from TABLE_DICTIONARY_EXCLUDE where Latest_DAY IS NULL  order by Latest_DAY""",
+      s"""select Latest_DAY  from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY IS NULL  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_119")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_120
-  test("VMALL_DICTIONARY_EXCLUDE_120", Include) {
+  //DICTIONARY_EXCLUDE_120
+  test("Queries_DICTIONARY_EXCLUDE_120", Include) {
 
-    checkAnswer(s"""select Latest_DAY  from VMALL_DICTIONARY_EXCLUDE where Latest_DAY IS NOT NULL  order by Latest_DAY""",
-      s"""select Latest_DAY  from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY IS NOT NULL  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_120")
+    checkAnswer(s"""select Latest_DAY  from TABLE_DICTIONARY_EXCLUDE where Latest_DAY IS NOT NULL  order by Latest_DAY""",
+      s"""select Latest_DAY  from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY IS NOT NULL  order by Latest_DAY""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_120")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_121
-  test("VMALL_DICTIONARY_EXCLUDE_121", Include) {
+  //DICTIONARY_EXCLUDE_121
+  test("Queries_DICTIONARY_EXCLUDE_121", Include) {
 
-    checkAnswer(s"""Select count(gamePointId) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""Select count(gamePointId) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_121")
+    checkAnswer(s"""Select count(gamePointId) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""Select count(gamePointId) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_121")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_122
-  test("VMALL_DICTIONARY_EXCLUDE_122", Include) {
+  //DICTIONARY_EXCLUDE_122
+  test("Queries_DICTIONARY_EXCLUDE_122", Include) {
 
-    checkAnswer(s"""select count(DISTINCT gamePointId) as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(DISTINCT gamePointId) as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_122")
+    checkAnswer(s"""select count(DISTINCT gamePointId) as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(DISTINCT gamePointId) as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_122")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_123
-  test("VMALL_DICTIONARY_EXCLUDE_123", Include) {
+  //DICTIONARY_EXCLUDE_123
+  test("Queries_DICTIONARY_EXCLUDE_123", Include) {
 
-    checkAnswer(s"""select sum(gamePointId)+10 as a ,gamePointId  from VMALL_DICTIONARY_EXCLUDE group by gamePointId order by a""",
-      s"""select sum(gamePointId)+10 as a ,gamePointId  from VMALL_DICTIONARY_EXCLUDE1_hive group by gamePointId order by a""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_123")
+    checkAnswer(s"""select sum(gamePointId)+10 as a ,gamePointId  from TABLE_DICTIONARY_EXCLUDE group by gamePointId order by a""",
+      s"""select sum(gamePointId)+10 as a ,gamePointId  from TABLE_DICTIONARY_EXCLUDE1_hive group by gamePointId order by a""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_123")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_124
-  test("VMALL_DICTIONARY_EXCLUDE_124", Include) {
+  //DICTIONARY_EXCLUDE_124
+  test("Queries_DICTIONARY_EXCLUDE_124", Include) {
 
-    checkAnswer(s"""select max(gamePointId),min(gamePointId) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select max(gamePointId),min(gamePointId) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_124")
+    checkAnswer(s"""select max(gamePointId),min(gamePointId) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select max(gamePointId),min(gamePointId) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_124")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_125
-  ignore("VMALL_DICTIONARY_EXCLUDE_125", Include) {
+  //DICTIONARY_EXCLUDE_125
+  ignore("Queries_DICTIONARY_EXCLUDE_125", Include) {
 
-    checkAnswer(s"""select sum(gamePointId) a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId)""",
-      s"""select sum(gamePointId) a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_125")
+    checkAnswer(s"""select sum(gamePointId) a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId)""",
+      s"""select sum(gamePointId) a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_125")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_126
-  ignore("VMALL_DICTIONARY_EXCLUDE_126", Include) {
+  //DICTIONARY_EXCLUDE_126
+  ignore("Queries_DICTIONARY_EXCLUDE_126", Include) {
 
-    checkAnswer(s"""select avg(gamePointId) a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId)""",
-      s"""select avg(gamePointId) a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_126")
+    checkAnswer(s"""select avg(gamePointId) a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId)""",
+      s"""select avg(gamePointId) a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_126")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_127
-  test("VMALL_DICTIONARY_EXCLUDE_127", Include) {
+  //DICTIONARY_EXCLUDE_127
+  test("Queries_DICTIONARY_EXCLUDE_127", Include) {
 
-    checkAnswer(s"""select min(gamePointId) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select min(gamePointId) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_127")
+    checkAnswer(s"""select min(gamePointId) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select min(gamePointId) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_127")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_128
-  test("VMALL_DICTIONARY_EXCLUDE_128", Include) {
+  //DICTIONARY_EXCLUDE_128
+  test("Queries_DICTIONARY_EXCLUDE_128", Include) {
 
-    sql(s"""select variance(gamePointId) as a   from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select variance(gamePointId) as a   from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_129
-  test("VMALL_DICTIONARY_EXCLUDE_129", Include) {
+  //DICTIONARY_EXCLUDE_129
+  test("Queries_DICTIONARY_EXCLUDE_129", Include) {
 
-    sql(s"""select var_pop(gamePointId)  as a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select var_pop(gamePointId)  as a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_130
-  test("VMALL_DICTIONARY_EXCLUDE_130", Include) {
+  //DICTIONARY_EXCLUDE_130
+  test("Queries_DICTIONARY_EXCLUDE_130", Include) {
 
-    sql(s"""select var_samp(gamePointId) as a  from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select var_samp(gamePointId) as a  from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_131
-  test("VMALL_DICTIONARY_EXCLUDE_131", Include) {
+  //DICTIONARY_EXCLUDE_131
+  test("Queries_DICTIONARY_EXCLUDE_131", Include) {
 
-    sql(s"""select stddev_pop(gamePointId) as a  from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select stddev_pop(gamePointId) as a  from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_132
-  test("VMALL_DICTIONARY_EXCLUDE_132", Include) {
+  //DICTIONARY_EXCLUDE_132
+  test("Queries_DICTIONARY_EXCLUDE_132", Include) {
 
-    sql(s"""select stddev_samp(gamePointId)  as a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select stddev_samp(gamePointId)  as a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_133
-  test("VMALL_DICTIONARY_EXCLUDE_133", Include) {
+  //DICTIONARY_EXCLUDE_133
+  test("Queries_DICTIONARY_EXCLUDE_133", Include) {
 
-    sql(s"""select covar_pop(gamePointId,gamePointId) as a  from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select covar_pop(gamePointId,gamePointId) as a  from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_134
-  test("VMALL_DICTIONARY_EXCLUDE_134", Include) {
+  //DICTIONARY_EXCLUDE_134
+  test("Queries_DICTIONARY_EXCLUDE_134", Include) {
 
-    sql(s"""select covar_samp(gamePointId,gamePointId) as a  from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select covar_samp(gamePointId,gamePointId) as a  from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_135
-  test("VMALL_DICTIONARY_EXCLUDE_135", Include) {
+  //DICTIONARY_EXCLUDE_135
+  test("Queries_DICTIONARY_EXCLUDE_135", Include) {
 
-    checkAnswer(s"""select corr(gamePointId,gamePointId)  as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select corr(gamePointId,gamePointId)  as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_135")
+    checkAnswer(s"""select corr(gamePointId,gamePointId)  as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select corr(gamePointId,gamePointId)  as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_135")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_136
-  test("VMALL_DICTIONARY_EXCLUDE_136", Include) {
+  //DICTIONARY_EXCLUDE_136
+  test("Queries_DICTIONARY_EXCLUDE_136", Include) {
 
-    sql(s"""select percentile_approx(gamePointId,0.2) as a  from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select percentile_approx(gamePointId,0.2) as a  from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_137
-  test("VMALL_DICTIONARY_EXCLUDE_137", Include) {
+  //DICTIONARY_EXCLUDE_137
+  test("Queries_DICTIONARY_EXCLUDE_137", Include) {
 
-    sql(s"""select percentile_approx(gamePointId,0.2,5) as a  from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select percentile_approx(gamePointId,0.2,5) as a  from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_138
-  test("VMALL_DICTIONARY_EXCLUDE_138", Include) {
+  //DICTIONARY_EXCLUDE_138
+  test("Queries_DICTIONARY_EXCLUDE_138", Include) {
 
-    sql(s"""select percentile_approx(gamePointId,array(0.2,0.3,0.99))  as a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select percentile_approx(gamePointId,array(0.2,0.3,0.99))  as a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_139
-  test("VMALL_DICTIONARY_EXCLUDE_139", Include) {
+  //DICTIONARY_EXCLUDE_139
+  test("Queries_DICTIONARY_EXCLUDE_139", Include) {
 
-    sql(s"""select percentile_approx(gamePointId,array(0.2,0.3,0.99),5) as a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select percentile_approx(gamePointId,array(0.2,0.3,0.99),5) as a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_140
-  test("VMALL_DICTIONARY_EXCLUDE_140", Include) {
+  //DICTIONARY_EXCLUDE_140
+  test("Queries_DICTIONARY_EXCLUDE_140", Include) {
 
-    sql(s"""select histogram_numeric(gamePointId,2)  as a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select histogram_numeric(gamePointId,2)  as a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_141
-  test("VMALL_DICTIONARY_EXCLUDE_141", Include) {
+  //DICTIONARY_EXCLUDE_141
+  test("Queries_DICTIONARY_EXCLUDE_141", Include) {
 
-    checkAnswer(s"""select gamePointId, gamePointId+ 10 as a  from VMALL_DICTIONARY_EXCLUDE order by a""",
-      s"""select gamePointId, gamePointId+ 10 as a  from VMALL_DICTIONARY_EXCLUDE1_hive order by a""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_141")
+    checkAnswer(s"""select gamePointId, gamePointId+ 10 as a  from TABLE_DICTIONARY_EXCLUDE order by a""",
+      s"""select gamePointId, gamePointId+ 10 as a  from TABLE_DICTIONARY_EXCLUDE1_hive order by a""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_141")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_142
-  test("VMALL_DICTIONARY_EXCLUDE_142", Include) {
+  //DICTIONARY_EXCLUDE_142
+  test("Queries_DICTIONARY_EXCLUDE_142", Include) {
 
-    checkAnswer(s"""select min(gamePointId), max(gamePointId+ 10) Total from VMALL_DICTIONARY_EXCLUDE group by  channelsId order by Total""",
-      s"""select min(gamePointId), max(gamePointId+ 10) Total from VMALL_DICTIONARY_EXCLUDE1_hive group by  channelsId order by Total""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_142")
+    checkAnswer(s"""select min(gamePointId), max(gamePointId+ 10) Total from TABLE_DICTIONARY_EXCLUDE group by  channelsId order by Total""",
+      s"""select min(gamePointId), max(gamePointId+ 10) Total from TABLE_DICTIONARY_EXCLUDE1_hive group by  channelsId order by Total""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_142")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_143
-  test("VMALL_DICTIONARY_EXCLUDE_143", Include) {
+  //DICTIONARY_EXCLUDE_143
+  test("Queries_DICTIONARY_EXCLUDE_143", Include) {
 
-    sql(s"""select last(gamePointId) a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select last(gamePointId) a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_144
-  ignore("VMALL_DICTIONARY_EXCLUDE_144", Include) {
+  //DICTIONARY_EXCLUDE_144
+  ignore("Queries_DICTIONARY_EXCLUDE_144", Include) {
 
-    checkAnswer(s"""select FIRST(gamePointId) a from VMALL_DICTIONARY_EXCLUDE order by a""",
-      s"""select FIRST(gamePointId) a from VMALL_DICTIONARY_EXCLUDE1_hive order by a""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_144")
+    checkAnswer(s"""select FIRST(gamePointId) a from TABLE_DICTIONARY_EXCLUDE order by a""",
+      s"""select FIRST(gamePointId) a from TABLE_DICTIONARY_EXCLUDE1_hive order by a""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_144")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_145
-  test("VMALL_DICTIONARY_EXCLUDE_145", Include) {
+  //DICTIONARY_EXCLUDE_145
+  test("Queries_DICTIONARY_EXCLUDE_145", Include) {
 
-    checkAnswer(s"""select gamePointId,count(gamePointId) a from VMALL_DICTIONARY_EXCLUDE group by gamePointId order by gamePointId""",
-      s"""select gamePointId,count(gamePointId) a from VMALL_DICTIONARY_EXCLUDE1_hive group by gamePointId order by gamePointId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_145")
+    checkAnswer(s"""select gamePointId,count(gamePointId) a from TABLE_DICTIONARY_EXCLUDE group by gamePointId order by gamePointId""",
+      s"""select gamePointId,count(gamePointId) a from TABLE_DICTIONARY_EXCLUDE1_hive group by gamePointId order by gamePointId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_145")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_146
-  test("VMALL_DICTIONARY_EXCLUDE_146", Include) {
+  //DICTIONARY_EXCLUDE_146
+  test("Queries_DICTIONARY_EXCLUDE_146", Include) {
 
-    checkAnswer(s"""select Lower(gamePointId) a  from VMALL_DICTIONARY_EXCLUDE order by gamePointId""",
-      s"""select Lower(gamePointId) a  from VMALL_DICTIONARY_EXCLUDE1_hive order by gamePointId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_146")
+    checkAnswer(s"""select Lower(gamePointId) a  from TABLE_DICTIONARY_EXCLUDE order by gamePointId""",
+      s"""select Lower(gamePointId) a  from TABLE_DICTIONARY_EXCLUDE1_hive order by gamePointId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_146")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_147
-  test("VMALL_DICTIONARY_EXCLUDE_147", Include) {
+  //DICTIONARY_EXCLUDE_147
+  test("Queries_DICTIONARY_EXCLUDE_147", Include) {
 
-    checkAnswer(s"""select distinct gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId""",
-      s"""select distinct gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive order by gamePointId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_147")
+    checkAnswer(s"""select distinct gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId""",
+      s"""select distinct gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive order by gamePointId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_147")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_148
-  test("VMALL_DICTIONARY_EXCLUDE_148", Include) {
+  //DICTIONARY_EXCLUDE_148
+  test("Queries_DICTIONARY_EXCLUDE_148", Include) {
 
-    checkAnswer(s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE  order by gamePointId limit 101""",
-      s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive  order by gamePointId limit 101""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_148")
+    checkAnswer(s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE  order by gamePointId limit 101""",
+      s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive  order by gamePointId limit 101""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_148")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_149
-  test("VMALL_DICTIONARY_EXCLUDE_149", Include) {
+  //DICTIONARY_EXCLUDE_149
+  test("Queries_DICTIONARY_EXCLUDE_149", Include) {
 
-    checkAnswer(s"""select gamePointId as a from VMALL_DICTIONARY_EXCLUDE  order by a asc limit 10""",
-      s"""select gamePointId as a from VMALL_DICTIONARY_EXCLUDE1_hive  order by a asc limit 10""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_149")
+    checkAnswer(s"""select gamePointId as a from TABLE_DICTIONARY_EXCLUDE  order by a asc limit 10""",
+      s"""select gamePointId as a from TABLE_DICTIONARY_EXCLUDE1_hive  order by a asc limit 10""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_149")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_150
-  test("VMALL_DICTIONARY_EXCLUDE_150", Include) {
+  //DICTIONARY_EXCLUDE_150
+  test("Queries_DICTIONARY_EXCLUDE_150", Include) {
 
-    checkAnswer(s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE where  (gamePointId == 4.70133553923674E43) and (imei=='1AA100084')""",
-      s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive where  (gamePointId == 4.70133553923674E43) and (imei=='1AA100084')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_150")
+    checkAnswer(s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE where  (gamePointId == 4.70133553923674E43) and (imei=='1AA100084')""",
+      s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive where  (gamePointId == 4.70133553923674E43) and (imei=='1AA100084')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_150")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_151
-  test("VMALL_DICTIONARY_EXCLUDE_151", Include) {
+  //DICTIONARY_EXCLUDE_151
+  test("Queries_DICTIONARY_EXCLUDE_151", Include) {
 
-    checkAnswer(s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE where gamePointId !=4.70133553923674E43  order by gamePointId""",
-      s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive where gamePointId !=4.70133553923674E43  order by gamePointId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_151")
+    checkAnswer(s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE where gamePointId !=4.70133553923674E43  order by gamePointId""",
+      s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive where gamePointId !=4.70133553923674E43  order by gamePointId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_151")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_152
-  test("VMALL_DICTIONARY_EXCLUDE_152", Include) {
+  //DICTIONARY_EXCLUDE_152
+  test("Queries_DICTIONARY_EXCLUDE_152", Include) {
 
-    checkAnswer(s"""select gamePointId  from VMALL_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""",
-      s"""select gamePointId  from VMALL_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_152")
+    checkAnswer(s"""select gamePointId  from TABLE_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""",
+      s"""select gamePointId  from TABLE_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_152")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_153
-  test("VMALL_DICTIONARY_EXCLUDE_153", Include) {
+  //DICTIONARY_EXCLUDE_153
+  test("Queries_DICTIONARY_EXCLUDE_153", Include) {
 
-    checkAnswer(s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE where gamePointId !=4.70133553923674E43""",
-      s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive where gamePointId !=4.70133553923674E43""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_153")
+    checkAnswer(s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE where gamePointId !=4.70133553923674E43""",
+      s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive where gamePointId !=4.70133553923674E43""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_153")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_154
-  test("VMALL_DICTIONARY_EXCLUDE_154", Include) {
+  //DICTIONARY_EXCLUDE_154
+  test("Queries_DICTIONARY_EXCLUDE_154", Include) {
 
-    checkAnswer(s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE where gamePointId >4.70133553923674E43""",
-      s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive where gamePointId >4.70133553923674E43""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_154")
+    checkAnswer(s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE where gamePointId >4.70133553923674E43""",
+      s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive where gamePointId >4.70133553923674E43""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_154")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_155
-  test("VMALL_DICTIONARY_EXCLUDE_155", Include) {
+  //DICTIONARY_EXCLUDE_155
+  test("Queries_DICTIONARY_EXCLUDE_155", Include) {
 
-    checkAnswer(s"""select gamePointId  from VMALL_DICTIONARY_EXCLUDE where gamePointId<>gamePointId""",
-      s"""select gamePointId  from VMALL_DICTIONARY_EXCLUDE1_hive where gamePointId<>gamePointId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_155")
+    checkAnswer(s"""select gamePointId  from TABLE_DICTIONARY_EXCLUDE where gamePointId<>gamePointId""",
+      s"""select gamePointId  from TABLE_DICTIONARY_EXCLUDE1_hive where gamePointId<>gamePointId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_155")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_156
-  test("VMALL_DICTIONARY_EXCLUDE_156", Include) {
+  //DICTIONARY_EXCLUDE_156
+  test("Queries_DICTIONARY_EXCLUDE_156", Include) {
 
-    checkAnswer(s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE where gamePointId != Latest_areaId  order by gamePointId""",
-      s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive where gamePointId != Latest_areaId  order by gamePointId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_156")
+    checkAnswer(s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE where gamePointId != Latest_areaId  order by gamePointId""",
+      s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive where gamePointId != Latest_areaId  order by gamePointId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_156")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_157
-  test("VMALL_DICTIONARY_EXCLUDE_157", Include) {
+  //DICTIONARY_EXCLUDE_157
+  test("Queries_DICTIONARY_EXCLUDE_157", Include) {
 
-    checkAnswer(s"""select gamePointId, gamePointId from VMALL_DICTIONARY_EXCLUDE where Latest_areaId<gamePointId  order by gamePointId""",
-      s"""select gamePointId, gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_areaId<gamePointId  order by gamePointId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_157")
+    checkAnswer(s"""select gamePointId, gamePointId from TABLE_DICTIONARY_EXCLUDE where Latest_areaId<gamePointId  order by gamePointId""",
+      s"""select gamePointId, gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_areaId<gamePointId  order by gamePointId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_157")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_158
-  test("VMALL_DICTIONARY_EXCLUDE_158", Include) {
+  //DICTIONARY_EXCLUDE_158
+  test("Queries_DICTIONARY_EXCLUDE_158", Include) {
 
-    checkAnswer(s"""select gamePointId, gamePointId from VMALL_DICTIONARY_EXCLUDE where gamePointId<=gamePointId  order by gamePointId""",
-      s"""select gamePointId, gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive where gamePointId<=gamePointId  order by gamePointId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_158")
+    checkAnswer(s"""select gamePointId, gamePointId from TABLE_DICTIONARY_EXCLUDE where gamePointId<=gamePointId  order by gamePointId""",
+      s"""select gamePointId, gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive where gamePointId<=gamePointId  order by gamePointId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_158")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_159
-  test("VMALL_DICTIONARY_EXCLUDE_159", Include) {
+  //DICTIONARY_EXCLUDE_159
+  test("Queries_DICTIONARY_EXCLUDE_159", Include) {
 
-    checkAnswer(s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE where gamePointId <1000 order by gamePointId""",
-      s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive where gamePointId <1000 order by gamePointId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_159")
+    checkAnswer(s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE where gamePointId <1000 order by gamePointId""",
+      s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive where gamePointId <1000 order by gamePointId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_159")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_160
-  test("VMALL_DICTIONARY_EXCLUDE_160", Include) {
+  //DICTIONARY_EXCLUDE_160
+  test("Queries_DICTIONARY_EXCLUDE_160", Include) {
 
-    checkAnswer(s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE where gamePointId >1000 order by gamePointId""",
-      s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive where gamePointId >1000 order by gamePointId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_160")
+    checkAnswer(s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE where gamePointId >1000 order by gamePointId""",
+      s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive where gamePointId >1000 order by gamePointId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_160")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_161
-  test("VMALL_DICTIONARY_EXCLUDE_161", Include) {
+  //DICTIONARY_EXCLUDE_161
+  test("Queries_DICTIONARY_EXCLUDE_161", Include) {
 
-    checkAnswer(s"""select gamePointId  from VMALL_DICTIONARY_EXCLUDE where gamePointId IS NULL order by gamePointId""",
-      s"""select gamePointId  from VMALL_DICTIONARY_EXCLUDE1_hive where gamePointId IS NULL order by gamePointId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_161")
+    checkAnswer(s"""select gamePointId  from TABLE_DICTIONARY_EXCLUDE where gamePointId IS NULL order by gamePointId""",
+      s"""select gamePointId  from TABLE_DICTIONARY_EXCLUDE1_hive where gamePointId IS NULL order by gamePointId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_161")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_162
-  test("VMALL_DICTIONARY_EXCLUDE_162", Include) {
+  //DICTIONARY_EXCLUDE_162
+  test("Queries_DICTIONARY_EXCLUDE_162", Include) {
 
-    checkAnswer(s"""select gamePointId  from VMALL_DICTIONARY_EXCLUDE where gamePointId IS NOT NULL order by gamePointId""",
-      s"""select gamePointId  from VMALL_DICTIONARY_EXCLUDE1_hive where gamePointId IS NOT NULL order by gamePointId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_162")
+    checkAnswer(s"""select gamePointId  from TABLE_DICTIONARY_EXCLUDE where gamePointId IS NOT NULL order by gamePointId""",
+      s"""select gamePointId  from TABLE_DICTIONARY_EXCLUDE1_hive where gamePointId IS NOT NULL order by gamePointId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_162")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_163
-  test("VMALL_DICTIONARY_EXCLUDE_163", Include) {
+  //DICTIONARY_EXCLUDE_163
+  test("Queries_DICTIONARY_EXCLUDE_163", Include) {
 
-    checkAnswer(s"""Select count(productionDate) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""Select count(productionDate) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_163")
+    checkAnswer(s"""Select count(productionDate) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""Select count(productionDate) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_163")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_164
-  test("VMALL_DICTIONARY_EXCLUDE_164", Include) {
+  //DICTIONARY_EXCLUDE_164
+  test("Queries_DICTIONARY_EXCLUDE_164", Include) {
 
-    checkAnswer(s"""select count(DISTINCT productionDate) as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(DISTINCT productionDate) as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_164")
+    checkAnswer(s"""select count(DISTINCT productionDate) as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(DISTINCT productionDate) as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_164")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_165
-  test("VMALL_DICTIONARY_EXCLUDE_165", Include) {
+  //DICTIONARY_EXCLUDE_165
+  test("Queries_DICTIONARY_EXCLUDE_165", Include) {
 
-    checkAnswer(s"""select sum(productionDate)+10 as a ,productionDate  from VMALL_DICTIONARY_EXCLUDE group by productionDate order by productionDate""",
-      s"""select sum(productionDate)+10 as a ,productionDate  from VMALL_DICTIONARY_EXCLUDE1_hive group by productionDate order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_165")
+    checkAnswer(s"""select sum(productionDate)+10 as a ,productionDate  from TABLE_DICTIONARY_EXCLUDE group by productionDate order by productionDate""",
+      s"""select sum(productionDate)+10 as a ,productionDate  from TABLE_DICTIONARY_EXCLUDE1_hive group by productionDate order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_165")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_166
-  test("VMALL_DICTIONARY_EXCLUDE_166", Include) {
+  //DICTIONARY_EXCLUDE_166
+  test("Queries_DICTIONARY_EXCLUDE_166", Include) {
 
-    checkAnswer(s"""select max(productionDate),min(productionDate) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select max(productionDate),min(productionDate) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_166")
+    checkAnswer(s"""select max(productionDate),min(productionDate) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select max(productionDate),min(productionDate) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_166")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_167
-  test("VMALL_DICTIONARY_EXCLUDE_167", Include) {
+  //DICTIONARY_EXCLUDE_167
+  test("Queries_DICTIONARY_EXCLUDE_167", Include) {
 
-    checkAnswer(s"""select sum(productionDate) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(productionDate) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_167")
+    checkAnswer(s"""select sum(productionDate) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(productionDate) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_167")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_168
-  test("VMALL_DICTIONARY_EXCLUDE_168", Include) {
+  //DICTIONARY_EXCLUDE_168
+  test("Queries_DICTIONARY_EXCLUDE_168", Include) {
 
-    checkAnswer(s"""select avg(productionDate) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select avg(productionDate) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_168")
+    checkAnswer(s"""select avg(productionDate) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select avg(productionDate) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_168")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_169
-  test("VMALL_DICTIONARY_EXCLUDE_169", Include) {
+  //DICTIONARY_EXCLUDE_169
+  test("Queries_DICTIONARY_EXCLUDE_169", Include) {
 
-    checkAnswer(s"""select min(productionDate) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select min(productionDate) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_169")
+    checkAnswer(s"""select min(productionDate) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select min(productionDate) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_169")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_170
-  test("VMALL_DICTIONARY_EXCLUDE_170", Include) {
+  //DICTIONARY_EXCLUDE_170
+  test("Queries_DICTIONARY_EXCLUDE_170", Include) {
 
-    sql(s"""select variance(gamePointId) as a   from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select variance(gamePointId) as a   from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_171
-  ignore("VMALL_DICTIONARY_EXCLUDE_171", Include) {
+  //DICTIONARY_EXCLUDE_171
+  ignore("Queries_DICTIONARY_EXCLUDE_171", Include) {
 
-    checkAnswer(s"""select var_pop(gamePointId) as a from (select * from VMALL_DICTIONARY_EXCLUDE order by gamePointId)""",
-      s"""select var_pop(gamePointId) as a from (select * from VMALL_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_171")
+    checkAnswer(s"""select var_pop(gamePointId) as a from (select * from TABLE_DICTIONARY_EXCLUDE order by gamePointId)""",
+      s"""select var_pop(gamePointId) as a from (select * from TABLE_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_171")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_172
-  ignore("VMALL_DICTIONARY_EXCLUDE_172", Include) {
+  //DICTIONARY_EXCLUDE_172
+  ignore("Queries_DICTIONARY_EXCLUDE_172", Include) {
 
-    checkAnswer(s"""select var_samp(gamePointId) as a from (select * from VMALL_DICTIONARY_EXCLUDE order by gamePointId)""",
-      s"""select var_samp(gamePointId) as a from (select * from VMALL_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_172")
+    checkAnswer(s"""select var_samp(gamePointId) as a from (select * from TABLE_DICTIONARY_EXCLUDE order by gamePointId)""",
+      s"""select var_samp(gamePointId) as a from (select * from TABLE_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_172")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_173
-  test("VMALL_DICTIONARY_EXCLUDE_173", Include) {
+  //DICTIONARY_EXCLUDE_173
+  test("Queries_DICTIONARY_EXCLUDE_173", Include) {
 
-    sql(s"""select stddev_pop(gamePointId) as a  from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select stddev_pop(gamePointId) as a  from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_174
-  test("VMALL_DICTIONARY_EXCLUDE_174", Include) {
+  //DICTIONARY_EXCLUDE_174
+  test("Queries_DICTIONARY_EXCLUDE_174", Include) {
 
-    sql(s"""select stddev_samp(gamePointId)  as a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select stddev_samp(gamePointId)  as a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_175
-  test("VMALL_DICTIONARY_EXCLUDE_175", Include) {
+  //DICTIONARY_EXCLUDE_175
+  test("Queries_DICTIONARY_EXCLUDE_175", Include) {
 
-    sql(s"""select covar_pop(gamePointId,gamePointId) as a  from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select covar_pop(gamePointId,gamePointId) as a  from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_176
-  test("VMALL_DICTIONARY_EXCLUDE_176", Include) {
+  //DICTIONARY_EXCLUDE_176
+  test("Queries_DICTIONARY_EXCLUDE_176", Include) {
 
-    sql(s"""select covar_samp(gamePointId,gamePointId) as a  from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select covar_samp(gamePointId,gamePointId) as a  from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_177
-  test("VMALL_DICTIONARY_EXCLUDE_177", Include) {
+  //DICTIONARY_EXCLUDE_177
+  test("Queries_DICTIONARY_EXCLUDE_177", Include) {
 
-    checkAnswer(s"""select corr(gamePointId,gamePointId)  as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select corr(gamePointId,gamePointId)  as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_177")
+    checkAnswer(s"""select corr(gamePointId,gamePointId)  as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select corr(gamePointId,gamePointId)  as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_177")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_178
-  test("VMALL_DICTIONARY_EXCLUDE_178", Include) {
+  //DICTIONARY_EXCLUDE_178
+  test("Queries_DICTIONARY_EXCLUDE_178", Include) {
 
-    sql(s"""select percentile_approx(gamePointId,0.2) as a  from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select percentile_approx(gamePointId,0.2) as a  from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_179
-  test("VMALL_DICTIONARY_EXCLUDE_179", Include) {
+  //DICTIONARY_EXCLUDE_179
+  test("Queries_DICTIONARY_EXCLUDE_179", Include) {
 
-    sql(s"""select percentile_approx(gamePointId,0.2,5) as a  from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select percentile_approx(gamePointId,0.2,5) as a  from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_180
-  test("VMALL_DICTIONARY_EXCLUDE_180", Include) {
+  //DICTIONARY_EXCLUDE_180
+  test("Queries_DICTIONARY_EXCLUDE_180", Include) {
 
-    sql(s"""select percentile_approx(gamePointId,array(0.2,0.3,0.99))  as a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select percentile_approx(gamePointId,array(0.2,0.3,0.99))  as a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_181
-  test("VMALL_DICTIONARY_EXCLUDE_181", Include) {
+  //DICTIONARY_EXCLUDE_181
+  test("Queries_DICTIONARY_EXCLUDE_181", Include) {
 
-    sql(s"""select percentile_approx(gamePointId,array(0.2,0.3,0.99),5) as a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
+    sql(s"""select percentile_approx(gamePointId,array(0.2,0.3,0.99),5) as a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_182
-  test("VMALL_DICTIONARY_EXCLUDE_182", Include) {
+  //DICTIONARY_EXCLUDE_182
+  test("Queries_DICTIONARY_EXCLUDE_182", Include) {
 
-    sql(s"""select histogram_numeric(productionDate,2)  as a from (select productionDate from VMALL_DICTIONARY_EXCLUDE order by productionDate) t""").collect
+    sql(s"""select histogram_numeric(productionDate,2)  as a from (select productionDate from TABLE_DICTIONARY_EXCLUDE order by productionDate) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_183
-  test("VMALL_DICTIONARY_EXCLUDE_183", Include) {
+  //DICTIONARY_EXCLUDE_183
+  test("Queries_DICTIONARY_EXCLUDE_183", Include) {
 
-    sql(s"""select last(productionDate) a from VMALL_DICTIONARY_EXCLUDE order by a""").collect
+    sql(s"""select last(productionDate) a from TABLE_DICTIONARY_EXCLUDE order by a""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_184
-  test("VMALL_DICTIONARY_EXCLUDE_184", Include) {
+  //DICTIONARY_EXCLUDE_184
+  test("Queries_DICTIONARY_EXCLUDE_184", Include) {
 
-    sql(s"""select FIRST(productionDate) a from (select productionDate from VMALL_DICTIONARY_EXCLUDE order by productionDate) t""").collect
+    sql(s"""select FIRST(productionDate) a from (select productionDate from TABLE_DICTIONARY_EXCLUDE order by productionDate) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_185
-  test("VMALL_DICTIONARY_EXCLUDE_185", Include) {
+  //DICTIONARY_EXCLUDE_185
+  test("Queries_DICTIONARY_EXCLUDE_185", Include) {
 
-    checkAnswer(s"""select productionDate,count(productionDate) a from VMALL_DICTIONARY_EXCLUDE group by productionDate order by productionDate""",
-      s"""select productionDate,count(productionDate) a from VMALL_DICTIONARY_EXCLUDE1_hive group by productionDate order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_185")
+    checkAnswer(s"""select productionDate,count(productionDate) a from TABLE_DICTIONARY_EXCLUDE group by productionDate order by productionDate""",
+      s"""select productionDate,count(productionDate) a from TABLE_DICTIONARY_EXCLUDE1_hive group by productionDate order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_185")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_186
-  test("VMALL_DICTIONARY_EXCLUDE_186", Include) {
+  //DICTIONARY_EXCLUDE_186
+  test("Queries_DICTIONARY_EXCLUDE_186", Include) {
 
-    checkAnswer(s"""select Lower(productionDate) a  from VMALL_DICTIONARY_EXCLUDE order by productionDate""",
-      s"""select Lower(productionDate) a  from VMALL_DICTIONARY_EXCLUDE1_hive order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_186")
+    checkAnswer(s"""select Lower(productionDate) a  from TABLE_DICTIONARY_EXCLUDE order by productionDate""",
+      s"""select Lower(productionDate) a  from TABLE_DICTIONARY_EXCLUDE1_hive order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_186")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_187
-  test("VMALL_DICTIONARY_EXCLUDE_187", Include) {
+  //DICTIONARY_EXCLUDE_187
+  test("Queries_DICTIONARY_EXCLUDE_187", Include) {
 
-    checkAnswer(s"""select distinct productionDate from VMALL_DICTIONARY_EXCLUDE order by productionDate""",
-      s"""select distinct productionDate from VMALL_DICTIONARY_EXCLUDE1_hive order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_187")
+    checkAnswer(s"""select distinct productionDate from TABLE_DICTIONARY_EXCLUDE order by productionDate""",
+      s"""select distinct productionDate from TABLE_DICTIONARY_EXCLUDE1_hive order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_187")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_188
-  test("VMALL_DICTIONARY_EXCLUDE_188", Include) {
+  //DICTIONARY_EXCLUDE_188
+  test("Queries_DICTIONARY_EXCLUDE_188", Include) {
 
-    checkAnswer(s"""select productionDate from VMALL_DICTIONARY_EXCLUDE order by productionDate limit 101""",
-      s"""select productionDate from VMALL_DICTIONARY_EXCLUDE1_hive order by productionDate limit 101""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_188")
+    checkAnswer(s"""select productionDate from TABLE_DICTIONARY_EXCLUDE order by productionDate limit 101""",
+      s"""select productionDate from TABLE_DICTIONARY_EXCLUDE1_hive order by productionDate limit 101""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_188")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_189
-  test("VMALL_DICTIONARY_EXCLUDE_189", Include) {
+  //DICTIONARY_EXCLUDE_189
+  test("Queries_DICTIONARY_EXCLUDE_189", Include) {
 
-    checkAnswer(s"""select productionDate as a from VMALL_DICTIONARY_EXCLUDE  order by a asc limit 10""",
-      s"""select productionDate as a from VMALL_DICTIONARY_EXCLUDE1_hive  order by a asc limit 10""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_189")
+    checkAnswer(s"""select productionDate as a from TABLE_DICTIONARY_EXCLUDE  order by a asc limit 10""",
+      s"""select productionDate as a from TABLE_DICTIONARY_EXCLUDE1_hive  order by a asc limit 10""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_189")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_190
-  test("VMALL_DICTIONARY_EXCLUDE_190", Include) {
+  //DICTIONARY_EXCLUDE_190
+  test("Queries_DICTIONARY_EXCLUDE_190", Include) {
 
-    checkAnswer(s"""select productionDate from VMALL_DICTIONARY_EXCLUDE where  (productionDate == '2015-07-01 12:07:28.0') and (productionDate=='2015-07-01 12:07:28.0')""",
-      s"""select productionDate from VMALL_DICTIONARY_EXCLUDE1_hive where  (productionDate == '2015-07-01 12:07:28.0') and (productionDate=='2015-07-01 12:07:28.0')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_190")
+    checkAnswer(s"""select productionDate from TABLE_DICTIONARY_EXCLUDE where  (productionDate == '2015-07-01 12:07:28.0') and (productionDate=='2015-07-01 12:07:28.0')""",
+      s"""select productionDate from TABLE_DICTIONARY_EXCLUDE1_hive where  (productionDate == '2015-07-01 12:07:28.0') and (productionDate=='2015-07-01 12:07:28.0')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_190")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_191
-  test("VMALL_DICTIONARY_EXCLUDE_191", Include) {
+  //DICTIONARY_EXCLUDE_191
+  test("Queries_DICTIONARY_EXCLUDE_191", Include) {
 
-    checkAnswer(s"""select productionDate from VMALL_DICTIONARY_EXCLUDE where productionDate !='2015-07-01 12:07:28.0' order by productionDate""",
-      s"""select productionDate from VMALL_DICTIONARY_EXCLUDE1_hive where productionDate !='2015-07-01 12:07:28.0' order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_191")
+    checkAnswer(s"""select productionDate from TABLE_DICTIONARY_EXCLUDE where productionDate !='2015-07-01 12:07:28.0' order by productionDate""",
+      s"""select productionDate from TABLE_DICTIONARY_EXCLUDE1_hive where productionDate !='2015-07-01 12:07:28.0' order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_191")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_192
-  test("VMALL_DICTIONARY_EXCLUDE_192", Include) {
+  //DICTIONARY_EXCLUDE_192
+  test("Queries_DICTIONARY_EXCLUDE_192", Include) {
 
-    checkAnswer(s"""select productionDate  from VMALL_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""",
-      s"""select productionDate  from VMALL_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_192")
+    checkAnswer(s"""select productionDate  from TABLE_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""",
+      s"""select productionDate  from TABLE_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_192")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_193
-  test("VMALL_DICTIONARY_EXCLUDE_193", Include) {
+  //DICTIONARY_EXCLUDE_193
+  test("Queries_DICTIONARY_EXCLUDE_193", Include) {
 
-    checkAnswer(s"""select productionDate from VMALL_DICTIONARY_EXCLUDE where productionDate !='2015-07-01 12:07:28.0' order by productionDate""",
-      s"""select productionDate from VMALL_DICTIONARY_EXCLUDE1_hive where productionDate !='2015-07-01 12:07:28.0' order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_193")
+    checkAnswer(s"""select productionDate from TABLE_DICTIONARY_EXCLUDE where productionDate !='2015-07-01 12:07:28.0' order by productionDate""",
+      s"""select productionDate from TABLE_DICTIONARY_EXCLUDE1_hive where productionDate !='2015-07-01 12:07:28.0' order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_193")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_194
-  test("VMALL_DICTIONARY_EXCLUDE_194", Include) {
+  //DICTIONARY_EXCLUDE_194
+  test("Queries_DICTIONARY_EXCLUDE_194", Include) {
 
-    checkAnswer(s"""select productionDate from VMALL_DICTIONARY_EXCLUDE where productionDate >'2015-07-01 12:07:28.0' order by productionDate""",
-      s"""select productionDate from VMALL_DICTIONARY_EXCLUDE1_hive where productionDate >'2015-07-01 12:07:28.0' order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_194")
+    checkAnswer(s"""select productionDate from TABLE_DICTIONARY_EXCLUDE where productionDate >'2015-07-01 12:07:28.0' order by productionDate""",
+      s"""select productionDate from TABLE_DICTIONARY_EXCLUDE1_hive where productionDate >'2015-07-01 12:07:28.0' order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_194")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_195
-  test("VMALL_DICTIONARY_EXCLUDE_195", Include) {
+  //DICTIONARY_EXCLUDE_195
+  test("Queries_DICTIONARY_EXCLUDE_195", Include) {
 
-    checkAnswer(s"""select productionDate  from VMALL_DICTIONARY_EXCLUDE where productionDate<>productionDate order by productionDate""",
-      s"""select productionDate  from VMALL_DICTIONARY_EXCLUDE1_hive where productionDate<>productionDate order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_195")
+    checkAnswer(s"""select productionDate  from TABLE_DICTIONARY_EXCLUDE where productionDate<>productionDate order by productionDate""",
+      s"""select productionDate  from TABLE_DICTIONARY_EXCLUDE1_hive where productionDate<>productionDate order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_195")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_196
-  test("VMALL_DICTIONARY_EXCLUDE_196", Include) {
+  //DICTIONARY_EXCLUDE_196
+  test("Queries_DICTIONARY_EXCLUDE_196", Include) {
 
-    checkAnswer(s"""select productionDate from VMALL_DICTIONARY_EXCLUDE where productionDate != Latest_areaId order by productionDate""",
-      s"""select productionDate from VMALL_DICTIONARY_EXCLUDE1_hive where productionDate != Latest_areaId order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_196")
+    checkAnswer(s"""select productionDate from TABLE_DICTIONARY_EXCLUDE where productionDate != Latest_areaId order by productionDate""",
+      s"""select productionDate from TABLE_DICTIONARY_EXCLUDE1_hive where productionDate != Latest_areaId order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_196")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_197
-  test("VMALL_DICTIONARY_EXCLUDE_197", Include) {
+  //DICTIONARY_EXCLUDE_197
+  test("Queries_DICTIONARY_EXCLUDE_197", Include) {
 
-    checkAnswer(s"""select productionDate from VMALL_DICTIONARY_EXCLUDE where Latest_areaId<productionDate order by productionDate""",
-      s"""select productionDate from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_areaId<productionDate order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_197")
+    checkAnswer(s"""select productionDate from TABLE_DICTIONARY_EXCLUDE where Latest_areaId<productionDate order by productionDate""",
+      s"""select productionDate from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_areaId<productionDate order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_197")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_198
-  test("VMALL_DICTIONARY_EXCLUDE_198", Include) {
+  //DICTIONARY_EXCLUDE_198
+  test("Queries_DICTIONARY_EXCLUDE_198", Include) {
 
-    checkAnswer(s"""select productionDate from VMALL_DICTIONARY_EXCLUDE where productionDate<=productionDate order by productionDate""",
-      s"""select productionDate from VMALL_DICTIONARY_EXCLUDE1_hive where productionDate<=productionDate order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_198")
+    checkAnswer(s"""select productionDate from TABLE_DICTIONARY_EXCLUDE where productionDate<=productionDate order by productionDate""",
+      s"""select productionDate from TABLE_DICTIONARY_EXCLUDE1_hive where productionDate<=productionDate order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_198")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_199
-  test("VMALL_DICTIONARY_EXCLUDE_199", Include) {
+  //DICTIONARY_EXCLUDE_199
+  test("Queries_DICTIONARY_EXCLUDE_199", Include) {
 
-    checkAnswer(s"""select productionDate from VMALL_DICTIONARY_EXCLUDE where productionDate <cast('2015-07-01 12:07:28.0' as timestamp) order by productionDate""",
-      s"""select productionDate from VMALL_DICTIONARY_EXCLUDE1_hive where productionDate <cast('2015-07-01 12:07:28.0' as timestamp) order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_199")
+    checkAnswer(s"""select productionDate from TABLE_DICTIONARY_EXCLUDE where productionDate <cast('2015-07-01 12:07:28.0' as timestamp) order by productionDate""",
+      s"""select productionDate from TABLE_DICTIONARY_EXCLUDE1_hive where productionDate <cast('2015-07-01 12:07:28.0' as timestamp) order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_199")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_200
-  test("VMALL_DICTIONARY_EXCLUDE_200", Include) {
+  //DICTIONARY_EXCLUDE_200
+  test("Queries_DICTIONARY_EXCLUDE_200", Include) {
 
-    checkAnswer(s"""select productionDate  from VMALL_DICTIONARY_EXCLUDE where productionDate IS NULL""",
-      s"""select productionDate  from VMALL_DICTIONARY_EXCLUDE1_hive where productionDate IS NULL""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_200")
+    checkAnswer(s"""select productionDate  from TABLE_DICTIONARY_EXCLUDE where productionDate IS NULL""",
+      s"""select productionDate  from TABLE_DICTIONARY_EXCLUDE1_hive where productionDate IS NULL""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_200")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_201
-  test("VMALL_DICTIONARY_EXCLUDE_201", Include) {
+  //DICTIONARY_EXCLUDE_201
+  test("Queries_DICTIONARY_EXCLUDE_201", Include) {
 
-    checkAnswer(s"""select productionDate  from VMALL_DICTIONARY_EXCLUDE where productionDate IS NOT NULL order by productionDate""",
-      s"""select productionDate  from VMALL_DICTIONARY_EXCLUDE1_hive where productionDate IS NOT NULL order by productionDate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_201")
+    checkAnswer(s"""select productionDate  from TABLE_DICTIONARY_EXCLUDE where productionDate IS NOT NULL order by productionDate""",
+      s"""select productionDate  from TABLE_DICTIONARY_EXCLUDE1_hive where productionDate IS NOT NULL order by productionDate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_201")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_202
-  test("VMALL_DICTIONARY_EXCLUDE_202", Include) {
+  //DICTIONARY_EXCLUDE_202
+  test("Queries_DICTIONARY_EXCLUDE_202", Include) {
 
-    checkAnswer(s"""Select count(deviceInformationId) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""Select count(deviceInformationId) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_202")
+    checkAnswer(s"""Select count(deviceInformationId) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""Select count(deviceInformationId) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_202")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_203
-  test("VMALL_DICTIONARY_EXCLUDE_203", Include) {
+  //DICTIONARY_EXCLUDE_203
+  test("Queries_DICTIONARY_EXCLUDE_203", Include) {
 
-    checkAnswer(s"""select count(DISTINCT deviceInformationId) as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(DISTINCT deviceInformationId) as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_203")
+    checkAnswer(s"""select count(DISTINCT deviceInformationId) as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(DISTINCT deviceInformationId) as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_203")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_204
-  test("VMALL_DICTIONARY_EXCLUDE_204", Include) {
+  //DICTIONARY_EXCLUDE_204
+  test("Queries_DICTIONARY_EXCLUDE_204", Include) {
 
-    checkAnswer(s"""select sum(deviceInformationId)+10 as a ,deviceInformationId  from VMALL_DICTIONARY_EXCLUDE group by deviceInformationId order by deviceInformationId""",
-      s"""select sum(deviceInformationId)+10 as a ,deviceInformationId  from VMALL_DICTIONARY_EXCLUDE1_hive group by deviceInformationId order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_204")
+    checkAnswer(s"""select sum(deviceInformationId)+10 as a ,deviceInformationId  from TABLE_DICTIONARY_EXCLUDE group by deviceInformationId order by deviceInformationId""",
+      s"""select sum(deviceInformationId)+10 as a ,deviceInformationId  from TABLE_DICTIONARY_EXCLUDE1_hive group by deviceInformationId order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_204")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_205
-  test("VMALL_DICTIONARY_EXCLUDE_205", Include) {
+  //DICTIONARY_EXCLUDE_205
+  test("Queries_DICTIONARY_EXCLUDE_205", Include) {
 
-    checkAnswer(s"""select max(deviceInformationId),min(deviceInformationId) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select max(deviceInformationId),min(deviceInformationId) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_205")
+    checkAnswer(s"""select max(deviceInformationId),min(deviceInformationId) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select max(deviceInformationId),min(deviceInformationId) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_205")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_206
-  test("VMALL_DICTIONARY_EXCLUDE_206", Include) {
+  //DICTIONARY_EXCLUDE_206
+  test("Queries_DICTIONARY_EXCLUDE_206", Include) {
 
-    checkAnswer(s"""select sum(deviceInformationId) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(deviceInformationId) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_206")
+    checkAnswer(s"""select sum(deviceInformationId) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(deviceInformationId) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_206")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_207
-  test("VMALL_DICTIONARY_EXCLUDE_207", Include) {
+  //DICTIONARY_EXCLUDE_207
+  test("Queries_DICTIONARY_EXCLUDE_207", Include) {
 
-    checkAnswer(s"""select avg(deviceInformationId) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select avg(deviceInformationId) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_207")
+    checkAnswer(s"""select avg(deviceInformationId) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select avg(deviceInformationId) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_207")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_208
-  test("VMALL_DICTIONARY_EXCLUDE_208", Include) {
+  //DICTIONARY_EXCLUDE_208
+  test("Queries_DICTIONARY_EXCLUDE_208", Include) {
 
-    checkAnswer(s"""select min(deviceInformationId) a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select min(deviceInformationId) a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_208")
+    checkAnswer(s"""select min(deviceInformationId) a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select min(deviceInformationId) a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_208")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_209
-  test("VMALL_DICTIONARY_EXCLUDE_209", Include) {
+  //DICTIONARY_EXCLUDE_209
+  test("Queries_DICTIONARY_EXCLUDE_209", Include) {
 
-    sql(s"""select variance(deviceInformationId) as a   from (select deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
+    sql(s"""select variance(deviceInformationId) as a   from (select deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_210
-  ignore("VMALL_DICTIONARY_EXCLUDE_210", Include) {
+  //DICTIONARY_EXCLUDE_210
+  ignore("Queries_DICTIONARY_EXCLUDE_210", Include) {
 
-    checkAnswer(s"""select var_pop(deviceInformationId)  as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select var_pop(deviceInformationId)  as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_210")
+    checkAnswer(s"""select var_pop(deviceInformationId)  as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select var_pop(deviceInformationId)  as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_210")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_211
-  ignore("VMALL_DICTIONARY_EXCLUDE_211", Include) {
+  //DICTIONARY_EXCLUDE_211
+  ignore("Queries_DICTIONARY_EXCLUDE_211", Include) {
 
-    checkAnswer(s"""select var_samp(deviceInformationId) as a  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select var_samp(deviceInformationId) as a  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_211")
+    checkAnswer(s"""select var_samp(deviceInformationId) as a  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select var_samp(deviceInformationId) as a  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_211")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_212
-  test("VMALL_DICTIONARY_EXCLUDE_212", Include) {
+  //DICTIONARY_EXCLUDE_212
+  test("Queries_DICTIONARY_EXCLUDE_212", Include) {
 
-    sql(s"""select stddev_pop(deviceInformationId) as a  from (select deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
+    sql(s"""select stddev_pop(deviceInformationId) as a  from (select deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_213
-  test("VMALL_DICTIONARY_EXCLUDE_213", Include) {
+  //DICTIONARY_EXCLUDE_213
+  test("Queries_DICTIONARY_EXCLUDE_213", Include) {
 
-    sql(s"""select stddev_samp(deviceInformationId)  as a from (select deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
+    sql(s"""select stddev_samp(deviceInformationId)  as a from (select deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_214
-  test("VMALL_DICTIONARY_EXCLUDE_214", Include) {
+  //DICTIONARY_EXCLUDE_214
+  test("Queries_DICTIONARY_EXCLUDE_214", Include) {
 
-    sql(s"""select covar_pop(deviceInformationId,deviceInformationId) as a  from (select deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
+    sql(s"""select covar_pop(deviceInformationId,deviceInformationId) as a  from (select deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_215
-  test("VMALL_DICTIONARY_EXCLUDE_215", Include) {
+  //DICTIONARY_EXCLUDE_215
+  test("Queries_DICTIONARY_EXCLUDE_215", Include) {
 
-    sql(s"""select covar_samp(deviceInformationId,deviceInformationId) as a  from (select deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
+    sql(s"""select covar_samp(deviceInformationId,deviceInformationId) as a  from (select deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_216
-  test("VMALL_DICTIONARY_EXCLUDE_216", Include) {
+  //DICTIONARY_EXCLUDE_216
+  test("Queries_DICTIONARY_EXCLUDE_216", Include) {
 
-    checkAnswer(s"""select corr(deviceInformationId,deviceInformationId)  as a from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select corr(deviceInformationId,deviceInformationId)  as a from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_216")
+    checkAnswer(s"""select corr(deviceInformationId,deviceInformationId)  as a from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select corr(deviceInformationId,deviceInformationId)  as a from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_216")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_217
-  test("VMALL_DICTIONARY_EXCLUDE_217", Include) {
+  //DICTIONARY_EXCLUDE_217
+  test("Queries_DICTIONARY_EXCLUDE_217", Include) {
 
-    sql(s"""select percentile_approx(deviceInformationId,0.2) as a  from (select deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
+    sql(s"""select percentile_approx(deviceInformationId,0.2) as a  from (select deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_218
-  test("VMALL_DICTIONARY_EXCLUDE_218", Include) {
+  //DICTIONARY_EXCLUDE_218
+  test("Queries_DICTIONARY_EXCLUDE_218", Include) {
 
-    sql(s"""select percentile_approx(deviceInformationId,0.2,5) as a  from (select deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
+    sql(s"""select percentile_approx(deviceInformationId,0.2,5) as a  from (select deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_219
-  test("VMALL_DICTIONARY_EXCLUDE_219", Include) {
+  //DICTIONARY_EXCLUDE_219
+  test("Queries_DICTIONARY_EXCLUDE_219", Include) {
 
-    sql(s"""select percentile_approx(deviceInformationId,array(0.2,0.3,0.99))  as a from (select deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
+    sql(s"""select percentile_approx(deviceInformationId,array(0.2,0.3,0.99))  as a from (select deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_220
-  test("VMALL_DICTIONARY_EXCLUDE_220", Include) {
+  //DICTIONARY_EXCLUDE_220
+  test("Queries_DICTIONARY_EXCLUDE_220", Include) {
 
-    sql(s"""select percentile_approx(deviceInformationId,array(0.2,0.3,0.99),5) as a from (select deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
+    sql(s"""select percentile_approx(deviceInformationId,array(0.2,0.3,0.99),5) as a from (select deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_221
-  test("VMALL_DICTIONARY_EXCLUDE_221", Include) {
+  //DICTIONARY_EXCLUDE_221
+  test("Queries_DICTIONARY_EXCLUDE_221", Include) {
 
-    sql(s"""select histogram_numeric(deviceInformationId,2)  as a from (select deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
+    sql(s"""select histogram_numeric(deviceInformationId,2)  as a from (select deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_222
-  test("VMALL_DICTIONARY_EXCLUDE_222", Include) {
+  //DICTIONARY_EXCLUDE_222
+  test("Queries_DICTIONARY_EXCLUDE_222", Include) {
 
-    checkAnswer(s"""select deviceInformationId, deviceInformationId+ 10 as a  from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId""",
-      s"""select deviceInformationId, deviceInformationId+ 10 as a  from VMALL_DICTIONARY_EXCLUDE1_hive order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_222")
+    checkAnswer(s"""select deviceInformationId, deviceInformationId+ 10 as a  from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId""",
+      s"""select deviceInformationId, deviceInformationId+ 10 as a  from TABLE_DICTIONARY_EXCLUDE1_hive order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_222")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_223
-  test("VMALL_DICTIONARY_EXCLUDE_223", Include) {
+  //DICTIONARY_EXCLUDE_223
+  test("Queries_DICTIONARY_EXCLUDE_223", Include) {
 
-    checkAnswer(s"""select min(deviceInformationId), max(deviceInformationId+ 10) Total from VMALL_DICTIONARY_EXCLUDE group by  channelsId order by Total""",
-      s"""select min(deviceInformationId), max(deviceInformationId+ 10) Total from VMALL_DICTIONARY_EXCLUDE1_hive group by  channelsId order by Total""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_223")
+    checkAnswer(s"""select min(deviceInformationId), max(deviceInformationId+ 10) Total from TABLE_DICTIONARY_EXCLUDE group by  channelsId order by Total""",
+      s"""select min(deviceInformationId), max(deviceInformationId+ 10) Total from TABLE_DICTIONARY_EXCLUDE1_hive group by  channelsId order by Total""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_223")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_224
-  test("VMALL_DICTIONARY_EXCLUDE_224", Include) {
+  //DICTIONARY_EXCLUDE_224
+  test("Queries_DICTIONARY_EXCLUDE_224", Include) {
 
-    sql(s"""select last(deviceInformationId) a from VMALL_DICTIONARY_EXCLUDE order by a""").collect
+    sql(s"""select last(deviceInformationId) a from TABLE_DICTIONARY_EXCLUDE order by a""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_225
-  test("VMALL_DICTIONARY_EXCLUDE_225", Include) {
+  //DICTIONARY_EXCLUDE_225
+  test("Queries_DICTIONARY_EXCLUDE_225", Include) {
 
-    sql(s"""select FIRST(deviceInformationId) a from (select deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
+    sql(s"""select FIRST(deviceInformationId) a from (select deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId) t""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_226
-  test("VMALL_DICTIONARY_EXCLUDE_226", Include) {
+  //DICTIONARY_EXCLUDE_226
+  test("Queries_DICTIONARY_EXCLUDE_226", Include) {
 
-    checkAnswer(s"""select deviceInformationId,count(deviceInformationId) a from VMALL_DICTIONARY_EXCLUDE group by deviceInformationId order by deviceInformationId""",
-      s"""select deviceInformationId,count(deviceInformationId) a from VMALL_DICTIONARY_EXCLUDE1_hive group by deviceInformationId order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_226")
+    checkAnswer(s"""select deviceInformationId,count(deviceInformationId) a from TABLE_DICTIONARY_EXCLUDE group by deviceInformationId order by deviceInformationId""",
+      s"""select deviceInformationId,count(deviceInformationId) a from TABLE_DICTIONARY_EXCLUDE1_hive group by deviceInformationId order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_226")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_227
-  test("VMALL_DICTIONARY_EXCLUDE_227", Include) {
+  //DICTIONARY_EXCLUDE_227
+  test("Queries_DICTIONARY_EXCLUDE_227", Include) {
 
-    checkAnswer(s"""select Lower(deviceInformationId) a  from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId""",
-      s"""select Lower(deviceInformationId) a  from VMALL_DICTIONARY_EXCLUDE1_hive order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_227")
+    checkAnswer(s"""select Lower(deviceInformationId) a  from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId""",
+      s"""select Lower(deviceInformationId) a  from TABLE_DICTIONARY_EXCLUDE1_hive order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_227")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_228
-  test("VMALL_DICTIONARY_EXCLUDE_228", Include) {
+  //DICTIONARY_EXCLUDE_228
+  test("Queries_DICTIONARY_EXCLUDE_228", Include) {
 
-    checkAnswer(s"""select distinct deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId""",
-      s"""select distinct deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_228")
+    checkAnswer(s"""select distinct deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId""",
+      s"""select distinct deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_228")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_229
-  test("VMALL_DICTIONARY_EXCLUDE_229", Include) {
+  //DICTIONARY_EXCLUDE_229
+  test("Queries_DICTIONARY_EXCLUDE_229", Include) {
 
-    checkAnswer(s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE order by deviceInformationId limit 101""",
-      s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive order by deviceInformationId limit 101""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_229")
+    checkAnswer(s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE order by deviceInformationId limit 101""",
+      s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive order by deviceInformationId limit 101""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_229")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_230
-  test("VMALL_DICTIONARY_EXCLUDE_230", Include) {
+  //DICTIONARY_EXCLUDE_230
+  test("Queries_DICTIONARY_EXCLUDE_230", Include) {
 
-    checkAnswer(s"""select deviceInformationId as a from VMALL_DICTIONARY_EXCLUDE  order by a asc limit 10""",
-      s"""select deviceInformationId as a from VMALL_DICTIONARY_EXCLUDE1_hive  order by a asc limit 10""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_230")
+    checkAnswer(s"""select deviceInformationId as a from TABLE_DICTIONARY_EXCLUDE  order by a asc limit 10""",
+      s"""select deviceInformationId as a from TABLE_DICTIONARY_EXCLUDE1_hive  order by a asc limit 10""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_230")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_231
-  test("VMALL_DICTIONARY_EXCLUDE_231", Include) {
+  //DICTIONARY_EXCLUDE_231
+  test("Queries_DICTIONARY_EXCLUDE_231", Include) {
 
-    checkAnswer(s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE where  (deviceInformationId == 100084) and (deviceInformationId==100084)""",
-      s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive where  (deviceInformationId == 100084) and (deviceInformationId==100084)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_231")
+    checkAnswer(s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE where  (deviceInformationId == 100084) and (deviceInformationId==100084)""",
+      s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive where  (deviceInformationId == 100084) and (deviceInformationId==100084)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_231")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_232
-  test("VMALL_DICTIONARY_EXCLUDE_232", Include) {
+  //DICTIONARY_EXCLUDE_232
+  test("Queries_DICTIONARY_EXCLUDE_232", Include) {
 
-    checkAnswer(s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE where deviceInformationId !='100084' order by deviceInformationId""",
-      s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive where deviceInformationId !='100084' order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_232")
+    checkAnswer(s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE where deviceInformationId !='100084' order by deviceInformationId""",
+      s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive where deviceInformationId !='100084' order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_232")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_233
-  test("VMALL_DICTIONARY_EXCLUDE_233", Include) {
+  //DICTIONARY_EXCLUDE_233
+  test("Queries_DICTIONARY_EXCLUDE_233", Include) {
 
-    checkAnswer(s"""select deviceInformationId  from VMALL_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""",
-      s"""select deviceInformationId  from VMALL_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_233")
+    checkAnswer(s"""select deviceInformationId  from TABLE_DICTIONARY_EXCLUDE where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""",
+      s"""select deviceInformationId  from TABLE_DICTIONARY_EXCLUDE1_hive where (deviceInformationId=100 and deviceColor='1Device Color') OR (deviceInformationId=10 and deviceColor='0Device Color')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_233")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_234
-  test("VMALL_DICTIONARY_EXCLUDE_234", Include) {
+  //DICTIONARY_EXCLUDE_234
+  test("Queries_DICTIONARY_EXCLUDE_234", Include) {
 
-    checkAnswer(s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE where deviceInformationId !=100084 order by deviceInformationId""",
-      s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive where deviceInformationId !=100084 order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_234")
+    checkAnswer(s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE where deviceInformationId !=100084 order by deviceInformationId""",
+      s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive where deviceInformationId !=100084 order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_234")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_235
-  test("VMALL_DICTIONARY_EXCLUDE_235", Include) {
+  //DICTIONARY_EXCLUDE_235
+  test("Queries_DICTIONARY_EXCLUDE_235", Include) {
 
-    checkAnswer(s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE where deviceInformationId >100084 order by deviceInformationId""",
-      s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive where deviceInformationId >100084 order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_235")
+    checkAnswer(s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE where deviceInformationId >100084 order by deviceInformationId""",
+      s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive where deviceInformationId >100084 order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_235")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_236
-  test("VMALL_DICTIONARY_EXCLUDE_236", Include) {
+  //DICTIONARY_EXCLUDE_236
+  test("Queries_DICTIONARY_EXCLUDE_236", Include) {
 
-    checkAnswer(s"""select deviceInformationId  from VMALL_DICTIONARY_EXCLUDE where deviceInformationId<>deviceInformationId order by deviceInformationId""",
-      s"""select deviceInformationId  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceInformationId<>deviceInformationId order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_236")
+    checkAnswer(s"""select deviceInformationId  from TABLE_DICTIONARY_EXCLUDE where deviceInformationId<>deviceInformationId order by deviceInformationId""",
+      s"""select deviceInformationId  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceInformationId<>deviceInformationId order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_236")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_237
-  test("VMALL_DICTIONARY_EXCLUDE_237", Include) {
+  //DICTIONARY_EXCLUDE_237
+  test("Queries_DICTIONARY_EXCLUDE_237", Include) {
 
-    checkAnswer(s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE where deviceInformationId != Latest_areaId order by deviceInformationId""",
-      s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive where deviceInformationId != Latest_areaId order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_237")
+    checkAnswer(s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE where deviceInformationId != Latest_areaId order by deviceInformationId""",
+      s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive where deviceInformationId != Latest_areaId order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_237")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_238
-  test("VMALL_DICTIONARY_EXCLUDE_238", Include) {
+  //DICTIONARY_EXCLUDE_238
+  test("Queries_DICTIONARY_EXCLUDE_238", Include) {
 
-    checkAnswer(s"""select deviceInformationId, deviceInformationId from VMALL_DICTIONARY_EXCLUDE where Latest_areaId<deviceInformationId order by deviceInformationId""",
-      s"""select deviceInformationId, deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_areaId<deviceInformationId order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_238")
+    checkAnswer(s"""select deviceInformationId, deviceInformationId from TABLE_DICTIONARY_EXCLUDE where Latest_areaId<deviceInformationId order by deviceInformationId""",
+      s"""select deviceInformationId, deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_areaId<deviceInformationId order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_238")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_239
-  test("VMALL_DICTIONARY_EXCLUDE_239", Include) {
+  //DICTIONARY_EXCLUDE_239
+  test("Queries_DICTIONARY_EXCLUDE_239", Include) {
 
-    checkAnswer(s"""select deviceInformationId, deviceInformationId from VMALL_DICTIONARY_EXCLUDE where deviceInformationId<=deviceInformationId order by deviceInformationId""",
-      s"""select deviceInformationId, deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive where deviceInformationId<=deviceInformationId order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_239")
+    checkAnswer(s"""select deviceInformationId, deviceInformationId from TABLE_DICTIONARY_EXCLUDE where deviceInformationId<=deviceInformationId order by deviceInformationId""",
+      s"""select deviceInformationId, deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive where deviceInformationId<=deviceInformationId order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_239")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_240
-  test("VMALL_DICTIONARY_EXCLUDE_240", Include) {
+  //DICTIONARY_EXCLUDE_240
+  test("Queries_DICTIONARY_EXCLUDE_240", Include) {
 
-    checkAnswer(s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE where deviceInformationId <1000 order by deviceInformationId""",
-      s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive where deviceInformationId <1000 order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_240")
+    checkAnswer(s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE where deviceInformationId <1000 order by deviceInformationId""",
+      s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive where deviceInformationId <1000 order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_240")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_241
-  test("VMALL_DICTIONARY_EXCLUDE_241", Include) {
+  //DICTIONARY_EXCLUDE_241
+  test("Queries_DICTIONARY_EXCLUDE_241", Include) {
 
-    checkAnswer(s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE where deviceInformationId >1000 order by deviceInformationId""",
-      s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive where deviceInformationId >1000 order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_241")
+    checkAnswer(s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE where deviceInformationId >1000 order by deviceInformationId""",
+      s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive where deviceInformationId >1000 order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_241")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_242
-  test("VMALL_DICTIONARY_EXCLUDE_242", Include) {
+  //DICTIONARY_EXCLUDE_242
+  test("Queries_DICTIONARY_EXCLUDE_242", Include) {
 
-    checkAnswer(s"""select deviceInformationId  from VMALL_DICTIONARY_EXCLUDE where deviceInformationId IS NULL order by deviceInformationId""",
-      s"""select deviceInformationId  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceInformationId IS NULL order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_242")
+    checkAnswer(s"""select deviceInformationId  from TABLE_DICTIONARY_EXCLUDE where deviceInformationId IS NULL order by deviceInformationId""",
+      s"""select deviceInformationId  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceInformationId IS NULL order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_242")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_243
-  test("VMALL_DICTIONARY_EXCLUDE_243", Include) {
+  //DICTIONARY_EXCLUDE_243
+  test("Queries_DICTIONARY_EXCLUDE_243", Include) {
 
-    checkAnswer(s"""select deviceInformationId  from VMALL_DICTIONARY_EXCLUDE where deviceInformationId IS NOT NULL order by deviceInformationId""",
-      s"""select deviceInformationId  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceInformationId IS NOT NULL order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_243")
+    checkAnswer(s"""select deviceInformationId  from TABLE_DICTIONARY_EXCLUDE where deviceInformationId IS NOT NULL order by deviceInformationId""",
+      s"""select deviceInformationId  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceInformationId IS NOT NULL order by deviceInformationId""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_243")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_244
-  test("VMALL_DICTIONARY_EXCLUDE_244", Include) {
+  //DICTIONARY_EXCLUDE_244
+  test("Queries_DICTIONARY_EXCLUDE_244", Include) {
 
-    checkAnswer(s"""select sum(imei)+10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(imei)+10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_244")
+    checkAnswer(s"""select sum(imei)+10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(imei)+10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_244")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_245
-  test("VMALL_DICTIONARY_EXCLUDE_245", Include) {
+  //DICTIONARY_EXCLUDE_245
+  test("Queries_DICTIONARY_EXCLUDE_245", Include) {
 
-    checkAnswer(s"""select sum(imei)*10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(imei)*10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_245")
+    checkAnswer(s"""select sum(imei)*10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(imei)*10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_245")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_246
-  test("VMALL_DICTIONARY_EXCLUDE_246", Include) {
+  //DICTIONARY_EXCLUDE_246
+  test("Queries_DICTIONARY_EXCLUDE_246", Include) {
 
-    checkAnswer(s"""select sum(imei)/10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(imei)/10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_246")
+    checkAnswer(s"""select sum(imei)/10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(imei)/10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_246")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_247
-  test("VMALL_DICTIONARY_EXCLUDE_247", Include) {
+  //DICTIONARY_EXCLUDE_247
+  test("Queries_DICTIONARY_EXCLUDE_247", Include) {
 
-    checkAnswer(s"""select sum(imei)-10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(imei)-10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_247")
+    checkAnswer(s"""select sum(imei)-10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(imei)-10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_247")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_248
-  test("VMALL_DICTIONARY_EXCLUDE_248", Include) {
+  //DICTIONARY_EXCLUDE_248
+  test("Queries_DICTIONARY_EXCLUDE_248", Include) {
 
-    checkAnswer(s"""select sum(contractNumber)+10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(contractNumber)+10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_248")
+    checkAnswer(s"""select sum(contractNumber)+10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(contractNumber)+10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_248")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_249
-  test("VMALL_DICTIONARY_EXCLUDE_249", Include) {
+  //DICTIONARY_EXCLUDE_249
+  test("Queries_DICTIONARY_EXCLUDE_249", Include) {
 
-    checkAnswer(s"""select sum(contractNumber)*10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(contractNumber)*10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_249")
+    checkAnswer(s"""select sum(contractNumber)*10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(contractNumber)*10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_249")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_250
-  test("VMALL_DICTIONARY_EXCLUDE_250", Include) {
+  //DICTIONARY_EXCLUDE_250
+  test("Queries_DICTIONARY_EXCLUDE_250", Include) {
 
-    checkAnswer(s"""select sum(contractNumber)/10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(contractNumber)/10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_250")
+    checkAnswer(s"""select sum(contractNumber)/10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(contractNumber)/10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_250")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_251
-  test("VMALL_DICTIONARY_EXCLUDE_251", Include) {
+  //DICTIONARY_EXCLUDE_251
+  test("Queries_DICTIONARY_EXCLUDE_251", Include) {
 
-    checkAnswer(s"""select sum(contractNumber)-10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(contractNumber)-10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_251")
+    checkAnswer(s"""select sum(contractNumber)-10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(contractNumber)-10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_251")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_252
-  test("VMALL_DICTIONARY_EXCLUDE_252", Include) {
+  //DICTIONARY_EXCLUDE_252
+  test("Queries_DICTIONARY_EXCLUDE_252", Include) {
 
-    checkAnswer(s"""select sum(Latest_DAY)+10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(Latest_DAY)+10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_252")
+    checkAnswer(s"""select sum(Latest_DAY)+10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(Latest_DAY)+10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_252")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_253
-  test("VMALL_DICTIONARY_EXCLUDE_253", Include) {
+  //DICTIONARY_EXCLUDE_253
+  test("Queries_DICTIONARY_EXCLUDE_253", Include) {
 
-    checkAnswer(s"""select sum(Latest_DAY)*10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(Latest_DAY)*10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_253")
+    checkAnswer(s"""select sum(Latest_DAY)*10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(Latest_DAY)*10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_253")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_254
-  test("VMALL_DICTIONARY_EXCLUDE_254", Include) {
+  //DICTIONARY_EXCLUDE_254
+  test("Queries_DICTIONARY_EXCLUDE_254", Include) {
 
-    checkAnswer(s"""select sum(Latest_DAY)/10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(Latest_DAY)/10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_254")
+    checkAnswer(s"""select sum(Latest_DAY)/10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(Latest_DAY)/10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_254")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_255
-  test("VMALL_DICTIONARY_EXCLUDE_255", Include) {
+  //DICTIONARY_EXCLUDE_255
+  test("Queries_DICTIONARY_EXCLUDE_255", Include) {
 
-    checkAnswer(s"""select sum(Latest_DAY)-10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(Latest_DAY)-10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_255")
+    checkAnswer(s"""select sum(Latest_DAY)-10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(Latest_DAY)-10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_255")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_256
-  ignore("VMALL_DICTIONARY_EXCLUDE_256", Include) {
+  //DICTIONARY_EXCLUDE_256
+  ignore("Queries_DICTIONARY_EXCLUDE_256", Include) {
 
-    checkAnswer(s"""select sum(gamePointId)+10 as a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId)""",
-      s"""select sum(gamePointId)+10 as a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_256")
+    checkAnswer(s"""select sum(gamePointId)+10 as a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId)""",
+      s"""select sum(gamePointId)+10 as a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_256")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_257
-  ignore("VMALL_DICTIONARY_EXCLUDE_257", Include) {
+  //DICTIONARY_EXCLUDE_257
+  ignore("Queries_DICTIONARY_EXCLUDE_257", Include) {
 
-    checkAnswer(s"""select sum(gamePointId)*10 as a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId)""",
-      s"""select sum(gamePointId)*10 as a from (select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_257")
+    checkAnswer(s"""select sum(gamePointId)*10 as a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId)""",
+      s"""select sum(gamePointId)*10 as a from (select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_257")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_258
-  test("VMALL_DICTIONARY_EXCLUDE_258", Include) {
+  //DICTIONARY_EXCLUDE_258
+  test("Queries_DICTIONARY_EXCLUDE_258", Include) {
 
-    checkAnswer(s"""select sum(gamePointId)/10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(gamePointId)/10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_258")
+    checkAnswer(s"""select sum(gamePointId)/10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(gamePointId)/10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_258")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_259
-  ignore("VMALL_DICTIONARY_EXCLUDE_259", Include) {
+  //DICTIONARY_EXCLUDE_259
+  ignore("Queries_DICTIONARY_EXCLUDE_259", Include) {
 
-    checkAnswer(s"""select sum(gamePointId)-10 as a   from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId)""",
-      s"""select sum(gamePointId)-10 as a   from (select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_259")
+    checkAnswer(s"""select sum(gamePointId)-10 as a   from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId)""",
+      s"""select sum(gamePointId)-10 as a   from (select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_259")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_260
-  test("VMALL_DICTIONARY_EXCLUDE_260", Include) {
+  //DICTIONARY_EXCLUDE_260
+  test("Queries_DICTIONARY_EXCLUDE_260", Include) {
 
-    checkAnswer(s"""select sum(productionDate)+10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(productionDate)+10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_260")
+    checkAnswer(s"""select sum(productionDate)+10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(productionDate)+10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_260")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_261
-  test("VMALL_DICTIONARY_EXCLUDE_261", Include) {
+  //DICTIONARY_EXCLUDE_261
+  test("Queries_DICTIONARY_EXCLUDE_261", Include) {
 
-    checkAnswer(s"""select sum(productionDate)*10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(productionDate)*10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_261")
+    checkAnswer(s"""select sum(productionDate)*10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(productionDate)*10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_261")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_262
-  test("VMALL_DICTIONARY_EXCLUDE_262", Include) {
+  //DICTIONARY_EXCLUDE_262
+  test("Queries_DICTIONARY_EXCLUDE_262", Include) {
 
-    checkAnswer(s"""select sum(productionDate)/10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(productionDate)/10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_262")
+    checkAnswer(s"""select sum(productionDate)/10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(productionDate)/10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_262")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_263
-  test("VMALL_DICTIONARY_EXCLUDE_263", Include) {
+  //DICTIONARY_EXCLUDE_263
+  test("Queries_DICTIONARY_EXCLUDE_263", Include) {
 
-    checkAnswer(s"""select sum(productionDate)-10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(productionDate)-10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_263")
+    checkAnswer(s"""select sum(productionDate)-10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(productionDate)-10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_263")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_264
-  test("VMALL_DICTIONARY_EXCLUDE_264", Include) {
+  //DICTIONARY_EXCLUDE_264
+  test("Queries_DICTIONARY_EXCLUDE_264", Include) {
 
-    checkAnswer(s"""select sum(deviceInformationId)+10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(deviceInformationId)+10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_264")
+    checkAnswer(s"""select sum(deviceInformationId)+10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(deviceInformationId)+10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_264")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_265
-  test("VMALL_DICTIONARY_EXCLUDE_265", Include) {
+  //DICTIONARY_EXCLUDE_265
+  test("Queries_DICTIONARY_EXCLUDE_265", Include) {
 
-    checkAnswer(s"""select sum(deviceInformationId)*10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(deviceInformationId)*10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_265")
+    checkAnswer(s"""select sum(deviceInformationId)*10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(deviceInformationId)*10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_265")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_266
-  test("VMALL_DICTIONARY_EXCLUDE_266", Include) {
+  //DICTIONARY_EXCLUDE_266
+  test("Queries_DICTIONARY_EXCLUDE_266", Include) {
 
-    checkAnswer(s"""select sum(deviceInformationId)/10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(deviceInformationId)/10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_266")
+    checkAnswer(s"""select sum(deviceInformationId)/10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(deviceInformationId)/10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_266")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_267
-  test("VMALL_DICTIONARY_EXCLUDE_267", Include) {
+  //DICTIONARY_EXCLUDE_267
+  test("Queries_DICTIONARY_EXCLUDE_267", Include) {
 
-    checkAnswer(s"""select sum(deviceInformationId)-10 as a   from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(deviceInformationId)-10 as a   from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_267")
+    checkAnswer(s"""select sum(deviceInformationId)-10 as a   from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(deviceInformationId)-10 as a   from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_267")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_292
-  test("VMALL_DICTIONARY_EXCLUDE_292", Include) {
+  //DICTIONARY_EXCLUDE_292
+  test("Queries_DICTIONARY_EXCLUDE_292", Include) {
 
-    checkAnswer(s"""SELECT productiondate from VMALL_DICTIONARY_EXCLUDE where productiondate LIKE '2015-09-30%'""",
-      s"""SELECT productiondate from VMALL_DICTIONARY_EXCLUDE1_hive where productiondate LIKE '2015-09-30%'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_292")
+    checkAnswer(s"""SELECT productiondate from TABLE_DICTIONARY_EXCLUDE where productiondate LIKE '2015-09-30%'""",
+      s"""SELECT productiondate from TABLE_DICTIONARY_EXCLUDE1_hive where productiondate LIKE '2015-09-30%'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_292")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_293
-  test("VMALL_DICTIONARY_EXCLUDE_293", Include) {
+  //DICTIONARY_EXCLUDE_293
+  test("Queries_DICTIONARY_EXCLUDE_293", Include) {
 
-    checkAnswer(s"""SELECT productiondate from VMALL_DICTIONARY_EXCLUDE where productiondate LIKE '% %'""",
-      s"""SELECT productiondate from VMALL_DICTIONARY_EXCLUDE1_hive where productiondate LIKE '% %'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_293")
+    checkAnswer(s"""SELECT productiondate from TABLE_DICTIONARY_EXCLUDE where productiondate LIKE '% %'""",
+      s"""SELECT productiondate from TABLE_DICTIONARY_EXCLUDE1_hive where productiondate LIKE '% %'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_293")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_294
-  test("VMALL_DICTIONARY_EXCLUDE_294", Include) {
+  //DICTIONARY_EXCLUDE_294
+  test("Queries_DICTIONARY_EXCLUDE_294", Include) {
 
-    checkAnswer(s"""SELECT productiondate from VMALL_DICTIONARY_EXCLUDE where productiondate LIKE '%12:07:28'""",
-      s"""SELECT productiondate from VMALL_DICTIONARY_EXCLUDE1_hive where productiondate LIKE '%12:07:28'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_294")
+    checkAnswer(s"""SELECT productiondate from TABLE_DICTIONARY_EXCLUDE where productiondate LIKE '%12:07:28'""",
+      s"""SELECT productiondate from TABLE_DICTIONARY_EXCLUDE1_hive where productiondate LIKE '%12:07:28'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_294")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_295
-  test("VMALL_DICTIONARY_EXCLUDE_295", Include) {
+  //DICTIONARY_EXCLUDE_295
+  test("Queries_DICTIONARY_EXCLUDE_295", Include) {
 
-    checkAnswer(s"""select contractnumber from VMALL_DICTIONARY_EXCLUDE where contractnumber like '922337204%' """,
-      s"""select contractnumber from VMALL_DICTIONARY_EXCLUDE1_hive where contractnumber like '922337204%' """, "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_295")
+    checkAnswer(s"""select contractnumber from TABLE_DICTIONARY_EXCLUDE where contractnumber like '922337204%' """,
+      s"""select contractnumber from TABLE_DICTIONARY_EXCLUDE1_hive where contractnumber like '922337204%' """, "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_295")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_296
-  test("VMALL_DICTIONARY_EXCLUDE_296", Include) {
+  //DICTIONARY_EXCLUDE_296
+  test("Queries_DICTIONARY_EXCLUDE_296", Include) {
 
-    checkAnswer(s"""select contractnumber from VMALL_DICTIONARY_EXCLUDE where contractnumber like '%047800'""",
-      s"""select contractnumber from VMALL_DICTIONARY_EXCLUDE1_hive where contractnumber like '%047800'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_296")
+    checkAnswer(s"""select contractnumber from TABLE_DICTIONARY_EXCLUDE where contractnumber like '%047800'""",
+      s"""select contractnumber from TABLE_DICTIONARY_EXCLUDE1_hive where contractnumber like '%047800'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_296")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_297
-  test("VMALL_DICTIONARY_EXCLUDE_297", Include) {
+  //DICTIONARY_EXCLUDE_297
+  test("Queries_DICTIONARY_EXCLUDE_297", Include) {
 
-    checkAnswer(s"""select contractnumber from VMALL_DICTIONARY_EXCLUDE where contractnumber like '%720%'""",
-      s"""select contractnumber from VMALL_DICTIONARY_EXCLUDE1_hive where contractnumber like '%720%'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_297")
+    checkAnswer(s"""select contractnumber from TABLE_DICTIONARY_EXCLUDE where contractnumber like '%720%'""",
+      s"""select contractnumber from TABLE_DICTIONARY_EXCLUDE1_hive where contractnumber like '%720%'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_297")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_298
-  test("VMALL_DICTIONARY_EXCLUDE_298", Include) {
+  //DICTIONARY_EXCLUDE_298
+  test("Queries_DICTIONARY_EXCLUDE_298", Include) {
 
-    checkAnswer(s"""SELECT Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY like '12345678%'""",
-      s"""SELECT Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY like '12345678%'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_298")
+    checkAnswer(s"""SELECT Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY like '12345678%'""",
+      s"""SELECT Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY like '12345678%'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_298")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_299
-  test("VMALL_DICTIONARY_EXCLUDE_299", Include) {
+  //DICTIONARY_EXCLUDE_299
+  test("Queries_DICTIONARY_EXCLUDE_299", Include) {
 
-    checkAnswer(s"""SELECT Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY like '%5678%'""",
-      s"""SELECT Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY like '%5678%'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_299")
+    checkAnswer(s"""SELECT Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY like '%5678%'""",
+      s"""SELECT Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY like '%5678%'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_299")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_300
-  test("VMALL_DICTIONARY_EXCLUDE_300", Include) {
+  //DICTIONARY_EXCLUDE_300
+  test("Queries_DICTIONARY_EXCLUDE_300", Include) {
 
-    checkAnswer(s"""SELECT Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY like '1234567%'""",
-      s"""SELECT Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY like '1234567%'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_300")
+    checkAnswer(s"""SELECT Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY like '1234567%'""",
+      s"""SELECT Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY like '1234567%'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_300")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_301
-  test("VMALL_DICTIONARY_EXCLUDE_301", Include) {
+  //DICTIONARY_EXCLUDE_301
+  test("Queries_DICTIONARY_EXCLUDE_301", Include) {
 
-    checkAnswer(s"""SELECT gamepointID from VMALL_DICTIONARY_EXCLUDE where gamepointID like '1.1098347722%'""",
-      s"""SELECT gamepointID from VMALL_DICTIONARY_EXCLUDE1_hive where gamepointID like '1.1098347722%'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_301")
+    checkAnswer(s"""SELECT gamepointID from TABLE_DICTIONARY_EXCLUDE where gamepointID like '1.1098347722%'""",
+      s"""SELECT gamepointID from TABLE_DICTIONARY_EXCLUDE1_hive where gamepointID like '1.1098347722%'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_301")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_302
-  test("VMALL_DICTIONARY_EXCLUDE_302", Include) {
+  //DICTIONARY_EXCLUDE_302
+  test("Queries_DICTIONARY_EXCLUDE_302", Include) {
 
-    checkAnswer(s"""SELECT gamepointID from VMALL_DICTIONARY_EXCLUDE where gamepointID like '%8347722%'""",
-      s"""SELECT gamepointID from VMALL_DICTIONARY_EXCLUDE1_hive where gamepointID like '%8347722%'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_302")
+    checkAnswer(s"""SELECT gamepointID from TABLE_DICTIONARY_EXCLUDE where gamepointID like '%8347722%'""",
+      s"""SELECT gamepointID from TABLE_DICTIONARY_EXCLUDE1_hive where gamepointID like '%8347722%'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_302")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_303
-  test("VMALL_DICTIONARY_EXCLUDE_303", Include) {
+  //DICTIONARY_EXCLUDE_303
+  test("Queries_DICTIONARY_EXCLUDE_303", Include) {
 
-    checkAnswer(s"""SELECT gamepointID from VMALL_DICTIONARY_EXCLUDE where gamepointID like '%7512E42'""",
-      s"""SELECT gamepointID from VMALL_DICTIONARY_EXCLUDE1_hive where gamepointID like '%7512E42'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_303")
+    checkAnswer(s"""SELECT gamepointID from TABLE_DICTIONARY_EXCLUDE where gamepointID like '%7512E42'""",
+      s"""SELECT gamepointID from TABLE_DICTIONARY_EXCLUDE1_hive where gamepointID like '%7512E42'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_303")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_304
-  test("VMALL_DICTIONARY_EXCLUDE_304", Include) {
+  //DICTIONARY_EXCLUDE_304
+  test("Queries_DICTIONARY_EXCLUDE_304", Include) {
 
-    checkAnswer(s"""SELECT deviceinformationid from VMALL_DICTIONARY_EXCLUDE where deviceinformationid like '1000%'""",
-      s"""SELECT deviceinformationid from VMALL_DICTIONARY_EXCLUDE1_hive where deviceinformationid like '1000%'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_304")
+    checkAnswer(s"""SELECT deviceinformationid from TABLE_DICTIONARY_EXCLUDE where deviceinformationid like '1000%'""",
+      s"""SELECT deviceinformationid from TABLE_DICTIONARY_EXCLUDE1_hive where deviceinformationid like '1000%'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_304")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_305
-  test("VMALL_DICTIONARY_EXCLUDE_305", Include) {
+  //DICTIONARY_EXCLUDE_305
+  test("Queries_DICTIONARY_EXCLUDE_305", Include) {
 
-    checkAnswer(s"""SELECT deviceinformationid from VMALL_DICTIONARY_EXCLUDE where deviceinformationid like '%00%'""",
-      s"""SELECT deviceinformationid from VMALL_DICTIONARY_EXCLUDE1_hive where deviceinformationid like '%00%'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_305")
+    checkAnswer(s"""SELECT deviceinformationid from TABLE_DICTIONARY_EXCLUDE where deviceinformationid like '%00%'""",
+      s"""SELECT deviceinformationid from TABLE_DICTIONARY_EXCLUDE1_hive where deviceinformationid like '%00%'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_305")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_306
-  test("VMALL_DICTIONARY_EXCLUDE_306", Include) {
+  //DICTIONARY_EXCLUDE_306
+  test("Queries_DICTIONARY_EXCLUDE_306", Include) {
 
-    checkAnswer(s"""SELECT deviceinformationid from VMALL_DICTIONARY_EXCLUDE where deviceinformationid like '%0084'""",
-      s"""SELECT deviceinformationid from VMALL_DICTIONARY_EXCLUDE1_hive where deviceinformationid like '%0084'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_306")
+    checkAnswer(s"""SELECT deviceinformationid from TABLE_DICTIONARY_EXCLUDE where deviceinformationid like '%0084'""",
+      s"""SELECT deviceinformationid from TABLE_DICTIONARY_EXCLUDE1_hive where deviceinformationid like '%0084'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_306")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_307
-  test("VMALL_DICTIONARY_EXCLUDE_307", Include) {
+  //DICTIONARY_EXCLUDE_307
+  test("Queries_DICTIONARY_EXCLUDE_307", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei like '1AA10%'""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei like '1AA10%'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_307")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei like '1AA10%'""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei like '1AA10%'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_307")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_308
-  test("VMALL_DICTIONARY_EXCLUDE_308", Include) {
+  //DICTIONARY_EXCLUDE_308
+  test("Queries_DICTIONARY_EXCLUDE_308", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei like '%A10%'""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei like '%A10%'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_308")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei like '%A10%'""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei like '%A10%'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_308")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_309
-  test("VMALL_DICTIONARY_EXCLUDE_309", Include) {
+  //DICTIONARY_EXCLUDE_309
+  test("Queries_DICTIONARY_EXCLUDE_309", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei like '%00084'""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei like '%00084'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_309")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei like '%00084'""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei like '%00084'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_309")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_310
-  test("VMALL_DICTIONARY_EXCLUDE_310", Include) {
+  //DICTIONARY_EXCLUDE_310
+  test("Queries_DICTIONARY_EXCLUDE_310", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei in ('1AA100074','1AA100075','1AA100077')""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei in ('1AA100074','1AA100075','1AA100077')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_310")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei in ('1AA100074','1AA100075','1AA100077')""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei in ('1AA100074','1AA100075','1AA100077')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_310")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_311
-  test("VMALL_DICTIONARY_EXCLUDE_311", Include) {
+  //DICTIONARY_EXCLUDE_311
+  test("Queries_DICTIONARY_EXCLUDE_311", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei not in ('1AA100074','1AA100075','1AA100077')""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei not in ('1AA100074','1AA100075','1AA100077')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_311")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei not in ('1AA100074','1AA100075','1AA100077')""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei not in ('1AA100074','1AA100075','1AA100077')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_311")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_312
-  test("VMALL_DICTIONARY_EXCLUDE_312", Include) {
+  //DICTIONARY_EXCLUDE_312
+  test("Queries_DICTIONARY_EXCLUDE_312", Include) {
 
-    checkAnswer(s"""select deviceinformationid from VMALL_DICTIONARY_EXCLUDE where deviceinformationid in (100081,100078,10008)""",
-      s"""select deviceinformationid from VMALL_DICTIONARY_EXCLUDE1_hive where deviceinformationid in (100081,100078,10008)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_312")
+    checkAnswer(s"""select deviceinformationid from TABLE_DICTIONARY_EXCLUDE where deviceinformationid in (100081,100078,10008)""",
+      s"""select deviceinformationid from TABLE_DICTIONARY_EXCLUDE1_hive where deviceinformationid in (100081,100078,10008)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_312")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_313
-  test("VMALL_DICTIONARY_EXCLUDE_313", Include) {
+  //DICTIONARY_EXCLUDE_313
+  test("Queries_DICTIONARY_EXCLUDE_313", Include) {
 
-    checkAnswer(s"""select deviceinformationid from VMALL_DICTIONARY_EXCLUDE where deviceinformationid not in (100081,100078,10008)""",
-      s"""select deviceinformationid from VMALL_DICTIONARY_EXCLUDE1_hive where deviceinformationid not in (100081,100078,10008)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_313")
+    checkAnswer(s"""select deviceinformationid from TABLE_DICTIONARY_EXCLUDE where deviceinformationid not in (100081,100078,10008)""",
+      s"""select deviceinformationid from TABLE_DICTIONARY_EXCLUDE1_hive where deviceinformationid not in (100081,100078,10008)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_313")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_314
-  test("VMALL_DICTIONARY_EXCLUDE_314", Include) {
+  //DICTIONARY_EXCLUDE_314
+  test("Queries_DICTIONARY_EXCLUDE_314", Include) {
 
-    checkAnswer(s"""select productiondate from VMALL_DICTIONARY_EXCLUDE where productiondate in ('2015-10-04 12:07:28','2015-10-07%','2015-10-07 12:07:28')""",
-      s"""select productiondate from VMALL_DICTIONARY_EXCLUDE1_hive where productiondate in ('2015-10-04 12:07:28','2015-10-07%','2015-10-07 12:07:28')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_314")
+    checkAnswer(s"""select productiondate from TABLE_DICTIONARY_EXCLUDE where productiondate in ('2015-10-04 12:07:28','2015-10-07%','2015-10-07 12:07:28')""",
+      s"""select productiondate from TABLE_DICTIONARY_EXCLUDE1_hive where productiondate in ('2015-10-04 12:07:28','2015-10-07%','2015-10-07 12:07:28')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_314")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_315
-  test("VMALL_DICTIONARY_EXCLUDE_315", Include) {
+  //DICTIONARY_EXCLUDE_315
+  test("Queries_DICTIONARY_EXCLUDE_315", Include) {
 
-    checkAnswer(s"""select productiondate from VMALL_DICTIONARY_EXCLUDE where productiondate not in (cast('2015-10-04 12:07:28' as timestamp),cast('2015-10-07 12:07:28' as timestamp))""",
-      s"""select productiondate from VMALL_DICTIONARY_EXCLUDE1_hive where productiondate not in (cast('2015-10-04 12:07:28' as timestamp),cast('2015-10-07 12:07:28' as timestamp))""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_315")
+    checkAnswer(s"""select productiondate from TABLE_DICTIONARY_EXCLUDE where productiondate not in (cast('2015-10-04 12:07:28' as timestamp),cast('2015-10-07 12:07:28' as timestamp))""",
+      s"""select productiondate from TABLE_DICTIONARY_EXCLUDE1_hive where productiondate not in (cast('2015-10-04 12:07:28' as timestamp),cast('2015-10-07 12:07:28' as timestamp))""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_315")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_316
-  test("VMALL_DICTIONARY_EXCLUDE_316", Include) {
+  //DICTIONARY_EXCLUDE_316
+  test("Queries_DICTIONARY_EXCLUDE_316", Include) {
 
-    checkAnswer(s"""select gamepointid from VMALL_DICTIONARY_EXCLUDE where gamepointid in (5.02870412391492E39,3.82247669125491E41,6.8591561117512E42)""",
-      s"""select gamepointid from VMALL_DICTIONARY_EXCLUDE1_hive where gamepointid in (5.02870412391492E39,3.82247669125491E41,6.8591561117512E42)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_316")
+    checkAnswer(s"""select gamepointid from TABLE_DICTIONARY_EXCLUDE where gamepointid in (5.02870412391492E39,3.82247669125491E41,6.8591561117512E42)""",
+      s"""select gamepointid from TABLE_DICTIONARY_EXCLUDE1_hive where gamepointid in (5.02870412391492E39,3.82247669125491E41,6.8591561117512E42)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_316")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_317
-  test("VMALL_DICTIONARY_EXCLUDE_317", Include) {
+  //DICTIONARY_EXCLUDE_317
+  test("Queries_DICTIONARY_EXCLUDE_317", Include) {
 
-    checkAnswer(s"""select gamepointid from VMALL_DICTIONARY_EXCLUDE where gamepointid not in (5.02870412391492E39,3.82247669125491E41,6.8591561117512E42)""",
-      s"""select gamepointid from VMALL_DICTIONARY_EXCLUDE1_hive where gamepointid not in (5.02870412391492E39,3.82247669125491E41,6.8591561117512E42)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_317")
+    checkAnswer(s"""select gamepointid from TABLE_DICTIONARY_EXCLUDE where gamepointid not in (5.02870412391492E39,3.82247669125491E41,6.8591561117512E42)""",
+      s"""select gamepointid from TABLE_DICTIONARY_EXCLUDE1_hive where gamepointid not in (5.02870412391492E39,3.82247669125491E41,6.8591561117512E42)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_317")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_318
-  test("VMALL_DICTIONARY_EXCLUDE_318", Include) {
+  //DICTIONARY_EXCLUDE_318
+  test("Queries_DICTIONARY_EXCLUDE_318", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY in (1234567890123530.0000000000,1234567890123520.0000000000)""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY in (1234567890123530.0000000000,1234567890123520.0000000000)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_318")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY in (1234567890123530.0000000000,1234567890123520.0000000000)""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY in (1234567890123530.0000000000,1234567890123520.0000000000)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_318")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_319
-  test("VMALL_DICTIONARY_EXCLUDE_319", Include) {
+  //DICTIONARY_EXCLUDE_319
+  test("Queries_DICTIONARY_EXCLUDE_319", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY not in (1234567890123530.0000000000,1234567890123520.0000000000)""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY not in (1234567890123530.0000000000,1234567890123520.0000000000)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_319")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY not in (1234567890123530.0000000000,1234567890123520.0000000000)""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY not in (1234567890123530.0000000000,1234567890123520.0000000000)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_319")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_322
-  test("VMALL_DICTIONARY_EXCLUDE_322", Include) {
+  //DICTIONARY_EXCLUDE_322
+  test("Queries_DICTIONARY_EXCLUDE_322", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei !='1AA100077'""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei !='1AA100077'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_322")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei !='1AA100077'""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei !='1AA100077'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_322")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_323
-  test("VMALL_DICTIONARY_EXCLUDE_323", Include) {
+  //DICTIONARY_EXCLUDE_323
+  test("Queries_DICTIONARY_EXCLUDE_323", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei NOT LIKE '1AA100077'""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei NOT LIKE '1AA100077'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_323")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei NOT LIKE '1AA100077'""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei NOT LIKE '1AA100077'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_323")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_324
-  test("VMALL_DICTIONARY_EXCLUDE_324", Include) {
+  //DICTIONARY_EXCLUDE_324
+  test("Queries_DICTIONARY_EXCLUDE_324", Include) {
 
-    checkAnswer(s"""select deviceinformationid from VMALL_DICTIONARY_EXCLUDE where deviceinformationid !=100078""",
-      s"""select deviceinformationid from VMALL_DICTIONARY_EXCLUDE1_hive where deviceinformationid !=100078""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_324")
+    checkAnswer(s"""select deviceinformationid from TABLE_DICTIONARY_EXCLUDE where deviceinformationid !=100078""",
+      s"""select deviceinformationid from TABLE_DICTIONARY_EXCLUDE1_hive where deviceinformationid !=100078""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_324")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_325
-  test("VMALL_DICTIONARY_EXCLUDE_325", Include) {
+  //DICTIONARY_EXCLUDE_325
+  test("Queries_DICTIONARY_EXCLUDE_325", Include) {
 
-    checkAnswer(s"""select deviceinformationid from VMALL_DICTIONARY_EXCLUDE where deviceinformationid NOT LIKE 100079""",
-      s"""select deviceinformationid from VMALL_DICTIONARY_EXCLUDE1_hive where deviceinformationid NOT LIKE 100079""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_325")
+    checkAnswer(s"""select deviceinformationid from TABLE_DICTIONARY_EXCLUDE where deviceinformationid NOT LIKE 100079""",
+      s"""select deviceinformationid from TABLE_DICTIONARY_EXCLUDE1_hive where deviceinformationid NOT LIKE 100079""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_325")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_326
-  test("VMALL_DICTIONARY_EXCLUDE_326", Include) {
+  //DICTIONARY_EXCLUDE_326
+  test("Queries_DICTIONARY_EXCLUDE_326", Include) {
 
-    checkAnswer(s"""select productiondate from VMALL_DICTIONARY_EXCLUDE where productiondate !='2015-10-07 12:07:28'""",
-      s"""select productiondate from VMALL_DICTIONARY_EXCLUDE1_hive where productiondate !='2015-10-07 12:07:28'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_326")
+    checkAnswer(s"""select productiondate from TABLE_DICTIONARY_EXCLUDE where productiondate !='2015-10-07 12:07:28'""",
+      s"""select productiondate from TABLE_DICTIONARY_EXCLUDE1_hive where productiondate !='2015-10-07 12:07:28'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_326")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_327
-  ignore("VMALL_DICTIONARY_EXCLUDE_327", Include) {
+  //DICTIONARY_EXCLUDE_327
+  ignore("Queries_DICTIONARY_EXCLUDE_327", Include) {
 
-    checkAnswer(s"""select productiondate from VMALL_DICTIONARY_EXCLUDE where productiondate NOT LIKE '2015-10-07 12:07:28'""",
-      s"""select productiondate from VMALL_DICTIONARY_EXCLUDE1_hive where productiondate NOT LIKE '2015-10-07 12:07:28'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_327")
+    checkAnswer(s"""select productiondate from TABLE_DICTIONARY_EXCLUDE where productiondate NOT LIKE '2015-10-07 12:07:28'""",
+      s"""select productiondate from TABLE_DICTIONARY_EXCLUDE1_hive where productiondate NOT LIKE '2015-10-07 12:07:28'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_327")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_328
-  test("VMALL_DICTIONARY_EXCLUDE_328", Include) {
+  //DICTIONARY_EXCLUDE_328
+  test("Queries_DICTIONARY_EXCLUDE_328", Include) {
 
-    checkAnswer(s"""select gamepointid from VMALL_DICTIONARY_EXCLUDE where gamepointid !=6.8591561117512E42""",
-      s"""select gamepointid from VMALL_DICTIONARY_EXCLUDE1_hive where gamepointid !=6.8591561117512E42""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_328")
+    checkAnswer(s"""select gamepointid from TABLE_DICTIONARY_EXCLUDE where gamepointid !=6.8591561117512E42""",
+      s"""select gamepointid from TABLE_DICTIONARY_EXCLUDE1_hive where gamepointid !=6.8591561117512E42""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_328")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_329
-  test("VMALL_DICTIONARY_EXCLUDE_329", Include) {
+  //DICTIONARY_EXCLUDE_329
+  test("Queries_DICTIONARY_EXCLUDE_329", Include) {
 
-    checkAnswer(s"""select gamepointid from VMALL_DICTIONARY_EXCLUDE where gamepointid NOT LIKE 6.8591561117512E43""",
-      s"""select gamepointid from VMALL_DICTIONARY_EXCLUDE1_hive where gamepointid NOT LIKE 6.8591561117512E43""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_329")
+    checkAnswer(s"""select gamepointid from TABLE_DICTIONARY_EXCLUDE where gamepointid NOT LIKE 6.8591561117512E43""",
+      s"""select gamepointid from TABLE_DICTIONARY_EXCLUDE1_hive where gamepointid NOT LIKE 6.8591561117512E43""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_329")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_330
-  test("VMALL_DICTIONARY_EXCLUDE_330", Include) {
+  //DICTIONARY_EXCLUDE_330
+  test("Queries_DICTIONARY_EXCLUDE_330", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY != 1234567890123520.0000000000""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY != 1234567890123520.0000000000""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_330")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY != 1234567890123520.0000000000""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY != 1234567890123520.0000000000""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_330")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_331
-  test("VMALL_DICTIONARY_EXCLUDE_331", Include) {
+  //DICTIONARY_EXCLUDE_331
+  test("Queries_DICTIONARY_EXCLUDE_331", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY NOT LIKE 1234567890123520.0000000000""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY NOT LIKE 1234567890123520.0000000000""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_331")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY NOT LIKE 1234567890123520.0000000000""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY NOT LIKE 1234567890123520.0000000000""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_331")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_335
-  test("VMALL_DICTIONARY_EXCLUDE_335", Include) {
+  //DICTIONARY_EXCLUDE_335
+  test("Queries_DICTIONARY_EXCLUDE_335", Include) {
 
-    checkAnswer(s"""SELECT productiondate,IMEI from VMALL_DICTIONARY_EXCLUDE where IMEI RLIKE '1AA100077'""",
-      s"""SELECT productiondate,IMEI from VMALL_DICTIONARY_EXCLUDE1_hive where IMEI RLIKE '1AA100077'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_335")
+    checkAnswer(s"""SELECT productiondate,IMEI from TABLE_DICTIONARY_EXCLUDE where IMEI RLIKE '1AA100077'""",
+      s"""SELECT productiondate,IMEI from TABLE_DICTIONARY_EXCLUDE1_hive where IMEI RLIKE '1AA100077'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_335")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_336
-  test("VMALL_DICTIONARY_EXCLUDE_336", Include) {
+  //DICTIONARY_EXCLUDE_336
+  test("Queries_DICTIONARY_EXCLUDE_336", Include) {
 
-    checkAnswer(s"""SELECT deviceinformationId from VMALL_DICTIONARY_EXCLUDE where deviceinformationId RLIKE '100079'""",
-      s"""SELECT deviceinformationId from VMALL_DICTIONARY_EXCLUDE1_hive where deviceinformationId RLIKE '100079'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_336")
+    checkAnswer(s"""SELECT deviceinformationId from TABLE_DICTIONARY_EXCLUDE where deviceinformationId RLIKE '100079'""",
+      s"""SELECT deviceinformationId from TABLE_DICTIONARY_EXCLUDE1_hive where deviceinformationId RLIKE '100079'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_336")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_337
-  test("VMALL_DICTIONARY_EXCLUDE_337", Include) {
+  //DICTIONARY_EXCLUDE_337
+  test("Queries_DICTIONARY_EXCLUDE_337", Include) {
 
-    checkAnswer(s"""SELECT gamepointid from VMALL_DICTIONARY_EXCLUDE where gamepointid RLIKE '1.61922711065643E42'""",
-      s"""SELECT gamepointid from VMALL_DICTIONARY_EXCLUDE1_hive where gamepointid RLIKE '1.61922711065643E42'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_337")
+    checkAnswer(s"""SELECT gamepointid from TABLE_DICTIONARY_EXCLUDE where gamepointid RLIKE '1.61922711065643E42'""",
+      s"""SELECT gamepointid from TABLE_DICTIONARY_EXCLUDE1_hive where gamepointid RLIKE '1.61922711065643E42'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_337")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_338
-  test("VMALL_DICTIONARY_EXCLUDE_338", Include) {
+  //DICTIONARY_EXCLUDE_338
+  test("Queries_DICTIONARY_EXCLUDE_338", Include) {
 
-    checkAnswer(s"""SELECT Latest_Day from VMALL_DICTIONARY_EXCLUDE where Latest_Day RLIKE '1234567890123550.0000000000'""",
-      s"""SELECT Latest_Day from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_Day RLIKE '1234567890123550.0000000000'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_338")
+    checkAnswer(s"""SELECT Latest_Day from TABLE_DICTIONARY_EXCLUDE where Latest_Day RLIKE '1234567890123550.0000000000'""",
+      s"""SELECT Latest_Day from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_Day RLIKE '1234567890123550.0000000000'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_338")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_339
-  test("VMALL_DICTIONARY_EXCLUDE_339", Include) {
+  //DICTIONARY_EXCLUDE_339
+  test("Queries_DICTIONARY_EXCLUDE_339", Include) {
 
-    checkAnswer(s"""SELECT contractnumber from VMALL_DICTIONARY_EXCLUDE where contractnumber RLIKE '9223372047800'""",
-      s"""SELECT contractnumber from VMALL_DICTIONARY_EXCLUDE1_hive where contractnumber RLIKE '9223372047800'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_339")
+    checkAnswer(s"""SELECT contractnumber from TABLE_DICTIONARY_EXCLUDE where contractnumber RLIKE '9223372047800'""",
+      s"""SELECT contractnumber from TABLE_DICTIONARY_EXCLUDE1_hive where contractnumber RLIKE '9223372047800'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_339")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_340
-  test("VMALL_DICTIONARY_EXCLUDE_340", Include) {
+  //DICTIONARY_EXCLUDE_340
+  test("Queries_DICTIONARY_EXCLUDE_340", Include) {
 
-    checkAnswer(s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from VMALL_DICTIONARY_EXCLUDE a join VMALL_DICTIONARY_EXCLUDE b on a.productiondate=b.productiondate""",
-      s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from VMALL_DICTIONARY_EXCLUDE1_hive a join VMALL_DICTIONARY_EXCLUDE1_hive b on a.productiondate=b.productiondate""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_340")
+    checkAnswer(s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from TABLE_DICTIONARY_EXCLUDE a join TABLE_DICTIONARY_EXCLUDE b on a.productiondate=b.productiondate""",
+      s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from TABLE_DICTIONARY_EXCLUDE1_hive a join TABLE_DICTIONARY_EXCLUDE1_hive b on a.productiondate=b.productiondate""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_340")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_341
-  test("VMALL_DICTIONARY_EXCLUDE_341", Include) {
+  //DICTIONARY_EXCLUDE_341
+  test("Queries_DICTIONARY_EXCLUDE_341", Include) {
 
-    checkAnswer(s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from VMALL_DICTIONARY_EXCLUDE a join VMALL_DICTIONARY_EXCLUDE b on a.deviceinformationid=b.deviceinformationid""",
-      s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from VMALL_DICTIONARY_EXCLUDE1_hive a join VMALL_DICTIONARY_EXCLUDE1_hive b on a.deviceinformationid=b.deviceinformationid""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_341")
+    checkAnswer(s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from TABLE_DICTIONARY_EXCLUDE a join TABLE_DICTIONARY_EXCLUDE b on a.deviceinformationid=b.deviceinformationid""",
+      s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from TABLE_DICTIONARY_EXCLUDE1_hive a join TABLE_DICTIONARY_EXCLUDE1_hive b on a.deviceinformationid=b.deviceinformationid""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_341")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_342
-  test("VMALL_DICTIONARY_EXCLUDE_342", Include) {
+  //DICTIONARY_EXCLUDE_342
+  test("Queries_DICTIONARY_EXCLUDE_342", Include) {
 
-    checkAnswer(s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from VMALL_DICTIONARY_EXCLUDE a join VMALL_DICTIONARY_EXCLUDE b on a.imei=b.imei""",
-      s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from VMALL_DICTIONARY_EXCLUDE1_hive a join VMALL_DICTIONARY_EXCLUDE1_hive b on a.imei=b.imei""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_342")
+    checkAnswer(s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from TABLE_DICTIONARY_EXCLUDE a join TABLE_DICTIONARY_EXCLUDE b on a.imei=b.imei""",
+      s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from TABLE_DICTIONARY_EXCLUDE1_hive a join TABLE_DICTIONARY_EXCLUDE1_hive b on a.imei=b.imei""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_342")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_343
-  test("VMALL_DICTIONARY_EXCLUDE_343", Include) {
+  //DICTIONARY_EXCLUDE_343
+  test("Queries_DICTIONARY_EXCLUDE_343", Include) {
 
-    checkAnswer(s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from VMALL_DICTIONARY_EXCLUDE a join VMALL_DICTIONARY_EXCLUDE b on a.gamepointid=b.gamepointid""",
-      s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from VMALL_DICTIONARY_EXCLUDE1_hive a join VMALL_DICTIONARY_EXCLUDE1_hive b on a.gamepointid=b.gamepointid""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_343")
+    checkAnswer(s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from TABLE_DICTIONARY_EXCLUDE a join TABLE_DICTIONARY_EXCLUDE b on a.gamepointid=b.gamepointid""",
+      s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from TABLE_DICTIONARY_EXCLUDE1_hive a join TABLE_DICTIONARY_EXCLUDE1_hive b on a.gamepointid=b.gamepointid""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_343")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_344
-  test("VMALL_DICTIONARY_EXCLUDE_344", Include) {
+  //DICTIONARY_EXCLUDE_344
+  test("Queries_DICTIONARY_EXCLUDE_344", Include) {
 
-    checkAnswer(s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from VMALL_DICTIONARY_EXCLUDE a join VMALL_DICTIONARY_EXCLUDE b on a.Latest_Day=b.Latest_Day""",
-      s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from VMALL_DICTIONARY_EXCLUDE1_hive a join VMALL_DICTIONARY_EXCLUDE1_hive b on a.Latest_Day=b.Latest_Day""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_344")
+    checkAnswer(s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from TABLE_DICTIONARY_EXCLUDE a join TABLE_DICTIONARY_EXCLUDE b on a.Latest_Day=b.Latest_Day""",
+      s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from TABLE_DICTIONARY_EXCLUDE1_hive a join TABLE_DICTIONARY_EXCLUDE1_hive b on a.Latest_Day=b.Latest_Day""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_344")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_345
-  test("VMALL_DICTIONARY_EXCLUDE_345", Include) {
+  //DICTIONARY_EXCLUDE_345
+  test("Queries_DICTIONARY_EXCLUDE_345", Include) {
 
-    checkAnswer(s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from VMALL_DICTIONARY_EXCLUDE a join VMALL_DICTIONARY_EXCLUDE b on a.contractnumber=b.contractnumber""",
-      s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from VMALL_DICTIONARY_EXCLUDE1_hive a join VMALL_DICTIONARY_EXCLUDE1_hive b on a.contractnumber=b.contractnumber""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_345")
+    checkAnswer(s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from TABLE_DICTIONARY_EXCLUDE a join TABLE_DICTIONARY_EXCLUDE b on a.contractnumber=b.contractnumber""",
+      s"""select  b.contractNumber,b.Latest_DAY,b.gamePointId,b.productionDate,b.deviceInformationId,b.IMEI from TABLE_DICTIONARY_EXCLUDE1_hive a join TABLE_DICTIONARY_EXCLUDE1_hive b on a.contractnumber=b.contractnumber""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_345")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_346
-  test("VMALL_DICTIONARY_EXCLUDE_346", Include) {
+  //DICTIONARY_EXCLUDE_346
+  test("Queries_DICTIONARY_EXCLUDE_346", Include) {
 
-    checkAnswer(s"""select count( contractNumber ),sum( contractNumber ),count(distinct contractNumber ),avg( contractNumber ),max( contractNumber ),min( contractNumber ),1 from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count( contractNumber ),sum( contractNumber ),count(distinct contractNumber ),avg( contractNumber ),max( contractNumber ),min( contractNumber ),1 from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_346")
+    checkAnswer(s"""select count( contractNumber ),sum( contractNumber ),count(distinct contractNumber ),avg( contractNumber ),max( contractNumber ),min( contractNumber ),1 from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count( contractNumber ),sum( contractNumber ),count(distinct contractNumber ),avg( contractNumber ),max( contractNumber ),min( contractNumber ),1 from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_346")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_347
-  test("VMALL_DICTIONARY_EXCLUDE_347", Include) {
+  //DICTIONARY_EXCLUDE_347
+  test("Queries_DICTIONARY_EXCLUDE_347", Include) {
 
-    checkAnswer(s"""select count( Latest_Day ),sum( Latest_Day ),count(distinct Latest_Day ),avg( Latest_Day ),max( Latest_Day ),min( Latest_Day ),1 from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count( Latest_Day ),sum( Latest_Day ),count(distinct Latest_Day ),avg( Latest_Day ),max( Latest_Day ),min( Latest_Day ),1 from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_347")
+    checkAnswer(s"""select count( Latest_Day ),sum( Latest_Day ),count(distinct Latest_Day ),avg( Latest_Day ),max( Latest_Day ),min( Latest_Day ),1 from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count( Latest_Day ),sum( Latest_Day ),count(distinct Latest_Day ),avg( Latest_Day ),max( Latest_Day ),min( Latest_Day ),1 from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_347")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_348
-  ignore("VMALL_DICTIONARY_EXCLUDE_348", Include) {
+  //DICTIONARY_EXCLUDE_348
+  ignore("Queries_DICTIONARY_EXCLUDE_348", Include) {
 
-    checkAnswer(s"""select count( gamePointId),sum( gamePointId ),count(distinct gamePointId ),avg(gamePointId),max(gamePointId),min(gamePointId),1 from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count( gamePointId),sum( gamePointId ),count(distinct gamePointId ),avg(gamePointId),max(gamePointId),min(gamePointId),1 from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_348")
+    checkAnswer(s"""select count( gamePointId),sum( gamePointId ),count(distinct gamePointId ),avg(gamePointId),max(gamePointId),min(gamePointId),1 from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count( gamePointId),sum( gamePointId ),count(distinct gamePointId ),avg(gamePointId),max(gamePointId),min(gamePointId),1 from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_348")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_349
-  test("VMALL_DICTIONARY_EXCLUDE_349", Include) {
+  //DICTIONARY_EXCLUDE_349
+  test("Queries_DICTIONARY_EXCLUDE_349", Include) {
 
-    checkAnswer(s"""select count(deviceInformationId),sum(deviceInformationId),count(deviceInformationId),avg(deviceInformationId),max(deviceInformationId),min(deviceInformationId),1 from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(deviceInformationId),sum(deviceInformationId),count(deviceInformationId),avg(deviceInformationId),max(deviceInformationId),min(deviceInformationId),1 from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_349")
+    checkAnswer(s"""select count(deviceInformationId),sum(deviceInformationId),count(deviceInformationId),avg(deviceInformationId),max(deviceInformationId),min(deviceInformationId),1 from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(deviceInformationId),sum(deviceInformationId),count(deviceInformationId),avg(deviceInformationId),max(deviceInformationId),min(deviceInformationId),1 from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_349")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_350
-  test("VMALL_DICTIONARY_EXCLUDE_350", Include) {
+  //DICTIONARY_EXCLUDE_350
+  test("Queries_DICTIONARY_EXCLUDE_350", Include) {
 
-    checkAnswer(s"""select count( productionDate),sum(  productionDate ),count(distinct  productionDate ),avg(  productionDate ),max(  productionDate),min(  productionDate ),1 from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count( productionDate),sum(  productionDate ),count(distinct  productionDate ),avg(  productionDate ),max(  productionDate),min(  productionDate ),1 from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_350")
+    checkAnswer(s"""select count( productionDate),sum(  productionDate ),count(distinct  productionDate ),avg(  productionDate ),max(  productionDate),min(  productionDate ),1 from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count( productionDate),sum(  productionDate ),count(distinct  productionDate ),avg(  productionDate ),max(  productionDate),min(  productionDate ),1 from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_350")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_351
-  test("VMALL_DICTIONARY_EXCLUDE_351", Include) {
+  //DICTIONARY_EXCLUDE_351
+  test("Queries_DICTIONARY_EXCLUDE_351", Include) {
 
-    checkAnswer(s"""select count(IMEI ),sum(IMEI ),count(distinct IMEI ),avg(IMEI ),max(IMEI ),min(IMEI ),1 from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(IMEI ),sum(IMEI ),count(distinct IMEI ),avg(IMEI ),max(IMEI ),min(IMEI ),1 from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_351")
+    checkAnswer(s"""select count(IMEI ),sum(IMEI ),count(distinct IMEI ),avg(IMEI ),max(IMEI ),min(IMEI ),1 from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(IMEI ),sum(IMEI ),count(distinct IMEI ),avg(IMEI ),max(IMEI ),min(IMEI ),1 from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_351")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_352
-  test("VMALL_DICTIONARY_EXCLUDE_352", Include) {
+  //DICTIONARY_EXCLUDE_352
+  test("Queries_DICTIONARY_EXCLUDE_352", Include) {
 
-    checkAnswer(s"""select sum(contractNumber),count(contractNumber),avg(contractNumber),sum(contractNumber)/count(contractNumber) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(contractNumber),count(contractNumber),avg(contractNumber),sum(contractNumber)/count(contractNumber) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_352")
+    checkAnswer(s"""select sum(contractNumber),count(contractNumber),avg(contractNumber),sum(contractNumber)/count(contractNumber) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(contractNumber),count(contractNumber),avg(contractNumber),sum(contractNumber)/count(contractNumber) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_352")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_353
-  test("VMALL_DICTIONARY_EXCLUDE_353", Include) {
+  //DICTIONARY_EXCLUDE_353
+  test("Queries_DICTIONARY_EXCLUDE_353", Include) {
 
-    checkAnswer(s"""select sum(Latest_Day),count(Latest_Day),avg(Latest_Day),sum(Latest_Day)/count(Latest_Day) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(Latest_Day),count(Latest_Day),avg(Latest_Day),sum(Latest_Day)/count(Latest_Day) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_353")
+    checkAnswer(s"""select sum(Latest_Day),count(Latest_Day),avg(Latest_Day),sum(Latest_Day)/count(Latest_Day) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(Latest_Day),count(Latest_Day),avg(Latest_Day),sum(Latest_Day)/count(Latest_Day) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_353")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_354
-  ignore("VMALL_DICTIONARY_EXCLUDE_354", Include) {
+  //DICTIONARY_EXCLUDE_354
+  ignore("Queries_DICTIONARY_EXCLUDE_354", Include) {
 
-    checkAnswer(s"""select sum(gamepointId),count(gamepointId),avg(gamepointID),sum(gamepointID)/count(gamepointID) from (select gamePointId from VMALL_DICTIONARY_EXCLUDE order by gamePointId)""",
-      s"""select sum(gamepointId),count(gamepointId),avg(gamepointID),sum(gamepointID)/count(gamepointID) from (select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_354")
+    checkAnswer(s"""select sum(gamepointId),count(gamepointId),avg(gamepointID),sum(gamepointID)/count(gamepointID) from (select gamePointId from TABLE_DICTIONARY_EXCLUDE order by gamePointId)""",
+      s"""select sum(gamepointId),count(gamepointId),avg(gamepointID),sum(gamepointID)/count(gamepointID) from (select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_354")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_355
-  test("VMALL_DICTIONARY_EXCLUDE_355", Include) {
+  //DICTIONARY_EXCLUDE_355
+  test("Queries_DICTIONARY_EXCLUDE_355", Include) {
 
-    checkAnswer(s"""select sum(deviceinformationId),count(deviceinformationId),avg(deviceinformationId),sum(deviceinformationId)/count(deviceinformationId) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(deviceinformationId),count(deviceinformationId),avg(deviceinformationId),sum(deviceinformationId)/count(deviceinformationId) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_355")
+    checkAnswer(s"""select sum(deviceinformationId),count(deviceinformationId),avg(deviceinformationId),sum(deviceinformationId)/count(deviceinformationId) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(deviceinformationId),count(deviceinformationId),avg(deviceinformationId),sum(deviceinformationId)/count(deviceinformationId) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_355")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_356
-  test("VMALL_DICTIONARY_EXCLUDE_356", Include) {
+  //DICTIONARY_EXCLUDE_356
+  test("Queries_DICTIONARY_EXCLUDE_356", Include) {
 
-    checkAnswer(s"""select sum(IMEI),count(IMEI),avg(IMEI),sum(IMEI)/count(IMEI) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(IMEI),count(IMEI),avg(IMEI),sum(IMEI)/count(IMEI) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_356")
+    checkAnswer(s"""select sum(IMEI),count(IMEI),avg(IMEI),sum(IMEI)/count(IMEI) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(IMEI),count(IMEI),avg(IMEI),sum(IMEI)/count(IMEI) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_356")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_357
-  test("VMALL_DICTIONARY_EXCLUDE_357", Include) {
+  //DICTIONARY_EXCLUDE_357
+  test("Queries_DICTIONARY_EXCLUDE_357", Include) {
 
-    checkAnswer(s"""select sum(productionDate),count(productionDate),avg(productionDate),sum(productionDate)/count(productionDate) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select sum(productionDate),count(productionDate),avg(productionDate),sum(productionDate)/count(productionDate) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_357")
+    checkAnswer(s"""select sum(productionDate),count(productionDate),avg(productionDate),sum(productionDate)/count(productionDate) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select sum(productionDate),count(productionDate),avg(productionDate),sum(productionDate)/count(productionDate) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_357")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_358
-  test("VMALL_DICTIONARY_EXCLUDE_358", Include) {
+  //DICTIONARY_EXCLUDE_358
+  test("Queries_DICTIONARY_EXCLUDE_358", Include) {
 
-    checkAnswer(s"""select contractNumber,Latest_DAY,gamePointId,productionDate,deviceInformationId,IMEI  from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select contractNumber,Latest_DAY,gamePointId,productionDate,deviceInformationId,IMEI  from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_358")
+    checkAnswer(s"""select contractNumber,Latest_DAY,gamePointId,productionDate,deviceInformationId,IMEI  from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select contractNumber,Latest_DAY,gamePointId,productionDate,deviceInformationId,IMEI  from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_358")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_359
-  test("VMALL_DICTIONARY_EXCLUDE_359", Include) {
+  //DICTIONARY_EXCLUDE_359
+  test("Queries_DICTIONARY_EXCLUDE_359", Include) {
 
-    checkAnswer(s"""select count(MAC) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(MAC) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_359")
+    checkAnswer(s"""select count(MAC) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(MAC) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_359")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_360
-  test("VMALL_DICTIONARY_EXCLUDE_360", Include) {
+  //DICTIONARY_EXCLUDE_360
+  test("Queries_DICTIONARY_EXCLUDE_360", Include) {
 
-    checkAnswer(s"""select count(gamePointId) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(gamePointId) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_360")
+    checkAnswer(s"""select count(gamePointId) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(gamePointId) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_360")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_361
-  test("VMALL_DICTIONARY_EXCLUDE_361", Include) {
+  //DICTIONARY_EXCLUDE_361
+  test("Queries_DICTIONARY_EXCLUDE_361", Include) {
 
-    checkAnswer(s"""select count(contractNumber) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(contractNumber) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_361")
+    checkAnswer(s"""select count(contractNumber) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(contractNumber) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_361")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_362
-  test("VMALL_DICTIONARY_EXCLUDE_362", Include) {
+  //DICTIONARY_EXCLUDE_362
+  test("Queries_DICTIONARY_EXCLUDE_362", Include) {
 
-    checkAnswer(s"""select count(Latest_DAY) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(Latest_DAY) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_362")
+    checkAnswer(s"""select count(Latest_DAY) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(Latest_DAY) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_362")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_363
-  test("VMALL_DICTIONARY_EXCLUDE_363", Include) {
+  //DICTIONARY_EXCLUDE_363
+  test("Queries_DICTIONARY_EXCLUDE_363", Include) {
 
-    checkAnswer(s"""select count(productionDate) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(productionDate) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_363")
+    checkAnswer(s"""select count(productionDate) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(productionDate) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_363")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_364
-  test("VMALL_DICTIONARY_EXCLUDE_364", Include) {
+  //DICTIONARY_EXCLUDE_364
+  test("Queries_DICTIONARY_EXCLUDE_364", Include) {
 
-    checkAnswer(s"""select count(deviceInformationId) from VMALL_DICTIONARY_EXCLUDE""",
-      s"""select count(deviceInformationId) from VMALL_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_364")
+    checkAnswer(s"""select count(deviceInformationId) from TABLE_DICTIONARY_EXCLUDE""",
+      s"""select count(deviceInformationId) from TABLE_DICTIONARY_EXCLUDE1_hive""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_364")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_365
-  test("VMALL_DICTIONARY_EXCLUDE_365", Include) {
+  //DICTIONARY_EXCLUDE_365
+  test("Queries_DICTIONARY_EXCLUDE_365", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE where  contractNumber  != '9223372047700'""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE1_hive where  contractNumber  != '9223372047700'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_365")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE where  contractNumber  != '9223372047700'""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE1_hive where  contractNumber  != '9223372047700'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_365")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_366
-  test("VMALL_DICTIONARY_EXCLUDE_366", Include) {
+  //DICTIONARY_EXCLUDE_366
+  test("Queries_DICTIONARY_EXCLUDE_366", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE where  Latest_DAY  != '1234567890123480.0000000000' order by imei,deviceInformationId,MAC,deviceColor limit 5""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE1_hive where  Latest_DAY  != '1234567890123480.0000000000' order by imei,deviceInformationId,MAC,deviceColor limit 5""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_366")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE where  Latest_DAY  != '1234567890123480.0000000000' order by imei,deviceInformationId,MAC,deviceColor limit 5""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE1_hive where  Latest_DAY  != '1234567890123480.0000000000' order by imei,deviceInformationId,MAC,deviceColor limit 5""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_366")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_367
-  test("VMALL_DICTIONARY_EXCLUDE_367", Include) {
+  //DICTIONARY_EXCLUDE_367
+  test("Queries_DICTIONARY_EXCLUDE_367", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE where  gamePointId  != '2.27852521808948E36' order by imei,deviceInformationId,MAC,deviceColor limit 5""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE1_hive where  gamePointId  != '2.27852521808948E36' order by imei,deviceInformationId,MAC,deviceColor limit 5""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_367")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE where  gamePointId  != '2.27852521808948E36' order by imei,deviceInformationId,MAC,deviceColor limit 5""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE1_hive where  gamePointId  != '2.27852521808948E36' order by imei,deviceInformationId,MAC,deviceColor limit 5""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_367")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_368
-  test("VMALL_DICTIONARY_EXCLUDE_368", Include) {
+  //DICTIONARY_EXCLUDE_368
+  test("Queries_DICTIONARY_EXCLUDE_368", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE where  productionDate  != '2015-09-18 12:07:28.0' order by imei,deviceInformationId,MAC,deviceColor limit 5""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE1_hive where  productionDate  != '2015-09-18 12:07:28.0' order by imei,deviceInformationId,MAC,deviceColor limit 5""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_368")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE where  productionDate  != '2015-09-18 12:07:28.0' order by imei,deviceInformationId,MAC,deviceColor limit 5""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE1_hive where  productionDate  != '2015-09-18 12:07:28.0' order by imei,deviceInformationId,MAC,deviceColor limit 5""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_368")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_369
-  test("VMALL_DICTIONARY_EXCLUDE_369", Include) {
+  //DICTIONARY_EXCLUDE_369
+  test("Queries_DICTIONARY_EXCLUDE_369", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE where  deviceInformationId  != 100075 order by imei,deviceInformationId,MAC,deviceColor limit 5""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE1_hive where  deviceInformationId  != 100075 order by imei,deviceInformationId,MAC,deviceColor limit 5""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_369")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE where  deviceInformationId  != 100075 order by imei,deviceInformationId,MAC,deviceColor limit 5""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE1_hive where  deviceInformationId  != 100075 order by imei,deviceInformationId,MAC,deviceColor limit 5""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_369")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_370
-  test("VMALL_DICTIONARY_EXCLUDE_370", Include) {
+  //DICTIONARY_EXCLUDE_370
+  test("Queries_DICTIONARY_EXCLUDE_370", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE where  contractNumber  not like '9223372047700' order by  deviceInformationId limit 5""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE1_hive where  contractNumber  not like '9223372047700' order by  deviceInformationId limit 5""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_370")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE where  contractNumber  not like '9223372047700' order by  deviceInformationId limit 5""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE1_hive where  contractNumber  not like '9223372047700' order by  deviceInformationId limit 5""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_370")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_371
-  test("VMALL_DICTIONARY_EXCLUDE_371", Include) {
+  //DICTIONARY_EXCLUDE_371
+  test("Queries_DICTIONARY_EXCLUDE_371", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE where  Latest_DAY  not like '1234567890123480.0000000000' order by imei, deviceInformationId, deviceColor limit 5""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE1_hive where  Latest_DAY  not like '1234567890123480.0000000000' order by imei, deviceInformationId, deviceColor limit 5""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_371")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE where  Latest_DAY  not like '1234567890123480.0000000000' order by imei, deviceInformationId, deviceColor limit 5""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE1_hive where  Latest_DAY  not like '1234567890123480.0000000000' order by imei, deviceInformationId, deviceColor limit 5""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_371")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_372
-  test("VMALL_DICTIONARY_EXCLUDE_372", Include) {
+  //DICTIONARY_EXCLUDE_372
+  test("Queries_DICTIONARY_EXCLUDE_372", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE where  gamePointId  not like '2.27852521808948E36' order by imei,deviceInformationId,MAC limit 5""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE1_hive where  gamePointId  not like '2.27852521808948E36' order by imei,deviceInformationId,MAC limit 5""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_372")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE where  gamePointId  not like '2.27852521808948E36' order by imei,deviceInformationId,MAC limit 5""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE1_hive where  gamePointId  not like '2.27852521808948E36' order by imei,deviceInformationId,MAC limit 5""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_372")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_373
-  test("VMALL_DICTIONARY_EXCLUDE_373", Include) {
+  //DICTIONARY_EXCLUDE_373
+  test("Queries_DICTIONARY_EXCLUDE_373", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE where  productionDate  not like '2015-09-18 12:07:28.0' order by imei,deviceInformationId,MAC limit 5""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE1_hive where  productionDate  not like '2015-09-18 12:07:28.0' order by imei,deviceInformationId,MAC limit 5""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_373")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE where  productionDate  not like '2015-09-18 12:07:28.0' order by imei,deviceInformationId,MAC limit 5""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE1_hive where  productionDate  not like '2015-09-18 12:07:28.0' order by imei,deviceInformationId,MAC limit 5""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_373")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_374
-  test("VMALL_DICTIONARY_EXCLUDE_374", Include) {
+  //DICTIONARY_EXCLUDE_374
+  test("Queries_DICTIONARY_EXCLUDE_374", Include) {
 
-    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE where  deviceInformationId  not like '100075' order by imei,deviceInformationId,MAC limit 5""",
-      s"""select imei,deviceInformationId,MAC,deviceColor from VMALL_DICTIONARY_EXCLUDE1_hive where  deviceInformationId  not like '100075' order by imei,deviceInformationId,MAC limit 5""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_374")
+    checkAnswer(s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE where  deviceInformationId  not like '100075' order by imei,deviceInformationId,MAC limit 5""",
+      s"""select imei,deviceInformationId,MAC,deviceColor from TABLE_DICTIONARY_EXCLUDE1_hive where  deviceInformationId  not like '100075' order by imei,deviceInformationId,MAC limit 5""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_374")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_375
-  test("VMALL_DICTIONARY_EXCLUDE_375", Include) {
+  //DICTIONARY_EXCLUDE_375
+  test("Queries_DICTIONARY_EXCLUDE_375", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei is not null""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei is not null""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_375")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei is not null""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei is not null""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_375")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_376
-  test("VMALL_DICTIONARY_EXCLUDE_376", Include) {
+  //DICTIONARY_EXCLUDE_376
+  test("Queries_DICTIONARY_EXCLUDE_376", Include) {
 
-    checkAnswer(s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE where gamePointId is not null""",
-      s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive where gamePointId is not null""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_376")
+    checkAnswer(s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE where gamePointId is not null""",
+      s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive where gamePointId is not null""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_376")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_377
-  test("VMALL_DICTIONARY_EXCLUDE_377", Include) {
+  //DICTIONARY_EXCLUDE_377
+  test("Queries_DICTIONARY_EXCLUDE_377", Include) {
 
-    checkAnswer(s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE where contractNumber is not null""",
-      s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive where contractNumber is not null""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_377")
+    checkAnswer(s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE where contractNumber is not null""",
+      s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive where contractNumber is not null""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_377")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_378
-  test("VMALL_DICTIONARY_EXCLUDE_378", Include) {
+  //DICTIONARY_EXCLUDE_378
+  test("Queries_DICTIONARY_EXCLUDE_378", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY is not null""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY is not null""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_378")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY is not null""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY is not null""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_378")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_379
-  test("VMALL_DICTIONARY_EXCLUDE_379", Include) {
+  //DICTIONARY_EXCLUDE_379
+  test("Queries_DICTIONARY_EXCLUDE_379", Include) {
 
-    checkAnswer(s"""select productionDate from VMALL_DICTIONARY_EXCLUDE where productionDate is not null""",
-      s"""select productionDate from VMALL_DICTIONARY_EXCLUDE1_hive where productionDate is not null""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_379")
+    checkAnswer(s"""select productionDate from TABLE_DICTIONARY_EXCLUDE where productionDate is not null""",
+      s"""select productionDate from TABLE_DICTIONARY_EXCLUDE1_hive where productionDate is not null""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_379")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_380
-  test("VMALL_DICTIONARY_EXCLUDE_380", Include) {
+  //DICTIONARY_EXCLUDE_380
+  test("Queries_DICTIONARY_EXCLUDE_380", Include) {
 
-    checkAnswer(s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE where deviceInformationId is not null""",
-      s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive where deviceInformationId is not null""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_380")
+    checkAnswer(s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE where deviceInformationId is not null""",
+      s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive where deviceInformationId is not null""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_380")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_381
-  test("VMALL_DICTIONARY_EXCLUDE_381", Include) {
+  //DICTIONARY_EXCLUDE_381
+  test("Queries_DICTIONARY_EXCLUDE_381", Include) {
 
-    checkAnswer(s"""select imei from VMALL_DICTIONARY_EXCLUDE where imei is  null""",
-      s"""select imei from VMALL_DICTIONARY_EXCLUDE1_hive where imei is  null""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_381")
+    checkAnswer(s"""select imei from TABLE_DICTIONARY_EXCLUDE where imei is  null""",
+      s"""select imei from TABLE_DICTIONARY_EXCLUDE1_hive where imei is  null""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_381")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_382
-  test("VMALL_DICTIONARY_EXCLUDE_382", Include) {
+  //DICTIONARY_EXCLUDE_382
+  test("Queries_DICTIONARY_EXCLUDE_382", Include) {
 
-    checkAnswer(s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE where gamePointId is  null""",
-      s"""select gamePointId from VMALL_DICTIONARY_EXCLUDE1_hive where gamePointId is  null""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_382")
+    checkAnswer(s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE where gamePointId is  null""",
+      s"""select gamePointId from TABLE_DICTIONARY_EXCLUDE1_hive where gamePointId is  null""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_382")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_383
-  test("VMALL_DICTIONARY_EXCLUDE_383", Include) {
+  //DICTIONARY_EXCLUDE_383
+  test("Queries_DICTIONARY_EXCLUDE_383", Include) {
 
-    checkAnswer(s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE where contractNumber is  null""",
-      s"""select contractNumber from VMALL_DICTIONARY_EXCLUDE1_hive where contractNumber is  null""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_383")
+    checkAnswer(s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE where contractNumber is  null""",
+      s"""select contractNumber from TABLE_DICTIONARY_EXCLUDE1_hive where contractNumber is  null""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_383")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_384
-  test("VMALL_DICTIONARY_EXCLUDE_384", Include) {
+  //DICTIONARY_EXCLUDE_384
+  test("Queries_DICTIONARY_EXCLUDE_384", Include) {
 
-    checkAnswer(s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE where Latest_DAY is  null""",
-      s"""select Latest_DAY from VMALL_DICTIONARY_EXCLUDE1_hive where Latest_DAY is  null""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_384")
+    checkAnswer(s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE where Latest_DAY is  null""",
+      s"""select Latest_DAY from TABLE_DICTIONARY_EXCLUDE1_hive where Latest_DAY is  null""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_384")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_385
-  test("VMALL_DICTIONARY_EXCLUDE_385", Include) {
+  //DICTIONARY_EXCLUDE_385
+  test("Queries_DICTIONARY_EXCLUDE_385", Include) {
 
-    checkAnswer(s"""select productionDate from VMALL_DICTIONARY_EXCLUDE where productionDate is  null""",
-      s"""select productionDate from VMALL_DICTIONARY_EXCLUDE1_hive where productionDate is  null""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_385")
+    checkAnswer(s"""select productionDate from TABLE_DICTIONARY_EXCLUDE where productionDate is  null""",
+      s"""select productionDate from TABLE_DICTIONARY_EXCLUDE1_hive where productionDate is  null""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_385")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_386
-  test("VMALL_DICTIONARY_EXCLUDE_386", Include) {
+  //DICTIONARY_EXCLUDE_386
+  test("Queries_DICTIONARY_EXCLUDE_386", Include) {
 
-    checkAnswer(s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE where deviceInformationId is  null""",
-      s"""select deviceInformationId from VMALL_DICTIONARY_EXCLUDE1_hive where deviceInformationId is  null""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_386")
+    checkAnswer(s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE where deviceInformationId is  null""",
+      s"""select deviceInformationId from TABLE_DICTIONARY_EXCLUDE1_hive where deviceInformationId is  null""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_386")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_387
-  test("VMALL_DICTIONARY_EXCLUDE_387", Include) {
+  //DICTIONARY_EXCLUDE_387
+  test("Queries_DICTIONARY_EXCLUDE_387", Include) {
 
-    checkAnswer(s"""select count(*) from VMALL_DICTIONARY_EXCLUDE where imei = '1AA1'""",
-      s"""select count(*) from VMALL_DICTIONARY_EXCLUDE1_hive where imei = '1AA1'""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_387")
+    checkAnswer(s"""select count(*) from TABLE_DICTIONARY_EXCLUDE where imei = '1AA1'""",
+      s"""select count(*) from TABLE_DICTIONARY_EXCLUDE1_hive where imei = '1AA1'""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_387")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_001
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_001", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_001
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_001", Include) {
 
-    checkAnswer(s"""select count(imei)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000'  and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select count(imei)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000'  and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_001")
+    checkAnswer(s"""select count(imei)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000'  and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select count(imei)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000'  and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_001")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_002
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_002", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_002
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_002", Include) {
 
-    checkAnswer(s"""select count(deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select count(deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_002")
+    checkAnswer(s"""select count(deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select count(deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_002")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_003
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_003", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_003
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_003", Include) {
 
-    checkAnswer(s"""select count(productionDate)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select count(productionDate)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_003")
+    checkAnswer(s"""select count(productionDate)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select count(productionDate)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_003")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_004
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_004", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_004
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_004", Include) {
 
-    checkAnswer(s"""select count(gamePointId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select count(gamePointId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_004")
+    checkAnswer(s"""select count(gamePointId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select count(gamePointId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_004")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_005
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_005", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_005
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_005", Include) {
 
-    checkAnswer(s"""select count(Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select count(Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_005")
+    checkAnswer(s"""select count(Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select count(Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_005")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_006
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_006", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_006
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_006", Include) {
 
-    checkAnswer(s"""select count(contractNumber)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select count(contractNumber)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_006")
+    checkAnswer(s"""select count(contractNumber)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select count(contractNumber)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_006")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_007
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_007", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_007
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_007", Include) {
 
-    checkAnswer(s"""select count(distinct imei)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select count(distinct imei)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_007")
+    checkAnswer(s"""select count(distinct imei)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select count(distinct imei)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_007")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_008
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_008", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_008
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_008", Include) {
 
-    checkAnswer(s"""select count(distinct deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select count(distinct deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_008")
+    checkAnswer(s"""select count(distinct deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select count(distinct deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_008")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_009
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_009", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_009
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_009", Include) {
 
-    checkAnswer(s"""select count(distinct productionDate)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select count(distinct productionDate)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_009")
+    checkAnswer(s"""select count(distinct productionDate)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select count(distinct productionDate)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_009")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_010
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_010", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_010
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_010", Include) {
 
-    checkAnswer(s"""select count(distinct gamePointId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select count(distinct gamePointId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_010")
+    checkAnswer(s"""select count(distinct gamePointId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select count(distinct gamePointId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_010")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_011
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_011", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_011
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_011", Include) {
 
-    checkAnswer(s"""select count(distinct Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select count(distinct Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_011")
+    checkAnswer(s"""select count(distinct Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select count(distinct Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_011")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_012
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_012", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_012
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_012", Include) {
 
-    checkAnswer(s"""select count(distinct contractNumber)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select count(distinct contractNumber)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_012")
+    checkAnswer(s"""select count(distinct contractNumber)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select count(distinct contractNumber)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_012")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_013
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_013", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_013
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_013", Include) {
 
-    checkAnswer(s"""select sum(deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select sum(deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_013")
+    checkAnswer(s"""select sum(deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select sum(deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_013")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_014
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_014", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_014
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_014", Include) {
 
-    checkAnswer(s"""select sum(productionDate)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select sum(productionDate)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_014")
+    checkAnswer(s"""select sum(productionDate)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select sum(productionDate)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_014")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_015
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_015", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_015
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_015", Include) {
 
-    sql(s"""select sum(gamePointId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""").collect
+    sql(s"""select sum(gamePointId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_016
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_016", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_016
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_016", Include) {
 
-    checkAnswer(s"""select sum(Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select sum(Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_016")
+    checkAnswer(s"""select sum(Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select sum(Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_016")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_017
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_017", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_017
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_017", Include) {
 
-    checkAnswer(s"""select sum(contractNumber)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select sum(contractNumber)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_017")
+    checkAnswer(s"""select sum(contractNumber)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select sum(contractNumber)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_017")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_018
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_018", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_018
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_018", Include) {
 
-    checkAnswer(s"""select sum(distinct deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select sum(distinct deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_018")
+    checkAnswer(s"""select sum(distinct deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select sum(distinct deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_018")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_019
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_019", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_019
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_019", Include) {
 
-    checkAnswer(s"""select sum(distinct gamePointId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select sum(distinct gamePointId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_019")
+    checkAnswer(s"""select sum(distinct gamePointId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select sum(distinct gamePointId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_019")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_020
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_020", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_020
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_020", Include) {
 
-    checkAnswer(s"""select sum(distinct Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select sum(distinct Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_020")
+    checkAnswer(s"""select sum(distinct Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select sum(distinct Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_020")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_021
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_021", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_021
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_021", Include) {
 
-    checkAnswer(s"""select sum(distinct contractNumber)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select sum(distinct contractNumber)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_021")
+    checkAnswer(s"""select sum(distinct contractNumber)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select sum(distinct contractNumber)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_021")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_022
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_022", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_022
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_022", Include) {
 
-    checkAnswer(s"""select min(deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select min(deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_022")
+    checkAnswer(s"""select min(deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select min(deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_022")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_023
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_023", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_023
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_023", Include) {
 
-    checkAnswer(s"""select min(productionDate)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select min(productionDate)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_023")
+    checkAnswer(s"""select min(productionDate)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select min(productionDate)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_023")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_024
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_024", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_024
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_024", Include) {
 
-    checkAnswer(s"""select min(gamePointId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select min(gamePointId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_024")
+    checkAnswer(s"""select min(gamePointId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select min(gamePointId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_024")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_025
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_025", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_025
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_025", Include) {
 
-    checkAnswer(s"""select min(Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select min(Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_025")
+    checkAnswer(s"""select min(Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select min(Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_025")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_026
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_026", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_026
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_026", Include) {
 
-    checkAnswer(s"""select min(contractNumber)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select min(contractNumber)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_026")
+    checkAnswer(s"""select min(contractNumber)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select min(contractNumber)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_026")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_027
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_027", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_027
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_027", Include) {
 
-    checkAnswer(s"""select max(imei)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select max(imei)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_027")
+    checkAnswer(s"""select max(imei)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select max(imei)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_027")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_028
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_028", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_028
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_028", Include) {
 
-    checkAnswer(s"""select max(deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select max(deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_028")
+    checkAnswer(s"""select max(deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select max(deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_028")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_029
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_029", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_029
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_029", Include) {
 
-    checkAnswer(s"""select max(productionDate)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select max(productionDate)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_029")
+    checkAnswer(s"""select max(productionDate)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select max(productionDate)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_029")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_030
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_030", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_030
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_030", Include) {
 
-    checkAnswer(s"""select max(gamePointId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select max(gamePointId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_030")
+    checkAnswer(s"""select max(gamePointId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select max(gamePointId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_030")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_031
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_031", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_031
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_031", Include) {
 
-    checkAnswer(s"""select max(Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select max(Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_031")
+    checkAnswer(s"""select max(Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select max(Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_031")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_032
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_032", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_032
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_032", Include) {
 
-    checkAnswer(s"""select max(contractNumber)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select max(contractNumber)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_032")
+    checkAnswer(s"""select max(contractNumber)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select max(contractNumber)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_032")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_033
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_033", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_033
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_033", Include) {
 
-    checkAnswer(s"""select variance(deviceInformationId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select variance(deviceInformationId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_033")
+    checkAnswer(s"""select variance(deviceInformationId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select variance(deviceInformationId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_033")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_034
-  ignore("VMALL_DICTIONARY_EXCLUDE_PushUP_034", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_034
+  ignore("Queries_DICTIONARY_EXCLUDE_PushUP_034", Include) {
 
-    checkAnswer(s"""select variance(gamePointId) from (select * from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""",
-      s"""select variance(gamePointId) from (select * from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_034")
+    checkAnswer(s"""select variance(gamePointId) from (select * from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""",
+      s"""select variance(gamePointId) from (select * from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_034")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_035
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_035", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_035
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_035", Include) {
 
-    sql(s"""select variance(gamePointId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""").collect
+    sql(s"""select variance(gamePointId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_036
-  ignore("VMALL_DICTIONARY_EXCLUDE_PushUP_036", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_036
+  ignore("Queries_DICTIONARY_EXCLUDE_PushUP_036", Include) {
 
-    checkAnswer(s"""select variance(Latest_DAY) from (select * from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""",
-      s"""select variance(Latest_DAY) from (select * from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_036")
+    checkAnswer(s"""select variance(Latest_DAY) from (select * from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""",
+      s"""select variance(Latest_DAY) from (select * from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_036")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_037
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_037", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_037
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_037", Include) {
 
-    checkAnswer(s"""select variance(contractNumber) from (select * from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by contractNumber)""",
-      s"""select variance(contractNumber) from (select * from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by contractNumber)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_037")
+    checkAnswer(s"""select variance(contractNumber) from (select * from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by contractNumber)""",
+      s"""select variance(contractNumber) from (select * from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by contractNumber)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_037")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_038
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_038", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_038
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_038", Include) {
 
-    checkAnswer(s"""select var_samp(deviceInformationId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select var_samp(deviceInformationId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_038")
+    checkAnswer(s"""select var_samp(deviceInformationId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select var_samp(deviceInformationId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_038")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_039
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_039", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_039
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_039", Include) {
 
-    checkAnswer(s"""select var_samp(gamePointId) from (select * from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""",
-      s"""select var_samp(gamePointId) from (select * from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_039")
+    checkAnswer(s"""select var_samp(gamePointId) from (select * from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""",
+      s"""select var_samp(gamePointId) from (select * from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_039")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_040
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_040", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_040
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_040", Include) {
 
-    sql(s"""select var_samp(gamePointId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""").collect
+    sql(s"""select var_samp(gamePointId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_041
-  ignore("VMALL_DICTIONARY_EXCLUDE_PushUP_041", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_041
+  ignore("Queries_DICTIONARY_EXCLUDE_PushUP_041", Include) {
 
-    checkAnswer(s"""select var_samp(Latest_DAY) from (select * from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""",
-      s"""select var_samp(Latest_DAY) from (select * from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_041")
+    checkAnswer(s"""select var_samp(Latest_DAY) from (select * from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""",
+      s"""select var_samp(Latest_DAY) from (select * from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_041")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_042
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_042", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_042
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_042", Include) {
 
-    sql(s"""select var_samp(contractNumber) from (select contractNumber from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')order by contractNumber)""").collect
+    sql(s"""select var_samp(contractNumber) from (select contractNumber from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')order by contractNumber)""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_043
-  ignore("VMALL_DICTIONARY_EXCLUDE_PushUP_043", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_043
+  ignore("Queries_DICTIONARY_EXCLUDE_PushUP_043", Include) {
 
-    checkAnswer(s"""select stddev_pop(deviceInformationId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select stddev_pop(deviceInformationId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_043")
+    checkAnswer(s"""select stddev_pop(deviceInformationId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select stddev_pop(deviceInformationId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_043")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_044
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_044", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_044
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_044", Include) {
 
-    checkAnswer(s"""select stddev_pop(gamePointId) from (select * from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""",
-      s"""select stddev_pop(gamePointId) from (select * from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_044")
+    checkAnswer(s"""select stddev_pop(gamePointId) from (select * from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""",
+      s"""select stddev_pop(gamePointId) from (select * from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_044")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_045
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_045", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_045
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_045", Include) {
 
-    sql(s"""select stddev_pop(gamePointId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""").collect
+    sql(s"""select stddev_pop(gamePointId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_046
-  ignore("VMALL_DICTIONARY_EXCLUDE_PushUP_046", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_046
+  ignore("Queries_DICTIONARY_EXCLUDE_PushUP_046", Include) {
 
-    checkAnswer(s"""select stddev_pop(Latest_DAY) from (select * from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""",
-      s"""select stddev_pop(Latest_DAY) from (select * from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_046")
+    checkAnswer(s"""select stddev_pop(Latest_DAY) from (select * from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""",
+      s"""select stddev_pop(Latest_DAY) from (select * from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_046")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_047
-  ignore("VMALL_DICTIONARY_EXCLUDE_PushUP_047", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_047
+  ignore("Queries_DICTIONARY_EXCLUDE_PushUP_047", Include) {
 
-    checkAnswer(s"""select stddev_pop(contractNumber)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select stddev_pop(contractNumber)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_047")
+    checkAnswer(s"""select stddev_pop(contractNumber)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select stddev_pop(contractNumber)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_047")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_048
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_048", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_048
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_048", Include) {
 
-    checkAnswer(s"""select stddev_samp(deviceInformationId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select stddev_samp(deviceInformationId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_048")
+    checkAnswer(s"""select stddev_samp(deviceInformationId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select stddev_samp(deviceInformationId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_048")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_049
-  ignore("VMALL_DICTIONARY_EXCLUDE_PushUP_049", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_049
+  ignore("Queries_DICTIONARY_EXCLUDE_PushUP_049", Include) {
 
-    checkAnswer(s"""select stddev_samp(gamePointId) from (select * from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""",
-      s"""select stddev_samp(gamePointId) from (select * from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_049")
+    checkAnswer(s"""select stddev_samp(gamePointId) from (select * from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""",
+      s"""select stddev_samp(gamePointId) from (select * from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_049")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_050
-  ignore("VMALL_DICTIONARY_EXCLUDE_PushUP_050", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_050
+  ignore("Queries_DICTIONARY_EXCLUDE_PushUP_050", Include) {
 
-    checkAnswer(s"""select stddev_samp(gamePointId) from (select * from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""",
-      s"""select stddev_samp(gamePointId) from (select * from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_050")
+    checkAnswer(s"""select stddev_samp(gamePointId) from (select * from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""",
+      s"""select stddev_samp(gamePointId) from (select * from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by gamePointId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_050")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_051
-  ignore("VMALL_DICTIONARY_EXCLUDE_PushUP_051", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_051
+  ignore("Queries_DICTIONARY_EXCLUDE_PushUP_051", Include) {
 
-    checkAnswer(s"""select stddev_samp(Latest_DAY) from (select * from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""",
-      s"""select stddev_samp(Latest_DAY) from (select * from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_051")
+    checkAnswer(s"""select stddev_samp(Latest_DAY) from (select * from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""",
+      s"""select stddev_samp(Latest_DAY) from (select * from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by Latest_DAY)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_051")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_053
-  ignore("VMALL_DICTIONARY_EXCLUDE_PushUP_053", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_053
+  ignore("Queries_DICTIONARY_EXCLUDE_PushUP_053", Include) {
 
-    checkAnswer(s"""select count(imei),count(distinct deviceinformationId),sum(deviceinformationId),sum(distinct deviceinformationId),min(deviceinformationId),max(imei),variance(deviceInformationId),var_samp(deviceInformationId),stddev_pop(gamePointId),stddev_samp(Latest_DAY) from (select * from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by deviceinformationId)""",
-      s"""select count(imei),count(distinct deviceinformationId),sum(deviceinformationId),sum(distinct deviceinformationId),min(deviceinformationId),max(imei),variance(deviceInformationId),var_samp(deviceInformationId),stddev_pop(gamePointId),stddev_samp(Latest_DAY) from (select * from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by deviceinformationId)""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_053")
+    checkAnswer(s"""select count(imei),count(distinct deviceinformationId),sum(deviceinformationId),sum(distinct deviceinformationId),min(deviceinformationId),max(imei),variance(deviceInformationId),var_samp(deviceInformationId),stddev_pop(gamePointId),stddev_samp(Latest_DAY) from (select * from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by deviceinformationId)""",
+      s"""select count(imei),count(distinct deviceinformationId),sum(deviceinformationId),sum(distinct deviceinformationId),min(deviceinformationId),max(imei),variance(deviceInformationId),var_samp(deviceInformationId),stddev_pop(gamePointId),stddev_samp(Latest_DAY) from (select * from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') order by deviceinformationId)""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_053")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_054
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_054", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_054
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_054", Include) {
 
-    checkAnswer(s"""select AVG(deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select AVG(deviceinformationId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_054")
+    checkAnswer(s"""select AVG(deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select AVG(deviceinformationId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_054")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_055
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_055", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_055
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_055", Include) {
 
-    checkAnswer(s"""select AVG(productionDate)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select AVG(productionDate)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_055")
+    checkAnswer(s"""select AVG(productionDate)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select AVG(productionDate)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_055")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_056
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_056", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_056
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_056", Include) {
 
-    checkAnswer(s"""select AVG(gamePointId)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select AVG(gamePointId)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_056")
+    checkAnswer(s"""select AVG(gamePointId)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select AVG(gamePointId)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_056")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_057
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_057", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_057
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_057", Include) {
 
-    checkAnswer(s"""select AVG(Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select AVG(Latest_DAY)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_057")
+    checkAnswer(s"""select AVG(Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select AVG(Latest_DAY)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_057")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_058
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_058", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_058
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_058", Include) {
 
-    checkAnswer(s"""select AVG(contractNumber)  from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
-      s"""select AVG(contractNumber)  from VMALL_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_058")
+    checkAnswer(s"""select AVG(contractNumber)  from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""",
+      s"""select AVG(contractNumber)  from TABLE_DICTIONARY_EXCLUDE1_hive where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_058")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_059
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_059", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_059
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_059", Include) {
 
-    sql(s"""select count(imei),sum(distinct deviceinformationId),min(productionDate),max(imei),variance(Latest_DAY) from VMALL_DICTIONARY_EXCLUDE group by deviceInformationId limit 5""").collect
+    sql(s"""select count(imei),sum(distinct deviceinformationId),min(productionDate),max(imei),variance(Latest_DAY) from TABLE_DICTIONARY_EXCLUDE group by deviceInformationId limit 5""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_060
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_060", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_060
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_060", Include) {
 
-    sql(s"""select sum(deviceinformationId),sum(distinct deviceinformationId),min(deviceinformationId),max(imei),variance(deviceInformationId) from VMALL_DICTIONARY_EXCLUDE group by deviceInformationId order by deviceinformationId limit 5""").collect
+    sql(s"""select sum(deviceinformationId),sum(distinct deviceinformationId),min(deviceinformationId),max(imei),variance(deviceInformationId) from TABLE_DICTIONARY_EXCLUDE group by deviceInformationId order by deviceinformationId limit 5""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_061
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_061", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_061
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_061", Include) {
 
-    sql(s"""select count(imei),sum(distinct deviceinformationId),min(productionDate),max(imei),variance(Latest_DAY) from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')group by deviceInformationId limit 5""").collect
+    sql(s"""select count(imei),sum(distinct deviceinformationId),min(productionDate),max(imei),variance(Latest_DAY) from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null')group by deviceInformationId limit 5""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_062
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_062", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_062
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_062", Include) {
 
-    sql(s"""select count(imei),sum(distinct deviceinformationId),min(productionDate),max(imei),variance(Latest_DAY) from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') group by deviceInformationId order by deviceinformationId limit 5""").collect
+    sql(s"""select count(imei),sum(distinct deviceinformationId),min(productionDate),max(imei),variance(Latest_DAY) from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') group by deviceInformationId order by deviceinformationId limit 5""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_063
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_063", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_063
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_063", Include) {
 
-    sql(s"""select count(imei),sum(distinct deviceinformationId),min(productionDate),max(imei),variance(Latest_DAY) from VMALL_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') group by deviceInformationId,productionDate   sort by productionDate limit 5
+    sql(s"""select count(imei),sum(distinct deviceinformationId),min(productionDate),max(imei),variance(Latest_DAY) from TABLE_DICTIONARY_EXCLUDE where deviceColor ='5Device Color' and modelId != '109' or Latest_DAY > '1234567890123540.0000000000' and contractNumber == '92233720368547800' or  Active_operaSysVersion like 'Operating System Version' and gamePointId <=> '8.1366141918611E39' and deviceInformationId < '1000000' and productionDate not like '2016-07-01' and imei is null and Latest_HOUR is not null and channelsId <= '7' and Latest_releaseId >= '1' and Latest_MONTH between 6 and 8 and Latest_YEAR not between 2016 and 2017 and Latest_HOUR RLIKE '12' and gamePointDescription REGEXP 'Site' and imei in ('1AA1','1AA100','1AA10','1AA1000','1AA10000','1AA100000','1AA1000000','1AA100001','1AA100002','1AA100004','','NULL') and Active_BacVerNumber not in ('Background version number1','','null') group by deviceInformationId,productionDate   sort by productionDate limit 5
   """).collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_064
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_064", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_064
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_064", Include) {
 
-    checkAnswer(s"""select sum(deviceinformationId+10)t  from  VMALL_DICTIONARY_EXCLUDE having t >1234567""",
-      s"""select sum(deviceinformationId+10)t  from  VMALL_DICTIONARY_EXCLUDE1_hive having t >1234567""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_064")
-
-  }
-
-
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_065
-  ignore("VMALL_DICTIONARY_EXCLUDE_PushUP_065", Include) {
-
-    checkAnswer(s"""select sum(deviceinformationId+gamePointId)t  from  (select gamePointId,deviceinformationId from VMALL_DICTIONARY_EXCLUDE order by gamePointId,deviceinformationId) having t >1234567""",
-      s"""select sum(deviceinformationId+gamePointId)t  from  (select gamePointId,deviceinformationId from VMALL_DICTIONARY_EXCLUDE1_hive order by gamePointId,deviceinformationId) having t >1234567""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_065")
+    checkAnswer(s"""select sum(deviceinformationId+10)t  from  TABLE_DICTIONARY_EXCLUDE having t >1234567""",
+      s"""select sum(deviceinformationId+10)t  from  TABLE_DICTIONARY_EXCLUDE1_hive having t >1234567""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_064")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_066
-  ignore("VMALL_DICTIONARY_EXCLUDE_PushUP_066", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_065
+  ignore("Queries_DICTIONARY_EXCLUDE_PushUP_065", Include) {
 
-    checkAnswer(s"""select sum(deviceinformationId)t,Sum(gamePointId)   from  (select gamePointId,deviceinformationId from VMALL_DICTIONARY_EXCLUDE order by gamePointId,deviceinformationId) having t >1234567""",
-      s"""select sum(deviceinformationId)t,Sum(gamePointId)   from  (select gamePointId,deviceinformationId from VMALL_DICTIONARY_EXCLUDE1_hive order by gamePointId,deviceinformationId) having t >1234567""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_066")
-
-  }
-
-
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_067
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_067", Include) {
-
-    checkAnswer(s"""select count(imei) a,sum(distinct deviceinformationId) b,min(productionDate) c  from VMALL_DICTIONARY_EXCLUDE group by imei,deviceinformationId,productionDate  order by  a,b,c""",
-      s"""select count(imei) a,sum(distinct deviceinformationId) b,min(productionDate) c  from VMALL_DICTIONARY_EXCLUDE1_hive group by imei,deviceinformationId,productionDate  order by  a,b,c""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_067")
+    checkAnswer(s"""select sum(deviceinformationId+gamePointId)t  from  (select gamePointId,deviceinformationId from TABLE_DICTIONARY_EXCLUDE order by gamePointId,deviceinformationId) having t >1234567""",
+      s"""select sum(deviceinformationId+gamePointId)t  from  (select gamePointId,deviceinformationId from TABLE_DICTIONARY_EXCLUDE1_hive order by gamePointId,deviceinformationId) having t >1234567""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_065")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_069
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_069", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_066
+  ignore("Queries_DICTIONARY_EXCLUDE_PushUP_066", Include) {
 
-    sql(s"""SELECT  min(Latest_DAY),max(imei),variance(contractNumber), SUM(gamePointId),count(imei),sum(distinct deviceinformationId) FROM (select * from VMALL_DICTIONARY_EXCLUDE) SUB_QRY GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, ActiveAreaId ASC limit 10""").collect
-
-  }
-
-
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_070
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_070", Include) {
-
-    checkAnswer(s"""SELECT  VMALL_DICTIONARY_EXCLUDE.gamePointId AS gamePointId,VMALL_DICTIONARY_EXCLUDE.AMSize AS AMSize, VMALL_DICTIONARY_EXCLUDE.ActiveCountry AS ActiveCountry, VMALL_DICTIONARY_EXCLUDE.Activecity AS Activecity FROM ( SELECT AMSize,gamePointId, ActiveCountry, Activecity FROM (select * from VMALL_DICTIONARY_EXCLUDE) SUB_QRY ) VMALL_DICTIONARY_EXCLUDE FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from VMALL_DICTIONARY_EXCLUDE) SUB_QRY ) VMALL_DICTIONARY_EXCLUDE1 ON VMALL_DICTIONARY_EXCLUDE.AMSize = VMALL_DICTIONARY_EXCLUDE1.AMSize WHERE VMALL_DICTIONARY_EXCLUDE.AMSize LIKE '5RAM %' GROUP BY VMALL_DICTIONARY_EXCLUDE.AMSize, VMALL_DICTIONARY_EXCLUDE.ActiveCountry, VMALL_DICTIONARY_EXCLUDE.Activecity,VMALL_DICTIONARY_EXCLUDE.gamePointId ORDER BY VMALL_DICTIONARY_EXCLUDE.gamePointId ASC, VMALL_DICTIONARY_EXCLUDE.AMSize ASC, VMALL_DICTIONARY_EXCLUDE.ActiveCountry ASC, VMALL_DICTIONARY_EXCLUDE.Activecity ASC""",
-      s"""SELECT  VMALL_DICTIONARY_EXCLUDE1_hive.gamePointId AS gamePointId,VMALL_DICTIONARY_EXCLUDE1_hive.AMSize AS AMSize, VMALL_DICTIONARY_EXCLUDE1_hive.ActiveCountry AS ActiveCountry, VMALL_DICTIONARY_EXCLUDE1_hive.Activecity AS Activecity FROM ( SELECT AMSize,gamePointId, ActiveCountry, Activecity FROM (select * from VMALL_DICTIONARY_EXCLUDE1_hive) SUB_QRY ) VMALL_DICTIONARY_EXCLUDE1_hive FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from VMALL_DICTIONARY_EXCLUDE1_hive) SUB_QRY ) VMALL_DICTIONARY_EXCLUDE1_hive1 ON VMALL_DICTIONARY_EXCLUDE1_hive.AMSize = VMALL_DICTIONARY_EXCLUDE1_hive1.AMSize WHERE VMALL_DICTIONARY_EXCLUDE1_hive.AMSize LIKE '5RAM %' GROUP BY VMALL_DICTIONARY_EXCLUDE1_hive.AMSize, VMALL_DICTIONARY_EXCLUDE1_hive.ActiveCountry, VMALL_DICTIONARY_EXCLUDE1_hive.Activecity,VMALL_DICTIONARY_EXCLUDE1_hive.gamePointId ORDER BY VMALL_DICTIONARY_EXCLUDE1_hive.gamePointId ASC, VMALL_DICTIONARY_EXCLUDE1_hive.AMSize ASC, VMALL_DICTIONARY_EXCLUDE1_hive.ActiveCountry ASC, VMALL_DICTIONARY_EXCLUDE1_hive.Activecity ASC""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_070")
+    checkAnswer(s"""select sum(deviceinformationId)t,Sum(gamePointId)   from  (select gamePointId,deviceinformationId from TABLE_DICTIONARY_EXCLUDE order by gamePointId,deviceinformationId) having t >1234567""",
+      s"""select sum(deviceinformationId)t,Sum(gamePointId)   from  (select gamePointId,deviceinformationId from TABLE_DICTIONARY_EXCLUDE1_hive order by gamePointId,deviceinformationId) having t >1234567""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_066")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_071
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_071", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_067
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_067", Include) {
 
-    sql(s"""SELECT VMALL_DICTIONARY_EXCLUDE.gamePointId AS gamePointId,VMALL_DICTIONARY_EXCLUDE.AMSize AS AMSize, VMALL_DICTIONARY_EXCLUDE.ActiveCountry AS ActiveCountry, VMALL_DICTIONARY_EXCLUDE.Activecity AS Activecity FROM ( SELECT AMSize,gamePointId, ActiveCountry, Activecity FROM (select * from VMALL_DICTIONARY_EXCLUDE) SUB_QRY ) VMALL_DICTIONARY_EXCLUDE RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from VMALL_DICTIONARY_EXCLUDE) SUB_QRY ) VMALL_DICTIONARY_EXCLUDE1 ON VMALL_DICTIONARY_EXCLUDE.AMSize = VMALL_DICTIONARY_EXCLUDE1.AMSize WHERE NOT(VMALL_DICTIONARY_EXCLUDE.AMSize = "8RAM size") GROUP BY VMALL_DICTIONARY_EXCLUDE.AMSize, VMALL_DICTIONARY_EXCLUDE.ActiveCountry, VMALL_DICTIONARY_EXCLUDE.Activecity,VMALL_DICTIONARY_EXCLUDE.gamePointId  ORDER BY VMALL_DICTIONARY_EXCLUDE.AMSize ASC, VMALL_DICTIONARY_EXCLUDE.ActiveCountry ASC, VMALL_DICTIONARY_EXCLUDE.Activecity ASC limit 10""").collect
+    checkAnswer(s"""select count(imei) a,sum(distinct deviceinformationId) b,min(productionDate) c  from TABLE_DICTIONARY_EXCLUDE group by imei,deviceinformationId,productionDate  order by  a,b,c""",
+      s"""select count(imei) a,sum(distinct deviceinformationId) b,min(productionDate) c  from TABLE_DICTIONARY_EXCLUDE1_hive group by imei,deviceinformationId,productionDate  order by  a,b,c""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_067")
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_072
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_072", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_069
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_069", Include) {
 
-    sql(s"""SELECT VMALL_DICTIONARY_EXCLUDE.gamePointId AS gamePointId,VMALL_DICTIONARY_EXCLUDE.AMSize AS AMSize, VMALL_DICTIONARY_EXCLUDE.ActiveCountry AS ActiveCountry, VMALL_DICTIONARY_EXCLUDE.Activecity AS Activecity FROM ( SELECT AMSize,gamePointId, ActiveCountry, Activecity FROM (select * from VMALL_DICTIONARY_EXCLUDE) SUB_QRY ) VMALL_DICTIONARY_EXCLUDE LEFT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from VMALL_DICTIONARY_EXCLUDE) SUB_QRY ) VMALL_DICTIONARY_EXCLUDE1 ON VMALL_DICTIONARY_EXCLUDE.AMSize = VMALL_DICTIONARY_EXCLUDE1.AMSize WHERE NOT(VMALL_DICTIONARY_EXCLUDE.AMSize = "8RAM size") GROUP BY VMALL_DICTIONARY_EXCLUDE.AMSize, VMALL_DICTIONARY_EXCLUDE.ActiveCountry, VMALL_DICTIONARY_EXCLUDE.Activecity,VMALL_DICTIONARY_EXCLUDE.gamePointId  ORDER BY VMALL_DICTIONARY_EXCLUDE.AMSize ASC, VMALL_DICTIONARY_EXCLUDE.ActiveCountry ASC, VMALL_DICTIONARY_EXCLUDE.Activecity ASC limit 10
+    sql(s"""SELECT  min(Latest_DAY),max(imei),variance(contractNumber), SUM(gamePointId),count(imei),sum(distinct deviceinformationId) FROM (select * from TABLE_DICTIONARY_EXCLUDE) SUB_QRY GROUP BY AMSize, ActiveAreaId ORDER BY AMSize ASC, ActiveAreaId ASC limit 10""").collect
+
+  }
+
+
+  //DICTIONARY_EXCLUDE_PushUP_070
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_070", Include) {
+
+    checkAnswer(s"""SELECT  TABLE_DICTIONARY_EXCLUDE.gamePointId AS gamePointId,TABLE_DICTIONARY_EXCLUDE.AMSize AS AMSize, TABLE_DICTIONARY_EXCLUDE.ActiveCountry AS ActiveCountry, TABLE_DICTIONARY_EXCLUDE.Activecity AS Activecity FROM ( SELECT AMSize,gamePointId, ActiveCountry, Activecity FROM (select * from TABLE_DICTIONARY_EXCLUDE) SUB_QRY ) TABLE_DICTIONARY_EXCLUDE FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from TABLE_DICTIONARY_EXCLUDE) SUB_QRY ) TABLE_DICTIONARY_EXCLUDE1 ON TABLE_DICTIONARY_EXCLUDE.AMSize = TABLE_DICTIONARY_EXCLUDE1.AMSize WHERE TABLE_DICTIONARY_EXCLUDE.AMSize LIKE '5RAM %' GROUP BY TABLE_DICTIONARY_EXCLUDE.AMSize, TABLE_DICTIONARY_EXCLUDE.ActiveCountry, TABLE_DICTIONARY_EXCLUDE.Activecity,TABLE_DICTIONARY_EXCLUDE.gamePointId ORDER BY TABLE_DICTIONARY_EXCLUDE.gamePointId ASC, TABLE_DICTIONARY_EXCLUDE.AMSize ASC, TABLE_DICTIONARY_EXCLUDE.ActiveCountry ASC, TABLE_DICTIONARY_EXCLUDE.Activecity ASC""",
+      s"""SELECT  TABLE_DICTIONARY_EXCLUDE1_hive.gamePointId AS gamePointId,TABLE_DICTIONARY_EXCLUDE1_hive.AMSize AS AMSize, TABLE_DICTIONARY_EXCLUDE1_hive.ActiveCountry AS ActiveCountry, TABLE_DICTIONARY_EXCLUDE1_hive.Activecity AS Activecity FROM ( SELECT AMSize,gamePointId, ActiveCountry, Activecity FROM (select * from TABLE_DICTIONARY_EXCLUDE1_hive) SUB_QRY ) TABLE_DICTIONARY_EXCLUDE1_hive FULL OUTER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from TABLE_DICTIONARY_EXCLUDE1_hive) SUB_QRY ) TABLE_DICTIONARY_EXCLUDE1_hive1 ON TABLE_DICTIONARY_EXCLUDE1_hive.AMSize = TABLE_DICTIONARY_EXCLUDE1_hive1.AMSize WHERE TABLE_DICTIONARY_EXCLUDE1_hive.AMSize LIKE '5RAM %' GROUP BY TABLE_DICTIONARY_EXCLUDE1_hive.AMSize, TABLE_DICTIONARY_EXCLUDE1_hive.ActiveCountry, TABLE_DICTIONARY_EXCLUDE1_hive.Activecity,TABLE_DICTIONARY_EXCLUDE1_hive.gamePointId ORDER BY TABLE_DICTIONARY_EXCLUDE1_hive.gamePointId ASC, TABLE_DICTIONARY_EXCLUDE1_hive.AMSize ASC, TABLE_DICTIONARY_EXCLUDE1_hive.ActiveCountry ASC, TABLE_DICTIONARY_EXCLUDE1_hive.Activecity ASC""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_070")
+
+  }
+
+
+  //DICTIONARY_EXCLUDE_PushUP_071
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_071", Include) {
+
+    sql(s"""SELECT TABLE_DICTIONARY_EXCLUDE.gamePointId AS gamePointId,TABLE_DICTIONARY_EXCLUDE.AMSize AS AMSize, TABLE_DICTIONARY_EXCLUDE.ActiveCountry AS ActiveCountry, TABLE_DICTIONARY_EXCLUDE.Activecity AS Activecity FROM ( SELECT AMSize,gamePointId, ActiveCountry, Activecity FROM (select * from TABLE_DICTIONARY_EXCLUDE) SUB_QRY ) TABLE_DICTIONARY_EXCLUDE RIGHT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from TABLE_DICTIONARY_EXCLUDE) SUB_QRY ) TABLE_DICTIONARY_EXCLUDE1 ON TABLE_DICTIONARY_EXCLUDE.AMSize = TABLE_DICTIONARY_EXCLUDE1.AMSize WHERE NOT(TABLE_DICTIONARY_EXCLUDE.AMSize = "8RAM size") GROUP BY TABLE_DICTIONARY_EXCLUDE.AMSize, TABLE_DICTIONARY_EXCLUDE.ActiveCountry, TABLE_DICTIONARY_EXCLUDE.Activecity,TABLE_DICTIONARY_EXCLUDE.gamePointId  ORDER BY TABLE_DICTIONARY_EXCLUDE.AMSize ASC, TABLE_DICTIONARY_EXCLUDE.ActiveCountry ASC, TABLE_DICTIONARY_EXCLUDE.Activecity ASC limit 10""").collect
+
+  }
+
+
+  //DICTIONARY_EXCLUDE_PushUP_072
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_072", Include) {
+
+    sql(s"""SELECT TABLE_DICTIONARY_EXCLUDE.gamePointId AS gamePointId,TABLE_DICTIONARY_EXCLUDE.AMSize AS AMSize, TABLE_DICTIONARY_EXCLUDE.ActiveCountry AS ActiveCountry, TABLE_DICTIONARY_EXCLUDE.Activecity AS Activecity FROM ( SELECT AMSize,gamePointId, ActiveCountry, Activecity FROM (select * from TABLE_DICTIONARY_EXCLUDE) SUB_QRY ) TABLE_DICTIONARY_EXCLUDE LEFT JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from TABLE_DICTIONARY_EXCLUDE) SUB_QRY ) TABLE_DICTIONARY_EXCLUDE1 ON TABLE_DICTIONARY_EXCLUDE.AMSize = TABLE_DICTIONARY_EXCLUDE1.AMSize WHERE NOT(TABLE_DICTIONARY_EXCLUDE.AMSize = "8RAM size") GROUP BY TABLE_DICTIONARY_EXCLUDE.AMSize, TABLE_DICTIONARY_EXCLUDE.ActiveCountry, TABLE_DICTIONARY_EXCLUDE.Activecity,TABLE_DICTIONARY_EXCLUDE.gamePointId  ORDER BY TABLE_DICTIONARY_EXCLUDE.AMSize ASC, TABLE_DICTIONARY_EXCLUDE.ActiveCountry ASC, TABLE_DICTIONARY_EXCLUDE.Activecity ASC limit 10
   """).collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_073
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_073", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_073
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_073", Include) {
 
-    sql(s"""SELECT VMALL_DICTIONARY_EXCLUDE.gamePointId AS gamePointId,VMALL_DICTIONARY_EXCLUDE.AMSize AS AMSize, VMALL_DICTIONARY_EXCLUDE.ActiveCountry AS ActiveCountry, VMALL_DICTIONARY_EXCLUDE.Activecity AS Activecity FROM ( SELECT AMSize,gamePointId, ActiveCountry, Activecity FROM (select * from VMALL_DICTIONARY_EXCLUDE) SUB_QRY ) VMALL_DICTIONARY_EXCLUDE INNER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from VMALL_DICTIONARY_EXCLUDE) SUB_QRY ) VMALL_DICTIONARY_EXCLUDE1 ON VMALL_DICTIONARY_EXCLUDE.AMSize = VMALL_DICTIONARY_EXCLUDE1.AMSize WHERE NOT(VMALL_DICTIONARY_EXCLUDE.AMSize = "8RAM size") GROUP BY VMALL_DICTIONARY_EXCLUDE.AMSize, VMALL_DICTIONARY_EXCLUDE.ActiveCountry, VMALL_DICTIONARY_EXCLUDE.Activecity,VMALL_DICTIONARY_EXCLUDE.gamePointId  ORDER BY VMALL_DICTIONARY_EXCLUDE.AMSize ASC, VMALL_DICTIONARY_EXCLUDE.ActiveCountry ASC, VMALL_DICTIONARY_EXCLUDE.Activecity ASC limit 10
+    sql(s"""SELECT TABLE_DICTIONARY_EXCLUDE.gamePointId AS gamePointId,TABLE_DICTIONARY_EXCLUDE.AMSize AS AMSize, TABLE_DICTIONARY_EXCLUDE.ActiveCountry AS ActiveCountry, TABLE_DICTIONARY_EXCLUDE.Activecity AS Activecity FROM ( SELECT AMSize,gamePointId, ActiveCountry, Activecity FROM (select * from TABLE_DICTIONARY_EXCLUDE) SUB_QRY ) TABLE_DICTIONARY_EXCLUDE INNER JOIN ( SELECT ActiveCountry, Activecity, AMSize FROM (select * from TABLE_DICTIONARY_EXCLUDE) SUB_QRY ) TABLE_DICTIONARY_EXCLUDE1 ON TABLE_DICTIONARY_EXCLUDE.AMSize = TABLE_DICTIONARY_EXCLUDE1.AMSize WHERE NOT(TABLE_DICTIONARY_EXCLUDE.AMSize = "8RAM size") GROUP BY TABLE_DICTIONARY_EXCLUDE.AMSize, TABLE_DICTIONARY_EXCLUDE.ActiveCountry, TABLE_DICTIONARY_EXCLUDE.Activecity,TABLE_DICTIONARY_EXCLUDE.gamePointId  ORDER BY TABLE_DICTIONARY_EXCLUDE.AMSize ASC, TABLE_DICTIONARY_EXCLUDE.ActiveCountry ASC, TABLE_DICTIONARY_EXCLUDE.Activecity ASC limit 10
   """).collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_074
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_074", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_074
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_074", Include) {
 
-    sql(s"""select count(gamepointid),series  from VMALL_DICTIONARY_EXCLUDE group by series order by series limit 5""").collect
+    sql(s"""select count(gamepointid),series  from TABLE_DICTIONARY_EXCLUDE group by series order by series limit 5""").collect
 
   }
 
 
-  //VMALL_DICTIONARY_EXCLUDE_PushUP_075
-  test("VMALL_DICTIONARY_EXCLUDE_PushUP_075", Include) {
+  //DICTIONARY_EXCLUDE_PushUP_075
+  test("Queries_DICTIONARY_EXCLUDE_PushUP_075", Include) {
 
-    checkAnswer(s"""select count(gamepointid),series  from VMALL_DICTIONARY_EXCLUDE group by series order by series""",
-      s"""select count(gamepointid),series  from VMALL_DICTIONARY_EXCLUDE1_hive group by series order by series""", "QueriesExcludeDictionaryTestCase_VMALL_DICTIONARY_EXCLUDE_PushUP_075")
+    checkAnswer(s"""select count(gamepointid),series  from TABLE_DICTIONARY_EXCLUDE group by series order by series""",
+      s"""select count(gamepointid),series  from TABLE_DICTIONARY_EXCLUDE1_hive group by series order by series""", "QueriesExcludeDictionaryTestCase_DICTIONARY_EXCLUDE_PushUP_075")
 
   }
 
@@ -5034,10 +5034,10 @@ class QueriesExcludeDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   override def afterAll {
-  sql("drop table if exists VMALL_DICTIONARY_EXCLUDE")
-  sql("drop table if exists VMALL_DICTIONARY_EXCLUDE1_hive")
-  sql("drop table if exists VMALL_DICTIONARY_EXCLUDE1")
-  sql("drop table if exists VMALL_DICTIONARY_EXCLUDE1_hive")
+  sql("drop table if exists TABLE_DICTIONARY_EXCLUDE")
+  sql("drop table if exists TABLE_DICTIONARY_EXCLUDE1_hive")
+  sql("drop table if exists TABLE_DICTIONARY_EXCLUDE1")
+  sql("drop table if exists TABLE_DICTIONARY_EXCLUDE1_hive")
   sql("drop table if exists smart_500_DE")
   sql("drop table if exists smart_500_DE_hive")
   }

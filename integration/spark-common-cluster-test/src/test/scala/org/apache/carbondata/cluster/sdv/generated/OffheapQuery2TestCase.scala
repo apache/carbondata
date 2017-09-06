@@ -32,7 +32,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
          
 
   //To check select query with limit
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_120", Include) {
+  test("OffHeapQuery-002-TC_120", Include) {
      sql(s"""CREATE TABLE uniqdataquery2 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
     sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdataquery2 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -43,7 +43,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select query with limit as string
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_121", Include) {
+  test("OffHeapQuery-002-TC_121", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 limit """"").collect
@@ -57,7 +57,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select query with no input given at limit
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_122", Include) {
+  test("OffHeapQuery-002-TC_122", Include) {
 
     sql(s"""select * from uniqdataquery2 limit""").collect
 
@@ -66,7 +66,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select count  query  with where and group by clause
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_123", Include) {
+  test("OffHeapQuery-002-TC_123", Include) {
 
     sql(s"""select count(*) from uniqdataquery2 where cust_name="CUST_NAME_00000" group by cust_name""").collect
 
@@ -75,7 +75,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select count  query   and group by  cust_name using like operator
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_124", Include) {
+  test("OffHeapQuery-002-TC_124", Include) {
 
     sql(s"""select count(*) from uniqdataquery2 where cust_name like "cust_name_0%" group by cust_name""").collect
 
@@ -84,7 +84,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select count  query   and group by  name using IN operator with empty values
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_125", Include) {
+  test("OffHeapQuery-002-TC_125", Include) {
 
     sql(s"""select count(*) from uniqdataquery2 where cust_name IN("","") group by cust_name""").collect
 
@@ -93,7 +93,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select count  query   and group by  name using IN operator with specific  values
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_126", Include) {
+  test("OffHeapQuery-002-TC_126", Include) {
 
     sql(s"""select count(*) from uniqdataquery2 where cust_name IN(1,2,3) group by cust_name""").collect
 
@@ -102,7 +102,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select distinct query
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_127", Include) {
+  test("OffHeapQuery-002-TC_127", Include) {
 
     sql(s"""select distinct cust_name from uniqdataquery2 group by cust_name""").collect
 
@@ -111,7 +111,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check where clause with OR and no operand
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_128", Include) {
+  test("OffHeapQuery-002-TC_128", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id > 1 OR """).collect
@@ -125,7 +125,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check OR clause with LHS and RHS having no arguments
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_129", Include) {
+  test("OffHeapQuery-002-TC_129", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where OR """).collect
@@ -139,7 +139,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check OR clause with LHS having no arguments
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_130", Include) {
+  test("OffHeapQuery-002-TC_130", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where OR cust_id > "1"""").collect
@@ -153,7 +153,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check incorrect query
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_132", Include) {
+  test("OffHeapQuery-002-TC_132", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id > 0 OR name  """).collect
@@ -167,7 +167,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select query with rhs false
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_133", Include) {
+  test("OffHeapQuery-002-TC_133", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id > 9005 OR false""").collect
 
@@ -176,7 +176,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check count on multiple arguments
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_134", Include) {
+  test("OffHeapQuery-002-TC_134", Include) {
 
     sql(s"""select count(cust_id,cust_name) from uniqdataquery2 where cust_id > 10544""").collect
 
@@ -185,7 +185,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check count with no argument
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_135", Include) {
+  test("OffHeapQuery-002-TC_135", Include) {
 
     sql(s"""select count() from uniqdataquery2 where cust_id > 10544""").collect
 
@@ -194,7 +194,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check count with * as an argument
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_136", Include) {
+  test("OffHeapQuery-002-TC_136", Include) {
 
     sql(s"""select count(*) from uniqdataquery2 where cust_id>10544""").collect
 
@@ -203,7 +203,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select count query execution with entire column
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_137", Include) {
+  test("OffHeapQuery-002-TC_137", Include) {
 
     sql(s"""select count(*) from uniqdataquery2""").collect
 
@@ -212,7 +212,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select distinct query execution
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_138", Include) {
+  test("OffHeapQuery-002-TC_138", Include) {
 
     sql(s"""select distinct * from uniqdataquery2""").collect
 
@@ -221,7 +221,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select multiple column query execution
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_139", Include) {
+  test("OffHeapQuery-002-TC_139", Include) {
 
     sql(s"""select cust_name,cust_id,count(cust_name) from uniqdataquery2 group by cust_name,cust_id""").collect
 
@@ -230,7 +230,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select count and distinct query execution
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_140", Include) {
+  test("OffHeapQuery-002-TC_140", Include) {
     try {
 
       sql(s"""select count(cust_id),distinct(cust_name) from uniqdataquery2""").collect
@@ -244,7 +244,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check sum query execution
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_141", Include) {
+  test("OffHeapQuery-002-TC_141", Include) {
 
     sql(s"""select sum(cust_id) as sum,cust_name from uniqdataquery2 group by cust_name""").collect
 
@@ -253,7 +253,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check sum of names query execution
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_142", Include) {
+  test("OffHeapQuery-002-TC_142", Include) {
 
     sql(s"""select sum(cust_name) from uniqdataquery2""").collect
 
@@ -262,7 +262,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select distinct and groupby query execution
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_143", Include) {
+  test("OffHeapQuery-002-TC_143", Include) {
 
     sql(s"""select distinct(cust_name,cust_id) from uniqdataquery2 group by cust_name,cust_id""").collect
 
@@ -271,7 +271,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check select with where clause on cust_name query execution
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_144", Include) {
+  test("OffHeapQuery-002-TC_144", Include) {
 
     sql(s"""select cust_id from uniqdataquery2 where cust_name="cust_name_00000"""").collect
 
@@ -280,7 +280,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check query execution with IN operator without paranthesis
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_146", Include) {
+  test("OffHeapQuery-002-TC_146", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id IN 9000,9005""").collect
@@ -294,7 +294,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check query execution with IN operator with paranthesis
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_147", Include) {
+  test("OffHeapQuery-002-TC_147", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id IN (9000,9005)""").collect
 
@@ -303,7 +303,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check query execution with IN operator with out specifying any field.
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_148", Include) {
+  test("OffHeapQuery-002-TC_148", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where IN(1,2)""").collect
@@ -317,7 +317,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check OR with correct syntax
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_149", Include) {
+  test("OffHeapQuery-002-TC_149", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id>9005 or cust_id=9005""").collect
 
@@ -326,7 +326,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check OR with boolean expression
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_150", Include) {
+  test("OffHeapQuery-002-TC_150", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id>9005 or false""").collect
 
@@ -335,7 +335,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check AND with correct syntax
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_151", Include) {
+  test("OffHeapQuery-002-TC_151", Include) {
 
     sql(s"""select * from uniqdataquery2 where true AND true""").collect
 
@@ -344,7 +344,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check AND with using booleans
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_152", Include) {
+  test("OffHeapQuery-002-TC_152", Include) {
 
     sql(s"""select * from uniqdataquery2 where true AND false""").collect
 
@@ -353,7 +353,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check AND with using booleans in invalid syntax
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_153", Include) {
+  test("OffHeapQuery-002-TC_153", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where AND true""").collect
@@ -367,7 +367,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check AND Passing two conditions on same input
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_154", Include) {
+  test("OffHeapQuery-002-TC_154", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id=6 and cust_id>5""").collect
 
@@ -376,7 +376,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check AND changing case
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_155", Include) {
+  test("OffHeapQuery-002-TC_155", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id=6 aND cust_id>5""").collect
 
@@ -385,7 +385,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check AND using 0 and 1 treated as boolean values
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_156", Include) {
+  test("OffHeapQuery-002-TC_156", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where true aNd 0""").collect
@@ -399,7 +399,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check AND on two columns
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_157", Include) {
+  test("OffHeapQuery-002-TC_157", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id=9000 and cust_name='cust_name_00000'""").collect
 
@@ -408,7 +408,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '='operator with correct syntax
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_158", Include) {
+  test("OffHeapQuery-002-TC_158", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id=9000 and cust_name='cust_name_00000' and ACTIVE_EMUI_VERSION='ACTIVE_EMUI_VERSION_00000'""").collect
 
@@ -417,7 +417,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '='operator without Passing any value
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_159", Include) {
+  test("OffHeapQuery-002-TC_159", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id=""").collect
@@ -431,7 +431,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '='operator without Passing columnname and value.
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_160", Include) {
+  test("OffHeapQuery-002-TC_160", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where =""").collect
@@ -445,7 +445,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '!='operator with correct syntax
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_161", Include) {
+  test("OffHeapQuery-002-TC_161", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id!=9000""").collect
 
@@ -454,7 +454,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '!='operator by keeping space between them
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_162", Include) {
+  test("OffHeapQuery-002-TC_162", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id !   = 9001""").collect
@@ -468,7 +468,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '!='operator by Passing boolean value whereas column expects an integer
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_163", Include) {
+  test("OffHeapQuery-002-TC_163", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id != true""").collect
 
@@ -477,7 +477,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '!='operator without providing any value
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_164", Include) {
+  test("OffHeapQuery-002-TC_164", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id != """).collect
@@ -491,7 +491,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '!='operator without providing any column name
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_165", Include) {
+  test("OffHeapQuery-002-TC_165", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where  != false""").collect
@@ -505,7 +505,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check 'NOT' with valid syntax
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_166", Include) {
+  test("OffHeapQuery-002-TC_166", Include) {
 
     sql(s"""select * from uniqdataquery2 where NOT(cust_id=9000)""").collect
 
@@ -514,7 +514,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check 'NOT' using boolean values
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_167", Include) {
+  test("OffHeapQuery-002-TC_167", Include) {
 
     sql(s"""select * from uniqdataquery2 where NOT(false)""").collect
 
@@ -523,7 +523,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check 'NOT' applying it on a value
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_168", Include) {
+  test("OffHeapQuery-002-TC_168", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id = 'NOT(false)'""").collect
 
@@ -532,7 +532,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check 'NOT' with between operator
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_169", Include) {
+  test("OffHeapQuery-002-TC_169", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id NOT BETWEEN 9000 and 9005""").collect
 
@@ -541,7 +541,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check 'NOT' operator in nested way
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_170", Include) {
+  test("OffHeapQuery-002-TC_170", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id NOT (NOT(true))""").collect
@@ -555,7 +555,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check 'NOT' operator with parenthesis.
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_171", Include) {
+  test("OffHeapQuery-002-TC_171", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id NOT ()""").collect
@@ -569,7 +569,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check 'NOT' operator without condition.
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_172", Include) {
+  test("OffHeapQuery-002-TC_172", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id NOT""").collect
@@ -583,7 +583,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check 'NOT' operator checking case sensitivity.
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_173", Include) {
+  test("OffHeapQuery-002-TC_173", Include) {
 
     sql(s"""select * from uniqdataquery2 where nOt(false)""").collect
 
@@ -592,7 +592,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '>' operator without specifying column
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_174", Include) {
+  test("OffHeapQuery-002-TC_174", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where > 20""").collect
@@ -606,7 +606,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '>' operator without specifying value
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_175", Include) {
+  test("OffHeapQuery-002-TC_175", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id > """).collect
@@ -620,7 +620,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '>' operator with correct syntax
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_176", Include) {
+  test("OffHeapQuery-002-TC_176", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id >9005""").collect
 
@@ -629,7 +629,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '>' operator for Integer value
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_177", Include) {
+  test("OffHeapQuery-002-TC_177", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id > 9010""").collect
 
@@ -638,7 +638,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '>' operator for String value
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_178", Include) {
+  test("OffHeapQuery-002-TC_178", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_name > 'cust_name_00000'""").collect
 
@@ -647,7 +647,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '<' operator without specifying column
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_179", Include) {
+  test("OffHeapQuery-002-TC_179", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where < 5""").collect
@@ -661,7 +661,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '<' operator with correct syntax
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_180", Include) {
+  test("OffHeapQuery-002-TC_180", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id < 9005""").collect
 
@@ -670,7 +670,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '<' operator for String value
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_181", Include) {
+  test("OffHeapQuery-002-TC_181", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_name < "cust_name_00001"""").collect
 
@@ -679,7 +679,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '<=' operator without specifying column
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_182", Include) {
+  test("OffHeapQuery-002-TC_182", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where  <= 2""").collect
@@ -693,7 +693,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '<=' operator without providing value
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_183", Include) {
+  test("OffHeapQuery-002-TC_183", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where  cust_id <= """).collect
@@ -707,7 +707,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '<=' operator with correct syntax
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_184", Include) {
+  test("OffHeapQuery-002-TC_184", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id <=9002""").collect
 
@@ -716,7 +716,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check '<=' operator adding space between'<' and  '='
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_185", Include) {
+  test("OffHeapQuery-002-TC_185", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id < =  9002""").collect
@@ -730,7 +730,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check 'BETWEEN' operator without providing range
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_186", Include) {
+  test("OffHeapQuery-002-TC_186", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where age between""").collect
@@ -744,7 +744,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check  'BETWEEN' operator with correct syntax
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_187", Include) {
+  test("OffHeapQuery-002-TC_187", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id between 9002 and 9030""").collect
 
@@ -753,7 +753,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check  'BETWEEN' operator providing two same values
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_188", Include) {
+  test("OffHeapQuery-002-TC_188", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_name beTWeen 'CU%' and 'CU%'""").collect
 
@@ -762,7 +762,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check  'NOT BETWEEN' operator for integer
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_189", Include) {
+  test("OffHeapQuery-002-TC_189", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id NOT between 9024 and 9030""").collect
 
@@ -771,7 +771,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check  'NOT BETWEEN' operator for string
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_190", Include) {
+  test("OffHeapQuery-002-TC_190", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_name NOT beTWeen 'cust_name_00000' and 'cust_name_00001'""").collect
 
@@ -780,7 +780,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check  'IS NULL' for case sensitiveness.
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_191", Include) {
+  test("OffHeapQuery-002-TC_191", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id Is NulL""").collect
 
@@ -789,7 +789,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check  'IS NULL' for null field
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_192", Include) {
+  test("OffHeapQuery-002-TC_192", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_name Is NulL""").collect
 
@@ -798,7 +798,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check  'IS NULL' without providing column
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_193", Include) {
+  test("OffHeapQuery-002-TC_193", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where Is NulL""").collect
@@ -812,7 +812,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check  'IS NOT NULL' without providing column
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_194", Include) {
+  test("OffHeapQuery-002-TC_194", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where IS NOT NULL""").collect
@@ -826,7 +826,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check ''IS NOT NULL' operator with correct syntax
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_195", Include) {
+  test("OffHeapQuery-002-TC_195", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id IS NOT NULL""").collect
 
@@ -835,7 +835,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check  'Like' operator for integer
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_196", Include) {
+  test("OffHeapQuery-002-TC_196", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id Like '9%'""").collect
 
@@ -844,7 +844,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Limit clause with where condition
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_197", Include) {
+  test("OffHeapQuery-002-TC_197", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id>10987 limit 15""").collect
 
@@ -853,7 +853,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Limit clause with where condition and no argument
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_198", Include) {
+  test("OffHeapQuery-002-TC_198", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id=10987 limit""").collect
@@ -867,7 +867,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Limit clause with where condition and decimal argument
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_199", Include) {
+  test("OffHeapQuery-002-TC_199", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id=10987 limit 0.0""").collect
@@ -881,7 +881,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check where clause with distinct and group by
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_200", Include) {
+  test("OffHeapQuery-002-TC_200", Include) {
 
     sql(s"""select distinct cust_name from uniqdataquery2 where cust_name IN("CUST_NAME_01999") group by cust_name""").collect
 
@@ -890,7 +890,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check subqueries
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_201", Include) {
+  test("OffHeapQuery-002-TC_201", Include) {
 
     sql(s"""select * from (select cust_id from uniqdataquery2 where cust_id IN (10987,10988)) uniqdataquery2 where cust_id IN (10987, 10988)""").collect
 
@@ -899,7 +899,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To count with where clause
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_202", Include) {
+  test("OffHeapQuery-002-TC_202", Include) {
 
     sql(s"""select count(cust_id) from uniqdataquery2 where cust_id > 10874""").collect
 
@@ -908,7 +908,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Join query
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_203", Include) {
+  test("OffHeapQuery-002-TC_203", Include) {
      sql(s"""CREATE TABLE uniqdataquery22 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdataquery22 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     sql(s"""select uniqdataquery2.CUST_ID from uniqdataquery2 join uniqdataquery22 where uniqdataquery2.CUST_ID > 10700 and uniqdataquery22.CUST_ID > 10500""").collect
@@ -918,7 +918,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Left join with where clause
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_204", Include) {
+  test("OffHeapQuery-002-TC_204", Include) {
 
     sql(s"""select uniqdataquery2.CUST_ID from uniqdataquery2 LEFT join uniqdataquery22 where uniqdataquery2.CUST_ID > 10000""").collect
 
@@ -927,7 +927,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Full join
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_205", Include) {
+  test("OffHeapQuery-002-TC_205", Include) {
     try {
 
       sql(s"""select uniqdataquery2.CUST_ID from uniqdataquery2 FULL JOIN uniqdataquery22 where CUST_ID""").collect
@@ -941,7 +941,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Broadcast join
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_206", Include) {
+  test("OffHeapQuery-002-TC_206", Include) {
 
     sql(s"""select broadcast.cust_id from uniqdataquery2 broadcast join uniqdataquery22 where broadcast.cust_id > 10900""").collect
 
@@ -950,7 +950,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To avg function
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_207", Include) {
+  test("OffHeapQuery-002-TC_207", Include) {
 
     sql(s"""select avg(cust_name) from uniqdataquery2 where cust_id > 10544 group by cust_name""").collect
 
@@ -959,7 +959,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check subquery with aggrgate function avg
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_208", Include) {
+  test("OffHeapQuery-002-TC_208", Include) {
 
     sql(s"""select cust_id,avg(cust_id) from uniqdataquery2 where cust_id IN (select cust_id from uniqdataquery2 where cust_id > 0) group by cust_id""").collect
 
@@ -968,7 +968,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check HAVING on Measure
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_209", Include) {
+  test("OffHeapQuery-002-TC_209", Include) {
 
     sql(s"""select cust_id from uniqdataquery2 where cust_id > 10543 group by cust_id having cust_id = 10546""").collect
 
@@ -977,7 +977,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check HAVING on dimension
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_210", Include) {
+  test("OffHeapQuery-002-TC_210", Include) {
 
     sql(s"""select cust_name from uniqdataquery2 where cust_id > 10544 group by cust_name having cust_name like 'C%'""").collect
 
@@ -986,7 +986,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check HAVING on multiple columns
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_211", Include) {
+  test("OffHeapQuery-002-TC_211", Include) {
 
     sql(s"""select cust_id,cust_name from uniqdataquery2 where cust_id > 10544 group by cust_id,cust_name having cust_id = 10545 AND cust_name like 'C%'""").collect
 
@@ -995,7 +995,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check HAVING with empty condition
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_213", Include) {
+  test("OffHeapQuery-002-TC_213", Include) {
 
     sql(s"""select cust_name from uniqdataquery2 where cust_id > 10544 group by cust_name having """"").collect
 
@@ -1004,7 +1004,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check SORT on measure
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_214", Include) {
+  test("OffHeapQuery-002-TC_214", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id > 10544 sort by cust_id asc""").collect
 
@@ -1013,7 +1013,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check SORT on dimemsion
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_215", Include) {
+  test("OffHeapQuery-002-TC_215", Include) {
 
     sql(s"""select * from uniqdataquery2 where cust_id > 10544 sort by cust_name desc""").collect
 
@@ -1022,7 +1022,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check SORT using 'AND' on multiple column
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_216", Include) {
+  test("OffHeapQuery-002-TC_216", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 where cust_id > 10544 sort by cust_name desc and cust_id asc""").collect
@@ -1036,7 +1036,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Select average names and group by name query execution
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_217", Include) {
+  test("OffHeapQuery-002-TC_217", Include) {
 
     sql(s"""select avg(cust_name) from uniqdataquery2 group by cust_name""").collect
 
@@ -1045,7 +1045,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Select average id and group by id query execution
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_218", Include) {
+  test("OffHeapQuery-002-TC_218", Include) {
 
     sql(s"""select avg(cust_id) from uniqdataquery2 group by cust_id""").collect
 
@@ -1054,7 +1054,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check average aggregate function with no arguments
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_219", Include) {
+  test("OffHeapQuery-002-TC_219", Include) {
     try {
 
       sql(s"""select cust_id,avg() from uniqdataquery2 group by cust_id""").collect
@@ -1068,7 +1068,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check average aggregate function with empty string
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_220", Include) {
+  test("OffHeapQuery-002-TC_220", Include) {
 
     sql(s"""select cust_id,avg("") from uniqdataquery2 group by cust_id""").collect
 
@@ -1077,7 +1077,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check nested  average aggregate function
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_221", Include) {
+  test("OffHeapQuery-002-TC_221", Include) {
     try {
 
       sql(s"""select cust_id,avg(count(cust_id)) from uniqdataquery2 group by cust_id""").collect
@@ -1091,7 +1091,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Multilevel query
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_222", Include) {
+  test("OffHeapQuery-002-TC_222", Include) {
 
     sql(s"""select cust_id,avg(cust_id) from uniqdataquery2 where cust_id IN (select cust_id from uniqdataquery2) group by cust_id""").collect
 
@@ -1100,7 +1100,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Using first() with group by clause
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_223", Include) {
+  test("OffHeapQuery-002-TC_223", Include) {
 
     sql(s"""select first(cust_id) from uniqdataquery2 group by cust_id""").collect
 
@@ -1109,7 +1109,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check max with groupby clause query execution
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_224", Include) {
+  test("OffHeapQuery-002-TC_224", Include) {
 
     sql(s"""select max(cust_name) from uniqdataquery2 group by(cust_name)""").collect
 
@@ -1118,7 +1118,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check max with groupby clause query with id execution
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_225", Include) {
+  test("OffHeapQuery-002-TC_225", Include) {
 
     sql(s"""select max(cust_name) from uniqdataquery2 group by(cust_name),cust_id""").collect
 
@@ -1127,7 +1127,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check  multiple aggregate functions
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_226", Include) {
+  test("OffHeapQuery-002-TC_226", Include) {
 
     sql(s"""select max(cust_name),sum(cust_name),count(cust_id) from uniqdataquery2 group by(cust_name),cust_id""").collect
 
@@ -1136,7 +1136,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check max with empty string as argument
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_227", Include) {
+  test("OffHeapQuery-002-TC_227", Include) {
 
     sql(s"""select max("") from uniqdataquery2 group by(cust_name)""").collect
 
@@ -1145,7 +1145,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check  select count of names with group by clause
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_228", Include) {
+  test("OffHeapQuery-002-TC_228", Include) {
 
     sql(s"""select count(cust_name) from uniqdataquery2 group by cust_name""").collect
 
@@ -1154,7 +1154,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Order by ASC
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_229", Include) {
+  test("OffHeapQuery-002-TC_229", Include) {
 
     sql(s"""select * from uniqdataquery2 order by cust_id ASC""").collect
 
@@ -1163,7 +1163,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Order by DESC
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_230", Include) {
+  test("OffHeapQuery-002-TC_230", Include) {
 
     sql(s"""select * from uniqdataquery2 order by cust_id DESC""").collect
 
@@ -1172,7 +1172,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Order by without column name
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_231", Include) {
+  test("OffHeapQuery-002-TC_231", Include) {
     try {
 
       sql(s"""select * from uniqdataquery2 order by ASC""").collect
@@ -1186,7 +1186,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check cast Int to String
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_232", Include) {
+  test("OffHeapQuery-002-TC_232", Include) {
 
     sql(s"""select cast(bigint_column1 as STRING) from uniqdataquery2""").collect
 
@@ -1195,7 +1195,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check cast string to int
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_233", Include) {
+  test("OffHeapQuery-002-TC_233", Include) {
 
     sql(s"""select cast(cust_name as INT) from uniqdataquery2""").collect
 
@@ -1204,7 +1204,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check cast int to decimal
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_234", Include) {
+  test("OffHeapQuery-002-TC_234", Include) {
 
     sql(s"""select cast(bigint_column1 as DECIMAL(10,4)) from uniqdataquery2""").collect
 
@@ -1213,7 +1213,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Using window with order by
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_235", Include) {
+  test("OffHeapQuery-002-TC_235", Include) {
 
     sql(s"""select cust_name, sum(bigint_column1) OVER w from uniqdataquery2 WINDOW w AS (PARTITION BY bigint_column2 ORDER BY cust_id)""").collect
 
@@ -1222,7 +1222,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Using window without partition
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_236", Include) {
+  test("OffHeapQuery-002-TC_236", Include) {
     try {
 
       sql(s"""select cust_name, sum(bigint_column1) OVER w from uniqdataquery2 WINDOW w""").collect
@@ -1236,7 +1236,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Using ROLLUP with group by
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_237", Include) {
+  test("OffHeapQuery-002-TC_237", Include) {
 
     sql(s"""select cust_name from uniqdataquery2 group by cust_name with ROLLUP""").collect
 
@@ -1245,7 +1245,7 @@ class OffheapQuery2TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check Using ROLLUP without group by clause
-  test("PTS-AR-Productize-New-Features-Huawei-Spark2.1-006-01-01-01_001-TC_238", Include) {
+  test("OffHeapQuery-002-TC_238", Include) {
     try {
 
       sql(s"""select cust_name from uniqdataquery2 with ROLLUP""").collect

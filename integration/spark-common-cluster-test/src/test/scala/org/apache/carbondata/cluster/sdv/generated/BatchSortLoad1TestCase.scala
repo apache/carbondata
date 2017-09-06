@@ -32,7 +32,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
          
 
   //To load data after setting sort scope and sort size in carbon property file
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_001", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_001", Include) {
      sql(s"""drop table if exists uniqdata11""").collect
    sql(s"""CREATE TABLE uniqdata11 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
@@ -44,7 +44,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load 1 lac data load after setting sort scope and sort size in carbon property file
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_002", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_002", Include) {
     sql(s"""drop table if exists uniqdata12""").collect
      sql(s"""CREATE TABLE uniqdata12 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
@@ -56,7 +56,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with option file header in load
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_003", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_003", Include) {
      sql(s"""CREATE TABLE uniqdata12a(CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata12a OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -67,7 +67,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file without folder path in load
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_004", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_004", Include) {
     try {
      sql(s"""CREATE TABLE uniqdata13 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
       sql(s"""LOAD DATA  into table uniqdata13 OPTIONS('DELIMITER'=',' , 'FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -80,7 +80,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file without table_name in load
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_005", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_005", Include) {
     try {
      sql(s"""CREATE TABLE uniqdata14 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format'""").collect
       sql(s"""LOAD DATA  INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table OPTIONS('DELIMITER'=',' , 'FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -93,7 +93,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with option QUOTECHAR'='"'
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_006", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_006", Include) {
      sql(s"""CREATE TABLE uniqdata15 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata15 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -105,7 +105,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
   //To load data after setting sort scope and sort size in carbon property file with OPTIONS('COMMENTCHAR'='#')
 
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_007", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_007", Include) {
      sql(s"""CREATE TABLE uniqdata16 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata16 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -116,7 +116,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with option 'MULTILINE'='true'
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_008", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_008", Include) {
      sql(s"""CREATE TABLE uniqdata17 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata17 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -127,7 +127,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with OPTIONS('ESCAPECHAR'='\')
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_009", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_009", Include) {
      sql(s"""CREATE TABLE uniqdata18 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata18 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -138,7 +138,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with OPTIONS 'BAD_RECORDS_ACTION'='FORCE'
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_010", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_010", Include) {
      sql(s"""CREATE TABLE uniqdata19b (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata19b OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -149,7 +149,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with OPTIONS 'BAD_RECORDS_ACTION'='IGNORE'
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_011", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_011", Include) {
      sql(s"""CREATE TABLE uniqdata19c (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata19c OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='IGNORE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -160,7 +160,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with OPTIONS 'BAD_RECORDS_ACTION'='REDIRECT'
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_012", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_012", Include) {
      sql(s"""CREATE TABLE uniqdata19d (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
 
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata19d OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -171,7 +171,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with OPTIONS 'BAD_RECORDS_LOGGER_ENABLE'='FALSE'
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_013", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_013", Include) {
      sql(s"""CREATE TABLE uniqdata19e (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata19e OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='FALSE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     sql(s"""select * from uniqdata19e""").collect
@@ -181,7 +181,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with OPTIONS 'BAD_RECORDS_LOGGER_ENABLE'='TRUE'
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_014", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_014", Include) {
      sql(s"""CREATE TABLE uniqdata19f (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata19f OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     sql(s"""select * from uniqdata19f""").collect
@@ -191,7 +191,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with OPTIONS ‘SINGLE_PASS’=’true’
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_015", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_015", Include) {
      sql(s"""CREATE TABLE uniqdata20a (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata20a OPTIONS('DELIMITER'=',','QUOTECHAR'='"','SINGLE_PASS'='TRUE','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     sql(s"""select * from uniqdata20a""").collect
@@ -201,7 +201,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with OPTIONS ‘SINGLE_PASS’=’false’
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_016", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_016", Include) {
      sql(s"""CREATE TABLE uniqdata20b (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata20b OPTIONS('DELIMITER'=',','QUOTECHAR'='"','SINGLE_PASS'='FALSE','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     sql(s"""select * from uniqdata20b""").collect
@@ -211,7 +211,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with NO_INVERTED_INDEX
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_017", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_017", Include) {
      sql(s"""CREATE TABLE uniqdata20c (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata' TBLPROPERTIES('NO_INVERTED_INDEX'='CUST_NAME')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata20c OPTIONS('DELIMITER'=',' ,'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     sql(s"""select * from uniqdata20c""").collect
@@ -221,7 +221,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with COLUMNDICT
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_018", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_018", Include) {
      sql(s"""drop table if exists t3""").collect
    sql(s"""CREATE TABLE t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/Data/batchsort/data.csv' into table t3 options('COLUMNDICT'='country:$resourcesPath/Data/columndict/country.csv', 'SINGLE_PASS'='true')""").collect
@@ -230,7 +230,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To load data after setting sort scope and sort size in carbon property file with ALL_DICTIONARY_PATH
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_019", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_019", Include) {
     sql(s"""drop table if exists t3""").collect
     try {
       sql(s"""CREATE TABLE t3 (ID Int, country String, name String, phonetype String, serialname String, salary Int,floatField float) STORED BY 'carbondata'""").collect
@@ -244,7 +244,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check incremental load one with batch_sort and others configured with different sort
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_021", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_021", Include) {
      sql(s"""CREATE TABLE uniqdata20a (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata20a OPTIONS('DELIMITER'=',' ,'SORT_SCOPE'='LOCAL_SORT','QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata20a OPTIONS('DELIMITER'=',' ,'SORT_SCOPE'='BATCH_SORT','QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -259,7 +259,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check sort_scope option with a wrong value
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_023", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_023", Include) {
     try {
      sql(s"""CREATE TABLE uniqdata20a (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata20a OPTIONS('DELIMITER'=',' , 'SORT_SCOPE'='ABCXYZ',‘SINGLE_PASS’=’true’,'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
@@ -272,7 +272,7 @@ class BatchSortLoad1TestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //To check sort_scope option with null value
-  test("PTS-AR-Batch_sort_Loading_001-01-01-01_001-TC_024", Include) {
+  test("Batch_sort_Loading_001-01-01-01_001-TC_024", Include) {
     try {
      sql(s"""CREATE TABLE uniqdata20a (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
       sql(s"""LOAD DATA INPATH '$resourcesPath/Data/uniqdata/7000_UniqData.csv' into table uniqdata20a OPTIONS('DELIMITER'=',' , 'SORT_SCOPE'='null',‘SINGLE_PASS’=’true’,'QUOTECHAR'='"','COMMENTCHAR'='#','MULTILINE'='true','ESCAPECHAR'='\','BAD_RECORDS_ACTION'='REDIRECT','BAD_RECORDS_LOGGER_ENABLE'='TRUE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
