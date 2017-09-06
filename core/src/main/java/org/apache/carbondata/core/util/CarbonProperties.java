@@ -100,7 +100,6 @@ public final class CarbonProperties {
     validatePrefetchBufferSize();
     validateBlockletGroupSizeInMB();
     validateNumberOfColumnPerIORead();
-    validateNumberOfRowsPerBlockletColumnPage();
     validateEnableUnsafeSort();
     validateCustomBlockDistribution();
     validateEnableVectorReader();
@@ -309,37 +308,6 @@ public final class CarbonProperties {
           + CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
       carbonProperties.setProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
           CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE);
-    }
-  }
-
-  /**
-   * This method validates the number of column read in one IO
-   */
-  private void validateNumberOfRowsPerBlockletColumnPage() {
-    String numberOfRowsPerBlockletColumnPageString = carbonProperties
-        .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
-            CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
-    try {
-      short numberOfRowsPerBlockletColumnPage =
-          Short.parseShort(numberOfRowsPerBlockletColumnPageString);
-      if (numberOfRowsPerBlockletColumnPage
-          < CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_MIN
-          || numberOfRowsPerBlockletColumnPage
-          > CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_MAX) {
-        LOGGER.info("The Number Of rows per blocklet column pages value \""
-            + numberOfRowsPerBlockletColumnPageString + "\" is invalid. Using the default value \""
-            + CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
-        carbonProperties
-            .setProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
-                CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.info("The Number Of rows per blocklet column pages value \""
-          + numberOfRowsPerBlockletColumnPageString + "\" is invalid. Using the default value \""
-          + CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
-      carbonProperties
-          .setProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
-              CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
     }
   }
 

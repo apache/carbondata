@@ -1602,8 +1602,7 @@ public final class FilterUtil {
   public static BitSetGroup createBitSetGroupWithDefaultValue(int pageCount, int totalRowCount,
       boolean defaultValue) {
     BitSetGroup bitSetGroup = new BitSetGroup(pageCount);
-    int numberOfRows = Integer
-        .parseInt(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+    int numberOfRows = CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
     int pagesTobeFullFilled = totalRowCount / numberOfRows;
     int rowCountForLastPage = totalRowCount % numberOfRows;
     for (int i = 0; i < pagesTobeFullFilled; i++) {
