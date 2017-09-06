@@ -347,7 +347,7 @@ object CommonUtil {
       sys.error("The size of new list must be smaller than original list, please check again!")
     }
     val tempList = newListInfo.mkString(",").split(",")
-      .map(_.trim.replace("(", "").replace(")", ""))
+      .map(_.replace("(", "").replace(")", "").trim)
     if (tempList.length != originListInfo.size) {
       sys.error("The total number of elements in new list must equal to original list!")
     }
