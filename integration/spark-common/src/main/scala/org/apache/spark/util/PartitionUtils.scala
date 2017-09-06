@@ -81,7 +81,8 @@ object PartitionUtils {
     val columnDataType = partitionInfo.getColumnSchemaList.get(0).getDataType
     val index = partitionIdList.indexOf(partitionId)
     if (index < 0) {
-      throw new IllegalArgumentException("Invalid Partition Id "+ partitionId + "\n Use show partitions table_name to get the list of valid partitions")
+      throw new IllegalArgumentException("Invalid Partition Id " + partitionId +
+        "\n Use show partitions table_name to get the list of valid partitions")
     }
     else {
       if (partitionInfo.getPartitionType == PartitionType.RANGE) {
