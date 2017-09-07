@@ -466,6 +466,112 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     checkAnswer(result_after5, result_origin5)
   }
 
+   test("test exception when alter partition and the values"
+       + "in range_info can not match partition column type") {
+     val exception_test_range_int: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_int(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='11,12')
+        """.stripMargin)
+        
+       sql("ALTER TABLE test_range_int ADD PARTITION ('abc')")
+    }
+     assert(exception_test_range_int.getMessage
+         .contains("Data in range info must be the same type with the partition field's type"))
+
+    sql("DROP TABLE IF EXISTS test_range_smallint")
+    val exception_test_range_smallint: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_smallint(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 SMALLINT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='11,12')
+        """.stripMargin)
+      sql("ALTER TABLE test_range_smallint ADD PARTITION ('abc')")
+    }
+     assert(exception_test_range_smallint.getMessage
+         .contains("Data in range info must be the same type with the partition field's type"))
+
+    sql("DROP TABLE IF EXISTS test_range_float")
+    val exception_test_range_float: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_float(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 FLOAT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='1.1,2.1')
+        """.stripMargin)
+      sql("ALTER TABLE test_range_float ADD PARTITION ('abc')")
+    }
+     assert(exception_test_range_float.getMessage
+         .contains("Data in range info must be the same type with the partition field's type"))
+
+    sql("DROP TABLE IF EXISTS test_range_double")
+    val exception_test_range_double: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_double(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 DOUBLE) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='1000.005,2000.005')
+        """.stripMargin)
+      sql("ALTER TABLE test_range_double ADD PARTITION ('abc')")
+    }
+     assert(exception_test_range_double.getMessage
+         .contains("Data in range info must be the same type with the partition field's type"))
+
+    sql("DROP TABLE IF EXISTS test_range_bigint")
+    val exception_test_range_bigint: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_bigint(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 BIGINT) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='123456789,223456789')
+        """.stripMargin)
+       sql("ALTER TABLE test_range_bigint ADD PARTITION ('abc')")
+    }
+     assert(exception_test_range_bigint.getMessage
+         .contains("Data in range info must be the same type with the partition field's type"))
+
+    sql("DROP TABLE IF EXISTS test_range_date")
+    val exception_test_range_date: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_date(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 DATE) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59')
+        """.stripMargin)
+      sql("ALTER TABLE test_range_date ADD PARTITION ('abc')")
+    }
+    assert(exception_test_range_date.getMessage
+      .contains("Data in range info must be the same type with the partition field's type"))
+
+    sql("DROP TABLE IF EXISTS test_range_timestamp")
+    val exception_test_range_timestamp: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_timestamp(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 TIMESTAMP) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59')
+        """.stripMargin)
+      sql("ALTER TABLE test_range_timestamp ADD PARTITION ('abc')")
+    }
+    assert(exception_test_range_timestamp.getMessage
+      .contains("Data in range info must be the same type with the partition field's type"))
+    sql("DROP TABLE IF EXISTS test_range_decimal")
+    val exception_test_range_decimal: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE test_range_decimal(col1 INT, col2 STRING)
+          | PARTITIONED BY (col3 DECIMAL(25, 4)) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='22.22,33.33')
+        """.stripMargin)
+      sql("ALTER TABLE test_range_decimal ADD PARTITION ('abc')")
+    }
+    assert(exception_test_range_decimal.getMessage
+         .contains("Data in range info must be the same type with the partition field's type"))
+  }
+
   def validateDataFiles(tableUniqueName: String, segmentId: String, partitions: Seq[Int]): Unit = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
     val dataFiles = getDataFiles(carbonTable, segmentId)
@@ -517,6 +623,14 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS list_table_country")
     sql("DROP TABLE IF EXISTS range_table_logdate_split")
     sql("DROP TABLE IF EXISTS range_table_bucket")
+    sql("DROP TABLE IF EXISTS test_range_int")
+    sql("DROP TABLE IF EXISTS test_range_smallint")
+    sql("DROP TABLE IF EXISTS test_range_bigint")
+    sql("DROP TABLE IF EXISTS test_range_float")
+    sql("DROP TABLE IF EXISTS test_range_double")
+    sql("DROP TABLE IF EXISTS test_range_date")
+    sql("DROP TABLE IF EXISTS test_range_timestamp")
+    sql("DROP TABLE IF EXISTS test_range_decimal")
   }
 
 
