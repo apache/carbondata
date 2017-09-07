@@ -36,7 +36,8 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     dropTable
-
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     /**
@@ -539,7 +540,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
         """
           | CREATE TABLE test_range_date(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 DATE) STORED BY 'carbondata'
-          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59')
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='2017-06-11, 2017-06-13')
         """.stripMargin)
       sql("ALTER TABLE test_range_date ADD PARTITION ('abc')")
     }
@@ -552,7 +553,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
         """
           | CREATE TABLE test_range_timestamp(col1 INT, col2 STRING)
           | PARTITIONED BY (col3 TIMESTAMP) STORED BY 'carbondata'
-          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59')
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='2017/06/11, 2017/06/13')
         """.stripMargin)
       sql("ALTER TABLE test_range_timestamp ADD PARTITION ('abc')")
     }
