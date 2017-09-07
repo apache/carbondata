@@ -44,7 +44,7 @@ object CarbonSortColumnsExample {
       .appName("CarbonSortColumnsExample")
       .config("spark.sql.warehouse.dir", warehouse)
       .config("spark.driver.host", "localhost")
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
+      .getOrCreateCarbonSession(storeLocation)
 
     spark.sparkContext.setLogLevel("WARN")
 
