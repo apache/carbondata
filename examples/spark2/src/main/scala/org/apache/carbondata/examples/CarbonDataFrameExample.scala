@@ -42,7 +42,7 @@ object CarbonDataFrameExample {
       .master("local")
       .appName("CarbonDataFrameExample")
       .config("spark.sql.warehouse.dir", warehouse)
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
+      .getOrCreateCarbonSession(storeLocation)
 
     spark.sparkContext.setLogLevel("ERROR")
 
