@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.presto;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -75,8 +77,8 @@ public class PrestoFilterUtil {
     else if (colType == VarcharType.VARCHAR) return DataType.STRING;
     else if (colType == DateType.DATE) return DataType.DATE;
     else if (colType == TimestampType.TIMESTAMP) return DataType.TIMESTAMP;
-    else if (colType == DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
-        carbondataColumnHandle.getScale())) return DataType.DECIMAL;
+    else if (colType.equals(DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
+        carbondataColumnHandle.getScale()))) return DataType.DECIMAL;
     else return DataType.STRING;
   }
 
@@ -178,7 +180,7 @@ public class PrestoFilterUtil {
         filters.add(new InExpression(colExpression, candidates));
       } else if (disjuncts.size() > 0) {
         if (disjuncts.size() > 1) {
-          Expression finalFilters = new OrExpression(disjuncts.get(0), disjuncts.get(1));
+          Expression finalFilters = new AndExpression(disjuncts.get(0), disjuncts.get(1));
           if (disjuncts.size() > 2) {
             for (int i = 2; i < disjuncts.size(); i++) {
               filters.add(new AndExpression(finalFilters, disjuncts.get(i)));
@@ -196,7 +198,7 @@ public class PrestoFilterUtil {
       finalFilters = new AndExpression(tmp.get(0), tmp.get(1));
       if (tmp.size() > 2) {
         for (int i = 2; i < tmp.size(); i++) {
-          finalFilters = new OrExpression(finalFilters, tmp.get(i));
+          finalFilters = new AndExpression(finalFilters, tmp.get(i));
         }
       }
     } else if (tmp.size() == 1) finalFilters = tmp.get(0);
@@ -222,6 +224,14 @@ public class PrestoFilterUtil {
       c.add(Calendar.DAY_OF_YEAR, ((Long) rawdata).intValue());
       Date date = c.getTime();
       return date.getTime() * 1000;
+    }
+    else if (type instanceof DecimalType) {
+      if(rawdata instanceof  Double) {
+        return new BigDecimal((Double) rawdata);
+      } else if (rawdata instanceof  Long) {
+        return new BigDecimal(new BigInteger(String.valueOf(rawdata)),
+            ((DecimalType) type).getScale());
+      }
     }
 
     return rawdata;

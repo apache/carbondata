@@ -53,22 +53,24 @@ public class CarbondataRecordCursor implements RecordCursor {
 
   private Object[] fields;
   private CarbondataSplit split;
-  private CarbonIterator<Object[]> rowCursor;
-  private CarbonDictionaryDecodeReaderSupport readSupport;
+  private CarbonDictionaryDecodeReadSupport readSupport;
   private Tuple3<DataType, Dictionary, Int>[] dictionary;
+  CarbonVectorizedRecordReader vectorizedRecordReader;
 
   private long totalBytes;
   private long nanoStart;
   private long nanoEnd;
 
-  public CarbondataRecordCursor(CarbonDictionaryDecodeReaderSupport readSupport,
-      CarbonIterator<Object[]> carbonIterator, List<CarbondataColumnHandle> columnHandles,
-      CarbondataSplit split, Tuple3<DataType, Dictionary, Int>[] dictionaries) {
-    this.rowCursor = carbonIterator;
+
+
+  public CarbondataRecordCursor(CarbonDictionaryDecodeReadSupport readSupport,
+       CarbonVectorizedRecordReader vectorizedRecordReader,
+      List<CarbondataColumnHandle> columnHandles,
+      CarbondataSplit split) {
+    this.vectorizedRecordReader = vectorizedRecordReader;
     this.columnHandles = columnHandles;
     this.readSupport = readSupport;
     this.totalBytes = 0;
-    this.dictionary = dictionaries;
   }
 
   @Override public long getTotalBytes() {
@@ -96,12 +98,6 @@ public class CarbondataRecordCursor implements RecordCursor {
 
     if (nanoStart == 0) {
       nanoStart = System.nanoTime();
-    }
-
-    if (rowCursor.hasNext()) {
-      fields = readSupport.readRow(rowCursor.next(), dictionary);
-      totalBytes += fields.length;
-      return true;
     }
     return false;
   }
@@ -201,5 +197,13 @@ public class CarbondataRecordCursor implements RecordCursor {
     nanoEnd = System.nanoTime();
 
     //todo  delete cache from readSupport
+  }
+
+  public CarbonVectorizedRecordReader getVectorizedRecordReader() {
+    return vectorizedRecordReader;
+  }
+
+  public CarbonDictionaryDecodeReadSupport getReadSupport() {
+    return readSupport;
   }
 }

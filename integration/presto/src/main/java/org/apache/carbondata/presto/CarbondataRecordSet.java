@@ -22,32 +22,24 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
-import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.result.BatchResult;
-import org.apache.carbondata.core.scan.result.iterator.ChunkRowIterator;
+import org.apache.carbondata.core.scan.result.iterator.AbstractDetailQueryResultIterator;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.presto.impl.CarbonLocalInputSplit;
 
-import com.facebook.presto.spi.ColumnHandle;
 import com.facebook.presto.spi.ConnectorSession;
 import com.facebook.presto.spi.ConnectorSplit;
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.RecordSet;
-import com.facebook.presto.spi.predicate.TupleDomain;
 import com.facebook.presto.spi.type.Type;
-import scala.Tuple3;
+import org.apache.hadoop.mapred.TaskAttemptContext;
 
 import static org.apache.carbondata.presto.Types.checkType;
-
-//import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodedReadSupportImpl;
 
 public class CarbondataRecordSet implements RecordSet {
 
@@ -56,19 +48,17 @@ public class CarbondataRecordSet implements RecordSet {
   private List<CarbondataColumnHandle> columns;
   private QueryExecutor queryExecutor;
 
-  private CarbonDictionaryDecodeReaderSupport readSupport;
+  private CarbonDictionaryDecodeReadSupport readSupport;
+  private TaskAttemptContext taskAttemptContext;
 
   public CarbondataRecordSet(CarbonTable carbonTable, ConnectorSession session,
-      ConnectorSplit split, List<CarbondataColumnHandle> columns, QueryModel queryModel) {
+      ConnectorSplit split, List<CarbondataColumnHandle> columns, QueryModel queryModel,
+      TaskAttemptContext taskAttemptContext) {
     this.split = checkType(split, CarbondataSplit.class, "connectorSplit");
     this.queryModel = queryModel;
     this.columns = columns;
-    this.readSupport = new CarbonDictionaryDecodeReaderSupport();
-  }
-
-  //todo support later
-  private Expression parseConstraint2Expression(TupleDomain<ColumnHandle> constraints) {
-    return null;
+    this.readSupport = new CarbonDictionaryDecodeReadSupport();
+    this.taskAttemptContext = taskAttemptContext;
   }
 
   @Override public List<Type> getColumnTypes() {
@@ -76,7 +66,7 @@ public class CarbondataRecordSet implements RecordSet {
   }
 
   /**
-   * get data blocks via Carbondata QueryModel API
+   * get data blocks via Carbondata QueryModel API.
    */
   @Override public RecordCursor cursor() {
     CarbonLocalInputSplit carbonLocalInputSplit = split.getLocalInputSplit();
@@ -87,12 +77,14 @@ public class CarbondataRecordSet implements RecordSet {
     queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
     try {
 
-      Tuple3[] dict = readSupport
+      readSupport
           .initialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
-      CarbonIterator<Object[]> carbonIterator =
-          new ChunkRowIterator((CarbonIterator<BatchResult>) queryExecutor.execute(queryModel));
+      CarbonIterator iterator = queryExecutor.execute(queryModel);
+      CarbonVectorizedRecordReader vectorReader =
+          new CarbonVectorizedRecordReader(queryExecutor, queryModel,
+              (AbstractDetailQueryResultIterator) iterator);
       RecordCursor rc =
-          new CarbondataRecordCursor(readSupport, carbonIterator, columns, split, dict);
+          new CarbondataRecordCursor(readSupport, vectorReader, columns, split);
       return rc;
     } catch (QueryExecutionException e) {
       throw new RuntimeException(e.getMessage(), e);
@@ -100,5 +92,5 @@ public class CarbondataRecordSet implements RecordSet {
       throw new RuntimeException(ex.getMessage(), ex);
     }
   }
-}
 
+}
