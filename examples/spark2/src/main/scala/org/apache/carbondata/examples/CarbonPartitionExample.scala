@@ -47,7 +47,7 @@ object CarbonPartitionExample {
       .master("local")
       .appName("CarbonPartitionExample")
       .config("spark.sql.warehouse.dir", warehouse)
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
+      .getOrCreateCarbonSession(storeLocation)
 
     spark.sparkContext.setLogLevel("WARN")
 

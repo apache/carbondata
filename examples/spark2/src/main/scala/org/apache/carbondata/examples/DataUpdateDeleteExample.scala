@@ -48,7 +48,7 @@ object DataUpdateDeleteExample {
       .config("spark.sql.warehouse.dir", warehouse)
       .config("spark.driver.host", "localhost")
       .config("spark.sql.crossJoin.enabled", "true")
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
+      .getOrCreateCarbonSession(storeLocation)
     spark.sparkContext.setLogLevel("WARN")
 
     // Specify date format based on raw data
