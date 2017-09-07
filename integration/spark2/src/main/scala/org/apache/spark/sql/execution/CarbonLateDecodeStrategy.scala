@@ -29,7 +29,7 @@ import org.apache.spark.sql.catalyst.planning.PhysicalOperation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partitioning, UnknownPartitioning}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.optimizer.CarbonDecoderRelation
+import org.apache.spark.sql.optimizer.{CarbonDecoderRelation}
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types.{AtomicType, IntegerType, StringType}
 
@@ -59,7 +59,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           filters,
           (a, f, needDecoder) => toCatalystRDD(l, a, relation.buildScan(
             a.map(_.name).toArray, f), needDecoder)) ::
-            Nil
+        Nil
       case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
         if ((profile.isInstanceOf[IncludeProfile] && profile.isEmpty) ||
             !CarbonDictionaryDecoder.
@@ -139,10 +139,15 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
   protected def pruneFilterProjectRaw(
       relation: LogicalRelation,
-      projects: Seq[NamedExpression],
+      rawProjects: Seq[NamedExpression],
       filterPredicates: Seq[Expression],
       scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter],
         ArrayBuffer[AttributeReference]) => RDD[InternalRow]) = {
+    val projects = rawProjects.map {p =>
+      p.transform {
+        case CustomDeterministicExpression(exp) => exp
+      }
+    }.asInstanceOf[Seq[NamedExpression]]
 
     val projectSet = AttributeSet(projects.flatMap(_.references))
     val filterSet = AttributeSet(filterPredicates.flatMap(_.references))
@@ -162,7 +167,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       val handledPredicates = filterPredicates.filterNot(unhandledPredicates.contains)
       val unhandledSet = AttributeSet(unhandledPredicates.flatMap(_.references))
       AttributeSet(handledPredicates.flatMap(_.references)) --
-          (projectSet ++ unhandledSet).map(relation.attributeMap)
+      (projectSet ++ unhandledSet).map(relation.attributeMap)
     }
 
     // Combines all Catalyst filter `Expression`s that are either not convertible to data source
@@ -213,12 +218,12 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       // when the columns of this projection are enough to evaluate all filter conditions,
       // just do a scan followed by a filter, with no extra project.
       val requestedColumns = projects
-          // Safe due to if above.
-          .asInstanceOf[Seq[Attribute]]
-          // Match original case of attributes.
-          .map(relation.attributeMap)
-          // Don't request columns that are only referenced by pushed filters.
-          .filterNot(handledSet.contains)
+        // Safe due to if above.
+        .asInstanceOf[Seq[Attribute]]
+        // Match original case of attributes.
+        .map(relation.attributeMap)
+        // Don't request columns that are only referenced by pushed filters.
+        .filterNot(handledSet.contains)
       val updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
 
       val updateProject = projects.map { expr =>
@@ -227,7 +232,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           val dict = map.get(attr.name)
           if (dict.isDefined && dict.get) {
             attr = AttributeReference(attr.name, IntegerType, attr.nullable, attr.metadata)(attr
-                .exprId, attr.qualifier)
+              .exprId, attr.qualifier)
           }
         }
         attr
@@ -245,17 +250,17 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
       var newProjectList: Seq[Attribute] = Seq.empty
       val updatedProjects = projects.map {
-          case a@Alias(s: ScalaUDF, name)
-            if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
-                name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
-            val reference = AttributeReference(name, StringType, true)().withExprId(a.exprId)
-            newProjectList :+= reference
-            reference
-          case other => other
+        case a@Alias(s: ScalaUDF, name)
+          if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
+             name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
+          val reference = AttributeReference(name, StringType, true)().withExprId(a.exprId)
+          newProjectList :+= reference
+          reference
+        case other => other
       }
       // Don't request columns that are only referenced by pushed filters.
       val requestedColumns =
-      (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq ++ newProjectList
+        (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq ++ newProjectList
       val updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
       val scan = getDataSourceScan(relation,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]],
@@ -454,9 +459,9 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       case c@EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case Not(EqualTo(a: Attribute, Literal(v, t))) =>
-          Some(sources.Not(sources.EqualTo(a.name, v)))
+        Some(sources.Not(sources.EqualTo(a.name, v)))
       case Not(EqualTo(Literal(v, t), a: Attribute)) =>
-          Some(sources.Not(sources.EqualTo(a.name, v)))
+        Some(sources.Not(sources.EqualTo(a.name, v)))
       case c@Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case c@Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
@@ -530,6 +535,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     val supportCodegen =
       sqlContext.conf.wholeStageEnabled && sqlContext.conf.wholeStageMaxNumFields >= cols.size
     supportCodegen && vectorizedReader.toBoolean &&
-      cols.forall(_.dataType.isInstanceOf[AtomicType])
+    cols.forall(_.dataType.isInstanceOf[AtomicType])
   }
 }

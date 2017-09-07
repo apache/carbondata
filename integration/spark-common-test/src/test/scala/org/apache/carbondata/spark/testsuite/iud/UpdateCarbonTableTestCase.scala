@@ -434,6 +434,36 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS default.carbon1")
   }
 
+  test("update table in carbondata with rand() ") {
+
+    sql("""CREATE TABLE iud.rand(imei string,age int,task bigint,num double,level decimal(10,3),name string)STORED BY 'org.apache.carbondata.format' """)
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/update01.csv' INTO TABLE iud.rand OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='imei,age,task,num,level,name')""").collect
+
+    sql("select substring(name,1,2 ) , name ,getTupleId() as tupleId , rand()  from  iud.rand").show(100)
+
+    sql("select name , substring(name,1,2 ) ,getTupleId() as tupleId , num , rand() from  iud.rand").show(100)
+
+    sql("Update  rand set (num) = (rand())").show()
+
+    sql("Update  rand set (num) = (rand(9))").show()
+
+    sql("Update  rand set (name) = ('Lily')").show()
+
+    sql("select name ,  num from  iud.rand").show(100)
+
+    sql("select  imei , age , name , num  from  iud.rand").show(100)
+
+    sql("select rand() , getTupleId() as tupleId from  iud.rand").show(100)
+
+    sql("select * from  iud.rand").show(100)
+
+    sql("select  imei , rand() , num from  iud.rand").show(100)
+
+    sql("select  name , rand()  from  iud.rand").show(100)
+
+    sql("DROP TABLE IF EXISTS iud.rand")
+  }
+
   override def afterAll {
     sql("use default")
     sql("drop database  if exists iud cascade")
