@@ -139,17 +139,6 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     intercept[Exception] { sql("alter table test drop columns(c)") }
   }
 
-  test("test exception if invalid partition id is provided in alter command") {
-    sql("drop table if exists test_invalid_partition_id")
-
-    sql("CREATE TABLE test_invalid_partition_id (CUST_NAME String,ACTIVE_EMUI_VERSION string,DOB Timestamp,DOJ timestamp, " +
-      "BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10)," +
-      "Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) PARTITIONED BY (CUST_ID int)" +
-      " STORED BY 'org.apache.carbondata.format' " +
-      "TBLPROPERTIES ('PARTITION_TYPE'='RANGE','RANGE_INFO'='9090,9500,9800',\"TABLE_BLOCKSIZE\"= \"256 MB\")")
-    intercept[IllegalArgumentException] { sql("ALTER TABLE test_invalid_partition_id SPLIT PARTITION(6) INTO ('9800','9900')") }
-  }
-
   test("test describe formatted for partition column") {
     sql("drop table if exists des")
     sql(
