@@ -34,7 +34,6 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
-
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.hadoop.hive.common.type.HiveDecimal;
@@ -43,18 +42,16 @@ import org.apache.hadoop.hive.serde2.io.DoubleWritable;
 import org.apache.hadoop.hive.serde2.io.HiveDecimalWritable;
 import org.apache.hadoop.hive.serde2.io.ShortWritable;
 import org.apache.hadoop.hive.serde2.io.TimestampWritable;
-
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
-
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.catalyst.util.GenericArrayData;
 
 /**
- *  This is the class to decode dictionary encoded column data back to its original value.
+ * This is the class to decode dictionary encoded column data back to its original value.
  */
 public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
 
@@ -233,9 +230,9 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       case SHORT:
         return new ShortWritable((Short) obj);
       case DATE:
-        return new DateWritable(new Date((long) obj));
+        return new DateWritable(new Date((Integer) obj));
       case TIMESTAMP:
-        return new TimestampWritable(new Timestamp((long) obj));
+        return new TimestampWritable(new Timestamp((long) obj / 1000));
       case STRING:
         return new Text(obj.toString());
       case DECIMAL:
