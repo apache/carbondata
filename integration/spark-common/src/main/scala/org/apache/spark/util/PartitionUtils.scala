@@ -84,39 +84,37 @@ object PartitionUtils {
       throw new IllegalArgumentException("Invalid Partition Id " + partitionId +
         "\n Use show partitions table_name to get the list of valid partitions")
     }
-    else {
-      if (partitionInfo.getPartitionType == PartitionType.RANGE) {
-        val rangeInfo = partitionInfo.getRangeInfo.asScala.toList
-        val newRangeInfo = partitionId match {
-          case 0 => rangeInfo ++ splitInfo
-          case _ => rangeInfo.take(index - 1) ++ splitInfo ++
-            rangeInfo.takeRight(rangeInfo.size - index)
-        }
-        CommonUtil.validateRangeInfo(newRangeInfo, columnDataType,
-          timestampFormatter, dateFormatter)
-        partitionInfo.setRangeInfo(newRangeInfo.asJava)
-      } else if (partitionInfo.getPartitionType == PartitionType.LIST) {
-        val originList = partitionInfo.getListInfo.asScala.map(_.asScala.toList).toList
-        if (partitionId != 0) {
-          val targetListInfo = partitionInfo.getListInfo.get(index - 1)
-          CommonUtil.validateSplitListInfo(targetListInfo.asScala.toList, splitInfo, originList)
-        } else {
-          CommonUtil.validateAddListInfo(splitInfo, originList)
-        }
-        val addListInfo = PartitionUtils.getListInfo(splitInfo.mkString(","))
-        val newListInfo = partitionId match {
-          case 0 => originList ++ addListInfo
-          case _ => originList.take(index - 1) ++ addListInfo ++
-            originList.takeRight(originList.size - index)
-        }
-        partitionInfo.setListInfo(newListInfo.map(_.asJava).asJava)
+    if (partitionInfo.getPartitionType == PartitionType.RANGE) {
+      val rangeInfo = partitionInfo.getRangeInfo.asScala.toList
+      val newRangeInfo = partitionId match {
+        case 0 => rangeInfo ++ splitInfo
+        case _ => rangeInfo.take(index - 1) ++ splitInfo ++
+          rangeInfo.takeRight(rangeInfo.size - index)
       }
-
-      if (partitionId == 0) {
-        partitionInfo.addPartition(splitInfo.size)
+      CommonUtil.validateRangeInfo(newRangeInfo, columnDataType,
+        timestampFormatter, dateFormatter)
+      partitionInfo.setRangeInfo(newRangeInfo.asJava)
+    } else if (partitionInfo.getPartitionType == PartitionType.LIST) {
+      val originList = partitionInfo.getListInfo.asScala.map(_.asScala.toList).toList
+      if (partitionId != 0) {
+        val targetListInfo = partitionInfo.getListInfo.get(index - 1)
+        CommonUtil.validateSplitListInfo(targetListInfo.asScala.toList, splitInfo, originList)
       } else {
-        partitionInfo.splitPartition(index, splitInfo.size)
+        CommonUtil.validateAddListInfo(splitInfo, originList)
       }
+      val addListInfo = PartitionUtils.getListInfo(splitInfo.mkString(","))
+      val newListInfo = partitionId match {
+        case 0 => originList ++ addListInfo
+        case _ => originList.take(index - 1) ++ addListInfo ++
+          originList.takeRight(originList.size - index)
+      }
+      partitionInfo.setListInfo(newListInfo.map(_.asJava).asJava)
+    }
+
+    if (partitionId == 0) {
+      partitionInfo.addPartition(splitInfo.size)
+    } else {
+      partitionInfo.splitPartition(index, splitInfo.size)
     }
   }
 
