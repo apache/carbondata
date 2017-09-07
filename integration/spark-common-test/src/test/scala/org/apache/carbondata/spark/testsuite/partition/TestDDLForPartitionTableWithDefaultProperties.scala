@@ -17,10 +17,12 @@
 
 package org.apache.carbondata.spark.testsuite.partition
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -110,6 +112,9 @@ class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with Befo
   }
 
   test("create partition table: list partition with date datatype") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+
     sql(
       """
         | CREATE TABLE default.listTableDate (empno int, empname String, designation String, doj Timestamp,
