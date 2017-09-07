@@ -476,7 +476,6 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
           | PARTITIONED BY (col3 INT) STORED BY 'carbondata'
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='11,12')
         """.stripMargin)
-        
        sql("ALTER TABLE test_range_int ADD PARTITION ('abc')")
     }
      assert(exception_test_range_int.getMessage
