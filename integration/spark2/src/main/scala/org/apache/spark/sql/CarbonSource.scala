@@ -17,9 +17,12 @@
 
 package org.apache.spark.sql
 
+import java.io.{BufferedWriter, FileWriter, IOException}
+import java.util
+import java.util.UUID
+
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
-
 import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.mapreduce.Job
@@ -29,6 +32,7 @@ import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.command.{CreateTable, TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.datasources.{FileFormat, OutputWriterFactory}
 import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonRelation}
+import org.apache.spark.sql.execution.command.{BucketFields, CreateTable}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.sources._
@@ -52,7 +56,9 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 class CarbonSource extends CreatableRelationProvider with RelationProvider
   with SchemaRelationProvider with DataSourceRegister with FileFormat  {
 
-  override def shortName(): String = "carbondata"
+  override def shortName(): String = {
+    "carbondata"
+  }
 
   // will be called if hive supported create table command is provided
   override def createRelation(sqlContext: SQLContext,
@@ -217,20 +223,155 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
  * by setting the output committer class in the conf of spark.sql.sources.outputCommitterClass.
  */
   def prepareWrite(
-    sparkSession: SparkSession,
-    job: Job,
-    options: Map[String, String],
-    dataSchema: StructType): OutputWriterFactory = new CarbonStreamingOutputWriterFactory()
+                    sparkSession: SparkSession,
+                    job: Job,
+                    options: Map[String, String],
+                    dataSchema: StructType): OutputWriterFactory = {
+    //    val pathExists: Boolean = options.get("path").isDefined
+    Console.println("Options : "+options)
+    Console.println("Spark session : "+ sparkSession)
+    val tablePath = options.get("path")
+    val path: String = tablePath match {
+      case Some(value) => value
+      case None => ""
+    }
+    val meta: CarbonMetastore = new CarbonMetastore(sparkSession.conf, path)
+    val schemaPath = path + "/Metadata/schema"
+    val schema: TableInfo = meta.readSchemaFile(schemaPath)
+  Console.println("Schema : "+schema)
+    Console.println("DataSchema : "+dataSchema)
+//    val isValid = validateSchema(schema, dataSchema)
+    //Console.println("Schema valid ::: " + isValid)
+//    if(isValid)
+    new CarbonStreamingOutputWriterFactory()
+ //   else
+ //     throw new InvalidSchemaException("Exception in schema validation : ")
+  }
 
-/**
- * When possible, this method should return the schema of the given `files`.  When the format
- * does not support inference, or no valid files are given should return None.  In these cases
- * Spark will require that user specify the schema manually.
- */
+  /**
+    * Validates streamed schema against existing table schema
+    * @param schema existing table schema
+    * @param dataSchema streamed schema
+    * @return true if schema validation is successful else false
+    */
+  private def validateSchema(schema: TableInfo, dataSchema: StructType): Boolean = {
+    val factTable: TableSchema = schema.getFact_table
+    import scala.collection.JavaConversions._
+    var columnnSchemaValues = factTable.getTable_columns.toList.sortBy(_.schemaOrdinal)
+    //columnnSchemaValues.sortBy(_.schemaOrdinal)
+    val dataTypeList = List[String]()
+    val columnNameList = List[String]()
+    val dataTypes = for {cn <- columnnSchemaValues
+                         data: List[String] = addToList(dataTypeList, cn.data_type.toString)
+    } yield data
+    val listOfDatatypes = dataTypes.flatten
+    val columnNames = for {cn <- columnnSchemaValues
+                           data: List[String] = addToList(columnNameList, cn.column_name)
+    } yield data
+
+    val listOfColumnNames = columnNames.flatten
+    val pairOfStoredSchema = listOfColumnNames.zip(listOfDatatypes)
+    val mapOfStoredTableSchema = pairOfStoredSchema.flatMap(element => addToMap(element, Map[String, String]())).toMap
+    Console.println("Map of stored schema ::: " + mapOfStoredTableSchema)
+
+    val StreamedSchema: StructType = dataSchema
+    val size = StreamedSchema.size
+    val StreamedDataTypeInitialList = List[String]()
+    val StreamedDataType = for {i <- 0 until size
+                                data: List[String] = addToList(StreamedDataTypeInitialList, StreamedSchema.fields(i).dataType.toString)
+    } yield data
+
+    val StreamedDataTypeList = StreamedDataType.flatten.toList
+    val parsedDatatypeList = for {list <- StreamedDataTypeList
+                                  a = parseStreamingDataType(list)} yield a
+
+    val StreamedColumnNameList = List[String]()
+    val StreamedColumnName = for {i <- 0 until size
+                                  data: List[String] = addToList(StreamedColumnNameList, StreamedSchema.fields(i).name)
+    } yield data
+
+    val StreamedColumns = StreamedColumnName.flatten.toList
+    val pairOfStreamedSchema = StreamedColumns.zip(parsedDatatypeList)
+    val mapOfStreamedSchema = pairOfStreamedSchema.flatMap(element => addToMap(element, Map[String, String]())).toMap
+    Console.println("Map of Streamed schema :::: " + mapOfStreamedSchema)
+
+    //Comparing stored table schema and streamed schema
+    val isValid = mapOfStoredTableSchema == mapOfStreamedSchema
+    isValid
+  }
+
+  /**
+    * Adds element to the list
+    * @param list1
+    * @param element
+    * @return list with added element
+    */
+  private def addToList(list1: List[String], element: String): List[String] = {
+    List(element) ::: list1
+  }
+
+  /**
+    * Adds a pair of values to the map
+    * @param pair
+    * @param map
+    * @return
+    */
+  private def addToMap(pair: (String, String), map: Map[String, String]): Map[String, String] = {
+    map + (pair._1 -> pair._2)
+  }
+
+  /**
+    * Parses streamed datatype according to carbon datatype
+    * @param dataType
+    * @return
+    */
+  def parseStreamingDataType(dataType: String): String = {
+    dataType match {
+      case "IntegerType" => DataType.INT.toString
+      case "StringType" => DataType.STRING.toString
+      case "DateType" => DataType.DATE.toString
+      case "DoubleType" => DataType.DOUBLE.toString
+      case "FloatType" => DataType.DOUBLE.toString
+      case "LongType" => DataType.LONG.toString
+      case "ShortType" => DataType.SHORT.toString
+      case "TimestampType" => DataType.TIMESTAMP.toString
+    }
+  }
+
+
+  private def validateTable(path: String): CarbonStreamingOutputWriterFactory = {
+    val tableName = path.toString.split("/").toList.reverse.head
+    val databaseName = path.toString.split("/").toList.reverse(2)
+    val absoluteTableIdentifier: AbsoluteTableIdentifier = new AbsoluteTableIdentifier(path,
+      new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString))
+    if (checkIfTableExists(absoluteTableIdentifier)) {
+      new CarbonStreamingOutputWriterFactory()
+    } else {
+      Console.print(s"/$databaseName/$tableName does not exist.")
+      throw new NoSuchTableException(databaseName, tableName)
+    }
+  }
+
+  private def checkIfTableExists(absoluteTableIdentifier: AbsoluteTableIdentifier): Boolean = {
+    val carbonTablePath: CarbonTablePath = CarbonStorePath
+      .getCarbonTablePath(absoluteTableIdentifier)
+    val schemaFilePath: String = carbonTablePath.getSchemaFilePath
+    FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL) ||
+      FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS) ||
+      FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS)
+  }
+
+  /**
+    * When possible, this method should return the schema of the given `files`.  When the format
+    * does not support inference, or no valid files are given should return None.  In these cases
+    * Spark will require that user specify the schema manually.
+    */
   def inferSchema(
-    sparkSession: SparkSession,
-    options: Map[String, String],
-    files: Seq[FileStatus]): Option[StructType] = Some(new StructType().add("value", StringType))
+                   sparkSession: SparkSession,
+                   options: Map[String, String],
+                   files: Seq[FileStatus]): Option[StructType] = {
+    Some(new StructType().add("value", StringType))
+  }
 
 }
 
