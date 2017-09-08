@@ -1091,6 +1091,26 @@ public final class CarbonCommonConstants {
   public static final String defaultValueIsPersistEnabled = "true";
 
   /**
+   * Which storage level to persist dataset when updating data
+   * with 'carbon.update.persist.enable'='true'
+   */
+  @CarbonProperty
+  public static final String CARBON_UPDATE_STORAGE_LEVEL =
+      "carbon.update.storage.level";
+
+  /**
+   * The default value(MEMORY_AND_DISK) is the same as the default storage level of Dataset.
+   * Unlike `RDD.cache()`, the default storage level is set to be `MEMORY_AND_DISK` because
+   * recomputing the in-memory columnar representation of the underlying table is expensive.
+   *
+   * if user's executor has less memory, set the CARBON_UPDATE_STORAGE_LEVEL
+   * to MEMORY_AND_DISK_SER or other storage level to correspond to different environment.
+   * You can get more recommendations about storage level in spark website:
+   * http://spark.apache.org/docs/latest/rdd-programming-guide.html#rdd-persistence.
+   */
+  public static final String CARBON_UPDATE_STORAGE_LEVEL_DEFAULT = "MEMORY_AND_DISK";
+
+  /**
    * current data file version
    */
   public static final String CARBON_DATA_FILE_DEFAULT_VERSION = "V3";

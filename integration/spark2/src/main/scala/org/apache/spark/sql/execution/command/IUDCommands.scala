@@ -175,16 +175,7 @@ private[sql] case class ProjectForUpdateCommand(
     val currentTime = CarbonUpdateUtil.readCurrentTime
     //    var dataFrame: DataFrame = null
     var dataSet: DataFrame = null
-    val isPersistEnabledUserValue = CarbonProperties.getInstance
-        .getProperty(CarbonCommonConstants.isPersistEnabled,
-          CarbonCommonConstants.defaultValueIsPersistEnabled)
-    var isPersistEnabled = CarbonCommonConstants.defaultValueIsPersistEnabled.toBoolean
-    if (isPersistEnabledUserValue.equalsIgnoreCase("false")) {
-      isPersistEnabled = false
-    }
-    else if (isPersistEnabledUserValue.equalsIgnoreCase("true")) {
-      isPersistEnabled = true
-    }
+    var isPersistEnabled = CarbonProperties.getInstance.isPersistUpdateDataset()
     try {
       lockStatus = metadataLock.lockWithRetries()
       if (lockStatus) {
@@ -199,13 +190,11 @@ private[sql] case class ProjectForUpdateCommand(
       // Get RDD.
 
       dataSet = if (isPersistEnabled) {
-        Dataset.ofRows(sparkSession, plan).persist(StorageLevel.MEMORY_AND_DISK)
-        //          DataFrame(sqlContext, plan)
-        //            .persist(StorageLevel.MEMORY_AND_DISK)
+        Dataset.ofRows(sparkSession, plan).persist(StorageLevel.fromString(
+          CarbonProperties.getInstance.getUpdateDatasetStorageLevel()))
       }
       else {
         Dataset.ofRows(sparkSession, plan)
-        //          DataFrame(sqlContext, plan)
       }
       var executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
 
