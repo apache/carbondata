@@ -101,14 +101,13 @@ class CarbondataPageSource implements ConnectorPageSource {
     if (nanoStart == 0) {
       nanoStart = System.nanoTime();
     }
-    Object vectorBatch;
     ColumnarBatch columnarBatch = null;
     int batchSize = 0;
     try {
       batchId++;
       if(vectorReader.nextKeyValue()) {
-        vectorBatch = vectorReader.getCurrentValue();
-        if(vectorBatch instanceof ColumnarBatch)
+        Object vectorBatch = vectorReader.getCurrentValue();
+        if(vectorBatch != null && vectorBatch instanceof ColumnarBatch)
         {
           columnarBatch = (ColumnarBatch) vectorBatch;
           batchSize = columnarBatch.numRows();
@@ -120,6 +119,9 @@ class CarbondataPageSource implements ConnectorPageSource {
 
       } else {
         close();
+        return null;
+      }
+      if (columnarBatch == null) {
         return null;
       }
 

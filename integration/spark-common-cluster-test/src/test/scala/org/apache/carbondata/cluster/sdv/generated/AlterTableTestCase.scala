@@ -470,8 +470,8 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""insert into test1 select 'xx',1.2""").collect
    sql(s"""alter table test1 change price price decimal(10,7)""").collect
    sql(s"""insert into test1 select 'xx2',999.9999999""").collect
-    checkAnswer(s"""select name,price from test1 where price = 999.9999999""",
-      Seq(Row("xx2",999.9999999)), "AlterTableTestCase_AlterData_001_02")
+    checkAnswer(s"""select name from test1 where price = 999.9999999""",
+      Seq(Row("xx2")), "AlterTableTestCase_AlterData_001_02")
      sql(s"""drop table if exists test1""").collect
   }
 

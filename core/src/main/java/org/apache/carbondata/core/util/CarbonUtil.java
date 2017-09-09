@@ -1452,9 +1452,9 @@ public final class CarbonUtil {
         valueEncoderMeta.setUniqueValue(buffer.getDouble());
         break;
       case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
-        valueEncoderMeta.setMaxValue(0.0);
-        valueEncoderMeta.setMinValue(0.0);
-        valueEncoderMeta.setUniqueValue(0.0);
+        valueEncoderMeta.setMaxValue(BigDecimal.valueOf(Long.MAX_VALUE));
+        valueEncoderMeta.setMinValue(BigDecimal.valueOf(Long.MIN_VALUE));
+        valueEncoderMeta.setUniqueValue(BigDecimal.valueOf(Long.MIN_VALUE));
         break;
       case CarbonCommonConstants.BIG_INT_MEASURE:
         valueEncoderMeta.setMaxValue(buffer.getLong());
