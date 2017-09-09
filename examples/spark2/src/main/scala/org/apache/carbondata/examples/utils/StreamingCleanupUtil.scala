@@ -15,40 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.spark.util
+package org.apache.carbondata.examples.utils
 
 import java.io.IOException
+
 import scala.tools.nsc.io.Path
 
-
+// scalastyle:off println
 object StreamingCleanupUtil {
 
   def main(args: Array[String]): Unit = {
 
     if (args.length < 1) {
-      System.err.println("Usage: StreamingCleanupUtil <csvDir> [checkpointLocation]...")
+      System.err.println("Usage: StreamingCleanupUtil <dirPath> [dirpath]...")
       System.exit(1)
     }
     var i = 0
-  //  def printStrings( args:String* ) = {
-  //    var i : Int = 0;
-
-  //    for( arg <- args ){
-  //      println("Arg value[" + i + "] = " + arg );
-  //      i = i + 1;
-  //    }
-  //  }
-
     while (i < args.length) {
-
       try {
         val path: Path = Path(args(i))
         path.deleteRecursively()
       } catch {
         case ioe: IOException => println("IO Exception while deleting files recursively" + ioe)
       }
-
-      i = i + 1
     }
   }
 }
+// scalastyle:on println

@@ -23,7 +23,6 @@ import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.commons.lang.RandomStringUtils
-import org.apache.spark.util.StreamingCleanupUtil
 
 /**
   * Write data received from the network into carbondata file.
