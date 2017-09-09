@@ -143,7 +143,6 @@
           </environmentVariables>
           <systemProperties>
             <java.awt.headless>true</java.awt.headless>
-            <user.timezone>GMT</user.timezone>
             <spark.master.url>${spark.master.url}</spark.master.url>
             <hdfs.url>${hdfs.url}</hdfs.url>
           </systemProperties>
