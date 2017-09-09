@@ -95,7 +95,9 @@ public class DecimalSliceStreamReader  extends AbstractStreamReader {
         }
       }
     }
-
+    if (builder == null) {
+      return null;
+    }
     return builder.build();
   }
 

@@ -49,7 +49,6 @@ public class CarbondataRecordSet implements RecordSet {
   private QueryExecutor queryExecutor;
 
   private CarbonDictionaryDecodeReadSupport readSupport;
-  private TaskAttemptContext taskAttemptContext;
 
   public CarbondataRecordSet(CarbonTable carbonTable, ConnectorSession session,
       ConnectorSplit split, List<CarbondataColumnHandle> columns, QueryModel queryModel,
@@ -58,7 +57,6 @@ public class CarbondataRecordSet implements RecordSet {
     this.queryModel = queryModel;
     this.columns = columns;
     this.readSupport = new CarbonDictionaryDecodeReadSupport();
-    this.taskAttemptContext = taskAttemptContext;
   }
 
   @Override public List<Type> getColumnTypes() {

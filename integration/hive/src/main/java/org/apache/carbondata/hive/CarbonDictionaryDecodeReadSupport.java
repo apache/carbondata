@@ -230,7 +230,7 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       case SHORT:
         return new ShortWritable((Short) obj);
       case DATE:
-        return new DateWritable(new Date((Integer) obj));
+        return new DateWritable(new Date(((Integer) obj).longValue()));
       case TIMESTAMP:
         return new TimestampWritable(new Timestamp((long) obj / 1000));
       case STRING:

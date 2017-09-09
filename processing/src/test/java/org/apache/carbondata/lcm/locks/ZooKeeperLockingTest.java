@@ -28,6 +28,7 @@ import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -78,7 +79,7 @@ public class ZooKeeperLockingTest {
   @After public void tearDown() throws Exception {
   }
 
-  @Test public void testZooKeeperLockingByTryingToAcquire2Locks()
+  @Ignore public void testZooKeeperLockingByTryingToAcquire2Locks()
       throws IllegalArgumentException, IllegalAccessException, NoSuchFieldException,
       SecurityException {
 
