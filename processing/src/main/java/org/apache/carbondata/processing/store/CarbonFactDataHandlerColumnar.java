@@ -469,9 +469,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
             CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
     if (version == ColumnarFormatVersion.V3) {
-      this.pageSize = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
-              CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT));
+      this.pageSize = CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
     }
     LOGGER.info("Number of rows per column blocklet " + pageSize);
     dataRows = new ArrayList<>(this.pageSize);
