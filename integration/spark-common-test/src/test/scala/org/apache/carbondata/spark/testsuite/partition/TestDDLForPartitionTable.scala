@@ -197,7 +197,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_int.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_int.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_small")
     val exception_test_list_small: Exception = intercept[Exception] {
@@ -208,7 +208,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_small.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_small.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_float")
     val exception_test_list_float: Exception = intercept[Exception] {
@@ -219,7 +219,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_float.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_float.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_double")
     val exception_test_list_double: Exception = intercept[Exception] {
@@ -230,7 +230,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_double.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_double.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_bigint")
     val exception_test_list_bigint: Exception = intercept[Exception] {
@@ -241,7 +241,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_bigint.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_bigint.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_date")
     val exception_test_list_date: Exception = intercept[Exception] {
@@ -252,7 +252,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_date.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_date.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_timestamp")
     val exception_test_list_timestamp: Exception = intercept[Exception] {
@@ -263,7 +263,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_list_timestamp.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_timestamp.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_list_decimal")
     val exception_test_list_decimal: Exception = intercept[Exception] {
@@ -274,7 +274,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='23.23111,2.32')
         """.stripMargin)
     }
-    assert(exception_test_list_decimal.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_list_decimal.getMessage.contains("Invalid Partition Values"))
   }
 
   test("test exception when values in range_info can not match partition column type") {
@@ -287,7 +287,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_int.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_int.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_smallint")
     val exception_test_range_smallint: Exception = intercept[Exception] {
@@ -298,7 +298,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_smallint.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_smallint.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_float")
     val exception_test_range_float: Exception = intercept[Exception] {
@@ -309,7 +309,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_float.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_float.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_double")
     val exception_test_range_double: Exception = intercept[Exception] {
@@ -320,7 +320,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_double.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_double.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_bigint")
     val exception_test_range_bigint: Exception = intercept[Exception] {
@@ -331,7 +331,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_bigint.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_bigint.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_date")
     val exception_test_range_date: Exception = intercept[Exception] {
@@ -342,7 +342,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_date.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_date.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_timestamp")
     val exception_test_range_timestamp: Exception = intercept[Exception] {
@@ -353,7 +353,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_timestamp.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_timestamp.getMessage.contains("Invalid Partition Values"))
 
     sql("DROP TABLE IF EXISTS test_range_decimal")
     val exception_test_range_decimal: Exception = intercept[Exception] {
@@ -364,7 +364,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
           | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='abc,def')
         """.stripMargin)
     }
-    assert(exception_test_range_decimal.getMessage.contains("Invalid partition definition"))
+    assert(exception_test_range_decimal.getMessage.contains("Invalid Partition Values"))
   }
 
   override def afterAll = {
