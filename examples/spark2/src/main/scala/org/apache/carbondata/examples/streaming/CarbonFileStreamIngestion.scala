@@ -22,6 +22,7 @@ import java.io.File
 import org.apache.spark.sql.{SaveMode, SparkSession}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.examples.utils.StreamingCleanupUtil
 import org.apache.commons.lang.RandomStringUtils
 
 object CarbonDataFileStreamingExample {
