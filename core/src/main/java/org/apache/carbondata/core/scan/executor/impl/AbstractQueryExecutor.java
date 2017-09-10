@@ -128,11 +128,19 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
 
     if (queryModel.getTableBlockInfos().get(0).getDetailInfo() != null) {
       List<AbstractIndex> indexList = new ArrayList<>();
-      indexList.add(new IndexWrapper(queryModel.getTableBlockInfos()));
+      Map<String, List<TableBlockInfo>> listMap = new LinkedHashMap<>();
+      for (TableBlockInfo blockInfo: queryModel.getTableBlockInfos()) {
+        List<TableBlockInfo> tableBlockInfos = listMap.get(blockInfo.getFilePath());
+        if (tableBlockInfos == null) {
+          tableBlockInfos = new ArrayList<>();
+          listMap.put(blockInfo.getFilePath(), tableBlockInfos);
+        }
+        tableBlockInfos.add(blockInfo);
+      }
+      for (List<TableBlockInfo> tableBlockInfos: listMap.values()) {
+        indexList.add(new IndexWrapper(tableBlockInfos));
+      }
       queryProperties.dataBlocks = indexList;
-      queryStatistic
-          .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
-      queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     } else {
       // get the table blocks
       CacheProvider cacheProvider = CacheProvider.getInstance();
@@ -147,10 +155,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
               queryModel.getAbsoluteTableIdentifier());
       cache.removeTableBlocksIfHorizontalCompactionDone(queryModel);
       queryProperties.dataBlocks = cache.getAll(tableBlockUniqueIdentifiers);
-      queryStatistic
-          .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
-      queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     }
+    queryStatistic
+        .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
+    queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     // calculating the total number of aggeragted columns
     int aggTypeCount = queryModel.getQueryMeasures().size();
 

@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat
 import java.util.{ArrayList, Date, List}
 
 import scala.collection.JavaConverters._
+import scala.util.Random
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce._
@@ -54,7 +55,7 @@ class CarbonScanRDD(
     columnProjection: CarbonProjection,
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
-    serializedTableInfo: Array[Byte],
+    @transient serializedTableInfo: Array[Byte],
     @transient tableInfo: TableInfo, inputMetricsStats: InitInputMetrics)
   extends CarbonRDDWithTableInfo[InternalRow](sc, Nil, serializedTableInfo) {
 
@@ -147,13 +148,30 @@ class CarbonScanRDD(
         }
         noOfNodes = nodeBlockMapping.size
       } else {
-        splits.asScala.zipWithIndex.foreach { splitWithIndex =>
-          val multiBlockSplit =
-            new CarbonMultiBlockSplit(identifier,
-              Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
-              splitWithIndex._1.getLocations)
-          val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
-          result.add(partition)
+        if (CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_USE_BLOCKLET_DISTRIBUTION,
+            CarbonCommonConstants.CARBON_USE_BLOCKLET_DISTRIBUTION_DEFAULT).toBoolean) {
+          // Use blocklet distribution
+          // Randomize the blocklets for better shuffling
+          Random.shuffle(splits.asScala).zipWithIndex.foreach { splitWithIndex =>
+            val multiBlockSplit =
+              new CarbonMultiBlockSplit(identifier,
+                Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
+                splitWithIndex._1.getLocations)
+            val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
+            result.add(partition)
+          }
+        } else {
+          // Use block distribution
+          splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).
+            groupBy(f => f.getBlockPath).values.zipWithIndex.foreach { splitWithIndex =>
+            val multiBlockSplit =
+              new CarbonMultiBlockSplit(identifier,
+                splitWithIndex._1.asJava,
+                splitWithIndex._1.flatMap(f => f.getLocations).distinct.toArray)
+            val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
+            result.add(partition)
+          }
         }
       }
 
@@ -176,7 +194,7 @@ class CarbonScanRDD(
   }
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
-
+    val queryStartTime = System.currentTimeMillis
     val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
     if (null == carbonPropertiesFilePath) {
       System.setProperty("carbon.properties.filepath",
@@ -209,16 +227,15 @@ class CarbonScanRDD(
       }
 
       reader.initialize(inputSplit, attemptContext)
-      val queryStartTime = System.currentTimeMillis
 
       new Iterator[Any] {
         private var havePair = false
         private var finished = false
 
         context.addTaskCompletionListener { context =>
-          logStatistics(queryStartTime, model.getStatisticsRecorder)
           reader.close()
-        close()
+          close()
+          logStatistics(queryStartTime, model.getStatisticsRecorder)
         }
 
         override def hasNext: Boolean = {
@@ -288,6 +305,8 @@ class CarbonScanRDD(
     queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
       System.currentTimeMillis - queryStartTime)
     recorder.recordStatistics(queryStatistic)
+    // print executor query statistics for each task_id
+    recorder.logStatisticsAsTableExecutor()
   }
 
   /**
