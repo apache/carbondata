@@ -20,38 +20,38 @@ package org.apache.carbondata.examples
 import java.io.File
 
 import org.apache.spark.sql.{SaveMode, SparkSession}
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.utils.StreamingCleanupUtil
-import org.apache.commons.lang.RandomStringUtils
 
 /**
-  * Write data received from the network into carbondata file.
-  *
-  * Usage: CarbonNetworkStreamingExample <hostname> <port>
-  * <hostname> and <port> describe the TCP server that Structured Streaming
-  * would connect to receive data.
-  *
-  * To run this on your local machine, you need to first run a Netcat server
-  *    `$ nc -lk 9876`
-  * and then run the example
-  *    `$ bin/run-example sql.streaming.CarbondataNetworkStreamingExample
-  *    localhost 9876`
-  */
+ * Write data received from the network into carbondata file.
+ *
+ * Usage: CarbonNetworkStreamingExample <hostname> <port>
+ * <hostname> and <port> describe the TCP server that Structured Streaming
+ * would connect to receive data.
+ *
+ * To run this on your local machine, you need to first run a Netcat server
+ * `$ nc -lk 9999` and input data
+ * and then run the example with program arguments as "localhost 9999"
+ */
+
+// scalastyle:off println
 object CarbonDataNetworkStreamingExample {
 
   def main(args: Array[String]) {
-
-    // get host and port number
-    val host = args(0)
-    val port = args(1).toInt
 
     if (args.length < 2) {
       System.err.println("Usage: CarbonNetworkStreamingIngestion <hostname> <port>")
       System.exit(1)
     }
 
-    //setup paths
+    // get host and port number
+    val host = args(0)
+    val port = args(1).toInt
+
+    // setup paths
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
@@ -64,13 +64,13 @@ object CarbonDataNetworkStreamingExample {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
-    //cleanup any residual files
+    // cleanup any residual files
     StreamingCleanupUtil.main(Array(ckptLocation))
 
     import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
       .builder()
-      .master("local")
+      .master("local[2]")
       .appName("CarbonNetworkStreamingExample")
       .config("spark.sql.warehouse.dir", warehouse)
       .getOrCreateCarbonSession(storeLocation, metastoredb)
@@ -80,7 +80,7 @@ object CarbonDataNetworkStreamingExample {
     // Writes Dataframe to CarbonData file:
     import spark.implicits._
 
-    //Generate random data
+    // Generate random data
     val dataDF = spark.sparkContext.parallelize(1 to 10)
       .map(id => (id, "name_ABC", "city_XYZ", 10000*id)).
       toDF("id", "name", "city", "salary")
@@ -107,16 +107,16 @@ object CarbonDataNetworkStreamingExample {
       .option("port", port)
       .load()
 
-    //Write from socket stream to carbondata file
+    // Write from socket stream to carbondata file
     val qry = readSocketDF.writeStream
       .format("carbondata")
       .option("checkpointLocation", ckptLocation)
       .option("path", streamTablePath)
       .start()
 
-    // stop streaming query after 5 sec delay
-    //Thread.sleep(5000)
-    qry.awaitTermination()
+    // stop streaming query after 10 sec delay
+    Thread.sleep(10000)
+    qry.stop()
 
     // verify streaming data is added into the table
     spark.sql(s""" SELECT * FROM ${streamTableName} """).show()
@@ -126,3 +126,4 @@ object CarbonDataNetworkStreamingExample {
     spark.sql(s"DROP TABLE IF EXISTS ${streamTableName}")
   }
 }
+// scalastyle:on println

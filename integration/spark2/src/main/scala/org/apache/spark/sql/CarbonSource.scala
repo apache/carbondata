@@ -18,14 +18,15 @@
 package org.apache.spark.sql
 
 import java.io.{BufferedWriter, FileWriter, IOException}
-import java.util
 import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.language.implicitConversions
+
 import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.fs.{FileStatus, Path}
 import org.apache.hadoop.mapreduce.Job
+import org.apache.parquet.schema.InvalidSchemaException
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
@@ -40,11 +41,13 @@ import org.apache.spark.sql.streaming.CarbonStreamingOutputWriterFactory
 import org.apache.spark.sql.types.{StringType, StructType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.format.{DataType, TableInfo, TableSchema}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -228,37 +231,38 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
                     options: Map[String, String],
                     dataSchema: StructType): OutputWriterFactory = {
     //    val pathExists: Boolean = options.get("path").isDefined
-    Console.println("Options : "+options)
-    Console.println("Spark session : "+ sparkSession)
-    val tablePath = options.get("path")
-    val path: String = tablePath match {
-      case Some(value) => value
-      case None => ""
+    if (!(dataSchema.size.equals(1) &&
+      dataSchema.fields(0).dataType.equals(StringType))) {
+      val tablePath = options.get("path")
+      val path: String = tablePath match {
+        case Some(value) => value
+        case None => ""
+      }
+
+      val meta: CarbonMetastore = new CarbonMetastore(sparkSession.conf, path)
+      val schemaPath = path + "/Metadata/schema"
+      val schema: TableInfo = meta.readSchemaFile(schemaPath)
+      val isValid = validateSchema(schema, dataSchema)
+
+      if(!isValid) {
+        throw new InvalidSchemaException("Exception in schema validation : ")
+      }
     }
-    val meta: CarbonMetastore = new CarbonMetastore(sparkSession.conf, path)
-    val schemaPath = path + "/Metadata/schema"
-    val schema: TableInfo = meta.readSchemaFile(schemaPath)
-  Console.println("Schema : "+schema)
-    Console.println("DataSchema : "+dataSchema)
-//    val isValid = validateSchema(schema, dataSchema)
-    //Console.println("Schema valid ::: " + isValid)
-//    if(isValid)
     new CarbonStreamingOutputWriterFactory()
- //   else
- //     throw new InvalidSchemaException("Exception in schema validation : ")
   }
 
   /**
-    * Validates streamed schema against existing table schema
-    * @param schema existing table schema
-    * @param dataSchema streamed schema
-    * @return true if schema validation is successful else false
-    */
+   * Validates streamed schema against existing table schema
+   * @param schema existing table schema
+   * @param dataSchema streamed schema
+   * @return true if schema validation is successful else false
+   */
   private def validateSchema(schema: TableInfo, dataSchema: StructType): Boolean = {
     val factTable: TableSchema = schema.getFact_table
-    import scala.collection.JavaConversions._
-    var columnnSchemaValues = factTable.getTable_columns.toList.sortBy(_.schemaOrdinal)
-    //columnnSchemaValues.sortBy(_.schemaOrdinal)
+    import scala.collection.JavaConverters._
+    var columnnSchemaValues = factTable.getTable_columns.asScala.sortBy(_.schemaOrdinal)
+    //  toList.sortBy(_.schemaOrdinal)
+    // columnnSchemaValues.sortBy(_.schemaOrdinal)
     val dataTypeList = List[String]()
     val columnNameList = List[String]()
     val dataTypes = for {cn <- columnnSchemaValues
@@ -271,14 +275,17 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
     val listOfColumnNames = columnNames.flatten
     val pairOfStoredSchema = listOfColumnNames.zip(listOfDatatypes)
-    val mapOfStoredTableSchema = pairOfStoredSchema.flatMap(element => addToMap(element, Map[String, String]())).toMap
-    Console.println("Map of stored schema ::: " + mapOfStoredTableSchema)
+    val mapOfStoredTableSchema = pairOfStoredSchema
+      .flatMap(element => addToMap(element, Map[String, String]())).toMap
+    // Console.println("Map of stored schema ::: " + mapOfStoredTableSchema)
 
     val StreamedSchema: StructType = dataSchema
     val size = StreamedSchema.size
     val StreamedDataTypeInitialList = List[String]()
-    val StreamedDataType = for {i <- 0 until size
-                                data: List[String] = addToList(StreamedDataTypeInitialList, StreamedSchema.fields(i).dataType.toString)
+    val StreamedDataType =
+      for {i <- 0 until size
+           data: List[String] =
+           addToList(StreamedDataTypeInitialList, StreamedSchema.fields(i).dataType.toString)
     } yield data
 
     val StreamedDataTypeList = StreamedDataType.flatten.toList
@@ -286,45 +293,48 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
                                   a = parseStreamingDataType(list)} yield a
 
     val StreamedColumnNameList = List[String]()
-    val StreamedColumnName = for {i <- 0 until size
-                                  data: List[String] = addToList(StreamedColumnNameList, StreamedSchema.fields(i).name)
+    val StreamedColumnName =
+      for {i <- 0 until size
+           data: List[String] =
+           addToList(StreamedColumnNameList, StreamedSchema.fields(i).name)
     } yield data
 
     val StreamedColumns = StreamedColumnName.flatten.toList
     val pairOfStreamedSchema = StreamedColumns.zip(parsedDatatypeList)
-    val mapOfStreamedSchema = pairOfStreamedSchema.flatMap(element => addToMap(element, Map[String, String]())).toMap
-    Console.println("Map of Streamed schema :::: " + mapOfStreamedSchema)
+    val mapOfStreamedSchema = pairOfStreamedSchema
+      .flatMap(element => addToMap(element, Map[String, String]())).toMap
+//    Console.println("Map of Streamed schema :::: " + mapOfStreamedSchema)
 
-    //Comparing stored table schema and streamed schema
+    // Comparing stored table schema and streamed schema
     val isValid = mapOfStoredTableSchema == mapOfStreamedSchema
     isValid
   }
 
   /**
-    * Adds element to the list
-    * @param list1
-    * @param element
-    * @return list with added element
-    */
+   * Adds element to the list
+   * @param list1
+   * @param element
+   * @return list with added element
+   */
   private def addToList(list1: List[String], element: String): List[String] = {
     List(element) ::: list1
   }
 
   /**
-    * Adds a pair of values to the map
-    * @param pair
-    * @param map
-    * @return
-    */
+   * Adds a pair of values to the map
+   * @param pair
+   * @param map
+   * @return
+   */
   private def addToMap(pair: (String, String), map: Map[String, String]): Map[String, String] = {
     map + (pair._1 -> pair._2)
   }
 
   /**
-    * Parses streamed datatype according to carbon datatype
-    * @param dataType
-    * @return
-    */
+   * Parses streamed datatype according to carbon datatype
+   * @param dataType
+   * @return
+   */
   def parseStreamingDataType(dataType: String): String = {
     dataType match {
       case "IntegerType" => DataType.INT.toString
@@ -347,7 +357,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     if (checkIfTableExists(absoluteTableIdentifier)) {
       new CarbonStreamingOutputWriterFactory()
     } else {
-      Console.print(s"/$databaseName/$tableName does not exist.")
+      // Console.print(s"/$databaseName/$tableName does not exist.")
       throw new NoSuchTableException(databaseName, tableName)
     }
   }
@@ -362,10 +372,10 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
   }
 
   /**
-    * When possible, this method should return the schema of the given `files`.  When the format
-    * does not support inference, or no valid files are given should return None.  In these cases
-    * Spark will require that user specify the schema manually.
-    */
+   * When possible, this method should return the schema of the given `files`.  When the format
+   * does not support inference, or no valid files are given should return None.  In these cases
+   * Spark will require that user specify the schema manually.
+   */
   def inferSchema(
                    sparkSession: SparkSession,
                    options: Map[String, String],

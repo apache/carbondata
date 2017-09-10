@@ -38,6 +38,7 @@ object StreamingCleanupUtil {
       } catch {
         case ioe: IOException => println("IO Exception while deleting files recursively" + ioe)
       }
+      i = i + 1
     }
   }
 }
