@@ -63,14 +63,17 @@ public class DimensionChunkStoreFactory {
       boolean isInvertedIndex, int numberOfRows, long totalSize, DimensionStoreType storeType) {
 
     if (isUnsafe) {
-      if (storeType == DimensionStoreType.FIXEDLENGTH) {
-        return new UnsafeFixedLengthDimensionDataChunkStore(totalSize, columnValueSize,
-            isInvertedIndex, numberOfRows);
-      } else {
-        return new UnsafeVariableLengthDimesionDataChunkStore(totalSize, isInvertedIndex,
-            numberOfRows);
+      try {
+        if (storeType == DimensionStoreType.FIXEDLENGTH) {
+          return new UnsafeFixedLengthDimensionDataChunkStore(totalSize, columnValueSize,
+              isInvertedIndex, numberOfRows);
+        } else {
+          return new UnsafeVariableLengthDimesionDataChunkStore(totalSize, isInvertedIndex,
+              numberOfRows);
+        }
+      } catch (Exception e) {
+        throw new RuntimeException(e);
       }
-
     } else {
       if (storeType == DimensionStoreType.FIXEDLENGTH) {
         return new SafeFixedLengthDimensionDataChunkStore(isInvertedIndex, columnValueSize);

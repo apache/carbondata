@@ -20,9 +20,11 @@ package org.apache.carbondata.core.datastore.chunk.store.impl.unsafe;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
-import org.apache.carbondata.core.memory.MemoryAllocatorFactory;
 import org.apache.carbondata.core.memory.MemoryBlock;
+import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 /**
  * Responsibility is to store dimension data in memory. storage can be on heap
@@ -60,6 +62,8 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    */
   protected boolean isMemoryOccupied;
 
+  private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+
   /**
    * Constructor
    *
@@ -68,10 +72,9 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
    * @param numberOfRows   total number of rows
    */
   public UnsafeAbstractDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
-      int numberOfRows) {
+      int numberOfRows) throws MemoryException {
     // allocating the data page
-    this.dataPageMemoryBlock =
-        MemoryAllocatorFactory.INSATANCE.getMemoryAllocator().allocate(totalSize);
+    this.dataPageMemoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, totalSize);
     this.isExplicitSorted = isInvertedIdex;
   }
 
@@ -116,7 +119,7 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
       return;
     }
     // free data page memory
-    MemoryAllocatorFactory.INSATANCE.getMemoryAllocator().free(dataPageMemoryBlock);
+    UnsafeMemoryManager.INSTANCE.freeMemory(taskId, dataPageMemoryBlock);
     isMemoryReleased = true;
     this.dataPageMemoryBlock = null;
     this.isMemoryOccupied = false;

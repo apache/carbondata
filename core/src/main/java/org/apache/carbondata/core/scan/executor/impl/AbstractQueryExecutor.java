@@ -128,19 +128,11 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
 
     if (queryModel.getTableBlockInfos().get(0).getDetailInfo() != null) {
       List<AbstractIndex> indexList = new ArrayList<>();
-      Map<String, List<TableBlockInfo>> listMap = new LinkedHashMap<>();
-      for (TableBlockInfo blockInfo: queryModel.getTableBlockInfos()) {
-        List<TableBlockInfo> tableBlockInfos = listMap.get(blockInfo.getFilePath());
-        if (tableBlockInfos == null) {
-          tableBlockInfos = new ArrayList<>();
-          listMap.put(blockInfo.getFilePath(), tableBlockInfos);
-        }
-        tableBlockInfos.add(blockInfo);
-      }
-      for (List<TableBlockInfo> tableBlockInfos: listMap.values()) {
-        indexList.add(new IndexWrapper(tableBlockInfos));
-      }
+      indexList.add(new IndexWrapper(queryModel.getTableBlockInfos()));
       queryProperties.dataBlocks = indexList;
+      queryStatistic
+          .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
+      queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     } else {
       // get the table blocks
       CacheProvider cacheProvider = CacheProvider.getInstance();
