@@ -59,7 +59,7 @@ public class CarbonDictionaryDecodeReadSupportTest {
   private static ColumnSchema columnSchemas[] = new ColumnSchema[12];
   private CarbonDictionaryDecodeReadSupport carbonDictionaryDecodeReadSupportObj =
       new CarbonDictionaryDecodeReadSupport();
-  private static AbsoluteTableIdentifier absoluteTableIdentifier;
+  private static AbsoluteTableIdentifier mockAbsoluteTableIdentifier;
   private Dictionary dictionary = new ColumnDictionaryInfo(DataType.BOOLEAN);
   private String name[] = new String[] { "FirstName", "LastName" };
   private Object objects[];
@@ -87,9 +87,9 @@ public class CarbonDictionaryDecodeReadSupportTest {
       carbonColumnsArray[i] = new CarbonDimension(columnSchemas[i], 10, 20, 30, 40);
     }
 
-    absoluteTableIdentifier = new AbsoluteTableIdentifier(
-        "/incubator-carbondata/examples/spark2/target/store",
-        new CarbonTableIdentifier("default", "t5", "TBLID"));
+    mockAbsoluteTableIdentifier =
+        new AbsoluteTableIdentifier("/carbondata/integration/hive/target/store",
+            new CarbonTableIdentifier("default", "t5", "TBLID"));
 
     new MockUp<AbstractColumnDictionaryInfo>() {
       @Mock public String getDictionaryValueForKey(int surrogateKey) {
@@ -122,7 +122,7 @@ public class CarbonDictionaryDecodeReadSupportTest {
       }
     };
 
-    carbonDictionaryDecodeReadSupportObj.initialize(carbonColumnsArray, absoluteTableIdentifier);
+    carbonDictionaryDecodeReadSupportObj.initialize(carbonColumnsArray, mockAbsoluteTableIdentifier);
     Assert.assertEquals(carbonDictionaryDecodeReadSupportObj.carbonColumns.length,
         carbonColumnsArray.length);
   }
@@ -142,7 +142,7 @@ public class CarbonDictionaryDecodeReadSupportTest {
       }
     }
     objects = new Object[] { null };
-    carbonDictionaryDecodeReadSupportObj.initialize(carbonColumns, absoluteTableIdentifier);
+    carbonDictionaryDecodeReadSupportObj.initialize(carbonColumns, mockAbsoluteTableIdentifier);
     carbonDictionaryDecodeReadSupportObj.readRow(objects);
     Assert.assertEquals(carbonDictionaryDecodeReadSupportObj.writableArr[0], objects[0]);
   }
@@ -163,7 +163,7 @@ public class CarbonDictionaryDecodeReadSupportTest {
     }
     objects = new Object[] { 1 };
     try {
-      carbonDictionaryDecodeReadSupportObj.initialize(carbonColumns, absoluteTableIdentifier);
+      carbonDictionaryDecodeReadSupportObj.initialize(carbonColumns, mockAbsoluteTableIdentifier);
       carbonDictionaryDecodeReadSupportObj.readRow(objects);
       Assert.assertTrue(false);
     } catch (IOException | RuntimeException ex) {
@@ -190,7 +190,7 @@ public class CarbonDictionaryDecodeReadSupportTest {
     }
     objects = new Object[] { 0, 1, 0, 1.23, 12L, (short) 1, 3, 4L, 1.23 };
     carbonDictionaryDecodeReadSupportObj
-        .initialize(primitiveCarbonColumns, absoluteTableIdentifier);
+        .initialize(primitiveCarbonColumns, mockAbsoluteTableIdentifier);
     carbonDictionaryDecodeReadSupportObj.readRow(objects);
     Assert.assertEquals(carbonDictionaryDecodeReadSupportObj.writableArr[1].toString(), "China");
   }
@@ -230,7 +230,8 @@ public class CarbonDictionaryDecodeReadSupportTest {
         return list;
       }
     };
-    carbonDictionaryDecodeReadSupportObj.initialize(structCarbonColumns, absoluteTableIdentifier);
+    carbonDictionaryDecodeReadSupportObj.initialize(structCarbonColumns,
+        mockAbsoluteTableIdentifier);
     carbonDictionaryDecodeReadSupportObj.readRow(objects);
     Assert.assertEquals(carbonDictionaryDecodeReadSupportObj.writableArr[0].getClass(),
         ArrayWritable.class);
@@ -252,7 +253,8 @@ public class CarbonDictionaryDecodeReadSupportTest {
     }
     objects = new Object[] { "" };
     try {
-      carbonDictionaryDecodeReadSupportObj.initialize(structCarbonColumns, absoluteTableIdentifier);
+      carbonDictionaryDecodeReadSupportObj.initialize(structCarbonColumns,
+          mockAbsoluteTableIdentifier);
       carbonDictionaryDecodeReadSupportObj.readRow(objects);
       Assert.assertTrue(false);
     } catch (IOException | RuntimeException ex) {
@@ -296,7 +298,7 @@ public class CarbonDictionaryDecodeReadSupportTest {
         return list;
       }
     };
-    carbonDictionaryDecodeReadSupportObj.initialize(arrayCarbonColumns, absoluteTableIdentifier);
+    carbonDictionaryDecodeReadSupportObj.initialize(arrayCarbonColumns, mockAbsoluteTableIdentifier);
     carbonDictionaryDecodeReadSupportObj.readRow(objects);
     Assert.assertEquals(carbonDictionaryDecodeReadSupportObj.writableArr[0].getClass(),
         ArrayWritable.class);
@@ -317,7 +319,7 @@ public class CarbonDictionaryDecodeReadSupportTest {
     }
     objects = new Object[] { new ArrayType() };
 
-    carbonDictionaryDecodeReadSupportObj.initialize(arrayCarbonColumns, absoluteTableIdentifier);
+    carbonDictionaryDecodeReadSupportObj.initialize(arrayCarbonColumns, mockAbsoluteTableIdentifier);
     carbonDictionaryDecodeReadSupportObj.readRow(objects);
     Assert.assertEquals(carbonDictionaryDecodeReadSupportObj.writableArr[0], null);
   }
