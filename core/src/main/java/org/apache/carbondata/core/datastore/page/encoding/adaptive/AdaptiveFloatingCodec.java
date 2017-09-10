@@ -18,7 +18,6 @@
 package org.apache.carbondata.core.datastore.page.encoding.adaptive;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -45,7 +44,7 @@ import org.apache.carbondata.format.Encoding;
 public class AdaptiveFloatingCodec extends AdaptiveCodec {
 
   private ColumnPage encodedPage;
-  private BigDecimal factor;
+  private Double factor;
 
   public static ColumnPageCodec newInstance(DataType srcDataType, DataType targetDataType,
       SimpleStatsResult stats) {
@@ -55,7 +54,7 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
   public AdaptiveFloatingCodec(DataType srcDataType, DataType targetDataType,
       SimpleStatsResult stats) {
     super(srcDataType, targetDataType, stats);
-    this.factor = BigDecimal.valueOf(Math.pow(10, stats.getDecimalCount()));
+    this.factor = Math.pow(10, stats.getDecimalCount());
   }
 
   @Override
@@ -98,12 +97,11 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
     assert meta instanceof AdaptiveFloatingEncoderMeta;
     AdaptiveFloatingEncoderMeta codecMeta = (AdaptiveFloatingEncoderMeta) meta;
-    final Compressor compressor = CompressorFactory.getInstance().getCompressor(
-        codecMeta.getCompressorName());
+    final Compressor compressor =
+        CompressorFactory.getInstance().getCompressor(codecMeta.getCompressorName());
     final DataType targetDataType = codecMeta.getTargetDataType();
     return new ColumnPageDecoder() {
-      @Override
-      public ColumnPage decode(byte[] input, int offset, int length)
+      @Override public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
         ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
         return LazyColumnPage.newPage(page, converter);
@@ -141,24 +139,19 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
     public void encode(int rowId, float value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId,
-              BigDecimal.valueOf(value).multiply(factor).byteValue());
+          encodedPage.putByte(rowId, (byte) (value * factor));
           break;
         case SHORT:
-          encodedPage.putShort(rowId,
-              BigDecimal.valueOf(value).multiply(factor).shortValue());
+          encodedPage.putShort(rowId, (short) (value * factor));
           break;
         case SHORT_INT:
-          encodedPage.putShortInt(rowId,
-              BigDecimal.valueOf(value).multiply(factor).intValue());
+          encodedPage.putShortInt(rowId, (int) (value * factor));
           break;
         case INT:
-          encodedPage.putInt(rowId,
-              BigDecimal.valueOf(value).multiply(factor).intValue());
+          encodedPage.putInt(rowId, (int) (value * factor));
           break;
         case LONG:
-          encodedPage.putLong(rowId,
-              BigDecimal.valueOf(value).multiply(factor).longValue());
+          encodedPage.putLong(rowId, (long) (value * factor));
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
@@ -169,24 +162,19 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
     public void encode(int rowId, double value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId,
-              BigDecimal.valueOf(value).multiply(factor).byteValue());
+          encodedPage.putByte(rowId, (byte) (value * factor));
           break;
         case SHORT:
-          encodedPage.putShort(rowId,
-              BigDecimal.valueOf(value).multiply(factor).shortValue());
+          encodedPage.putShort(rowId, (short) (value * factor));
           break;
         case SHORT_INT:
-          encodedPage.putShortInt(rowId,
-              BigDecimal.valueOf(value).multiply(factor).intValue());
+          encodedPage.putShortInt(rowId, (int) (value * factor));
           break;
         case INT:
-          encodedPage.putInt(rowId,
-              BigDecimal.valueOf(value).multiply(factor).intValue());
+          encodedPage.putInt(rowId, (int) (value * factor));
           break;
         case LONG:
-          encodedPage.putLong(rowId,
-              BigDecimal.valueOf(value).multiply(factor).longValue());
+          encodedPage.putLong(rowId, (long) (value * factor));
           break;
         case DOUBLE:
           encodedPage.putDouble(rowId, value);
@@ -211,24 +199,23 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
       throw new RuntimeException("internal error: " + debugInfo());
     }
 
-    @Override
-    public double decodeDouble(byte value) {
-      return BigDecimal.valueOf(value).divide(factor).doubleValue();
+    @Override public double decodeDouble(byte value) {
+      return value / factor;
     }
 
     @Override
     public double decodeDouble(short value) {
-      return BigDecimal.valueOf(value).divide(factor).doubleValue();
+      return value / factor;
     }
 
     @Override
     public double decodeDouble(int value) {
-      return BigDecimal.valueOf(value).divide(factor).doubleValue();
+      return value / factor;
     }
 
     @Override
     public double decodeDouble(long value) {
-      return BigDecimal.valueOf(value).divide(factor).doubleValue();
+      return value / factor;
     }
 
     @Override
