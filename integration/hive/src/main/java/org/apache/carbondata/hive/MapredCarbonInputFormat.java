@@ -172,7 +172,7 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
       //verify that the columns parsed by Hive exist in the table
       for (String col : columnNames) {
         //show columns command will return these data
-        if (carbonColumnNames.contains(col)) {
+        if (carbonColumnNames.contains(col) || carbonColumnNames.contains(col.toUpperCase())) {
           projectionColumns.append(col + ",");
         }
       }
