@@ -24,26 +24,19 @@ import com.facebook.presto.spi.block.BlockBuilder;
 import com.facebook.presto.spi.block.BlockBuilderStatus;
 import com.facebook.presto.spi.type.Type;
 
-/**
- * Class for Reading the Double value and setting it in Block
- */
-public class DoubleStreamReader extends AbstractStreamReader {
+public class ShortStreamReader extends AbstractStreamReader {
 
-  public DoubleStreamReader() {
+
+  public ShortStreamReader( ) {
 
   }
 
-  /**
-   * Create the DoubleType Block
-   *
-   * @param type
-   * @return
-   * @throws IOException
-   */
-  public Block readBlock(Type type) throws IOException {
-    int numberOfRows;
-    BlockBuilder builder;
-    if (isVectorReader) {
+  public Block readBlock(Type type)
+      throws IOException
+  {
+    int numberOfRows = 0;
+    BlockBuilder builder = null;
+    if(isVectorReader) {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
@@ -54,12 +47,13 @@ public class DoubleStreamReader extends AbstractStreamReader {
           populateVector(type, numberOfRows, builder);
         }
       }
+
     } else {
       numberOfRows = streamData.length;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (streamData != null) {
-        for (int i = 0; i < numberOfRows; i++) {
-          type.writeDouble(builder, (Double) streamData[i]);
+        for(int i = 0; i < numberOfRows ; i++ ){
+          type.writeLong(builder,(Short)streamData[i]);
         }
       }
     }
@@ -72,15 +66,15 @@ public class DoubleStreamReader extends AbstractStreamReader {
       if (columnVector.isNullAt(i)) {
         builder.appendNull();
       } else {
-        type.writeDouble(builder, columnVector.getDouble(i));
+        type.writeLong(builder, (columnVector.getShort(i)));
       }
     }
   }
 
   private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
     for (int i = 0; i < numberOfRows; i++) {
-      type.writeDouble(builder, columnVector.getDouble(i));
-    }
+       type.writeLong(builder, (columnVector.getShort(i)));
+      }
   }
 
 }
