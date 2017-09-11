@@ -890,6 +890,42 @@ public final class CarbonProperties {
   }
 
   /**
+   * Return valid CARBON_UPDATE_STORAGE_LEVEL
+   * @return boolean
+   */
+  public boolean isPersistUpdateDataset() {
+    String isPersistEnabled = getProperty(CarbonCommonConstants.isPersistEnabled,
+            CarbonCommonConstants.defaultValueIsPersistEnabled);
+    boolean validatePersistEnabled = CarbonUtil.validateBoolean(isPersistEnabled);
+    if (!validatePersistEnabled) {
+      LOGGER.error("The " + CarbonCommonConstants.isPersistEnabled
+          + " configuration value is invalid. It will use default value("
+          + CarbonCommonConstants.defaultValueIsPersistEnabled
+          + ").");
+      isPersistEnabled = CarbonCommonConstants.defaultValueIsPersistEnabled;
+    }
+    return isPersistEnabled.equalsIgnoreCase("true");
+  }
+
+  /**
+   * Return valid storage level for CARBON_UPDATE_STORAGE_LEVEL
+   * @return String
+   */
+  public String getUpdateDatasetStorageLevel() {
+    String storageLevel = getProperty(CarbonCommonConstants.CARBON_UPDATE_STORAGE_LEVEL,
+        CarbonCommonConstants.CARBON_UPDATE_STORAGE_LEVEL_DEFAULT);
+    boolean validateStorageLevel = CarbonUtil.isValidStorageLevel(storageLevel);
+    if (!validateStorageLevel) {
+      LOGGER.error("The " + CarbonCommonConstants.CARBON_UPDATE_STORAGE_LEVEL
+          + " configuration value is invalid. It will use default storage level("
+          + CarbonCommonConstants.CARBON_UPDATE_STORAGE_LEVEL_DEFAULT
+          + ") to persist dataset.");
+      storageLevel = CarbonCommonConstants.CARBON_UPDATE_STORAGE_LEVEL_DEFAULT;
+    }
+    return storageLevel.toUpperCase();
+  }
+
+  /**
    * returns true if carbon property
    * @param key
    * @return
