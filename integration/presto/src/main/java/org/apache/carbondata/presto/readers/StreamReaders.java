@@ -23,6 +23,8 @@ import com.facebook.presto.spi.block.SliceArrayBlock;
 import com.facebook.presto.spi.type.DateType;
 import com.facebook.presto.spi.type.DecimalType;
 import com.facebook.presto.spi.type.IntegerType;
+import com.facebook.presto.spi.type.SmallintType;
+import com.facebook.presto.spi.type.TimestampType;
 import com.facebook.presto.spi.type.Type;
 import io.airlift.slice.Slice;
 
@@ -44,6 +46,10 @@ public final class StreamReaders {
         return new IntegerStreamReader();
       } else if (type instanceof DecimalType) {
         return new DecimalSliceStreamReader();
+      } else if (type instanceof SmallintType) {
+        return new ShortStreamReader();
+      } else if (type instanceof TimestampType) {
+        return new TimestampStreamReader();
       }
       return new LongStreamReader();
     } else if (javaType == double.class) {

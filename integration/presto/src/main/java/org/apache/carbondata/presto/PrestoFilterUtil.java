@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.presto;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
@@ -75,8 +77,8 @@ public class PrestoFilterUtil {
     else if (colType == VarcharType.VARCHAR) return DataType.STRING;
     else if (colType == DateType.DATE) return DataType.DATE;
     else if (colType == TimestampType.TIMESTAMP) return DataType.TIMESTAMP;
-    else if (colType == DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
-        carbondataColumnHandle.getScale())) return DataType.DECIMAL;
+    else if (colType.equals(DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
+        carbondataColumnHandle.getScale()))) return DataType.DECIMAL;
     else return DataType.STRING;
   }
 
@@ -104,13 +106,12 @@ public class PrestoFilterUtil {
       checkArgument(domain.getType().isOrderable(), "Domain type must be orderable");
 
       List<Object> singleValues = new ArrayList<>();
-      List<Expression> disjuncts = new ArrayList<>();
+      Map<Object, List<Expression>> valueExpressionMap = new HashMap<>();
       for (Range range : domain.getValues().getRanges().getOrderedRanges()) {
         if (range.isSingleValue()) {
           Object value = ConvertDataByType(range.getLow().getValue(), type);
           singleValues.add(value);
         } else {
-          List<Expression> rangeConjuncts = new ArrayList<>();
           if (!range.getLow().isLowerUnbounded()) {
             Object value = ConvertDataByType(range.getLow().getValue(), type);
             switch (range.getLow().getBound()) {
@@ -120,14 +121,20 @@ public class PrestoFilterUtil {
                 } else {
                   GreaterThanExpression greater = new GreaterThanExpression(colExpression,
                       new LiteralExpression(value, coltype));
-                  rangeConjuncts.add(greater);
+                  if(valueExpressionMap.get(value) == null) {
+                    valueExpressionMap.put(value, new ArrayList<>());
+                  }
+                  valueExpressionMap.get(value).add(greater);
                 }
                 break;
               case EXACTLY:
                 GreaterThanEqualToExpression greater =
                     new GreaterThanEqualToExpression(colExpression,
                         new LiteralExpression(value, coltype));
-                rangeConjuncts.add(greater);
+                if(valueExpressionMap.get(value) == null) {
+                  valueExpressionMap.put(value, new ArrayList<>());
+                }
+                valueExpressionMap.get(value).add(greater);
                 break;
               case BELOW:
                 throw new IllegalArgumentException("Low marker should never use BELOW bound");
@@ -143,18 +150,23 @@ public class PrestoFilterUtil {
               case EXACTLY:
                 LessThanEqualToExpression less = new LessThanEqualToExpression(colExpression,
                     new LiteralExpression(value, coltype));
-                rangeConjuncts.add(less);
+                if(valueExpressionMap.get(value) == null) {
+                  valueExpressionMap.put(value, new ArrayList<>());
+                }
+                valueExpressionMap.get(value).add(less);
                 break;
               case BELOW:
                 LessThanExpression less2 =
                     new LessThanExpression(colExpression, new LiteralExpression(value, coltype));
-                rangeConjuncts.add(less2);
+                if(valueExpressionMap.get(value) == null) {
+                  valueExpressionMap.put(value, new ArrayList<>());
+                }
+                valueExpressionMap.get(value).add(less2);
                 break;
               default:
                 throw new AssertionError("Unhandled bound: " + range.getHigh().getBound());
             }
           }
-          disjuncts.addAll(rangeConjuncts);
         }
       }
       if (singleValues.size() == 1) {
@@ -174,19 +186,34 @@ public class PrestoFilterUtil {
             .map((a) -> new LiteralExpression(ConvertDataByType(a, type), coltype))
             .collect(Collectors.toList());
         candidates = new ListExpression(exs);
-
         filters.add(new InExpression(colExpression, candidates));
-      } else if (disjuncts.size() > 0) {
-        if (disjuncts.size() > 1) {
-          Expression finalFilters = new OrExpression(disjuncts.get(0), disjuncts.get(1));
-          if (disjuncts.size() > 2) {
-            for (int i = 2; i < disjuncts.size(); i++) {
-              filters.add(new AndExpression(finalFilters, disjuncts.get(i)));
+      } else if (valueExpressionMap.size() > 0) {
+        List<Expression> valuefilters = new ArrayList<>();
+        Expression finalFilters = null;
+        List<Expression> expressions;
+        for (Map.Entry<Object, List<Expression>> entry : valueExpressionMap.entrySet()) {
+          expressions = valueExpressionMap.get(entry.getKey());
+          if (expressions.size() == 1) {
+            finalFilters = expressions.get(0);
+          } else if (expressions.size() >= 2) {
+            finalFilters = new OrExpression(expressions.get(0), expressions.get(1));
+            for (int i = 2; i < expressions.size(); i++) {
+              finalFilters = new OrExpression(finalFilters, expressions.get(i));
             }
-          } else {
-            filters.add(finalFilters);
           }
-        } else if (disjuncts.size() == 1) filters.add(disjuncts.get(0));
+          valuefilters.add(finalFilters);
+        }
+
+        if(valuefilters.size() == 1){
+          finalFilters = valuefilters.get(0);
+        } else if (valuefilters.size() >= 2) {
+         finalFilters = new AndExpression(valuefilters.get(0), valuefilters.get(1));
+         for (int i = 2; i < valuefilters.size() ; i++) {
+           finalFilters = new AndExpression(finalFilters, valuefilters.get(i));
+         }
+       }
+
+        filters.add(finalFilters);
       }
     }
 
@@ -196,7 +223,7 @@ public class PrestoFilterUtil {
       finalFilters = new AndExpression(tmp.get(0), tmp.get(1));
       if (tmp.size() > 2) {
         for (int i = 2; i < tmp.size(); i++) {
-          finalFilters = new OrExpression(finalFilters, tmp.get(i));
+          finalFilters = new AndExpression(finalFilters, tmp.get(i));
         }
       }
     } else if (tmp.size() == 1) finalFilters = tmp.get(0);
@@ -222,6 +249,14 @@ public class PrestoFilterUtil {
       c.add(Calendar.DAY_OF_YEAR, ((Long) rawdata).intValue());
       Date date = c.getTime();
       return date.getTime() * 1000;
+    }
+    else if (type instanceof DecimalType) {
+      if(rawdata instanceof  Double) {
+        return new BigDecimal((Double) rawdata);
+      } else if (rawdata instanceof  Long) {
+        return new BigDecimal(new BigInteger(String.valueOf(rawdata)),
+            ((DecimalType) type).getScale());
+      }
     }
 
     return rawdata;
