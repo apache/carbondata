@@ -16,6 +16,10 @@
  */
 package org.apache.carbondata.spark.testsuite.deleteTable
 
+import java.nio.file.Files
+
+import org.apache.commons.io.FileUtils
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -29,6 +33,11 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists dropTableTest1")
     sql("drop table if exists dropTableTest2")
     sql("drop table if exists dropTableTest4")
+    sql("drop table if exists dropTableTest5")
+    sql("drop table if exists dropTableTest6")
+    sql("drop table if exists dropTableTest7")
+    sql("DROP database if exists temptablecheckDB cascade")
+
     sql("drop table if exists table1")
     sql("drop table if exists table2")
 
@@ -234,12 +243,101 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("delete temporary table"){
+    val tempLocation = Files.createTempDirectory("dropTableTest5")
+    try{
+      sql(
+        s"""
+           | CREATE TEMPORARY TABLE dropTableTest5
+           | (Drop5Col1 int,Drop5Col2 string)
+           | USING PARQUET OPTIONS
+           | ('path'='$tempLocation')
+      """.stripMargin)
+      sql("DROP table dropTableTest5")
+      assert(true)
+    }
+    catch {
+      case e:Exception =>
+        System.out.println("dropTableTest5 errormessage: "+e.getMessage)
+        assert(false)
+    } finally {
+      FileUtils.deleteQuietly(tempLocation.toFile)
+    }
+  }
+
+  test("test delete temp table when a carbon table of same name exists") {
+    val tempLocation = Files.createTempDirectory("dropTableTest6")
+    sql(s"CREATE DATABASE if not exists temptablecheckDB")
+    sql("USE temptablecheckDB")
+    try {
+      sql(
+        s"""
+           | CREATE TEMPORARY TABLE dropTableTest6
+           | (Drop5Col1 int,Drop5Col2 string)
+           |  USING PARQUET
+           |  OPTIONS ('path'='$tempLocation')
+      """.stripMargin)
+      sql(
+        "CREATE TABLE dropTableTest6(Drop5Col1 String, Drop5Col2 String, Drop5Col3 int, Drop5Col4" +
+        " double) stored by" +
+        "'carbondata'")
+      sql("DROP TABLE dropTableTest6")
+      checkAnswer(sql("DESC dropTableTest6"), Seq(Row("Drop5Col1", "string", null),
+        Row("Drop5Col2", "string", null),
+        Row("Drop5Col3", "int", null),
+        Row("Drop5Col4", "double", null)))
+      sql("DROP TABLE dropTableTest6")
+    } catch {
+      case e:Exception =>
+        System.out.println("dropTableTest6 errormessage: "+e.getMessage)
+        assert(false)
+    } finally {
+      sql("USE default")
+      FileUtils.deleteQuietly(tempLocation.toFile)
+    }
+  }
+
+  test("test delete temp table when a carbon table of same name exists before creation") {
+    val tempLocation = Files.createTempDirectory("dropTableTest7")
+    sql(s"CREATE DATABASE if not exists temptablecheckDB")
+    sql("USE temptablecheckDB")
+    try {
+      sql(
+        "CREATE TABLE dropTableTest7(Drop5Col1 String, Drop5Col2 String, Drop5Col3 int, Drop5Col4" +
+        " double) stored by" +
+        "'carbondata'")
+      sql(
+        s"""
+           | CREATE TEMPORARY TABLE dropTableTest7
+           | (Drop5Col1 int,Drop5Col2 string)
+           | USING PARQUET
+           | OPTIONS ('path'='$tempLocation')
+      """.stripMargin)
+      sql("DROP TABLE temptablecheckDB.dropTableTest7")
+      sql("desc dropTableTest7").show(200,false)
+      checkAnswer(sql("DESC dropTableTest7"), Seq(Row("Drop5Col1", "int", null),
+        Row("Drop5Col2", "string", null)))
+      sql("DROP TABLE dropTableTest7")
+    } catch {
+      case e:Exception =>
+        System.out.println("dropTableTest7 errormessage: "+e.getMessage)
+        assert(false)
+    } finally {
+      sql("USE default")
+      FileUtils.deleteQuietly(tempLocation.toFile)
+    }
+  }
+
 
   override def afterAll: Unit = {
     sql("drop table if exists CaseInsensitiveTable")
     sql("drop table if exists dropTableTest1")
     sql("drop table if exists dropTableTest2")
     sql("drop table if exists dropTableTest4")
+    sql("drop table if exists dropTableTest5")
+    sql("drop table if exists dropTableTest6")
+    sql("drop table if exists dropTableTest7")
+    sql("DROP DATABASE if exists temptablecheckDB cascade")
     sql("drop table if exists table1")
     sql("drop table if exists table2")
   }

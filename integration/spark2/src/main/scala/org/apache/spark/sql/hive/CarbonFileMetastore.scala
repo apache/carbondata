@@ -154,9 +154,13 @@ class CarbonFileMetastore extends CarbonMetaStore {
   override def tableExists(tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession): Boolean = {
     try {
-      lookupRelation(tableIdentifier)(sparkSession)
+      if (sparkSession.sessionState.catalog.isTemporaryTable(tableIdentifier)) {
+        return false
+      } else {
+        lookupRelation(tableIdentifier)(sparkSession)
+      }
     } catch {
-      case e: Exception =>
+      case _: Exception =>
         return false
     }
     true
@@ -393,10 +397,14 @@ class CarbonFileMetastore extends CarbonMetaStore {
 
   def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
     try {
-      val tablePath = lookupRelation(tableIdentifier)(sparkSession).
-        asInstanceOf[CarbonRelation].tableMeta.tablePath
-      val fileType = FileFactory.getFileType(tablePath)
-      FileFactory.isFileExist(tablePath, fileType)
+      if (sparkSession.sessionState.catalog.isTemporaryTable(tableIdentifier)) {
+        return false
+      } else {
+        val tablePath = lookupRelation(tableIdentifier)(sparkSession).
+          asInstanceOf[CarbonRelation].tableMeta.tablePath
+        val fileType = FileFactory.getFileType(tablePath)
+        FileFactory.isFileExist(tablePath, fileType)
+      }
     } catch {
       case e: Exception =>
         false

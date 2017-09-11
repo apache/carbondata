@@ -349,8 +349,7 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
       sys.error("No Dimensions found. Table should have at least one dimesnion !")
     }
 
-    if (sparkSession.sessionState.catalog.listTables(dbName)
-        .exists(_.table.equalsIgnoreCase(tbName))) {
+    if (sparkSession.sessionState.catalog.tableExists(TableIdentifier(tbName, Some(dbName)))) {
       if (!cm.ifNotExistsSet) {
         LOGGER.audit(
           s"Table creation with Database name [$dbName] and Table name [$tbName] failed. " +
