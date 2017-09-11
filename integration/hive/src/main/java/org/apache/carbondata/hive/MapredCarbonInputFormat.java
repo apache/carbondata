@@ -163,7 +163,7 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     StringBuilder allColumns = new StringBuilder();
     StringBuilder projectionColumns = new StringBuilder();
     for (CarbonColumn column : carbonColumns) {
-      carbonColumnNames.add(column.getColName());
+      carbonColumnNames.add(column.getColName().toLowerCase());
       allColumns.append(column.getColName() + ",");
     }
 
@@ -172,7 +172,7 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
       //verify that the columns parsed by Hive exist in the table
       for (String col : columnNames) {
         //show columns command will return these data
-        if (carbonColumnNames.contains(col)) {
+        if (carbonColumnNames.contains(col.toLowerCase())) {
           projectionColumns.append(col + ",");
         }
       }
