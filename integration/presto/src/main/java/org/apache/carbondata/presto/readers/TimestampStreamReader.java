@@ -24,25 +24,17 @@ import com.facebook.presto.spi.block.BlockBuilder;
 import com.facebook.presto.spi.block.BlockBuilderStatus;
 import com.facebook.presto.spi.type.Type;
 
-/**
- * Class for Reading the Double value and setting it in Block
- */
-public class DoubleStreamReader extends AbstractStreamReader {
+public class TimestampStreamReader extends AbstractStreamReader {
 
-  public DoubleStreamReader() {
+  private int TIMESTAMP_DIVISOR  = 1000;
+
+  public TimestampStreamReader() {
 
   }
 
-  /**
-   * Create the DoubleType Block
-   *
-   * @param type
-   * @return
-   * @throws IOException
-   */
   public Block readBlock(Type type) throws IOException {
-    int numberOfRows;
-    BlockBuilder builder;
+    int numberOfRows = 0;
+    BlockBuilder builder = null;
     if (isVectorReader) {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
@@ -54,12 +46,13 @@ public class DoubleStreamReader extends AbstractStreamReader {
           populateVector(type, numberOfRows, builder);
         }
       }
+
     } else {
       numberOfRows = streamData.length;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (streamData != null) {
         for (int i = 0; i < numberOfRows; i++) {
-          type.writeDouble(builder, (Double) streamData[i]);
+          type.writeLong(builder, (Long) streamData[i]);
         }
       }
     }
@@ -72,14 +65,14 @@ public class DoubleStreamReader extends AbstractStreamReader {
       if (columnVector.isNullAt(i)) {
         builder.appendNull();
       } else {
-        type.writeDouble(builder, columnVector.getDouble(i));
+        type.writeLong(builder, columnVector.getLong(i)/ TIMESTAMP_DIVISOR);
       }
     }
   }
 
   private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
     for (int i = 0; i < numberOfRows; i++) {
-      type.writeDouble(builder, columnVector.getDouble(i));
+      type.writeLong(builder, columnVector.getLong(i)/TIMESTAMP_DIVISOR);
     }
   }
 

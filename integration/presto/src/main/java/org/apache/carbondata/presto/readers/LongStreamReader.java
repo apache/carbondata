@@ -37,12 +37,11 @@ public class LongStreamReader extends AbstractStreamReader {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
-        for (int i = 0; i < numberOfRows; i++) {
-          if (columnVector.isNullAt(i)) {
-            builder.appendNull();
-          } else {
-            type.writeLong(builder, columnVector.getLong(i));
-          }
+        if(columnVector.anyNullsSet()) {
+          handleNullInVector(type, numberOfRows, builder);
+        }
+        else {
+          populateVector(type, numberOfRows, builder);
         }
       }
 
@@ -57,6 +56,22 @@ public class LongStreamReader extends AbstractStreamReader {
     }
 
     return builder.build();
+  }
+
+  private void handleNullInVector(Type type, int numberOfRows, BlockBuilder builder) {
+    for (int i = 0; i < numberOfRows; i++) {
+      if (columnVector.isNullAt(i)) {
+        builder.appendNull();
+      } else {
+        type.writeLong(builder, columnVector.getLong(i));
+      }
+    }
+  }
+
+  private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
+    for (int i = 0; i < numberOfRows; i++) {
+      type.writeLong(builder, columnVector.getLong(i));
+    }
   }
 
 }
