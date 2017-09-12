@@ -73,10 +73,13 @@ class TestComplexTypeWithBigArray extends QueryTest with BeforeAndAfterAll {
       sql("select count(*) from big_array where array_contains(list, '1') "),
       Row(33000)
     )
-    checkAnswer(
-      sql("select count(x) from (select explode(list) as x from big_array)"),
-      Row(66000)
-    )
+    if (sqlContext.sparkContext.version.startsWith("2.")) {
+      // explode UDF is supported start from spark 2.0
+      checkAnswer(
+        sql("select count(x) from (select explode(list) as x from big_array)"),
+        Row(66000)
+      )
+    }
     checkAnswer(
       sql("select * from big_array where value = 15000"),
       Row(15000, mutable.WrappedArray.make[String](Array("15000", "1")))
@@ -128,10 +131,13 @@ class TestComplexTypeWithBigArray extends QueryTest with BeforeAndAfterAll {
       sql("select count(*) from big_array where array_contains(list, 1) "),
       Row(33000)
     )
-    checkAnswer(
-      sql("select count(x) from (select explode(list) as x from big_array)"),
-      Row(66000)
-    )
+    if (sqlContext.sparkContext.version.startsWith("2.")) {
+      // explode UDF is supported start from spark 2.0
+      checkAnswer(
+        sql("select count(x) from (select explode(list) as x from big_array)"),
+        Row(66000)
+      )
+    }
     checkAnswer(
       sql("select * from big_array where value = 15000"),
       Row(15000, mutable.WrappedArray.make[Int](Array(15000, 1)))
