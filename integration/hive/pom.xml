@@ -70,15 +70,15 @@
             <exclusions>
                 <exclusion>
                     <groupId>org.apache.spark</groupId>
-                    <artifactId>spark-hive-thriftserver_2.10</artifactId>
+                    <artifactId>spark-hive-thriftserver_2.11</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.spark</groupId>
-                    <artifactId>spark-repl_2.10</artifactId>
+                    <artifactId>spark-repl_2.11</artifactId>
                 </exclusion>
                 <exclusion>
                     <groupId>org.apache.spark</groupId>
-                    <artifactId>spark-sql_2.10</artifactId>
+                    <artifactId>spark-sql_2.11</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -119,7 +119,7 @@
             <exclusions>
               <exclusion>
                 <groupId>org.apache.spark</groupId>
-                <artifactId>spark-sql_2.10</artifactId>
+                <artifactId>spark-sql_2.11</artifactId>
               </exclusion>
             </exclusions>
         </dependency>
