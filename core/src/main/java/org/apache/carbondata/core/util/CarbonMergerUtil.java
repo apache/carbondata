@@ -35,7 +35,7 @@ public class CarbonMergerUtil {
       LogServiceFactory.getLogService(CarbonMergerUtil.class.getName());
 
   public static int[] getCardinalityFromLevelMetadata(String path, String tableName) {
-    int[] localCardinality = null;
+    int[] localCardinality = new int[0];
     try {
       localCardinality = CarbonUtil.getCardinalityFromLevelMetadataFile(
           path + '/' + CarbonCommonConstants.LEVEL_METADATA_FILE + tableName + ".metadata");
