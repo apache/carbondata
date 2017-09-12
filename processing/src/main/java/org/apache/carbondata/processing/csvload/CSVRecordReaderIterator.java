@@ -19,8 +19,12 @@ package org.apache.carbondata.processing.csvload;
 
 import java.io.IOException;
 
+
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
+import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+
+import com.univocity.parsers.common.TextParsingException;
 
 import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -62,6 +66,10 @@ public class CSVRecordReaderIterator extends CarbonIterator<Object []> {
       }
       return true;
     } catch (Exception e) {
+      if (e instanceof TextParsingException) {
+        throw new CarbonDataLoadingException(
+            CarbonDataProcessorUtil.trimErrorMessage(e.getMessage()));
+      }
       throw new CarbonDataLoadingException(e);
     }
   }

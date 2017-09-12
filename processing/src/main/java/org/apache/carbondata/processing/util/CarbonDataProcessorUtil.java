@@ -610,4 +610,20 @@ public final class CarbonDataProcessorUtil {
     }
     return outArr;
   }
+
+  /**
+   * This method returns String if exception is TextParsingException
+   *
+   * @param input
+   * @return
+   */
+  public static String trimErrorMessage(String input) {
+    String errorMessage = input;
+    if (input != null) {
+      if (input.split("Hint").length > 0) {
+        errorMessage = input.split("Hint")[0];
+      }
+    }
+    return errorMessage;
+  }
 }
