@@ -36,8 +36,10 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  */
 public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable {
 
+  private static final long serialVersionUID = 1905162071950251407L;
+
   // column spec of this column
-  private TableSpec.ColumnSpec columnSpec;
+  private transient TableSpec.ColumnSpec columnSpec;
 
   // storage data type of this column, it could be different from data type in the column spec
   private DataType storeDataType;
@@ -73,7 +75,6 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     this.compressorName = compressorName;
     setType(convertType(storeDataType));
     if (stats != null) {
-      assert (stats.getDataType() == storeDataType);
       setDecimal(stats.getDecimalCount());
       setMaxValue(stats.getMax());
       setMinValue(stats.getMin());
@@ -86,6 +87,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     switch (type) {
       case BYTE:
       case SHORT:
+      case SHORT_INT:
       case INT:
       case LONG:
         return CarbonCommonConstants.BIG_INT_MEASURE;
