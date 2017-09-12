@@ -367,6 +367,25 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     assert(exception_test_range_decimal.getMessage.contains("Invalid Partition Values"))
   }
 
+  test("Invalid Partition Range") {
+    val exceptionMessage: Exception = intercept[Exception] {
+      sql(
+        """
+          | CREATE TABLE default.rangeTableInvalid (empno int, empname String, designation String,
+          |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+          |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+          |  utilization int,salary int)
+          | PARTITIONED BY (doj Timestamp)
+          | STORED BY 'org.apache.carbondata.format'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
+          |  'RANGE_INFO'='2017-06-11 00:00:02')
+        """.stripMargin)
+    }
+
+    assert(exceptionMessage.getMessage
+      .contains("Range info must define a valid range.Please check again!"))
+  }
+
   override def afterAll = {
     dropTable
   }
@@ -395,6 +414,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test_range_date")
     sql("DROP TABLE IF EXISTS test_range_timestamp")
     sql("DROP TABLE IF EXISTS test_range_decimal")
+    sql("DROP TABLE IF EXISTS rangeTableInvalid")
   }
 
 }
