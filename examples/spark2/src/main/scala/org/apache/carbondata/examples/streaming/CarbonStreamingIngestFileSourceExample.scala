@@ -26,7 +26,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.utils.StreamingCleanupUtil
 
-object CarbonDataFileStreamingExample {
+object CarbonStreamingIngestFileSourceExample {
 
   def main(args: Array[String]) {
 

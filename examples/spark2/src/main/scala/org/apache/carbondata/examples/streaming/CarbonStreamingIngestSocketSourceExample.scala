@@ -38,7 +38,7 @@ import org.apache.carbondata.examples.utils.StreamingCleanupUtil
  */
 
 // scalastyle:off println
-object CarbonDataNetworkStreamingExample {
+object CarbonStreamingIngestSocketSourceExample {
 
   def main(args: Array[String]) {
 
@@ -73,7 +73,6 @@ object CarbonDataNetworkStreamingExample {
       .master("local[2]")
       .appName("CarbonNetworkStreamingExample")
       .config("spark.sql.warehouse.dir", warehouse)
-      .config("spark.sql.streaming.schemaInference", "true")
       .getOrCreateCarbonSession(storeLocation, metastoredb)
 
     spark.sparkContext.setLogLevel("ERROR")

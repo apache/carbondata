@@ -239,6 +239,8 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     validateTable(options.get("path").get)
 
     // Check id streaming data schema matches with carbon table schema
+    // Data from socket source does not have schema attached to it,
+    // Following check is to ignore schema validation for socket source.
     if (!(dataSchema.size.equals(1) &&
       dataSchema.fields(0).dataType.equals(StringType))) {
       val tablePath = options.get("path")
@@ -273,6 +275,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     val schema: TableInfo = meta.readSchemaFile(schemaPath)
     schema
   }
+
   /**
    * Validates streamed schema against existing table schema
    * @param schema existing carbon table schema
@@ -322,7 +325,6 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
   }
 
-
   /**
    * Validates if given table exists or throws exception
    * @param String existing carbon table path
@@ -351,6 +353,11 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
   }
 
+  /**
+    * Checks if table exists by checking its schema file
+    * @param absoluteTableIdentifier
+    * @return Boolean
+    */
   private def checkIfTableExists(absoluteTableIdentifier: AbsoluteTableIdentifier): Boolean = {
     val carbonTablePath: CarbonTablePath = CarbonStorePath
       .getCarbonTablePath(absoluteTableIdentifier)
