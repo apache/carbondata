@@ -265,7 +265,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
           .getDirectDictionaryGenerator(
               dimColEvaluatorInfoList.get(0).getDimension().getDataType());
-      int key = directDictionaryGenerator.generateDirectSurrogateKey(null);
+      int key = directDictionaryGenerator.generateDirectSurrogateKey(null) + 1;
       CarbonDimension currentBlockDimension =
           segmentProperties.getDimensions().get(dimensionBlocksIndex[0]);
       if (currentBlockDimension.isSortColumn()) {
