@@ -73,6 +73,7 @@ object CarbonDataNetworkStreamingExample {
       .master("local[2]")
       .appName("CarbonNetworkStreamingExample")
       .config("spark.sql.warehouse.dir", warehouse)
+      .config("spark.sql.streaming.schemaInference", "true")
       .getOrCreateCarbonSession(storeLocation, metastoredb)
 
     spark.sparkContext.setLogLevel("ERROR")
@@ -82,7 +83,7 @@ object CarbonDataNetworkStreamingExample {
 
     // Generate random data
     val dataDF = spark.sparkContext.parallelize(1 to 10)
-      .map(id => (id, "name_ABC", "city_XYZ", 10000*id)).
+      .map(id => (id, "name_ABC", "city_XYZ", 10000.00*id)).
       toDF("id", "name", "city", "salary")
 
     // drop table if exists previously
@@ -99,6 +100,11 @@ object CarbonDataNetworkStreamingExample {
       .save()
 
     spark.sql(s""" SELECT * FROM ${streamTableName} """).show()
+
+    // Generate random data
+    val dataDF1 = spark.sparkContext.parallelize(50 to 70)
+      .map(id => (id, "name_ABC", "city_XYZ", 10.00*id)).
+      toDF("id", "name", "city", "salary")
 
     // Create DataFrame representing the stream of input lines from connection to host:port
     val readSocketDF = spark.readStream
