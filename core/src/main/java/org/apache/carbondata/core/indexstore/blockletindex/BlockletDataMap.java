@@ -243,10 +243,16 @@ public class BlockletDataMap implements DataMap, Cacheable {
     IndexKey searchStartKey = listOfStartEndKeys.get(0);
     // reading the last value from list which has end key
     IndexKey searchEndKey = listOfStartEndKeys.get(1);
-    if (null == searchStartKey && null == searchEndKey) {
+    if (null == searchStartKey) {
       try {
         // TODO need to handle for no dictionary dimensions
         searchStartKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);
+      } catch (KeyGenException e) {
+        return null;
+      }
+    }
+    if (null == searchEndKey) {
+      try {
         // TODO need to handle for no dictionary dimensions
         searchEndKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
       } catch (KeyGenException e) {

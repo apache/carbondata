@@ -137,7 +137,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
 
     try {
       dataHandler.finish();
-    } catch (Exception e) {
+    } catch (CarbonDataWriterException e) {
       LOGGER.error(e, "Failed for table: " + tableName + " in  finishing data handler");
     }
     LOGGER.info("Record Processed For table: " + tableName);

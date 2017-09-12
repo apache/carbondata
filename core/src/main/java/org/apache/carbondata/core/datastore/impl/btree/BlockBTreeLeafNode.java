@@ -64,7 +64,7 @@ public class BlockBTreeLeafNode extends AbstractBTreeLeafNode {
    * @return
    */
   @Override
-  public int numberOfPages() {
+  public int getNumberOfPages() {
     throw new UnsupportedOperationException("Unsupported operation");
   }
 

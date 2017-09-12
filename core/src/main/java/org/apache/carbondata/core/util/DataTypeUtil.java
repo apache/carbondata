@@ -595,7 +595,7 @@ public final class DataTypeUtil {
         return value;
       }
       return null;
-    } catch (Exception e) {
+    } catch (NumberFormatException e) {
       return null;
     }
   }

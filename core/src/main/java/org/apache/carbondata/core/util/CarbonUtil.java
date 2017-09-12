@@ -617,18 +617,15 @@ public final class CarbonUtil {
     DataInputStream dataInputStream = null;
     int[] cardinality = null;
 
-    try {
-      if (FileFactory.isFileExist(levelPath, FileFactory.getFileType(levelPath))) {
-        dataInputStream =
-            FileFactory.getDataInputStream(levelPath, FileFactory.getFileType(levelPath));
+    if (FileFactory.isFileExist(levelPath, FileFactory.getFileType(levelPath))) {
+      dataInputStream =
+              FileFactory.getDataInputStream(levelPath, FileFactory.getFileType(levelPath));
 
-        cardinality = new int[dataInputStream.readInt()];
+      cardinality = new int[dataInputStream.readInt()];
 
-        for (int i = 0; i < cardinality.length; i++) {
-          cardinality[i] = dataInputStream.readInt();
-        }
+      for (int i = 0; i < cardinality.length; i++) {
+        cardinality[i] = dataInputStream.readInt();
       }
-    } finally {
       closeStreams(dataInputStream);
     }
 
@@ -1963,7 +1960,11 @@ public final class CarbonUtil {
       thriftWriter.open();
       thriftWriter.write(tableInfo);
     } finally {
-      thriftWriter.close();
+      try {
+        thriftWriter.close();
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage());
+      }
     }
   }
 

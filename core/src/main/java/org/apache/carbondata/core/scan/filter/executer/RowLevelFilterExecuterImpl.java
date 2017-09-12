@@ -188,7 +188,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             blockChunkHolder.getDimensionRawDataChunk()[dimensionBlocksIndex[0]].getRowCount();
       } else {
         // specific for restructure case where default values need to be filled
-        pageNumbers = blockChunkHolder.getDataBlock().numberOfPages();
+        pageNumbers = blockChunkHolder.getDataBlock().getNumberOfPages();
         numberOfRows = new int[] { blockChunkHolder.getDataBlock().nodeSize() };
       }
     }
@@ -200,7 +200,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             blockChunkHolder.getMeasureRawDataChunk()[measureBlocksIndex[0]].getRowCount();
       } else {
         // specific for restructure case where default values need to be filled
-        pageNumbers = blockChunkHolder.getDataBlock().numberOfPages();
+        pageNumbers = blockChunkHolder.getDataBlock().getNumberOfPages();
         numberOfRows = new int[] { blockChunkHolder.getDataBlock().nodeSize() };
       }
     }

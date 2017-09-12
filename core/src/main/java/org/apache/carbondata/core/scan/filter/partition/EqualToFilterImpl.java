@@ -41,7 +41,7 @@ public class EqualToFilterImpl implements PartitionFilterIntf {
   }
 
   @Override public BitSet applyFilter(Partitioner partitioner) {
-    BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), false);
+    BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.getNumPartitions(), false);
     if (equalTo.isNull) {
       partitionMap.set(partitioner.getPartition(null));
     } else {

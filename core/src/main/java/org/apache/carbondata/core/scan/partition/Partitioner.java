@@ -21,7 +21,7 @@ import java.io.Serializable;
 
 public interface Partitioner extends Serializable {
 
-  int numPartitions();
+  int getNumPartitions();
 
   int getPartition(Object key);
 }

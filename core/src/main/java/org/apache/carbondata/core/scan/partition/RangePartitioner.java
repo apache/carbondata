@@ -69,7 +69,7 @@ public class RangePartitioner implements Partitioner {
    *
    * @return
    */
-  @Override public int numPartitions() {
+  @Override public int getNumPartitions() {
     return numPartitions + 1;
   }
 

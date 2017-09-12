@@ -539,8 +539,12 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
           .getDataInputStream(localFilePath, FileFactory.getFileType(localFilePath), bufferSize);
       IOUtils.copyBytes(dataInputStream, dataOutputStream, bufferSize);
     } finally {
-      CarbonUtil.closeStream(dataInputStream);
-      CarbonUtil.closeStream(dataOutputStream);
+      try {
+        CarbonUtil.closeStream(dataInputStream);
+        CarbonUtil.closeStream(dataOutputStream);
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage());
+      }
     }
   }
 

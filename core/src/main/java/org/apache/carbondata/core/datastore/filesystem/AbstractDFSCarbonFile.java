@@ -192,7 +192,6 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
         dataOutputStream.write(buff, 0, read);
         remaining = remaining - read;
       }
-      CarbonUtil.closeStreams(dataInputStream, dataOutputStream);
       // rename the temp file to original file
       tempFile.renameForce(fileName);
       fileTruncatedSuccessfully = true;

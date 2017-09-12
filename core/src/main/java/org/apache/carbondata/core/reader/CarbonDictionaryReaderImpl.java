@@ -23,6 +23,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.ColumnDictionaryChunkIterator;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -38,6 +40,9 @@ import org.apache.thrift.TBase;
  * It implements various overloaded method for read functionality.
  */
 public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
+
+  private static final LogService LOGGER =
+          LogServiceFactory.getLogService(CarbonDictionaryReaderImpl.class.getName());
 
   /**
    * carbon table identifier
@@ -293,8 +298,12 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
     try {
       dictionaryMetaChunkList = columnMetadataReaderImpl.read();
     } finally {
-      // close the metadata reader
-      columnMetadataReaderImpl.close();
+      try {
+        // close the metadata reader
+        columnMetadataReaderImpl.close();
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage());
+      }
     }
     return dictionaryMetaChunkList;
   }

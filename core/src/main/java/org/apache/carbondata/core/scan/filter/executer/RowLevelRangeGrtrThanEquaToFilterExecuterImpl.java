@@ -170,7 +170,7 @@ public class RowLevelRangeGrtrThanEquaToFilterExecuterImpl extends RowLevelFilte
     if (!isDimensionPresentInCurrentBlock[0] && !isMeasurePresentInCurrentBlock[0]) {
       int numberOfRows = blockChunkHolder.getDataBlock().nodeSize();
       return FilterUtil
-          .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().numberOfPages(),
+          .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().getNumberOfPages(),
               numberOfRows, true);
     }
 

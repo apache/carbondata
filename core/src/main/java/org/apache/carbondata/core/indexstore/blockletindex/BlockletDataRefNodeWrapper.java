@@ -61,7 +61,7 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
     return blockInfos.get(index).getDetailInfo().getRowCount();
   }
 
-  @Override public long nodeNumber() {
+  @Override public long getNodeNumber() {
     return index;
   }
 
@@ -127,7 +127,7 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
     return deleteDeltaDataCache;
   }
 
-  @Override public int numberOfPages() {
+  @Override public int getNumberOfPages() {
     return blockInfos.get(index).getDetailInfo().getPagesCount();
   }
 

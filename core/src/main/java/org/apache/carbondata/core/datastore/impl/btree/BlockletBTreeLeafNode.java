@@ -135,7 +135,7 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
   /**
    * @return the number of pages in blocklet
    */
-  @Override public int numberOfPages() {
+  @Override public int getNumberOfPages() {
     return numberOfPages;
   }
 }

@@ -393,12 +393,12 @@ public final class CarbonLoaderUtil {
         if (null != brWriter) {
           brWriter.flush();
         }
-      } catch (Exception e) {
-        LOGGER.error("error in  flushing ");
-
+        CarbonUtil.closeStreams(brWriter);
+        writeOperation.close();
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage());
       }
-      CarbonUtil.closeStreams(brWriter);
-      writeOperation.close();
+
     }
 
   }

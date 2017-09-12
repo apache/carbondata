@@ -164,8 +164,7 @@ public class SegmentStatusManager {
           dataInputStream.close();
         }
       } catch (Exception e) {
-        LOG.error(e);
-        throw e;
+        LOG.error(e.getMessage());
       }
     }
     return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,

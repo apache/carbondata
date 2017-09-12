@@ -290,8 +290,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
         try {
           dataHandler.closeHandler();
         } catch (CarbonDataWriterException e) {
-          LOGGER.error(e);
-          throw new Exception("Problem loading data during compaction: " + e.getMessage());
+          LOGGER.error("Problem loading data during compaction: " + e.getMessage());
         }
       }
     }

@@ -34,7 +34,7 @@ public class TrueFilterExecutor implements FilterExecuter {
    */
   public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
       throws FilterUnsupportedException, IOException {
-    int numberOfPages = blockChunkHolder.getDataBlock().numberOfPages();
+    int numberOfPages = blockChunkHolder.getDataBlock().getNumberOfPages();
     BitSetGroup group = new BitSetGroup(numberOfPages);
     for (int i = 0; i < numberOfPages; i++) {
       BitSet set = new BitSet();

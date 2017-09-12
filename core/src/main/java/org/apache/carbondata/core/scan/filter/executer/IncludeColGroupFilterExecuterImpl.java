@@ -77,7 +77,7 @@ public class IncludeColGroupFilterExecuterImpl extends IncludeFilterExecuterImpl
         }
       }
 
-    } catch (Exception e) {
+    } catch (KeyGenException e) {
       LOGGER.error(e);
     }
 

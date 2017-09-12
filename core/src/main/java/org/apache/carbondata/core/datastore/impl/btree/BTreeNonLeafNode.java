@@ -131,7 +131,7 @@ public class BTreeNonLeafNode implements BTreeNode {
    *
    * @return block number
    */
-  @Override public long nodeNumber() {
+  @Override public long getNodeNumber() {
     throw new UnsupportedOperationException("Unsupported operation");
   }
 
@@ -250,7 +250,7 @@ public class BTreeNonLeafNode implements BTreeNode {
    * @return
    */
   @Override
-  public int numberOfPages() {
+  public int getNumberOfPages() {
     // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unsupported operation");
   }

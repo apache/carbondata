@@ -137,13 +137,17 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
         sortIndexThriftWriter.write(columnSortInfo);
       } catch (IOException ie) {
         LOGGER.error(ie,
-            "problem while writing the dictionary sort index file.");
+                "problem while writing the dictionary sort index file.");
         throw new IOException("problem while writing the dictionary sort index file.", ie);
       } finally {
-        if (null != sortIndexThriftWriter) {
-          this.sortIndexThriftWriter.close();
+        try {
+          if (null != sortIndexThriftWriter) {
+            this.sortIndexThriftWriter.close();
+          }
+          this.sortIndexFilePath = null;
+        } catch (IOException e) {
+          LOGGER.error(e.getMessage());
         }
-        this.sortIndexFilePath = null;
       }
     }
   }

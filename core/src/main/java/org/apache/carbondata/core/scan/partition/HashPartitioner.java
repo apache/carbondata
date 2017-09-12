@@ -28,7 +28,7 @@ public class HashPartitioner implements Partitioner {
     this.numPartitions = numPartitions;
   }
 
-  @Override public int numPartitions() {
+  @Override public int getNumPartitions() {
     return numPartitions;
   }
 

@@ -80,7 +80,7 @@ public class RangeFilterImpl implements PartitionFilterIntf {
             (RangePartitioner) partitioner, filterValueOfRange, isGreaterThan, isEqualTo,
             timestampFormatter, dateFormatter);
       default:
-        return PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), true);
+        return PartitionUtil.generateBitSetBySize(partitioner.getNumPartitions(), true);
     }
   }
 

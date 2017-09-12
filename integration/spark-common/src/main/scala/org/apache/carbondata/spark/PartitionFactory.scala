@@ -41,7 +41,7 @@ class HashPartitioner(partitions: Int) extends Partitioner {
 
   private val partitioner = new JavaHashPartitioner(partitions)
 
-  override def numPartitions: Int = partitioner.numPartitions()
+  override def numPartitions: Int = partitioner.getNumPartitions()
 
   override def getPartition(key: Any): Int = partitioner.getPartition(key)
 }
@@ -50,7 +50,7 @@ class ListPartitioner(partitionInfo: PartitionInfo) extends Partitioner {
 
   private val partitioner = new JavaListPartitioner(partitionInfo)
 
-  override def numPartitions: Int = partitioner.numPartitions()
+  override def numPartitions: Int = partitioner.getNumPartitions()
 
   override def getPartition(key: Any): Int = partitioner.getPartition(key)
 }
@@ -59,7 +59,7 @@ class RangePartitioner(partitionInfo: PartitionInfo) extends Partitioner {
 
   private val partitioner = new JavaRangePartitioner(partitionInfo)
 
-  override def numPartitions: Int = partitioner.numPartitions()
+  override def numPartitions: Int = partitioner.getNumPartitions()
 
   override def getPartition(key: Any): Int = partitioner.getPartition(key)
 }

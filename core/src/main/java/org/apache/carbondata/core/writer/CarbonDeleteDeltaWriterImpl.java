@@ -64,7 +64,8 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
    * @param value deleted records
    * @throws IOException if an I/O error occurs
    */
-  @Override public void write(String value) throws IOException {
+  @Override
+  public void write(String value) throws IOException {
     BufferedWriter brWriter = null;
     try {
       FileFactory.createNewFile(filePath, fileType);
@@ -75,23 +76,28 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
     } catch (IOException ioe) {
       LOGGER.error("Error message: " + ioe.getLocalizedMessage());
     } finally {
-      if (null != brWriter) {
-        brWriter.flush();
+      try {
+        if (null != brWriter) {
+          brWriter.flush();
+        }
+        if (null != dataOutStream) {
+          dataOutStream.flush();
+        }
+        CarbonUtil.closeStreams(brWriter, dataOutStream);
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage());
       }
-      if (null != dataOutStream) {
-        dataOutStream.flush();
-      }
-      CarbonUtil.closeStreams(brWriter, dataOutStream);
     }
-
   }
 
   /**
    * This method will write the deleted records data in the json format.
+   *
    * @param deleteDeltaBlockDetails
    * @throws IOException
    */
-  @Override public void write(DeleteDeltaBlockDetails deleteDeltaBlockDetails) throws IOException {
+  @Override
+  public void write(DeleteDeltaBlockDetails deleteDeltaBlockDetails) throws IOException {
     BufferedWriter brWriter = null;
     try {
       FileFactory.createNewFile(filePath, fileType);
@@ -104,14 +110,17 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
     } catch (IOException ioe) {
       LOGGER.error("Error message: " + ioe.getLocalizedMessage());
     } finally {
-      if (null != brWriter) {
-        brWriter.flush();
+      try {
+        if (null != brWriter) {
+          brWriter.flush();
+        }
+        if (null != dataOutStream) {
+          dataOutStream.flush();
+        }
+        CarbonUtil.closeStreams(brWriter, dataOutStream);
+      } catch (IOException e) {
+        LOGGER.debug(e.getMessage());
       }
-      if (null != dataOutStream) {
-        dataOutStream.flush();
-      }
-      CarbonUtil.closeStreams(brWriter, dataOutStream);
     }
-
   }
 }

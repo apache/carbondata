@@ -438,7 +438,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
           bufferSize < numberOfRecordsLeftToBeRead ? bufferSize : numberOfRecordsLeftToBeRead;
     }
 
-    @Override public Void call() throws Exception {
+    @Override public Void call() throws CarbonSortKeyAndGroupByException {
       try {
         if (isBackUpFilling) {
           backupBuffer = prefetchRecordsFromFile(numberOfRecords);
@@ -446,7 +446,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
         } else {
           currentBuffer = prefetchRecordsFromFile(numberOfRecords);
         }
-      } catch (Exception e) {
+      } catch (CarbonSortKeyAndGroupByException e) {
         LOGGER.error(e);
       }
       return null;

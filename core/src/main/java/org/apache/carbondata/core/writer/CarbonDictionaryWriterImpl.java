@@ -202,8 +202,12 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
         // if stream is open then only need to write dictionary file.
         writeDictionaryFile();
       } finally {
-        // close the thrift writer for dictionary file
-        closeThriftWriter();
+        try {
+          // close the thrift writer for dictionary file
+          closeThriftWriter();
+        } catch (IOException e) {
+          LOGGER.error(e.getMessage());
+        }
       }
     }
   }
@@ -420,8 +424,12 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
       carbonDictionaryColumnMetaChunk =
           columnMetadataReaderImpl.readLastEntryOfDictionaryMetaChunk();
     } finally {
-      // Close metadata reader
-      columnMetadataReaderImpl.close();
+      try {
+        // Close metadata reader
+        columnMetadataReaderImpl.close();
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage());
+      }
     }
     return carbonDictionaryColumnMetaChunk;
   }

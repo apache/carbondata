@@ -21,6 +21,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -39,6 +41,8 @@ import org.apache.carbondata.format.FileFooter;
  */
 public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
 
+  private static final LogService LOGGER =
+          LogServiceFactory.getLogService(DataFileFooterConverter.class.getName());
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta
    */
@@ -83,8 +87,12 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
       dataFileFooter.setBlockletList(blockletInfoList);
       dataFileFooter.setBlockletIndex(getBlockletIndexForDataFileFooter(blockletIndexList));
     } finally {
-      if (null != fileReader) {
-        fileReader.finish();
+      try {
+        if (null != fileReader) {
+          fileReader.finish();
+        }
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage());
       }
     }
     return dataFileFooter;

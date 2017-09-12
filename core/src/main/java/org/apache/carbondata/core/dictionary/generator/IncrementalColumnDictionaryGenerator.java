@@ -194,8 +194,12 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
         }
       }
     } finally {
-      if (null != dictionaryWriter) {
-        dictionaryWriter.close();
+      try {
+        if (null != dictionaryWriter) {
+          dictionaryWriter.close();
+        }
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage());
       }
     }
 

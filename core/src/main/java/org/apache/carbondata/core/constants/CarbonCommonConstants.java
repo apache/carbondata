@@ -988,7 +988,7 @@ public final class CarbonCommonConstants {
   /**
    * Indicates alter partition
    */
-  public static String ALTER_PARTITION_KEY_WORD = "ALTER_PARTITION";
+  public static final String ALTER_PARTITION_KEY_WORD = "ALTER_PARTITION";
 
   /**
    * hdfs temporary directory key
