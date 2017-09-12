@@ -354,10 +354,10 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
   }
 
   /**
-    * Checks if table exists by checking its schema file
-    * @param absoluteTableIdentifier
-    * @return Boolean
-    */
+   * Checks if table exists by checking its schema file
+   * @param absoluteTableIdentifier
+   * @return Boolean
+   */
   private def checkIfTableExists(absoluteTableIdentifier: AbsoluteTableIdentifier): Boolean = {
     val carbonTablePath: CarbonTablePath = CarbonStorePath
       .getCarbonTablePath(absoluteTableIdentifier)
