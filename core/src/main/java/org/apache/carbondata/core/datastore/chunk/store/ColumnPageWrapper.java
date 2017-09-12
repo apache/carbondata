@@ -25,9 +25,11 @@ import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 public class ColumnPageWrapper implements DimensionColumnDataChunk {
 
   private ColumnPage columnPage;
+  private int columnValueSize;
 
-  public ColumnPageWrapper(ColumnPage columnPage) {
+  public ColumnPageWrapper(ColumnPage columnPage, int columnValueSize) {
     this.columnPage = columnPage;
+    this.columnValueSize = columnValueSize;
   }
 
   @Override
@@ -71,7 +73,7 @@ public class ColumnPageWrapper implements DimensionColumnDataChunk {
 
   @Override
   public int getColumnValueSize() {
-    throw new UnsupportedOperationException("internal error");
+    return columnValueSize;
   }
 
   @Override

@@ -21,6 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -37,8 +38,9 @@ public class RLEEncoderMeta extends ColumnPageEncoderMeta implements Writable {
 
   }
 
-  public RLEEncoderMeta(DataType dataType, int pageSize, SimpleStatsResult stats) {
-    super(dataType, stats);
+  public RLEEncoderMeta(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      SimpleStatsResult stats) {
+    super(columnSpec, dataType, stats, "");
     this.pageSize = pageSize;
   }
 

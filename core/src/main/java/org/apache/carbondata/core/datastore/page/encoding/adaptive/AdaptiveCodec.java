@@ -17,9 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page.encoding.adaptive;
 
-import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
-import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
@@ -45,10 +43,6 @@ public abstract class AdaptiveCodec implements ColumnPageCodec {
     this.stats = stats;
     this.srcDataType = srcDataType;
     this.targetDataType = targetDataType;
-  }
-
-  public EncodedColumnPage[] encodeComplexColumn(ComplexColumnPage input) {
-    throw new UnsupportedOperationException("internal error");
   }
 
   public DataType getTargetDataType() {

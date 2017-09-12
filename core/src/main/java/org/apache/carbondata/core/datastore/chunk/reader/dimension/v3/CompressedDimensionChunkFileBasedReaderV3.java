@@ -30,8 +30,8 @@ import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
-import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategy;
-import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategyFactory;
+import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
+import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -55,7 +55,7 @@ import org.apache.commons.lang.ArrayUtils;
  */
 public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkReaderV2V3Format {
 
-  private EncodingStrategy strategy = EncodingStrategyFactory.getStrategy();
+  private EncodingFactory encodingFactory = DefaultEncodingFactory.getInstance();
 
   /**
    * end position of last dimension in carbon data file
@@ -213,20 +213,18 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset
     int offset = rawColumnPage.getOffSet() + dimensionChunksLength
-        .get(rawColumnPage.getBlockletId()) + dataChunk3.getPage_offset().get(pageNumber);
+        .get(rawColumnPage.getColumnIndex()) + dataChunk3.getPage_offset().get(pageNumber);
     // first read the data and uncompressed it
     return decodeDimension(rawColumnPage, rawData, pageMetadata, offset);
   }
 
-  private DimensionColumnDataChunk decodeDimensionByMeta(DataChunk2 pageMetadata,
+  private ColumnPage decodeDimensionByMeta(DataChunk2 pageMetadata,
       ByteBuffer pageData, int offset)
       throws IOException, MemoryException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
-    ColumnPageDecoder decoder = strategy.createDecoder(encodings, encoderMetas);
-    ColumnPage decodedPage = decoder.decode(
-        pageData.array(), offset, pageMetadata.data_page_length);
-    return new ColumnPageWrapper(decodedPage);
+    ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas);
+    return decoder.decode(pageData.array(), offset, pageMetadata.data_page_length);
   }
 
   private boolean isEncodedWithMeta(DataChunk2 pageMetadata) {
@@ -246,7 +244,9 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset)
       throws IOException, MemoryException {
     if (isEncodedWithMeta(pageMetadata)) {
-      return decodeDimensionByMeta(pageMetadata, pageData, offset);
+      ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, offset);
+      return new ColumnPageWrapper(decodedPage,
+          eachColumnValueSize[rawColumnPage.getColumnIndex()]);
     } else {
       // following code is for backward compatibility
       return decodeDimensionLegacy(rawColumnPage, pageData, pageMetadata, offset);
@@ -276,7 +276,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
           CarbonUtil.getIntArray(pageData, offset, pageMetadata.rle_page_length);
       // uncompress the data with rle indexes
       dataPage = UnBlockIndexer.uncompressData(dataPage, rlePage,
-          eachColumnValueSize[rawColumnPage.getBlockletId()]);
+          eachColumnValueSize[rawColumnPage.getColumnIndex()]);
     }
 
     DimensionColumnDataChunk columnDataChunk = null;
@@ -292,7 +292,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       columnDataChunk =
           new FixedLengthDimensionDataChunk(dataPage, invertedIndexes, invertedIndexesReverse,
               pageMetadata.getNumberOfRowsInpage(),
-              eachColumnValueSize[rawColumnPage.getBlockletId()]);
+              eachColumnValueSize[rawColumnPage.getColumnIndex()]);
     }
     return columnDataChunk;
   }

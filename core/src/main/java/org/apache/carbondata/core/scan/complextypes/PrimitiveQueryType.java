@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
-import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -46,8 +45,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
 
   private int keySize;
 
-  private int blockIndex;
-
   private Dictionary dictionary;
 
   private org.apache.carbondata.core.metadata.datatype.DataType dataType;
@@ -63,7 +60,6 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
     this.dictionary = dictionary;
     this.name = name;
     this.parentname = parentname;
-    this.blockIndex = blockIndex;
     this.isDirectDictionary = isDirectDictionary;
   }
 
@@ -95,10 +91,7 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
   @Override public void parseBlocksAndReturnComplexColumnByteArray(
       DimensionRawColumnChunk[] rawColumnChunks, int rowNumber,
       int pageNumber, DataOutputStream dataOutputStream) throws IOException {
-    DimensionColumnDataChunk dataChunk =
-        rawColumnChunks[blockIndex].convertToDimColDataChunk(pageNumber);
-    byte[] currentVal = new byte[dataChunk.getColumnValueSize()];
-    copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber, currentVal);
+    byte[] currentVal = copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber);
     dataOutputStream.write(currentVal);
   }
 

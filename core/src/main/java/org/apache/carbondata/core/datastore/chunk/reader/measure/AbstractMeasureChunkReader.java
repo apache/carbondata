@@ -17,15 +17,15 @@
 package org.apache.carbondata.core.datastore.chunk.reader.measure;
 
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
-import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategy;
-import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategyFactory;
+import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
+import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
 
 /**
  * Measure block reader abstract class
  */
 public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkReader {
 
-  protected EncodingStrategy strategy = EncodingStrategyFactory.getStrategy();
+  protected EncodingFactory encodingFactory = DefaultEncodingFactory.getInstance();
 
   /**
    * file path from which blocks will be read

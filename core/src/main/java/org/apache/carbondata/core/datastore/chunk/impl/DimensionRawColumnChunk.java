@@ -39,9 +39,9 @@ public class DimensionRawColumnChunk extends AbstractRawColumnChunk {
 
   private FileHolder fileHolder;
 
-  public DimensionRawColumnChunk(int blockletId, ByteBuffer rawData, int offSet, int length,
+  public DimensionRawColumnChunk(int columnIndex, ByteBuffer rawData, int offSet, int length,
       DimensionColumnChunkReader columnChunkReader) {
-    super(blockletId, rawData, offSet, length);
+    super(columnIndex, rawData, offSet, length);
     this.chunkReader = columnChunkReader;
   }
 

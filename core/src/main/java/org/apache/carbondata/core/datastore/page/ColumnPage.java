@@ -22,7 +22,11 @@ import java.math.BigDecimal;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.ColumnType;
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -42,10 +46,14 @@ import static org.apache.carbondata.core.metadata.datatype.DataType.SHORT_INT;
 
 public abstract class ColumnPage {
 
+  // number of row in this page
   protected final int pageSize;
+
+  // data type of the page storage
   protected final DataType dataType;
-  protected int scale;
-  protected int precision;
+
+  // specification of this column
+  private final TableSpec.ColumnSpec columnSpec;
 
   // The index of the rowId whose value is null, will be set to 1
   private BitSet nullBitSet;
@@ -59,13 +67,18 @@ public abstract class ColumnPage {
       .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
           CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT));
 
-  protected ColumnPage(DataType dataType, int pageSize, int scale, int precision) {
+  /**
+   * Create a new column page with input data type and page size.
+   */
+  protected ColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
+    this.columnSpec = columnSpec;
     this.dataType = dataType;
     this.pageSize = pageSize;
-    this.scale = scale;
-    this.precision = precision;
     this.nullBitSet = new BitSet(pageSize);
     if (dataType == DECIMAL) {
+      assert (columnSpec.getColumnType() == ColumnType.MEASURE);
+      int precision = columnSpec.getPrecision();
+      int scale = columnSpec.getScale();
       decimalConverter = DecimalConverterFactory.INSTANCE.getDecimalConverter(precision, scale);
     }
   }
@@ -117,54 +130,52 @@ public abstract class ColumnPage {
     this.statsCollector = statsCollector;
   }
 
-  private static ColumnPage createVarLengthPage(DataType dataType, int pageSize, int scale,
-      int precision) {
+  private static ColumnPage createVarLengthPage(TableSpec.ColumnSpec columnSpec, DataType dataType,
+      int pageSize) {
     if (unsafe) {
       try {
-        return new UnsafeVarLengthColumnPage(dataType, pageSize, scale, precision);
+        return new UnsafeVarLengthColumnPage(columnSpec, dataType, pageSize);
       } catch (MemoryException e) {
         throw new RuntimeException(e);
       }
     } else {
-      return new SafeVarLengthColumnPage(dataType, pageSize, scale, precision);
+      return new SafeVarLengthColumnPage(columnSpec, dataType, pageSize);
     }
   }
 
-  private static ColumnPage createFixLengthPage(DataType dataType, int pageSize, int scale,
-      int precision) {
+  private static ColumnPage createFixLengthPage(TableSpec.ColumnSpec columnSpec, DataType dataType,
+      int pageSize) {
     if (unsafe) {
       try {
-        return new UnsafeFixLengthColumnPage(dataType, pageSize, scale, precision);
+        return new UnsafeFixLengthColumnPage(columnSpec, dataType, pageSize);
       } catch (MemoryException e) {
         throw new RuntimeException(e);
       }
     } else {
-      return new SafeFixLengthColumnPage(dataType, pageSize, scale, pageSize);
+      return new SafeFixLengthColumnPage(columnSpec, dataType, pageSize);
     }
   }
 
-  private static ColumnPage createPage(DataType dataType, int pageSize, int scale, int precision) {
+  private static ColumnPage createPage(TableSpec.ColumnSpec columnSpec, DataType dataType,
+      int pageSize) {
     if (dataType.equals(BYTE_ARRAY) || dataType.equals(DECIMAL)) {
-      return createVarLengthPage(dataType, pageSize, scale, precision);
+      return createVarLengthPage(columnSpec, dataType, pageSize);
     } else {
-      return createFixLengthPage(dataType, pageSize, scale, precision);
+      return createFixLengthPage(columnSpec, dataType, pageSize);
     }
   }
 
-  public static ColumnPage newPage(DataType dataType, int pageSize) throws MemoryException {
-    return newPage(dataType, pageSize, -1, -1);
-  }
-
-  public static ColumnPage newDecimalPage(DataType dataType, int pageSize, int scale, int precision)
+  public static ColumnPage newDecimalPage(TableSpec.ColumnSpec columnSpec, DataType dataType,
+      int pageSize)
     throws MemoryException {
-    return newPage(dataType, pageSize, scale, precision);
+    return newPage(columnSpec, dataType, pageSize);
   }
 
   /**
    * Create a new page of dataType and number of row = pageSize
    */
-  private static ColumnPage newPage(DataType dataType, int pageSize, int scale, int precision)
-      throws MemoryException {
+  public static ColumnPage newPage(TableSpec.ColumnSpec columnSpec, DataType dataType,
+      int pageSize) throws MemoryException {
     ColumnPage instance;
     if (unsafe) {
       switch (dataType) {
@@ -175,12 +186,13 @@ public abstract class ColumnPage {
         case LONG:
         case FLOAT:
         case DOUBLE:
-          instance = new UnsafeFixLengthColumnPage(dataType, pageSize, -1, -1);
+          instance = new UnsafeFixLengthColumnPage(columnSpec, dataType, pageSize);
           break;
         case DECIMAL:
         case STRING:
         case BYTE_ARRAY:
-          instance = new UnsafeVarLengthColumnPage(dataType, pageSize, scale, precision);
+          instance =
+              new UnsafeVarLengthColumnPage(columnSpec, dataType, pageSize);
           break;
         default:
           throw new RuntimeException("Unsupported data dataType: " + dataType);
@@ -188,32 +200,32 @@ public abstract class ColumnPage {
     } else {
       switch (dataType) {
         case BYTE:
-          instance = newBytePage(new byte[pageSize]);
+          instance = newBytePage(columnSpec, new byte[pageSize]);
           break;
         case SHORT:
-          instance = newShortPage(new short[pageSize]);
+          instance = newShortPage(columnSpec, new short[pageSize]);
           break;
         case SHORT_INT:
-          instance = newShortIntPage(new byte[pageSize * 3]);
+          instance = newShortIntPage(columnSpec, new byte[pageSize * 3]);
           break;
         case INT:
-          instance = newIntPage(new int[pageSize]);
+          instance = newIntPage(columnSpec, new int[pageSize]);
           break;
         case LONG:
-          instance = newLongPage(new long[pageSize]);
+          instance = newLongPage(columnSpec, new long[pageSize]);
           break;
         case FLOAT:
-          instance = newFloatPage(new float[pageSize]);
+          instance = newFloatPage(columnSpec, new float[pageSize]);
           break;
         case DOUBLE:
-          instance = newDoublePage(new double[pageSize]);
+          instance = newDoublePage(columnSpec, new double[pageSize]);
           break;
         case DECIMAL:
-          instance = newDecimalPage(new byte[pageSize][], scale, precision);
+          instance = newDecimalPage(columnSpec, new byte[pageSize][]);
           break;
         case STRING:
         case BYTE_ARRAY:
-          instance = new SafeVarLengthColumnPage(dataType, pageSize, -1, -1);
+          instance = new SafeVarLengthColumnPage(columnSpec, dataType, pageSize);
           break;
         default:
           throw new RuntimeException("Unsupported data dataType: " + dataType);
@@ -222,68 +234,68 @@ public abstract class ColumnPage {
     return instance;
   }
 
-  public static ColumnPage wrapByteArrayPage(byte[][] byteArray) {
-    ColumnPage columnPage = createPage(BYTE_ARRAY, byteArray.length, -1, -1);
+  public static ColumnPage wrapByteArrayPage(TableSpec.ColumnSpec columnSpec, byte[][] byteArray) {
+    ColumnPage columnPage = createPage(columnSpec, BYTE_ARRAY, byteArray.length);
     columnPage.setByteArrayPage(byteArray);
     return columnPage;
   }
 
-  private static ColumnPage newBytePage(byte[] byteData) {
-    ColumnPage columnPage = createPage(BYTE, byteData.length,  -1, -1);
+  private static ColumnPage newBytePage(TableSpec.ColumnSpec columnSpec, byte[] byteData) {
+    ColumnPage columnPage = createPage(columnSpec, BYTE, byteData.length);
     columnPage.setBytePage(byteData);
     return columnPage;
   }
 
-  private static ColumnPage newShortPage(short[] shortData) {
-    ColumnPage columnPage = createPage(SHORT, shortData.length,  -1, -1);
+  private static ColumnPage newShortPage(TableSpec.ColumnSpec columnSpec, short[] shortData) {
+    ColumnPage columnPage = createPage(columnSpec, SHORT, shortData.length);
     columnPage.setShortPage(shortData);
     return columnPage;
   }
 
-  private static ColumnPage newShortIntPage(byte[] shortIntData) {
-    ColumnPage columnPage = createPage(SHORT_INT, shortIntData.length / 3,  -1, -1);
+  private static ColumnPage newShortIntPage(TableSpec.ColumnSpec columnSpec, byte[] shortIntData) {
+    ColumnPage columnPage = createPage(columnSpec, SHORT_INT, shortIntData.length / 3);
     columnPage.setShortIntPage(shortIntData);
     return columnPage;
   }
 
-  private static ColumnPage newIntPage(int[] intData) {
-    ColumnPage columnPage = createPage(INT, intData.length,  -1, -1);
+  private static ColumnPage newIntPage(TableSpec.ColumnSpec columnSpec, int[] intData) {
+    ColumnPage columnPage = createPage(columnSpec, INT, intData.length);
     columnPage.setIntPage(intData);
     return columnPage;
   }
 
-  private static ColumnPage newLongPage(long[] longData) {
-    ColumnPage columnPage = createPage(LONG, longData.length,  -1, -1);
+  private static ColumnPage newLongPage(TableSpec.ColumnSpec columnSpec, long[] longData) {
+    ColumnPage columnPage = createPage(columnSpec, LONG, longData.length);
     columnPage.setLongPage(longData);
     return columnPage;
   }
 
-  private static ColumnPage newFloatPage(float[] floatData) {
-    ColumnPage columnPage = createPage(FLOAT, floatData.length,  -1, -1);
+  private static ColumnPage newFloatPage(TableSpec.ColumnSpec columnSpec, float[] floatData) {
+    ColumnPage columnPage = createPage(columnSpec, FLOAT, floatData.length);
     columnPage.setFloatPage(floatData);
     return columnPage;
   }
 
-  private static ColumnPage newDoublePage(double[] doubleData) {
-    ColumnPage columnPage = createPage(DOUBLE, doubleData.length, -1, -1);
+  private static ColumnPage newDoublePage(TableSpec.ColumnSpec columnSpec, double[] doubleData) {
+    ColumnPage columnPage = createPage(columnSpec, DOUBLE, doubleData.length);
     columnPage.setDoublePage(doubleData);
     return columnPage;
   }
 
-  private static ColumnPage newDecimalPage(byte[][] byteArray, int scale, int precision) {
-    ColumnPage columnPage = createPage(DECIMAL, byteArray.length, scale, precision);
+  private static ColumnPage newDecimalPage(TableSpec.ColumnSpec columnSpec, byte[][] byteArray) {
+    ColumnPage columnPage = createPage(columnSpec, DECIMAL, byteArray.length);
     columnPage.setByteArrayPage(byteArray);
     return columnPage;
   }
 
-  private static ColumnPage newDecimalPage(byte[] lvEncodedByteArray, int scale, int precision)
-      throws MemoryException {
-    return VarLengthColumnPageBase.newDecimalColumnPage(lvEncodedByteArray, scale, precision);
+  private static ColumnPage newDecimalPage(TableSpec.ColumnSpec columnSpec,
+      byte[] lvEncodedByteArray) throws MemoryException {
+    return VarLengthColumnPageBase.newDecimalColumnPage(columnSpec, lvEncodedByteArray);
   }
 
-  private static ColumnPage newLVBytesPage(byte[] lvEncodedByteArray)
-      throws MemoryException {
-    return VarLengthColumnPageBase.newLVBytesColumnPage(lvEncodedByteArray);
+  private static ColumnPage newLVBytesPage(TableSpec.ColumnSpec columnSpec,
+      byte[] lvEncodedByteArray) throws MemoryException {
+    return VarLengthColumnPageBase.newLVBytesColumnPage(columnSpec, lvEncodedByteArray);
   }
 
   /**
@@ -538,7 +550,7 @@ public abstract class ColumnPage {
   /**
    * For variable length page, get the flattened data
    */
-  public abstract byte[] getFlattenedBytePage();
+  public abstract byte[] getLVFlattenedBytePage() throws IOException;
 
   /**
    * For decimals
@@ -572,7 +584,7 @@ public abstract class ColumnPage {
       case DECIMAL:
         return compressor.compressByte(getDecimalPage());
       case BYTE_ARRAY:
-        return compressor.compressByte(getFlattenedBytePage());
+        return compressor.compressByte(getLVFlattenedBytePage());
       default:
         throw new UnsupportedOperationException("unsupport compress column page: " + dataType);
     }
@@ -582,47 +594,51 @@ public abstract class ColumnPage {
    * Decompress data and create a column page using the decompressed data,
    * except for decimal page
    */
-  public static ColumnPage decompress(Compressor compressor, DataType dataType,
-      byte[] compressedData, int offset, int length)
+  public static ColumnPage decompress(ColumnPageEncoderMeta meta, byte[] compressedData,
+      int offset, int length)
       throws MemoryException {
-    switch (dataType) {
+    Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
+    TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
+    switch (meta.getStoreDataType()) {
       case BYTE:
         byte[] byteData = compressor.unCompressByte(compressedData, offset, length);
-        return newBytePage(byteData);
+        return newBytePage(columnSpec, byteData);
       case SHORT:
         short[] shortData = compressor.unCompressShort(compressedData, offset, length);
-        return newShortPage(shortData);
+        return newShortPage(columnSpec, shortData);
       case SHORT_INT:
         byte[] shortIntData = compressor.unCompressByte(compressedData, offset, length);
-        return newShortIntPage(shortIntData);
+        return newShortIntPage(columnSpec, shortIntData);
       case INT:
         int[] intData = compressor.unCompressInt(compressedData, offset, length);
-        return newIntPage(intData);
+        return newIntPage(columnSpec, intData);
       case LONG:
         long[] longData = compressor.unCompressLong(compressedData, offset, length);
-        return newLongPage(longData);
+        return newLongPage(columnSpec, longData);
       case FLOAT:
         float[] floatData = compressor.unCompressFloat(compressedData, offset, length);
-        return newFloatPage(floatData);
+        return newFloatPage(columnSpec, floatData);
       case DOUBLE:
         double[] doubleData = compressor.unCompressDouble(compressedData, offset, length);
-        return newDoublePage(doubleData);
+        return newDoublePage(columnSpec, doubleData);
       case BYTE_ARRAY:
         byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
-        return newLVBytesPage(lvVarBytes);
+        return newLVBytesPage(columnSpec, lvVarBytes);
       default:
-        throw new UnsupportedOperationException("unsupport uncompress column page: " + dataType);
+        throw new UnsupportedOperationException("unsupport uncompress column page: " +
+            meta.getStoreDataType());
     }
   }
 
   /**
    * Decompress decimal data and create a column page
    */
-  public static ColumnPage decompressDecimalPage(Compressor compressor,
-      byte[] compressedData, int offset, int length, int scale, int precision)
-      throws MemoryException {
+  public static ColumnPage decompressDecimalPage(ColumnPageEncoderMeta meta, byte[] compressedData,
+      int offset, int length) throws MemoryException {
+    Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
+    TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     byte[] lvEncodedBytes = compressor.unCompressByte(compressedData, offset, length);
-    return newDecimalPage(lvEncodedBytes, scale, precision);
+    return newDecimalPage(columnSpec, lvEncodedBytes);
   }
 
   public BitSet getNullBits() {
@@ -631,5 +647,9 @@ public abstract class ColumnPage {
 
   public void setNullBits(BitSet nullBitSet) {
     this.nullBitSet = nullBitSet;
+  }
+
+  public TableSpec.ColumnSpec getColumnSpec() {
+    return columnSpec;
   }
 }

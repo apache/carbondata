@@ -33,7 +33,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
-import org.apache.carbondata.core.datastore.DimensionType;
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
@@ -585,8 +585,8 @@ public final class CarbonDataProcessorUtil {
    * @param dimensionType
    * @return
    */
-  public static boolean isRleApplicableForColumn(DimensionType dimensionType) {
-    if (dimensionType == DimensionType.GLOBAL_DICTIONARY) {
+  public static boolean isRleApplicableForColumn(ColumnType dimensionType) {
+    if (dimensionType == ColumnType.GLOBAL_DICTIONARY) {
       return true;
     }
     return false;

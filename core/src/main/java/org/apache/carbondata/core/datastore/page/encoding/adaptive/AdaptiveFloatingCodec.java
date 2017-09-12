@@ -71,7 +71,8 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
         if (encodedPage != null) {
           throw new IllegalStateException("already encoded");
         }
-        encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
+        encodedPage = ColumnPage.newPage(input.getColumnSpec(), targetDataType,
+            input.getPageSize());
         input.convertValue(converter);
         byte[] result = encodedPage.compress(compressor);
         encodedPage.freeMemory();
@@ -87,24 +88,20 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
 
       @Override
       protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
-        return new AdaptiveFloatingEncoderMeta(compressor.getName(), targetDataType, stats);
+        return new ColumnPageEncoderMeta(inputPage.getColumnSpec(), targetDataType, stats,
+            compressor.getName());
       }
 
     };
   }
 
   @Override
-  public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
-    assert meta instanceof AdaptiveFloatingEncoderMeta;
-    AdaptiveFloatingEncoderMeta codecMeta = (AdaptiveFloatingEncoderMeta) meta;
-    final Compressor compressor =
-        CompressorFactory.getInstance().getCompressor(codecMeta.getCompressorName());
-    final DataType targetDataType = codecMeta.getTargetDataType();
+  public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     return new ColumnPageDecoder() {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
-        ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
+        ColumnPage page = ColumnPage.decompress(meta, input, offset, length);
         return LazyColumnPage.newPage(page, converter);
       }
     };

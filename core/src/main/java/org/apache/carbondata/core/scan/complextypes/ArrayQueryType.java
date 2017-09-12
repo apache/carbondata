@@ -63,16 +63,15 @@ public class ArrayQueryType extends ComplexQueryType implements GenericQueryType
 
   public void parseBlocksAndReturnComplexColumnByteArray(DimensionRawColumnChunk[] rawColumnChunks,
       int rowNumber, int pageNumber, DataOutputStream dataOutputStream) throws IOException {
-    byte[] input = new byte[8];
-    copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber, input);
+    byte[] input = copyBlockDataChunk(rawColumnChunks, rowNumber, pageNumber);
     ByteBuffer byteArray = ByteBuffer.wrap(input);
     int dataLength = byteArray.getInt();
     dataOutputStream.writeInt(dataLength);
     if (dataLength > 0) {
-      int columnIndex = byteArray.getInt();
+      int dataOffset = byteArray.getInt();
       for (int i = 0; i < dataLength; i++) {
         children
-            .parseBlocksAndReturnComplexColumnByteArray(rawColumnChunks, columnIndex++, pageNumber,
+            .parseBlocksAndReturnComplexColumnByteArray(rawColumnChunks, dataOffset++, pageNumber,
                 dataOutputStream);
       }
     }

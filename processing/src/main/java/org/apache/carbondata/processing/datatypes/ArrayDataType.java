@@ -64,6 +64,13 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
    */
   private int dataCounter;
 
+  private ArrayDataType(int outputArrayIndex, int dataCounter, GenericDataType children) {
+    this.outputArrayIndex = outputArrayIndex;
+    this.dataCounter = dataCounter;
+    this.children = children;
+  }
+
+
   /**
    * constructor
    * @param name
@@ -270,4 +277,8 @@ public class ArrayDataType implements GenericDataType<ArrayObject> {
     children.fillCardinalityAfterDataLoad(dimCardWithComplex, maxSurrogateKeyArray);
   }
 
+  @Override
+  public GenericDataType<ArrayObject> deepCopy() {
+    return new ArrayDataType(this.outputArrayIndex, this.dataCounter, this.children.deepCopy());
+  }
 }

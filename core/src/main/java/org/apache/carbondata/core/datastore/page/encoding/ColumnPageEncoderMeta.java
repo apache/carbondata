@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -35,18 +36,21 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  */
 public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable {
 
-  // data type of this column
-  private DataType dataType;
+  private static final long serialVersionUID = 1905162071950251407L;
+
+  // column spec of this column
+  private transient TableSpec.ColumnSpec columnSpec;
+
+  // storage data type of this column, it could be different from data type in the column spec
+  private DataType storeDataType;
+
+  // compressor name for compressing and decompressing this column
+  private String compressorName;
 
   private int scale;
   private int precision;
 
-  public static final char BYTE_VALUE_MEASURE = 'c';
-  public static final char SHORT_VALUE_MEASURE = 'j';
-  public static final char INT_VALUE_MEASURE = 'k';
-  public static final char BIG_INT_MEASURE = 'd';
   public static final char DOUBLE_MEASURE = 'n';
-  public static final char BIG_DECIMAL_MEASURE = 'b';
   public static final char STRING = 's';
   public static final char TIMESTAMP = 't';
   public static final char DATE = 'x';
@@ -55,14 +59,22 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   public ColumnPageEncoderMeta() {
   }
 
-  public ColumnPageEncoderMeta(DataType dataType, SimpleStatsResult stats) {
-    if (dataType == null) {
-      throw new IllegalArgumentException("data type must not be null");
+  public ColumnPageEncoderMeta(TableSpec.ColumnSpec columnSpec, DataType storeDataType,
+      SimpleStatsResult stats, String compressorName) {
+    if (columnSpec == null) {
+      throw new IllegalArgumentException("columm spec must not be null");
     }
-    this.dataType = dataType;
-    setType(convertType(dataType));
+    if (storeDataType == null) {
+      throw new IllegalArgumentException("store data type must not be null");
+    }
+    if (compressorName == null) {
+      throw new IllegalArgumentException("compressor must not be null");
+    }
+    this.columnSpec = columnSpec;
+    this.storeDataType = storeDataType;
+    this.compressorName = compressorName;
+    setType(convertType(storeDataType));
     if (stats != null) {
-      assert (stats.getDataType() == dataType);
       setDecimal(stats.getDecimalCount());
       setMaxValue(stats.getMax());
       setMinValue(stats.getMin());
@@ -75,6 +87,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     switch (type) {
       case BYTE:
       case SHORT:
+      case SHORT_INT:
       case INT:
       case LONG:
         return CarbonCommonConstants.BIG_INT_MEASURE;
@@ -95,28 +108,33 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     }
   }
 
-  public DataType getDataType() {
-    return dataType;
+  public DataType getStoreDataType() {
+    return storeDataType;
   }
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeByte(dataType.ordinal());
+    columnSpec.write(out);
+    out.writeByte(storeDataType.ordinal());
     out.writeInt(getDecimal());
     out.writeByte(getDataTypeSelected());
     writeMinMax(out);
+    out.writeUTF(compressorName);
   }
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    dataType = DataType.valueOf(in.readByte());
+    columnSpec = new TableSpec.ColumnSpec();
+    columnSpec.readFields(in);
+    storeDataType = DataType.valueOf(in.readByte());
     setDecimal(in.readInt());
     setDataTypeSelected(in.readByte());
     readMinMax(in);
+    compressorName = in.readUTF();
   }
 
   private void writeMinMax(DataOutput out) throws IOException {
-    switch (dataType) {
+    switch (columnSpec.getSchemaDataType()) {
       case BYTE:
         out.writeByte((byte) getMaxValue());
         out.writeByte((byte) getMinValue());
@@ -161,12 +179,12 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
         // TODO: support stats for complex type
         break;
       default:
-        throw new IllegalArgumentException("invalid data type: " + dataType);
+        throw new IllegalArgumentException("invalid data type: " + storeDataType);
     }
   }
 
   private void readMinMax(DataInput in) throws IOException {
-    switch (dataType) {
+    switch (columnSpec.getSchemaDataType()) {
       case BYTE:
         this.setMaxValue(in.readByte());
         this.setMinValue(in.readByte());
@@ -210,7 +228,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
         // TODO: support stats for complex type
         break;
       default:
-        throw new IllegalArgumentException("invalid data type: " + dataType);
+        throw new IllegalArgumentException("invalid data type: " + storeDataType);
     }
   }
 
@@ -227,7 +245,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
    */
   private byte[] getValueAsBytes(Object value) {
     ByteBuffer b;
-    switch (dataType) {
+    switch (storeDataType) {
       case BYTE:
         b = ByteBuffer.allocate(8);
         b.putLong((byte) value);
@@ -260,7 +278,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       case DATE:
         return (byte[]) value;
       default:
-        throw new IllegalArgumentException("Invalid data type: " + dataType);
+        throw new IllegalArgumentException("Invalid data type: " + storeDataType);
     }
   }
 
@@ -270,5 +288,17 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
 
   public int getPrecision() {
     return precision;
+  }
+
+  public TableSpec.ColumnSpec getColumnSpec() {
+    return columnSpec;
+  }
+
+  public String getCompressorName() {
+    return compressorName;
+  }
+
+  public DataType getSchemaDataType() {
+    return columnSpec.getSchemaDataType();
   }
 }
