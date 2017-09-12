@@ -98,6 +98,9 @@ Data/InsertData/WithHeaders.csv
 Data/InsertData/WithoutHeader.csv
 Data/uniqdata/1lac_UniqData.csv
 Data/batchsort/data.csv
+Data/batchsort/1000_UniqData.csv
+Data/batchsort/folder1/7000_UniqData.csv
+Data/batchsort/folder1/folder2/1lac_UniqData.csv
 Data/3Lakh.csv
 Data/1lakh.csv
 Data/noinverted.csv
