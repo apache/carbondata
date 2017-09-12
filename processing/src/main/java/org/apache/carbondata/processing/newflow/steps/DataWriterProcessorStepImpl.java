@@ -123,7 +123,7 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
       LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterProcessorStepImpl");
       throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage(), e);
     }
-    return null;
+    return new Iterator[0];
   }
 
   @Override protected String getStepName() {

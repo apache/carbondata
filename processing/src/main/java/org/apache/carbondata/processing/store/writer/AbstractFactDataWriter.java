@@ -354,7 +354,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
 
     File[] dataFiles = new File[dataFileList.size()];
     dataFileList.toArray(dataFiles);
-    if (dataFiles != null && dataFiles.length > 0) {
+    if (dataFiles.length > 0) {
       // since files are in different directory, we should only compare the file name
       // and ignore the directory
       Arrays.sort(dataFiles, new Comparator<File>() {

@@ -21,13 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -254,19 +248,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     // Start the consumer which will take each blocklet/page in order and write to a file
     Consumer consumer = new Consumer(tablePageList);
     consumerExecutorServiceTaskList.add(consumerExecutorService.submit(consumer));
-  }
-
-  private boolean[] arrangeUniqueBlockType(boolean[] aggKeyBlock) {
-    int counter = 0;
-    boolean[] uniqueBlock = new boolean[aggKeyBlock.length];
-    for (int i = 0; i < isDictDimension.length; i++) {
-      if (isDictDimension[i]) {
-        uniqueBlock[i] = aggKeyBlock[counter++];
-      } else {
-        uniqueBlock[i] = false;
-      }
-    }
-    return uniqueBlock;
   }
 
   private void setComplexMapSurrogateIndex(int dimensionCount) {
