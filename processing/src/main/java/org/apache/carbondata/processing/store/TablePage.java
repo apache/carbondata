@@ -23,7 +23,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.datastore.DimensionType;
 import org.apache.carbondata.core.datastore.TableSpec;
@@ -32,9 +34,9 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
+import org.apache.carbondata.core.datastore.page.encoding.DefaultEncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
-import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategy;
-import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategyFactory;
+import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
 import org.apache.carbondata.core.datastore.page.key.TablePageKey;
 import org.apache.carbondata.core.datastore.page.statistics.KeyPageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.LVStringStatsCollector;
@@ -73,10 +75,13 @@ public class TablePage {
 
   private EncodedTablePage encodedTablePage;
 
-  private EncodingStrategy encodingStrategy = EncodingStrategyFactory.getStrategy();
+  private EncodingFactory encodingFactory = DefaultEncodingFactory.getInstance();
 
   // true if it is last page of all input rows
   private boolean isLastPage;
+
+  // used for complex column to deserilize the byte array in input CarbonRow
+  private Map<Integer, GenericDataType> complexIndexMap = null;
 
   TablePage(CarbonFactDataHandlerModel model, int pageSize) throws MemoryException {
     this.model = model;
@@ -119,6 +124,13 @@ public class TablePage {
     boolean hasNoDictionary = noDictDimensionPages.length > 0;
     this.key = new TablePageKey(pageSize, model.getMDKeyGenerator(), model.getSegmentProperties(),
         hasNoDictionary);
+
+    // for complex type, `complexIndexMap` is used in multithread (in multiple Producer),
+    // we need to clone the index map to make it thread safe
+    this.complexIndexMap = new HashMap<>();
+    for (Map.Entry<Integer, GenericDataType> entry: model.getComplexIndexMap().entrySet()) {
+      this.complexIndexMap.put(entry.getKey(), entry.getValue().deepCopy());
+    }
   }
 
   /**
@@ -187,7 +199,7 @@ public class TablePage {
   // TODO: this function should be refactoried, ColumnPage should support complex type encoding
   // directly instead of doing it here
   private void addComplexColumn(int index, int rowId, byte[] complexColumns) {
-    GenericDataType complexDataType = model.getComplexIndexMap().get(
+    GenericDataType complexDataType = complexIndexMap.get(
         index + model.getPrimitiveDimLens().length);
 
     // initialize the page if first row
@@ -265,7 +277,7 @@ public class TablePage {
       throws MemoryException, IOException {
     EncodedColumnPage[] encodedMeasures = new EncodedColumnPage[measurePages.length];
     for (int i = 0; i < measurePages.length; i++) {
-      ColumnPageEncoder encoder = encodingStrategy.createEncoder(
+      ColumnPageEncoder encoder = encodingFactory.createEncoder(
           model.getTableSpec().getMeasureSpec(i), measurePages[i]);
       encodedMeasures[i] = encoder.encode(measurePages[i]);
     }
@@ -289,14 +301,14 @@ public class TablePage {
       switch (spec.getDimensionType()) {
         case GLOBAL_DICTIONARY:
         case DIRECT_DICTIONARY:
-          columnPageEncoder = encodingStrategy.createEncoder(
+          columnPageEncoder = encodingFactory.createEncoder(
               spec,
               dictDimensionPages[dictIndex]);
           encodedPage = columnPageEncoder.encode(dictDimensionPages[dictIndex++]);
           encodedDimensions.add(encodedPage);
           break;
         case PLAIN_VALUE:
-          columnPageEncoder = encodingStrategy.createEncoder(
+          columnPageEncoder = encodingFactory.createEncoder(
               spec,
               noDictDimensionPages[noDictIndex]);
           encodedPage = columnPageEncoder.encode(noDictDimensionPages[noDictIndex++]);

@@ -39,9 +39,9 @@ public class MeasureRawColumnChunk extends AbstractRawColumnChunk {
 
   private FileHolder fileReader;
 
-  public MeasureRawColumnChunk(int blockId, ByteBuffer rawData, int offSet, int length,
+  public MeasureRawColumnChunk(int columnIndex, ByteBuffer rawData, int offSet, int length,
       MeasureColumnChunkReader chunkReader) {
-    super(blockId, rawData, offSet, length);
+    super(columnIndex, rawData, offSet, length);
     this.chunkReader = chunkReader;
   }
 

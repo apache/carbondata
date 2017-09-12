@@ -79,18 +79,18 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
    * Below method will be used to read the raw chunk based on block index
    *
    * @param fileReader file reader to read the blocks from file
-   * @param blockletIndex block to be read
+   * @param columnIndex column to be read
    * @return dimension column chunk
    */
   @Override public DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader,
-      int blockletIndex) throws IOException {
-    DataChunk dataChunk = dimensionColumnChunk.get(blockletIndex);
+      int columnIndex) throws IOException {
+    DataChunk dataChunk = dimensionColumnChunk.get(columnIndex);
     ByteBuffer buffer = null;
     synchronized (fileReader) {
       buffer = fileReader
           .readByteBuffer(filePath, dataChunk.getDataPageOffset(), dataChunk.getDataPageLength());
     }
-    DimensionRawColumnChunk rawColumnChunk = new DimensionRawColumnChunk(blockletIndex, buffer, 0,
+    DimensionRawColumnChunk rawColumnChunk = new DimensionRawColumnChunk(columnIndex, buffer, 0,
         dataChunk.getDataPageLength(), this);
     rawColumnChunk.setFileHolder(fileReader);
     rawColumnChunk.setPagesCount(1);
@@ -100,7 +100,7 @@ public class CompressedDimensionChunkFileBasedReaderV1 extends AbstractChunkRead
 
   @Override public DimensionColumnDataChunk convertToDimensionChunk(
       DimensionRawColumnChunk dimensionRawColumnChunk, int pageNumber) throws IOException {
-    int blockIndex = dimensionRawColumnChunk.getBlockletId();
+    int blockIndex = dimensionRawColumnChunk.getColumnIndex();
     byte[] dataPage = null;
     int[] invertedIndexes = null;
     int[] invertedIndexesReverse = null;

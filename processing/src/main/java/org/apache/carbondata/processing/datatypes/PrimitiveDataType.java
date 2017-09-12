@@ -95,6 +95,11 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private CarbonDimension carbonDimension;
 
+  private PrimitiveDataType(int outputArrayIndex, int dataCounter) {
+    this.outputArrayIndex = outputArrayIndex;
+    this.dataCounter = dataCounter;
+  }
+
   /**
    * constructor
    *
@@ -237,7 +242,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
       KeyGenerator[] generator) throws IOException, KeyGenException {
     int data = byteArrayInput.getInt();
-    dataOutputStream.write(generator[index].generateKey(new int[] { data }));
+    byte[] v = generator[index].generateKey(new int[] { data });
+    dataOutputStream.write(v);
   }
 
   /*
@@ -316,5 +322,13 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex,
       int[] maxSurrogateKeyArray) {
     dimCardWithComplex.add(maxSurrogateKeyArray[index]);
+  }
+
+  @Override
+  public GenericDataType<Object> deepCopy() {
+    PrimitiveDataType dataType = new PrimitiveDataType(this.outputArrayIndex, 0);
+    dataType.setKeySize(this.keySize);
+    dataType.setSurrogateIndex(this.index);
+    return dataType;
   }
 }

@@ -29,8 +29,9 @@ import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
-import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.ComplexDimensionIndexCodec;
+import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressCodec;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.BlockletMinMaxIndex;
@@ -145,10 +146,9 @@ public abstract class ColumnPageEncoder {
 
   private static EncodedColumnPage encodeChildColumn(byte[][] data)
       throws IOException, MemoryException {
-    Compressor compressor = CompressorFactory.getInstance().getCompressor();
-    ComplexDimensionIndexCodec codec = new ComplexDimensionIndexCodec(false, false, compressor);
-    ColumnPageEncoder encoder = codec.createEncoder(null);
-    return encoder.encode(ColumnPage.wrapByteArrayPage(data));
+    ColumnPage page = ColumnPage.wrapByteArrayPage(data);
+    ColumnPageEncoder encoder = new DirectCompressCodec(DataType.BYTE_ARRAY).createEncoder(null);
+    return encoder.encode(page);
   }
 
 }

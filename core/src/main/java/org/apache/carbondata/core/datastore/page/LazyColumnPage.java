@@ -153,7 +153,7 @@ public class LazyColumnPage extends ColumnPage {
   }
 
   @Override
-  public byte[] getFlattenedBytePage() {
+  public byte[] getLVFlattenedBytePage() {
     throw new UnsupportedOperationException("internal error");
   }
 

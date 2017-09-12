@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -309,7 +310,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   abstract void copyBytes(int rowId, byte[] dest, int destOffset, int length);
 
   @Override
-  public byte[] getFlattenedBytePage() {
+  public byte[] getLVFlattenedBytePage() throws IOException {
     // output LV encoded byte array
     int offset = 0;
     byte[] data = new byte[totalLength + pageSize * 4];

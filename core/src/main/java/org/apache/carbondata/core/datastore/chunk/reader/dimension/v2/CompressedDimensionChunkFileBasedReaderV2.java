@@ -53,26 +53,26 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
    * Below method will be used to read the chunk based on block index
    *
    * @param fileReader    file reader to read the blocks from file
-   * @param blockletIndex block to be read
+   * @param columnIndex   column to be read
    * @return dimension column chunk
    */
-  public DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader, int blockletIndex)
+  public DimensionRawColumnChunk readRawDimensionChunk(FileHolder fileReader, int columnIndex)
       throws IOException {
     int length = 0;
-    if (dimensionChunksOffset.size() - 1 == blockletIndex) {
+    if (dimensionChunksOffset.size() - 1 == columnIndex) {
       // Incase of last block read only for datachunk and read remaining while converting it.
-      length = dimensionChunksLength.get(blockletIndex);
+      length = dimensionChunksLength.get(columnIndex);
     } else {
-      long currentDimensionOffset = dimensionChunksOffset.get(blockletIndex);
-      length = (int) (dimensionChunksOffset.get(blockletIndex + 1) - currentDimensionOffset);
+      long currentDimensionOffset = dimensionChunksOffset.get(columnIndex);
+      length = (int) (dimensionChunksOffset.get(columnIndex + 1) - currentDimensionOffset);
     }
     ByteBuffer buffer = null;
     synchronized (fileReader) {
       buffer =
-          fileReader.readByteBuffer(filePath, dimensionChunksOffset.get(blockletIndex), length);
+          fileReader.readByteBuffer(filePath, dimensionChunksOffset.get(columnIndex), length);
     }
     DimensionRawColumnChunk rawColumnChunk =
-        new DimensionRawColumnChunk(blockletIndex, buffer, 0, length, this);
+        new DimensionRawColumnChunk(columnIndex, buffer, 0, length, this);
     rawColumnChunk.setFileHolder(fileReader);
     rawColumnChunk.setPagesCount(1);
     rawColumnChunk.setRowCount(new int[] { numberOfRows });
@@ -123,7 +123,7 @@ public class CompressedDimensionChunkFileBasedReaderV2 extends AbstractChunkRead
     int[] rlePage = null;
     DataChunk2 dimensionColumnChunk = null;
     int copySourcePoint = dimensionRawColumnChunk.getOffSet();
-    int blockIndex = dimensionRawColumnChunk.getBlockletId();
+    int blockIndex = dimensionRawColumnChunk.getColumnIndex();
     ByteBuffer rawData = dimensionRawColumnChunk.getRawData();
     if (dimensionChunksOffset.size() - 1 == blockIndex) {
       dimensionColumnChunk =

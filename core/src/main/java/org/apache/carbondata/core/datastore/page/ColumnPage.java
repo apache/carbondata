@@ -538,7 +538,7 @@ public abstract class ColumnPage {
   /**
    * For variable length page, get the flattened data
    */
-  public abstract byte[] getFlattenedBytePage();
+  public abstract byte[] getLVFlattenedBytePage() throws IOException;
 
   /**
    * For decimals
@@ -572,7 +572,7 @@ public abstract class ColumnPage {
       case DECIMAL:
         return compressor.compressByte(getDecimalPage());
       case BYTE_ARRAY:
-        return compressor.compressByte(getFlattenedBytePage());
+        return compressor.compressByte(getLVFlattenedBytePage());
       default:
         throw new UnsupportedOperationException("unsupport compress column page: " + dataType);
     }

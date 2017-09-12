@@ -17,6 +17,9 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -64,6 +67,17 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   @Override
   public void setByteArrayPage(byte[][] byteArray) {
     byteArrayData = byteArray;
+  }
+
+  @Override
+  public byte[] getLVFlattenedBytePage() throws IOException {
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    DataOutputStream out = new DataOutputStream(stream);
+    for (byte[] byteArrayDatum : byteArrayData) {
+      out.writeInt(byteArrayDatum.length);
+      out.write(byteArrayDatum);
+    }
+    return stream.toByteArray();
   }
 
   @Override

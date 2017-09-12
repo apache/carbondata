@@ -50,7 +50,7 @@ import static org.apache.carbondata.format.Encoding.RLE_INTEGRAL;
 /**
  * Base class for encoding strategy implementation.
  */
-public abstract class EncodingStrategy {
+public abstract class EncodingFactory {
 
   /**
    * Return new encoder for specified column
@@ -113,7 +113,7 @@ public abstract class EncodingStrategy {
       case INT:
       case LONG:
         // create the codec based on algorithm and create decoder by recovering the metadata
-        ColumnPageCodec codec = DefaultEncodingStrategy.selectCodecByAlgorithmForIntegral(stats);
+        ColumnPageCodec codec = DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(stats);
         if (codec instanceof AdaptiveIntegralCodec) {
           AdaptiveIntegralCodec adaptiveCodec = (AdaptiveIntegralCodec) codec;
           AdaptiveIntegralEncoderMeta meta = new AdaptiveIntegralEncoderMeta(
@@ -134,7 +134,7 @@ public abstract class EncodingStrategy {
       case FLOAT:
       case DOUBLE:
         // create the codec based on algorithm and create decoder by recovering the metadata
-        codec = DefaultEncodingStrategy.selectCodecByAlgorithmForFloating(stats);
+        codec = DefaultEncodingFactory.selectCodecByAlgorithmForFloating(stats);
         if (codec instanceof AdaptiveFloatingCodec) {
           AdaptiveFloatingCodec adaptiveCodec = (AdaptiveFloatingCodec) codec;
           AdaptiveFloatingEncoderMeta meta = new AdaptiveFloatingEncoderMeta(

@@ -74,15 +74,15 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
    * Method to read the blocks data based on block index
    *
    * @param fileReader file reader to read the blocks
-   * @param blockIndex block to be read
+   * @param columnIndex column to be read
    * @return measure data chunk
    */
-  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
+  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int columnIndex)
       throws IOException {
-    DataChunk dataChunk = measureColumnChunks.get(blockIndex);
+    DataChunk dataChunk = measureColumnChunks.get(columnIndex);
     ByteBuffer buffer = fileReader
         .readByteBuffer(filePath, dataChunk.getDataPageOffset(), dataChunk.getDataPageLength());
-    MeasureRawColumnChunk rawColumnChunk = new MeasureRawColumnChunk(blockIndex, buffer, 0,
+    MeasureRawColumnChunk rawColumnChunk = new MeasureRawColumnChunk(columnIndex, buffer, 0,
         dataChunk.getDataPageLength(), this);
     rawColumnChunk.setFileReader(fileReader);
     rawColumnChunk.setPagesCount(1);
@@ -93,7 +93,7 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
   @Override
   public ColumnPage convertToColumnPage(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber) throws IOException, MemoryException {
-    int blockIndex = measureRawColumnChunk.getBlockletId();
+    int blockIndex = measureRawColumnChunk.getColumnIndex();
     DataChunk dataChunk = measureColumnChunks.get(blockIndex);
     ValueEncoderMeta meta = dataChunk.getValueEncoderMeta().get(0);
     ColumnPageDecoder codec = strategy.createDecoderLegacy(meta);

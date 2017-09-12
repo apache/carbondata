@@ -650,8 +650,8 @@ public class SegmentProperties {
   public int[] getDimensionColumnsValueSize() {
     int[] dimensionValueSize =
         new int[eachDimColumnValueSize.length + eachComplexDimColumnValueSize.length];
-    System
-        .arraycopy(eachDimColumnValueSize, 0, dimensionValueSize, 0, eachDimColumnValueSize.length);
+    System.arraycopy(
+        eachDimColumnValueSize, 0, dimensionValueSize, 0, eachDimColumnValueSize.length);
     System.arraycopy(eachComplexDimColumnValueSize, 0, dimensionValueSize,
         eachDimColumnValueSize.length, eachComplexDimColumnValueSize.length);
     return dimensionValueSize;

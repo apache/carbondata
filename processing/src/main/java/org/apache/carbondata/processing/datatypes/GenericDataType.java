@@ -142,4 +142,8 @@ public interface GenericDataType<T> {
    */
   void fillCardinality(List<Integer> dimCardWithComplex);
 
+  /**
+   * clone self for multithread access (for complex type processing in table page)
+   */
+  GenericDataType<T> deepCopy();
 }

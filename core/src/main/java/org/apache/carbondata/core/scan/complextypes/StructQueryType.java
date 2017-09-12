@@ -84,8 +84,7 @@ public class StructQueryType extends ComplexQueryType implements GenericQueryTyp
   @Override public void parseBlocksAndReturnComplexColumnByteArray(
       DimensionRawColumnChunk[] dimensionColumnDataChunks, int rowNumber,
       int pageNumber, DataOutputStream dataOutputStream) throws IOException {
-    byte[] input = new byte[8];
-    copyBlockDataChunk(dimensionColumnDataChunks, rowNumber, pageNumber, input);
+    byte[] input = copyBlockDataChunk(dimensionColumnDataChunks, rowNumber, pageNumber);
     ByteBuffer byteArray = ByteBuffer.wrap(input);
     int childElement = byteArray.getInt();
     dataOutputStream.writeInt(childElement);

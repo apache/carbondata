@@ -48,22 +48,22 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
   }
 
   @Override
-  public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
+  public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int columnIndex)
       throws IOException {
     int dataLength = 0;
-    if (measureColumnChunkOffsets.size() - 1 == blockIndex) {
-      dataLength = measureColumnChunkLength.get(blockIndex);
+    if (measureColumnChunkOffsets.size() - 1 == columnIndex) {
+      dataLength = measureColumnChunkLength.get(columnIndex);
     } else {
-      long currentMeasureOffset = measureColumnChunkOffsets.get(blockIndex);
-      dataLength = (int) (measureColumnChunkOffsets.get(blockIndex + 1) - currentMeasureOffset);
+      long currentMeasureOffset = measureColumnChunkOffsets.get(columnIndex);
+      dataLength = (int) (measureColumnChunkOffsets.get(columnIndex + 1) - currentMeasureOffset);
     }
     ByteBuffer buffer = null;
     synchronized (fileReader) {
       buffer = fileReader
-          .readByteBuffer(filePath, measureColumnChunkOffsets.get(blockIndex), dataLength);
+          .readByteBuffer(filePath, measureColumnChunkOffsets.get(columnIndex), dataLength);
     }
     MeasureRawColumnChunk rawColumnChunk =
-        new MeasureRawColumnChunk(blockIndex, buffer, 0, dataLength, this);
+        new MeasureRawColumnChunk(columnIndex, buffer, 0, dataLength, this);
     rawColumnChunk.setFileReader(fileReader);
     rawColumnChunk.setPagesCount(1);
     rawColumnChunk.setRowCount(new int[] { numberOfRows });
@@ -111,7 +111,7 @@ public class CompressedMeasureChunkFileBasedReaderV2 extends AbstractMeasureChun
   public ColumnPage convertToColumnPage(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber) throws IOException, MemoryException {
     int copyPoint = measureRawColumnChunk.getOffSet();
-    int blockIndex = measureRawColumnChunk.getBlockletId();
+    int blockIndex = measureRawColumnChunk.getColumnIndex();
     ByteBuffer rawData = measureRawColumnChunk.getRawData();
     DataChunk2 measureColumnChunk = CarbonUtil.readDataChunk(rawData, copyPoint,
         measureColumnChunkLength.get(blockIndex));

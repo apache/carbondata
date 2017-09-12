@@ -36,17 +36,16 @@ public class ComplexQueryType {
   }
 
   /**
-   * Method will copy the block chunk holder data to the passed
-   * byte[], this method is also used by child
-   *
-   * @param rowNumber
-   * @param input
+   * Method will copy the block chunk holder data and return the cloned value.
+   * This method is also used by child.
    */
-  protected void copyBlockDataChunk(DimensionRawColumnChunk[] rawColumnChunks,
-      int rowNumber, int pageNumber, byte[] input) {
+  protected byte[] copyBlockDataChunk(DimensionRawColumnChunk[] rawColumnChunks,
+      int rowNumber, int pageNumber) {
     byte[] data =
         rawColumnChunks[blockIndex].convertToDimColDataChunk(pageNumber).getChunkData(rowNumber);
-    System.arraycopy(data, 0, input, 0, data.length);
+    byte[] output = new byte[data.length];
+    System.arraycopy(data, 0, output, 0, output.length);
+    return output;
   }
 
   /*
