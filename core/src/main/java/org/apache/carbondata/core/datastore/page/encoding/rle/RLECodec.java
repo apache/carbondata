@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
@@ -64,7 +65,7 @@ public class RLECodec implements ColumnPageCodec {
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
     assert meta instanceof RLEEncoderMeta;
     RLEEncoderMeta codecMeta = (RLEEncoderMeta) meta;
-    return new RLEDecoder(codecMeta.getDataType(), codecMeta.getPageSize());
+    return new RLEDecoder(codecMeta.getColumnSpec(), codecMeta.getPageSize());
   }
 
   // This codec supports integral type only
@@ -157,8 +158,8 @@ public class RLECodec implements ColumnPageCodec {
 
     @Override
     protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
-      return new RLEEncoderMeta(
-          inputPage.getDataType(), inputPage.getPageSize(), inputPage.getStatistics());
+      return new RLEEncoderMeta(inputPage.getColumnSpec(),
+          inputPage.getPageSize(), inputPage.getStatistics());
     }
 
     private void putValue(Object value) throws IOException {
@@ -291,13 +292,12 @@ public class RLECodec implements ColumnPageCodec {
   // TODO: add a on-the-fly decoder for filter query with high selectivity
   private class RLEDecoder implements ColumnPageDecoder {
 
-    // src data type
-    private DataType dataType;
+    private TableSpec.ColumnSpec columnSpec;
     private int pageSize;
 
-    private RLEDecoder(DataType dataType, int pageSize) {
-      validateDataType(dataType);
-      this.dataType = dataType;
+    private RLEDecoder(TableSpec.ColumnSpec columnSpec, int pageSize) {
+      validateDataType(columnSpec.getSchemaDataType());
+      this.columnSpec = columnSpec;
       this.pageSize = pageSize;
     }
 
@@ -305,24 +305,24 @@ public class RLECodec implements ColumnPageCodec {
     public ColumnPage decode(byte[] input, int offset, int length)
         throws MemoryException, IOException {
       DataInputStream in = new DataInputStream(new ByteArrayInputStream(input, offset, length));
-      ColumnPage resultPage = ColumnPage.newPage(dataType, pageSize);
-      switch (dataType) {
+      ColumnPage page = ColumnPage.newPage(columnSpec, columnSpec.getSchemaDataType(), pageSize);
+      switch (columnSpec.getSchemaDataType()) {
         case BYTE:
-          decodeBytePage(in, resultPage);
+          decodeBytePage(in, page);
           break;
         case SHORT:
-          decodeShortPage(in, resultPage);
+          decodeShortPage(in, page);
           break;
         case INT:
-          decodeIntPage(in, resultPage);
+          decodeIntPage(in, page);
           break;
         case LONG:
-          decodeLongPage(in, resultPage);
+          decodeLongPage(in, page);
           break;
         default:
-          throw new RuntimeException("unsupported datatype:" + dataType);
+          throw new RuntimeException("unsupported datatype:" + columnSpec.getSchemaDataType());
       }
-      return resultPage;
+      return page;
     }
 
     private void decodeBytePage(DataInputStream in, ColumnPage decodedPage)

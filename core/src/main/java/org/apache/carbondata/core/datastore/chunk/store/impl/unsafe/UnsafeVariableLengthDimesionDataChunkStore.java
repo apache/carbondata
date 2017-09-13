@@ -165,23 +165,23 @@ public class UnsafeVariableLengthDimesionDataChunkStore
     return data;
   }
 
-  @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+  @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRowId) {
     byte[] value = getRow(rowId);
     if (ByteUtil.UnsafeComparer.INSTANCE
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, value)) {
-      vector.putNull(vectorRow);
+      vector.putNull(vectorRowId);
     } else {
       DataType dt = vector.getType();
       if (dt instanceof StringType) {
-        vector.putBytes(vectorRow, 0, value.length, value);
+        vector.putBytes(vectorRowId, 0, value.length, value);
       } else if (dt instanceof BooleanType) {
-        vector.putBoolean(vectorRow, ByteUtil.toBoolean(value[0]));
+        vector.putBoolean(vectorRowId, ByteUtil.toBoolean(value[0]));
       } else if (dt instanceof ShortType) {
-        vector.putShort(vectorRow, ByteUtil.toShort(value, 0, value.length));
+        vector.putShort(vectorRowId, ByteUtil.toShortForPlainValue(value, 0, value.length));
       } else if (dt instanceof IntegerType) {
-        vector.putInt(vectorRow, ByteUtil.toInt(value, 0, value.length));
+        vector.putInt(vectorRowId, ByteUtil.toIntForPlainValue(value, 0, value.length));
       } else if (dt instanceof LongType) {
-        vector.putLong(vectorRow, ByteUtil.toLong(value, 0, value.length));
+        vector.putLong(vectorRowId, ByteUtil.toLongForPlainValue(value, 0, value.length));
       }
     }
   }

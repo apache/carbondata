@@ -17,17 +17,23 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.io.ByteArrayOutputStream;
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+
+import static org.apache.carbondata.core.metadata.datatype.DataType.STRING;
 
 public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   // for string and decimal data
   private byte[][] byteArrayData;
 
-  SafeVarLengthColumnPage(DataType dataType, int pageSize, int scale, int precision) {
-    super(dataType, pageSize, scale, precision);
+  SafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      int scale, int precision) {
+    super(columnSpec, dataType, pageSize, scale, precision);
     byteArrayData = new byte[pageSize][];
   }
 
@@ -72,8 +78,34 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override
+  public byte[] getDirectFlattenedBytePage() {
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    for (int i = 0; i < byteArrayData.length; i++) {
+      stream.write(byteArrayData[i], 0, byteArrayData[i].length);
+    }
+    return stream.toByteArray();
+  }
+
+  @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
     System.arraycopy(byteArrayData[rowId], 0, dest, destOffset, length);
   }
 
+  /**
+   * Return a new column page that construct from input byte array and length of each row
+   */
+  static ColumnPage newStringPage(TableSpec.ColumnSpec columnSpec, byte[] bytes, short[] lengths)
+      throws MemoryException {
+    int pageSize = lengths.length;
+    SafeVarLengthColumnPage page = new SafeVarLengthColumnPage(
+        columnSpec, STRING, pageSize, -1, -1);
+    page.rowOffset[0] = 0;
+    int offset = 0;
+    for (int rowId = 0; rowId < pageSize; rowId++) {
+      page.putBytes(rowId, bytes, offset, lengths[rowId]);
+      offset += lengths[rowId];
+    }
+    page.totalLength = bytes.length;
+    return page;
+  }
 }

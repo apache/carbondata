@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page.encoding;
 
 import java.nio.ByteBuffer;
 
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
@@ -37,12 +38,14 @@ public class EncodedColumnPage {
   // stats of this page
   private SimpleStatsResult stats;
 
+  private ColumnType columnType;
+
   /**
    * Constructor
    * @param pageMetadata metadata of the encoded page
    * @param encodedData encoded data for this page
    */
-  public EncodedColumnPage(DataChunk2 pageMetadata, byte[] encodedData,
+  public EncodedColumnPage(ColumnType columnType, DataChunk2 pageMetadata, byte[] encodedData,
       SimpleStatsResult stats) {
     if (pageMetadata == null) {
       throw new IllegalArgumentException("data chunk2 must not be null");
@@ -50,6 +53,7 @@ public class EncodedColumnPage {
     if (encodedData == null) {
       throw new IllegalArgumentException("encoded data must not be null");
     }
+    this.columnType = columnType;
     this.pageMetadata = pageMetadata;
     this.encodedData = encodedData;
     this.stats = stats;
@@ -77,5 +81,9 @@ public class EncodedColumnPage {
 
   public SimpleStatsResult getStats() {
     return stats;
+  }
+
+  public ColumnType getColumnType() {
+    return columnType;
   }
 }

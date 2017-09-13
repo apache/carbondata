@@ -370,20 +370,19 @@ public final class DataTypeUtil {
       DataType actualDataType) {
     switch (actualDataType) {
       case STRING:
-        return ByteUtil.toBytes(dimensionValue);
+        return ByteUtil.toBytesForPlainValue(dimensionValue);
       case BOOLEAN:
-        return ByteUtil.toBytes(Boolean.parseBoolean(dimensionValue));
+        return ByteUtil.toBytesForPlainValue(Boolean.parseBoolean(dimensionValue));
       case SHORT:
-        return ByteUtil.toBytes(Short.parseShort(dimensionValue));
+        return ByteUtil.toBytesForPlainValue(Short.parseShort(dimensionValue));
       case INT:
-        return ByteUtil.toBytes(Integer.parseInt(dimensionValue));
+        return ByteUtil.toBytesForPlainValue(Integer.parseInt(dimensionValue));
       case LONG:
-        return ByteUtil.toBytes(Long.parseLong(dimensionValue));
+        return ByteUtil.toBytesForPlainValue(Long.parseLong(dimensionValue));
       default:
-        return ByteUtil.toBytes(dimensionValue);
+        return ByteUtil.toBytesForPlainValue(dimensionValue);
     }
   }
-
 
   /**
    * Below method will be used to convert the data passed to its actual data
@@ -406,11 +405,11 @@ public final class DataTypeUtil {
         case BOOLEAN:
           return ByteUtil.toBoolean(dataInBytes);
         case SHORT:
-          return ByteUtil.toShort(dataInBytes, 0, dataInBytes.length);
+          return ByteUtil.toShortForPlainValue(dataInBytes, 0, dataInBytes.length);
         case INT:
-          return ByteUtil.toInt(dataInBytes, 0, dataInBytes.length);
+          return ByteUtil.toIntForPlainValue(dataInBytes, 0, dataInBytes.length);
         case LONG:
-          return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length);
+          return ByteUtil.toLongForPlainValue(dataInBytes, 0, dataInBytes.length);
         default:
           return ByteUtil.toString(dataInBytes, 0, dataInBytes.length);
       }

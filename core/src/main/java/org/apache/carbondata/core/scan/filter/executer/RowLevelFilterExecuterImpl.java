@@ -35,7 +35,6 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDataChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
@@ -260,12 +259,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         DimensionColumnDataChunk columnDataChunk =
             blockChunkHolder.getDimensionRawDataChunk()[dimensionBlocksIndex[i]]
                 .convertToDimColDataChunk(pageIndex);
-        if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)
-            && columnDataChunk instanceof VariableLengthDimensionDataChunk) {
-
-          VariableLengthDimensionDataChunk dimensionColumnDataChunk =
-              (VariableLengthDimensionDataChunk) columnDataChunk;
-          byte[] memberBytes = dimensionColumnDataChunk.getChunkData(index);
+        if (!dimColumnEvaluatorInfo.getDimension().hasEncoding(Encoding.DICTIONARY)) {
+          byte[] memberBytes = columnDataChunk.getChunkData(index);
           if (null != memberBytes) {
             if (Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, memberBytes)) {
               memberBytes = null;
@@ -273,8 +268,6 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
                 .getDataBasedOnDataTypeForNoDictionaryColumn(memberBytes,
                     dimColumnEvaluatorInfo.getDimension().getDataType());
-          } else {
-            continue;
           }
         } else {
           int dictionaryValue = readSurrogatesFromColumnBlock(blockChunkHolder, index, pageIndex,

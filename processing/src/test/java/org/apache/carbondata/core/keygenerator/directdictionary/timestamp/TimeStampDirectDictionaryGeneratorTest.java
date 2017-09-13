@@ -52,7 +52,6 @@ public class TimeStampDirectDictionaryGeneratorTest {
     Assert.assertEquals(1, key);
     key = generator.generateDirectSurrogateKey("2015-10-20 12:30:01");
     Assert.assertEquals(surrogateKey, key);
-
   }
 
   /**

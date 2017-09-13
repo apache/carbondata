@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.datastore.chunk.impl;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionDataChunkStore;
 
@@ -39,11 +40,11 @@ public abstract class AbstractDimensionDataChunk implements DimensionColumnDataC
   /**
    * Below method to get the data based in row id
    *
-   * @param index row id of the data
+   * @param rowId row id of the data
    * @return chunk
    */
-  @Override public byte[] getChunkData(int index) {
-    return dataChunkStore.getRow(index);
+  @Override public byte[] getChunkData(int rowId) {
+    return dataChunkStore.getRow(rowId);
   }
 
   /**
@@ -63,13 +64,20 @@ public abstract class AbstractDimensionDataChunk implements DimensionColumnDataC
   /**
    * To compare the data
    *
-   * @param index        row index to be compared
+   * @param rowId        row index to be compared
    * @param compareValue value to compare
    * @return compare result
    */
-  @Override public int compareTo(int index, byte[] compareValue) {
+  @Override public int compareTo(int rowId, byte[] compareValue) {
     // TODO Auto-generated method stub
-    return dataChunkStore.compareTo(index, compareValue);
+    return dataChunkStore.compareTo(rowId, compareValue);
+  }
+
+  /**
+   * return true is data is not present at rowId
+   */
+  @Override public boolean isNull(int rowId) {
+    return dataChunkStore.compareTo(rowId, CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY) == 0;
   }
 
   /**

@@ -239,7 +239,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
   }
 
-  ignore("Alter table add partition: List Partition") {
+  test("Alter table add partition: List Partition") {
     sql("""ALTER TABLE list_table_area ADD PARTITION ('OutSpace', 'Hi')""".stripMargin)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_list_table_area")
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)

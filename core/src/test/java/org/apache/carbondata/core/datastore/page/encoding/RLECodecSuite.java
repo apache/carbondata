@@ -20,10 +20,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
+import org.apache.carbondata.core.datastore.ColumnType;
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.rle.RLECodec;
 import org.apache.carbondata.core.datastore.page.encoding.rle.RLEEncoderMeta;
-import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
@@ -42,8 +43,7 @@ public class RLECodecSuite {
 
     TestData(byte[] inputByteData, byte[] expectedEncodedByteData) throws IOException, MemoryException {
       this.inputByteData = inputByteData;
-      inputBytePage = ColumnPage.newPage(DataType.BYTE, inputByteData.length);
-      inputBytePage.setStatsCollector(PrimitivePageStatsCollector.newInstance(DataType.BYTE, 0, 0));
+      inputBytePage = ColumnPage.newPage(null, DataType.BYTE, inputByteData.length);
       for (int i = 0; i < inputByteData.length; i++) {
         inputBytePage.putData(i, inputByteData[i]);
       }
@@ -125,7 +125,8 @@ public class RLECodecSuite {
 
   private void testBytePageDecode(byte[] inputBytes, byte[] expectedDecodedBytes) throws IOException, MemoryException {
     RLECodec codec = new RLECodec();
-    RLEEncoderMeta meta = new RLEEncoderMeta(DataType.BYTE, expectedDecodedBytes.length, null);
+    TableSpec.ColumnSpec spec = new TableSpec.ColumnSpec("", DataType.BYTE, ColumnType.MEASURE);
+    RLEEncoderMeta meta = new RLEEncoderMeta(spec, expectedDecodedBytes.length, null);
     ColumnPageDecoder decoder = codec.createDecoder(meta);
     ColumnPage page = decoder.decode(inputBytes, 0, inputBytes.length);
     byte[] decoded = page.getBytePage();

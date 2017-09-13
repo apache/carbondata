@@ -41,7 +41,7 @@ import org.apache.carbondata.format.Encoding;
  */
 public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
-  private ColumnPage encodedPage;
+  private ColumnPage convertedPage;
 
   public AdaptiveIntegralCodec(DataType srcDataType, DataType targetDataType,
       SimpleStatsResult stats) {
@@ -59,13 +59,14 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
     return new ColumnPageEncoder() {
       @Override
       protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
-        if (encodedPage != null) {
+        if (convertedPage != null) {
           throw new IllegalStateException("already encoded");
         }
-        encodedPage = ColumnPage.newPage(targetDataType, input.getPageSize());
+        convertedPage = ColumnPage.newPage(
+            input.getColumnSpec(), targetDataType, input.getPageSize());
         input.convertValue(converter);
-        byte[] result = encodedPage.compress(compressor);
-        encodedPage.freeMemory();
+        byte[] result = convertedPage.compress(compressor);
+        convertedPage.freeMemory();
         return result;
       }
 
@@ -78,25 +79,27 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
       @Override
       protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
-        return new AdaptiveIntegralEncoderMeta(compressor.getName(), targetDataType, stats);
+        return new AdaptiveIntegralEncoderMeta(inputPage.getColumnSpec(),
+            compressor.getName(), targetDataType, stats);
       }
 
     };
   }
 
   @Override
-  public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
+  public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     assert meta instanceof AdaptiveIntegralEncoderMeta;
     AdaptiveIntegralEncoderMeta codecMeta = (AdaptiveIntegralEncoderMeta) meta;
     final Compressor compressor = CompressorFactory.getInstance().getCompressor(
         codecMeta.getCompressorName());
-    final DataType targetDataType = codecMeta.getTargetDataType();
+    final DataType targetDataType = codecMeta.getStoreDataType();
     return new ColumnPageDecoder() {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
-        ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
-        return LazyColumnPage.newPage(page, converter);
+        ColumnPage page = ColumnPage.decompress(
+            meta.getColumnSpec(), compressor, targetDataType, input, offset, length);
+        return LazyColumnPage.newPage(srcDataType, page, converter);
       }
     };
   }
@@ -115,7 +118,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
     public void encode(int rowId, short value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId, (byte) value);
+          convertedPage.putByte(rowId, (byte) value);
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
@@ -126,13 +129,13 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
     public void encode(int rowId, int value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId, (byte) value);
+          convertedPage.putByte(rowId, (byte) value);
           break;
         case SHORT:
-          encodedPage.putShort(rowId, (short) value);
+          convertedPage.putShort(rowId, (short) value);
           break;
         case SHORT_INT:
-          encodedPage.putShortInt(rowId, value);
+          convertedPage.putShortInt(rowId, value);
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
@@ -143,16 +146,16 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
     public void encode(int rowId, long value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId, (byte) value);
+          convertedPage.putByte(rowId, (byte) value);
           break;
         case SHORT:
-          encodedPage.putShort(rowId, (short) value);
+          convertedPage.putShort(rowId, (short) value);
           break;
         case SHORT_INT:
-          encodedPage.putShortInt(rowId, (int) value);
+          convertedPage.putShortInt(rowId, (int) value);
           break;
         case INT:
-          encodedPage.putInt(rowId, (int) value);
+          convertedPage.putInt(rowId, (int) value);
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
@@ -163,16 +166,16 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
     public void encode(int rowId, float value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId, (byte) value);
+          convertedPage.putByte(rowId, (byte) value);
           break;
         case SHORT:
-          encodedPage.putShort(rowId, (short) value);
+          convertedPage.putShort(rowId, (short) value);
           break;
         case SHORT_INT:
-          encodedPage.putShortInt(rowId, (int) value);
+          convertedPage.putShortInt(rowId, (int) value);
           break;
         case INT:
-          encodedPage.putInt(rowId, (int) value);
+          convertedPage.putInt(rowId, (int) value);
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
@@ -183,19 +186,19 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
     public void encode(int rowId, double value) {
       switch (targetDataType) {
         case BYTE:
-          encodedPage.putByte(rowId, (byte) value);
+          convertedPage.putByte(rowId, (byte) value);
           break;
         case SHORT:
-          encodedPage.putShort(rowId, (short) value);
+          convertedPage.putShort(rowId, (short) value);
           break;
         case SHORT_INT:
-          encodedPage.putShortInt(rowId, (int) value);
+          convertedPage.putShortInt(rowId, (int) value);
           break;
         case INT:
-          encodedPage.putInt(rowId, (int) value);
+          convertedPage.putInt(rowId, (int) value);
           break;
         case LONG:
-          encodedPage.putLong(rowId, (long) value);
+          convertedPage.putLong(rowId, (long) value);
           break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());

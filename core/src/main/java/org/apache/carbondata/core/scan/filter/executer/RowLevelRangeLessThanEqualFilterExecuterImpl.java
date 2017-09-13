@@ -20,14 +20,11 @@ import java.io.IOException;
 import java.util.BitSet;
 import java.util.List;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
-import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -262,10 +259,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       int numerOfRows) {
     byte[] defaultValue = null;
     if (dimColEvaluatorInfoList.get(0).getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-      DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
-          .getDirectDictionaryGenerator(
-              dimColEvaluatorInfoList.get(0).getDimension().getDataType());
-      int key = directDictionaryGenerator.generateDirectSurrogateKey(null) + 1;
+      int key = 1;
       CarbonDimension currentBlockDimension =
           segmentProperties.getDimensions().get(dimensionBlocksIndex[0]);
       defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
@@ -279,8 +273,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       bitSet = setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows, defaultValue);
     }
     if (dimensionColumnDataChunk.isNoDicitionaryColumn()) {
-      FilterUtil.removeNullValues(dimensionColumnDataChunk, bitSet,
-          CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+      FilterUtil.removeNullValues(dimensionColumnDataChunk, bitSet);
     }
     return bitSet;
   }
@@ -367,7 +360,7 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
     BitSet bitSet = new BitSet(numerOfRows);
     byte[][] filterValues = this.filterRangeValues;
     // binary search can only be applied if column is sorted
-    if (isNaturalSorted) {
+    if (isNaturalSorted && !dimensionColumnDataChunk.isNoDicitionaryColumn()) {
       int start = 0;
       int last = 0;
       int startIndex = 0;

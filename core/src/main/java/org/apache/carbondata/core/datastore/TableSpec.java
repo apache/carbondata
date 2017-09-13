@@ -17,9 +17,14 @@
 
 package org.apache.carbondata.core.datastore;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 
@@ -27,52 +32,36 @@ public class TableSpec {
 
   // column spec for each dimension and measure
   private DimensionSpec[] dimensionSpec;
+  private DimensionSpec[] complexDimensionSpec;
   private MeasureSpec[] measureSpec;
 
-  // number of simple dimensions
-  private int numSimpleDimensions;
-
   public TableSpec(List<CarbonDimension> dimensions, List<CarbonMeasure> measures) {
-    // first calculate total number of columnar field considering column group and complex column
-    numSimpleDimensions = 0;
-    for (CarbonDimension dimension : dimensions) {
-      if (dimension.isColumnar()) {
-        if (!dimension.isComplex()) {
-          numSimpleDimensions++;
-        }
-      } else {
-        throw new UnsupportedOperationException("column group is not supported");
-      }
-    }
-    dimensionSpec = new DimensionSpec[dimensions.size()];
-    measureSpec = new MeasureSpec[measures.size()];
     addDimensions(dimensions);
     addMeasures(measures);
   }
 
   private void addDimensions(List<CarbonDimension> dimensions) {
-    int dimIndex = 0;
-    for (int i = 0; i < dimensions.size(); i++) {
-      CarbonDimension dimension = dimensions.get(i);
+    List<DimensionSpec> dictDims = new ArrayList<>();
+    List<DimensionSpec> complexDims = new ArrayList<>();
+    for (CarbonDimension dimension : dimensions) {
       if (dimension.isColumnar()) {
         if (dimension.isComplex()) {
-          DimensionSpec spec = new DimensionSpec(DimensionType.COMPLEX, dimension);
-          dimensionSpec[dimIndex++] = spec;
+          complexDims.add(new DimensionSpec(ColumnType.COMPLEX, dimension));
         } else if (dimension.isDirectDictionaryEncoding()) {
-          DimensionSpec spec = new DimensionSpec(DimensionType.DIRECT_DICTIONARY, dimension);
-          dimensionSpec[dimIndex++] = spec;
+          dictDims.add(new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension));
         } else if (dimension.isGlobalDictionaryEncoding()) {
-          DimensionSpec spec = new DimensionSpec(DimensionType.GLOBAL_DICTIONARY, dimension);
-          dimensionSpec[dimIndex++] = spec;
+          dictDims.add(new DimensionSpec(ColumnType.GLOBAL_DICTIONARY, dimension));
         } else {
-          DimensionSpec spec = new DimensionSpec(DimensionType.PLAIN_VALUE, dimension);
-          dimensionSpec[dimIndex++] = spec;
+          dictDims.add(new DimensionSpec(ColumnType.PLAIN_VALUE, dimension));
         }
       }
     }
+    this.dimensionSpec = dictDims.toArray(new DimensionSpec[dictDims.size()]);
+    this.complexDimensionSpec = complexDims.toArray(new DimensionSpec[complexDims.size()]);
   }
 
   private void addMeasures(List<CarbonMeasure> measures) {
+    this.measureSpec = new MeasureSpec[measures.size()];
     for (int i = 0; i < measures.size(); i++) {
       CarbonMeasure measure = measures.get(i);
       measureSpec[i] = new MeasureSpec(measure.getColName(), measure.getDataType(), measure
@@ -80,54 +69,65 @@ public class TableSpec {
     }
   }
 
-  public DimensionSpec getDimensionSpec(int dimensionIndex) {
-    return dimensionSpec[dimensionIndex];
+  public DimensionSpec[] getDimensionSpec() {
+    return dimensionSpec;
   }
 
-  public MeasureSpec getMeasureSpec(int measureIndex) {
-    return measureSpec[measureIndex];
+  public DimensionSpec[] getComplexDimensionSpec() {
+    return complexDimensionSpec;
   }
 
-  public int getNumSimpleDimensions() {
-    return numSimpleDimensions;
+  public MeasureSpec[] getMeasureSpec() {
+    return measureSpec;
   }
 
-  public int getNumDimensions() {
-    return dimensionSpec.length;
-  }
-
-  /**
-   * return number of measures
-   */
-  public int getNumMeasures() {
-    return measureSpec.length;
-  }
-
-  public class ColumnSpec {
+  public static class ColumnSpec implements Writable {
     // field name of this column
     private String fieldName;
 
     // data type of this column
-    private DataType dataType;
+    private DataType schemaDataType;
 
-    ColumnSpec(String fieldName, DataType dataType) {
-      this.fieldName = fieldName;
-      this.dataType = dataType;
+    // dimension type of this dimension
+    private ColumnType columnType;
+
+    public ColumnSpec() {
     }
 
-    public DataType getDataType() {
-      return dataType;
+    public ColumnSpec(String fieldName, DataType schemaDataType, ColumnType columnType) {
+      this.fieldName = fieldName;
+      this.schemaDataType = schemaDataType;
+      this.columnType = columnType;
+    }
+
+    public DataType getSchemaDataType() {
+      return schemaDataType;
     }
 
     public String getFieldName() {
       return fieldName;
     }
+
+    public ColumnType getColumnType() {
+      return columnType;
+    }
+
+    @Override
+    public void write(DataOutput out) throws IOException {
+      out.writeUTF(fieldName);
+      out.writeByte(schemaDataType.ordinal());
+      out.writeByte(columnType.ordinal());
+    }
+
+    @Override
+    public void readFields(DataInput in) throws IOException {
+      this.fieldName = in.readUTF();
+      this.schemaDataType = DataType.valueOf(in.readByte());
+      this.columnType = ColumnType.valueOf(in.readByte());
+    }
   }
 
-  public class DimensionSpec extends ColumnSpec {
-
-    // dimension type of this dimension
-    private DimensionType type;
+  public class DimensionSpec extends ColumnSpec implements Writable {
 
     // indicate whether this dimension is in sort column
     private boolean inSortColumns;
@@ -135,15 +135,10 @@ public class TableSpec {
     // indicate whether this dimension need to do inverted index
     private boolean doInvertedIndex;
 
-    DimensionSpec(DimensionType dimensionType, CarbonDimension dimension) {
-      super(dimension.getColName(), dimension.getDataType());
-      this.type = dimensionType;
+    DimensionSpec(ColumnType columnType, CarbonDimension dimension) {
+      super(dimension.getColName(), dimension.getDataType(), columnType);
       this.inSortColumns = dimension.isSortColumn();
       this.doInvertedIndex = dimension.isUseInvertedIndex();
-    }
-
-    public DimensionType getDimensionType() {
-      return type;
     }
 
     public boolean isInSortColumns() {
@@ -153,15 +148,25 @@ public class TableSpec {
     public boolean isDoInvertedIndex() {
       return doInvertedIndex;
     }
+
+    @Override
+    public void write(DataOutput out) throws IOException {
+      super.write(out);
+    }
+
+    @Override
+    public void readFields(DataInput in) throws IOException {
+      super.readFields(in);
+    }
   }
 
-  public class MeasureSpec extends ColumnSpec {
+  public class MeasureSpec extends ColumnSpec implements Writable {
 
     private int scale;
     private int precision;
 
     MeasureSpec(String fieldName, DataType dataType, int scale, int precision) {
-      super(fieldName, dataType);
+      super(fieldName, dataType, ColumnType.MEASURE);
       this.scale = scale;
       this.precision = precision;
     }
@@ -172,6 +177,16 @@ public class TableSpec {
 
     public int getPrecision() {
       return precision;
+    }
+
+    @Override
+    public void write(DataOutput out) throws IOException {
+      super.write(out);
+    }
+
+    @Override
+    public void readFields(DataInput in) throws IOException {
+      super.readFields(in);
     }
   }
 }

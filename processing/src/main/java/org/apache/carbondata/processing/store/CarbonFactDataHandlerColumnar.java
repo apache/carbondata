@@ -166,7 +166,8 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
             CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE));
     if (isAggKeyBlock) {
       int[] dimLens = model.getSegmentProperties().getDimColumnsCardinality();
-      for (int i = 0; i < model.getTableSpec().getNumSimpleDimensions(); i++) {
+      int numSimpleDimensions = model.getTableSpec().getDimensionSpec().length;
+      for (int i = 0; i < numSimpleDimensions; i++) {
         if (model.getSegmentProperties().getDimensions().get(i).isGlobalDictionaryEncoding()) {
           this.rleEncodingForDictDimension[i] = true;
         }

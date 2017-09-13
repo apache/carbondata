@@ -52,7 +52,7 @@ public class RangePartitioner implements Partitioner {
     bounds = new Object[numPartitions];
     if (partitionColumnDataType == DataType.STRING) {
       for (int i = 0; i < numPartitions; i++) {
-        bounds[i] = ByteUtil.toBytes(values.get(i));
+        bounds[i] = ByteUtil.toBytesForPlainValue(values.get(i));
       }
     } else {
       for (int i = 0; i < numPartitions; i++) {

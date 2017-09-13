@@ -119,7 +119,7 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     return currentRowData;
   }
 
-  @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
+  @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRowId) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplictSorted) {
       rowId = invertedIndexReverse[rowId];
@@ -142,19 +142,20 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     }
     if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
         CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentDataOffset, length)) {
-      vector.putNull(vectorRow);
+      vector.putNull(vectorRowId);
     } else {
       DataType dt = vector.getType();
       if (dt instanceof StringType) {
-        vector.putBytes(vectorRow, currentDataOffset, length, data);
+        vector.putBytes(vectorRowId, currentDataOffset, length, data);
       } else if (dt instanceof BooleanType) {
-        vector.putBoolean(vectorRow, ByteUtil.toBoolean(data[currentDataOffset]));
+        vector.putBoolean(vectorRowId, ByteUtil.toBoolean(data[currentDataOffset]));
       } else if (dt instanceof ShortType) {
-        vector.putShort(vectorRow, ByteUtil.toShort(data, currentDataOffset, length));
+        vector.putShort(vectorRowId,
+            ByteUtil.toShortForPlainValue(data, currentDataOffset, length));
       } else if (dt instanceof IntegerType) {
-        vector.putInt(vectorRow, ByteUtil.toInt(data, currentDataOffset, length));
+        vector.putInt(vectorRowId, ByteUtil.toIntForPlainValue(data, currentDataOffset, length));
       } else if (dt instanceof LongType) {
-        vector.putLong(vectorRow, ByteUtil.toLong(data, currentDataOffset, length));
+        vector.putLong(vectorRowId, ByteUtil.toLongForPlainValue(data, currentDataOffset, length));
       }
     }
   }

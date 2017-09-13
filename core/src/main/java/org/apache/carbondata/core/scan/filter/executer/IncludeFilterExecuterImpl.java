@@ -23,6 +23,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
@@ -225,7 +226,7 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
     // binary search can only be applied if column is sorted and
     // inverted index exists for that column
-    if (isNaturalSorted) {
+    if (isNaturalSorted && !dimensionColumnDataChunk.isNoDicitionaryColumn()) {
       int startIndex = 0;
       for (int i = 0; i < filterValues.length; i++) {
         if (startIndex >= numerOfRows) {
@@ -239,6 +240,15 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
         }
         if (rangeIndex[1] >= 0) {
           startIndex = rangeIndex[1] + 1;
+        }
+      }
+    } else if (dimensionColumnDataChunk instanceof ColumnPageWrapper) {
+      // ColumnPageWrapper is not sorted, compare value at each row
+      for (int k = 0; k < filterValues.length; k++) {
+        for (int i = 0; i < numerOfRows; i++) {
+          if (ByteUtil.compare(dimensionColumnDataChunk.getChunkData(i), filterValues[k]) == 0) {
+            bitSet.set(i);
+          }
         }
       }
     } else {

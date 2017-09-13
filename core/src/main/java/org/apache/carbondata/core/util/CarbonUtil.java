@@ -44,6 +44,7 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -1983,87 +1984,74 @@ public final class CarbonUtil {
     }
   }
 
-  public static byte[] getMaxValueAsBytes(ValueEncoderMeta meta) {
-    ByteBuffer b;
-    switch (meta.getType()) {
-      case LONG:
-        b = ByteBuffer.allocate(8);
-        b.putLong((long) meta.getMaxValue());
-        b.flip();
-        return b.array();
-      case DOUBLE:
-        b = ByteBuffer.allocate(8);
-        b.putDouble((double) meta.getMaxValue());
-        b.flip();
-        return b.array();
-      case DECIMAL:
-      case BYTE_ARRAY:
-        return new byte[8];
-      default:
-        throw new IllegalArgumentException("Invalid data type: " + meta.getType());
-    }
-  }
-
-  public static byte[] getMinValueAsBytes(ValueEncoderMeta meta) {
-    ByteBuffer b;
-    switch (meta.getType()) {
-      case LONG:
-        b = ByteBuffer.allocate(8);
-        b.putLong((long) meta.getMinValue());
-        b.flip();
-        return b.array();
-      case DOUBLE:
-        b = ByteBuffer.allocate(8);
-        b.putDouble((double) meta.getMinValue());
-        b.flip();
-        return b.array();
-      case DECIMAL:
-      case BYTE_ARRAY:
-        return new byte[8];
-      default:
-        throw new IllegalArgumentException("Invalid data type: " + meta.getType());
-    }
-  }
-
-
   /**
    * convert value to byte array
    */
-  public static byte[] getValueAsBytes(DataType dataType, Object value) {
+  public static byte[] getValueAsBytes(ColumnType columnType, DataType dataType, Object value) {
     ByteBuffer b;
     switch (dataType) {
       case BYTE:
-        b = ByteBuffer.allocate(8);
-        b.putLong((byte) value);
-        b.flip();
-        return b.array();
+        if (columnType == ColumnType.MEASURE) {
+          b = ByteBuffer.allocate(8);
+          b.putLong((byte) value);
+          return b.array();
+        } else if (columnType == ColumnType.PLAIN_VALUE) {
+          return ByteUtil.toBytesForPlainValue((byte) value);
+        } else if (columnType == ColumnType.GLOBAL_DICTIONARY ||
+            columnType == ColumnType.DIRECT_DICTIONARY) {
+          return ByteUtil.toBytes((byte) value);
+        } else {
+          throw new RuntimeException("internal error");
+        }
       case SHORT:
-        b = ByteBuffer.allocate(8);
-        b.putLong((short) value);
-        b.flip();
-        return b.array();
+        if (columnType == ColumnType.MEASURE) {
+          b = ByteBuffer.allocate(8);
+          b.putLong((short) value);
+          return b.array();
+        } else if (columnType == ColumnType.PLAIN_VALUE) {
+          return ByteUtil.toBytesForPlainValue((short) value);
+        } else if (columnType == ColumnType.GLOBAL_DICTIONARY ||
+            columnType == ColumnType.DIRECT_DICTIONARY) {
+          return ByteUtil.toBytes((short) value);
+        } else {
+          throw new RuntimeException("internal error");
+        }
       case INT:
-        b = ByteBuffer.allocate(8);
-        b.putLong((int) value);
-        b.flip();
-        return b.array();
+        if (columnType == ColumnType.MEASURE) {
+          b = ByteBuffer.allocate(8);
+          b.putLong((int) value);
+          return b.array();
+        } else if (columnType == ColumnType.PLAIN_VALUE) {
+          return ByteUtil.toBytesForPlainValue((int) value);
+        } else if (columnType == ColumnType.GLOBAL_DICTIONARY ||
+            columnType == ColumnType.DIRECT_DICTIONARY) {
+          return ByteUtil.toBytes((int) value);
+        } else {
+          throw new RuntimeException("internal error");
+        }
       case LONG:
-        b = ByteBuffer.allocate(8);
-        b.putLong((long) value);
-        b.flip();
-        return b.array();
+        if (columnType == ColumnType.MEASURE) {
+          b = ByteBuffer.allocate(8);
+          b.putLong((long) value);
+          return b.array();
+        } else if (columnType == ColumnType.PLAIN_VALUE) {
+          return ByteUtil.toBytesForPlainValue((long) value);
+        } else {
+          throw new RuntimeException("internal error");
+        }
       case DOUBLE:
-        b = ByteBuffer.allocate(8);
-        b.putDouble((double) value);
-        b.flip();
-        return b.array();
+        if (columnType == ColumnType.MEASURE) {
+          b = ByteBuffer.allocate(8);
+          b.putDouble((double) value);
+          return b.array();
+        } else {
+          throw new RuntimeException("internal error");
+        }
       case DECIMAL:
         return DataTypeUtil.bigDecimalToByte((BigDecimal)value);
       case BYTE_ARRAY:
         return (byte[]) value;
       case STRING:
-      case TIMESTAMP:
-      case DATE:
         return (byte[]) value;
       default:
         throw new IllegalArgumentException("Invalid data type: " + dataType);

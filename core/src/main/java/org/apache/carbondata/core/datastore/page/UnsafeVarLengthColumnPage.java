@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -54,9 +55,10 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
    * @param dataType data type
    * @param pageSize number of row
    */
-  UnsafeVarLengthColumnPage(DataType dataType, int pageSize, int scale, int precision)
+  UnsafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      int scale, int precision)
       throws MemoryException {
-    super(dataType, pageSize, scale, precision);
+    super(columnSpec, dataType, pageSize, scale, precision);
     capacity = (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR);
     memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
     baseAddress = memoryBlock.getBaseObject();
@@ -69,9 +71,9 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
    * @param pageSize number of row
    * @param capacity initial capacity of the page, in bytes
    */
-  UnsafeVarLengthColumnPage(DataType dataType, int pageSize, int capacity,
-      int scale, int precision) throws MemoryException {
-    super(dataType, pageSize, scale, precision);
+  UnsafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      int capacity, int scale, int precision) throws MemoryException {
+    super(columnSpec, dataType, pageSize, scale, precision);
     this.capacity = capacity;
     memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long)(capacity));
     baseAddress = memoryBlock.getBaseObject();
@@ -164,6 +166,14 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
           rowData, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
       bytes[rowId] = rowData;
     }
+    return bytes;
+  }
+
+  @Override
+  public byte[] getDirectFlattenedBytePage() {
+    byte[] bytes = new byte[totalLength];
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset, bytes,
+        CarbonUnsafe.BYTE_ARRAY_OFFSET, totalLength);
     return bytes;
   }
 

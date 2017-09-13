@@ -51,7 +51,7 @@ public class InFilterImpl implements PartitionFilterIntf {
           literal.getLiteralExpValue().toString(),
           partitionInfo.getColumnSchemaList().get(0).getDataType());
       if (PartitionType.RANGE == partitionInfo.getPartitionType() && value instanceof String) {
-        value = ByteUtil.toBytes((String)value);
+        value = ByteUtil.toBytesForPlainValue((String)value);
       }
       partitionMap.set(partitioner.getPartition(value));
     }

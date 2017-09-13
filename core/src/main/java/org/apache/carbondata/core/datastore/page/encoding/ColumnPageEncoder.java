@@ -25,12 +25,15 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.carbondata.core.datastore.ColumnType;
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.ComplexColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.dimension.legacy.ComplexDimensionIndexCodec;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.BlockletMinMaxIndex;
@@ -38,12 +41,18 @@ import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.Encoding;
 import org.apache.carbondata.format.PresenceMeta;
 
+/**
+ * Encoder for one column page
+ */
 public abstract class ColumnPageEncoder {
 
+  // return the encoded data by applying encoding algorithm on input column page
   protected abstract byte[] encodeData(ColumnPage input) throws MemoryException, IOException;
 
+  // return the Encoding list of this encoder
   protected abstract List<Encoding> getEncodingList();
 
+  // return the encoder metadata of this encoder
   protected abstract ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage);
 
   /**
@@ -53,7 +62,8 @@ public abstract class ColumnPageEncoder {
   public EncodedColumnPage encode(ColumnPage inputPage) throws IOException, MemoryException {
     byte[] encodedBytes = encodeData(inputPage);
     DataChunk2 pageMetadata = buildPageMetadata(inputPage, encodedBytes);
-    return new EncodedColumnPage(pageMetadata, encodedBytes, inputPage.getStatistics());
+    return new EncodedColumnPage(inputPage.getColumnSpec().getColumnType(),
+        pageMetadata, encodedBytes, inputPage.getStatistics());
   }
 
   private DataChunk2 buildPageMetadata(ColumnPage inputPage, byte[] encodedBytes)
@@ -106,12 +116,13 @@ public abstract class ColumnPageEncoder {
 
   private BlockletMinMaxIndex buildMinMaxIndex(ColumnPage inputPage) {
     BlockletMinMaxIndex index = new BlockletMinMaxIndex();
-    byte[] bytes = CarbonUtil.getValueAsBytes(
+    byte[] bytes = CarbonUtil.getValueAsBytes(inputPage.getColumnSpec().getColumnType(),
         inputPage.getDataType(), inputPage.getStatistics().getMax());
     ByteBuffer max = ByteBuffer.wrap(
         bytes);
     ByteBuffer min = ByteBuffer.wrap(
-        CarbonUtil.getValueAsBytes(inputPage.getDataType(), inputPage.getStatistics().getMin()));
+        CarbonUtil.getValueAsBytes(inputPage.getColumnSpec().getColumnType(),
+            inputPage.getDataType(), inputPage.getStatistics().getMin()));
     index.addToMax_values(max);
     index.addToMin_values(min);
     return index;
@@ -146,9 +157,17 @@ public abstract class ColumnPageEncoder {
   private static EncodedColumnPage encodeChildColumn(byte[][] data)
       throws IOException, MemoryException {
     Compressor compressor = CompressorFactory.getInstance().getCompressor();
-    ComplexDimensionIndexCodec codec = new ComplexDimensionIndexCodec(false, false, compressor);
+    ComplexDimensionIndexCodec codec =
+        new ComplexDimensionIndexCodec(false, false, compressor);
     ColumnPageEncoder encoder = codec.createEncoder(null);
-    return encoder.encode(ColumnPage.wrapByteArrayPage(data));
+    TableSpec.ColumnSpec spec =
+        new TableSpec.ColumnSpec("", DataType.BYTE_ARRAY, ColumnType.COMPLEX);
+    return encoder.encode(ColumnPage.wrapByteArrayPage(spec, data));
+  }
+
+  @Override
+  public String toString() {
+    return this.getClass().getName();
   }
 
 }

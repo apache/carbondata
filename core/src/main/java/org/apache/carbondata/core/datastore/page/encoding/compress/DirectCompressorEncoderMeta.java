@@ -21,6 +21,7 @@ import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -32,9 +33,9 @@ public class DirectCompressorEncoderMeta extends ColumnPageEncoderMeta implement
   public DirectCompressorEncoderMeta() {
   }
 
-  public DirectCompressorEncoderMeta(String compressorName, final DataType dataType,
-      SimpleStatsResult stats) {
-    super(dataType, stats);
+  public DirectCompressorEncoderMeta(TableSpec.ColumnSpec columnSpec, String compressorName,
+      DataType storeDataType, SimpleStatsResult stats) {
+    super(columnSpec, storeDataType, stats);
     this.compressorName = compressorName;
   }
 

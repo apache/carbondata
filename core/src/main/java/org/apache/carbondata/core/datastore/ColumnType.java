@@ -17,19 +17,35 @@
 
 package org.apache.carbondata.core.datastore;
 
-public enum DimensionType {
-  // global dictionary for low cardinality dimension
+public enum ColumnType {
+  // global dictionary for low cardinality dimension column
   GLOBAL_DICTIONARY,
 
   // for timestamp and date column
   DIRECT_DICTIONARY,
 
-  // no dictionary, for high cardinality dimension
+  // for high cardinality dimension column
   PLAIN_VALUE,
 
-  // expanded column from a complex data type column
+  // complex column (array, struct, map)
   COMPLEX,
 
-  // column group, multiple columns encoded as one column
-  COLUMN_GROUP
+  // measure column, numerical data type
+  MEASURE;
+
+  public static ColumnType valueOf(int ordinal) {
+    if (ordinal == GLOBAL_DICTIONARY.ordinal()) {
+      return GLOBAL_DICTIONARY;
+    } else if (ordinal == DIRECT_DICTIONARY.ordinal()) {
+      return DIRECT_DICTIONARY;
+    } else if (ordinal == PLAIN_VALUE.ordinal()) {
+      return PLAIN_VALUE;
+    } else if (ordinal == COMPLEX.ordinal()) {
+      return COMPLEX;
+    } else if (ordinal == MEASURE.ordinal()) {
+      return MEASURE;
+    } else {
+      throw new RuntimeException("create ColumnType with invalid ordinal: " + ordinal);
+    }
+  }
 }

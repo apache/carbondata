@@ -183,7 +183,7 @@ public class FilterScanner extends AbstractBlockletScanner {
     scannedPages.addCountStatistic(QueryStatisticsConstants.PAGE_SCANNED,
         scannedPages.getCount() + bitSetGroup.getScannedPages());
     int[] rowCount = new int[bitSetGroup.getNumberOfPages()];
-    // get the row indexes from bot set
+    // get the row indexes from bit set
     int[][] indexesGroup = new int[bitSetGroup.getNumberOfPages()][];
     for (int k = 0; k < indexesGroup.length; k++) {
       BitSet bitSet = bitSetGroup.getBitSet(k);

@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.page;
 import java.io.IOException;
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
@@ -52,9 +53,10 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   private static final int floatBits = DataType.FLOAT.getSizeBits();
   private static final int doubleBits = DataType.DOUBLE.getSizeBits();
 
-  UnsafeFixLengthColumnPage(DataType dataType, int pageSize, int scale, int precision)
+  UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      int scale, int precision)
       throws MemoryException {
-    super(dataType, pageSize, scale, precision);
+    super(columnSpec, dataType, pageSize, scale, precision);
     switch (dataType) {
       case BYTE:
       case SHORT:
@@ -266,7 +268,12 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
-  public byte[] getFlattenedBytePage() {
+  public byte[] getLVFlattenedBytePage() {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
+  public byte[] getDirectFlattenedBytePage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 

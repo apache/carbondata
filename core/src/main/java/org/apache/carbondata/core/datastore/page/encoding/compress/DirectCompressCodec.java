@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -62,7 +63,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
     assert meta instanceof DirectCompressorEncoderMeta;
     DirectCompressorEncoderMeta codecMeta = (DirectCompressorEncoderMeta) meta;
-    return new DirectDecompressor(codecMeta.getCompressorName(),
+    return new DirectDecompressor(meta.getColumnSpec(), codecMeta.getCompressorName(),
         codecMeta.getScale(), codecMeta.getPrecision());
   }
 
@@ -88,19 +89,22 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
     @Override
     protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
-      return new DirectCompressorEncoderMeta(compressor.getName(), inputPage.getDataType(),
-          inputPage.getStatistics());
+      return new DirectCompressorEncoderMeta(inputPage.getColumnSpec(),
+          compressor.getName(), inputPage.getDataType(), inputPage.getStatistics());
     }
 
   }
 
   private class DirectDecompressor implements ColumnPageDecoder {
 
+    private TableSpec.ColumnSpec columnSpec;
     private Compressor compressor;
     private int scale;
     private int precision;
 
-    DirectDecompressor(String compressorName, int scale, int precision) {
+    DirectDecompressor(TableSpec.ColumnSpec columnSpec, String compressorName, int scale,
+        int precision) {
+      this.columnSpec = columnSpec;
       this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
       this.scale = scale;
       this.precision = precision;
@@ -110,12 +114,13 @@ public class DirectCompressCodec implements ColumnPageCodec {
     public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
       ColumnPage decodedPage;
       if (dataType == DataType.DECIMAL) {
-        decodedPage = ColumnPage.decompressDecimalPage(compressor, input, offset, length,
-            scale, precision);
+        decodedPage = ColumnPage.decompressDecimalPage(
+            columnSpec, compressor, input, offset, length, scale, precision);
       } else {
-        decodedPage = ColumnPage.decompress(compressor, dataType, input, offset, length);
+        decodedPage = ColumnPage.decompress(
+            columnSpec, compressor, dataType, input, offset, length);
       }
-      return LazyColumnPage.newPage(decodedPage, converter);
+      return LazyColumnPage.newPage(dataType, decodedPage, converter);
     }
   }
 

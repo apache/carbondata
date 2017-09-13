@@ -342,7 +342,7 @@ public final class ByteUtil {
    * @param s
    * @return
    */
-  public static byte[] toBytes(String s) {
+  public static byte[] toBytesForPlainValue(String s) {
     try {
       return s.getBytes(UTF8_CSN);
     } catch (UnsupportedEncodingException e) {
@@ -380,7 +380,7 @@ public final class ByteUtil {
    * @param b
    * @return
    */
-  public static byte[] toBytes(final boolean b) {
+  public static byte[] toBytesForPlainValue(final boolean b) {
     return new byte[] { b ? (byte) -1 : (byte) 0 };
   }
 
@@ -402,12 +402,12 @@ public final class ByteUtil {
   }
 
   /**
-   * short => byte[]
+   * short ^ Short.MIN_VALUE => byte[]
    *
    * @param val
    * @return
    */
-  public static byte[] toBytes(short val) {
+  public static byte[] toBytesForPlainValue(short val) {
     val = (short)(val ^ Short.MIN_VALUE);
     byte[] b = new byte[SIZEOF_SHORT];
     b[1] = (byte) val;
@@ -417,14 +417,14 @@ public final class ByteUtil {
   }
 
   /**
-   * byte[] => short
+   * byte[] => short ^ Short.MIN_VALUE
    *
    * @param bytes
    * @param offset
    * @param length
    * @return
    */
-  public static short toShort(byte[] bytes, int offset, final int length) {
+  public static short toShortForPlainValue(byte[] bytes, int offset, final int length) {
     if (length != SIZEOF_SHORT || offset + length > bytes.length) {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_SHORT);
     }
@@ -446,12 +446,12 @@ public final class ByteUtil {
   }
 
   /**
-   * int => byte[]
+   * int ^ Integer.MIN_VALUE => byte[]
    *
    * @param val
    * @return
    */
-  public static byte[] toBytes(int val) {
+  public static byte[] toBytesForPlainValue(int val) {
     val = val ^ Integer.MIN_VALUE;
     byte[] b = new byte[4];
     for (int i = 3; i > 0; i--) {
@@ -488,14 +488,14 @@ public final class ByteUtil {
   }
 
   /**
-   * byte[] => int
+   * byte[] => int ^ Integer.MIN_VALUE
    *
    * @param bytes
    * @param offset
    * @param length
    * @return
    */
-  public static int toInt(byte[] bytes, int offset, final int length) {
+  public static int toIntForPlainValue(byte[] bytes, int offset, final int length) {
     if (length != SIZEOF_INT || offset + length > bytes.length) {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_INT);
     }
@@ -516,9 +516,25 @@ public final class ByteUtil {
     return n ^ Integer.MIN_VALUE;
   }
 
+  /**
+   * byte[4] -> int
+   */
   public static int toInt(byte[] bytes, int offset) {
     return (((int)bytes[offset]) << 24) + (((int)bytes[offset + 1]) << 16) +
         (((int)bytes[offset + 2]) << 8) + bytes[offset + 3];
+  }
+
+  /**
+   * int -> byte[4]
+   */
+  public static byte[] toBytes(int val) {
+    byte[] b = new byte[4];
+    for (int i = 3; i > 0; i--) {
+      b[i] = (byte) val;
+      val >>>= 8;
+    }
+    b[0] = (byte) val;
+    return b;
   }
 
   public static void setInt(byte[] data, int offset, int value) {
@@ -529,12 +545,12 @@ public final class ByteUtil {
   }
 
   /**
-   * long => byte[]
+   * long ^ Long.MIN_VALUE => byte[]
    *
    * @param val
    * @return
    */
-  public static byte[] toBytes(long val) {
+  public static byte[] toBytesForPlainValue(long val) {
     val = val ^ Long.MIN_VALUE;
     byte[] b = new byte[8];
     for (int i = 7; i > 0; i--) {
@@ -546,9 +562,9 @@ public final class ByteUtil {
   }
 
   /**
-   * byte[] => long
+   * byte[] => long ^ Long.MIN_VALUE
    */
-  public static long toLong(byte[] bytes, int offset, final int length) {
+  public static long toLongForPlainValue(byte[] bytes, int offset, final int length) {
     if (length != SIZEOF_LONG || offset + length > bytes.length) {
       throw explainWrongLengthOrOffset(bytes, offset, length, SIZEOF_LONG);
     }

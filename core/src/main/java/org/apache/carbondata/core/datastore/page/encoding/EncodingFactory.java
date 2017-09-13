@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveDeltaIntegralCodec;
@@ -33,6 +36,8 @@ import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveInteg
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveIntegralEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressCodec;
 import org.apache.carbondata.core.datastore.page.encoding.compress.DirectCompressorEncoderMeta;
+import org.apache.carbondata.core.datastore.page.encoding.directstring.DirectStringCodec;
+import org.apache.carbondata.core.datastore.page.encoding.directstring.DirectStringEncoderMeta;
 import org.apache.carbondata.core.datastore.page.encoding.rle.RLECodec;
 import org.apache.carbondata.core.datastore.page.encoding.rle.RLEEncoderMeta;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
@@ -45,12 +50,16 @@ import static org.apache.carbondata.format.Encoding.ADAPTIVE_DELTA_INTEGRAL;
 import static org.apache.carbondata.format.Encoding.ADAPTIVE_FLOATING;
 import static org.apache.carbondata.format.Encoding.ADAPTIVE_INTEGRAL;
 import static org.apache.carbondata.format.Encoding.DIRECT_COMPRESS;
+import static org.apache.carbondata.format.Encoding.DIRECT_STRING;
 import static org.apache.carbondata.format.Encoding.RLE_INTEGRAL;
 
 /**
  * Base class for encoding strategy implementation.
  */
-public abstract class EncodingStrategy {
+public abstract class EncodingFactory {
+
+  private static final LogService LOG =
+      LogServiceFactory.getLogService(EncodingFactory.class.getCanonicalName());
 
   /**
    * Return new encoder for specified column
@@ -69,36 +78,54 @@ public abstract class EncodingStrategy {
     byte[] encoderMeta = encoderMetas.get(0).array();
     ByteArrayInputStream stream = new ByteArrayInputStream(encoderMeta);
     DataInputStream in = new DataInputStream(stream);
+    ColumnPageCodec codec = null;
+    ColumnPageEncoderMeta metadata = null;
     if (encoding == DIRECT_COMPRESS) {
-      DirectCompressorEncoderMeta metadata = new DirectCompressorEncoderMeta();
+      metadata = new DirectCompressorEncoderMeta();
       metadata.readFields(in);
-      return new DirectCompressCodec(metadata.getDataType()).createDecoder(metadata);
+      codec = new DirectCompressCodec(metadata.getStoreDataType());
     } else if (encoding == ADAPTIVE_INTEGRAL) {
-      AdaptiveIntegralEncoderMeta metadata = new AdaptiveIntegralEncoderMeta();
+      metadata = new AdaptiveIntegralEncoderMeta();
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
-      return new AdaptiveIntegralCodec(metadata.getDataType(), metadata.getTargetDataType(),
-          stats).createDecoder(metadata);
+      codec = new AdaptiveIntegralCodec(
+          metadata.getSchemaDataType(), metadata.getStoreDataType(), stats);
     } else if (encoding == ADAPTIVE_DELTA_INTEGRAL) {
-      AdaptiveDeltaIntegralEncoderMeta metadata = new AdaptiveDeltaIntegralEncoderMeta();
+      metadata = new AdaptiveDeltaIntegralEncoderMeta();
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
-      return new AdaptiveDeltaIntegralCodec(metadata.getDataType(), metadata.getTargetDataType(),
-          stats).createDecoder(metadata);
+      codec = new AdaptiveDeltaIntegralCodec(
+          metadata.getSchemaDataType(), metadata.getStoreDataType(), stats);
     } else if (encoding == RLE_INTEGRAL) {
-      RLEEncoderMeta metadata = new RLEEncoderMeta();
+      metadata = new RLEEncoderMeta();
       metadata.readFields(in);
-      return new RLECodec().createDecoder(metadata);
+      codec = new RLECodec();
     } else if (encoding == ADAPTIVE_FLOATING) {
-      AdaptiveFloatingEncoderMeta metadata = new AdaptiveFloatingEncoderMeta();
+      metadata = new AdaptiveFloatingEncoderMeta();
       metadata.readFields(in);
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
-      return new AdaptiveFloatingCodec(metadata.getDataType(), metadata.getTargetDataType(),
-          stats).createDecoder(metadata);
+      codec = new AdaptiveFloatingCodec(
+          metadata.getSchemaDataType(), metadata.getStoreDataType(), stats);
+    } else if (encoding == DIRECT_STRING) {
+      metadata = new DirectStringEncoderMeta();
+      metadata.readFields(in);
+      codec = new DirectStringCodec();
+    }
+
+    if (codec != null) {
+      if (LOG.isInfoEnabled()) {
+        LOG.info("Using " + codec.getName() + " to decode column '" +
+            metadata.getColumnSpec().getFieldName() + "'");
+      }
+      return codec.createDecoder(metadata);
     } else {
       // for backward compatibility
-      ValueEncoderMeta metadata = CarbonUtil.deserializeEncoderMetaV3(encoderMeta);
-      return createDecoderLegacy(metadata);
+      ValueEncoderMeta meta = CarbonUtil.deserializeEncoderMetaV3(encoderMeta);
+      ColumnPageDecoder decoder = createDecoderLegacy(meta);
+      if (LOG.isInfoEnabled()) {
+        LOG.info("Using " + decoder + " for legacy data");
+      }
+      return decoder;
     }
   }
 
@@ -107,25 +134,27 @@ public abstract class EncodingStrategy {
    */
   public ColumnPageDecoder createDecoderLegacy(ValueEncoderMeta metadata) {
     SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
+    TableSpec.ColumnSpec spec = new TableSpec.ColumnSpec("legacy", stats.getDataType(),
+        ColumnType.MEASURE);
     switch (metadata.getType()) {
       case BYTE:
       case SHORT:
       case INT:
       case LONG:
         // create the codec based on algorithm and create decoder by recovering the metadata
-        ColumnPageCodec codec = DefaultEncodingStrategy.selectCodecByAlgorithmForIntegral(stats);
+        ColumnPageCodec codec = DefaultEncodingFactory.selectCodecByAlgorithmForIntegral(stats);
         if (codec instanceof AdaptiveIntegralCodec) {
           AdaptiveIntegralCodec adaptiveCodec = (AdaptiveIntegralCodec) codec;
-          AdaptiveIntegralEncoderMeta meta = new AdaptiveIntegralEncoderMeta(
+          AdaptiveIntegralEncoderMeta meta = new AdaptiveIntegralEncoderMeta(spec,
               "snappy", adaptiveCodec.getTargetDataType(), stats);
           return codec.createDecoder(meta);
         } else if (codec instanceof AdaptiveDeltaIntegralCodec) {
           AdaptiveDeltaIntegralCodec adaptiveCodec = (AdaptiveDeltaIntegralCodec) codec;
-          AdaptiveDeltaIntegralEncoderMeta meta = new AdaptiveDeltaIntegralEncoderMeta(
+          AdaptiveDeltaIntegralEncoderMeta meta = new AdaptiveDeltaIntegralEncoderMeta(spec,
               "snappy", adaptiveCodec.getTargetDataType(), stats);
           return codec.createDecoder(meta);
         } else if (codec instanceof DirectCompressCodec) {
-          DirectCompressorEncoderMeta meta = new DirectCompressorEncoderMeta(
+          DirectCompressorEncoderMeta meta = new DirectCompressorEncoderMeta(spec,
               "snappy", metadata.getType(), stats);
           return codec.createDecoder(meta);
         } else {
@@ -134,14 +163,14 @@ public abstract class EncodingStrategy {
       case FLOAT:
       case DOUBLE:
         // create the codec based on algorithm and create decoder by recovering the metadata
-        codec = DefaultEncodingStrategy.selectCodecByAlgorithmForFloating(stats);
+        codec = DefaultEncodingFactory.selectCodecByAlgorithmForFloating(stats);
         if (codec instanceof AdaptiveFloatingCodec) {
           AdaptiveFloatingCodec adaptiveCodec = (AdaptiveFloatingCodec) codec;
-          AdaptiveFloatingEncoderMeta meta = new AdaptiveFloatingEncoderMeta(
+          AdaptiveFloatingEncoderMeta meta = new AdaptiveFloatingEncoderMeta(spec,
               "snappy", adaptiveCodec.getTargetDataType(), stats);
           return codec.createDecoder(meta);
         } else if (codec instanceof DirectCompressCodec) {
-          DirectCompressorEncoderMeta meta = new DirectCompressorEncoderMeta(
+          DirectCompressorEncoderMeta meta = new DirectCompressorEncoderMeta(spec,
               "snappy", metadata.getType(), stats);
           return codec.createDecoder(meta);
         } else {
@@ -149,9 +178,8 @@ public abstract class EncodingStrategy {
         }
       case DECIMAL:
       case BYTE_ARRAY:
-        // no dictionary dimension
         return new DirectCompressCodec(stats.getDataType()).createDecoder(
-            new DirectCompressorEncoderMeta("snappy", stats.getDataType(), stats));
+            new DirectCompressorEncoderMeta(spec, "snappy", metadata.getType(), stats));
       default:
         throw new RuntimeException("unsupported data type: " + stats.getDataType());
     }

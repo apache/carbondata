@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datastore.chunk.reader.dimension.v3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
@@ -28,9 +29,11 @@ import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDa
 import org.apache.carbondata.core.datastore.chunk.reader.dimension.AbstractChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.chunk.store.ColumnPageWrapper;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
+import org.apache.carbondata.core.datastore.compression.Compressor;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
-import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategy;
+import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
 import org.apache.carbondata.core.datastore.page.encoding.EncodingStrategyFactory;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
@@ -55,7 +58,7 @@ import org.apache.commons.lang.ArrayUtils;
  */
 public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkReaderV2V3Format {
 
-  private EncodingStrategy strategy = EncodingStrategyFactory.getStrategy();
+  private EncodingFactory strategy = EncodingStrategyFactory.getStrategy();
 
   /**
    * end position of last dimension in carbon data file
@@ -218,7 +221,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     return decodeDimension(rawColumnPage, rawData, pageMetadata, offset);
   }
 
-  private DimensionColumnDataChunk decodeDimensionByMeta(DataChunk2 pageMetadata,
+  private ColumnPage decodeDimensionByMeta(DataChunk2 pageMetadata,
       ByteBuffer pageData, int offset)
       throws IOException, MemoryException {
     List<Encoding> encodings = pageMetadata.getEncoders();
@@ -226,7 +229,18 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     ColumnPageDecoder decoder = strategy.createDecoder(encodings, encoderMetas);
     ColumnPage decodedPage = decoder.decode(
         pageData.array(), offset, pageMetadata.data_page_length);
-    return new ColumnPageWrapper(decodedPage);
+    decodedPage.setNullBits(getNullBitSet(pageMetadata.presence));
+    return decodedPage;
+  }
+
+  /**
+   * convert the thrift presence meta to null bitset
+   */
+  private BitSet getNullBitSet(
+      org.apache.carbondata.format.PresenceMeta presentMetadataThrift) {
+    Compressor compressor = CompressorFactory.getInstance().getCompressor();
+    return BitSet.valueOf(
+        compressor.unCompressByte(presentMetadataThrift.getPresent_bit_stream()));
   }
 
   private boolean isEncodedWithMeta(DataChunk2 pageMetadata) {
@@ -234,6 +248,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     if (encodings != null && encodings.size() == 1) {
       Encoding encoding = encodings.get(0);
       switch (encoding) {
+        case ADAPTIVE_INTEGRAL:
+        case ADAPTIVE_DELTA_INTEGRAL:
         case DIRECT_COMPRESS:
         case DIRECT_STRING:
           return true;
@@ -246,7 +262,8 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       ByteBuffer pageData, DataChunk2 pageMetadata, int offset)
       throws IOException, MemoryException {
     if (isEncodedWithMeta(pageMetadata)) {
-      return decodeDimensionByMeta(pageMetadata, pageData, offset);
+      ColumnPage decodedPage = decodeDimensionByMeta(pageMetadata, pageData, offset);
+      return new ColumnPageWrapper(decodedPage, eachColumnValueSize[rawColumnPage.getBlockletId()]);
     } else {
       // following code is for backward compatibility
       return decodeDimensionLegacy(rawColumnPage, pageData, pageMetadata, offset);
