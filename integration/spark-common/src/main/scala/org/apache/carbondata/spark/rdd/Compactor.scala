@@ -36,14 +36,13 @@ object Compactor {
 
   def triggerCompaction(compactionCallableModel: CompactionCallableModel): Unit = {
 
-    val storePath = compactionCallableModel.storePath
     val storeLocation = compactionCallableModel.storeLocation
     val carbonTable = compactionCallableModel.carbonTable
     val loadsToMerge = compactionCallableModel.loadsToMerge
     val sc = compactionCallableModel.sqlContext
     val carbonLoadModel = compactionCallableModel.carbonLoadModel
     val compactionType = compactionCallableModel.compactionType
-
+    val storePath = carbonLoadModel.getStorePath
     val startTime = System.nanoTime()
     val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
     var finalMergeStatus = false

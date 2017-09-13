@@ -118,23 +118,26 @@ case class CompactionModel(compactionSize: Long,
     carbonTable: CarbonTable,
     isDDLTrigger: Boolean)
 
-case class CompactionCallableModel(storePath: String,
-    carbonLoadModel: CarbonLoadModel,
+case class CompactionCallableModel(carbonLoadModel: CarbonLoadModel,
     storeLocation: String,
     carbonTable: CarbonTable,
     loadsToMerge: util.List[LoadMetadataDetails],
     sqlContext: SQLContext,
     compactionType: CompactionType)
 
-case class SplitPartitionCallableModel(storePath: String,
-    carbonLoadModel: CarbonLoadModel,
+case class AlterPartitionModel(carbonLoadModel: CarbonLoadModel,
+    segmentId: String,
+    oldPartitionIds: List[Int],
+    sqlContext: SQLContext
+)
+
+case class SplitPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
     segmentId: String,
     partitionId: String,
-    oldPartitionIdList: List[Int],
+    oldPartitionIds: List[Int],
     sqlContext: SQLContext)
 
-case class DropPartitionCallableModel(storePath: String,
-    carbonLoadModel: CarbonLoadModel,
+case class DropPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
     segmentId: String,
     partitionId: String,
     oldPartitionIds: List[Int],

@@ -178,7 +178,6 @@ case class AlterTableCompaction(alterTableModel: AlterTableModel) extends Runnab
           .alterTableForCompaction(sparkSession.sqlContext,
             alterTableModel,
             carbonLoadModel,
-            relation.tableMeta.storePath,
             storeLocation
           )
     } catch {
@@ -302,7 +301,6 @@ case class AlterTableSplitPartitionCommand(splitPartitionModel: AlterTableSplitP
       CarbonDataRDDFactory.alterTableSplitPartition(sparkSession.sqlContext,
         partitionId.toString,
         carbonLoadModel,
-        relation.tableMeta.storePath,
         oldPartitionIds.asScala.toList
       )
       success = true
@@ -438,7 +436,6 @@ case class AlterTableDropPartition(alterTableDropPartitionModel: AlterTableDropP
       carbonLoadModel.setFactTimeStamp(loadStartTime)
       CarbonDataRDDFactory.alterTableDropPartition(sparkSession.sqlContext,
         partitionId,
-        storePath,
         carbonLoadModel,
         dropWithData,
         oldPartitionIds.asScala.toList
@@ -934,7 +931,7 @@ case class LoadTable(
           LOGGER.info(s"Overwrite of carbon table with $dbName.$tableName is in progress")
         }
         if (null == carbonLoadModel.getLoadMetadataDetails) {
-          CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+          CommonUtil.readLoadMetadataDetails(carbonLoadModel)
         }
         if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
             StringUtils.isEmpty(column_dict) && StringUtils.isEmpty(all_dictionary_path)) {

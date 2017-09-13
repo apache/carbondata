@@ -314,7 +314,6 @@ object GlobalDictionaryUtil {
         isComplexes += dimensions(i).isComplex
       }
     }
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(hdfsLocation, table)
     val primDimensions = primDimensionsBuffer.map { x => x }.toArray
     val dictDetail = CarbonSparkFactory.getDictionaryDetailService.
       getDictionaryDetail(dictfolderPath, primDimensions, table, hdfsLocation)
@@ -330,7 +329,7 @@ object GlobalDictionaryUtil {
       carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
     // get load count
     if (null == carbonLoadModel.getLoadMetadataDetails) {
-      CommonUtil.readLoadMetadataDetails(carbonLoadModel, hdfsLocation)
+      CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     }
     DictionaryLoadModel(table,
       dimensions,

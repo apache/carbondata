@@ -19,7 +19,7 @@ package org.apache.carbondata.spark.rdd
 
 import java.io.IOException
 
-import org.apache.spark.sql.execution.command.DropPartitionCallableModel
+import org.apache.spark.sql.execution.command.{AlterPartitionModel, DropPartitionCallableModel}
 import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -31,10 +31,11 @@ object PartitionDropper {
   val logger = LogServiceFactory.getLogService(PartitionDropper.getClass.getName)
 
   def triggerPartitionDrop(dropPartitionCallableModel: DropPartitionCallableModel): Unit = {
-    val sc = dropPartitionCallableModel.sqlContext.sparkContext
-    val storePath = dropPartitionCallableModel.storePath
-    val carbonLoadModel = dropPartitionCallableModel.carbonLoadModel
-    val segmentId = dropPartitionCallableModel.segmentId
+    val alterPartitionModel = new AlterPartitionModel(dropPartitionCallableModel.carbonLoadModel,
+      dropPartitionCallableModel.segmentId,
+      dropPartitionCallableModel.oldPartitionIds,
+      dropPartitionCallableModel.sqlContext
+    )
     val partitionId = dropPartitionCallableModel.partitionId
     val oldPartitionIds = dropPartitionCallableModel.oldPartitionIds
     val dropWithData = dropPartitionCallableModel.dropWithData
@@ -66,26 +67,17 @@ object PartitionDropper {
       try {
         for (i <- 0 until bucketNumber) {
           val bucketId = i
-          val rdd = new CarbonScanPartitionRDD(
-            sc,
-            Seq(partitionId, targetPartitionId),
-            storePath,
-            segmentId,
-            bucketId,
-            oldPartitionIds,
+          val rdd = new CarbonScanPartitionRDD(alterPartitionModel,
             carbonTableIdentifier,
-            carbonLoadModel
+            Seq(partitionId, targetPartitionId),
+            bucketId
           ).partitionBy(partitioner).map(_._2)
 
-          val dropStatus = new AlterTableLoadPartitionRDD(sc,
+          val dropStatus = new AlterTableLoadPartitionRDD(alterPartitionModel,
             new AlterPartitionResultImpl(),
             Seq(partitionId),
-            segmentId,
             bucketId,
-            carbonLoadModel,
             identifier,
-            storePath,
-            oldPartitionIds,
             rdd).collect()
 
           if (dropStatus.length == 0) {
@@ -103,9 +95,9 @@ object PartitionDropper {
 
         if (finalDropStatus) {
           try {
-            PartitionUtils.deleteOriginalCarbonFile(identifier, segmentId,
-              Seq(partitionId, targetPartitionId).toList, oldPartitionIds, storePath, dbName,
-              tableName, partitionInfo, carbonLoadModel)
+            PartitionUtils.deleteOriginalCarbonFile(alterPartitionModel, identifier,
+              Seq(partitionId, targetPartitionId).toList, dbName,
+              tableName, partitionInfo)
           } catch {
             case e: IOException => sys.error(s"Exception while delete original carbon files " +
                                              e.getMessage)
@@ -119,8 +111,8 @@ object PartitionDropper {
         case e: Exception => sys.error(s"Exception in dropping partition action: ${ e.getMessage }")
       }
     } else {
-      PartitionUtils.deleteOriginalCarbonFile(identifier, segmentId, Seq(partitionId).toList,
-        oldPartitionIds, storePath, dbName, tableName, partitionInfo, carbonLoadModel)
+      PartitionUtils.deleteOriginalCarbonFile(alterPartitionModel, identifier,
+        Seq(partitionId).toList, dbName, tableName, partitionInfo)
       logger.audit(s"Drop Partition request completed for table " +
                    s"${ dbName }.${ tableName }")
       logger.info(s"Drop Partition request completed for table " +

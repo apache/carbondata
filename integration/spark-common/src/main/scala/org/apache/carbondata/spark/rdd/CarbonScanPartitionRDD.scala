@@ -27,6 +27,7 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
+import org.apache.spark.sql.execution.command.AlterPartitionModel
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.PartitionUtils
@@ -53,27 +54,23 @@ import org.apache.carbondata.spark.load.CarbonLoaderUtil
 /**
  * This RDD is used in alter table partition statement to get data of target partitions,
  * then repartition data according to new partitionInfo
- * @param sc
- * @param partitionIds  the ids of target partition to be scanned
- * @param storePath
- * @param segmentId
- * @param bucketId
- * @param oldPartitionIdList  the taskId in partition order before partitionInfo is modified
+ * @param alterPartitionModel
  * @param carbonTableIdentifier
- * @param carbonLoadModel
+ * @param partitionIds  the ids of target partition to be scanned
+ * @param bucketId
  */
-class CarbonScanPartitionRDD(
-    sc: SparkContext,
-    partitionIds: Seq[String],
-    storePath: String,
-    segmentId: String,
-    bucketId: Int,
-    oldPartitionIdList: List[Int],
+class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
     carbonTableIdentifier: CarbonTableIdentifier,
-    carbonLoadModel: CarbonLoadModel)
-  extends RDD[(AnyRef, Array[AnyRef])](sc, Nil) {
+    partitionIds: Seq[String],
+    bucketId: Int)
+  extends RDD[(AnyRef, Array[AnyRef])](alterPartitionModel.sqlContext.sparkContext, Nil) {
 
-  private val queryId = sc.getConf.get("queryId", System.nanoTime() + "")
+  private val queryId = alterPartitionModel.sqlContext.sparkContext.getConf
+    .get("queryId", System.nanoTime() + "")
+  val segmentId = alterPartitionModel.segmentId
+  val carbonLoadModel = alterPartitionModel.carbonLoadModel
+  val oldPartitionIdList = alterPartitionModel.oldPartitionIds
+  val storePath = carbonLoadModel.getStorePath
   val identifier = new AbsoluteTableIdentifier(storePath, carbonTableIdentifier)
   var storeLocation: String = null
   var splitStatus: Boolean = false

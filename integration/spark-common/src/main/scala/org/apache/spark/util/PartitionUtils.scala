@@ -26,6 +26,7 @@ import scala.collection.mutable.ListBuffer
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
+import org.apache.spark.sql.execution.command.AlterPartitionModel
 
 import org.apache.carbondata.core.datastore.block.{SegmentProperties, TableBlockInfo}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -151,13 +152,17 @@ object PartitionUtils {
   }
 
   @throws(classOf[IOException])
-  def deleteOriginalCarbonFile(identifier: AbsoluteTableIdentifier, segmentId: String,
-      partitionIds: List[String], oldPartitionIdList: List[Int], storePath: String,
-      dbName: String, tableName: String, partitionInfo: PartitionInfo,
-      carbonLoadModel: CarbonLoadModel): Unit = {
+  def deleteOriginalCarbonFile(alterPartitionModel: AlterPartitionModel,
+      identifier: AbsoluteTableIdentifier,
+      partitionIds: List[String], dbName: String, tableName: String,
+      partitionInfo: PartitionInfo): Unit = {
+    val carbonLoadModel = alterPartitionModel.carbonLoadModel
+    val segmentId = alterPartitionModel.segmentId
+    val oldPartitionIds = alterPartitionModel.oldPartitionIds
     val newTime = carbonLoadModel.getFactTimeStamp
+    val storePath = carbonLoadModel.getStorePath
     val tableBlockInfoList =
-      getPartitionBlockList(identifier, segmentId, partitionIds, oldPartitionIdList,
+      getPartitionBlockList(identifier, segmentId, partitionIds, oldPartitionIds,
         partitionInfo).asScala
     val pathList: util.List[String] = new util.ArrayList[String]()
     val carbonTablePath = new CarbonTablePath(storePath, dbName, tableName)

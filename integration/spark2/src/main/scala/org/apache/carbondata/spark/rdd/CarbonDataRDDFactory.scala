@@ -76,7 +76,6 @@ object CarbonDataRDDFactory {
   def alterTableForCompaction(sqlContext: SQLContext,
       alterTableModel: AlterTableModel,
       carbonLoadModel: CarbonLoadModel,
-      storePath: String,
       storeLocation: String): Unit = {
     var compactionSize: Long = 0
     var compactionType: CompactionType = CompactionType.MINOR_COMPACTION
@@ -104,7 +103,7 @@ object CarbonDataRDDFactory {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
 
     if (null == carbonLoadModel.getLoadMetadataDetails) {
-      CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+      CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     }
     // reading the start time of data load.
     val loadStartTime : Long =
@@ -135,7 +134,6 @@ object CarbonDataRDDFactory {
       LOGGER.info("System level compaction lock is enabled.")
       handleCompactionForSystemLocking(sqlContext,
         carbonLoadModel,
-        storePath,
         storeLocation,
         compactionType,
         carbonTable,
@@ -154,7 +152,6 @@ object CarbonDataRDDFactory {
         try {
           startCompactionThreads(sqlContext,
             carbonLoadModel,
-            storePath,
             storeLocation,
             compactionModel,
             lock
@@ -178,14 +175,12 @@ object CarbonDataRDDFactory {
   def alterTableSplitPartition(sqlContext: SQLContext,
       partitionId: String,
       carbonLoadModel: CarbonLoadModel,
-      storePath: String,
       oldPartitionIdList: List[Int]): Unit = {
     LOGGER.audit(s"Add partition request received for table " +
          s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     try {
       startSplitThreads(sqlContext,
         carbonLoadModel,
-        storePath,
         partitionId,
         oldPartitionIdList)
     } catch {
@@ -197,7 +192,6 @@ object CarbonDataRDDFactory {
 
   def alterTableDropPartition(sqlContext: SQLContext,
       partitionId: String,
-      storePath: String,
       carbonLoadModel: CarbonLoadModel,
       dropWithData: Boolean,
       oldPartitionIds: List[Int]): Unit = {
@@ -206,7 +200,6 @@ object CarbonDataRDDFactory {
     try {
       startDropThreads(sqlContext,
         carbonLoadModel,
-        storePath,
         partitionId,
         dropWithData,
         oldPartitionIds)
@@ -219,7 +212,6 @@ object CarbonDataRDDFactory {
 
   def handleCompactionForSystemLocking(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      storePath: String,
       storeLocation: String,
       compactionType: CompactionType,
       carbonTable: CarbonTable,
@@ -234,7 +226,6 @@ object CarbonDataRDDFactory {
       try {
         startCompactionThreads(sqlContext,
           carbonLoadModel,
-          storePath,
           storeLocation,
           compactionModel,
           lock
@@ -270,7 +261,6 @@ object CarbonDataRDDFactory {
 
   def startCompactionThreads(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      storePath: String,
       storeLocation: String,
       compactionModel: CompactionModel,
       compactionLock: ICarbonLock): Unit = {
@@ -279,7 +269,7 @@ object CarbonDataRDDFactory {
     if (compactionModel.compactionType != CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
       // update the updated table status. For the case of Update Delta Compaction the Metadata
       // is filled in LoadModel, no need to refresh.
-      CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+      CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     }
 
     val compactionThread = new Thread {
@@ -291,7 +281,6 @@ object CarbonDataRDDFactory {
           var exception: Exception = null
           try {
             DataManagementFunc.executeCompaction(carbonLoadModel: CarbonLoadModel,
-              storePath: String,
               compactionModel: CompactionModel,
               executor, sqlContext, storeLocation
             )
@@ -323,7 +312,7 @@ object CarbonDataRDDFactory {
               val compactionType = CarbonCompactionUtil.determineCompactionType(metadataPath)
 
               val newCarbonLoadModel = new CarbonLoadModel()
-              DataManagementFunc.prepareCarbonLoadModel(storePath, table, newCarbonLoadModel)
+              DataManagementFunc.prepareCarbonLoadModel(table, newCarbonLoadModel)
 
               val compactionSize = CarbonDataMergerUtil
                   .getCompactionSize(CompactionType.MAJOR_COMPACTION)
@@ -336,7 +325,6 @@ object CarbonDataRDDFactory {
               // proceed for compaction
               try {
                 DataManagementFunc.executeCompaction(newCarbonLoadModel,
-                  newCarbonLoadModel.getStorePath,
                   newcompactionModel,
                   executor, sqlContext, storeLocation
                 )
@@ -387,7 +375,6 @@ object CarbonDataRDDFactory {
   case class SplitThread(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       executor: ExecutorService,
-      storePath: String,
       segmentId: String,
       partitionId: String,
       oldPartitionIdList: List[Int]) extends Thread {
@@ -396,8 +383,7 @@ object CarbonDataRDDFactory {
         var exception: Exception = null
         try {
           DataManagementFunc.executePartitionSplit(sqlContext,
-            carbonLoadModel, executor, storePath, segmentId, partitionId,
-            oldPartitionIdList)
+            carbonLoadModel, executor, segmentId, partitionId, oldPartitionIdList)
           triggeredSplitPartitionStatus = true
         } catch {
           case e: Exception =>
@@ -413,7 +399,6 @@ object CarbonDataRDDFactory {
   case class dropPartitionThread(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       executor: ExecutorService,
-      storePath: String,
       segmentId: String,
       partitionId: String,
       dropWithData: Boolean,
@@ -421,7 +406,7 @@ object CarbonDataRDDFactory {
     override def run(): Unit = {
       try {
         DataManagementFunc.executeDroppingPartition(sqlContext, carbonLoadModel, executor,
-          storePath, segmentId, partitionId, dropWithData, oldPartitionIds)
+          segmentId, partitionId, dropWithData, oldPartitionIds)
       } catch {
         case e: Exception =>
           LOGGER.error(s"Exception in dropping partition thread: ${ e.getMessage } }")
@@ -431,7 +416,6 @@ object CarbonDataRDDFactory {
 
   def startSplitThreads(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      storePath: String,
       partitionId: String,
       oldPartitionIdList: List[Int]): Unit = {
     val numberOfCores = CarbonProperties.getInstance()
@@ -446,7 +430,7 @@ object CarbonDataRDDFactory {
       val threadArray: Array[SplitThread] = new Array[SplitThread](validSegments.size)
       var i = 0
       validSegments.foreach { segmentId =>
-        threadArray(i) = SplitThread(sqlContext, carbonLoadModel, executor, storePath,
+        threadArray(i) = SplitThread(sqlContext, carbonLoadModel, executor,
           segmentId, partitionId, oldPartitionIdList)
         threadArray(i).start()
         i += 1
@@ -472,7 +456,6 @@ object CarbonDataRDDFactory {
 
   def startDropThreads(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      storePath: String,
       partitionId: String,
       dropWithData: Boolean,
       oldPartitionIds: List[Int]): Unit = {
@@ -489,7 +472,7 @@ object CarbonDataRDDFactory {
       var i = 0
       for (segmentId: String <- validSegments) {
         threadArray(i) = dropPartitionThread(sqlContext, carbonLoadModel, executor,
-            storePath, segmentId, partitionId, dropWithData, oldPartitionIds)
+            segmentId, partitionId, dropWithData, oldPartitionIds)
         threadArray(i).start()
         i += 1
       }
@@ -555,7 +538,6 @@ object CarbonDataRDDFactory {
 
           handleCompactionForSystemLocking(sqlContext,
             carbonLoadModel,
-            storePath,
             storeLocation,
             CompactionType.MINOR_COMPACTION,
             carbonTable,
@@ -572,7 +554,6 @@ object CarbonDataRDDFactory {
             try {
               startCompactionThreads(sqlContext,
                 carbonLoadModel,
-                storePath,
                 storeLocation,
                 compactionModel,
                 lock

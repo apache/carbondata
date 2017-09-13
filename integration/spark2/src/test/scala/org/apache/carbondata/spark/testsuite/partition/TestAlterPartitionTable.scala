@@ -278,29 +278,6 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     val result_origin5 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area >= 'OutSpace' ")
     checkAnswer(result_after5, result_origin5)
 
-    sql("""ALTER TABLE list_table_area ADD PARTITION ('One', '(Two, Three)', 'Four')""".stripMargin)
-    val carbonTable1 = CarbonMetadata.getInstance().getCarbonTable("default_list_table_area")
-    val partitionInfo1 = carbonTable1.getPartitionInfo(carbonTable.getFactTableName)
-    val partitionIds1 = partitionInfo1.getPartitionIds
-    val new_list_info = partitionInfo1.getListInfo
-    assert(partitionIds1 == List(0, 1, 2, 3, 4, 5, 6, 7, 8).map(Integer.valueOf(_)).asJava)
-    assert(partitionInfo1.getMAX_PARTITION == 8)
-    assert(partitionInfo1.getNumPartitions == 9)
-    assert(new_list_info.get(0).get(0) == "Asia")
-    assert(new_list_info.get(1).get(0) == "America")
-    assert(new_list_info.get(2).get(0) == "Europe")
-    assert(new_list_info.get(3).get(0) == "OutSpace")
-    assert(new_list_info.get(4).get(0) == "Hi")
-    assert(new_list_info.get(5).get(0) == "One")
-    assert(new_list_info.get(6).get(0) == "Two")
-    assert(new_list_info.get(6).get(1) == "Three")
-    assert(new_list_info.get(7).get(0) == "Four")
-    validateDataFiles("default_list_table_area", "0", Seq(0, 1, 2, 4))
-
-    val result_after6 = sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area")
-    val result_origin6 = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin""")
-    checkAnswer(result_after6, result_origin6)
-
     intercept[Exception]  { sql("""ALTER TABLE DROP PARTITION(0)""")}
     intercept[Exception]  { sql("""ALTER TABLE DROP PARTITION(0) WITH DATA""")}
     
@@ -309,17 +286,13 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     val partitionInfo2 = carbonTable2.getPartitionInfo(carbonTable.getFactTableName)
     val partitionIds2 = partitionInfo2.getPartitionIds
     val list_info2 = partitionInfo2.getListInfo
-    assert(partitionIds2 == List(0, 1, 3, 4, 5, 6, 7, 8).map(Integer.valueOf(_)).asJava)
-    assert(partitionInfo2.getMAX_PARTITION == 8)
-    assert(partitionInfo2.getNumPartitions == 8)
+    assert(partitionIds2 == List(0, 1, 3, 4, 5).map(Integer.valueOf(_)).asJava)
+    assert(partitionInfo2.getMAX_PARTITION == 5)
+    assert(partitionInfo2.getNumPartitions == 5)
     assert(list_info2.get(0).get(0) == "Asia")
     assert(list_info2.get(1).get(0) == "Europe")
     assert(list_info2.get(2).get(0) == "OutSpace")
     assert(list_info2.get(3).get(0) == "Hi")
-    assert(list_info2.get(4).get(0) == "One")
-    assert(list_info2.get(5).get(0) == "Two")
-    assert(list_info2.get(5).get(1) == "Three")
-    assert(list_info2.get(6).get(0) == "Four")
     validateDataFiles("default_list_table_area", "0", Seq(0, 1, 4))
     checkAnswer(sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area"),
       sql("select id, vin, logdate, phonenumber, country, area, salary from list_table_area_origin where area <> 'America' "))
@@ -465,23 +438,21 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val list_info = partitionInfo.getListInfo
-    assert(partitionIds == List(0, 1, 2, 3, 6, 7, 8, 5, 10, 11, 12).map(Integer.valueOf(_)).asJava)
+    assert(partitionIds == List(0, 1, 2, 3, 6, 7, 5, 10, 11, 12).map(Integer.valueOf(_)).asJava)
     assert(partitionInfo.getMAX_PARTITION == 12)
-    assert(partitionInfo.getNumPartitions == 11)
+    assert(partitionInfo.getNumPartitions == 10)
     assert(list_info.get(0).get(0) == "China")
     assert(list_info.get(0).get(1) == "US")
     assert(list_info.get(1).get(0) == "UK")
     assert(list_info.get(2).get(0) == "Japan")
     assert(list_info.get(3).get(0) == "Canada")
     assert(list_info.get(4).get(0) == "Russia")
-    assert(list_info.get(5).get(0) == "Good")
-    assert(list_info.get(5).get(1) == "NotGood")
-    assert(list_info.get(6).get(0) == "Korea")
-    assert(list_info.get(7).get(0) == "Part4")
-    assert(list_info.get(8).get(0) == "Part2")
-    assert(list_info.get(9).get(0) == "Part1")
-    assert(list_info.get(9).get(1) == "Part3")
-    validateDataFiles("default_list_table_country", "0", Seq(0, 1, 2, 3, 8))
+    assert(list_info.get(5).get(0) == "Korea")
+    assert(list_info.get(6).get(0) == "Part4")
+    assert(list_info.get(7).get(0) == "Part2")
+    assert(list_info.get(8).get(0) == "Part1")
+    assert(list_info.get(8).get(1) == "Part3")
+    validateDataFiles("default_list_table_country", "0", Seq(0, 1, 2, 3))
     val result_after = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country""")
     val result_origin = sql("""select id, vin, logdate, phonenumber, country, area, salary from list_table_country_origin""")
     checkAnswer(result_after, result_origin)
