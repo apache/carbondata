@@ -270,8 +270,12 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       int key = directDictionaryGenerator.generateDirectSurrogateKey(null) + 1;
       CarbonDimension currentBlockDimension =
           segmentProperties.getDimensions().get(dimensionBlocksIndex[0]);
-      defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
-          this.segmentProperties.getSortColumnsGenerator());
+      if (currentBlockDimension.isSortColumn()) {
+        defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
+            this.segmentProperties.getSortColumnsGenerator());
+      } else {
+        defaultValue = ByteUtil.toBytes(key);
+      }
     }
     BitSet bitSet = null;
     if (dimensionColumnDataChunk.isExplicitSorted()) {

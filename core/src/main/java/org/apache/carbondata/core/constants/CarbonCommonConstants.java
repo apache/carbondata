@@ -1371,6 +1371,10 @@ public final class CarbonCommonConstants {
 
   public static final String USE_DISTRIBUTED_DATAMAP_DEFAULT = "false";
 
+  public static final String CARBON_USE_BLOCKLET_DISTRIBUTION = "carbon.blocklet.distribution";
+
+  public static final String CARBON_USE_BLOCKLET_DISTRIBUTION_DEFAULT = "true";
+
   private CarbonCommonConstants() {
   }
 }
