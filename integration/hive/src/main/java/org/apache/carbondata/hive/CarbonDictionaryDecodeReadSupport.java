@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
 
 import org.apache.carbondata.core.cache.Cache;
@@ -228,9 +229,13 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       case LONG:
         return new LongWritable((long) obj);
       case SHORT:
-        return new ShortWritable((Short) obj);
+        return new ShortWritable((short) obj);
       case DATE:
-        return new DateWritable(new Date(((Integer) obj).longValue()));
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date(0));
+        c.add(Calendar.DAY_OF_YEAR, (Integer) obj);
+        Date date = new java.sql.Date(c.getTime().getTime());
+        return new DateWritable(date);
       case TIMESTAMP:
         return new TimestampWritable(new Timestamp((long) obj / 1000));
       case STRING:
