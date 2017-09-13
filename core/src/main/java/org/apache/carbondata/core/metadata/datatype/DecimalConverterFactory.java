@@ -18,7 +18,6 @@ package org.apache.carbondata.core.metadata.datatype;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
@@ -84,8 +83,6 @@ public final class DecimalConverterFactory {
 
   public class DecimalIntConverter implements DecimalConverter {
 
-    private ByteBuffer buffer = ByteBuffer.allocate(4);
-
     private int scale;
 
     public DecimalIntConverter(int precision, int scale) {
@@ -130,8 +127,6 @@ public final class DecimalConverterFactory {
   }
 
   public class DecimalLongConverter implements DecimalConverter {
-
-    private ByteBuffer buffer = ByteBuffer.allocate(8);
 
     private int scale;
 

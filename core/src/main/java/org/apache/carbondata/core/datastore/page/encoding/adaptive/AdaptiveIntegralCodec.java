@@ -88,13 +88,19 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
 
   @Override
   public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
-  final AdaptiveDeltaIntegralEncoderMeta codecMeta = (AdaptiveDeltaIntegralEncoderMeta) meta;
     return new ColumnPageDecoder() {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
-        ColumnPage page = ColumnPage.decompress(meta, input, offset, length);
-        return LazyColumnPage.newPage(page, converter, codecMeta);
+        ColumnPage page = null;
+        switch (meta.getSchemaDataType()) {
+          case DECIMAL:
+            page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
+            break;
+          default:
+            page = ColumnPage.decompress(meta, input, offset, length);
+        }
+        return LazyColumnPage.newPage(page, converter);
       }
     };
   }
