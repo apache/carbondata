@@ -52,7 +52,7 @@ public class LoadMetadataDetails implements Serializable {
 
   // dont remove static as the write will fail.
   private static final SimpleDateFormat parser =
-      new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
+      new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
   /**
    * Segment modification or deletion time stamp
    */
