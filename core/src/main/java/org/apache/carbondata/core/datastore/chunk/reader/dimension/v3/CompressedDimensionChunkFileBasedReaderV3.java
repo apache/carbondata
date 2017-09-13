@@ -55,7 +55,7 @@ import org.apache.commons.lang.ArrayUtils;
  */
 public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkReaderV2V3Format {
 
-  private EncodingFactory strategy = DefaultEncodingFactory.getInstance();
+  private EncodingFactory encodingFactory = DefaultEncodingFactory.getInstance();
 
   /**
    * end position of last dimension in carbon data file
@@ -223,7 +223,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       throws IOException, MemoryException {
     List<Encoding> encodings = pageMetadata.getEncoders();
     List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
-    ColumnPageDecoder decoder = strategy.createDecoder(encodings, encoderMetas);
+    ColumnPageDecoder decoder = encodingFactory.createDecoder(encodings, encoderMetas);
     return decoder.decode(pageData.array(), offset, pageMetadata.data_page_length);
   }
 

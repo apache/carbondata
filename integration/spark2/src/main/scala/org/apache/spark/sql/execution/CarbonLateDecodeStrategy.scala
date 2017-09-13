@@ -42,8 +42,8 @@ import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
- * Carbon strategy for late decode (convert dictionary key to value as late as possible), which
- * can improve the aggregation performance and reduce memory usage
+ * Carbon specific optimization for late decode (convert dictionary key to value as late as
+ * possible), which can improve the aggregation performance and reduce memory usage
  */
 private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   val PUSHED_FILTERS = "PushedFilters"

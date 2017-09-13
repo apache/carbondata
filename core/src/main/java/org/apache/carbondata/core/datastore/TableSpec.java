@@ -17,9 +17,13 @@
 
 package org.apache.carbondata.core.datastore;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 
@@ -56,16 +60,16 @@ public class TableSpec {
       CarbonDimension dimension = dimensions.get(i);
       if (dimension.isColumnar()) {
         if (dimension.isComplex()) {
-          DimensionSpec spec = new DimensionSpec(DimensionType.COMPLEX, dimension);
+          DimensionSpec spec = new DimensionSpec(ColumnType.COMPLEX, dimension);
           dimensionSpec[dimIndex++] = spec;
         } else if (dimension.isDirectDictionaryEncoding()) {
-          DimensionSpec spec = new DimensionSpec(DimensionType.DIRECT_DICTIONARY, dimension);
+          DimensionSpec spec = new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension);
           dimensionSpec[dimIndex++] = spec;
         } else if (dimension.isGlobalDictionaryEncoding()) {
-          DimensionSpec spec = new DimensionSpec(DimensionType.GLOBAL_DICTIONARY, dimension);
+          DimensionSpec spec = new DimensionSpec(ColumnType.GLOBAL_DICTIONARY, dimension);
           dimensionSpec[dimIndex++] = spec;
         } else {
-          DimensionSpec spec = new DimensionSpec(DimensionType.PLAIN_VALUE, dimension);
+          DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
           dimensionSpec[dimIndex++] = spec;
         }
       }
@@ -103,31 +107,54 @@ public class TableSpec {
     return measureSpec.length;
   }
 
-  public class ColumnSpec {
+
+  public static class ColumnSpec implements Writable {
     // field name of this column
     private String fieldName;
 
     // data type of this column
-    private DataType dataType;
+    private DataType schemaDataType;
 
-    ColumnSpec(String fieldName, DataType dataType) {
-      this.fieldName = fieldName;
-      this.dataType = dataType;
+    // dimension type of this dimension
+    private ColumnType columnType;
+
+    public ColumnSpec() {
     }
 
-    public DataType getDataType() {
-      return dataType;
+    public ColumnSpec(String fieldName, DataType schemaDataType, ColumnType columnType) {
+      this.fieldName = fieldName;
+      this.schemaDataType = schemaDataType;
+      this.columnType = columnType;
+    }
+
+    public DataType getSchemaDataType() {
+      return schemaDataType;
     }
 
     public String getFieldName() {
       return fieldName;
     }
+
+    public ColumnType getColumnType() {
+      return columnType;
+    }
+
+    @Override
+    public void write(DataOutput out) throws IOException {
+      out.writeUTF(fieldName);
+      out.writeByte(schemaDataType.ordinal());
+      out.writeByte(columnType.ordinal());
+    }
+
+    @Override
+    public void readFields(DataInput in) throws IOException {
+      this.fieldName = in.readUTF();
+      this.schemaDataType = DataType.valueOf(in.readByte());
+      this.columnType = ColumnType.valueOf(in.readByte());
+    }
   }
 
-  public class DimensionSpec extends ColumnSpec {
-
-    // dimension type of this dimension
-    private DimensionType type;
+  public class DimensionSpec extends ColumnSpec implements Writable {
 
     // indicate whether this dimension is in sort column
     private boolean inSortColumns;
@@ -135,15 +162,10 @@ public class TableSpec {
     // indicate whether this dimension need to do inverted index
     private boolean doInvertedIndex;
 
-    DimensionSpec(DimensionType dimensionType, CarbonDimension dimension) {
-      super(dimension.getColName(), dimension.getDataType());
-      this.type = dimensionType;
+    DimensionSpec(ColumnType columnType, CarbonDimension dimension) {
+      super(dimension.getColName(), dimension.getDataType(), columnType);
       this.inSortColumns = dimension.isSortColumn();
       this.doInvertedIndex = dimension.isUseInvertedIndex();
-    }
-
-    public DimensionType getDimensionType() {
-      return type;
     }
 
     public boolean isInSortColumns() {
@@ -153,15 +175,25 @@ public class TableSpec {
     public boolean isDoInvertedIndex() {
       return doInvertedIndex;
     }
+
+    @Override
+    public void write(DataOutput out) throws IOException {
+      super.write(out);
+    }
+
+    @Override
+    public void readFields(DataInput in) throws IOException {
+      super.readFields(in);
+    }
   }
 
-  public class MeasureSpec extends ColumnSpec {
+  public class MeasureSpec extends ColumnSpec implements Writable {
 
     private int scale;
     private int precision;
 
     MeasureSpec(String fieldName, DataType dataType, int scale, int precision) {
-      super(fieldName, dataType);
+      super(fieldName, dataType, ColumnType.MEASURE);
       this.scale = scale;
       this.precision = precision;
     }
@@ -172,6 +204,16 @@ public class TableSpec {
 
     public int getPrecision() {
       return precision;
+    }
+
+    @Override
+    public void write(DataOutput out) throws IOException {
+      super.write(out);
+    }
+
+    @Override
+    public void readFields(DataInput in) throws IOException {
+      super.readFields(in);
     }
   }
 }

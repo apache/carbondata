@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
@@ -64,7 +65,7 @@ public class RLECodec implements ColumnPageCodec {
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
     assert meta instanceof RLEEncoderMeta;
     RLEEncoderMeta codecMeta = (RLEEncoderMeta) meta;
-    return new RLEDecoder(codecMeta.getDataType(), codecMeta.getPageSize());
+    return new RLEDecoder(meta.getColumnSpec(), codecMeta.getPageSize());
   }
 
   // This codec supports integral type only
@@ -157,7 +158,7 @@ public class RLECodec implements ColumnPageCodec {
 
     @Override
     protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
-      return new RLEEncoderMeta(
+      return new RLEEncoderMeta(inputPage.getColumnSpec(),
           inputPage.getDataType(), inputPage.getPageSize(), inputPage.getStatistics());
     }
 
@@ -291,21 +292,21 @@ public class RLECodec implements ColumnPageCodec {
   // TODO: add a on-the-fly decoder for filter query with high selectivity
   private class RLEDecoder implements ColumnPageDecoder {
 
-    // src data type
-    private DataType dataType;
+    private TableSpec.ColumnSpec columnSpec;
     private int pageSize;
 
-    private RLEDecoder(DataType dataType, int pageSize) {
-      validateDataType(dataType);
-      this.dataType = dataType;
+    private RLEDecoder(TableSpec.ColumnSpec columnSpec, int pageSize) {
+      validateDataType(columnSpec.getSchemaDataType());
+      this.columnSpec = columnSpec;
       this.pageSize = pageSize;
     }
 
     @Override
     public ColumnPage decode(byte[] input, int offset, int length)
         throws MemoryException, IOException {
+      DataType dataType = columnSpec.getSchemaDataType();
       DataInputStream in = new DataInputStream(new ByteArrayInputStream(input, offset, length));
-      ColumnPage resultPage = ColumnPage.newPage(dataType, pageSize);
+      ColumnPage resultPage = ColumnPage.newPage(columnSpec, dataType, pageSize);
       switch (dataType) {
         case BYTE:
           decodeBytePage(in, resultPage);

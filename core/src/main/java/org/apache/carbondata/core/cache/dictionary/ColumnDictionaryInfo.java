@@ -312,11 +312,6 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
     }
   }
 
-  /**
-   * getDataType().
-   *
-   * @return
-   */
   public DataType getDataType() {
     return dataType;
   }

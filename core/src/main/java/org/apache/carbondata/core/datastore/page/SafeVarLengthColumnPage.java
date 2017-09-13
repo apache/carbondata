@@ -22,6 +22,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
@@ -29,8 +30,9 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   // for string and decimal data
   private byte[][] byteArrayData;
 
-  SafeVarLengthColumnPage(DataType dataType, int pageSize, int scale, int precision) {
-    super(dataType, pageSize, scale, precision);
+  SafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
+      int scale, int precision) {
+    super(columnSpec, dataType, pageSize, scale, precision);
     byteArrayData = new byte[pageSize][];
   }
 

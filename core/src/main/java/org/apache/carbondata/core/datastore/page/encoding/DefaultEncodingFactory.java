@@ -33,7 +33,7 @@ import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
- * Default strategy will select encoding base on column page data type and statistics
+ * Default factory will select encoding base on column page data type and statistics
  */
 public class DefaultEncodingFactory extends EncodingFactory {
 
@@ -42,11 +42,11 @@ public class DefaultEncodingFactory extends EncodingFactory {
 
   private static final boolean newWay = false;
 
-  private static EncodingFactory defaultStrategy = new DefaultEncodingFactory();
+  private static EncodingFactory encodingFactory = new DefaultEncodingFactory();
 
   public static EncodingFactory getInstance() {
-    // TODO: make it configurable after added new strategy
-    return defaultStrategy;
+    // TODO: make it configurable after added new encodingFactory
+    return encodingFactory;
   }
 
   @Override
@@ -67,7 +67,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
   private ColumnPageEncoder createEncoderForDimension(TableSpec.DimensionSpec columnSpec,
       ColumnPage inputPage) {
     Compressor compressor = CompressorFactory.getInstance().getCompressor();
-    switch (columnSpec.getDimensionType()) {
+    switch (columnSpec.getColumnType()) {
       case GLOBAL_DICTIONARY:
       case DIRECT_DICTIONARY:
       case PLAIN_VALUE:
@@ -76,14 +76,14 @@ public class DefaultEncodingFactory extends EncodingFactory {
         return new ComplexDimensionIndexCodec(false, false, compressor).createEncoder(null);
       default:
         throw new RuntimeException("unsupported dimension type: " +
-            columnSpec.getDimensionType());
+            columnSpec.getColumnType());
     }
   }
 
   private ColumnPageEncoder createEncoderForDimensionLegacy(TableSpec.DimensionSpec columnSpec) {
     TableSpec.DimensionSpec dimensionSpec = columnSpec;
     Compressor compressor = CompressorFactory.getInstance().getCompressor();
-    switch (dimensionSpec.getDimensionType()) {
+    switch (dimensionSpec.getColumnType()) {
       case GLOBAL_DICTIONARY:
         return new DictDimensionIndexCodec(
             dimensionSpec.isInSortColumns(),
@@ -101,7 +101,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
             compressor).createEncoder(null);
       default:
         throw new RuntimeException("unsupported dimension type: " +
-            dimensionSpec.getDimensionType());
+            dimensionSpec.getColumnType());
     }
   }
 

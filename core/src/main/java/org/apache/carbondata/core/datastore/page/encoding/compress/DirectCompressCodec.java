@@ -60,10 +60,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
   @Override
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
-    assert meta instanceof DirectCompressorEncoderMeta;
-    DirectCompressorEncoderMeta codecMeta = (DirectCompressorEncoderMeta) meta;
-    return new DirectDecompressor(codecMeta.getCompressorName(),
-        codecMeta.getScale(), codecMeta.getPrecision());
+    return new DirectDecompressor(meta, meta.getScale(), meta.getPrecision());
   }
 
   private static class DirectCompressor extends ColumnPageEncoder {
@@ -88,20 +85,20 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
     @Override
     protected ColumnPageEncoderMeta getEncoderMeta(ColumnPage inputPage) {
-      return new DirectCompressorEncoderMeta(compressor.getName(), inputPage.getDataType(),
-          inputPage.getStatistics());
+      return new ColumnPageEncoderMeta(inputPage.getColumnSpec(), inputPage.getDataType(),
+          inputPage.getStatistics(), compressor.getName());
     }
 
   }
 
   private class DirectDecompressor implements ColumnPageDecoder {
 
-    private Compressor compressor;
+    private ColumnPageEncoderMeta meta;
     private int scale;
     private int precision;
 
-    DirectDecompressor(String compressorName, int scale, int precision) {
-      this.compressor = CompressorFactory.getInstance().getCompressor(compressorName);
+    DirectDecompressor(ColumnPageEncoderMeta meta, int scale, int precision) {
+      this.meta = meta;
       this.scale = scale;
       this.precision = precision;
     }
@@ -110,10 +107,10 @@ public class DirectCompressCodec implements ColumnPageCodec {
     public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
       ColumnPage decodedPage;
       if (dataType == DataType.DECIMAL) {
-        decodedPage = ColumnPage.decompressDecimalPage(compressor, input, offset, length,
+        decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length,
             scale, precision);
       } else {
-        decodedPage = ColumnPage.decompress(compressor, dataType, input, offset, length);
+        decodedPage = ColumnPage.decompress(meta, input, offset, length);
       }
       return LazyColumnPage.newPage(decodedPage, converter);
     }

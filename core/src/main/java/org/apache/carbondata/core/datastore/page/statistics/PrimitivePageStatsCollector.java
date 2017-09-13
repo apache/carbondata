@@ -51,10 +51,10 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   // this is for decode flow, create stats from encoder meta in carbondata file
   public static PrimitivePageStatsCollector newInstance(ColumnPageEncoderMeta meta) {
-    PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(meta.getDataType(), meta.getScale(), meta.getPrecision());
+    PrimitivePageStatsCollector instance = new PrimitivePageStatsCollector(meta.getSchemaDataType(),
+        meta.getScale(), meta.getPrecision());
     // set min max from meta
-    switch (meta.getDataType()) {
+    switch (meta.getSchemaDataType()) {
       case BYTE:
         instance.minByte = (byte) meta.getMinValue();
         instance.maxByte = (byte) meta.getMaxValue();
@@ -85,7 +85,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         break;
       default:
         throw new UnsupportedOperationException(
-            "unsupported data type for stats collection: " + meta.getDataType());
+            "unsupported data type for stats collection: " + meta.getSchemaDataType());
     }
     return instance;
   }

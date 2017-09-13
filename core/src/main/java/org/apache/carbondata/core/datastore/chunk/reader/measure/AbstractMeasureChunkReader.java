@@ -25,7 +25,7 @@ import org.apache.carbondata.core.datastore.page.encoding.EncodingFactory;
  */
 public abstract class AbstractMeasureChunkReader implements MeasureColumnChunkReader {
 
-  protected EncodingFactory strategy = DefaultEncodingFactory.getInstance();
+  protected EncodingFactory encodingFactory = DefaultEncodingFactory.getInstance();
 
   /**
    * file path from which blocks will be read

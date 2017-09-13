@@ -27,7 +27,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.datastore.DimensionType;
+import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
@@ -87,15 +87,18 @@ public class TablePage {
     this.model = model;
     this.pageSize = pageSize;
     int numDictDimension = model.getMDKeyGenerator().getDimCount();
+    TableSpec tableSpec = model.getTableSpec();
     dictDimensionPages = new ColumnPage[numDictDimension];
     for (int i = 0; i < dictDimensionPages.length; i++) {
-      ColumnPage page = ColumnPage.newPage(DataType.BYTE_ARRAY, pageSize);
+      TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
+      ColumnPage page = ColumnPage.newPage(spec, DataType.BYTE_ARRAY, pageSize);
       page.setStatsCollector(KeyPageStatsCollector.newInstance(DataType.BYTE_ARRAY));
       dictDimensionPages[i] = page;
     }
     noDictDimensionPages = new ColumnPage[model.getNoDictionaryCount()];
     for (int i = 0; i < noDictDimensionPages.length; i++) {
-      ColumnPage page = ColumnPage.newPage(DataType.STRING, pageSize);
+      TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i + numDictDimension);
+      ColumnPage page = ColumnPage.newPage(spec, DataType.STRING, pageSize);
       page.setStatsCollector(LVStringStatsCollector.newInstance());
       noDictDimensionPages[i] = page;
     }
@@ -110,11 +113,11 @@ public class TablePage {
     for (int i = 0; i < measurePages.length; i++) {
       TableSpec.MeasureSpec spec = model.getTableSpec().getMeasureSpec(i);
       ColumnPage page;
-      if (spec.getDataType() == DataType.DECIMAL) {
-        page = ColumnPage.newDecimalPage(dataTypes[i], pageSize,
+      if (spec.getSchemaDataType() == DataType.DECIMAL) {
+        page = ColumnPage.newDecimalPage(spec, dataTypes[i], pageSize,
             spec.getScale(), spec.getPrecision());
       } else {
-        page = ColumnPage.newPage(dataTypes[i], pageSize);
+        page = ColumnPage.newPage(spec, dataTypes[i], pageSize);
       }
       page.setStatsCollector(
           PrimitivePageStatsCollector.newInstance(
@@ -298,7 +301,7 @@ public class TablePage {
       ColumnPageEncoder columnPageEncoder;
       EncodedColumnPage encodedPage;
       TableSpec.DimensionSpec spec = tableSpec.getDimensionSpec(i);
-      switch (spec.getDimensionType()) {
+      switch (spec.getColumnType()) {
         case GLOBAL_DICTIONARY:
         case DIRECT_DICTIONARY:
           columnPageEncoder = encodingFactory.createEncoder(
@@ -321,7 +324,7 @@ public class TablePage {
           break;
         default:
           throw new IllegalArgumentException("unsupported dimension type:" + spec
-              .getDimensionType());
+              .getColumnType());
       }
     }
 
@@ -339,10 +342,10 @@ public class TablePage {
     TableSpec spec = model.getTableSpec();
     int numDimensions = spec.getNumDimensions();
     for (int i = 0; i < numDimensions; i++) {
-      DimensionType type = spec.getDimensionSpec(i).getDimensionType();
-      if ((type == DimensionType.GLOBAL_DICTIONARY) || (type == DimensionType.DIRECT_DICTIONARY)) {
+      ColumnType type = spec.getDimensionSpec(i).getColumnType();
+      if ((type == ColumnType.GLOBAL_DICTIONARY) || (type == ColumnType.DIRECT_DICTIONARY)) {
         page = dictDimensionPages[++dictDimensionIndex];
-      } else if (type == DimensionType.PLAIN_VALUE) {
+      } else if (type == ColumnType.PLAIN_VALUE) {
         page = noDictDimensionPages[++noDictDimensionIndex];
       } else {
         // do not support datamap on complex column
