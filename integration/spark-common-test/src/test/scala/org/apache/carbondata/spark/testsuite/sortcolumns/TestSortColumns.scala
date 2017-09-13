@@ -91,6 +91,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     "create table with no dictionary sort_columns where NumberOfNoDictSortColumns is less than " +
     "NoDictionaryCount")
   {
+    sql("drop table if exists sorttable1b")
     sql(
       "CREATE TABLE sorttable1b (empno String, empname String, designation String, doj Timestamp," +
       " workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
