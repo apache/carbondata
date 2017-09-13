@@ -53,7 +53,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   }
 
   test(
-    "create table with no dictionary sort_columns where NumberOfNoDictSortColumns < " +
+    "create table with no dictionary sort_columns where NumberOfNoDictSortColumns is less than " +
     "NoDictionaryCount")
   {
     sql(
@@ -283,12 +283,27 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     checkExistence(sql("describe formatted sorttableDesc"),true,"SORT_COLUMNS")
     checkExistence(sql("describe formatted sorttableDesc"),true,"empno,empname")
   }
-  
+
   test("duplicate columns in sort_columns") {
     val exceptionCaught = intercept[MalformedCarbonCommandException]{
       sql("CREATE TABLE sorttable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='empno,empname,empno')")
     }
   assert(exceptionCaught.getMessage.equals("SORT_COLUMNS Either having duplicate columns : empno or it contains illegal argumnet."))
+  }
+
+  test("Measure columns in sort_columns") {
+    val exceptionCaught = intercept[MalformedCarbonCommandException] {
+      sql(
+        "CREATE TABLE sorttable1 (empno Double, empname String, designation String, doj Timestamp, " +
+        "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
+        "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
+        "utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties" +
+        "('sort_columns'='empno')")
+    }
+    println(exceptionCaught.getMessage)
+    assert(exceptionCaught.getMessage
+      .equals(
+        "sort_columns is unsupported for double datatype column: empno"))
   }
 
   override def afterAll = {
@@ -319,6 +334,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists unsortedtable_heap_inmemory")
     sql("drop table if exists test_sort_col")
     sql("drop table if exists test_sort_col_hive")
+    sql("drop table if exists sorttable1b")
   }
 
   def setLoadingProperties(offheap: String, unsafe: String, useBatch: String): Unit = {
