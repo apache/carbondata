@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package util
+package org.apache.carbondata.presto.util
 
 import java.io._
 import java.nio.charset.Charset

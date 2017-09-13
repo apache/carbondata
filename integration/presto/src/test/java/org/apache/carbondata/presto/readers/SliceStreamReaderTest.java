@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 package org.apache.carbondata.presto.readers;
 
 import com.facebook.presto.spi.block.SliceArrayBlock;

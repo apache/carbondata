@@ -1,3 +1,20 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package org.apache.carbondata.presto;
 
 import com.facebook.presto.hadoop.$internal.io.netty.util.concurrent.DefaultEventExecutorGroup;
@@ -26,7 +43,6 @@ import org.apache.carbondata.core.scan.executor.impl.VectorDetailQueryExecutor;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.result.BatchResult;
 import org.apache.carbondata.core.scan.result.iterator.AbstractDetailQueryResultIterator;
 import org.apache.carbondata.core.scan.result.iterator.VectorDetailQueryResultIterator;
 import org.apache.carbondata.presto.impl.CarbonLocalInputSplit;
@@ -48,7 +64,7 @@ import java.util.UUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-public class CarbonDataPageSourceTest {
+public class CarbondataPageSourceTest {
 
     private static TableInfo tableInfo;
     private static CarbonTable carbonTable;
@@ -135,7 +151,7 @@ public class CarbonDataPageSourceTest {
         new MockUp<VectorDetailQueryExecutor>() {
             @Mock
             public CarbonIterator<Object> execute(QueryModel queryModel) {
-               return new VectorDetailQueryResultIterator(null, queryModel, new DefaultEventExecutorGroup(2));
+                return new VectorDetailQueryResultIterator(null, queryModel, new DefaultEventExecutorGroup(2));
             }
         };
 
@@ -186,7 +202,7 @@ public class CarbonDataPageSourceTest {
     }
 
     @Test()
-    public void testEmptyColumn() {
+    public void testCarbonPage() {
 
         new MockUp<CarbonVectorizedRecordReader>() {
             @Mock
@@ -233,11 +249,66 @@ public class CarbonDataPageSourceTest {
     }
 
     @Test(expected = RuntimeException.class)
-    public void runTimeExceptionTest() {
-        new MockUp<BatchResult>() {
+    public void interruptedExceptionTest() {
+        new MockUp<CarbonVectorizedRecordReader>() {
             @Mock
-            public int getSize() {
-                return 1;
+            public void close() throws IOException {
+            }
+        };
+        new MockUp<CarbondataRecordCursor>() {
+            @Mock
+            public void close() throws IOException {
+
+            }
+        };
+        new MockUp<CarbonVectorizedRecordReader>() {
+            @Mock
+            public boolean nextKeyValue() throws IOException, InterruptedException {
+                throw new InterruptedException("Task Interrupted");
+            }
+        };
+        carbonPage.getNextPage();
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void runTimeExceptionTest() {
+        new MockUp<CarbonVectorizedRecordReader>() {
+            @Mock
+            public void close() throws IOException {
+            }
+        };
+        new MockUp<CarbondataRecordCursor>() {
+            @Mock
+            public void close() throws IOException {
+
+            }
+        };
+        new MockUp<CarbonVectorizedRecordReader>() {
+            @Mock
+            public boolean nextKeyValue() throws IOException, InterruptedException {
+                throw new RuntimeException("Exception while creating block");
+            }
+        };
+        carbonPage.getNextPage();
+    }
+
+    @Test(expected = RuntimeException.class)
+    public void ioExceptionTest() {
+        new MockUp<CarbonVectorizedRecordReader>() {
+            @Mock
+            public void close() throws IOException {
+            }
+        };
+        new MockUp<CarbondataRecordCursor>() {
+            @Mock
+            public void close() throws IOException {
+
+            }
+        };
+        new MockUp<CarbonVectorizedRecordReader>() {
+            @Mock
+            public boolean nextKeyValue() throws IOException, InterruptedException {
+                throw new IOException("unable to read block");
             }
         };
         carbonPage.getNextPage();
@@ -245,7 +316,7 @@ public class CarbonDataPageSourceTest {
 
     @Test
     public void testGetCompletedBytes() {
-        assertEquals(0, carbonPage.getCompletedBytes());
+        assertEquals(5, carbonPage.getCompletedBytes());
     }
 
     @Test

@@ -61,6 +61,9 @@ public class DecimalSliceStreamReaderTest {
         columnVector.putDecimal(1, decimal, 10);
         Block block = decimalSliceStreamReader.readBlock(DecimalType.createDecimalType(16, 2));
         assertNotNull(block);
+        columnVector.putNull(1);
+        Block blockWithNull = decimalSliceStreamReader.readBlock(DecimalType.createDecimalType(16, 2));
+        assertNotNull(blockWithNull);
     }
 
     @Test

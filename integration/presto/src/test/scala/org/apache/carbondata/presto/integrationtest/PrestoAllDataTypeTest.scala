@@ -19,7 +19,7 @@ package org.apache.carbondata.presto.integrationtest
 import java.io.File
 
 import org.scalatest.{BeforeAndAfterAll, FunSuiteLike}
-import util.CarbonDataStoreCreator
+import org.apache.carbondata.presto.util.CarbonDataStoreCreator
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.presto.server.PrestoServer
