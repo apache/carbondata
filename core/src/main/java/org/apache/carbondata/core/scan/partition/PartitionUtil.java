@@ -19,7 +19,6 @@ package org.apache.carbondata.core.scan.partition;
 
 import java.math.BigDecimal;
 import java.text.DateFormat;
-import java.text.ParseException;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -72,10 +71,6 @@ public class PartitionUtil {
         default:
           return data;
       }
-    } catch (NumberFormatException ex) {
-      return new IllegalArgumentException(ex.getMessage());
-    } catch (ParseException ex) {
-      return new IllegalArgumentException(ex.getMessage());
     } catch (Exception ex) {
       return null;
     }

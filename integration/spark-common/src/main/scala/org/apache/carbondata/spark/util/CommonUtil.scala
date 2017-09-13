@@ -327,7 +327,7 @@ object CommonUtil {
         case _ => PartitionUtil.getDataBasedOnDataType(iterator.next(), columnDataType,
           timestampFormatter, dateFormatter)
       }
-      if (next.isInstanceOf[IllegalArgumentException]) {
+      if (next == null) {
         sys.error(
           "Data in range info must be the same type with the partition field's type "
             + columnDataType + ", Exception:" +
