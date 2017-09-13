@@ -101,7 +101,8 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
         CompressorFactory.getInstance().getCompressor(codecMeta.getCompressorName());
     final DataType targetDataType = codecMeta.getTargetDataType();
     return new ColumnPageDecoder() {
-      @Override public ColumnPage decode(byte[] input, int offset, int length)
+      @Override
+      public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
         ColumnPage page = ColumnPage.decompress(compressor, targetDataType, input, offset, length);
         return LazyColumnPage.newPage(page, converter);
@@ -199,7 +200,8 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
       throw new RuntimeException("internal error: " + debugInfo());
     }
 
-    @Override public double decodeDouble(byte value) {
+    @Override
+    public double decodeDouble(byte value) {
       return value / factor;
     }
 
