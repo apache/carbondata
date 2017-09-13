@@ -83,9 +83,7 @@ This section provides the details of all the configurations required for CarbonD
 | Parameter | Default Value | Description | Range |
 |--------------------------------------|---------------|---------------------------------------------------|---------------------------|
 | carbon.number.of.cores | 4 | Number of cores to be used while querying. |  |
-| carbon.inmemory.record.size | 120000 | Number of records to be in memory while querying. | Min=100000 and Max=240000 |
 | carbon.enable.quick.filter | false | Improves the performance of filter query. |  |
-| no.of.cores.to.load.blocks.in.driver | 10 | Number of core to load the blocks in driver. |  |
 
 
 ##   Miscellaneous Configuration
