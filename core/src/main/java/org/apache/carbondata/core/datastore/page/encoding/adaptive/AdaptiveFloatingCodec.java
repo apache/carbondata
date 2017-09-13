@@ -96,8 +96,7 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
   }
 
   @Override
-  public ColumnPageDecoder createDecoder(finalColumnPageEncoderMeta meta) {
-
+  public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     return new ColumnPageDecoder() {
       @Override
       public ColumnPage decode(byte[] input, int offset, int length)
