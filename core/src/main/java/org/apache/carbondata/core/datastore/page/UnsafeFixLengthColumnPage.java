@@ -53,9 +53,9 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   private static final int floatBits = DataType.FLOAT.getSizeBits();
   private static final int doubleBits = DataType.DOUBLE.getSizeBits();
 
-  UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
-      int scale, int precision) throws MemoryException {
-    super(columnSpec, dataType, pageSize, scale, precision);
+  UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize)
+      throws MemoryException {
+    super(columnSpec, dataType, pageSize);
     switch (dataType) {
       case BYTE:
       case SHORT:

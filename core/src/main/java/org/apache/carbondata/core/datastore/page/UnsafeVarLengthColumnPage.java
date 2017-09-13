@@ -53,9 +53,9 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   /**
    * create a page
    */
-  UnsafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
-      int scale, int precision) throws MemoryException {
-    super(columnSpec, dataType, pageSize, scale, precision);
+  UnsafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize)
+      throws MemoryException {
+    super(columnSpec, dataType, pageSize);
     capacity = (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR);
     memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
     baseAddress = memoryBlock.getBaseObject();
@@ -66,8 +66,8 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
    * create a page with initial capacity
    */
   UnsafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
-      int capacity, int scale, int precision) throws MemoryException {
-    super(columnSpec, dataType, pageSize, scale, precision);
+      int capacity) throws MemoryException {
+    super(columnSpec, dataType, pageSize);
     this.capacity = capacity;
     memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long)(capacity));
     baseAddress = memoryBlock.getBaseObject();

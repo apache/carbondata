@@ -37,9 +37,8 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   // the length of bytes added in the page
   int totalLength;
 
-  VarLengthColumnPageBase(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
-      int scale, int precision) {
-    super(columnSpec, dataType, pageSize, scale, precision);
+  VarLengthColumnPageBase(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
+    super(columnSpec, dataType, pageSize);
     rowOffset = new int[pageSize + 1];
     totalLength = 0;
   }
@@ -82,16 +81,17 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   /**
    * Create a new column page for decimal page
    */
-  static ColumnPage newDecimalColumnPage(TableSpec.ColumnSpec columnSpec, byte[] lvEncodedBytes,
-      int scale, int precision) throws MemoryException {
+  static ColumnPage newDecimalColumnPage(TableSpec.ColumnSpec columnSpec, byte[] lvEncodedBytes)
+      throws MemoryException {
     DecimalConverterFactory.DecimalConverter decimalConverter =
-        DecimalConverterFactory.INSTANCE.getDecimalConverter(precision, scale);
+        DecimalConverterFactory.INSTANCE.getDecimalConverter(columnSpec.getPrecision(),
+            columnSpec.getScale());
     int size = decimalConverter.getSize();
     if (size < 0) {
       return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataType.DECIMAL);
     } else {
       // Here the size is always fixed.
-      return getDecimalColumnPage(columnSpec, lvEncodedBytes, scale, precision, size);
+      return getDecimalColumnPage(columnSpec, lvEncodedBytes, size);
     }
   }
 
@@ -104,7 +104,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   }
 
   private static ColumnPage getDecimalColumnPage(TableSpec.ColumnSpec columnSpec,
-      byte[] lvEncodedBytes, int scale, int precision, int size) throws MemoryException {
+      byte[] lvEncodedBytes, int size) throws MemoryException {
     List<Integer> rowOffset = new ArrayList<>();
     int offset;
     int rowId = 0;
@@ -116,9 +116,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
 
     VarLengthColumnPageBase page;
     if (unsafe) {
-      page = new UnsafeVarLengthColumnPage(columnSpec, DECIMAL, rowId, scale, precision);
+      page = new UnsafeVarLengthColumnPage(columnSpec, DECIMAL, rowId);
     } else {
-      page = new SafeVarLengthColumnPage(columnSpec, DECIMAL, rowId, scale, precision);
+      page = new SafeVarLengthColumnPage(columnSpec, DECIMAL, rowId);
     }
 
     // set total length and rowOffset in page
@@ -159,9 +159,9 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     VarLengthColumnPageBase page;
     int inputDataLength = offset;
     if (unsafe) {
-      page = new UnsafeVarLengthColumnPage(columnSpec, DECIMAL, numRows, inputDataLength, -1, -1);
+      page = new UnsafeVarLengthColumnPage(columnSpec, DECIMAL, numRows, inputDataLength);
     } else {
-      page = new SafeVarLengthColumnPage(columnSpec, dataType, numRows, -1, -1);
+      page = new SafeVarLengthColumnPage(columnSpec, dataType, numRows);
     }
 
     // set total length and rowOffset in page

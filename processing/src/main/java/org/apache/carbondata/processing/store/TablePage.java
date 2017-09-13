@@ -114,8 +114,7 @@ public class TablePage {
       TableSpec.MeasureSpec spec = model.getTableSpec().getMeasureSpec(i);
       ColumnPage page;
       if (spec.getSchemaDataType() == DataType.DECIMAL) {
-        page = ColumnPage.newDecimalPage(spec, dataTypes[i], pageSize,
-            spec.getScale(), spec.getPrecision());
+        page = ColumnPage.newDecimalPage(spec, dataTypes[i], pageSize);
       } else {
         page = ColumnPage.newPage(spec, dataTypes[i], pageSize);
       }

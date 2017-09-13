@@ -107,7 +107,6 @@ public class TableSpec {
     return measureSpec.length;
   }
 
-
   public static class ColumnSpec implements Writable {
     // field name of this column
     private String fieldName;
@@ -118,13 +117,25 @@ public class TableSpec {
     // dimension type of this dimension
     private ColumnType columnType;
 
+    // scale and precision is for decimal column only
+    // TODO: make DataType a class instead of enum
+    private int scale;
+    private int precision;
+
     public ColumnSpec() {
     }
 
     public ColumnSpec(String fieldName, DataType schemaDataType, ColumnType columnType) {
+      this(fieldName, schemaDataType, columnType, 0, 0);
+    }
+
+    public ColumnSpec(String fieldName, DataType schemaDataType, ColumnType columnType,
+        int scale, int precision) {
       this.fieldName = fieldName;
       this.schemaDataType = schemaDataType;
       this.columnType = columnType;
+      this.scale = scale;
+      this.precision = precision;
     }
 
     public DataType getSchemaDataType() {
@@ -139,11 +150,21 @@ public class TableSpec {
       return columnType;
     }
 
+    public int getScale() {
+      return scale;
+    }
+
+    public int getPrecision() {
+      return precision;
+    }
+
     @Override
     public void write(DataOutput out) throws IOException {
       out.writeUTF(fieldName);
       out.writeByte(schemaDataType.ordinal());
       out.writeByte(columnType.ordinal());
+      out.writeInt(scale);
+      out.writeInt(precision);
     }
 
     @Override
@@ -151,6 +172,8 @@ public class TableSpec {
       this.fieldName = in.readUTF();
       this.schemaDataType = DataType.valueOf(in.readByte());
       this.columnType = ColumnType.valueOf(in.readByte());
+      this.scale = in.readInt();
+      this.precision = in.readInt();
     }
   }
 
@@ -163,7 +186,7 @@ public class TableSpec {
     private boolean doInvertedIndex;
 
     DimensionSpec(ColumnType columnType, CarbonDimension dimension) {
-      super(dimension.getColName(), dimension.getDataType(), columnType);
+      super(dimension.getColName(), dimension.getDataType(), columnType, 0, 0);
       this.inSortColumns = dimension.isSortColumn();
       this.doInvertedIndex = dimension.isUseInvertedIndex();
     }
@@ -189,21 +212,8 @@ public class TableSpec {
 
   public class MeasureSpec extends ColumnSpec implements Writable {
 
-    private int scale;
-    private int precision;
-
     MeasureSpec(String fieldName, DataType dataType, int scale, int precision) {
-      super(fieldName, dataType, ColumnType.MEASURE);
-      this.scale = scale;
-      this.precision = precision;
-    }
-
-    public int getScale() {
-      return scale;
-    }
-
-    public int getPrecision() {
-      return precision;
+      super(fieldName, dataType, ColumnType.MEASURE, scale, precision);
     }
 
     @Override

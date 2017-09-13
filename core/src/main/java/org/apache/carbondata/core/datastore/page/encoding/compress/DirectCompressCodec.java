@@ -60,7 +60,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
 
   @Override
   public ColumnPageDecoder createDecoder(ColumnPageEncoderMeta meta) {
-    return new DirectDecompressor(meta, meta.getScale(), meta.getPrecision());
+    return new DirectDecompressor(meta);
   }
 
   private static class DirectCompressor extends ColumnPageEncoder {
@@ -94,21 +94,16 @@ public class DirectCompressCodec implements ColumnPageCodec {
   private class DirectDecompressor implements ColumnPageDecoder {
 
     private ColumnPageEncoderMeta meta;
-    private int scale;
-    private int precision;
 
-    DirectDecompressor(ColumnPageEncoderMeta meta, int scale, int precision) {
+    DirectDecompressor(ColumnPageEncoderMeta meta) {
       this.meta = meta;
-      this.scale = scale;
-      this.precision = precision;
     }
 
     @Override
     public ColumnPage decode(byte[] input, int offset, int length) throws MemoryException {
       ColumnPage decodedPage;
       if (dataType == DataType.DECIMAL) {
-        decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length,
-            scale, precision);
+        decodedPage = ColumnPage.decompressDecimalPage(meta, input, offset, length);
       } else {
         decodedPage = ColumnPage.decompress(meta, input, offset, length);
       }
