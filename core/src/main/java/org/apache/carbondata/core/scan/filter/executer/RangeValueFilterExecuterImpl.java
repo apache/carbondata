@@ -552,11 +552,15 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
       if (dimColEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dimColEvaluatorInfo.getDimension().getDataType());
-        int key = directDictionaryGenerator.generateDirectSurrogateKey(null) + 1;
+        int key = directDictionaryGenerator.generateDirectSurrogateKey(null);
         CarbonDimension currentBlockDimension =
             segmentProperties.getDimensions().get(dimensionBlocksIndex);
-        defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
-            this.segmentProperties.getSortColumnsGenerator());
+        if (currentBlockDimension.isSortColumn()) {
+          defaultValue = FilterUtil.getMaskKey(key, currentBlockDimension,
+              this.segmentProperties.getSortColumnsGenerator());
+        } else {
+          defaultValue = ByteUtil.toBytes(key);
+        }
       } else {
         defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
       }

@@ -155,10 +155,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
               queryModel.getAbsoluteTableIdentifier());
       cache.removeTableBlocksIfHorizontalCompactionDone(queryModel);
       queryProperties.dataBlocks = cache.getAll(tableBlockUniqueIdentifiers);
-      queryStatistic
-          .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
-      queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     }
+    queryStatistic
+        .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
+    queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     // calculating the total number of aggeragted columns
     int aggTypeCount = queryModel.getQueryMeasures().size();
 

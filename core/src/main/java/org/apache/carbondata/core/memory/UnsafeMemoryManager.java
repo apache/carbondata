@@ -96,9 +96,11 @@ public class UnsafeMemoryManager {
         taskIdToMemoryBlockMap.put(taskId, listOfMemoryBlock);
       }
       listOfMemoryBlock.add(allocate);
-      LOGGER.info("Memory block (" + allocate + ") is created with size " + allocate.size()
-          + ". Total memory used " + memoryUsed + "Bytes, left " + (totalMemory - memoryUsed)
-          + "Bytes");
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug("Memory block (" + allocate + ") is created with size " + allocate.size()
+            + ". Total memory used " + memoryUsed + "Bytes, left " + (totalMemory - memoryUsed)
+            + "Bytes");
+      }
       return allocate;
     }
     return null;
@@ -112,9 +114,11 @@ public class UnsafeMemoryManager {
       allocator.free(memoryBlock);
       memoryUsed -= memoryBlock.size();
       memoryUsed = memoryUsed < 0 ? 0 : memoryUsed;
-      LOGGER.info(
-          "Freeing memory of size: " + memoryBlock.size() + "available memory:  " + (totalMemory
-              - memoryUsed));
+      if (LOGGER.isDebugEnabled()) {
+        LOGGER.debug(
+            "Freeing memory of size: " + memoryBlock.size() + "available memory:  " + (totalMemory
+                - memoryUsed));
+      }
     }
   }
 
@@ -140,6 +144,8 @@ public class UnsafeMemoryManager {
           "Freeing memory of size: " + occuppiedMemory + ": Current available memory is: " + (
               totalMemory - memoryUsed));
     }
+    LOGGER.info("Total memory used after task " + taskId + " is " + memoryUsed
+        + " Current tasks running now are : " + taskIdToMemoryBlockMap.keySet());
   }
 
   public synchronized boolean isMemoryAvailable() {
@@ -160,6 +166,7 @@ public class UnsafeMemoryManager {
       baseBlock = INSTANCE.allocateMemory(taskId, size);
       if (baseBlock == null) {
         try {
+          LOGGER.info("Memory is not available, retry after 500 millis");
           Thread.sleep(500);
         } catch (InterruptedException e) {
           throw new MemoryException(e);
@@ -170,6 +177,8 @@ public class UnsafeMemoryManager {
       tries++;
     }
     if (baseBlock == null) {
+      LOGGER.error(" Memory Used : " + INSTANCE.memoryUsed + " Tasks running : "
+          + taskIdToMemoryBlockMap.keySet());
       throw new MemoryException("Not enough memory");
     }
     return baseBlock;
