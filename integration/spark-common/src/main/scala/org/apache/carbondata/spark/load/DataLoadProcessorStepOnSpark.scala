@@ -225,7 +225,7 @@ object DataLoadProcessorStepOnSpark {
     } else {
       storeLocation = System.getProperty("java.io.tmpdir")
     }
-    storeLocation = storeLocation + '/' + System.nanoTime() + '/' + index
+    storeLocation = storeLocation + '/' + System.nanoTime() + '_' + index
     storeLocation
   }
 
