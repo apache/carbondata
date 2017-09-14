@@ -77,9 +77,8 @@ class SDVSuites1 extends Suites with BeforeAndAfterAll {
                                  new OffheapSort2TestCase ::
                                  new PartitionTestCase ::
                                  new QueriesBasicTestCase ::
-                                 new GlobalSortTestCase ::
-                                 new DataLoadingIUDTestCase ::
-                                 new BatchSortLoad3TestCase :: Nil
+                                 new BatchSortLoad3TestCase ::
+                                 new GlobalSortTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -98,7 +97,7 @@ class SDVSuites2 extends Suites with BeforeAndAfterAll {
   val suites =      new QueriesBVATestCase ::
                     new QueriesCompactionTestCase ::
                     new QueriesExcludeDictionaryTestCase ::
-                    new QueriesIncludeDictionaryTestCase :: Nil
+                    new DataLoadingIUDTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
@@ -132,7 +131,8 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new ColumndictTestCase ::
                     new QueriesRangeFilterTestCase ::
                     new QueriesSparkBlockDistTestCase ::
-                    new DataLoadingV3TestCase :: Nil
+                    new DataLoadingV3TestCase ::
+                    new QueriesIncludeDictionaryTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
