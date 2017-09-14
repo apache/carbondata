@@ -61,6 +61,9 @@ public class CacheType<K, V> {
   public static final CacheType<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
       DRIVER_BLOCKLET_DATAMAP = new CacheType("driver_blocklet_datamap");
 
+  public static final CacheType<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
+      DRIVER_BLOCKLET_MINMAX_DATAMAP = new CacheType("driver_blocklet_minmax_datamap");
+
   /**
    * cacheName which is unique name for a cache
    */
