@@ -126,19 +126,13 @@
     </dependencies>
 
     <build>
+        <testSourceDirectory>src/test/scala</testSourceDirectory>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>
             </resource>
         </resources>
         <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
-                </configuration>
-            </plugin>
             <plugin>
                 <groupId>org.scala-tools</groupId>
                 <artifactId>maven-scala-plugin</artifactId>
@@ -167,11 +161,32 @@
                 </executions>
             </plugin>
             <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>1.7</source>
+                    <target>1.7</target>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.18</version>
                 <!-- Note config is repeated in scalatest config -->
                 <configuration>
+                    <includes>
+                        <include>**/Test*.java</include>
+                        <include>**/Test*.scala</include>
+                        <include>**/*Test.java</include>
+                        <include>**/*Test.scala</include>
+                        <include>**/*TestCase.java</include>
+                        <include>**/*TestCase.scala</include>
+                        <include>**/*Suite.java</include>
+                        <include>**/*Suite.scala</include>
+                        <include>**/Test*.scala</include>
+                        <include>**/*Test.scala</include>
+                        <include>**/*TestCase.scala</include>
+                        <include>**/*Suite.scala</include>
+                    </includes>
                     <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
                     <argLine>-Xmx3g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m</argLine>
                     <systemProperties>
@@ -179,6 +194,33 @@
                     </systemProperties>
                     <failIfNoTests>false</failIfNoTests>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.scalatest</groupId>
+                <artifactId>scalatest-maven-plugin</artifactId>
+                <version>1.0</version>
+                <!-- Note config is repeated in surefire config -->
+                <configuration>
+                    <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
+                    <junitxml>.</junitxml>
+                    <filereports>CarbonTestSuite.txt</filereports>
+                    <argLine>-ea -Xmx3g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
+                    </argLine>
+                    <stderr />
+                    <environmentVariables>
+                    </environmentVariables>
+                    <systemProperties>
+                        <java.awt.headless>true</java.awt.headless>
+                    </systemProperties>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>test</id>
+                        <goals>
+                            <goal>test</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
