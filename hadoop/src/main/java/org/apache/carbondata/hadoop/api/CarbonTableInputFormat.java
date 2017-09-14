@@ -448,21 +448,22 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         invalidBlockVOForSegmentId =
             updateStatusManager.getInvalidTimestampRange(inputSplit.getSegmentId());
       }
+      String[] deleteDeltaFilePath = null;
       if (isIUDTable) {
         // In case IUD is not performed in this table avoid searching for
         // invalidated blocks.
         if (CarbonUtil
-            .isInvalidTableBlock(inputSplit.getSegmentId(), inputSplit.getPath().toString(),
-                invalidBlockVOForSegmentId, updateStatusManager)) {
+                .isInvalidTableBlock(inputSplit.getSegmentId(), inputSplit.getPath().toString(),
+                        invalidBlockVOForSegmentId, updateStatusManager)) {
           continue;
         }
-      }
-      String[] deleteDeltaFilePath = null;
-      try {
-        deleteDeltaFilePath =
-            updateStatusManager.getDeleteDeltaFilePath(inputSplit.getPath().toString());
-      } catch (Exception e) {
-        throw new IOException(e);
+        // When iud is done then only get delete delta files for a block
+        try {
+          deleteDeltaFilePath =
+                  updateStatusManager.getDeleteDeltaFilePath(inputSplit.getPath().toString());
+        } catch (Exception e) {
+          throw new IOException(e);
+        }
       }
       inputSplit.setDeleteDeltaFiles(deleteDeltaFilePath);
       result.add(inputSplit);
