@@ -66,11 +66,17 @@ object CarbonStore {
       loadMetadataDetailsSortedArray
           .filter(_.getVisibility.equalsIgnoreCase("true"))
           .map { load =>
+            val mergedTo = if (load.getMergedLoadName != null) {
+         load.getMergedLoadName
+       } else {
+         ""
+       }
             Row(
               load.getLoadName,
               load.getLoadStatus,
               new java.sql.Timestamp(load.getLoadStartTime),
-              new java.sql.Timestamp(load.getLoadEndTime)
+              new java.sql.Timestamp(load.getLoadEndTime),
+              mergedTo
             )
           }.toSeq
     } else {

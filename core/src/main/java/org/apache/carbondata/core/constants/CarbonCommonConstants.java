@@ -50,6 +50,12 @@ public final class CarbonCommonConstants {
    * measure meta data file name
    */
   public static final String MEASURE_METADATA_FILE_NAME = "/msrMetaData_";
+
+  /**
+   * set the segment ids to query from the table
+   */
+  public static final String CARBON_INPUT_SEGMENTS = "carbon.input.segments.";
+
   /**
    * location of the carbon member, hierarchy and fact files
    */
