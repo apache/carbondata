@@ -85,7 +85,8 @@ case class ShowLoadsCommand(
     Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
       AttributeReference("Status", StringType, nullable = false)(),
       AttributeReference("Load Start Time", TimestampType, nullable = false)(),
-      AttributeReference("Load End Time", TimestampType, nullable = false)())
+      AttributeReference("Load End Time", TimestampType, nullable = false)(),
+      AttributeReference("Merged To", StringType, nullable = false)())
   }
 }
 

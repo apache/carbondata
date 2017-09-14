@@ -40,9 +40,9 @@ object ShowSegments {
   def showString(rows: Seq[Row]): String = {
     val sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.s")
     val sb = new StringBuilder
-    sb.append("+------------+------------------+----------------------+----------------------+\n")
-      .append("|SegmentId   |Status            |Load Start Time       |Load End Time         |\n")
-      .append("+------------+------------------+----------------------+----------------------+\n")
+    sb.append("+------------+------------------+----------------------+----------------------+----------------------+\n")
+      .append("|SegmentId   |Status            |Load Start Time       |Load End Time         |Merged To             |\n")
+      .append("+------------+------------------+----------------------+----------------------+----------------------+\n")
       rows.foreach{row =>
         sb.append("|")
           .append(StringUtils.rightPad(row.getString(0), 12))
@@ -52,9 +52,11 @@ object ShowSegments {
           .append(sdf.format(row.getAs[java.sql.Timestamp](2)))
           .append("|")
           .append(sdf.format(row.getAs[java.sql.Timestamp](3)))
+          .append("|")
+          .append(StringUtils.rightPad(row.getString(4), 18))
           .append("|\n")
       }
-    sb.append("+------------+------------------+----------------------+----------------------+\n")
+    sb.append("+------------+------------------+----------------------+----------------------+----------------------+\n")
     sb.toString
   }
 

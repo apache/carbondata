@@ -27,9 +27,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
@@ -108,6 +110,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   // comma separated list of input segment numbers
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
+  public static final String VALIDATE_INPUT_SEGMENT_IDs =
+            "mapreduce.input.carboninputformat.validsegments";
   // comma separated list of input files
   public static final String INPUT_FILES = "mapreduce.input.carboninputformat.files";
   public static final String ALTER_PARTITION_ID = "mapreduce.input.carboninputformat.partitionid";
@@ -253,6 +257,21 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   /**
+   * set list of segment to access
+   */
+  public static void setValidateSegmentsToAccess(Configuration configuration, Boolean validate) {
+    configuration.set(CarbonTableInputFormat.VALIDATE_INPUT_SEGMENT_IDs, validate.toString());
+  }
+
+  /**
+   * get list of segment to access
+   */
+  public static boolean getValidateSegmentsToAccess(Configuration configuration) {
+    return configuration.get(CarbonTableInputFormat.VALIDATE_INPUT_SEGMENT_IDs, "true")
+        .equalsIgnoreCase("true");
+  }
+
+  /**
    * Set list of files to access
    */
   public static void setFilesToAccess(Configuration configuration, List<String> validFiles) {
@@ -280,23 +299,50 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    */
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
+    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
     TableDataMap blockletMap =
         DataMapStoreManager.getInstance().getDataMap(identifier, BlockletDataMap.NAME,
             BlockletDataMapFactory.class.getName());
     List<String> invalidSegments = new ArrayList<>();
     List<UpdateVO> invalidTimestampsList = new ArrayList<>();
-    List<String> validSegments = Arrays.asList(getSegmentsToAccess(job));
     List<String> streamSegments = null;
-    // get all valid segments and set them into the configuration
-    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
-    if (validSegments.size() == 0) {
+    List<String> filteredSegmentToAccess = new ArrayList<>();
+    if (getValidateSegmentsToAccess(job.getConfiguration())) {
+
+      String[] segmentsToAccess = getSegmentsToAccess(job);
+      Set<String> segmentToAccessSet = new HashSet<>();
+      for (String segmentToAccess : segmentsToAccess) {
+        segmentToAccessSet.add(segmentToAccess);
+      }
+      // get all valid segments and set them into the configuration
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
       SegmentStatusManager.ValidAndInvalidSegmentsInfo segments =
           segmentStatusManager.getValidAndInvalidSegments();
-      validSegments = segments.getValidSegments();
+      List<String> validSegments = segments.getValidSegments();
       streamSegments = segments.getStreamSegments();
       if (validSegments.size() == 0) {
         return getSplitsOfStreaming(job, identifier, streamSegments);
+      }
+      if (segmentsToAccess.length == 0 || segmentsToAccess[0].equalsIgnoreCase("*")) {
+        filteredSegmentToAccess.addAll(validSegments);
+      } else {
+        for (String validSegment : validSegments) {
+          if (segmentToAccessSet.contains(validSegment)) {
+            filteredSegmentToAccess.add(validSegment);
+          }
+        }
+        if (!filteredSegmentToAccess.containsAll(segmentToAccessSet)) {
+          List<String> filteredSegmentToAccessTemp = new ArrayList<>();
+          filteredSegmentToAccessTemp.addAll(filteredSegmentToAccess);
+          filteredSegmentToAccessTemp.removeAll(segmentToAccessSet);
+          LOG.info(
+              "Segments ignored are : " + Arrays.toString(filteredSegmentToAccessTemp.toArray()));
+        }
+      }
+      if (filteredSegmentToAccess.size() == 0) {
+        return new ArrayList<>(0);
+      } else {
+        setSegmentsToAccess(job.getConfiguration(), filteredSegmentToAccess);
       }
       // remove entry in the segment index if there are invalid segments
       invalidSegments.addAll(segments.getInvalidSegments());
@@ -320,7 +366,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       }
     }
     // Clean segments if refresh is needed
-    for (String segment : validSegments) {
+    for (String segment : filteredSegmentToAccess) {
       if (DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
           .isRefreshNeeded(segment)) {
         toBeCleanedSegments.add(segment);
@@ -357,7 +403,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
     // do block filtering and get split
     List<InputSplit> splits =
-        getSplits(job, filterInterface, validSegments, matchedPartitions, partitionInfo, null);
+        getSplits(job, filterInterface, filteredSegmentToAccess, matchedPartitions, partitionInfo,
+            null);
     // pass the invalid segment to task side in order to remove index entry in task side
     if (invalidSegments.size() > 0) {
       for (InputSplit split : splits) {
