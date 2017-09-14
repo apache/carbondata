@@ -234,7 +234,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""drop table if exists uniqdata_h""").collect
     sql(s"""drop table if exists uniqdata_c""").collect
     sql(s"""CREATE TABLE uniqdata_h (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) ROW FORMAT DELIMITED FIELDS TERMINATED BY ','""").collect
-    sql(s"""load data local inpath '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata_h""").collect
+    sql(s"""load data inpath '$resourcesPath/Data/uniqdata/2000_UniqData.csv' into table uniqdata_h""").collect
     sql(s"""CREATE TABLE uniqdata_c (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata'""").collect
     sql(s"""insert into uniqdata_c select * from uniqdata_h""").collect
 

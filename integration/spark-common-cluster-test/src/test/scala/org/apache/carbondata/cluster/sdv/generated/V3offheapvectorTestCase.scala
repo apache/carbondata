@@ -181,8 +181,8 @@ class V3offheapvectorTestCase extends QueryTest with BeforeAndAfterAll {
   //Check query reponse when 1st column select ed nd filter is applied and data is selected from 1 page
   test("V3_01_Query_01_054", Include) {
 
-    checkAnswer(s"""select CUST_ID from 3lakh_uniqdata limit 10""",
-      Seq(Row(8999),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null)), "V3offheapvectorTestCase_V3_01_Query_01_054")
+    checkAnswer(s"""select CUST_ID from 3lakh_uniqdata order by CUST_ID limit 10""",
+      Seq(Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null),Row(null)), "V3offheapvectorTestCase_V3_01_Query_01_054")
 
   }
 

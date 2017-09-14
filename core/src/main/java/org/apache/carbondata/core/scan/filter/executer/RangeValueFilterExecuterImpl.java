@@ -552,7 +552,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
       if (dimColEvaluatorInfo.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dimColEvaluatorInfo.getDimension().getDataType());
-        int key = directDictionaryGenerator.generateDirectSurrogateKey(null);
+        int key = directDictionaryGenerator.generateDirectSurrogateKey(null) + 1;
         CarbonDimension currentBlockDimension =
             segmentProperties.getDimensions().get(dimensionBlocksIndex);
         if (currentBlockDimension.isSortColumn()) {

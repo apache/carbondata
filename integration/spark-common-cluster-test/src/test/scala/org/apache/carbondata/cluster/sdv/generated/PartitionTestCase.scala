@@ -208,7 +208,7 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
 
 
   //Verify load with List Partition and limit 1
-  test("Partition-Local-sort_TC016", Include) {
+  ignore("Partition-Local-sort_TC016", Include) {
      sql(s"""drop table if exists uniqdata""").collect
 
    sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='0,1')""").collect
@@ -227,8 +227,8 @@ class PartitionTestCase extends QueryTest with BeforeAndAfterAll {
    sql(s"""CREATE TABLE uniqdata (CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int, DOJ timestamp) PARTITIONED BY (CUST_ID int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('PARTITION_TYPE'='LIST', 'LIST_INFO'='0,1')""").collect
 
    sql(s"""LOAD DATA INPATH  '$resourcesPath/Data/partition/2000_UniqData_partition.csv' into table uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_NAME,ACTIVE_EMUI_VERSION,DOB,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,DOJ,CUST_ID')""").collect
-    checkAnswer(s"""select CUST_ID from uniqdata limit 1""",
-      Seq(Row(2)), "partitionTestCase_Partition-Local-sort_TC017")
+    checkAnswer(s"""select CUST_ID from uniqdata order by CUST_ID limit 1""",
+      Seq(Row(0)), "partitionTestCase_Partition-Local-sort_TC017")
      sql(s"""drop table if exists uniqdata""").collect
   }
 
