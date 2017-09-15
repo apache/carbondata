@@ -438,6 +438,13 @@
         </exclusion>
       </exclusions>
     </dependency>
+
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-network-common_2.11</artifactId>
+      <scope>test</scope>
+      <version>2.1.0</version>
+    </dependency>
   </dependencies>
 
   <build>

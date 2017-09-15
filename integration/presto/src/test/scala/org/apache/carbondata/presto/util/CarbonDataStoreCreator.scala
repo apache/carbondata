@@ -15,12 +15,12 @@
  * limitations under the License.
  */
 
-package util
+package org.apache.carbondata.presto.util
 
+import java.util
 import java.io._
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
-import java.util
 import java.util.{ArrayList, Date, List, UUID}
 
 import scala.collection.JavaConversions._
@@ -30,34 +30,34 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapred.TaskAttemptID
-import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.hadoop.mapreduce.{RecordReader, TaskType}
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier,
 ReverseDictionary}
-import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.fileoperations.{AtomicFileOperations, AtomicFileOperationsImpl,
 FileWriteOperation}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata,
+CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.converter.{SchemaConverter,
 ThriftWrapperSchemaConverterImpl}
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension,
 CarbonMeasure, ColumnSchema}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata,
-CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter,
-CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl,
 ThriftWriter}
+import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter,
+CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
 import org.apache.carbondata.processing.api.dataloader.SchemaInfo
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.csvload.{BlockDetails, CSVInputFormat,
@@ -65,6 +65,7 @@ CSVRecordReaderIterator, StringArrayWritable}
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
 
 object CarbonDataStoreCreator {
 
@@ -110,7 +111,7 @@ object CarbonDataStoreCreator {
       loadModel.setDefaultTimestampFormat(
         CarbonProperties.getInstance.getProperty(
           CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+          CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS))
       loadModel.setDefaultDateFormat(
         CarbonProperties.getInstance.getProperty(
           CarbonCommonConstants.CARBON_DATE_FORMAT,
@@ -397,7 +398,11 @@ object CarbonDataStoreCreator {
           dictionarySortInfo.getSortIndexInverted)
       }
       catch {
-        case exception: Exception => logger.error(s"exception occurs $exception")
+        case exception: Exception =>
+
+
+          logger.error(s"exception occurs $exception")
+          throw new CarbonDataLoadingException("Data Loading Failed")
       }
       finally carbonDictionaryWriter.close()
     }
@@ -545,13 +550,14 @@ object CarbonDataStoreCreator {
       writeOperation.close()
     }
     catch {
-      case exception: Exception => logger.error(s"Exception occurs $exception")
+      case exception: Exception => logger.error(s"exception occurs $exception")
+        throw new CarbonDataLoadingException("Data Loading Failed")
     }
   }
 
   private def readCurrentTime(): String = {
     val sdf: SimpleDateFormat = new SimpleDateFormat(
-      CarbonCommonConstants.CARBON_TIMESTAMP)
+      CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS)
     sdf.format(new Date())
   }
 
