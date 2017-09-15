@@ -161,8 +161,8 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
         out.writeDouble(0d); // unique value is obsoleted, maintain for compatibility
         break;
       case DECIMAL:
-        byte[] maxAsBytes = getMaxAsBytes();
-        byte[] minAsBytes = getMinAsBytes();
+        byte[] maxAsBytes = getMaxAsBytes(columnSpec.getSchemaDataType());
+        byte[] minAsBytes = getMinAsBytes(columnSpec.getSchemaDataType());
         byte[] unique = DataTypeUtil.bigDecimalToByte(BigDecimal.ZERO);
         out.writeShort((short) maxAsBytes.length);
         out.write(maxAsBytes);
@@ -232,20 +232,20 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     }
   }
 
-  public byte[] getMaxAsBytes() {
-    return getValueAsBytes(getMaxValue());
+  public byte[] getMaxAsBytes(DataType dataType) {
+    return getValueAsBytes(getMaxValue(), dataType);
   }
 
-  public byte[] getMinAsBytes() {
-    return getValueAsBytes(getMinValue());
+  public byte[] getMinAsBytes(DataType dataType) {
+    return getValueAsBytes(getMinValue(), dataType);
   }
 
   /**
    * convert value to byte array
    */
-  private byte[] getValueAsBytes(Object value) {
+  private byte[] getValueAsBytes(Object value, DataType dataType) {
     ByteBuffer b;
-    switch (storeDataType) {
+    switch (dataType) {
       case BYTE:
         b = ByteBuffer.allocate(8);
         b.putLong((byte) value);

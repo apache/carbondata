@@ -166,8 +166,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     return doubleData[rowId];
   }
 
-  @Override
-  public BigDecimal getDecimal(int rowId) {
+  @Override public BigDecimal getDecimal(int rowId) {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
