@@ -17,10 +17,10 @@
 
 package org.apache.carbondata.hive.store
 
+import java.util
 import java.io._
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
-import java.util
 import java.util.{ArrayList, Date, List, UUID}
 
 import scala.collection.JavaConversions._
@@ -30,34 +30,34 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapred.TaskAttemptID
-import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.hadoop.mapreduce.{RecordReader, TaskType}
+import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier,
 ReverseDictionary}
-import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.fileoperations.{AtomicFileOperations, AtomicFileOperationsImpl,
 FileWriteOperation}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata,
+CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.converter.{SchemaConverter,
 ThriftWrapperSchemaConverterImpl}
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension,
 CarbonMeasure, ColumnSchema}
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata,
-CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter,
-CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl,
 ThriftWriter}
+import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter,
+CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
 import org.apache.carbondata.processing.api.dataloader.SchemaInfo
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.csvload.{BlockDetails, CSVInputFormat,
@@ -65,14 +65,15 @@ CSVRecordReaderIterator, StringArrayWritable}
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants
+import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
 
 object CarbonDataStoreCreator {
 
   private val logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   /**
-    * Create store without any restructure
-    */
+   * Create store without any restructure
+   */
   def createCarbonStore(storePath: String, dataFilePath: String): Unit = {
     try {
       logger.info("Creating The Carbon Store")
@@ -110,27 +111,27 @@ object CarbonDataStoreCreator {
       loadModel.setDefaultTimestampFormat(
         CarbonProperties.getInstance.getProperty(
           CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+          CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS))
       loadModel.setDefaultDateFormat(
         CarbonProperties.getInstance.getProperty(
           CarbonCommonConstants.CARBON_DATE_FORMAT,
           CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
       loadModel.setSerializationNullFormat(
         TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName +
-          "," +
-          "\\N")
+        "," +
+        "\\N")
       loadModel.setBadRecordsLoggerEnable(
         TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName +
-          "," +
-          "false")
+        "," +
+        "false")
       loadModel.setBadRecordsAction(
         TableOptionConstant.BAD_RECORDS_ACTION.getName + "," +
-          "force")
+        "force")
       loadModel.setDirectLoad(true)
       loadModel.setIsEmptyDataBadRecord(
         DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD +
-          "," +
-          "true")
+        "," +
+        "true")
       loadModel.setMaxColumns("15")
       loadModel.setCsvHeader(
         "ID,JOININGDATE,country,name,phonetype,serialname,salary,bonus,dob,shortField")
@@ -284,8 +285,8 @@ object CarbonDataStoreCreator {
     tableSchema.setTableId(UUID.randomUUID().toString)
     tableInfo.setTableUniqueName(
       absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName +
-        "_" +
-        absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
+      "_" +
+      absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
     val carbonTablePath: CarbonTablePath = CarbonStorePath.getCarbonTablePath(
@@ -321,8 +322,8 @@ object CarbonDataStoreCreator {
   }
 
   private def writeDictionary(factFilePath: String,
-                              table: CarbonTable,
-                              absoluteTableIdentifier: AbsoluteTableIdentifier): Unit = {
+      table: CarbonTable,
+      absoluteTableIdentifier: AbsoluteTableIdentifier): Unit = {
     val reader: BufferedReader = new BufferedReader(
       new FileReader(factFilePath))
     val header: String = reader.readLine()
@@ -397,7 +398,11 @@ object CarbonDataStoreCreator {
           dictionarySortInfo.getSortIndexInverted)
       }
       catch {
-        case exception: Exception => logger.error(s"exception occurs $exception")
+        case exception: Exception =>
+
+
+          logger.error(s"exception occurs $exception")
+          throw new CarbonDataLoadingException("Data Loading Failed")
       }
       finally carbonDictionaryWriter.close()
     }
@@ -405,12 +410,12 @@ object CarbonDataStoreCreator {
   }
 
   /**
-    * Execute graph which will further load data
-    *
-    * @param loadModel
-    * @param storeLocation
-    * @throws Exception
-    */
+   * Execute graph which will further load data
+   *
+   * @param loadModel
+   * @param storeLocation
+   * @throws Exception
+   */
   private def executeGraph(loadModel: CarbonLoadModel, storeLocation: String): Unit = {
     new File(storeLocation).mkdirs()
     val outPutLoc: String = storeLocation + "/etl"
@@ -437,15 +442,15 @@ object CarbonDataStoreCreator {
     CarbonProperties.getInstance
       .addProperty("carbon.direct.dictionary", "true")
     val graphPath: String = outPutLoc + File.separator + loadModel.getDatabaseName +
-      File.separator +
-      tableName +
-      File.separator +
-      0 +
-      File.separator +
-      1 +
-      File.separator +
-      tableName +
-      ".ktr"
+                            File.separator +
+                            tableName +
+                            File.separator +
+                            0 +
+                            File.separator +
+                            1 +
+                            File.separator +
+                            tableName +
+                            ".ktr"
     val path: File = new File(graphPath)
     if (path.exists()) {
       path.delete()
@@ -490,7 +495,7 @@ object CarbonDataStoreCreator {
       loadModel.getTableName,
       new ArrayList[LoadMetadataDetails]())
     val segLocation: String = storeLocation + "/" + databaseName + "/" + tableName +
-      "/Fact/Part0/Segment_0"
+                              "/Fact/Part0/Segment_0"
     val file: File = new File(segLocation)
     var factFile: File = null
     val folderList: Array[File] = file.listFiles()
@@ -511,10 +516,10 @@ object CarbonDataStoreCreator {
   }
 
   private def writeLoadMetadata(
-                                 schema: CarbonDataLoadSchema,
-                                 databaseName: String,
-                                 tableName: String,
-                                 listOfLoadFolderDetails: util.List[LoadMetadataDetails]): Unit = {
+      schema: CarbonDataLoadSchema,
+      databaseName: String,
+      tableName: String,
+      listOfLoadFolderDetails: util.List[LoadMetadataDetails]): Unit = {
     try {
       val loadMetadataDetails: LoadMetadataDetails = new LoadMetadataDetails()
       loadMetadataDetails.setLoadEndTime(System.currentTimeMillis())
@@ -524,7 +529,7 @@ object CarbonDataStoreCreator {
         loadMetadataDetails.getTimeStamp(readCurrentTime()))
       listOfLoadFolderDetails.add(loadMetadataDetails)
       val dataLoadLocation: String = schema.getCarbonTable.getMetaDataFilepath + File.separator +
-        CarbonCommonConstants.LOADMETADATA_FILENAME
+                                     CarbonCommonConstants.LOADMETADATA_FILENAME
       val gsonObjectToWrite: Gson = new Gson()
       val writeOperation: AtomicFileOperations = new AtomicFileOperationsImpl(
         dataLoadLocation,
@@ -545,13 +550,14 @@ object CarbonDataStoreCreator {
       writeOperation.close()
     }
     catch {
-      case exception: Exception => logger.error(s"Exception occurs $exception")
+      case exception: Exception => logger.error(s"exception occurs $exception")
+        throw new CarbonDataLoadingException("Data Loading Failed")
     }
   }
 
   private def readCurrentTime(): String = {
     val sdf: SimpleDateFormat = new SimpleDateFormat(
-      CarbonCommonConstants.CARBON_TIMESTAMP)
+      CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS)
     sdf.format(new Date())
   }
 
