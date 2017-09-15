@@ -20,7 +20,8 @@ package org.apache.carbondata.examples
 import java.io.File
 
 import org.apache.spark.sql.{SaveMode, SparkSession}
-import org.apache.spark.sql.streaming.{OutputMode, ProcessingTime, Trigger}
+import org.apache.spark.sql.streaming.ProcessingTime
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.utils.{StreamingExampleUtil}
@@ -124,7 +125,7 @@ object CarbonStreamingIngestFileSourceExample {
         for (i <- 1 to 5) {
           Thread.sleep(2)
           StreamingExampleUtil.
-            generateCSVDataFile(spark, i*10+1, csvDataDir, SaveMode.Append)
+            generateCSVDataFile(spark, i * 10 + 1, csvDataDir, SaveMode.Append)
         }
       }
     }

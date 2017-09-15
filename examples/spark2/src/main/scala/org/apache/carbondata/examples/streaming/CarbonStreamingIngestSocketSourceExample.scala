@@ -17,13 +17,15 @@
 
 package org.apache.carbondata.examples
 
-import java.io.{BufferedOutputStream, File, PrintStream, PrintWriter}
+import java.io.File
 
 import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.streaming.ProcessingTime
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.examples.utils.StreamingExampleUtil
-import org.apache.spark.sql.streaming.ProcessingTime
+
 
 /**
  * This example reads stream data from socket source (input) and write into

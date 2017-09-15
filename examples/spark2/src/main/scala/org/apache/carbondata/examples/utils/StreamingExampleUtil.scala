@@ -22,7 +22,6 @@ import java.net.{ServerSocket, Socket}
 
 import scala.tools.nsc.io.Path
 
-import org.apache.spark
 import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 
 
@@ -34,7 +33,7 @@ import org.apache.spark.sql.{DataFrame, SaveMode, SparkSession}
 // scalastyle:off println
 object StreamingExampleUtil {
 
-  //Clean up directories recursively, accepts variable arguments
+  // Clean up directories recursively, accepts variable arguments
   def cleanUpDir(dirPaths: String*): Unit = {
 
       // if (args.length < 1) {
@@ -87,10 +86,9 @@ object StreamingExampleUtil {
     try {
       Some(new ServerSocket(port))
     } catch {
-      case e: java.net.ConnectException => {
+      case e: java.net.ConnectException =>
         println("Error Connecting to" + host + ":" + port, e)
         None
-      }
     }
   }
 
@@ -104,8 +102,11 @@ object StreamingExampleUtil {
     serverSocket.close()
   }
 
-  //write periodically on given socket
-  def writeToSocket(clientSocket: Socket, iterations: Int, delay: Int, startID: Int) = {
+  // write periodically on given socket
+  def writeToSocket(clientSocket: Socket,
+                   iterations: Int,
+                   delay: Int,
+                   startID: Int): Unit = {
 
     var nItr = 10
     var nDelay = 5
@@ -128,10 +129,11 @@ object StreamingExampleUtil {
 
     var j = startID
 
-    for (i <- startID to startID+nItr) {
+    for (i <- startID to startID + nItr) {
       // write 5 records per iteration
-      for (id <- j to j+5 ) {
-        socketWriter.println(id.toString + ", name_" + i + ", city_" + i + ", " + (i*10000.00).toString)
+      for (id <- j to j + 5 ) {
+        socketWriter.println(id.toString + ", name_" + i
+          + ", city_" + i + ", " + (i*10000.00).toString)
       }
       j = j + 5
       socketWriter.flush()
