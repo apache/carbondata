@@ -21,13 +21,13 @@ import scala.collection.JavaConverters._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.sort.SortScopeOptions
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object ValidateUtil {
-  def validateDateFormat(dateFormat: String, table: CarbonTable, tableName: String): Unit = {
-    val dimensions = table.getDimensionByTableName(tableName).asScala
+
+  def validateDateFormat(dateFormat: String, table: CarbonTable): Unit = {
+    val dimensions = table.getDimensionByTableName(table.getFactTableName).asScala
     // allowing empty value to be configured for dateformat option.
     if (dateFormat != null && dateFormat.trim != "") {
         val dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)

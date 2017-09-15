@@ -739,8 +739,7 @@ object GlobalDictionaryUtil {
           storePath,
           carbonTableIdentifier,
           dictfolderPath,
-          dimensions,
-          allDictionaryPath)
+          dimensions)
       }
     } catch {
       case ex: Exception =>
@@ -766,10 +765,9 @@ object GlobalDictionaryUtil {
       storePath: String,
       carbonTableIdentifier: CarbonTableIdentifier,
       dictfolderPath: String,
-      dimensions: Array[CarbonDimension],
-      allDictionaryPath: String): Unit = {
+      dimensions: Array[CarbonDimension]): Unit = {
     LOGGER.info("Generate global dictionary from dictionary files!")
-    val allDictionaryPathAppended = CarbonUtil.checkAndAppendHDFSUrl(allDictionaryPath)
+    val allDictionaryPathAppended = CarbonUtil.checkAndAppendHDFSUrl(carbonLoadModel.getAllDictPath)
     val isNonempty = validateAllDictionaryPath(allDictionaryPathAppended)
     if (isNonempty) {
       var headers = carbonLoadModel.getCsvHeaderColumns

@@ -440,7 +440,7 @@ case class LoadTable(
       val complex_delimiter_level_1 = options.getOrElse("complex_delimiter_level_1", "\\$")
       val complex_delimiter_level_2 = options.getOrElse("complex_delimiter_level_2", "\\:")
       val dateFormat = options.getOrElse("dateformat", null)
-      ValidateUtil.validateDateFormat(dateFormat, table, tableName)
+      ValidateUtil.validateDateFormat(dateFormat, table)
       val maxColumns = options.getOrElse("maxcolumns", null)
       val tableProperties = table.getTableInfo.getFactTable.getTableProperties
       val sortScopeDefault = CarbonProperties.getInstance().
@@ -619,8 +619,7 @@ case class LoadTable(
                 storePath,
                 carbonTableIdentifier,
                 dictFolderPath,
-                dimensions,
-                allDictionaryPath)
+                dimensions)
           }
           // dictionaryServerClient dictionary generator
           val dictionaryServerPort = CarbonProperties.getInstance()
