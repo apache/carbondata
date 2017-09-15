@@ -330,8 +330,7 @@ object CommonUtil {
       if (next == null) {
         sys.error(
           "Data in range info must be the same type with the partition field's type "
-            + columnDataType + ", Exception:" +
-          next.asInstanceOf[IllegalArgumentException].getMessage)
+            + columnDataType)
       }
       if (comparator.compare(head, next) < 0) {
         head = next
