@@ -19,12 +19,18 @@ package org.apache.carbondata.examples
 
 import java.io.File
 
-import org.apache.commons.lang.RandomStringUtils
 import org.apache.spark.sql.{SaveMode, SparkSession}
-
+import org.apache.spark.sql.streaming.{OutputMode, ProcessingTime, Trigger}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.examples.utils.StreamingCleanupUtil
+import org.apache.carbondata.examples.utils.{StreamingExampleUtil}
+
+/**
+ * Covers spark structured streaming scenario where user streams data
+ * from a file source (input source) and write into carbondata table(output sink).
+ * This example uses csv file as a input source and writes
+ * into target carbon table. The target carbon table must exist.
+ */
 
 object CarbonStreamingIngestFileSourceExample {
 
@@ -36,17 +42,15 @@ object CarbonStreamingIngestFileSourceExample {
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val metastoredb = s"$rootPath/examples/spark2/target"
     val csvDataDir = s"$rootPath/examples/spark2/resources/csvDataDir"
-    // val csvDataFile = s"$csvDataDir/sampleData.csv"
-    // val csvDataFile = s"$csvDataDir/sample.csv"
     val streamTableName = s"_carbon_file_stream_table_"
-    val stremTablePath = s"$storeLocation/default/$streamTableName"
+    val streamTablePath = s"$storeLocation/default/$streamTableName"
     val ckptLocation = s"$rootPath/examples/spark2/resources/ckptDir"
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
-    // cleanup any residual files
-    StreamingCleanupUtil.main(Array(csvDataDir, ckptLocation))
+    // cleanup residual files, if any
+    StreamingExampleUtil.cleanUpDir(csvDataDir, ckptLocation)
 
     import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
@@ -61,39 +65,33 @@ object CarbonStreamingIngestFileSourceExample {
     // Writes Dataframe to CarbonData file:
     import spark.implicits._
     import org.apache.spark.sql.types._
-
-    // Generate random data
-    val dataDF = spark.sparkContext.parallelize(1 to 10)
-      .map(id => (id, "name_ABC", "city_XYZ", 10000.00*id)).
-      toDF("id", "name", "city", "salary")
-
     // drop table if exists previously
     spark.sql(s"DROP TABLE IF EXISTS ${streamTableName}")
+    // Create target carbon table
+    spark.sql(
+      s"""
+         | CREATE TABLE ${streamTableName}(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT
+         | )
+         | STORED BY 'carbondata'""".stripMargin)
 
-    // Create Carbon Table
-    // Saves dataframe to carbondata file
-    dataDF.write
-      .format("carbondata")
-      .option("tableName", streamTableName)
-      .option("compress", "true")
-      .option("tempCSV", "false")
-      .mode(SaveMode.Overwrite)
-      .save()
+    // Generate CSV data and write to CSV file
+    StreamingExampleUtil.generateCSVDataFile(spark, 1, csvDataDir, SaveMode.Overwrite)
 
+    // scalastyle:off
+    spark.sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$csvDataDir'
+         | INTO TABLE ${streamTableName}
+         | OPTIONS('FILEHEADER'='id,name,city,salary'
+         | )""".stripMargin)
+    // scalastyle:on
+
+    // check initial table data
     spark.sql(s""" SELECT * FROM ${streamTableName} """).show()
-
-    // Create csv data frame file
-    val csvDataDF = spark.sparkContext.parallelize(11 to 30)
-      .map(id => (id,
-        s"name_${RandomStringUtils.randomAlphabetic(4).toUpperCase}",
-        s"city_${RandomStringUtils.randomAlphabetic(2).toUpperCase}",
-        10000.00*id)).toDF("id", "name", "city", "salary")
-
-    // write data into csv file ( It will be used as a stream source)
-    csvDataDF.write.
-      format("com.databricks.spark.csv").
-      option("header", "true").
-      save(csvDataDir)
 
     // define custom schema
     val inputSchema = new StructType().
@@ -102,7 +100,7 @@ object CarbonStreamingIngestFileSourceExample {
       add("city", "string").
       add("salary", "float")
 
-    // Read csv data file as a streaming source
+    // setup csv file as a input streaming source
     val csvReadDF = spark.readStream.
       format("csv").
       option("sep", ",").
@@ -112,13 +110,28 @@ object CarbonStreamingIngestFileSourceExample {
       load()
 
     // Write data from csv format streaming source to carbondata target format
-    val qry = csvReadDF.writeStream.
-      format("carbondata").
-      option("checkpointLocation", ckptLocation).
-      option("path", stremTablePath).
-      start()
+    // set trigger to every 1 second
+    val qry = csvReadDF.writeStream
+      .format("carbondata")
+      .trigger(ProcessingTime("1 seconds"))
+      .option("checkpointLocation", ckptLocation)
+      .option("path", streamTablePath)
+      .start()
 
-    // stop streaming query after 5 sec delay
+    // In a separate thread append data every 2 seconds to existing csv
+    val gendataThread: Thread = new Thread() {
+      override def run(): Unit = {
+        for (i <- 1 to 5) {
+          Thread.sleep(2)
+          StreamingExampleUtil.
+            generateCSVDataFile(spark, i*10+1, csvDataDir, SaveMode.Append)
+        }
+      }
+    }
+    gendataThread.start()
+    gendataThread.join()
+
+    // stop streaming execution after 5 sec delay
     Thread.sleep(5000)
     qry.stop()
 
@@ -126,7 +139,7 @@ object CarbonStreamingIngestFileSourceExample {
     // spark.sql(s""" SELECT * FROM ${streamTableName} """).show()
 
     // Cleanup residual files and table data
-    StreamingCleanupUtil.main(Array(csvDataDir, ckptLocation))
+    StreamingExampleUtil.cleanUpDir(csvDataDir, ckptLocation)
     spark.sql(s"DROP TABLE IF EXISTS ${streamTableName}")
   }
 }

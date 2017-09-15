@@ -17,24 +17,21 @@
 
 package org.apache.carbondata.examples
 
-import java.io.File
+import java.io.{BufferedOutputStream, File, PrintStream, PrintWriter}
 
 import org.apache.spark.sql.{SaveMode, SparkSession}
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.examples.utils.StreamingCleanupUtil
+import org.apache.carbondata.examples.utils.StreamingExampleUtil
+import org.apache.spark.sql.streaming.ProcessingTime
 
 /**
- * Write data received from the network into carbondata file.
+ * This example reads stream data from socket source (input) and write into
+ * existing carbon table(output).
  *
- * Usage: CarbonNetworkStreamingExample <hostname> <port>
- * <hostname> and <port> describe the TCP server that Structured Streaming
- * would connect to receive data.
- *
- * To run this on your local machine, you need to first run a Netcat server
- * `$ nc -lk 9999` and input data
- * and then run the example with program arguments as "localhost 9999"
+ * It uses localhost and port (9999) to create a socket and write to it.
+ * Exmaples uses two threads one to write data to socket and other thread
+ * to receive data from socket and write into carbon table.
  */
 
 // scalastyle:off println
@@ -42,21 +39,16 @@ object CarbonStreamingIngestSocketSourceExample {
 
   def main(args: Array[String]) {
 
-    if (args.length < 2) {
-      System.err.println("Usage: CarbonNetworkStreamingIngestion <hostname> <port>")
-      System.exit(1)
-    }
-
-    // get host and port number
-    val host = args(0)
-    val port = args(1).toInt
-
+    // setup localhost and port number
+    val host = "localhost"
+    val port = 9999
     // setup paths
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val metastoredb = s"$rootPath/examples/spark2/target"
+    val csvDataDir = s"$rootPath/examples/spark2/resources/csvDataDir"
     val streamTableName = s"_carbon_socket_stream_table_"
     val streamTablePath = s"$storeLocation/default/$streamTableName"
     val ckptLocation = s"$rootPath/examples/spark2/resources/ckptDir"
@@ -64,8 +56,8 @@ object CarbonStreamingIngestSocketSourceExample {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
 
-    // cleanup any residual files
-    StreamingCleanupUtil.main(Array(ckptLocation))
+    // cleanup residual files, if any
+    StreamingExampleUtil.cleanUpDir(csvDataDir, ckptLocation)
 
     import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
@@ -80,54 +72,86 @@ object CarbonStreamingIngestSocketSourceExample {
     // Writes Dataframe to CarbonData file:
     import spark.implicits._
 
-    // Generate random data
-    val dataDF = spark.sparkContext.parallelize(1 to 10)
-      .map(id => (id, "name_ABC", "city_XYZ", 10000.00*id)).
-      toDF("id", "name", "city", "salary")
-
     // drop table if exists previously
     spark.sql(s"DROP TABLE IF EXISTS ${streamTableName}")
 
-    // Create Carbon Table
-    // Saves dataframe to carbondata file
-    dataDF.write
-      .format("carbondata")
-      .option("tableName", streamTableName)
-      .option("compress", "true")
-      .option("tempCSV", "false")
-      .mode(SaveMode.Overwrite)
-      .save()
+    // Create target carbon table and populate with initial data
+    spark.sql(
+      s"""
+         | CREATE TABLE ${streamTableName}(
+         | id INT,
+         | name STRING,
+         | city STRING,
+         | salary FLOAT
+         | )
+         | STORED BY 'carbondata'""".stripMargin)
+
+    // Generate CSV data and write to CSV file
+    StreamingExampleUtil.generateCSVDataFile(spark, 1, csvDataDir, SaveMode.Overwrite)
+
+    // load the table
+    // scalastyle:off
+    spark.sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$csvDataDir'
+         | INTO TABLE ${streamTableName}
+         | OPTIONS('FILEHEADER'='id,name,city,salary'
+         | )""".stripMargin)
+
 
     spark.sql(s""" SELECT * FROM ${streamTableName} """).show()
 
-    // Generate random data
-    val dataDF1 = spark.sparkContext.parallelize(50 to 70)
-      .map(id => (id, "name_ABC", "city_XYZ", 10.00*id)).
-      toDF("id", "name", "city", "salary")
+    // Create server socket in main thread
+    val serverSocket = StreamingExampleUtil.createserverSocket(host, port)
 
-    // Create DataFrame representing the stream of input lines from connection to host:port
-    val readSocketDF = spark.readStream
-      .format("socket")
-      .option("host", host)
-      .option("port", port)
-      .load()
+    // Start client thread to receive streaming data and write into carbon
+    val streamWriterThread: Thread = new Thread() {
+      override def run(): Unit= {
 
-    // Write from socket stream to carbondata file
-    val qry = readSocketDF.writeStream
-      .format("carbondata")
-      .option("checkpointLocation", ckptLocation)
-      .option("path", streamTablePath)
-      .start()
+        try {
+          // Setup read stream to read input data from socket
+          val readSocketDF = spark.readStream
+            .format("socket")
+            .option("host", host)
+            .option("port", port)
+            .load()
 
-    // stop streaming query after 10 sec delay
-    Thread.sleep(10000)
-    qry.stop()
+          // Write data from socket stream to carbondata file
+          val qry = readSocketDF.writeStream
+            .format("carbondata")
+            .trigger(ProcessingTime("2 seconds"))
+            .option("checkpointLocation", ckptLocation)
+            .option("path", streamTablePath)
+            .start()
+
+          qry.awaitTermination()
+        } catch {
+          case e: InterruptedException => println("Done reading and writing streaming data")
+        }
+      }
+    }
+    streamWriterThread.start()
+
+    // wait for client to connection request and accept
+    val clientSocket = StreamingExampleUtil.waitToForClientConnection(serverSocket.get)
+
+    // Write to client's connected socket every 2 seconds, for 5 times
+    StreamingExampleUtil.writeToSocket(clientSocket, 5, 2, 11)
+
+    Thread.sleep(2000)
+    // interrupt client thread to stop streaming query
+    streamWriterThread.interrupt()
+    //wait for client thread to finish
+    streamWriterThread.join()
+
+    //Close the server socket
+    serverSocket.get.close()
 
     // verify streaming data is added into the table
-    spark.sql(s""" SELECT * FROM ${streamTableName} """).show()
+    // spark.sql(s""" SELECT * FROM ${streamTableName} """).show()
 
     // Cleanup residual files and table data
-    StreamingCleanupUtil.main(Array(ckptLocation))
+    StreamingExampleUtil.cleanUpDir(csvDataDir, ckptLocation)
     spark.sql(s"DROP TABLE IF EXISTS ${streamTableName}")
   }
 }

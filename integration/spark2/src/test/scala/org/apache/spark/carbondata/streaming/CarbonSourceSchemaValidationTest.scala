@@ -28,7 +28,6 @@ class CarbonSourceSchemaValidationTest extends QueryTest with BeforeAndAfterAll 
     val job = new Job()
     val storeLocation = TestQueryExecutor.storeLocation
 
-    println(s"Resource Path: $resourcesPath")
     sql("CREATE TABLE _carbon_stream_table_(id int,name string)STORED BY 'carbondata'")
     val tablePath: String = s"$storeLocation/default/_carbon_stream_table_"
     val dataSchema = StructType(Array(StructField("id", IntegerType, true), StructField("name", StringType, true)))

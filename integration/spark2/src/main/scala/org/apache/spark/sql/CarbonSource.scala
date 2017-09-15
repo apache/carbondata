@@ -224,12 +224,12 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
   }
 
-/**
- * Prepares a write job and returns an [[OutputWriterFactory]].  Client side job preparation can
- * be put here.  For example, user defined output committer can be configured here
- * by setting the output committer class in the conf of spark.sql.sources.outputCommitterClass.
- */
-  def prepareWrite(
+  /**
+   * Prepares a write job and returns an [[OutputWriterFactory]].  Client side job preparation can
+   * be put here.  For example, user defined output committer can be configured here
+   * by setting the output committer class in the conf of spark.sql.sources.outputCommitterClass.
+   */
+  override def prepareWrite(
       sparkSession: SparkSession,
       job: Job,
       options: Map[String, String],
@@ -378,7 +378,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
    * does not support inference, or no valid files are given should return None.  In these cases
    * Spark will require that user specify the schema manually.
    */
-  def inferSchema(
+  override def inferSchema(
                    sparkSession: SparkSession,
                    options: Map[String, String],
                    files: Seq[FileStatus]): Option[StructType] = {
