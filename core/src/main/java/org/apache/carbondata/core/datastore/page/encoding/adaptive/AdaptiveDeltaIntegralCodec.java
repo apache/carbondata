@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.datastore.page.encoding.adaptive;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,8 @@ import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.format.Encoding;
+
+import static org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL;
 
 /**
  * Codec for integer (byte, short, int, long) data type and floating data type (in case of
@@ -64,6 +67,9 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
         break;
       case DOUBLE:
         this.max = (long) (double) stats.getMax();
+        break;
+      case DECIMAL:
+        this.max = ((BigDecimal) stats.getMax()).unscaledValue().longValue();
         break;
       default:
         // this codec is for integer type only
@@ -111,13 +117,18 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
     };
   }
 
-  @Override
-  public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
+  @Override public ColumnPageDecoder createDecoder(final ColumnPageEncoderMeta meta) {
     return new ColumnPageDecoder() {
-      @Override
-      public ColumnPage decode(byte[] input, int offset, int length)
+      @Override public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
-        ColumnPage page = ColumnPage.decompress(meta, input, offset, length);
+        ColumnPage page = null;
+        switch (meta.getSchemaDataType()) {
+          case DECIMAL:
+            page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
+            break;
+          default:
+            page = ColumnPage.decompress(meta, input, offset, length);
+        }
         return LazyColumnPage.newPage(page, converter);
       }
     };

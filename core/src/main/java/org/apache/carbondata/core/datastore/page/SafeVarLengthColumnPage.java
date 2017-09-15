@@ -51,13 +51,12 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
   }
 
   @Override public void putDecimal(int rowId, BigDecimal decimal) {
-    putBytes(rowId, decimalConverter.convert(decimal));
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
   @Override
   public BigDecimal getDecimal(int rowId) {
-    byte[] bytes = byteArrayData[rowId];
-    return decimalConverter.getDecimal(bytes);
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
   @Override

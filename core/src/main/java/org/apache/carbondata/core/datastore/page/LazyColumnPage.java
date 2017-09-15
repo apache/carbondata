@@ -19,6 +19,8 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
+
 /**
  * This is a decorator of column page, it performs decoding lazily (when caller calls getXXX
  * method to get the value from the page)
@@ -93,7 +95,23 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public BigDecimal getDecimal(int rowId) {
-    return columnPage.getDecimal(rowId);
+    DecimalConverterFactory.DecimalConverter decimalConverter =
+        ((DecimalColumnPage) columnPage).getDecimalConverter();
+    switch (columnPage.getDataType()) {
+      case BYTE:
+        return decimalConverter.getDecimal(converter.decodeLong(columnPage.getByte(rowId)));
+      case SHORT:
+        return decimalConverter.getDecimal(converter.decodeLong(columnPage.getShort(rowId)));
+      case SHORT_INT:
+        return decimalConverter.getDecimal(converter.decodeLong(columnPage.getShortInt(rowId)));
+      case INT:
+        return decimalConverter.getDecimal(converter.decodeLong(columnPage.getInt(rowId)));
+      case LONG:
+      case DECIMAL:
+        return columnPage.getDecimal(rowId);
+      default:
+        throw new RuntimeException("internal error: " + this.toString());
+    }
   }
 
   @Override
