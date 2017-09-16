@@ -444,9 +444,13 @@ case class LoadTable(
       val maxColumns = options.getOrElse("maxcolumns", null)
 
       val tableProperties = table.getTableInfo.getFactTable.getTableProperties
-      val sortScope = if (null == tableProperties)
-        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT else tableProperties
-        .getOrDefault("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+      val sortScope = if (null == tableProperties) {
+        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT
+      } else {
+        tableProperties.getOrDefault("sort_scope",
+          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+      }
+
       ValidateUtil.validateSortScope(table, sortScope)
       val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb", null)
       val globalSortPartitions = options.getOrElse("global_sort_partitions", null)
