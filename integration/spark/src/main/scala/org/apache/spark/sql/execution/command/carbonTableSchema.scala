@@ -39,7 +39,7 @@ import org.codehaus.jackson.map.ObjectMapper
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.exception.InvalidConfigurationException
@@ -452,8 +452,13 @@ case class LoadTable(
       }
 
       ValidateUtil.validateSortScope(table, sortScope)
-      val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb", null)
-      val globalSortPartitions = options.getOrElse("global_sort_partitions", null)
+      val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
+      val batchSortSizeInMB = options.getOrElse("batch_sort_size_inmb", carbonProperty
+        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB,
+        carbonProperty.getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
+          CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT)))
+      val globalSortPartitions = options.getOrElse("global_sort_partitions", carbonProperty
+        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS, null))
       ValidateUtil.validateGlobalSortPartitions(globalSortPartitions)
 
       // if there isn't file header in csv file and load sql doesn't provide FILEHEADER option,
