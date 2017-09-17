@@ -664,6 +664,7 @@ public final class CarbonCommonConstants {
   public static final String DEFAULT_INVISIBLE_DUMMY_MEASURE = "default_dummy_measure";
   public static final String CARBON_IMPLICIT_COLUMN_POSITIONID = "positionId";
   public static final String CARBON_IMPLICIT_COLUMN_TUPLEID = "tupleId";
+  public static final String CARBON_IMPLICIT_COLUMN_SEGMENTID = "segId";
   /**
    * max driver lru cache size upto which lru cache will be loaded in memory
    */
