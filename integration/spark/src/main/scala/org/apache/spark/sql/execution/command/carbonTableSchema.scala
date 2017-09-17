@@ -442,6 +442,7 @@ case class LoadTable(
       val dateFormat = options.getOrElse("dateformat", null)
       ValidateUtil.validateDateFormat(dateFormat, table, tableName)
       val maxColumns = options.getOrElse("maxcolumns", null)
+      val tableProperties = table.getTableInfo.getFactTable.getTableProperties
       val sortScopeDefault = CarbonProperties.getInstance().
         getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
           CarbonProperties.getInstance().getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
