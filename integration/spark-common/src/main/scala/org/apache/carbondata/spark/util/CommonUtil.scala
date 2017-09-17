@@ -334,11 +334,16 @@ object CommonUtil {
         timestampFormatter, dateFormatter)
     }
     val iterator = rangeInfo.tail.toIterator
-    while(iterator.hasNext) {
+    while (iterator.hasNext) {
       val next = columnDataType match {
         case DataType.STRING => ByteUtil.toBytes(iterator.next())
         case _ => PartitionUtil.getDataBasedOnDataType(iterator.next(), columnDataType,
           timestampFormatter, dateFormatter)
+      }
+      if (next == null) {
+        sys.error(
+          "Data in range info must be the same type with the partition field's type "
+            + columnDataType)
       }
       if (comparator.compare(head, next) < 0) {
         head = next
