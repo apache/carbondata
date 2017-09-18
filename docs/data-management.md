@@ -106,7 +106,7 @@ Example :
 CLEAN FILES FOR TABLE table1
 ```
 
- This DML will physically delete the segment which are "Marked for delete" immediately.
+ This DML will physically delete the segment which are "Marked for delete" and "Compacted" immediately.
 
 ## Compacting Data
       
@@ -135,7 +135,7 @@ CLEAN FILES FOR TABLE table1
    
 | Parameter | Default | Application | Description | Valid Values |
 |-----------------------------------------|---------|-------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|--------------|
-| carbon.compaction.level.threshold | 4, 3 | Minor | This property is for minor compaction which decides how many segments to be merged. Example: If it is set as 2, 3 then minor compaction will be triggered for every 2 segments. 3 is the number of level 1 compacted segment which is further compacted to new segment. | NA |
+| carbon.compaction.level.threshold | 4, 3 | Minor | This property is for minor compaction which decides how many segments to be merged. Example: If it is set as "2, 3", then minor compaction will be triggered for every 2 segments in level 1. 3 is the number of level 1 compacted segment which is further compacted to new segment in level 2. | NA |
 | carbon.major.compaction.size | 1024 MB | Major | Major compaction size can be configured using this parameter. Sum of the segments which is below this threshold will be merged. | NA |
 | carbon.numberof.preserve.segments | 0 | Minor/Major | This property configures number of segments to preserve from being compacted. Example: carbon.numberof.preserve.segments=2 then 2 latest segments will always be excluded from the compaction. No segments will be preserved by default. | 0-100 |
 | carbon.allowed.compaction.days | 0 | Minor/Major | Compaction will merge the segments which are loaded within the specific number of days configured. Example: If the configuration is 2, then the segments which are loaded in the time frame of 2 days only will get merged. Segments which are loaded 2 days apart will not be merged. This is disabled by default. | 0-100 |
