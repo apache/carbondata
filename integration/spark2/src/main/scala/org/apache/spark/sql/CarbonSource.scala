@@ -33,7 +33,6 @@ import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.command.{TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.datasources.{FileFormat, OutputWriterFactory}
-// import org.apache.spark.sql.hive.CarbonMetastore
 import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
@@ -44,7 +43,6 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructT
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-// import org.apache.carbondata.core.metadata.datatype
 
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
@@ -56,12 +54,6 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-
-// import org.apache.carbondata.{TableInfo, TableSchema}
-
-
-
-
 
 /**
  * Carbon relation provider compliant to data source api.
@@ -333,6 +325,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     val isValid = tableColumnDataTypeList == streamedDataTypeList
     isValid
   }
+
   /**
    * Parses streamed datatype according to carbon datatype
    * @param dataType
