@@ -58,7 +58,7 @@ class CarbonStreamingOutputWriterFactory extends OutputWriterFactory {
 
 }
 
-object CarbonStreamingOutpurWriterFactory {
+object CarbonStreamingOutputWriterFactory {
 
   private[this] val writers = new ConcurrentHashMap[String, CarbonStreamingOutputWriter]()
 

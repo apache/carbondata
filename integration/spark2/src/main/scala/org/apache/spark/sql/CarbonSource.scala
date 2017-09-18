@@ -31,10 +31,10 @@ import org.apache.parquet.schema.InvalidSchemaException
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
-import org.apache.spark.sql.execution.command.{CreateTable, TableModel, TableNewProcessor}
+import org.apache.spark.sql.execution.command.{TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.datasources.{FileFormat, OutputWriterFactory}
+// import org.apache.spark.sql.hive.CarbonMetastore
 import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonRelation}
-import org.apache.spark.sql.execution.command.{BucketFields, CreateTable}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.sources._
@@ -44,14 +44,23 @@ import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructT
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
+// import org.apache.carbondata.core.metadata.datatype
+
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
-import org.apache.carbondata.core.metadata.schema.table.TableInfo
+import org.apache.carbondata.core.metadata.schema.table._
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.format.{DataType, TableInfo, TableSchema}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+
+// import org.apache.carbondata.{TableInfo, TableSchema}
+
+
+
 
 
 /**
@@ -238,20 +247,21 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     // Check if table with given path exists
     validateTable(options.get("path").get)
 
-    // Check id streaming data schema matches with carbon table schema
-    // Data from socket source does not have schema attached to it,
-    // Following check is to ignore schema validation for socket source.
+    /* Check id streaming data schema matches with carbon table schema
+     * Data from socket source does not have schema attached to it,
+     * Following check is to ignore schema validation for socket source.
+     */
     if (!(dataSchema.size.equals(1) &&
       dataSchema.fields(0).dataType.equals(StringType))) {
-      val tablePath = options.get("path")
-      val path: String = tablePath match {
+      val path = options.get("path")
+      val tablePath: String = path match {
         case Some(value) => value
         case None => ""
       }
-      val meta: CarbonMetastore = new CarbonMetastore(sparkSession.conf, path)
-      val schemaPath = path + "/Metadata/schema"
-      val schema: TableInfo = meta.readSchemaFile(schemaPath)
-      val isSchemaValid = validateSchema(schema, dataSchema)
+
+      val carbonTableSchema: org.apache.carbondata.format.TableSchema =
+        getTableSchema(sparkSession: SparkSession, tablePath: String)
+      val isSchemaValid = validateSchema(carbonTableSchema, dataSchema)
 
       if(!isSchemaValid) {
         LOGGER.error("Schema Validation Failed: streaming data schema"
@@ -269,25 +279,42 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
    * @param tablePath carbon table path
    * @return true if schema validation is successful else false
    */
-  private def getTableSchema(sparkSession: SparkSession, tablePath: String): TableInfo = {
-    val meta: CarbonMetastore = new CarbonMetastore(sparkSession.conf, tablePath)
-    val schemaPath = tablePath + "/Metadata/schema"
-    val schema: TableInfo = meta.readSchemaFile(schemaPath)
-    schema
+  private def getTableSchema(
+    sparkSession: SparkSession,
+    tablePath: String): org.apache.carbondata.format.TableSchema = {
+
+    val formattedTablePath = tablePath.replace('\\', '/')
+    val names = formattedTablePath.split("/")
+    if (names.length < 3) {
+      throw new IllegalArgumentException("invalid table path: " + tablePath)
+    }
+    val tableName : String = names(names.length - 1)
+    val dbName : String = names(names.length - 2)
+    val storePath = formattedTablePath.substring(0,
+      formattedTablePath.lastIndexOf
+      (((dbName.concat(CarbonCommonConstants.FILE_SEPARATOR).toString)
+        .concat(tableName)).toString) - 1)
+
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val thriftTableInfo: org.apache.carbondata.format.TableInfo =
+      metastore.getThriftTableInfo(new CarbonTablePath(storePath, dbName, tableName))(sparkSession)
+
+    val factTable: org.apache.carbondata.format.TableSchema = thriftTableInfo.getFact_table
+    factTable
   }
 
   /**
    * Validates streamed schema against existing table schema
-   * @param schema existing carbon table schema
+   * @param carbonTableSchema existing carbon table schema
    * @param dataSchema streamed data schema
    * @return true if schema validation is successful else false
    */
-  private def validateSchema(schema: TableInfo, dataSchema: StructType): Boolean = {
-    val factTable: TableSchema = schema.getFact_table
+  private def validateSchema(
+      carbonTableSchema: org.apache.carbondata.format.TableSchema,
+      dataSchema: StructType): Boolean = {
 
     import scala.collection.mutable.ListBuffer
-    import scala.collection.JavaConverters._
-    var columnnSchemaValues = factTable.getTable_columns.asScala.sortBy(_.schemaOrdinal)
+    val columnnSchemaValues = carbonTableSchema.getTable_columns.asScala.sortBy(_.schemaOrdinal)
 
     var columnDataTypes = new ListBuffer[String]()
     for(columnDataType <- columnnSchemaValues) {
@@ -306,13 +333,13 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     val isValid = tableColumnDataTypeList == streamedDataTypeList
     isValid
   }
-
   /**
    * Parses streamed datatype according to carbon datatype
    * @param dataType
    * @return String
    */
   def mapStreamingDataTypeToString(dataType: String): String = {
+    import org.apache.carbondata.format.DataType
     dataType match {
       case "IntegerType" => DataType.INT.toString
       case "StringType" => DataType.STRING.toString
@@ -390,11 +417,13 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
     // Check if table with given path exists
     validateTable(tablePath)
-    val schema: TableInfo = getTableSchema(sparkSession: SparkSession, tablePath: String)
-    val factTable: TableSchema = schema.getFact_table
-    import scala.collection.JavaConverters._
-    var columnnSchemaValues = factTable.getTable_columns.asScala.sortBy(_.schemaOrdinal)
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val carbonTableSchema: org.apache.carbondata.format.TableSchema =
+      getTableSchema(sparkSession: SparkSession, tablePath: String)
+    val columnnSchemaValues = carbonTableSchema.getTable_columns.asScala.sortBy(_.schemaOrdinal)
 
+    import scala.collection.mutable.ListBuffer
+    import scala.collection.JavaConverters._
     val tableColumnNames = new ListBuffer[String]()
     for (columnName <- columnnSchemaValues) {
       tableColumnNames.append(columnName.column_name)

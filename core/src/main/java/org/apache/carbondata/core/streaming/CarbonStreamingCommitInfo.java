@@ -36,7 +36,7 @@ public class CarbonStreamingCommitInfo {
 
   private long batchID;
 
-  private String fileOffset;
+  private long fileOffset;
 
   private long transactionID;     // future use
 
@@ -67,6 +67,8 @@ public class CarbonStreamingCommitInfo {
     this.batchID = batchID;
 
     this.transactionID = -1;
+
+    this.fileOffset = 0;
   }
 
   public String getDataBase() {
@@ -93,7 +95,7 @@ public class CarbonStreamingCommitInfo {
     return batchID;
   }
 
-  public String getFileOffset() {
+  public long getFileOffset() {
     return fileOffset;
   }
 
