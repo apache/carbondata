@@ -1069,13 +1069,14 @@ object CarbonDataRDDFactory {
         return
       }
       if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
+        // update the load entry in table status file for changing the status to failure
+        CommonUtil.updateTableStatusForFailure(carbonLoadModel)
         LOGGER.info("********starting clean up**********")
         CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
         LOGGER.info("********clean up done**********")
         LOGGER.audit(s"Data load is failed for " +
             s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.warn("Cannot write load metadata file as data load failed")
-        updateStatus(status, loadStatus)
         throw new Exception(errorMessage)
       } else {
         // check if data load fails due to bad record and throw data load failure due to
@@ -1083,16 +1084,19 @@ object CarbonDataRDDFactory {
         if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
             status(0)._2._2.failureCauses == FailureCauses.BAD_RECORDS &&
             carbonLoadModel.getBadRecordsAction.split(",")(1) == LoggerAction.FAIL.name) {
+          // update the load entry in table status file for changing the status to failure
+          CommonUtil.updateTableStatusForFailure(carbonLoadModel)
           LOGGER.info("********starting clean up**********")
           CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
           LOGGER.info("********clean up done**********")
           LOGGER.audit(s"Data load is failed for " +
                        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-          updateStatus(status, CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
           throw new Exception(status(0)._2._2.errorMsg)
         }
         // if segment is empty then fail the data load
         if (!CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
+          // update the load entry in table status file for changing the status to failure
+          CommonUtil.updateTableStatusForFailure(carbonLoadModel)
           LOGGER.info("********starting clean up**********")
           CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
           LOGGER.info("********clean up done**********")
@@ -1100,7 +1104,6 @@ object CarbonDataRDDFactory {
                        s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }" +
                        " as there is no data to load")
           LOGGER.warn("Cannot write load metadata file as data load failed")
-          updateStatus(status, CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
           throw new Exception("No Data to load")
         }
         writeDictionary(carbonLoadModel, result, false)
