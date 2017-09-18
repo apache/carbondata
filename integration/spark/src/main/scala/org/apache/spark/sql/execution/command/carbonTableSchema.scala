@@ -593,7 +593,7 @@ case class LoadTable(
           LOGGER.info(s"Overwrite is in progress for carbon table with $dbName.$tableName")
         }
         if (null == carbonLoadModel.getLoadMetadataDetails) {
-          CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+          CommonUtil.readLoadMetadataDetails(carbonLoadModel)
         }
         if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
             StringUtils.isEmpty(columnDict) && StringUtils.isEmpty(allDictionaryPath)) {
@@ -877,8 +877,7 @@ private[sql] case class DescribeCommandFormatted(
             .append(mapper.writeValueAsString(dimension.getColumnProperties))
             .append(",")
         }
-        if (dimension.hasEncoding(Encoding.DICTIONARY) &&
-            !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+        if (dimension.hasEncoding(Encoding.DICTIONARY)) {
           "DICTIONARY, KEY COLUMN" + (dimension.hasEncoding(Encoding.INVERTED_INDEX) match {
                       case false => ",NOINVERTEDINDEX"
                       case _ => ""

@@ -414,14 +414,21 @@ public final class FilterUtil {
     String result = null;
     try {
       int length = evaluateResultListFinal.size();
+      String timeFormat = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
       for (int i = 0; i < length; i++) {
         result = evaluateResultListFinal.get(i);
         if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(result)) {
-          filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+          if (dataType == DataType.STRING) {
+            filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+          } else {
+            filterValuesList.add(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
+          }
           continue;
         }
-        filterValuesList.add(
-              DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(result, dataType));
+        filterValuesList.add(DataTypeUtil
+            .getBytesBasedOnDataTypeForNoDictionaryColumn(result, dataType, timeFormat));
       }
     } catch (Throwable ex) {
       throw new FilterUnsupportedException("Unsupported Filter condition: " + result, ex);

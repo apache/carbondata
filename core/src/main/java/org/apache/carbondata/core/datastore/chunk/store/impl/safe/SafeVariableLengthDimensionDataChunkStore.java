@@ -29,6 +29,7 @@ import org.apache.spark.sql.types.IntegerType;
 import org.apache.spark.sql.types.LongType;
 import org.apache.spark.sql.types.ShortType;
 import org.apache.spark.sql.types.StringType;
+import org.apache.spark.sql.types.TimestampType;
 
 /**
  * Below class is responsible to store variable length dimension data chunk in
@@ -140,11 +141,13 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
       // for last record
       length = (short) (this.data.length - currentDataOffset);
     }
-    if (ByteUtil.UnsafeComparer.INSTANCE.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
-        CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentDataOffset, length)) {
+    DataType dt = vector.getType();
+    if ((!(dt instanceof StringType) && length == 0) || ByteUtil.UnsafeComparer.INSTANCE
+        .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
+            CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentDataOffset,
+            length)) {
       vector.putNull(vectorRow);
     } else {
-      DataType dt = vector.getType();
       if (dt instanceof StringType) {
         vector.putBytes(vectorRow, currentDataOffset, length, data);
       } else if (dt instanceof BooleanType) {
@@ -155,6 +158,8 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
         vector.putInt(vectorRow, ByteUtil.toInt(data, currentDataOffset, length));
       } else if (dt instanceof LongType) {
         vector.putLong(vectorRow, ByteUtil.toLong(data, currentDataOffset, length));
+      } else if (dt instanceof TimestampType) {
+        vector.putLong(vectorRow, ByteUtil.toLong(data, currentDataOffset, length) * 1000L);
       }
     }
   }

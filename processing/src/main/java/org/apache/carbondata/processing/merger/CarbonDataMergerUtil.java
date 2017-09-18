@@ -393,15 +393,14 @@ public final class CarbonDataMergerUtil {
   /**
    * To identify which all segments can be merged.
    *
-   * @param storeLocation
    * @param carbonLoadModel
    * @param compactionSize
    * @return
    */
-  public static List<LoadMetadataDetails> identifySegmentsToBeMerged(String storeLocation,
+  public static List<LoadMetadataDetails> identifySegmentsToBeMerged(
       CarbonLoadModel carbonLoadModel, long compactionSize,
       List<LoadMetadataDetails> segments, CompactionType compactionType) {
-
+    String storeLocation = carbonLoadModel.getStorePath();
     List<LoadMetadataDetails> sortedSegments = new ArrayList<LoadMetadataDetails>(segments);
 
     sortSegments(sortedSegments);

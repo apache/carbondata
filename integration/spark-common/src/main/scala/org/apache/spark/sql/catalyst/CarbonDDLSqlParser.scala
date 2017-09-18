@@ -619,6 +619,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     fields.foreach { field =>
       if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
         dimFields += field
+      } else if (DataTypeUtil.getDataType(field.dataType.get.toUpperCase) == DataType.TIMESTAMP &&
+                 !dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
+        noDictionaryDims :+= field.column
+        dimFields += field
       } else if (isDetectAsDimentionDatatype(field.dataType.get)) {
         dimFields += field
         // consider all String cols as noDicitonaryDims by default
@@ -626,8 +630,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           noDictionaryDims :+= field.column
         }
       } else if (sortKeyDimsTmp.exists(x => x.equalsIgnoreCase(field.column)) &&
-                 (dictExcludeCols.exists(x => x.equalsIgnoreCase(field.column)) ||
-                  isDefaultMeasure(field.dataType)) &&
+                 isDefaultMeasure(field.dataType) &&
                  (!field.dataType.get.equalsIgnoreCase("STRING"))) {
         throw new MalformedCarbonCommandException(s"Illegal argument in sort_column.Check if you " +
                                                   s"have included UNSUPPORTED DataType column{${
@@ -710,7 +713,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * detects whether datatype is part of dictionary_exclude
    */
   def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
-    val dataTypes = Array("string")
+    val dataTypes = Array("string", "timestamp", "int", "long", "bigint")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 

@@ -276,6 +276,8 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       } else {
         defaultValue = ByteUtil.toBytes(key);
       }
+    } else if (dimColEvaluatorInfoList.get(0).getDimension().getDataType() != DataType.STRING) {
+      defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
     }
     BitSet bitSet = null;
     if (dimensionColumnDataChunk.isExplicitSorted()) {

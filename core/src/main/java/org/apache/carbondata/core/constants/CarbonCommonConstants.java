@@ -190,6 +190,12 @@ public final class CarbonCommonConstants {
    * Bytes for string 0, it is used in codegen in case of null values.
    */
   public static final byte[] ZERO_BYTE_ARRAY = "0".getBytes(Charset.forName(DEFAULT_CHARSET));
+
+  /**
+   * Empty byte array
+   */
+  public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
   /**
    * FILE STATUS IN-PROGRESS
    */

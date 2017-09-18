@@ -104,7 +104,7 @@ object CarbonDataRDDFactory {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
 
     if (null == carbonLoadModel.getLoadMetadataDetails) {
-      CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+      CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     }
     // reading the start time of data load.
     val loadStartTime = CarbonUpdateUtil.readCurrentTime();
@@ -228,7 +228,7 @@ object CarbonDataRDDFactory {
       compactionLock: ICarbonLock): Unit = {
     val executor: ExecutorService = Executors.newFixedThreadPool(1)
     // update the updated table status.
-    CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+    CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     val compactionThread = new Thread {
       override def run(): Unit = {
 
@@ -238,7 +238,6 @@ object CarbonDataRDDFactory {
           var exception: Exception = null
           try {
             DataManagementFunc.executeCompaction(carbonLoadModel: CarbonLoadModel,
-              storePath: String,
               compactionModel: CompactionModel,
               executor, sqlContext, storeLocation
             )
@@ -269,7 +268,7 @@ object CarbonDataRDDFactory {
               val compactionType = CarbonCompactionUtil.determineCompactionType(metadataPath)
 
               val newCarbonLoadModel = new CarbonLoadModel()
-              DataManagementFunc.prepareCarbonLoadModel(storePath, table, newCarbonLoadModel)
+              DataManagementFunc.prepareCarbonLoadModel(table, newCarbonLoadModel)
 
               val compactionSize = CarbonDataMergerUtil
                   .getCompactionSize(CompactionType.MAJOR_COMPACTION)
@@ -282,7 +281,6 @@ object CarbonDataRDDFactory {
               // proceed for compaction
               try {
                 DataManagementFunc.executeCompaction(newCarbonLoadModel,
-                  newCarbonLoadModel.getStorePath,
                   newcompactionModel,
                   executor, sqlContext, storeLocation
                 )

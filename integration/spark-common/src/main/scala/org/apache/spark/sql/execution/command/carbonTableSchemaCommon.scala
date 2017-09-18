@@ -118,19 +118,31 @@ case class CompactionModel(compactionSize: Long,
     carbonTable: CarbonTable,
     isDDLTrigger: Boolean)
 
-case class CompactionCallableModel(storePath: String,
-    carbonLoadModel: CarbonLoadModel,
+case class CompactionCallableModel(carbonLoadModel: CarbonLoadModel,
     storeLocation: String,
     carbonTable: CarbonTable,
     loadsToMerge: util.List[LoadMetadataDetails],
     sqlContext: SQLContext,
     compactionType: CompactionType)
 
-case class SplitPartitionCallableModel(storePath: String,
-    carbonLoadModel: CarbonLoadModel,
+case class AlterPartitionModel(carbonLoadModel: CarbonLoadModel,
+    segmentId: String,
+    oldPartitionIds: List[Int],
+    sqlContext: SQLContext
+)
+
+case class SplitPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
     segmentId: String,
     partitionId: String,
-    oldPartitionIdList: List[Int],
+    oldPartitionIds: List[Int],
+    sqlContext: SQLContext)
+
+case class DropPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
+    segmentId: String,
+    partitionId: String,
+    oldPartitionIds: List[Int],
+    dropWithData: Boolean,
+    carbonTable: CarbonTable,
     sqlContext: SQLContext)
 
 case class DataTypeInfo(dataType: String, precision: Int = 0, scale: Int = 0)
@@ -160,7 +172,8 @@ case class AlterTableDropColumnModel(databaseName: Option[String],
 
 case class AlterTableDropPartitionModel(databaseName: Option[String],
     tableName: String,
-    partitionId: String)
+    partitionId: String,
+    dropWithData: Boolean)
 
 case class AlterTableSplitPartitionModel(databaseName: Option[String],
     tableName: String,
@@ -286,7 +299,10 @@ class AlterTableColumnSchemaGenerator(
     if (alterTableModel.highCardinalityDims.contains(colName)) {
       encoders.remove(Encoding.DICTIONARY)
     }
-    if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
+    if (dataType == DataType.DATE) {
+      encoders.add(Encoding.DIRECT_DICTIONARY)
+    }
+    if (dataType == DataType.TIMESTAMP && !alterTableModel.highCardinalityDims.contains(colName)) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     val colPropMap = new java.util.HashMap[String, String]()
@@ -351,7 +367,10 @@ class TableNewProcessor(cm: TableModel) {
     if (highCardinalityDims.contains(colName)) {
       encoders.remove(Encoding.DICTIONARY)
     }
-    if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
+    if (dataType == DataType.DATE) {
+      encoders.add(Encoding.DIRECT_DICTIONARY)
+    }
+    if (dataType == DataType.TIMESTAMP && !highCardinalityDims.contains(colName)) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     columnSchema.setEncodingList(encoders)
