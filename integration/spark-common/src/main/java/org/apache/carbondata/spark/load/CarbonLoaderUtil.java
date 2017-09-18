@@ -289,9 +289,18 @@ public final class CarbonLoaderUtil {
           newMetaEntry.setLoadName(segmentId);
           loadModel.setLoadMetadataDetails(listOfLoadFolderDetails);
           loadModel.setSegmentId(segmentId);
+          // Exception should be thrown if:
+          // 1. If insert overwrite is in progress and any other load or insert operation
+          // is triggered
+          // 2. If load or insert into operation is in progress and insert overwrite operation
+          // is triggered
           for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
             if (entry.getLoadStatus().equals(LoadStatusType.INSERT_OVERWRITE.getMessage())) {
               throw new RuntimeException("Already insert overwrite is in progress");
+            } else if (
+                newMetaEntry.getLoadStatus().equals(LoadStatusType.INSERT_OVERWRITE.getMessage())
+                    && entry.getLoadStatus().equals(LoadStatusType.IN_PROGRESS.getMessage())) {
+              throw new RuntimeException("Already insert into or load is in progress");
             }
           }
           listOfLoadFolderDetails.add(newMetaEntry);
@@ -318,7 +327,11 @@ public final class CarbonLoaderUtil {
                 // For insert overwrite, we will delete the old segment folder immediately
                 // So collect the old segments here
                 String path = carbonTablePath.getCarbonDataDirectoryPath("0", entry.getLoadName());
-                staleFolders.add(FileFactory.getCarbonFile(path));
+                // add to the deletion list only if file exist else HDFS file system will throw
+                // exception while deleting the file if file path does not exist
+                if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
+                  staleFolders.add(FileFactory.getCarbonFile(path));
+                }
               }
             }
           }
@@ -328,7 +341,13 @@ public final class CarbonLoaderUtil {
             .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
         // Delete all old stale segment folders
         for (CarbonFile staleFolder : staleFolders) {
-          CarbonUtil.deleteFoldersAndFiles(staleFolder);
+          // try block is inside for loop because even if there is failure in deletion of 1 stale
+          // folder still remaining stale folders should be deleted
+          try {
+            CarbonUtil.deleteFoldersAndFiles(staleFolder);
+          } catch (IOException | InterruptedException e) {
+            LOGGER.error("Failed to delete stale folder: " + e.getMessage());
+          }
         }
         status = true;
       } else {
