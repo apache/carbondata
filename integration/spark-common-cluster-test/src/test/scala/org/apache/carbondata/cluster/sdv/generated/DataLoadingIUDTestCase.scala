@@ -20,6 +20,8 @@ package org.apache.carbondata.cluster.sdv.generated
 
 import java.sql.Timestamp
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util._
 import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, BeforeAndAfterEach}
@@ -31,6 +33,8 @@ import org.scalatest.{BeforeAndAfter, BeforeAndAfterAll, BeforeAndAfterEach}
 class DataLoadingIUDTestCase extends QueryTest with BeforeAndAfterAll with BeforeAndAfter with BeforeAndAfterEach {
 
   override def beforeAll {
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
     sql("use default").collect
     sql("drop table if exists t_carbn02").collect
     sql("drop table if exists t_carbn01").collect
@@ -3769,5 +3773,7 @@ override def afterAll {
   sql("drop table if exists t_carbn01b").collect
   sql("drop table if exists T_Hive1").collect
   sql("drop table if exists T_Hive6").collect
+  CarbonProperties.getInstance().
+    addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
 }
 }
