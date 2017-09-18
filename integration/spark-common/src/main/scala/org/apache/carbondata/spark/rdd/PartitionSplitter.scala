@@ -19,22 +19,24 @@ package org.apache.carbondata.spark.rdd
 
 import java.io.IOException
 
-import org.apache.spark.sql.execution.command.SplitPartitionCallableModel
+import org.apache.spark.sql.execution.command.{AlterPartitionModel, SplitPartitionCallableModel}
 import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.spark.{PartitionFactory, SplitResultImpl}
+import org.apache.carbondata.spark.{AlterPartitionResultImpl, PartitionFactory}
 
 object PartitionSplitter {
 
   val logger = LogServiceFactory.getLogService(PartitionSplitter.getClass.getName)
 
   def triggerPartitionSplit(splitPartitionCallableModel: SplitPartitionCallableModel): Unit = {
-     val sc = splitPartitionCallableModel.sqlContext.sparkContext
+
+     val alterPartitionModel = new AlterPartitionModel(splitPartitionCallableModel.carbonLoadModel,
+       splitPartitionCallableModel.segmentId,
+       splitPartitionCallableModel.oldPartitionIds,
+       splitPartitionCallableModel.sqlContext
+     )
      val partitionId = splitPartitionCallableModel.partitionId
-     val storePath = splitPartitionCallableModel.storePath
-     val segmentId = splitPartitionCallableModel.segmentId
-     val oldPartitionIdList = splitPartitionCallableModel.oldPartitionIdList
      val carbonLoadModel = splitPartitionCallableModel.carbonLoadModel
      val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
      val identifier = carbonTable.getAbsoluteTableIdentifier
@@ -53,25 +55,17 @@ object PartitionSplitter {
      for (i <- 0 until bucketNumber) {
        val bucketId = i
        val rdd = new CarbonScanPartitionRDD(
-         sc,
-         Seq(partitionId),
-         storePath,
-         segmentId,
-         bucketId,
-         oldPartitionIdList,
+         alterPartitionModel,
          carbonTableIdentifier,
-         carbonLoadModel
+         Seq(partitionId),
+         bucketId
        ).partitionBy(partitioner).map(_._2)
 
-       val splitStatus = new AlterTableSplitPartitionRDD(sc,
-         new SplitResultImpl(),
+       val splitStatus = new AlterTableLoadPartitionRDD(alterPartitionModel,
+         new AlterPartitionResultImpl(),
          Seq(partitionId),
-         segmentId,
          bucketId,
-         carbonLoadModel,
          identifier,
-         storePath,
-         oldPartitionIdList,
          rdd).collect()
 
        if (splitStatus.length == 0) {
@@ -89,8 +83,8 @@ object PartitionSplitter {
      if (finalSplitStatus) {
        try {
          PartitionUtils.
-           deleteOriginalCarbonFile(identifier, segmentId, Seq(partitionId).toList,
-             oldPartitionIdList, storePath, databaseName, tableName, partitionInfo, carbonLoadModel)
+           deleteOriginalCarbonFile(alterPartitionModel, identifier, Seq(partitionId).toList
+             , databaseName, tableName, partitionInfo)
        } catch {
          case e: IOException => sys.error(s"Exception while delete original carbon files " +
          e.getMessage)

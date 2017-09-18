@@ -92,6 +92,11 @@ public class PartitionInfo implements Serializable {
     numPartitions = numPartitions - 1 + newPartitionNumbers;
   }
 
+  public void dropPartition(int index) {
+    partitionIds.remove(index);
+    numPartitions--;
+  }
+
   public List<ColumnSchema> getColumnSchemaList() {
     return columnSchemaList;
   }
