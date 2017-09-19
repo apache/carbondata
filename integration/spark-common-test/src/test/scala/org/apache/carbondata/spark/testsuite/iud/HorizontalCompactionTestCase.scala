@@ -23,11 +23,12 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
-
 class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "false")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
     sql("""drop database if exists iud4 cascade""")
     sql("""create database iud4""")
     sql("""use iud4""")
@@ -49,8 +50,6 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled, "true")
   }
-
-
 
   test("test IUD Horizontal Compaction Update Alter Clean.") {
     sql("""drop database if exists iud4 cascade""")
@@ -122,7 +121,6 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     )
     sql("""drop table dest2""")
   }
-
 
   test("test IUD Horizontal Compaction Delete") {
     sql("""drop database if exists iud4 cascade""")
@@ -306,8 +304,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     )
     sql("""drop table t_carbn01""")
   }
-
-
+  
   test("test IUD Horizontal Compaction Segment Delete Test Case") {
     sql("""drop database if exists iud4 cascade""")
     sql("""create database iud4""")
@@ -359,6 +356,8 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists iud4 cascade")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled , "true")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
   }
 
 }
