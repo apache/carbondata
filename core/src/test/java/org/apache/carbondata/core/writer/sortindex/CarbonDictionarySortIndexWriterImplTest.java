@@ -27,6 +27,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
@@ -56,13 +57,13 @@ public class CarbonDictionarySortIndexWriterImplTest {
         new CarbonTableIdentifier("testSchema", "carbon", UUID.randomUUID().toString());
     columnIdentifier = new ColumnIdentifier("Name", null, null);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier, columnIdentifier.getDataType(),
-        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
+        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier, CarbonTestUtil.configuration));
     dictionaryWriter =
-        new CarbonDictionaryWriterImpl(storePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier);
+        new CarbonDictionaryWriterImpl(storePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier, CarbonTestUtil.configuration);
     dictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier, storePath);
+        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier, storePath, CarbonTestUtil.configuration);
     carbonDictionarySortIndexReader =
-        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier, storePath);
+        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier, storePath, CarbonTestUtil.configuration);
   }
 
   /**
@@ -76,7 +77,7 @@ public class CarbonDictionarySortIndexWriterImplTest {
     String metaFolderPath =
         storePath + File.separator + carbonTableIdentifier.getDatabaseName() + File.separator
             + carbonTableIdentifier.getTableName() + File.separator + "Metadata";
-    CarbonUtil.checkAndCreateFolder(metaFolderPath);
+    CarbonUtil.checkAndCreateFolder(CarbonTestUtil.configuration, metaFolderPath);
 
     List<int[]> indexList = prepareExpectedData();
     int[] data = indexList.get(0);

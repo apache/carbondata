@@ -37,6 +37,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hive.common.type.HiveDecimal;
 import org.apache.hadoop.hive.serde2.io.DateWritable;
 import org.apache.hadoop.hive.serde2.io.DoubleWritable;
@@ -74,7 +75,8 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
    * @param absoluteTableIdentifier table identifier
    */
   @Override public void initialize(CarbonColumn[] carbonColumns,
-      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
+      AbsoluteTableIdentifier absoluteTableIdentifier,
+      Configuration configuration) throws IOException {
     this.carbonColumns = carbonColumns;
     dictionaries = new Dictionary[carbonColumns.length];
     dataTypes = new DataType[carbonColumns.length];
@@ -83,12 +85,13 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
           .hasEncoding(Encoding.DIRECT_DICTIONARY) && !carbonColumns[i].isComplex()) {
         CacheProvider cacheProvider = CacheProvider.getInstance();
         Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
-            .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath());
+            .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath(),
+                configuration);
         dataTypes[i] = carbonColumns[i].getDataType();
         dictionaries[i] = forwardDictionaryCache.get(
             new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier(),
                 carbonColumns[i].getColumnIdentifier(), dataTypes[i],
-                CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)));
+                CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier, configuration)));
       } else {
         dataTypes[i] = carbonColumns[i].getDataType();
       }

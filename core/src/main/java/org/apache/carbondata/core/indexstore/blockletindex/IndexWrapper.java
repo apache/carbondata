@@ -25,16 +25,18 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Wrapper of abstract index
  * TODO it could be removed after refactor
  */
 public class IndexWrapper extends AbstractIndex {
 
-  public IndexWrapper(List<TableBlockInfo> blockInfos) {
+  public IndexWrapper(List<TableBlockInfo> blockInfos, Configuration configuration) {
     DataFileFooter fileFooter = null;
     try {
-      fileFooter = CarbonUtil.readMetadatFile(blockInfos.get(0));
+      fileFooter = CarbonUtil.readMetadatFile(blockInfos.get(0), configuration);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }

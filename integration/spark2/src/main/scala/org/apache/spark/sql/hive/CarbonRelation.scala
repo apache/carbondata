@@ -22,6 +22,7 @@ import scala.Array.canBuildFrom
 import scala.collection.JavaConverters._
 import scala.util.parsing.combinator.RegexParsers
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Statistics}
@@ -41,7 +42,8 @@ case class CarbonRelation(
     databaseName: String,
     tableName: String,
     var metaData: CarbonMetaData,
-    tableMeta: TableMeta)
+    tableMeta: TableMeta,
+    configuration: Configuration)
   extends LeafNode with MultiInstanceRelation {
 
   def recursiveMethod(dimName: String, childDim: CarbonDimension): String = {
@@ -84,7 +86,7 @@ case class CarbonRelation(
   }
 
   override def newInstance(): LogicalPlan = {
-    CarbonRelation(databaseName, tableName, metaData, tableMeta)
+    CarbonRelation(databaseName, tableName, metaData, tableMeta, configuration)
       .asInstanceOf[this.type]
   }
 
@@ -195,16 +197,17 @@ case class CarbonRelation(
 
   def sizeInBytes: Long = {
     val tableStatusNewLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
-      tableMeta.carbonTable.getAbsoluteTableIdentifier)
+      tableMeta.carbonTable.getAbsoluteTableIdentifier, configuration)
 
     if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
       val tablePath = CarbonStorePath.getCarbonTablePath(
         tableMeta.storePath,
-        tableMeta.carbonTableIdentifier).getPath
+        tableMeta.carbonTableIdentifier,
+        configuration).getPath
       val fileType = FileFactory.getFileType(tablePath)
-      if(FileFactory.isFileExist(tablePath, fileType)) {
+      if(FileFactory.isFileExist(configuration, tablePath, fileType)) {
         tableStatusLastUpdateTime = tableStatusNewLastUpdatedTime
-        sizeInBytesLocalValue = FileFactory.getDirectorySize(tablePath)
+        sizeInBytesLocalValue = FileFactory.getDirectorySize(configuration, tablePath)
       }
     }
     sizeInBytesLocalValue

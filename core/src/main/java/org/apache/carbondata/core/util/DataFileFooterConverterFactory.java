@@ -18,6 +18,8 @@ package org.apache.carbondata.core.util;
 
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Factory class to get the thrift reader object based on version
  */
@@ -52,15 +54,15 @@ public class DataFileFooterConverterFactory {
    * @return footer reader instance
    */
   public AbstractDataFileFooterConverter getDataFileFooterConverter(
-      final ColumnarFormatVersion version) {
+      final ColumnarFormatVersion version, Configuration configuration) {
     switch (version) {
       case V1:
-        return new DataFileFooterConverter();
+        return new DataFileFooterConverter(configuration);
       case V2:
-        return new DataFileFooterConverter2();
+        return new DataFileFooterConverter2(configuration);
       case V3:
       default:
-        return new DataFileFooterConverterV3();
+        return new DataFileFooterConverterV3(configuration);
     }
   }
 

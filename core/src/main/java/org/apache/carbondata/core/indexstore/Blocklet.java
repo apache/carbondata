@@ -19,8 +19,7 @@ package org.apache.carbondata.core.indexstore;
 import java.io.IOException;
 import java.io.Serializable;
 
-import org.apache.carbondata.core.datastore.impl.FileFactory;
-
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
@@ -64,9 +63,9 @@ public class Blocklet implements Serializable {
     this.detailInfo = detailInfo;
   }
 
-  public void updateLocations() throws IOException {
+  public void updateLocations(Configuration configuration) throws IOException {
     Path path = new Path(this.path);
-    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    FileSystem fs = path.getFileSystem(configuration);
     RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(path);
     LocatedFileStatus fileStatus = iter.next();
     location = fileStatus.getBlockLocations()[0].getHosts();

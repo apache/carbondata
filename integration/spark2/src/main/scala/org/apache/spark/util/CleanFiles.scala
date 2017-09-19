@@ -17,7 +17,7 @@
 
 package org.apache.spark.util
 
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, SparkSession, SparkSQLUtil}
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.api.CarbonStore
@@ -43,7 +43,8 @@ object CleanFiles {
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.
       lookupRelation(Some(dbName), tableName)(spark).asInstanceOf[CarbonRelation].
       tableMeta.carbonTable
-    CarbonStore.cleanFiles(dbName, tableName, storePath, carbonTable, forceTableClean)
+    CarbonStore.cleanFiles(dbName, tableName, storePath, carbonTable, forceTableClean,
+      SparkSQLUtil.newHadoopConf(spark))
   }
 
   def main(args: Array[String]): Unit = {
@@ -60,8 +61,8 @@ object CleanFiles {
       forceTableClean = args(2).toBoolean
     }
     val spark = TableAPIUtil.spark(storePath, s"CleanFiles: $dbName.$tableName")
-    CarbonEnv.getInstance(spark).carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(spark).storePath)
+    CarbonEnv.getInstance(spark).carbonMetastore.checkSchemasModifiedTimeAndReloadTables(
+      SparkSQLUtil.newHadoopConf(spark), CarbonEnv.getInstance(spark).storePath)
     cleanFiles(spark, dbName, tableName, storePath, forceTableClean)
   }
 }

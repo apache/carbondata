@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.format.FileHeader;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 
 /**
@@ -31,7 +32,10 @@ public class CarbonHeaderReader {
   //Fact file path
   private String filePath;
 
-  public CarbonHeaderReader(String filePath) {
+  private Configuration configuration;
+
+  public CarbonHeaderReader(Configuration configuration, String filePath) {
+    this.configuration = configuration;
     this.filePath = filePath;
   }
 
@@ -58,7 +62,7 @@ public class CarbonHeaderReader {
    */
   private ThriftReader openThriftReader(String filePath) {
 
-    return new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
+    return new ThriftReader(configuration, filePath, new ThriftReader.TBaseCreator() {
       @Override public TBase create() {
         return new FileHeader();
       }

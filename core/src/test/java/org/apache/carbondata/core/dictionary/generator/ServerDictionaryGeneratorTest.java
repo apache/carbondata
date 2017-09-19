@@ -30,6 +30,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 
 import org.junit.After;
 import org.junit.Before;
@@ -98,7 +99,7 @@ public class ServerDictionaryGeneratorTest {
     empKey.setTableUniqueId("1");
     empKey.setColumnName(empColumnSchema.getColumnName());
     empKey.setData("FirstKey");
-    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable);
+    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable, CarbonTestUtil.configuration);
     Integer value = serverDictionaryGenerator.generateKey(empKey);
     assertEquals(new Integer(2), value);
   }
@@ -111,7 +112,7 @@ public class ServerDictionaryGeneratorTest {
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setTableUniqueId("1");
     firstKey.setData("FirstKey");
-    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable);
+    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable, CarbonTestUtil.configuration);
     Integer value = serverDictionaryGenerator.generateKey(firstKey);
     assertEquals(new Integer(2), value);
     DictionaryMessage secondKey = new DictionaryMessage();
@@ -129,7 +130,7 @@ public class ServerDictionaryGeneratorTest {
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setTableUniqueId("1");
     firstKey.setData("FirstKey");
-    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable);
+    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable, CarbonTestUtil.configuration);
     Integer value = serverDictionaryGenerator.generateKey(firstKey);
     assertEquals(new Integer(2), value);
     DictionaryMessage secondKey = new DictionaryMessage();
@@ -148,7 +149,7 @@ public class ServerDictionaryGeneratorTest {
     empKey.setData("FirstKey");
     empKey.setTableUniqueId("1");
     empKey.setColumnName(ageColumnSchema.getColumnName());
-    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable);
+    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable, CarbonTestUtil.configuration);
     serverDictionaryGenerator.generateKey(empKey);
     assertEquals(new Integer(2), serverDictionaryGenerator.size(empKey));
 
@@ -175,7 +176,7 @@ public class ServerDictionaryGeneratorTest {
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setTableUniqueId("1");
     firstKey.setData("FirstKey");
-    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable);
+    serverDictionaryGenerator.initializeGeneratorForTable(carbonTable, CarbonTestUtil.configuration);
 
     //Update generator with a new dimension
 

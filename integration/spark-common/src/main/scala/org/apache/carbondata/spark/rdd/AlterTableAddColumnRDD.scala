@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.spark.rdd
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{Partition, SparkContext, TaskContext}
-import org.apache.spark.rdd.RDD
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -51,8 +51,9 @@ class AddColumnPartition(rddId: Int, idx: Int, schema: ColumnSchema) extends Par
 class AlterTableAddColumnRDD[K, V](sc: SparkContext,
     @transient newColumns: Seq[ColumnSchema],
     carbonTableIdentifier: CarbonTableIdentifier,
-    carbonStorePath: String)
-  extends CarbonRDD[(Int, String)](sc, Nil) {
+    carbonStorePath: String,
+    @transient configuration: Configuration)
+  extends CarbonRDD[(Int, String)](sc, Nil, configuration) {
 
   val lockType: String = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOCK_TYPE,
     CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
@@ -69,12 +70,13 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
     val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     val iter = new Iterator[(Int, String)] {
       try {
+        val hadoopConf = getConf
         val columnSchema = split.asInstanceOf[AddColumnPartition].columnSchema
         // create dictionary file if it is a dictionary column
         if (columnSchema.hasEncoding(Encoding.DICTIONARY) &&
             !columnSchema.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           val carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(carbonStorePath, carbonTableIdentifier)
+            .getCarbonTablePath(carbonStorePath, carbonTableIdentifier, hadoopConf)
           var rawData: String = null
           if (null != columnSchema.getDefaultValue) {
             rawData = new String(columnSchema.getDefaultValue,
@@ -84,8 +86,8 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
           // Create table and metadata folders if not exist
           val metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath
           val fileType = FileFactory.getFileType(metadataDirectoryPath)
-          if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
-            FileFactory.mkdirs(metadataDirectoryPath, fileType)
+          if (!FileFactory.isFileExist(hadoopConf, metadataDirectoryPath, fileType)) {
+            FileFactory.mkdirs(hadoopConf, metadataDirectoryPath, fileType)
           }
           GlobalDictionaryUtil
             .loadDefaultDictionaryValueForNewColumn(carbonTablePath,

@@ -61,14 +61,14 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
       CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-    carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
+    carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(hadoopConf, carbonLoadModel))
     // Create table and metadata folders if not exist
     val carbonTablePath = CarbonStorePath
-      .getCarbonTablePath(table.getStorePath, table.getCarbonTableIdentifier)
+      .getCarbonTablePath(table.getStorePath, table.getCarbonTableIdentifier, hadoopConf)
     val metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath
     val fileType = FileFactory.getFileType(metadataDirectoryPath)
-    if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
-      FileFactory.mkdirs(metadataDirectoryPath, fileType)
+    if (!FileFactory.isFileExist(hadoopConf, metadataDirectoryPath, fileType)) {
+      FileFactory.mkdirs(hadoopConf, metadataDirectoryPath, fileType)
     }
     carbonLoadModel
   }
@@ -143,6 +143,7 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     val carbonLoadModel = buildCarbonLoadModel(sampleRelation, null, header, sampleAllDictionaryFile)
     GlobalDictionaryUtil
       .generateGlobalDictionary(sqlContext,
+        hadoopConf,
         carbonLoadModel,
         sampleRelation.tableMeta.storePath)
 
@@ -153,8 +154,8 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   test("Support generate global dictionary from all dictionary files for complex type") {
     val header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber"
     val carbonLoadModel = buildCarbonLoadModel(complexRelation, null, header, complexAllDictionaryFile)
-    GlobalDictionaryUtil
-      .generateGlobalDictionary(sqlContext,
+    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext,
+      hadoopConf,
       carbonLoadModel,
       complexRelation.tableMeta.storePath)
 

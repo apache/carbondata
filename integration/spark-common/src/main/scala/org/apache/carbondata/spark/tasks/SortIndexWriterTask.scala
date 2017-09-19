@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.spark.tasks
 
+import org.apache.hadoop.conf.Configuration
+
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.datatype.DataType
@@ -40,7 +42,8 @@ class SortIndexWriterTask(
     carbonStoreLocation: String,
     dictionary: Dictionary,
     distinctValues: java.util.List[String],
-    var carbonDictionarySortIndexWriter: CarbonDictionarySortIndexWriter = null) {
+    var carbonDictionarySortIndexWriter: CarbonDictionarySortIndexWriter = null,
+    configuration: Configuration) {
   def execute() {
     try {
       if (distinctValues.size() > 0) {
@@ -49,10 +52,9 @@ class SortIndexWriterTask(
         val dictionarySortInfo: CarbonDictionarySortInfo =
           preparator.getDictionarySortInfo(distinctValues, dictionary,
             dataType)
-        carbonDictionarySortIndexWriter =
-          dictService
-            .getDictionarySortIndexWriter(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
-            carbonStoreLocation)
+        carbonDictionarySortIndexWriter = dictService.getDictionarySortIndexWriter(
+          carbonTableIdentifier, dictionaryColumnUniqueIdentifier, carbonStoreLocation,
+          configuration)
         carbonDictionarySortIndexWriter.writeSortIndex(dictionarySortInfo.getSortIndex)
         carbonDictionarySortIndexWriter
           .writeInvertedSortIndex(dictionarySortInfo.getSortIndexInverted)

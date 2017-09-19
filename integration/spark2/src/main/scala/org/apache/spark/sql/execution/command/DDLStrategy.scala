@@ -52,7 +52,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         }
       case DropTableCommand(identifier, ifNotExists, isView, _)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
-          .isTablePathExists(identifier)(sparkSession) =>
+          .isTablePathExists(identifier, sparkSession.sessionState.newHadoopConf())(sparkSession) =>
         ExecutedCommandExec(
           CarbonDropTableCommand(ifNotExists, identifier.database,
             identifier.table.toLowerCase)) :: Nil
@@ -62,7 +62,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       _, child: LogicalPlan, overwrite, _) =>
         ExecutedCommandExec(LoadTableByInsert(relation, child, overwrite.enabled)) :: Nil
       case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
-        CarbonUtil.createDatabaseDirectory(dbName, CarbonEnv.getInstance(sparkSession).storePath)
+        CarbonUtil.createDatabaseDirectory(sparkSession.sessionState.newHadoopConf(), dbName,
+          CarbonEnv.getInstance(sparkSession).storePath)
         ExecutedCommandExec(createDb) :: Nil
       case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>
         ExecutedCommandExec(CarbonDropDatabaseCommand(drop)) :: Nil
@@ -132,7 +133,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if tableDesc.provider.get != DDLUtils.HIVE_PROVIDER
            && tableDesc.provider.get.equals("org.apache.spark.sql.CarbonSource") =>
         val updatedCatalog =
-          CarbonSource.updateCatalogTableWithCarbonSchema(tableDesc, sparkSession)
+          CarbonSource.updateCatalogTableWithCarbonSchema(tableDesc, sparkSession,
+            sparkSession.sessionState.newHadoopConf())
         val cmd =
           CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists = mode == SaveMode.Ignore)
         ExecutedCommandExec(cmd) :: Nil

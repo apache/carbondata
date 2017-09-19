@@ -37,6 +37,8 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ObjectSizeCalculator;
 import org.apache.carbondata.core.util.TaskMetricsMap;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This class implements methods to create dictionary cache which will hold
  * dictionary chunks for look up of surrogate keys and values
@@ -62,8 +64,9 @@ public class ForwardDictionaryCache<K extends
    * @param carbonStorePath
    * @param carbonLRUCache
    */
-  public ForwardDictionaryCache(String carbonStorePath, CarbonLRUCache carbonLRUCache) {
-    super(carbonStorePath, carbonLRUCache);
+  public ForwardDictionaryCache(Configuration configuration, String carbonStorePath,
+      CarbonLRUCache carbonLRUCache) {
+    super(configuration, carbonStorePath, carbonLRUCache);
   }
 
   /**

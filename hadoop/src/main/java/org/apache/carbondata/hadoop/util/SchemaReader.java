@@ -29,6 +29,7 @@ import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 
 /**
@@ -36,13 +37,15 @@ import org.apache.thrift.TBase;
  */
 public class SchemaReader {
 
-  public static CarbonTable readCarbonTableFromStore(AbsoluteTableIdentifier identifier)
+  public static CarbonTable readCarbonTableFromStore(AbsoluteTableIdentifier identifier,
+      Configuration configuration)
       throws IOException {
-    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier);
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier, configuration);
     String schemaFilePath = carbonTablePath.getSchemaFilePath();
-    if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL) ||
-        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS) ||
-        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS)) {
+    if (FileFactory.isFileExist(configuration, schemaFilePath, FileFactory.FileType.LOCAL) ||
+        FileFactory.isFileExist(configuration, schemaFilePath, FileFactory.FileType.HDFS) ||
+        FileFactory.isFileExist(configuration, schemaFilePath, FileFactory.FileType.VIEWFS) ||
+        FileFactory.isFileExist(configuration, schemaFilePath, FileFactory.FileType.S3)) {
       String tableName = identifier.getCarbonTableIdentifier().getTableName();
 
       ThriftReader.TBaseCreator createTBase = new ThriftReader.TBaseCreator() {
@@ -51,7 +54,7 @@ public class SchemaReader {
         }
       };
       ThriftReader thriftReader =
-          new ThriftReader(carbonTablePath.getSchemaFilePath(), createTBase);
+          new ThriftReader(configuration, carbonTablePath.getSchemaFilePath(), createTBase);
       thriftReader.open();
       org.apache.carbondata.format.TableInfo tableInfo =
           (org.apache.carbondata.format.TableInfo) thriftReader.read();

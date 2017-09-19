@@ -33,6 +33,7 @@ import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.Gson;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * This class perform the functionality of reading the delete delta file
@@ -52,6 +53,8 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
   private DataInputStream dataInputStream = null;
 
   private InputStreamReader inputStream = null;
+
+  private Configuration configuration;
 
   private static final int DEFAULT_BUFFER_SIZE = 258;
 
@@ -78,7 +81,7 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
     // Configure Buffer based on our requirement
     char[] buffer = new char[DEFAULT_BUFFER_SIZE];
     StringWriter sw = new StringWriter();
-    dataInputStream = FileFactory.getDataInputStream(filePath, fileType);
+    dataInputStream = FileFactory.getDataInputStream(configuration, filePath, fileType);
     inputStream = new InputStreamReader(dataInputStream,
         CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT);
     int n = 0;
@@ -100,10 +103,10 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
     InputStreamReader inStream = null;
     DeleteDeltaBlockDetails deleteDeltaBlockDetails;
     AtomicFileOperations fileOperation =
-        new AtomicFileOperationsImpl(filePath, FileFactory.getFileType(filePath));
+        new AtomicFileOperationsImpl(configuration, filePath, FileFactory.getFileType(filePath));
 
     try {
-      if (!FileFactory.isFileExist(filePath, FileFactory.getFileType(filePath))) {
+      if (!FileFactory.isFileExist(configuration, filePath, FileFactory.getFileType(filePath))) {
         return new DeleteDeltaBlockDetails("");
       }
       dataInputStream = fileOperation.openForRead();

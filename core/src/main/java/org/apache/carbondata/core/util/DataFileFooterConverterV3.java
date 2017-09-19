@@ -31,7 +31,13 @@ import org.apache.carbondata.core.reader.CarbonHeaderReader;
 import org.apache.carbondata.format.FileFooter3;
 import org.apache.carbondata.format.FileHeader;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
+
+  public DataFileFooterConverterV3(Configuration configuration) {
+    this.configuration = configuration;
+  }
 
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta
@@ -49,10 +55,11 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
   @Override public DataFileFooter readDataFileFooter(TableBlockInfo tableBlockInfo)
       throws IOException {
     DataFileFooter dataFileFooter = new DataFileFooter();
-    CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(tableBlockInfo.getFilePath());
+    CarbonHeaderReader carbonHeaderReader =
+        new CarbonHeaderReader(configuration, tableBlockInfo.getFilePath());
     FileHeader fileHeader = carbonHeaderReader.readHeader();
-    CarbonFooterReaderV3 reader =
-        new CarbonFooterReaderV3(tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset());
+    CarbonFooterReaderV3 reader = new CarbonFooterReaderV3(configuration,
+        tableBlockInfo.getFilePath(), tableBlockInfo.getBlockOffset());
     FileFooter3 footer = reader.readFooterVersion3();
     dataFileFooter.setVersionId(ColumnarFormatVersion.valueOf((short) fileHeader.getVersion()));
     dataFileFooter.setNumberOfRows(footer.getNum_rows());
@@ -86,7 +93,8 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
   }
 
   @Override public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
-    CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(tableBlockInfo.getFilePath());
+    CarbonHeaderReader carbonHeaderReader =
+        new CarbonHeaderReader(configuration, tableBlockInfo.getFilePath());
     FileHeader fileHeader = carbonHeaderReader.readHeader();
     List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
     List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();

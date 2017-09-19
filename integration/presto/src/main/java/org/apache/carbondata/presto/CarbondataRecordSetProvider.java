@@ -92,9 +92,9 @@ public class CarbondataRecordSetProvider implements ConnectorRecordSetProvider {
     try {
       Configuration conf = new Configuration();
       conf.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
-      String carbonTablePath = PathFactory.getInstance()
-          .getCarbonTablePath(targetTable.getAbsoluteTableIdentifier().getStorePath(),
-              targetTable.getCarbonTableIdentifier(), null).getPath();
+      String carbonTablePath = PathFactory.getInstance().getCarbonTablePath(
+          targetTable.getAbsoluteTableIdentifier().getStorePath(),
+          targetTable.getCarbonTableIdentifier(), null, conf).getPath();
 
       conf.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
       JobConf jobConf = new JobConf(conf);

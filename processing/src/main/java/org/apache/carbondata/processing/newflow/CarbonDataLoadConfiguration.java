@@ -31,11 +31,15 @@ import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.processing.newflow.converter.DictionaryCardinalityFinder;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class CarbonDataLoadConfiguration {
 
   private DataField[] dataFields;
 
   private AbsoluteTableIdentifier tableIdentifier;
+
+  private Configuration hadoopConf;
 
   private String[] header;
 
@@ -309,5 +313,13 @@ public class CarbonDataLoadConfiguration {
 
   public void setTableSpec(TableSpec tableSpec) {
     this.tableSpec = tableSpec;
+  }
+
+  public Configuration getHadoopConf() {
+    return hadoopConf;
+  }
+
+  public void setHadoopConf(Configuration hadoopConf) {
+    this.hadoopConf = hadoopConf;
   }
 }

@@ -31,6 +31,8 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.hadoop.conf.Configuration;
+
 public final class DeleteLoadFolders {
 
   private static final LogService LOGGER =
@@ -51,19 +53,21 @@ public final class DeleteLoadFolders {
    * @return
    */
   private static String getSegmentPath(String dbName, String tableName, String storeLocation,
-      int partitionId, LoadMetadataDetails oneLoad) {
+      int partitionId, LoadMetadataDetails oneLoad, Configuration configuration) {
     CarbonTablePath carbon = new CarbonStorePath(storeLocation).getCarbonTablePath(
-        new CarbonTableIdentifier(dbName, tableName, ""));
+        new CarbonTableIdentifier(dbName, tableName, ""), configuration);
     String segmentId = oneLoad.getLoadName();
     return carbon.getCarbonDataDirectoryPath("" + partitionId, segmentId);
   }
 
-  private static boolean physicalFactAndMeasureMetadataDeletion(String path) {
+  private static boolean physicalFactAndMeasureMetadataDeletion(Configuration configuration,
+      String path) {
 
     boolean status = false;
     try {
-      if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
-        CarbonFile file = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
+      if (FileFactory.isFileExist(configuration, path, FileFactory.getFileType(path))) {
+        CarbonFile file =
+            FileFactory.getCarbonFile(configuration, path, FileFactory.getFileType(path));
         CarbonFile[] filesToBeDeleted = file.listFiles(new CarbonFileFilter() {
 
           @Override public boolean accept(CarbonFile file) {
@@ -126,15 +130,17 @@ public final class DeleteLoadFolders {
   }
 
   public static boolean deleteLoadFoldersFromFileSystem(String dbName, String tableName,
-      String storeLocation, boolean isForceDelete, LoadMetadataDetails[] details) {
+      String storeLocation, boolean isForceDelete, LoadMetadataDetails[] details,
+      Configuration configuration) {
 
     boolean isDeleted = false;
 
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneLoad : details) {
         if (checkIfLoadCanBeDeleted(oneLoad, isForceDelete)) {
-          String path = getSegmentPath(dbName, tableName, storeLocation, 0, oneLoad);
-          boolean deletionStatus = physicalFactAndMeasureMetadataDeletion(path);
+          String path =
+              getSegmentPath(dbName, tableName, storeLocation, 0, oneLoad, configuration);
+          boolean deletionStatus = physicalFactAndMeasureMetadataDeletion(configuration, path);
           if (deletionStatus) {
             isDeleted = true;
             oneLoad.setVisibility("false");

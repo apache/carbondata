@@ -71,6 +71,7 @@ object CarbonDataStoreCreator {
 
   private val logger = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
+  private val hadoopConf = new Configuration()
   /**
    * Create store without any restructure
    */
@@ -291,7 +292,7 @@ object CarbonDataStoreCreator {
     tableInfo.setFactTable(tableSchema)
     val carbonTablePath: CarbonTablePath = CarbonStorePath.getCarbonTablePath(
       absoluteTableIdentifier.getStorePath,
-      absoluteTableIdentifier.getCarbonTableIdentifier)
+      absoluteTableIdentifier.getCarbonTableIdentifier, hadoopConf)
     val schemaFilePath: String = carbonTablePath.getSchemaFilePath
     val schemaMetadataPath: String =
       CarbonTablePath.getFolderContainingFile(schemaFilePath)
@@ -311,10 +312,10 @@ object CarbonDataStoreCreator {
       .add(schemaEvolutionEntry)
     val fileType: FileFactory.FileType =
       FileFactory.getFileType(schemaMetadataPath)
-    if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
-      FileFactory.mkdirs(schemaMetadataPath, fileType)
+    if (!FileFactory.isFileExist(hadoopConf, schemaMetadataPath, fileType)) {
+      FileFactory.mkdirs(hadoopConf, schemaMetadataPath, fileType)
     }
-    val thriftWriter: ThriftWriter = new ThriftWriter(schemaFilePath, false)
+    val thriftWriter: ThriftWriter = new ThriftWriter(hadoopConf, schemaFilePath, false)
     thriftWriter.open()
     thriftWriter.write(thriftTableInfo)
     thriftWriter.close()
@@ -349,7 +350,7 @@ object CarbonDataStoreCreator {
     }
     val dictCache: Cache[DictionaryColumnUniqueIdentifier, ReverseDictionary] = CacheProvider
       .getInstance.createCache(CacheType.REVERSE_DICTIONARY,
-      absoluteTableIdentifier.getStorePath)
+      absoluteTableIdentifier.getStorePath, hadoopConf)
     for (i <- set.indices) {
       val columnIdentifier: ColumnIdentifier =
         new ColumnIdentifier(dims.get(i).getColumnId, null, null)
@@ -359,12 +360,12 @@ object CarbonDataStoreCreator {
           columnIdentifier,
           columnIdentifier.getDataType,
           CarbonStorePath.getCarbonTablePath(table.getStorePath,
-            table.getCarbonTableIdentifier)
+            table.getCarbonTableIdentifier, hadoopConf)
         )
       val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(
         absoluteTableIdentifier.getStorePath,
         absoluteTableIdentifier.getCarbonTableIdentifier,
-        dictionaryColumnUniqueIdentifier)
+        dictionaryColumnUniqueIdentifier, hadoopConf)
       for (value <- set(i)) {
         writer.write(value)
       }
@@ -377,7 +378,7 @@ object CarbonDataStoreCreator {
             columnIdentifier,
             dims.get(i).getDataType,
             CarbonStorePath.getCarbonTablePath(table.getStorePath,
-              table.getCarbonTableIdentifier)
+              table.getCarbonTableIdentifier, hadoopConf)
           ))
         .asInstanceOf[Dictionary]
       val preparator: CarbonDictionarySortInfoPreparator =
@@ -391,7 +392,8 @@ object CarbonDataStoreCreator {
         new CarbonDictionarySortIndexWriterImpl(
           absoluteTableIdentifier.getCarbonTableIdentifier,
           dictionaryColumnUniqueIdentifier,
-          absoluteTableIdentifier.getStorePath)
+          absoluteTableIdentifier.getStorePath,
+          hadoopConf)
       try {
         carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex)
         carbonDictionaryWriter.writeInvertedSortIndex(
@@ -487,7 +489,7 @@ object CarbonDataStoreCreator {
       blockDetails,
       hadoopAttemptContext)
     new DataLoadExecutor()
-      .execute(loadModel, Array(storeLocation), Array(readerIterator))
+      .execute(loadModel, Array(storeLocation), Array(readerIterator), hadoopConf)
     info.setDatabaseName(databaseName)
     info.setTableName(tableName)
     writeLoadMetadata(loadModel.getCarbonDataLoadSchema,
@@ -532,6 +534,7 @@ object CarbonDataStoreCreator {
                                      CarbonCommonConstants.LOADMETADATA_FILENAME
       val gsonObjectToWrite: Gson = new Gson()
       val writeOperation: AtomicFileOperations = new AtomicFileOperationsImpl(
+        hadoopConf,
         dataLoadLocation,
         FileFactory.getFileType(dataLoadLocation))
       val dataOutputStream =

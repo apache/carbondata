@@ -19,10 +19,10 @@ package org.apache.carbondata.presto
 import com.facebook.presto.spi.block.SliceArrayBlock
 import io.airlift.slice.{Slice, Slices}
 import io.airlift.slice.Slices._
+import org.apache.hadoop.conf.Configuration
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
-import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryChunksWrapper,
-DictionaryColumnUniqueIdentifier}
+import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryChunksWrapper, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
@@ -47,7 +47,7 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
    */
 
   override def initialize(carbonColumns: Array[CarbonColumn],
-      absoluteTableIdentifier: AbsoluteTableIdentifier) {
+      absoluteTableIdentifier: AbsoluteTableIdentifier, configuration: Configuration) {
 
     dictionaries = new Array[Dictionary](carbonColumns.length)
     dataTypes = new Array[DataType](carbonColumns.length)
@@ -59,8 +59,8 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
                                         !carbonColumn.isComplex) {
         val cacheProvider: CacheProvider = CacheProvider.getInstance
         val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-          cacheProvider
-            .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath)
+          cacheProvider.createCache(CacheType.FORWARD_DICTIONARY,
+            absoluteTableIdentifier.getStorePath, configuration)
         dataTypes(index) = carbonColumn.getDataType
         dictionaries(index) = forwardDictionaryCache
           .get(new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier

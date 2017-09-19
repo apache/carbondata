@@ -113,8 +113,6 @@ public final class CarbonUtil {
    */
   private static final int CONST_HUNDRED = 100;
 
-  private static final Configuration conf = new Configuration(true);
-
   private CarbonUtil() {
 
   }
@@ -613,14 +611,15 @@ public final class CarbonUtil {
    * @return
    * @throws IOException
    */
-  public static int[] getCardinalityFromLevelMetadataFile(String levelPath) throws IOException {
+  public static int[] getCardinalityFromLevelMetadataFile(Configuration configuration,
+      String levelPath) throws IOException {
     DataInputStream dataInputStream = null;
     int[] cardinality = null;
 
     try {
-      if (FileFactory.isFileExist(levelPath, FileFactory.getFileType(levelPath))) {
-        dataInputStream =
-            FileFactory.getDataInputStream(levelPath, FileFactory.getFileType(levelPath));
+      if (FileFactory.isFileExist(configuration, levelPath, FileFactory.getFileType(levelPath))) {
+        dataInputStream = FileFactory.getDataInputStream(configuration, levelPath,
+            FileFactory.getFileType(levelPath));
 
         cardinality = new int[dataInputStream.readInt()];
 
@@ -699,9 +698,9 @@ public final class CarbonUtil {
    *
    * @param filePath
    */
-  public static String checkAndAppendHDFSUrl(String filePath) {
+  public static String checkAndAppendHDFSUrl(Configuration configuration, String filePath) {
     String currentPath = filePath;
-    String defaultFsUrl = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
+    String defaultFsUrl = configuration.get(CarbonCommonConstants.FS_DEFAULT_FS);
     String baseDFSUrl = CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL, "");
     if (checkIfPrefixExists(filePath)) {
@@ -725,19 +724,22 @@ public final class CarbonUtil {
 
   private static boolean checkIfPrefixExists(String path) {
     final String lowerPath = path.toLowerCase();
-    return lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || lowerPath
-        .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || lowerPath
-        .startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX) || lowerPath
-        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX);
+    return lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3A_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3_PREFIX);
   }
 
   /**
    * This method will check the existence of a file at a given path
    */
-  public static boolean isFileExists(String fileName) {
+  public static boolean isFileExists(Configuration configuration, String fileName) {
     try {
       FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-      if (FileFactory.isFileExist(fileName, fileType)) {
+      if (FileFactory.isFileExist(configuration, fileName, fileType)) {
         return true;
       }
     } catch (IOException e) {
@@ -749,14 +751,14 @@ public final class CarbonUtil {
   /**
    * This method will check and create the given path
    */
-  public static boolean checkAndCreateFolder(String path) {
+  public static boolean checkAndCreateFolder(Configuration configuration, String path) {
     boolean created = false;
     try {
       FileFactory.FileType fileType = FileFactory.getFileType(path);
-      if (FileFactory.isFileExist(path, fileType)) {
+      if (FileFactory.isFileExist(configuration, path, fileType)) {
         created = true;
       } else {
-        created = FileFactory.mkdirs(path, fileType);
+        created = FileFactory.mkdirs(configuration, path, fileType);
       }
     } catch (IOException e) {
       LOGGER.error(e.getMessage());
@@ -767,9 +769,9 @@ public final class CarbonUtil {
   /**
    * This method will return the size of a given file
    */
-  public static long getFileSize(String filePath) {
+  public static long getFileSize(Configuration configuration, String filePath) {
     FileFactory.FileType fileType = FileFactory.getFileType(filePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(filePath, fileType);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(configuration, filePath, fileType);
     return carbonFile.getSize();
   }
 
@@ -908,20 +910,21 @@ public final class CarbonUtil {
   /**
    * Below method will be used to read the data file matadata
    */
-  public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo) throws IOException {
+  public static DataFileFooter readMetadatFile(TableBlockInfo tableBlockInfo,
+      Configuration configuration) throws IOException {
     BlockletDetailInfo detailInfo = tableBlockInfo.getDetailInfo();
     if (detailInfo == null) {
       AbstractDataFileFooterConverter fileFooterConverter =
           DataFileFooterConverterFactory.getInstance()
-              .getDataFileFooterConverter(tableBlockInfo.getVersion());
+              .getDataFileFooterConverter(tableBlockInfo.getVersion(), configuration);
       return fileFooterConverter.readDataFileFooter(tableBlockInfo);
     } else {
       DataFileFooter fileFooter = new DataFileFooter();
       fileFooter.setSchemaUpdatedTimeStamp(detailInfo.getSchemaUpdatedTimeStamp());
       ColumnarFormatVersion version =
           ColumnarFormatVersion.valueOf(detailInfo.getVersionNumber());
-      AbstractDataFileFooterConverter dataFileFooterConverter =
-          DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
+      AbstractDataFileFooterConverter dataFileFooterConverter = DataFileFooterConverterFactory
+          .getInstance().getDataFileFooterConverter(version, configuration);
       fileFooter.setColumnInTable(dataFileFooterConverter.getSchema(tableBlockInfo));
       SegmentInfo segmentInfo = new SegmentInfo();
       segmentInfo.setColumnCardinality(detailInfo.getDimLens());
@@ -964,13 +967,14 @@ public final class CarbonUtil {
    * @param tableBlockInfo
    * @return
    */
-  public static long calculateMetaSize(TableBlockInfo tableBlockInfo) throws IOException {
+  public static long calculateMetaSize(TableBlockInfo tableBlockInfo,
+      Configuration configuration) throws IOException {
     FileHolder fileReader = null;
     try {
       long completeBlockLength = tableBlockInfo.getBlockLength();
       long footerPointer = completeBlockLength - 8;
       String filePath = tableBlockInfo.getFilePath();
-      fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath));
+      fileReader = FileFactory.getFileHolder(configuration, FileFactory.getFileType(filePath));
       long actualFooterOffset = fileReader.readLong(filePath, footerPointer);
       return footerPointer - actualFooterOffset;
     } finally {
@@ -1011,14 +1015,16 @@ public final class CarbonUtil {
    * @param tableBlockInfoList
    * @param absoluteTableIdentifier
    */
-  public static long calculateDriverBTreeSize(String taskId, String bucketNumber,
-      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier) {
+  public static long calculateDriverBTreeSize(Configuration configuration, String taskId,
+      String bucketNumber, List<TableBlockInfo> tableBlockInfoList,
+      AbsoluteTableIdentifier absoluteTableIdentifier) {
     // need to sort the  block info list based for task in ascending  order so
     // it will be sinkup with block index read from file
     Collections.sort(tableBlockInfoList);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
+        absoluteTableIdentifier.getStorePath(),
+        absoluteTableIdentifier.getCarbonTableIdentifier(),
+        configuration);
     // geting the index file path
     //TODO need to pass proper partition number when partiton will be supported
     String carbonIndexFilePath = carbonTablePath
@@ -1026,8 +1032,8 @@ public final class CarbonUtil {
             bucketNumber, CarbonTablePath.DataFileUtil
                 .getTimeStampFromFileName(tableBlockInfoList.get(0).getFilePath()),
             tableBlockInfoList.get(0).getVersion());
-    CarbonFile carbonFile = FileFactory
-        .getCarbonFile(carbonIndexFilePath, FileFactory.getFileType(carbonIndexFilePath));
+    CarbonFile carbonFile = FileFactory.getCarbonFile(configuration, carbonIndexFilePath,
+        FileFactory.getFileType(carbonIndexFilePath));
     // in case of carbonIndex file whole file is meta only so reading complete file.
     return carbonFile.getSize();
   }
@@ -1254,14 +1260,15 @@ public final class CarbonUtil {
    * @throws IOException if any problem while reading
    */
   public static List<DataFileFooter> readCarbonIndexFile(String taskId, String bucketNumber,
-      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier)
-      throws IOException {
+      List<TableBlockInfo> tableBlockInfoList, AbsoluteTableIdentifier absoluteTableIdentifier,
+      Configuration configuration) throws IOException {
     // need to sort the  block info list based for task in ascending  order so
     // it will be sinkup with block index read from file
     Collections.sort(tableBlockInfoList);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
+        absoluteTableIdentifier.getStorePath(),
+        absoluteTableIdentifier.getCarbonTableIdentifier(),
+        configuration);
     // geting the index file path
     //TODO need to pass proper partition number when partiton will be supported
     String carbonIndexFilePath = carbonTablePath
@@ -1269,7 +1276,7 @@ public final class CarbonUtil {
             bucketNumber, CarbonTablePath.DataFileUtil
                 .getTimeStampFromFileName(tableBlockInfoList.get(0).getFilePath()),
             tableBlockInfoList.get(0).getVersion());
-    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter(configuration);
     // read the index info and return
     return fileFooterConverter.getIndexInfo(carbonIndexFilePath, tableBlockInfoList);
   }
@@ -1298,15 +1305,16 @@ public final class CarbonUtil {
    * @param csvFilePath
    * @return
    */
-  public static String readHeader(String csvFilePath) throws IOException {
+  public static String readHeader(Configuration configuration,
+      String csvFilePath) throws IOException {
 
     DataInputStream fileReader = null;
     BufferedReader bufferedReader = null;
     String readLine = null;
 
     try {
-      fileReader =
-          FileFactory.getDataInputStream(csvFilePath, FileFactory.getFileType(csvFilePath));
+      fileReader = FileFactory.getDataInputStream(configuration, csvFilePath,
+          FileFactory.getFileType(csvFilePath));
       bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       readLine = bufferedReader.readLine();
@@ -1601,19 +1609,20 @@ public final class CarbonUtil {
    *                                         tableName and columnIdentifier
    * @return
    */
-  public static boolean isFileExistsForGivenColumn(String carbonStorePath,
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+  public static boolean isFileExistsForGivenColumn(Configuration configuration,
+      String carbonStorePath, DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
         dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-        dictionaryColumnUniqueIdentifier);
+        dictionaryColumnUniqueIdentifier, configuration);
 
     String dictionaryFilePath = carbonTablePath.getDictionaryFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     String dictionaryMetadataFilePath = carbonTablePath.getDictionaryMetaFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     // check if both dictionary and its metadata file exists for a given column
-    return isFileExists(dictionaryFilePath) && isFileExists(dictionaryMetadataFilePath);
+    return isFileExists(configuration, dictionaryFilePath) &&
+        isFileExists(configuration, dictionaryMetadataFilePath);
   }
 
   /**
@@ -1940,15 +1949,15 @@ public final class CarbonUtil {
    * @param schemaFilePath
    * @return
    */
-  public static org.apache.carbondata.format.TableInfo readSchemaFile(String schemaFilePath)
-      throws IOException {
+  public static org.apache.carbondata.format.TableInfo readSchemaFile(Configuration configuration,
+      String schemaFilePath) throws IOException {
     TBaseCreator createTBase = new ThriftReader.TBaseCreator() {
       public org.apache.thrift.TBase<org.apache.carbondata.format.TableInfo,
           org.apache.carbondata.format.TableInfo._Fields> create() {
         return new org.apache.carbondata.format.TableInfo();
       }
     };
-    ThriftReader thriftReader = new ThriftReader(schemaFilePath, createTBase);
+    ThriftReader thriftReader = new ThriftReader(configuration, schemaFilePath, createTBase);
     thriftReader.open();
     org.apache.carbondata.format.TableInfo tableInfo =
         (org.apache.carbondata.format.TableInfo) thriftReader.read();
@@ -1957,8 +1966,9 @@ public final class CarbonUtil {
   }
 
   public static void writeThriftTableToSchemaFile(String schemaFilePath,
-      org.apache.carbondata.format.TableInfo tableInfo) throws IOException {
-    ThriftWriter thriftWriter = new ThriftWriter(schemaFilePath, false);
+      org.apache.carbondata.format.TableInfo tableInfo,
+      Configuration configuration) throws IOException {
+    ThriftWriter thriftWriter = new ThriftWriter(configuration, schemaFilePath, false);
     try {
       thriftWriter.open();
       thriftWriter.write(tableInfo);
@@ -1967,18 +1977,19 @@ public final class CarbonUtil {
     }
   }
 
-  public static void createDatabaseDirectory(String dbName, String storePath) throws IOException {
+  public static void createDatabaseDirectory(Configuration configuration, String dbName,
+      String storePath) throws IOException {
     String databasePath = storePath + File.separator + dbName.toLowerCase();
     FileFactory.FileType fileType = FileFactory.getFileType(databasePath);
-    FileFactory.mkdirs(databasePath, fileType);
+    FileFactory.mkdirs(configuration, databasePath, fileType);
   }
 
-  public static void dropDatabaseDirectory(String dbName, String storePath)
-      throws IOException, InterruptedException {
+  public static void dropDatabaseDirectory(Configuration configuration, String dbName,
+      String storePath) throws IOException, InterruptedException {
     String databasePath = storePath + File.separator + dbName;
     FileFactory.FileType fileType = FileFactory.getFileType(databasePath);
-    if (FileFactory.isFileExist(databasePath, fileType)) {
-      CarbonFile dbPath = FileFactory.getCarbonFile(databasePath, fileType);
+    if (FileFactory.isFileExist(configuration, databasePath, fileType)) {
+      CarbonFile dbPath = FileFactory.getCarbonFile(configuration, databasePath, fileType);
       CarbonUtil.deleteFoldersAndFiles(dbPath);
     }
   }

@@ -28,6 +28,8 @@ import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * DataMap at the table level, user can add any number of datamaps for one table. Depends
  * on the filter condition it can prune the blocklets.
@@ -40,14 +42,17 @@ public final class TableDataMap implements EventListener {
 
   private DataMapFactory dataMapFactory;
 
+  private Configuration configuration;
+
   /**
    * It is called to initialize and load the required table datamap metadata.
    */
   public TableDataMap(AbsoluteTableIdentifier identifier,
-      String dataMapName, DataMapFactory dataMapFactory) {
+      String dataMapName, DataMapFactory dataMapFactory, Configuration configuration) {
     this.identifier = identifier;
     this.dataMapName = dataMapName;
     this.dataMapFactory = dataMapFactory;
+    this.configuration = configuration;
   }
 
   /**
@@ -61,7 +66,7 @@ public final class TableDataMap implements EventListener {
       throws IOException {
     List<Blocklet> blocklets = new ArrayList<>();
     for (String segmentId : segmentIds) {
-      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
+      List<DataMap> dataMaps = dataMapFactory.getDataMaps(configuration, segmentId);
       for (DataMap dataMap : dataMaps) {
         List<Blocklet> pruneBlocklets = dataMap.prune(filterExp);
         blocklets.addAll(addSegmentId(pruneBlocklets, segmentId));
@@ -87,7 +92,7 @@ public final class TableDataMap implements EventListener {
   public List<DataMapDistributable> toDistributable(List<String> segmentIds) throws IOException {
     List<DataMapDistributable> distributables = new ArrayList<>();
     for (String segmentsId : segmentIds) {
-      List<DataMapDistributable> list = dataMapFactory.toDistributable(segmentsId);
+      List<DataMapDistributable> list = dataMapFactory.toDistributable(configuration, segmentsId);
       for (DataMapDistributable distributable: list) {
         distributable.setDataMapName(dataMapName);
         distributable.setSegmentId(segmentsId);

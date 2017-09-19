@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
@@ -72,7 +73,7 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
         .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
     CacheProvider cacheProvider = CacheProvider.getInstance();
     forwardDictionaryCache =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, this.carbonStorePath);
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, this.carbonStorePath, CarbonTestUtil.configuration);
   }
 
   @Test public void get() throws Exception {
@@ -213,7 +214,7 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
             columnIdentifier.getDataType(),
-            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
+            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier, CarbonTestUtil.configuration));
     Map<String, Integer> dataToSurrogateKeyMap = new HashMap<>(data.size());
     int surrogateKey = 0;
     List<Integer> invertedIndexList = new ArrayList<>(data.size());
@@ -234,7 +235,7 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
     }
     CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
         new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
-            carbonStorePath);
+            carbonStorePath, CarbonTestUtil.configuration);
     try {
       dictionarySortIndexWriter.writeSortIndex(sortedIndexList);
       dictionarySortIndexWriter.writeInvertedSortIndex(invertedIndexList);

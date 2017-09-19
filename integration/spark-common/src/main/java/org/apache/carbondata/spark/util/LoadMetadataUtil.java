@@ -21,6 +21,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Utility for load data
  */
@@ -29,8 +31,10 @@ public final class LoadMetadataUtil {
 
   }
 
-  public static boolean isLoadDeletionRequired(String metaDataLocation) {
-    LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
+  public static boolean isLoadDeletionRequired(Configuration configuration,
+      String metaDataLocation) {
+    LoadMetadataDetails[] details =
+        SegmentStatusManager.readLoadMetadata(configuration, metaDataLocation);
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneRow : details) {
         if ((CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneRow.getLoadStatus())

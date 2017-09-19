@@ -22,8 +22,8 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -36,16 +36,16 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(ViewFSCarbonFile.class.getName());
 
-  public ViewFSCarbonFile(String filePath) {
-    super(filePath);
+  public ViewFSCarbonFile(Configuration configuration, String filePath) {
+    super(configuration, filePath);
   }
 
-  public ViewFSCarbonFile(Path path) {
-    super(path);
+  public ViewFSCarbonFile(Configuration configuration, Path path) {
+    super(configuration, path);
   }
 
-  public ViewFSCarbonFile(FileStatus fileStatus) {
-    super(fileStatus);
+  public ViewFSCarbonFile(Configuration configuration, FileStatus fileStatus) {
+    super(configuration, fileStatus);
   }
 
   /**
@@ -58,7 +58,7 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
     }
     CarbonFile[] files = new CarbonFile[listStatus.length];
     for (int i = 0; i < files.length; i++) {
-      files[i] = new ViewFSCarbonFile(listStatus[i]);
+      files[i] = new ViewFSCarbonFile(configuration, listStatus[i]);
     }
     return files;
   }
@@ -69,7 +69,7 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
     try {
       if (null != fileStatus && fileStatus.isDirectory()) {
         Path path = fileStatus.getPath();
-        listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
+        listStatus = path.getFileSystem(configuration).listStatus(path);
       } else {
         return new CarbonFile[0];
       }
@@ -101,14 +101,14 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
 
   @Override public CarbonFile getParentFile() {
     Path parent = fileStatus.getPath().getParent();
-    return null == parent ? null : new ViewFSCarbonFile(parent);
+    return null == parent ? null : new ViewFSCarbonFile(configuration, parent);
   }
 
   @Override
   public boolean renameForce(String changetoName) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(configuration);
       if (fs instanceof ViewFileSystem) {
         fs.delete(new Path(changetoName), true);
         fs.rename(fileStatus.getPath(), new Path(changetoName));

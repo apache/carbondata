@@ -85,7 +85,7 @@ public class RowConverterImpl implements RowConverter {
   public void initialize() throws IOException {
     CacheProvider cacheProvider = CacheProvider.getInstance();
     cache = cacheProvider.createCache(CacheType.REVERSE_DICTIONARY,
-        configuration.getTableIdentifier().getStorePath());
+        configuration.getTableIdentifier().getStorePath(), configuration.getHadoopConf());
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();
@@ -104,7 +104,7 @@ public class RowConverterImpl implements RowConverter {
           .createFieldEncoder(fields[i], cache,
               configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat, client,
               configuration.getUseOnePass(), configuration.getTableIdentifier().getStorePath(),
-              localCaches[i], isEmptyBadRecord);
+              localCaches[i], isEmptyBadRecord, configuration.getHadoopConf());
       fieldConverterList.add(fieldConverter);
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
@@ -210,7 +210,7 @@ public class RowConverterImpl implements RowConverter {
         fieldConverter = FieldEncoderFactory.getInstance().createFieldEncoder(fields[i], cache,
             configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat, client,
             configuration.getUseOnePass(), configuration.getTableIdentifier().getStorePath(),
-            localCaches[i], isEmptyBadRecord);
+            localCaches[i], isEmptyBadRecord, configuration.getHadoopConf());
       } catch (IOException e) {
         throw new RuntimeException(e);
       }

@@ -40,6 +40,8 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This class is aimed at managing dictionary files for any new addition and deletion
  * and calling of clear cache for BTree and dictionary instances from LRU cache
@@ -61,12 +63,12 @@ public class ManageDictionaryAndBTree {
    * @param storePath
    */
   public static void deleteDictionaryFileAndCache(final ColumnSchema columnSchema,
-      CarbonTableIdentifier carbonTableIdentifier, String storePath) {
+      CarbonTableIdentifier carbonTableIdentifier, String storePath, Configuration configuration) {
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier);
+        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier, configuration);
     String metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath();
-    CarbonFile metadataDir = FileFactory
-        .getCarbonFile(metadataDirectoryPath, FileFactory.getFileType(metadataDirectoryPath));
+    CarbonFile metadataDir = FileFactory.getCarbonFile(
+        configuration, metadataDirectoryPath, FileFactory.getFileType(metadataDirectoryPath));
     if (metadataDir.exists()) {
       // sort index file is created with dictionary size appended to it. So all the files
       // with a given column ID need to be listed
@@ -82,7 +84,7 @@ public class ManageDictionaryAndBTree {
         // try catch is inside for loop because even if one deletion fails, other files
         // still need to be deleted
         try {
-          FileFactory.deleteFile(file.getCanonicalPath(),
+          FileFactory.deleteFile(configuration, file.getCanonicalPath(),
               FileFactory.getFileType(file.getCanonicalPath()));
         } catch (IOException e) {
           LOGGER.error("Failed to delete dictionary or sortIndex file for column "
@@ -93,7 +95,7 @@ public class ManageDictionaryAndBTree {
     }
     // remove dictionary cache
     removeDictionaryColumnFromCache(carbonTableIdentifier, storePath,
-        columnSchema.getColumnUniqueId());
+        columnSchema.getColumnUniqueId(), configuration);
   }
 
   /**
@@ -104,14 +106,16 @@ public class ManageDictionaryAndBTree {
    * @param columnId
    */
   public static void removeDictionaryColumnFromCache(CarbonTableIdentifier carbonTableIdentifier,
-      String storePath, String columnId) {
+      String storePath, String columnId, Configuration configuration) {
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
-        CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY, storePath);
+        CacheProvider.getInstance().createCache(
+            CacheType.REVERSE_DICTIONARY, storePath, configuration);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
             new ColumnIdentifier(columnId, null, null));
     dictCache.invalidate(dictionaryColumnUniqueIdentifier);
-    dictCache = CacheProvider.getInstance().createCache(CacheType.FORWARD_DICTIONARY, storePath);
+    dictCache = CacheProvider.getInstance().createCache(
+        CacheType.FORWARD_DICTIONARY, storePath, configuration);
     dictCache.invalidate(dictionaryColumnUniqueIdentifier);
   }
 
@@ -120,24 +124,25 @@ public class ManageDictionaryAndBTree {
    *
    * @param carbonTable
    */
-  public static void clearBTreeAndDictionaryLRUCache(CarbonTable carbonTable) {
+  public static void clearBTreeAndDictionaryLRUCache(CarbonTable carbonTable,
+      Configuration configuration) {
     // clear Btree cache from LRU cache
     LoadMetadataDetails[] loadMetadataDetails =
-        SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath());
+        SegmentStatusManager.readLoadMetadata(configuration, carbonTable.getMetaDataFilepath());
     if (null != loadMetadataDetails) {
       String[] segments = new String[loadMetadataDetails.length];
       int i = 0;
       for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
         segments[i++] = loadMetadataDetail.getLoadName();
       }
-      invalidateBTreeCache(carbonTable.getAbsoluteTableIdentifier(), segments);
+      invalidateBTreeCache(carbonTable.getAbsoluteTableIdentifier(), segments, configuration);
     }
     // clear dictionary cache from LRU cache
     List<CarbonDimension> dimensions =
         carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
     for (CarbonDimension dimension : dimensions) {
       removeDictionaryColumnFromCache(carbonTable.getCarbonTableIdentifier(),
-          carbonTable.getStorePath(), dimension.getColumnId());
+          carbonTable.getStorePath(), dimension.getColumnId(), configuration);
     }
   }
 
@@ -148,9 +153,9 @@ public class ManageDictionaryAndBTree {
    * @param segments
    */
   public static void invalidateBTreeCache(AbsoluteTableIdentifier absoluteTableIdentifier,
-      String[] segments) {
+      String[] segments, Configuration configuration) {
     Cache<Object, Object> driverBTreeCache = CacheProvider.getInstance()
-        .createCache(CacheType.DRIVER_BTREE, absoluteTableIdentifier.getStorePath());
+        .createCache(CacheType.DRIVER_BTREE, absoluteTableIdentifier.getStorePath(), configuration);
     for (String segmentNo : segments) {
       TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
           new TableSegmentUniqueIdentifier(absoluteTableIdentifier, segmentNo);

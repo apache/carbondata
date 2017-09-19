@@ -97,7 +97,7 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test to check if exception during rename table does not throws table not found exception") {
     val locks = AlterTableUtil
-      .validateTableAndAcquireLock("default", "reverttest", List("meta.lock"))(sqlContext
+      .validateTableAndAcquireLock("default", "reverttest", List("meta.lock"), hadoopConf)(sqlContext
         .sparkSession)
     val exception = intercept[RuntimeException] {
       sql("alter table reverttest rename to revert")

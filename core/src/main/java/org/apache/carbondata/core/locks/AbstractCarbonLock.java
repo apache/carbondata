@@ -21,6 +21,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This is the abstract class of the lock implementations.This handles the
  * retrying part of the locking.
@@ -73,9 +75,9 @@ public abstract class AbstractCarbonLock implements ICarbonLock {
 
   }
 
-  public boolean releaseLockManually(String lockFile) {
+  public boolean releaseLockManually(Configuration configuration, String lockFile) {
     try {
-      return FileFactory.deleteFile(lockFile, FileFactory.getFileType(lockFile));
+      return FileFactory.deleteFile(configuration, lockFile, FileFactory.getFileType(lockFile));
     } catch (Exception e) {
       return false;
     }

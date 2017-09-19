@@ -27,7 +27,7 @@ class SubqueryWithFilterAndSortTestCase extends QueryTest with BeforeAndAfterAll
   val tempFilePath = s"$resourcesPath/temp/subqueryfilterwithsort.csv"
 
   override def beforeAll {
-    FileFactory.mkdirs(tempDirPath,FileType.LOCAL)
+    FileFactory.mkdirs(hadoopConf, tempDirPath,FileType.LOCAL)
     sql("drop table if exists subqueryfilterwithsort")
     sql("drop table if exists subqueryfilterwithsort_hive")
     sql("CREATE TABLE subqueryfilterwithsort (name String, id int) STORED BY 'org.apache.carbondata.format'")
@@ -59,12 +59,13 @@ class SubqueryWithFilterAndSortTestCase extends QueryTest with BeforeAndAfterAll
   }
 
   def writedata(filePath: String, data: String) = {
-    val dis = FileFactory.getDataOutputStream(filePath, FileFactory.getFileType(filePath))
+    val dis =
+      FileFactory.getDataOutputStream(hadoopConf, filePath, FileFactory.getFileType(filePath))
     dis.writeBytes(data.toString())
     dis.close()
   }
   def deleteFile(filePath: String) {
-    val file = FileFactory.getCarbonFile(filePath, FileFactory.getFileType(filePath))
+    val file = FileFactory.getCarbonFile(hadoopConf, filePath, FileFactory.getFileType(filePath))
     file.delete()
   }
 

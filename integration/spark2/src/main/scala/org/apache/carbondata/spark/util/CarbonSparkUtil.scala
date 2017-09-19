@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.hive.{CarbonMetaData, CarbonRelation, DictionaryMap}
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -45,13 +46,14 @@ object CarbonSparkUtil {
     CarbonMetaData(dimensionsAttr, measureAttr, carbonTable, DictionaryMap(dictionary.toMap))
   }
 
-  def createCarbonRelation(tableInfo: TableInfo, tablePath: String): CarbonRelation = {
+  def createCarbonRelation(tableInfo: TableInfo, tablePath: String,
+      configuration: Configuration): CarbonRelation = {
     val identifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
     val table = CarbonTable.buildFromTableInfo(tableInfo)
     val meta = new TableMeta(identifier.getCarbonTableIdentifier,
       identifier.getStorePath, tablePath, table)
     CarbonRelation(tableInfo.getDatabaseName, tableInfo.getFactTable.getTableName,
-      CarbonSparkUtil.createSparkMeta(table), meta)
+      CarbonSparkUtil.createSparkMeta(table), meta, configuration)
   }
 
 }

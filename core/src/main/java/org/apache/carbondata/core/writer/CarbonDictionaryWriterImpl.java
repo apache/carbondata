@@ -41,6 +41,7 @@ import org.apache.carbondata.core.util.path.HDFSLeaseUtils;
 import org.apache.carbondata.format.ColumnDictionaryChunk;
 import org.apache.carbondata.format.ColumnDictionaryChunkMeta;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 
 /**
@@ -127,6 +128,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   private static final Charset defaultCharset = Charset.forName(
       CarbonCommonConstants.DEFAULT_CHARSET);
 
+  private Configuration configuration;
   /**
    * Constructor
    *
@@ -135,11 +137,13 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    * @param dictionaryColumnUniqueIdentifier      column unique identifier
    */
   public CarbonDictionaryWriterImpl(String storePath, CarbonTableIdentifier carbonTableIdentifier,
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
+      Configuration configuration) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
     this.storePath = storePath;
     this.isFirstTime = true;
+    this.configuration = configuration;
   }
 
   /**
@@ -240,12 +244,13 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   private void init() throws IOException {
     initDictionaryChunkSize();
     initPaths();
-    boolean dictFileExists = CarbonUtil.isFileExists(this.dictionaryFilePath);
-    if (dictFileExists && CarbonUtil.isFileExists(this.dictionaryMetaFilePath)) {
-      this.chunk_start_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
+    boolean dictFileExists = CarbonUtil.isFileExists(configuration, this.dictionaryFilePath);
+    if (dictFileExists && CarbonUtil.isFileExists(configuration, this.dictionaryMetaFilePath)) {
+      this.chunk_start_offset = CarbonUtil.getFileSize(configuration, this.dictionaryFilePath);
       validateDictionaryFileOffsetWithLastSegmentEntryOffset();
     } else if (dictFileExists) {
-      FileFactory.getCarbonFile(dictionaryFilePath, FileFactory.getFileType(dictionaryFilePath))
+      FileFactory.getCarbonFile(
+          configuration, dictionaryFilePath, FileFactory.getFileType(dictionaryFilePath))
           .delete();
     }
     openThriftWriter(this.dictionaryFilePath);
@@ -254,9 +259,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
 
   protected void initPaths() {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(this.storePath, carbonTableIdentifier,
-            dictionaryColumnUniqueIdentifier);
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(
+        this.storePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier, configuration);
     this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     this.dictionaryMetaFilePath = carbonTablePath.getDictionaryMetaFilePath(
@@ -299,7 +303,8 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
           + this.dictionaryColumnUniqueIdentifier.getColumnIdentifier());
       // truncate the dictionary data till chunk meta end offset
       FileFactory.FileType fileType = FileFactory.getFileType(this.dictionaryFilePath);
-      CarbonFile carbonFile = FileFactory.getCarbonFile(this.dictionaryFilePath, fileType);
+      CarbonFile carbonFile =
+          FileFactory.getCarbonFile(configuration, this.dictionaryFilePath, fileType);
       boolean truncateSuccess = carbonFile
           .truncate(this.dictionaryFilePath, chunkMetaObjectForLastSegmentEntry.getEnd_offset());
       if (!truncateSuccess) {
@@ -363,7 +368,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    */
   private void openThriftWriter(String dictionaryFile) throws IOException {
     // create thrift writer instance
-    dictionaryThriftWriter = new ThriftWriter(dictionaryFile, true);
+    dictionaryThriftWriter = new ThriftWriter(configuration, dictionaryFile, true);
     // open the file stream
     try {
       dictionaryThriftWriter.open();
@@ -372,7 +377,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
       // 1. Handle File lease recovery
       if (HDFSLeaseUtils.checkExceptionMessageForLeaseRecovery(e.getMessage())) {
         LOGGER.error(e, "Lease recovery exception encountered for file: " + dictionaryFile);
-        boolean leaseRecovered = HDFSLeaseUtils.recoverFileLease(dictionaryFile);
+        boolean leaseRecovered = HDFSLeaseUtils.recoverFileLease(configuration, dictionaryFile);
         if (leaseRecovered) {
           // try to open output stream again after recovering the lease on file
           dictionaryThriftWriter.open();
@@ -431,12 +436,12 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    */
   protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
     return new CarbonDictionaryMetadataReaderImpl(storePath, carbonTableIdentifier,
-        dictionaryColumnUniqueIdentifier);
+        dictionaryColumnUniqueIdentifier, configuration);
   }
 
   @Override public void commit() throws IOException {
     if (null != dictionaryThriftWriter && dictionaryThriftWriter.isOpen()) {
-      this.chunk_end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
+      this.chunk_end_offset = CarbonUtil.getFileSize(configuration, this.dictionaryFilePath);
       writeDictionaryMetadataFile();
     }
   }

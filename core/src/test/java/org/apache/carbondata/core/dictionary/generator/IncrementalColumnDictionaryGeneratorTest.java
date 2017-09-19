@@ -28,6 +28,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 
 import org.junit.Before;
 import org.junit.Test;
@@ -66,14 +67,14 @@ public class IncrementalColumnDictionaryGeneratorTest {
   @Test public void generateKeyOnce() throws Exception {
     // Create the generator and add the key to dictionary
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable, CarbonTestUtil.configuration);
     Integer key = generator.generateKey("First");
     assertEquals(new Integer(11), key);
   }
 
   @Test public void generateKeyTwice() throws Exception {
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable, CarbonTestUtil.configuration);
     Integer key = generator.generateKey("First");
 
     // Add one more key and check if it works fine.
@@ -84,7 +85,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
   @Test public void generateKeyAgain() throws Exception {
     // Create the generator and add the key to dictionary
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable, CarbonTestUtil.configuration);
     Integer key = generator.generateKey("First");
 
     // Add the same key again anc check if the value is correct
@@ -95,7 +96,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
   @Test public void getKey() throws Exception {
     // Create the generator and add the key to dictionary
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable, CarbonTestUtil.configuration);
     Integer generatedKey = generator.generateKey("First");
 
     // Get the value of the key from dictionary and check if it matches with the created value
@@ -105,7 +106,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
 
   @Test public void getKeyInvalid() throws Exception {
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable, CarbonTestUtil.configuration);
 
     // Try to get value for an invalid key
     Integer obtainedKey = generator.getKey("Second");
@@ -114,7 +115,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
 
   @Test public void getOrGenerateKey() throws Exception {
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable, CarbonTestUtil.configuration);
 
     // Test first with generating a key and then trying geOrGenerate
     Integer generatedKey = generator.generateKey("First");
@@ -136,7 +137,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
 
     // Create the generator and add the keys to dictionary
     IncrementalColumnDictionaryGenerator generator =
-        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable);
+        new IncrementalColumnDictionaryGenerator(carbonDimension, 10, carbonTable, CarbonTestUtil.configuration);
 
     // Create a table schema for saving the dictionary
     TableSchema tableSchema = new TableSchema();

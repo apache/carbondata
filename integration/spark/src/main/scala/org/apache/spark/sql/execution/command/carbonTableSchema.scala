@@ -24,6 +24,7 @@ import scala.collection.mutable.ListBuffer
 import scala.language.implicitConversions
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -243,7 +244,8 @@ private[sql] case class DeleteLoadsById(
       loadids,
       getDB.getDatabaseName(databaseNameOp, sqlContext),
       tableName,
-      carbonTable
+      carbonTable,
+      sqlContext.sparkContext.hadoopConfiguration
     )
     Seq.empty
 
@@ -275,7 +277,8 @@ private[sql] case class DeleteLoadsByLoadDate(
       loadDate,
       getDB.getDatabaseName(databaseNameOp, sqlContext),
       tableName,
-      carbonTable
+      carbonTable,
+      sqlContext.sparkContext.hadoopConfiguration
     )
     Seq.empty
 
@@ -290,12 +293,13 @@ object LoadTable {
       model: DictionaryLoadModel,
       noDictDimension: Array[CarbonDimension]): Unit = {
 
+    val hadoopConf = sqlContext.sparkContext.hadoopConfiguration
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(model.hdfsLocation,
-      model.table)
+      model.table, hadoopConf)
     val schemaFilePath = carbonTablePath.getSchemaFilePath
 
     // read TableInfo
-    val tableInfo = CarbonMetastore.readSchemaFileToThriftTable(schemaFilePath)
+    val tableInfo = CarbonMetastore.readSchemaFileToThriftTable(hadoopConf, schemaFilePath)
 
     // modify TableInfo
     val columns = tableInfo.getFact_table.getTable_columns
@@ -306,7 +310,7 @@ object LoadTable {
     }
 
     // write TableInfo
-    CarbonMetastore.writeThriftTableToSchemaFile(schemaFilePath, tableInfo)
+    CarbonMetastore.writeThriftTableToSchemaFile(hadoopConf, schemaFilePath, tableInfo)
 
     // update Metadata
     val catalog = CarbonEnv.get.carbonMetastore
@@ -384,10 +388,10 @@ case class LoadTable(
       sys.error(s"Table $dbName.$tableName does not exist")
     }
     CarbonProperties.getInstance().addProperty("zookeeper.enable.lock", "false")
+    val hadoopConf = sqlContext.sparkContext.hadoopConfiguration
     val carbonLock = CarbonLockFactory
       .getCarbonLockObj(relation.tableMeta.carbonTable.getAbsoluteTableIdentifier
-        .getCarbonTableIdentifier,
-        LockUsage.METADATA_LOCK
+        .getCarbonTableIdentifier, LockUsage.METADATA_LOCK, hadoopConf
       )
     try {
       // take lock only in case of normal data load.
@@ -402,8 +406,8 @@ case class LoadTable(
       val factPath = if (dataFrame.isDefined) {
         ""
       } else {
-        FileUtils.getPaths(
-          CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser))
+        FileUtils.getPaths(hadoopConf,
+          CarbonUtil.checkAndAppendHDFSUrl(hadoopConf, factPathFromUser))
       }
       val carbonLoadModel = new CarbonLoadModel()
       carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
@@ -570,7 +574,8 @@ case class LoadTable(
         carbonLoadModel.setCsvHeader(fileHeader)
         carbonLoadModel.setColDictFilePath(columnDict)
         carbonLoadModel.setDirectLoad(true)
-        carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
+        carbonLoadModel.setCsvHeaderColumns(
+          CommonUtil.getCsvHeaderColumns(hadoopConf, carbonLoadModel))
         val validatedMaxColumns = CommonUtil.validateMaxColumns(carbonLoadModel.getCsvHeaderColumns,
           maxColumns)
         carbonLoadModel.setMaxColumns(validatedMaxColumns.toString)
@@ -580,20 +585,20 @@ case class LoadTable(
         val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
           .getCarbonTableIdentifier
         val carbonTablePath = CarbonStorePath
-          .getCarbonTablePath(storePath, carbonTableIdentifier)
+          .getCarbonTablePath(storePath, carbonTableIdentifier, hadoopConf)
         val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
         val dimensions = carbonTable.getDimensionByTableName(
           carbonTable.getFactTableName).asScala.toArray
         // add the start entry for the new load in the table status file
         if (!updateModel.isDefined) {
-          CommonUtil.
-            readAndUpdateLoadProgressInTableMeta(carbonLoadModel, storePath, isOverwriteExist)
+          CommonUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, storePath,
+            isOverwriteExist, hadoopConf)
         }
         if (isOverwriteExist) {
           LOGGER.info(s"Overwrite is in progress for carbon table with $dbName.$tableName")
         }
         if (null == carbonLoadModel.getLoadMetadataDetails) {
-          CommonUtil.readLoadMetadataDetails(carbonLoadModel)
+          CommonUtil.readLoadMetadataDetails(carbonLoadModel, hadoopConf)
         }
         if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
             StringUtils.isEmpty(columnDict) && StringUtils.isEmpty(allDictionaryPath)) {
@@ -608,13 +613,14 @@ case class LoadTable(
             // generate predefined dictionary
             GlobalDictionaryUtil
               .generatePredefinedColDictionary(colDictFilePath, carbonTableIdentifier,
-                dimensions, carbonLoadModel, sqlContext, storePath, dictFolderPath)
+                dimensions, carbonLoadModel, sqlContext, storePath, dictFolderPath, hadoopConf)
           }
           val allDictPath: String = carbonLoadModel.getAllDictPath
           if(!StringUtils.isEmpty(allDictPath)) {
             carbonLoadModel.initPredefDictMap()
             GlobalDictionaryUtil
               .generateDictionaryFromDictionaryFiles(sqlContext,
+                hadoopConf,
                 carbonLoadModel,
                 storePath,
                 carbonTableIdentifier,
@@ -637,7 +643,7 @@ case class LoadTable(
           }
           val server: Option[DictionaryServer] = if (createDictionary) {
             val dictionaryServer = DictionaryServer
-              .getInstance(dictionaryServerPort.toInt, carbonTable)
+              .getInstance(dictionaryServerPort.toInt, carbonTable, hadoopConf)
             carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
             sqlContext.sparkContext.addSparkListener(new SparkListener() {
               override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
@@ -693,8 +699,8 @@ case class LoadTable(
             (dataFrame, dataFrame)
           }
           GlobalDictionaryUtil
-            .generateGlobalDictionary(sqlContext, carbonLoadModel, relation.tableMeta.storePath,
-              dictionaryDataFrame)
+            .generateGlobalDictionary(sqlContext, hadoopConf, carbonLoadModel,
+              relation.tableMeta.storePath, dictionaryDataFrame)
           CarbonDataRDDFactory.loadCarbonData(sqlContext,
             carbonLoadModel,
             relation.tableMeta.storePath,
@@ -717,9 +723,9 @@ case class LoadTable(
         // Once the data load is successful delete the unwanted partition files
         try {
           val fileType = FileFactory.getFileType(partitionLocation)
-          if (FileFactory.isFileExist(partitionLocation, fileType)) {
+          if (FileFactory.isFileExist(hadoopConf, partitionLocation, fileType)) {
             val file = FileFactory
-              .getCarbonFile(partitionLocation, fileType)
+              .getCarbonFile(hadoopConf, partitionLocation, fileType)
             CarbonUtil.deleteFoldersAndFiles(file)
           }
         } catch {
@@ -753,14 +759,15 @@ case class LoadTable(
   private def updateTableMetadata(carbonLoadModel: CarbonLoadModel,
       sqlContext: SQLContext,
       model: DictionaryLoadModel,
-      noDictDimension: Array[CarbonDimension]): Unit = {
+      noDictDimension: Array[CarbonDimension],
+      hadoopConf: Configuration): Unit = {
 
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(model.hdfsLocation,
-      model.table)
+      model.table, hadoopConf)
     val schemaFilePath = carbonTablePath.getSchemaFilePath
 
     // read TableInfo
-    val tableInfo = CarbonMetastore.readSchemaFileToThriftTable(schemaFilePath)
+    val tableInfo = CarbonMetastore.readSchemaFileToThriftTable(hadoopConf, schemaFilePath)
 
     // modify TableInfo
     val columns = tableInfo.getFact_table.getTable_columns
@@ -771,7 +778,7 @@ case class LoadTable(
     }
 
     // write TableInfo
-    CarbonMetastore.writeThriftTableToSchemaFile(schemaFilePath, tableInfo)
+    CarbonMetastore.writeThriftTableToSchemaFile(hadoopConf, schemaFilePath, tableInfo)
 
 
     val catalog = CarbonEnv.get.carbonMetastore
@@ -806,9 +813,11 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
     val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
     val catalog = CarbonEnv.get.carbonMetastore
     val storePath = catalog.storePath
+    val hadoopConf = sqlContext.sparkContext.hadoopConfiguration
     try {
       locksToBeAcquired foreach {
-        lock => carbonLocks += CarbonLockUtil.getLockObject(carbonTableIdentifier, lock)
+        lock =>
+          carbonLocks += CarbonLockUtil.getLockObject(carbonTableIdentifier, lock, hadoopConf)
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
       CarbonEnv.get.carbonMetastore.dropTable(storePath, identifier)(sqlContext)
@@ -823,11 +832,11 @@ private[sql] case class DropTableCommand(ifExistsSet: Boolean, databaseNameOp: O
         if (unlocked) {
           logInfo("Table MetaData Unlocked Successfully")
           // deleting any remaining files.
-          val metadataFilePath = CarbonStorePath
-            .getCarbonTablePath(storePath, carbonTableIdentifier).getMetadataDirectoryPath
+          val metadataFilePath = CarbonStorePath.getCarbonTablePath(storePath,
+            carbonTableIdentifier, hadoopConf).getMetadataDirectoryPath
           val fileType = FileFactory.getFileType(metadataFilePath)
-          if (FileFactory.isFileExist(metadataFilePath, fileType)) {
-            val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
+          if (FileFactory.isFileExist(hadoopConf, metadataFilePath, fileType)) {
+            val file = FileFactory.getCarbonFile(hadoopConf, metadataFilePath, fileType)
             CarbonUtil.deleteFoldersAndFiles(file.getParentFile)
           }
         }
@@ -851,7 +860,8 @@ private[sql] case class ShowLoads(
       getDB.getDatabaseName(databaseNameOp, sqlContext),
       tableName,
       limit,
-      carbonTable.getMetaDataFilepath
+      carbonTable.getMetaDataFilepath,
+      sqlContext.sparkContext.hadoopConfiguration
     )
   }
 }
@@ -991,7 +1001,8 @@ private[sql] case class DeleteLoadByDate(
       CarbonEnv.get.carbonMetastore.storePath,
       level,
       actualColName,
-      dateValue)
+      dateValue,
+      sqlContext.sparkContext.hadoopConfiguration)
     LOGGER.audit(s"The delete load by date $dateValue is successful for $dbName.$tableName.")
     Seq.empty
   }
@@ -1013,7 +1024,8 @@ private[sql] case class CleanFiles(
       tableName,
       sqlContext.asInstanceOf[CarbonContext].storePath,
       carbonTable,
-      false)
+      false,
+      sqlContext.sparkContext.hadoopConfiguration)
     Seq.empty
   }
 }

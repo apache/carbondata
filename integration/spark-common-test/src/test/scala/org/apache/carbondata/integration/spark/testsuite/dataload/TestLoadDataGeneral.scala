@@ -46,9 +46,9 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
       tableName: String): Boolean = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(datbaseName + "_" + tableName)
     val partitionPath = CarbonStorePath.getCarbonTablePath(storeLocation,
-      carbonTable.getCarbonTableIdentifier).getPartitionDir("0")
+      carbonTable.getCarbonTableIdentifier, hadoopConf).getPartitionDir("0")
     val fileType: FileFactory.FileType = FileFactory.getFileType(partitionPath)
-    val carbonFile = FileFactory.getCarbonFile(partitionPath, fileType)
+    val carbonFile = FileFactory.getCarbonFile(hadoopConf, partitionPath, fileType)
     val segments: ArrayBuffer[String] = ArrayBuffer()
     carbonFile.listFiles.foreach { file =>
       segments += CarbonTablePath.DataPathUtil.getSegmentId(file.getAbsolutePath + "/dummy")

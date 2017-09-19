@@ -20,6 +20,7 @@ package org.apache.spark.sql
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
@@ -31,6 +32,7 @@ import org.apache.spark.sql.execution.{CodegenSupport, SparkPlan, UnaryExecNode}
 import org.apache.spark.sql.hive.{CarbonMetastoreTypes, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
@@ -67,6 +69,8 @@ case class CarbonDictionaryDecoder(
   val getDictionaryColumnIds: Array[(String, ColumnIdentifier, CarbonDimension)] =
     CarbonDictionaryDecoder.getDictionaryColumnMapping(child.output, relations, profile, aliasMap)
 
+  val confBytes = SparkUtil.compressConfiguration(sparkSession.sessionState.newHadoopConf())
+
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
       val storePath = CarbonEnv.getInstance(sparkSession).storePath
@@ -74,15 +78,15 @@ case class CarbonDictionaryDecoder(
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
         (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
       }.toMap
-
       if (CarbonDictionaryDecoder.isRequiredToDecode(getDictionaryColumnIds)) {
         val dataTypes = child.output.map { attr => attr.dataType }
         child.execute().mapPartitions { iter =>
           val cacheProvider: CacheProvider = CacheProvider.getInstance
+          val hadoopConf = SparkUtil.uncompressConfiguration(confBytes)
           val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-            cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+            cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath, hadoopConf)
           val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
-            forwardDictionaryCache)
+            forwardDictionaryCache, hadoopConf)
           val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
           // add a task completion listener to clear dictionary that is a decisive factor for
           // LRU eviction policy
@@ -130,11 +134,12 @@ case class CarbonDictionaryDecoder(
     }.toMap
 
     if (CarbonDictionaryDecoder.isRequiredToDecode(getDictionaryColumnIds)) {
+      val hadoopConf = SparkUtil.uncompressConfiguration(confBytes)
       val cacheProvider: CacheProvider = CacheProvider.getInstance
       val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath, hadoopConf)
       val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryWrapper(absoluteTableIdentifiers,
-        forwardDictionaryCache, storePath)
+        forwardDictionaryCache, storePath, hadoopConf)
 
       val exprs = child.output.map { exp =>
         ExpressionCanonicalizer.execute(BindReferences.bindReference(exp, child.output))
@@ -147,6 +152,7 @@ case class CarbonDictionaryDecoder(
           val valueIntern = ctx.freshName("valueIntern")
           val isNull = ctx.freshName("isNull")
           val dictsRef = ctx.addReferenceObj("dictsRef", dicts(index))
+          val confBytesRef = ctx.addReferenceObj("confBytes", confBytes, "byte[]")
           var code =
             s"""
                |${ev.code}
@@ -154,7 +160,8 @@ case class CarbonDictionaryDecoder(
           code +=
             s"""
              |boolean $isNull = false;
-             |byte[] $valueIntern = $dictsRef.getDictionaryValueForKeyInBytes(${ ev.value });
+             |byte[] $valueIntern = $dictsRef.getDictionaryValueForKeyInBytes(${ ev.value },
+             | org.apache.spark.util.SparkUtil.uncompressConfiguration($confBytesRef));
              |if ($valueIntern == null ||
              |  java.util.Arrays.equals(org.apache.carbondata.core.constants
              |.CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, $valueIntern)) {
@@ -243,14 +250,14 @@ case class CarbonDictionaryDecoder(
   }
 
   private def getDictionary(atiMap: Map[String, AbsoluteTableIdentifier],
-      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
+      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary], configuration: Configuration) = {
     val dicts: Seq[Dictionary] = getDictionaryColumnIds.map { f =>
       if (f._2 != null) {
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
             atiMap(f._1).getCarbonTableIdentifier,
             f._2, f._3.getDataType,
-            CarbonStorePath.getCarbonTablePath(atiMap(f._1))))
+            CarbonStorePath.getCarbonTablePath(atiMap(f._1), configuration)))
         } catch {
           case _: Throwable => null
         }
@@ -262,7 +269,8 @@ case class CarbonDictionaryDecoder(
   }
 
   private def getDictionaryWrapper(atiMap: Map[String, AbsoluteTableIdentifier],
-      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary], storePath: String) = {
+      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary], storePath: String,
+      configuration: Configuration) = {
     val allDictIdentifiers = new ArrayBuffer[DictionaryColumnUniqueIdentifier]()
     val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryColumnIds.map {
       case (tableName, columnIdentifier, carbonDimension) =>
@@ -271,7 +279,7 @@ case class CarbonDictionaryDecoder(
             val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
               atiMap(tableName).getCarbonTableIdentifier,
               columnIdentifier, carbonDimension.getDataType,
-              CarbonStorePath.getCarbonTablePath(atiMap(tableName)))
+              CarbonStorePath.getCarbonTablePath(atiMap(tableName), configuration))
             allDictIdentifiers += dictionaryColumnUniqueIdentifier;
             new ForwardDictionaryWrapper(
               storePath,
@@ -449,8 +457,9 @@ class CarbonDecoderRDD(
     prev: RDD[InternalRow],
     output: Seq[Attribute],
     storePath: String,
-    serializedTableInfo: Array[Byte])
-  extends CarbonRDDWithTableInfo[InternalRow](prev, serializedTableInfo) {
+    serializedTableInfo: Array[Byte],
+    @transient configuration: Configuration)
+  extends CarbonRDDWithTableInfo[InternalRow](prev, serializedTableInfo, configuration) {
 
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
@@ -525,9 +534,9 @@ class CarbonDecoderRDD(
 
     val cacheProvider: CacheProvider = CacheProvider.getInstance
     val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath, getConf)
     val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
-      forwardDictionaryCache)
+      forwardDictionaryCache, getConf)
     val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
     // add a task completion listener to clear dictionary that is a decisive factor for
     // LRU eviction policy
@@ -563,14 +572,14 @@ class CarbonDecoderRDD(
   }
 
   private def getDictionary(atiMap: Map[String, AbsoluteTableIdentifier],
-      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
+      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary], configuration: Configuration) = {
     val dicts: Seq[Dictionary] = getDictionaryColumnIds.map { f =>
       if (f._2 != null) {
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
             atiMap(f._1).getCarbonTableIdentifier,
             f._2, f._3.getDataType,
-            CarbonStorePath.getCarbonTablePath(atiMap(f._1))))
+            CarbonStorePath.getCarbonTablePath(atiMap(f._1), configuration)))
         } catch {
           case _: Throwable => null
         }
@@ -597,9 +606,10 @@ class ForwardDictionaryWrapper(
 
   var dictionaryLoader: DictionaryLoader = _
 
-  def getDictionaryValueForKeyInBytes (surrogateKey: Int): Array[Byte] = {
+  def getDictionaryValueForKeyInBytes (surrogateKey: Int,
+      configuration: Configuration): Array[Byte] = {
     if (dictionary == null) {
-      dictionary = dictionaryLoader.getDictionary(dictIdentifier)
+      dictionary = dictionaryLoader.getDictionary(dictIdentifier, configuration)
     }
     dictionary.getDictionaryValueForKeyInBytes(surrogateKey)
   }
@@ -608,9 +618,9 @@ class ForwardDictionaryWrapper(
     dictionaryLoader = loader
   }
 
-  def clear(): Unit = {
+  def clear(configuration: Configuration): Unit = {
     if (dictionary == null) {
-      dictionary = dictionaryLoader.getDictionary(dictIdentifier)
+      dictionary = dictionaryLoader.getDictionary(dictIdentifier, configuration)
     }
     dictionary.clear()
   }
@@ -626,11 +636,11 @@ class DictionaryLoader(storePath: String,
 
   var allDicts : java.util.List[Dictionary] = _
 
-  private def loadDictionary(): Unit = {
+  private def loadDictionary(configuration: Configuration): Unit = {
     if (!isDictionaryLoaded) {
       val cacheProvider: CacheProvider = CacheProvider.getInstance
       val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath, configuration)
       allDicts = forwardDictionaryCache.getAll(allDictIdentifiers.asJava)
       isDictionaryLoaded = true
       val dictionaryTaskCleaner = TaskContext.get
@@ -646,9 +656,10 @@ class DictionaryLoader(storePath: String,
     }
   }
 
-  def getDictionary(dictIdent: DictionaryColumnUniqueIdentifier): Dictionary = {
+  def getDictionary(dictIdent: DictionaryColumnUniqueIdentifier,
+      configuration: Configuration): Dictionary = {
     if (!isDictionaryLoaded) {
-      loadDictionary()
+      loadDictionary(configuration)
     }
     val findValue = allDictIdentifiers.zipWithIndex.find(p => p._1.equals(dictIdent)).get
     allDicts.get(findValue._2)

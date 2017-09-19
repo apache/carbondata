@@ -29,6 +29,8 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
+import org.apache.hadoop.conf.Configuration;
+
 public interface FilterProcessor {
 
   /**
@@ -41,8 +43,8 @@ public interface FilterProcessor {
    * @throws FilterUnsupportedException
    */
   FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider)
-      throws FilterUnsupportedException, IOException;
+      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider,
+      Configuration configuration) throws FilterUnsupportedException, IOException;
 
   /**
    * This API is exposed inorder to get the required block reference node
@@ -53,7 +55,8 @@ public interface FilterProcessor {
    * @return list of DataRefNode.
    */
   List<DataRefNode> getFilterredBlocks(DataRefNode dataRefNode, FilterResolverIntf filterResolver,
-      AbstractIndex segmentIndexBuilder, AbsoluteTableIdentifier tableIdentifier);
+      AbstractIndex segmentIndexBuilder, AbsoluteTableIdentifier tableIdentifier,
+      Configuration configuration);
 
   /**
    * This API will get the map of required partitions.

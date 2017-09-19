@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
@@ -91,19 +92,20 @@ class CarbonFileMetastore extends CarbonMetaStore {
    */
   override def createCarbonRelation(parameters: Map[String, String],
       absIdentifier: AbsoluteTableIdentifier,
-      sparkSession: SparkSession): CarbonRelation = {
+      sparkSession: SparkSession,
+      configuration: Configuration): CarbonRelation = {
     val database = absIdentifier.getCarbonTableIdentifier.getDatabaseName
     val tableName = absIdentifier.getCarbonTableIdentifier.getTableName
     val tables = getTableFromMetadataCache(database, tableName)
     tables match {
       case Some(t) =>
         CarbonRelation(database, tableName,
-          CarbonSparkUtil.createSparkMeta(t.carbonTable), t)
+          CarbonSparkUtil.createSparkMeta(t.carbonTable), t, configuration)
       case None =>
-        readCarbonSchema(absIdentifier) match {
+        readCarbonSchema(absIdentifier, sparkSession.sessionState.newHadoopConf()) match {
           case Some(meta) =>
             CarbonRelation(database, tableName,
-              CarbonSparkUtil.createSparkMeta(meta.carbonTable), meta)
+              CarbonSparkUtil.createSparkMeta(meta.carbonTable), meta, configuration)
           case None =>
             throw new NoSuchTableException(database, tableName)
         }
@@ -162,24 +164,25 @@ class CarbonFileMetastore extends CarbonMetaStore {
     true
   }
 
-  private def readCarbonSchema(identifier: AbsoluteTableIdentifier): Option[TableMeta] = {
+  private def readCarbonSchema(identifier: AbsoluteTableIdentifier,
+      configuration: Configuration): Option[TableMeta] = {
     val dbName = identifier.getCarbonTableIdentifier.getDatabaseName
     val tableName = identifier.getCarbonTableIdentifier.getTableName
     val storePath = identifier.getStorePath
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName.toLowerCase(),
       tableName.toLowerCase(), UUID.randomUUID().toString)
     val carbonTablePath =
-      CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
+      CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier, configuration)
     val tableMetadataFile = carbonTablePath.getSchemaFilePath
     val fileType = FileFactory.getFileType(tableMetadataFile)
-    if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
+    if (FileFactory.isFileExist(configuration, tableMetadataFile, fileType)) {
       val tableUniqueName = dbName + "_" + tableName
-      val tableInfo: TableInfo = CarbonUtil.readSchemaFile(tableMetadataFile)
+      val tableInfo: TableInfo = CarbonUtil.readSchemaFile(configuration, tableMetadataFile)
       val schemaConverter = new ThriftWrapperSchemaConverterImpl
       val wrapperTableInfo = schemaConverter
         .fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, storePath)
       val schemaFilePath = CarbonStorePath
-        .getCarbonTablePath(storePath, carbonTableIdentifier).getSchemaFilePath
+        .getCarbonTablePath(storePath, carbonTableIdentifier, configuration).getSchemaFilePath
       wrapperTableInfo.setStorePath(storePath)
       wrapperTableInfo
         .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
@@ -209,7 +212,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       schemaEvolutionEntry: SchemaEvolutionEntry,
-      tablePath: String) (sparkSession: SparkSession): String = {
+      tablePath: String,
+      configuration: Configuration) (sparkSession: SparkSession): String = {
     val absoluteTableIdentifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     if (schemaEvolutionEntry != null) {
@@ -226,7 +230,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
         wrapperTableInfo.getFactTable.getTableId)
     val path = createSchemaThriftFile(wrapperTableInfo,
       thriftTableInfo,
-      identifier)
+      identifier, configuration)
     addTableCache(wrapperTableInfo,
       AbsoluteTableIdentifier.from(absoluteTableIdentifier.getStorePath,
         newTableIdentifier.getDatabaseName,
@@ -244,7 +248,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
    */
   def revertTableSchema(carbonTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      tablePath: String)(sparkSession: SparkSession): String = {
+      tablePath: String,
+      configuration: Configuration)(sparkSession: SparkSession): String = {
     val tableIdentifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val wrapperTableInfo = schemaConverter
@@ -257,7 +262,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
     wrapperTableInfo.setStorePath(tableIdentifier.getStorePath)
     val path = createSchemaThriftFile(wrapperTableInfo,
       thriftTableInfo,
-      tableIdentifier.getCarbonTableIdentifier)
+      tableIdentifier.getCarbonTableIdentifier,
+      configuration)
     addTableCache(wrapperTableInfo, tableIdentifier)
     path
   }
@@ -270,7 +276,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
    * Load CarbonTable from wrapper tableInfo
    *
    */
-  def saveToDisk(tableInfo: schema.table.TableInfo, tablePath: String) {
+  def saveToDisk(tableInfo: schema.table.TableInfo, tablePath: String,
+      configuration: Configuration) {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val dbName = tableInfo.getDatabaseName
     val tableName = tableInfo.getFactTable.getTableName
@@ -280,7 +287,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
     tableInfo.setStorePath(identifier.getStorePath)
     createSchemaThriftFile(tableInfo,
       thriftTableInfo,
-      identifier.getCarbonTableIdentifier)
+      identifier.getCarbonTableIdentifier,
+      configuration)
     LOGGER.info(s"Table $tableName for Database $dbName created successfully.")
   }
 
@@ -288,9 +296,9 @@ class CarbonFileMetastore extends CarbonMetaStore {
    * Generates schema string from TableInfo
    */
   override def generateTableSchemaString(tableInfo: schema.table.TableInfo,
-      tablePath: String): String = {
+      tablePath: String, configuration: Configuration): String = {
     val tableIdentifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(tableIdentifier)
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(tableIdentifier, configuration)
     val schemaMetadataPath =
       CarbonTablePath.getFolderContainingFile(carbonTablePath.getSchemaFilePath)
     tableInfo.setMetaDataFilepath(schemaMetadataPath)
@@ -313,21 +321,22 @@ class CarbonFileMetastore extends CarbonMetaStore {
    */
   private def createSchemaThriftFile(tableInfo: schema.table.TableInfo,
       thriftTableInfo: TableInfo,
-      carbonTableIdentifier: CarbonTableIdentifier): String = {
+      carbonTableIdentifier: CarbonTableIdentifier,
+      configuration: Configuration): String = {
     val carbonTablePath = CarbonStorePath.
-      getCarbonTablePath(tableInfo.getStorePath, carbonTableIdentifier)
+      getCarbonTablePath(tableInfo.getStorePath, carbonTableIdentifier, configuration)
     val schemaFilePath = carbonTablePath.getSchemaFilePath
     val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
     tableInfo.setMetaDataFilepath(schemaMetadataPath)
     val fileType = FileFactory.getFileType(schemaMetadataPath)
-    if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
-      FileFactory.mkdirs(schemaMetadataPath, fileType)
+    if (!FileFactory.isFileExist(configuration, schemaMetadataPath, fileType)) {
+      FileFactory.mkdirs(configuration, schemaMetadataPath, fileType)
     }
-    val thriftWriter = new ThriftWriter(schemaFilePath, false)
+    val thriftWriter = new ThriftWriter(configuration, schemaFilePath, false)
     thriftWriter.open(FileWriteOperation.OVERWRITE)
     thriftWriter.write(thriftTableInfo)
     thriftWriter.close()
-    updateSchemasUpdatedTime(touchSchemaFileSystemTime(tableInfo.getStorePath))
+    updateSchemasUpdatedTime(touchSchemaFileSystemTime(configuration, tableInfo.getStorePath))
     carbonTablePath.getPath
   }
 
@@ -391,38 +400,40 @@ class CarbonFileMetastore extends CarbonMetaStore {
   }
 
 
-  def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
+  def isTablePathExists(tableIdentifier: TableIdentifier,
+      configuration: Configuration)(sparkSession: SparkSession): Boolean = {
     try {
       val tablePath = lookupRelation(tableIdentifier)(sparkSession).
         asInstanceOf[CarbonRelation].tableMeta.tablePath
       val fileType = FileFactory.getFileType(tablePath)
-      FileFactory.isFileExist(tablePath, fileType)
+      FileFactory.isFileExist(configuration, tablePath, fileType)
     } catch {
       case e: Exception =>
         false
     }
   }
 
-  def dropTable(tablePath: String, tableIdentifier: TableIdentifier)
+  def dropTable(tablePath: String, tableIdentifier: TableIdentifier, configuration: Configuration)
     (sparkSession: SparkSession) {
     val dbName = tableIdentifier.database.get
     val tableName = tableIdentifier.table
     val identifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
-    val metadataFilePath = CarbonStorePath.getCarbonTablePath(identifier).getMetadataDirectoryPath
+    val metadataFilePath =
+      CarbonStorePath.getCarbonTablePath(identifier, configuration).getMetadataDirectoryPath
     val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
     if (null != carbonTable) {
       // clear driver B-tree and dictionary cache
-      ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
+      ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable, configuration)
     }
     val fileType = FileFactory.getFileType(metadataFilePath)
 
-    if (FileFactory.isFileExist(metadataFilePath, fileType)) {
+    if (FileFactory.isFileExist(configuration, metadataFilePath, fileType)) {
       // while drop we should refresh the schema modified time so that if any thing has changed
       // in the other beeline need to update.
-      checkSchemasModifiedTimeAndReloadTables(identifier.getStorePath)
+      checkSchemasModifiedTimeAndReloadTables(configuration, identifier.getStorePath)
 
       removeTableFromMetadata(dbName, tableName)
-      updateSchemasUpdatedTime(touchSchemaFileSystemTime(identifier.getStorePath))
+      updateSchemasUpdatedTime(touchSchemaFileSystemTime(configuration, identifier.getStorePath))
       CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
       // discard cached table info in cachedDataSourceTables
       sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
@@ -445,8 +456,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
     tableModifiedTimeStore.put("default", timeStamp)
   }
 
-  def updateAndTouchSchemasUpdatedTime(basePath: String) {
-    updateSchemasUpdatedTime(touchSchemaFileSystemTime(basePath))
+  def updateAndTouchSchemasUpdatedTime(configuration: Configuration, basePath: String) {
+    updateSchemasUpdatedTime(touchSchemaFileSystemTime(configuration, basePath))
   }
 
 
@@ -455,23 +466,23 @@ class CarbonFileMetastore extends CarbonMetaStore {
    *
    * @return
    */
-  private def touchSchemaFileSystemTime(basePath: String): Long = {
+  private def touchSchemaFileSystemTime(configuration: Configuration, basePath: String): Long = {
     val (timestampFile, timestampFileType) = getTimestampFileAndType(basePath)
-    if (!FileFactory.isFileExist(timestampFile, timestampFileType)) {
+    if (!FileFactory.isFileExist(configuration, timestampFile, timestampFileType)) {
       LOGGER.audit(s"Creating timestamp file for $basePath")
-      FileFactory.createNewFile(timestampFile, timestampFileType)
+      FileFactory.createNewFile(configuration, timestampFile, timestampFileType)
     }
     val systemTime = System.currentTimeMillis()
-    FileFactory.getCarbonFile(timestampFile, timestampFileType)
+    FileFactory.getCarbonFile(configuration, timestampFile, timestampFileType)
       .setLastModifiedTime(systemTime)
     systemTime
   }
 
-  def checkSchemasModifiedTimeAndReloadTables(storePath: String) {
+  def checkSchemasModifiedTimeAndReloadTables(configuration: Configuration, storePath: String) {
     val (timestampFile, timestampFileType) =
       getTimestampFileAndType(storePath)
-    if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
-      if (!(FileFactory.getCarbonFile(timestampFile, timestampFileType).
+    if (FileFactory.isFileExist(configuration, timestampFile, timestampFileType)) {
+      if (!(FileFactory.getCarbonFile(configuration, timestampFile, timestampFileType).
         getLastModifiedTime ==
             tableModifiedTimeStore.get(CarbonCommonConstants.DATABASE_DEFAULT_NAME))) {
         refreshCache()
@@ -491,6 +502,6 @@ class CarbonFileMetastore extends CarbonMetaStore {
   override def getThriftTableInfo(tablePath: CarbonTablePath)
     (sparkSession: SparkSession): TableInfo = {
     val tableMetadataFile = tablePath.getSchemaFilePath
-    CarbonUtil.readSchemaFile(tableMetadataFile)
+    CarbonUtil.readSchemaFile(tablePath.getConfiguration, tableMetadataFile)
   }
 }

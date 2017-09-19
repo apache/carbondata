@@ -144,6 +144,14 @@ public final class CarbonCommonConstants {
    * ALLUXIO_PREFIX
    */
   public static final String ALLUXIOURL_PREFIX = "alluxio://";
+
+  /**
+   * S3_PREFIX
+   */
+  public static final String S3_PREFIX = "s3://";
+  public static final String S3A_PREFIX = "s3a://";
+  public static final String S3N_PREFIX = "s3n://";
+
   /**
    * FS_DEFAULT_FS
    */

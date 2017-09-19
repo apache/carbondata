@@ -23,6 +23,8 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Util class for merge activities of 2 loads.
  */
@@ -34,10 +36,11 @@ public class CarbonMergerUtil {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonMergerUtil.class.getName());
 
-  public static int[] getCardinalityFromLevelMetadata(String path, String tableName) {
+  public static int[] getCardinalityFromLevelMetadata(Configuration configuration,  String path,
+      String tableName) {
     int[] localCardinality = null;
     try {
-      localCardinality = CarbonUtil.getCardinalityFromLevelMetadataFile(
+      localCardinality = CarbonUtil.getCardinalityFromLevelMetadataFile(configuration,
           path + '/' + CarbonCommonConstants.LEVEL_METADATA_FILE + tableName + ".metadata");
     } catch (IOException e) {
       LOGGER.error("Error occurred :: " + e.getMessage());
@@ -52,10 +55,11 @@ public class CarbonMergerUtil {
    * @param tableName table name
    * @return cardinality
    */
-  public static int[] getCardinalityFromLevelMetadata(String[] paths, String tableName) {
+  public static int[] getCardinalityFromLevelMetadata(Configuration configuration, String[] paths,
+      String tableName) {
     int[] localCardinality = null;
     for (String path : paths) {
-      localCardinality = getCardinalityFromLevelMetadata(path, tableName);
+      localCardinality = getCardinalityFromLevelMetadata(configuration, path, tableName);
       if (null != localCardinality) {
         break;
       }

@@ -98,6 +98,8 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
  */
 public class StoreCreator {
 
+  public final  static Configuration configuration = new Configuration();
+
   private static AbsoluteTableIdentifier absoluteTableIdentifier;
 
   static {
@@ -272,7 +274,7 @@ public class StoreCreator {
     tableInfo.setFactTable(tableSchema);
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
+            absoluteTableIdentifier.getCarbonTableIdentifier(), configuration);
     String schemaFilePath = carbonTablePath.getSchemaFilePath();
     String schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath);
     tableInfo.setMetaDataFilepath(schemaMetadataPath);
@@ -288,11 +290,11 @@ public class StoreCreator {
         .add(schemaEvolutionEntry);
 
     FileFactory.FileType fileType = FileFactory.getFileType(schemaMetadataPath);
-    if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
-      FileFactory.mkdirs(schemaMetadataPath, fileType);
+    if (!FileFactory.isFileExist(configuration, schemaMetadataPath, fileType)) {
+      FileFactory.mkdirs(configuration, schemaMetadataPath, fileType);
     }
 
-    ThriftWriter thriftWriter = new ThriftWriter(schemaFilePath, false);
+    ThriftWriter thriftWriter = new ThriftWriter(configuration, schemaFilePath, false);
     thriftWriter.open();
     thriftWriter.write(thriftTableInfo);
     thriftWriter.close();
@@ -322,16 +324,16 @@ public class StoreCreator {
     }
 
     Cache dictCache = CacheProvider.getInstance()
-        .createCache(CacheType.REVERSE_DICTIONARY, absoluteTableIdentifier.getStorePath());
+        .createCache(CacheType.REVERSE_DICTIONARY, absoluteTableIdentifier.getStorePath(), configuration);
     for (int i = 0; i < set.length; i++) {
       ColumnIdentifier columnIdentifier = new ColumnIdentifier(dims.get(i).getColumnId(), null, null);
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
           new DictionaryColumnUniqueIdentifier(table.getCarbonTableIdentifier(), columnIdentifier,
               columnIdentifier.getDataType(), CarbonStorePath
-              .getCarbonTablePath(table.getStorePath(), table.getCarbonTableIdentifier()));
+              .getCarbonTablePath(table.getStorePath(), table.getCarbonTableIdentifier(), configuration));
       CarbonDictionaryWriter writer =
           new CarbonDictionaryWriterImpl(absoluteTableIdentifier.getStorePath(),
-              absoluteTableIdentifier.getCarbonTableIdentifier(), dictionaryColumnUniqueIdentifier);
+              absoluteTableIdentifier.getCarbonTableIdentifier(), dictionaryColumnUniqueIdentifier, configuration);
       for (String value : set[i]) {
         writer.write(value);
       }
@@ -340,7 +342,7 @@ public class StoreCreator {
       Dictionary dict = (Dictionary) dictCache.get(
           new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier(),
         		  columnIdentifier, dims.get(i).getDataType(),CarbonStorePath
-              .getCarbonTablePath(table.getStorePath(), table.getCarbonTableIdentifier())));
+              .getCarbonTablePath(table.getStorePath(), table.getCarbonTableIdentifier(), configuration)));
       CarbonDictionarySortInfoPreparator preparator =
           new CarbonDictionarySortInfoPreparator();
       List<String> newDistinctValues = new ArrayList<String>();
@@ -349,7 +351,7 @@ public class StoreCreator {
       CarbonDictionarySortIndexWriter carbonDictionaryWriter =
           new CarbonDictionarySortIndexWriterImpl(
               absoluteTableIdentifier.getCarbonTableIdentifier(), dictionaryColumnUniqueIdentifier,
-              absoluteTableIdentifier.getStorePath());
+              absoluteTableIdentifier.getStorePath(), configuration);
       try {
         carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex());
         carbonDictionaryWriter.writeInvertedSortIndex(dictionarySortInfo.getSortIndexInverted());
@@ -418,7 +420,8 @@ public class StoreCreator {
     CSVRecordReaderIterator readerIterator = new CSVRecordReaderIterator(recordReader, blockDetails, hadoopAttemptContext);
     new DataLoadExecutor().execute(loadModel,
         new String[] {storeLocation},
-        new CarbonIterator[]{readerIterator});
+        new CarbonIterator[]{readerIterator},
+        configuration);
 
     info.setDatabaseName(databaseName);
     info.setTableName(tableName);
@@ -468,7 +471,7 @@ public class StoreCreator {
     BufferedWriter brWriter = null;
 
     AtomicFileOperations writeOperation =
-        new AtomicFileOperationsImpl(dataLoadLocation, FileFactory.getFileType(dataLoadLocation));
+        new AtomicFileOperationsImpl(configuration, dataLoadLocation, FileFactory.getFileType(dataLoadLocation));
 
     try {
 

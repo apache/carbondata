@@ -35,6 +35,8 @@ import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class BadRecordsLogger {
 
   /**
@@ -88,11 +90,13 @@ public class BadRecordsLogger {
 
   private boolean isDataLoadFail;
 
+  private Configuration configuration;
+
   // private final Object syncObject =new Object();
 
   public BadRecordsLogger(String key, String fileName, String storePath,
       boolean badRecordsLogRedirect, boolean badRecordLoggerEnable,
-      boolean badRecordConvertNullDisable, boolean isDataLoadFail) {
+      boolean badRecordConvertNullDisable, boolean isDataLoadFail, Configuration configuration) {
     // Initially no bad rec
     taskKey = key;
     this.fileName = fileName;
@@ -101,6 +105,7 @@ public class BadRecordsLogger {
     this.badRecordLoggerEnable = badRecordLoggerEnable;
     this.badRecordConvertNullDisable = badRecordConvertNullDisable;
     this.isDataLoadFail = isDataLoadFail;
+    this.configuration = configuration;
   }
 
   /**
@@ -178,15 +183,15 @@ public class BadRecordsLogger {
     try {
       if (null == bufferedWriter) {
         FileType fileType = FileFactory.getFileType(storePath);
-        if (!FileFactory.isFileExist(this.storePath, fileType)) {
+        if (!FileFactory.isFileExist(configuration, this.storePath, fileType)) {
           // create the folders if not exist
-          FileFactory.mkdirs(this.storePath, fileType);
+          FileFactory.mkdirs(configuration, this.storePath, fileType);
 
           // create the files
-          FileFactory.createNewFile(logFilePath, fileType);
+          FileFactory.createNewFile(configuration, logFilePath, fileType);
         }
 
-        outStream = FileFactory.getDataOutputStream(logFilePath, fileType);
+        outStream = FileFactory.getDataOutputStream(configuration, logFilePath, fileType);
 
         bufferedWriter = new BufferedWriter(new OutputStreamWriter(outStream,
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
@@ -223,15 +228,15 @@ public class BadRecordsLogger {
     try {
       if (null == bufferedCSVWriter) {
         FileType fileType = FileFactory.getFileType(storePath);
-        if (!FileFactory.isFileExist(this.storePath, fileType)) {
+        if (!FileFactory.isFileExist(configuration, this.storePath, fileType)) {
           // create the folders if not exist
-          FileFactory.mkdirs(this.storePath, fileType);
+          FileFactory.mkdirs(configuration, this.storePath, fileType);
 
           // create the files
-          FileFactory.createNewFile(csvFilePath, fileType);
+          FileFactory.createNewFile(configuration, csvFilePath, fileType);
         }
 
-        outCSVStream = FileFactory.getDataOutputStream(csvFilePath, fileType);
+        outCSVStream = FileFactory.getDataOutputStream(configuration, csvFilePath, fileType);
 
         bufferedCSVWriter = new BufferedWriter(new OutputStreamWriter(outCSVStream,
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));

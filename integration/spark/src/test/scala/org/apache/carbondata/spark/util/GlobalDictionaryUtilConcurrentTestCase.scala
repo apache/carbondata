@@ -20,7 +20,6 @@ import java.util.concurrent.{Callable, Executors}
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
@@ -65,7 +64,8 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     carbonLoadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.CARBON_DATE_FORMAT,
       CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))  
-    carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
+    carbonLoadModel.setCsvHeaderColumns(
+      CommonUtil.getCsvHeaderColumns(hadoopConf, carbonLoadModel))
     carbonLoadModel.setMaxColumns("2000")
     carbonLoadModel
   }
@@ -99,7 +99,8 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     for (a <- 0 to recCount) {
       records.append(a).append("\n")
     }
-    val dis = FileFactory.getDataOutputStream(filePath, FileFactory.getFileType(filePath))
+    val dis =
+      FileFactory.getDataOutputStream(hadoopConf, filePath, FileFactory.getFileType(filePath))
     dis.writeBytes(records.toString())
     dis.close()
   }
@@ -137,14 +138,17 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
       carbonTableIdentifier,
       columnIdentifier,
       columnIdentifier.getDataType,
-      CarbonStorePath.getCarbonTablePath(storeLocation, carbonTableIdentifier))
-    val carbonTablePath = PathFactory.getInstance()
-        .getCarbonTablePath(sampleRelation.tableMeta.storePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier)
+      CarbonStorePath.getCarbonTablePath(storeLocation, carbonTableIdentifier, hadoopConf))
+    val carbonTablePath = PathFactory.getInstance().getCarbonTablePath(
+      sampleRelation.tableMeta.storePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
+      hadoopConf)
     val dictPath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId)
-    val dictFile = FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath))
+    val dictFile =
+      FileFactory.getCarbonFile(hadoopConf, dictPath, FileFactory.getFileType(dictPath))
     val offSet = dictFile.getSize
     val sortIndexPath = carbonTablePath.getSortIndexFilePath(columnIdentifier.getColumnId, offSet)
-    val sortIndexFile = FileFactory.getCarbonFile(sortIndexPath, FileFactory.getFileType(sortIndexPath))
+    val sortIndexFile =
+      FileFactory.getCarbonFile(hadoopConf, sortIndexPath, FileFactory.getFileType(sortIndexPath))
     assert(sortIndexFile.exists())
     val sortIndexFiles = carbonTablePath.getSortIndexFiles(sortIndexFile.getParentFile, columnIdentifier.getColumnId)
     assert(sortIndexFiles.length >= 1)
@@ -153,7 +157,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
 
   def deleteFiles(files: ListBuffer[String]) {
     for (i <- 0 until files.length) {
-      val file = FileFactory.getCarbonFile(files(i), FileFactory.getFileType(files(i)))
+      val file = FileFactory.getCarbonFile(hadoopConf, files(i), FileFactory.getFileType(files(i)))
       file.delete()
     }
   }
@@ -170,6 +174,7 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
       try {
         GlobalDictionaryUtil
           .generateGlobalDictionary(sqlContext,
+            hadoopConf,
             loadModel,
             sampleRelation.tableMeta.storePath)
       } catch {

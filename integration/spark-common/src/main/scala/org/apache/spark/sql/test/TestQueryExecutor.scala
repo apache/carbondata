@@ -23,6 +23,7 @@ import java.util.ServiceLoader
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Random
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.util.Utils
 
@@ -76,11 +77,13 @@ object TestQueryExecutor {
     s"$integrationPath/spark-common-test/src/test/resources"
   }
 
+  val hadoopConf = new Configuration()
+
   val storeLocation = if (hdfsUrl.startsWith("hdfs://")) {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
       CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
-    val carbonFile = FileFactory.
-      getCarbonFile(s"$hdfsUrl/store", FileFactory.getFileType(s"$hdfsUrl/store"))
+    val carbonFile = FileFactory.getCarbonFile(hadoopConf, s"$hdfsUrl/store",
+      FileFactory.getFileType(s"$hdfsUrl/store"))
     FileFactory.deleteAllCarbonFilesOfDir(carbonFile)
     s"$hdfsUrl/store_" + System.nanoTime()
   } else {
@@ -89,8 +92,8 @@ object TestQueryExecutor {
     s"$integrationPath/spark-common/target/store"
   }
   val warehouse = if (hdfsUrl.startsWith("hdfs://")) {
-    val carbonFile = FileFactory.
-      getCarbonFile(s"$hdfsUrl/warehouse", FileFactory.getFileType(s"$hdfsUrl/warehouse"))
+    val carbonFile = FileFactory.getCarbonFile(hadoopConf, s"$hdfsUrl/warehouse",
+      FileFactory.getFileType(s"$hdfsUrl/warehouse"))
     FileFactory.deleteAllCarbonFilesOfDir(carbonFile)
     s"$hdfsUrl/warehouse_" + System.nanoTime()
   } else {
@@ -99,7 +102,7 @@ object TestQueryExecutor {
 
   val hiveresultpath = if (hdfsUrl.startsWith("hdfs://")) {
     val p = s"$hdfsUrl/hiveresultpath"
-    FileFactory.mkdirs(p, FileFactory.getFileType(p))
+    FileFactory.mkdirs(hadoopConf, p, FileFactory.getFileType(p))
     p
   } else {
     val p = s"$integrationPath/spark-common/target/hiveresultpath"

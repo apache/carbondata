@@ -23,8 +23,8 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -37,16 +37,16 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(HDFSCarbonFile.class.getName());
 
-  public HDFSCarbonFile(String filePath) {
-    super(filePath);
+  public HDFSCarbonFile(Configuration configuration, String filePath) {
+    super(configuration, filePath);
   }
 
-  public HDFSCarbonFile(Path path) {
-    super(path);
+  public HDFSCarbonFile(Configuration configuration, Path path) {
+    super(configuration, path);
   }
 
-  public HDFSCarbonFile(FileStatus fileStatus) {
-    super(fileStatus);
+  public HDFSCarbonFile(Configuration configuration, FileStatus fileStatus) {
+    super(configuration, fileStatus);
   }
 
   /**
@@ -59,7 +59,7 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
     }
     CarbonFile[] files = new CarbonFile[listStatus.length];
     for (int i = 0; i < files.length; i++) {
-      files[i] = new HDFSCarbonFile(listStatus[i]);
+      files[i] = new HDFSCarbonFile(configuration, listStatus[i]);
     }
     return files;
   }
@@ -70,7 +70,7 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
     try {
       if (null != fileStatus && fileStatus.isDirectory()) {
         Path path = fileStatus.getPath();
-        listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
+        listStatus = path.getFileSystem(configuration).listStatus(path);
       } else {
         return new CarbonFile[0];
       }
@@ -103,22 +103,22 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
   @Override
   public CarbonFile getParentFile() {
     Path parent = fileStatus.getPath().getParent();
-    return null == parent ? null : new HDFSCarbonFile(parent);
+    return null == parent ? null : new HDFSCarbonFile(configuration, parent);
   }
 
   @Override
   public boolean renameForce(String changetoName) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(configuration);
       if (fs instanceof DistributedFileSystem) {
         ((DistributedFileSystem) fs).rename(fileStatus.getPath(), new Path(changetoName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);
         return true;
       } else {
-        return false;
+        return fs.rename(fileStatus.getPath(), new Path(changetoName));
       }
-    } catch (IOException e) {
+    } catch (Exception e) {
       LOGGER.error("Exception occured: " + e.getMessage());
       return false;
     }

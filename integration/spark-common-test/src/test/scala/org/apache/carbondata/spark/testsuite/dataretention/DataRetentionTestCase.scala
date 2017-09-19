@@ -36,28 +36,33 @@ import org.apache.spark.sql.test.util.QueryTest
  */
 class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
-  val absoluteTableIdentifierForLock: AbsoluteTableIdentifier = new
-      AbsoluteTableIdentifier(storeLocation,
-        new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "retentionlock", "200"))
+  val absoluteTableIdentifierForLock: AbsoluteTableIdentifier = new AbsoluteTableIdentifier(
+    storeLocation, new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "retentionlock", "200"))
   val absoluteTableIdentifierForRetention: AbsoluteTableIdentifier = new
       AbsoluteTableIdentifier(storeLocation,
         new CarbonTableIdentifier(
           CarbonCommonConstants.DATABASE_DEFAULT_NAME, "DataRetentionTable".toLowerCase(), "300"))
   val carbonTablePath = CarbonStorePath
     .getCarbonTablePath(absoluteTableIdentifierForRetention.getStorePath,
-      absoluteTableIdentifierForRetention.getCarbonTableIdentifier).getMetadataDirectoryPath
+      absoluteTableIdentifierForRetention.getCarbonTableIdentifier,
+      hadoopConf).getMetadataDirectoryPath
 
   var carbonDateFormat = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
   var defaultDateFormat = new SimpleDateFormat(CarbonCommonConstants
     .CARBON_TIMESTAMP_DEFAULT_FORMAT)
-  val carbonTableStatusLock: ICarbonLock = CarbonLockFactory
-    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
-  val carbonDeleteSegmentLock: ICarbonLock = CarbonLockFactory
-    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK)
-  val carbonCleanFilesLock: ICarbonLock = CarbonLockFactory
-    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.CLEAN_FILES_LOCK)
-  val carbonMetadataLock: ICarbonLock = CarbonLockFactory
-    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.METADATA_LOCK)
+  val carbonTableStatusLock: ICarbonLock = CarbonLockFactory.getCarbonLockObj(
+    absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK,
+    hadoopConf)
+  val carbonDeleteSegmentLock: ICarbonLock = CarbonLockFactory.getCarbonLockObj(
+    absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK,
+    hadoopConf)
+  val carbonCleanFilesLock: ICarbonLock = CarbonLockFactory.getCarbonLockObj(
+    absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.CLEAN_FILES_LOCK,
+    hadoopConf)
+  val carbonMetadataLock: ICarbonLock = CarbonLockFactory.getCarbonLockObj(
+    absoluteTableIdentifierForLock.getCarbonTableIdentifier,
+    LockUsage.METADATA_LOCK, hadoopConf)
 
   override def beforeAll {
     sql("drop table if exists DataRetentionTable")
@@ -121,7 +126,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("RetentionTest_DeleteSegmentsByLoadTime") {
     val segments: Array[LoadMetadataDetails] =
-      SegmentStatusManager.readLoadMetadata(carbonTablePath)
+      SegmentStatusManager.readLoadMetadata(hadoopConf, carbonTablePath)
     // check segment length, it should be 3 (loads)
     if (segments.length != 2) {
       assert(false)

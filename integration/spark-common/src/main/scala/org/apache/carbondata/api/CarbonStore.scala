@@ -22,6 +22,7 @@ import java.text.SimpleDateFormat
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.{Cast, Literal}
 import org.apache.spark.sql.types.TimestampType
@@ -41,8 +42,10 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       limit: Option[String],
-      tableFolderPath: String): Seq[Row] = {
-    val loadMetadataDetailsArray = SegmentStatusManager.readLoadMetadata(tableFolderPath)
+      tableFolderPath: String,
+      configuration: Configuration): Seq[Row] = {
+    val loadMetadataDetailsArray =
+      SegmentStatusManager.readLoadMetadata(configuration, tableFolderPath)
     if (loadMetadataDetailsArray.nonEmpty) {
       val parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
       var loadMetadataDetailsSortedArray = loadMetadataDetailsArray.sortWith { (l1, l2) =>
@@ -79,10 +82,13 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       storePath: String,
-      carbonTable: CarbonTable, forceTableClean: Boolean): Unit = {
+      carbonTable: CarbonTable,
+      forceTableClean: Boolean,
+      configuration: Configuration): Unit = {
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     try {
-      DataManagementFunc.cleanFiles(dbName, tableName, storePath, carbonTable, forceTableClean)
+      DataManagementFunc.cleanFiles(dbName, tableName, storePath, carbonTable, forceTableClean,
+        configuration)
       LOGGER.audit(s"Clean files operation is success for $dbName.$tableName.")
     } catch {
       case ex: Exception =>
@@ -103,7 +109,8 @@ object CarbonStore {
       loadids: Seq[String],
       dbName: String,
       tableName: String,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable,
+      configuration: Configuration): Unit = {
 
     LOGGER.audit(s"Delete segment by Id request has been received for $dbName.$tableName")
     validateLoadIds(loadids)
@@ -112,7 +119,7 @@ object CarbonStore {
 
     try {
       val invalidLoadIds = SegmentStatusManager.updateDeletionStatus(
-        carbonTable.getAbsoluteTableIdentifier, loadids.asJava, path).asScala
+        carbonTable.getAbsoluteTableIdentifier, loadids.asJava, path, configuration).asScala
       if (invalidLoadIds.isEmpty) {
         LOGGER.audit(s"Delete segment by Id is successfull for $dbName.$tableName.")
       } else {
@@ -129,7 +136,8 @@ object CarbonStore {
       timestamp: String,
       dbName: String,
       tableName: String,
-      carbonTable: CarbonTable): Unit = {
+      carbonTable: CarbonTable,
+      configuration: Configuration): Unit = {
     LOGGER.audit(s"Delete segment by Id request has been received for $dbName.$tableName")
 
     val time = validateTimeFormat(timestamp)
@@ -141,7 +149,8 @@ object CarbonStore {
           carbonTable.getAbsoluteTableIdentifier,
           timestamp,
           path,
-          time).asScala
+          time,
+          configuration).asScala
       if (invalidLoadTimestamps.isEmpty) {
         LOGGER.audit(s"Delete segment by date is successful for $dbName.$tableName.")
       } else {
@@ -158,11 +167,11 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       storePath: String,
-      segmentId: String): Boolean = {
+      segmentId: String,
+      configuration: Configuration): Boolean = {
     val identifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
-    val validAndInvalidSegments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = new
-        SegmentStatusManager(
-          identifier).getValidAndInvalidSegments
+    val validAndInvalidSegments: SegmentStatusManager.ValidAndInvalidSegmentsInfo =
+      new SegmentStatusManager(identifier, configuration).getValidAndInvalidSegments
     return validAndInvalidSegments.getValidSegments.contains(segmentId)
   }
 

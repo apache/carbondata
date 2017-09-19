@@ -20,6 +20,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.sql.catalyst.InternalRow;
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 
@@ -27,7 +28,7 @@ public class RawDataReadSupport implements CarbonReadSupport<InternalRow> {
 
   @Override
   public void initialize(CarbonColumn[] carbonColumns,
-      AbsoluteTableIdentifier absoluteTableIdentifier) { }
+      AbsoluteTableIdentifier absoluteTableIdentifier, Configuration configuration) { }
 
   /**
    * return column data as InternalRow

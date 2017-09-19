@@ -21,6 +21,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.format.FileFooter3;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 
 /**
@@ -35,7 +36,10 @@ public class CarbonFooterReaderV3 {
   //start offset of the file footer
   private long footerOffset;
 
-  public CarbonFooterReaderV3(String filePath, long offset) {
+  private Configuration configuration;
+
+  public CarbonFooterReaderV3(Configuration configuration, String filePath, long offset) {
+    this.configuration = configuration;
     this.filePath = filePath;
     this.footerOffset = offset;
   }
@@ -65,7 +69,7 @@ public class CarbonFooterReaderV3 {
    */
   private ThriftReader openThriftReader(String filePath) {
 
-    return new ThriftReader(filePath, new ThriftReader.TBaseCreator() {
+    return new ThriftReader(configuration, filePath, new ThriftReader.TBaseCreator() {
       @Override public TBase create() {
         return new FileFooter3();
       }

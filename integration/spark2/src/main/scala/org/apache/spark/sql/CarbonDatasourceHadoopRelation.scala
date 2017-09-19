@@ -52,9 +52,11 @@ case class CarbonDatasourceHadoopRelation(
     CarbonEnv.getInstance(sparkSession).carbonSessionInfo
   ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
 
+  @transient lazy val configuration = sparkSession.sessionState.newHadoopConf()
+
   @transient lazy val carbonRelation: CarbonRelation =
     CarbonEnv.getInstance(sparkSession).carbonMetastore.
-    createCarbonRelation(parameters, identifier, sparkSession)
+    createCarbonRelation(parameters, identifier, sparkSession, configuration)
 
 
   @transient lazy val carbonTable: CarbonTable = carbonRelation.tableMeta.carbonTable
@@ -70,14 +72,15 @@ case class CarbonDatasourceHadoopRelation(
 
     val projection = new CarbonProjection
     requiredColumns.foreach(projection.addColumn)
-    val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
     new CarbonScanRDD(
       sqlContext.sparkContext,
       projection,
       filterExpression.orNull,
       identifier,
       carbonTable.getTableInfo.serialize(),
-      carbonTable.getTableInfo, inputMetricsStats)
+      carbonTable.getTableInfo,
+      new CarbonInputMetrics,
+      configuration)
   }
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)

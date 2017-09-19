@@ -38,6 +38,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 
 import org.junit.After;
 import org.junit.Before;
@@ -75,7 +76,7 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
     CacheProvider cacheProvider = CacheProvider.getInstance();
     cacheProvider.dropAllCache();
     reverseDictionaryCache =
-        cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, this.carbonStorePath);
+        cacheProvider.createCache(CacheType.REVERSE_DICTIONARY, this.carbonStorePath, CarbonTestUtil.configuration);
   }
 
   @Test public void get() throws Exception {

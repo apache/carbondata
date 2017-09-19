@@ -18,6 +18,7 @@ package org.apache.spark.sql.hive
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 
@@ -49,36 +50,37 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
    */
   override def createCarbonRelation(parameters: Map[String, String],
       absIdentifier: AbsoluteTableIdentifier,
-      sparkSession: SparkSession): CarbonRelation = {
+      sparkSession: SparkSession,
+      configuration: Configuration): CarbonRelation = {
     val info = CarbonUtil.convertGsonToTableInfo(parameters.asJava)
     if (info != null) {
       val table = CarbonTable.buildFromTableInfo(info)
       val meta = new TableMeta(table.getCarbonTableIdentifier,
         absIdentifier.getStorePath, absIdentifier.getTablePath, table)
       CarbonRelation(info.getDatabaseName, info.getFactTable.getTableName,
-        CarbonSparkUtil.createSparkMeta(table), meta)
+        CarbonSparkUtil.createSparkMeta(table), meta, configuration)
     } else {
-      super.createCarbonRelation(parameters, absIdentifier, sparkSession)
+      super.createCarbonRelation(parameters, absIdentifier, sparkSession, configuration)
     }
   }
 
 
-  override def isTablePathExists(tableIdentifier: TableIdentifier)
+  override def isTablePathExists(tableIdentifier: TableIdentifier, configuration: Configuration)
     (sparkSession: SparkSession): Boolean = {
     tableExists(tableIdentifier)(sparkSession)
   }
 
-  override def dropTable(tablePath: String, tableIdentifier: TableIdentifier)
-    (sparkSession: SparkSession): Unit = {
+  override def dropTable(tablePath: String, tableIdentifier: TableIdentifier,
+      configuration: Configuration) (sparkSession: SparkSession): Unit = {
     val dbName = tableIdentifier.database.get
     val tableName = tableIdentifier.table
     val identifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
     val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
     if (null != carbonTable) {
       // clear driver B-tree and dictionary cache
-      ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
+      ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable, configuration)
     }
-    checkSchemasModifiedTimeAndReloadTables(identifier.getStorePath)
+    checkSchemasModifiedTimeAndReloadTables(configuration, identifier.getStorePath)
     removeTableFromMetadata(dbName, tableName)
     CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
     // discard cached table info in cachedDataSourceTables
@@ -86,7 +88,8 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     DataMapStoreManager.getInstance().clearDataMap(identifier, "blocklet")
   }
 
-  override def checkSchemasModifiedTimeAndReloadTables(storePath: String) {
+  override def checkSchemasModifiedTimeAndReloadTables(configuration: Configuration,
+      storePath: String) {
     // do nothing now
   }
 
@@ -119,8 +122,8 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: format.TableInfo,
       schemaEvolutionEntry: SchemaEvolutionEntry,
-      tablePath: String)
-    (sparkSession: SparkSession): String = {
+      tablePath: String,
+      configuration: Configuration) (sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val identifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
     if (schemaEvolutionEntry != null) {
@@ -131,7 +134,8 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       thriftTableInfo,
       identifier.getStorePath,
       sparkSession,
-      schemaConverter)
+      schemaConverter,
+      configuration)
   }
 
   private def updateHiveMetaStore(newTableIdentifier: CarbonTableIdentifier,
@@ -139,14 +143,16 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       thriftTableInfo: format.TableInfo,
       carbonStorePath: String,
       sparkSession: SparkSession,
-      schemaConverter: ThriftWrapperSchemaConverterImpl) = {
+      schemaConverter: ThriftWrapperSchemaConverterImpl,
+      configuration: Configuration) = {
     val wrapperTableInfo = schemaConverter
       .fromExternalToWrapperTableInfo(thriftTableInfo,
         newTableIdentifier.getDatabaseName,
         newTableIdentifier.getTableName,
         carbonStorePath)
     wrapperTableInfo.setStorePath(carbonStorePath)
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonStorePath, newTableIdentifier)
+    val carbonTablePath =
+      CarbonStorePath.getCarbonTablePath(carbonStorePath, newTableIdentifier, configuration)
     val schemaMetadataPath =
       CarbonTablePath.getFolderContainingFile(carbonTablePath.getSchemaFilePath)
     wrapperTableInfo.setMetaDataFilepath(schemaMetadataPath)
@@ -158,7 +164,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     sparkSession.catalog.refreshTable(TableIdentifier(tableName, Some(dbName)).quotedString)
     removeTableFromMetadata(dbName, tableName)
     CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
-    CarbonStorePath.getCarbonTablePath(carbonStorePath, newTableIdentifier).getPath
+    CarbonStorePath.getCarbonTablePath(carbonStorePath, newTableIdentifier, configuration).getPath
   }
 
   /**
@@ -170,7 +176,8 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
    */
   override def revertTableSchema(carbonTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: format.TableInfo,
-      tablePath: String)
+      tablePath: String,
+      configuration: Configuration)
     (sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val identifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
@@ -181,7 +188,8 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       thriftTableInfo,
       identifier.getStorePath,
       sparkSession,
-      schemaConverter)
+      schemaConverter,
+      configuration)
   }
 
 

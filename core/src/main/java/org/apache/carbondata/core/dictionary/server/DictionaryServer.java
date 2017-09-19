@@ -33,6 +33,7 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Dictionary Server to generate dictionary keys.
@@ -54,7 +55,8 @@ public class DictionaryServer {
     startServer(port);
   }
 
-  public static DictionaryServer getInstance(int port, CarbonTable carbonTable) throws Exception {
+  public static DictionaryServer getInstance(int port, CarbonTable carbonTable,
+      Configuration configuration) throws Exception {
     if (INSTANCE == null) {
       synchronized (lock) {
         if (INSTANCE == null) {
@@ -62,7 +64,7 @@ public class DictionaryServer {
         }
       }
     }
-    INSTANCE.initializeDictionaryGenerator(carbonTable);
+    INSTANCE.initializeDictionaryGenerator(carbonTable, configuration);
     return INSTANCE;
   }
 
@@ -142,8 +144,9 @@ public class DictionaryServer {
     boss.shutdownGracefully();
   }
 
-  public void initializeDictionaryGenerator(CarbonTable carbonTable) throws Exception {
-    dictionaryServerHandler.initializeTable(carbonTable);
+  public void initializeDictionaryGenerator(CarbonTable carbonTable,
+      Configuration configuration) throws Exception {
+    dictionaryServerHandler.initializeTable(carbonTable, configuration);
   }
 
   /**

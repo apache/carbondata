@@ -29,6 +29,7 @@ import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.service.PathService;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 
 import mockit.Mock;
@@ -52,9 +53,9 @@ public class CarbonDictionaryReaderImplTest {
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
             columnIdentifier.getDataType(),
-        CarbonStorePath.getCarbonTablePath("storePath", carbonTableIdentifier));
+        CarbonStorePath.getCarbonTablePath("storePath", carbonTableIdentifier, CarbonTestUtil.configuration));
     carbonDictionaryReaderImpl =
-        new CarbonDictionaryReaderImpl("storePath", carbonTableIdentifier, dictionaryColumnUniqueIdentifier);
+        new CarbonDictionaryReaderImpl("storePath", carbonTableIdentifier, dictionaryColumnUniqueIdentifier, CarbonTestUtil.configuration);
   }
 
   @Test public void testRead() throws Exception {

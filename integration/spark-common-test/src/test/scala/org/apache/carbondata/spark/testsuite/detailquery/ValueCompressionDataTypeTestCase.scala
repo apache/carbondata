@@ -25,7 +25,7 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   val tempDirPath = s"$resourcesPath/temp"
 
   override def beforeAll {
-    FileFactory.mkdirs(tempDirPath,FileType.LOCAL)
+    FileFactory.mkdirs(hadoopConf, tempDirPath,FileType.LOCAL)
   }
 
   test("ActualDataType:double,ChangedDatatype:Short,CompressionType:NonDecimalMaxMin") {
@@ -121,12 +121,13 @@ class ValueCompressionDataTypeTestCase extends QueryTest with BeforeAndAfterAll 
   }
 
   def writedata(filePath: String, data: String) = {
-    val dis = FileFactory.getDataOutputStream(filePath, FileFactory.getFileType(filePath))
+    val dis =
+      FileFactory.getDataOutputStream(hadoopConf, filePath, FileFactory.getFileType(filePath))
     dis.writeBytes(data.toString())
     dis.close()
   }
   def deleteFile(filePath: String) {
-    val file = FileFactory.getCarbonFile(filePath, FileFactory.getFileType(filePath))
+    val file = FileFactory.getCarbonFile(hadoopConf, filePath, FileFactory.getFileType(filePath))
     file.delete()
   }
 

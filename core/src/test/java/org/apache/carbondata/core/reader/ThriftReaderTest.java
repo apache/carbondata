@@ -20,6 +20,7 @@ package org.apache.carbondata.core.reader;
 import java.io.IOException;
 
 import org.apache.carbondata.core.reader.ThriftReader;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 import org.apache.carbondata.format.ColumnDictionaryChunkMeta;
 
 import mockit.Mock;
@@ -36,7 +37,7 @@ public class ThriftReaderTest {
   private static ThriftReader thriftReader = null;
 
   @BeforeClass public static void setup() {
-    thriftReader = new ThriftReader("TestFile.carbon");
+    thriftReader = new ThriftReader(CarbonTestUtil.configuration, "TestFile.carbon");
   }
 
   @Test(expected = java.io.IOException.class) public void testReadForException()
@@ -54,7 +55,7 @@ public class ThriftReaderTest {
       }
 
     };
-    thriftReader = new ThriftReader("TestFile.carbon", tBaseCreator);
+    thriftReader = new ThriftReader(CarbonTestUtil.configuration, "TestFile.carbon", tBaseCreator);
     thriftReader.read();
   }
 

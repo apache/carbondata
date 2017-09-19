@@ -31,6 +31,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark._
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, NodeInfo}
 import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -58,8 +59,9 @@ class CarbonMergerRDD[K, V](
     result: MergeResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     carbonMergerMapping: CarbonMergerMapping,
-    confExecutorsTemp: String)
-  extends CarbonRDD[(K, V)](sc, Nil) {
+    confExecutorsTemp: String,
+    @transient configuration: Configuration)
+  extends CarbonRDD[(K, V)](sc, Nil, configuration) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
   sc.setLocalProperty("spark.job.interruptOnCancel", "true")
@@ -78,6 +80,7 @@ class CarbonMergerRDD[K, V](
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      val hadoodConf = getConf
       val carbonSparkPartition = theSplit.asInstanceOf[CarbonSparkPartition]
       if (carbonTable.isPartitionTable) {
         carbonLoadModel.setTaskNo(String.valueOf(carbonSparkPartition.partitionId))
@@ -123,8 +126,8 @@ class CarbonMergerRDD[K, V](
             // Block of the sorted list as it will have the last updated cardinality.
             // Blocks are sorted by order of updation using TableBlockInfo.compare method so
             // the last block after the sort will be the latest one.
-            dataFileFooter = CarbonUtil
-              .readMetadatFile(tableBlockInfoList.get(tableBlockInfoList.size() - 1))
+            dataFileFooter = CarbonUtil.readMetadatFile(
+              tableBlockInfoList.get(tableBlockInfoList.size() - 1), hadoodConf)
           } catch {
             case e: IOException =>
               logError("Exception in preparing the data file footer for compaction " + e.getMessage)
@@ -166,7 +169,8 @@ class CarbonMergerRDD[K, V](
           CarbonCompactionUtil.createMappingForSegments(tableBlockInfoList)
 
         val dataFileMetadataSegMapping: java.util.Map[String, List[DataFileFooter]] =
-          CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList)
+          CarbonCompactionUtil.createDataFileFooterMappingForSegments(
+            tableBlockInfoList, hadoodConf)
 
         carbonLoadModel.setStorePath(hdfsStoreLocation)
         // check for restructured block
@@ -208,7 +212,7 @@ class CarbonMergerRDD[K, V](
           processor = new CompactionResultSortProcessor(carbonLoadModel, carbonTable,
             segmentProperties,
             carbonMergerMapping.campactionType,
-            factTableName
+            factTableName, hadoodConf
           )
         } else {
           processor =
@@ -218,7 +222,8 @@ class CarbonMergerRDD[K, V](
               segmentProperties,
               tempStoreLoc,
               carbonLoadModel,
-              carbonMergerMapping.campactionType
+              carbonMergerMapping.campactionType,
+              hadoodConf
             )
         }
         mergeStatus = processor.execute(result2)
@@ -264,7 +269,7 @@ class CarbonMergerRDD[K, V](
       hdfsStoreLocation, new CarbonTableIdentifier(databaseName, factTableName, tableId)
     )
     val updateStatusManager: SegmentUpdateStatusManager = new SegmentUpdateStatusManager(
-      absoluteTableIdentifier)
+      absoluteTableIdentifier, configuration)
     val jobConf: JobConf = new JobConf(new Configuration)
     val job: Job = new Job(jobConf)
     val format = CarbonInputFormatUtil.createCarbonInputFormat(absoluteTableIdentifier, job)
@@ -330,7 +335,7 @@ class CarbonMergerRDD[K, V](
 
       try {
         dataFileFooter = CarbonUtil.readMetadatFile(
-          CarbonInputSplit.getTableBlockInfo(carbonInputSplit))
+          CarbonInputSplit.getTableBlockInfo(carbonInputSplit), configuration)
       } catch {
         case e: IOException =>
           logError("Exception in preparing the data file footer for compaction " + e.getMessage)
@@ -357,7 +362,7 @@ class CarbonMergerRDD[K, V](
       // Check the cardinality of each columns and set the highest.
       try {
         dataFileFooter = CarbonUtil.readMetadatFile(
-          CarbonInputSplit.getTableBlockInfo(splits))
+          CarbonInputSplit.getTableBlockInfo(splits), configuration)
       } catch {
         case e: IOException =>
           logError("Exception in preparing the data file footer for compaction " + e.getMessage)

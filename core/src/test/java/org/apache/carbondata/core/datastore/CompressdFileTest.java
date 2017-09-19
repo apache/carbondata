@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.*;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -97,7 +98,7 @@ public class CompressdFileTest
 
       try {
         fileReader =
-            FileFactory.getDataInputStream(path, FileType.HDFS);
+            FileFactory.getDataInputStream(CarbonTestUtil.configuration, path, FileType.HDFS);
         bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
             Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
         readLine = bufferedReader.readLine();

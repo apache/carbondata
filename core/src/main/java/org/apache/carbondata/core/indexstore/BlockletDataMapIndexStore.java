@@ -29,6 +29,8 @@ import org.apache.carbondata.core.cache.CarbonLRUCache;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 import org.apache.carbondata.core.memory.MemoryException;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Class to handle loading, unloading,clearing,storing of the table
  * blocks
@@ -54,13 +56,17 @@ public class BlockletDataMapIndexStore
    */
   private Map<String, Object> segmentLockMap;
 
+  private Configuration configuration;
+
   /**
    * constructor to initialize the SegmentTaskIndexStore
    *
    * @param carbonStorePath
    * @param lruCache
    */
-  public BlockletDataMapIndexStore(String carbonStorePath, CarbonLRUCache lruCache) {
+  public BlockletDataMapIndexStore(Configuration configuration, String carbonStorePath,
+      CarbonLRUCache lruCache) {
+    this.configuration = configuration;
     this.carbonStorePath = carbonStorePath;
     this.lruCache = lruCache;
     segmentLockMap = new ConcurrentHashMap<String, Object>();
@@ -141,7 +147,7 @@ public class BlockletDataMapIndexStore
     BlockletDataMap dataMap = null;
     synchronized (lock) {
       dataMap = new BlockletDataMap();
-      dataMap.init(tableSegmentUniqueIdentifier.getFilePath());
+      dataMap.init(configuration, tableSegmentUniqueIdentifier.getFilePath());
       lruCache.put(tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier(), dataMap,
           dataMap.getMemorySize());
     }

@@ -26,6 +26,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * Handler for Dictionary server.
@@ -102,8 +103,8 @@ import io.netty.channel.ChannelInboundHandlerAdapter;
     }
   }
 
-  void initializeTable(CarbonTable carbonTable) {
-    generatorForServer.initializeGeneratorForTable(carbonTable);
+  void initializeTable(CarbonTable carbonTable, Configuration configuration) {
+    generatorForServer.initializeGeneratorForTable(carbonTable, configuration);
   }
 
 }

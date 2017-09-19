@@ -47,6 +47,8 @@ import org.apache.carbondata.core.util.ObjectSizeCalculator;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Class to handle loading, unloading,clearing,storing of the table
  * blocks
@@ -75,13 +77,18 @@ public class SegmentTaskIndexStore
   private Map<SegmentPropertiesWrapper, SegmentProperties> segmentProperties =
       new HashMap<SegmentPropertiesWrapper, SegmentProperties>();
 
+  private Configuration configuration;
+
   /**
    * constructor to initialize the SegmentTaskIndexStore
    *
+   * @param configuration
    * @param carbonStorePath
    * @param lruCache
    */
-  public SegmentTaskIndexStore(String carbonStorePath, CarbonLRUCache lruCache) {
+  public SegmentTaskIndexStore(Configuration configuration, String carbonStorePath,
+      CarbonLRUCache lruCache) {
+    this.configuration = configuration;
     this.carbonStorePath = carbonStorePath;
     this.lruCache = lruCache;
     segmentLockMap = new ConcurrentHashMap<String, Object>();
@@ -183,7 +190,7 @@ public class SegmentTaskIndexStore
     Map<TaskBucketHolder, AbstractIndex> taskIdToSegmentIndexMap = null;
     SegmentTaskIndexWrapper segmentTaskIndexWrapper = null;
     SegmentUpdateStatusManager updateStatusManager =
-        new SegmentUpdateStatusManager(absoluteTableIdentifier);
+        new SegmentUpdateStatusManager(absoluteTableIdentifier, configuration);
     String segmentId = null;
     TaskBucketHolder taskBucketHolder = null;
     try {
@@ -300,9 +307,9 @@ public class SegmentTaskIndexStore
     while (iterator.hasNext()) {
       Map.Entry<TaskBucketHolder, List<TableBlockInfo>> taskToBlockInfoList = iterator.next();
       taskBucketHolder = taskToBlockInfoList.getKey();
-      driverBTreeSize += CarbonUtil
-          .calculateDriverBTreeSize(taskBucketHolder.taskNo, taskBucketHolder.bucketNumber,
-              taskToBlockInfoList.getValue(), absoluteTableIdentifier);
+      driverBTreeSize += CarbonUtil.calculateDriverBTreeSize(configuration,
+          taskBucketHolder.taskNo, taskBucketHolder.bucketNumber, taskToBlockInfoList.getValue(),
+          absoluteTableIdentifier);
     }
     return driverBTreeSize;
   }
@@ -370,7 +377,7 @@ public class SegmentTaskIndexStore
     // so creating a list which will have all the data file meta data to of one task
     List<DataFileFooter> footerList = CarbonUtil
         .readCarbonIndexFile(taskBucketHolder.taskNo, taskBucketHolder.bucketNumber,
-            tableBlockInfoList, tableIdentifier);
+            tableBlockInfoList, tableIdentifier, configuration);
 
     // Reuse SegmentProperties object if tableIdentifier, columnsInTable and columnCardinality are
     // the same.

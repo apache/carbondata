@@ -21,6 +21,8 @@ import java.io.IOException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This is the interface to convert data reading from RecordReader to row representation.
  */
@@ -32,8 +34,8 @@ public interface CarbonReadSupport<T> {
    * @param carbonColumns column list
    * @param absoluteTableIdentifier table identifier
    */
-  void initialize(CarbonColumn[] carbonColumns,
-      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException;
+  void initialize(CarbonColumn[] carbonColumns, AbsoluteTableIdentifier absoluteTableIdentifier,
+      Configuration configuration) throws IOException;
 
   /**
    * convert column data back to row representation

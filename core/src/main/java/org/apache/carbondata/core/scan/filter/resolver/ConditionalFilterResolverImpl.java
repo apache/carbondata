@@ -38,6 +38,8 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnRes
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor.FilterInfoTypeVisitorFactory;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class ConditionalFilterResolverImpl implements FilterResolverIntf {
 
   private static final long serialVersionUID = 1838955268462201691L;
@@ -48,14 +50,17 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
   private MeasureColumnResolvedFilterInfo msrColResolvedFilterInfo;
   private AbsoluteTableIdentifier tableIdentifier;
   private boolean isMeasure;
+  protected transient Configuration configuration;
 
   public ConditionalFilterResolverImpl(Expression exp, boolean isExpressionResolve,
-      boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier, boolean isMeasure) {
+      boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier, boolean isMeasure,
+      Configuration configuration) {
     this.exp = exp;
     this.isExpressionResolve = isExpressionResolve;
     this.isIncludeFilter = isIncludeFilter;
     this.tableIdentifier = tableIdentifier;
     this.isMeasure = isMeasure;
+    this.configuration = configuration;
     if (isMeasure == false) {
       this.dimColResolvedFilterInfo = new DimColumnResolvedFilterInfo();
     } else {
@@ -108,11 +113,13 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
           if (columnExpression.isMeasure()) {
             msrColResolvedFilterInfo.setMeasure(columnExpression.getMeasure());
             msrColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
-                FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression, exp),
+                FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression, exp,
+                    configuration),
                 metadata);
           } else {
             dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
-                FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression, exp),
+                FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression, exp,
+                    configuration),
                 metadata);
           }
         }
@@ -138,11 +145,13 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
 
             if (columnExpression.isMeasure()) {
               msrColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
-                  FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression, exp),
+                  FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression, exp,
+                      configuration),
                   metadata);
             } else {
               dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
-                  FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression, exp),
+                  FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnExpression, exp,
+                      configuration),
                   metadata);
             }
           }
@@ -163,7 +172,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
               .getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY))
           || (exp instanceof RangeExpression)) {
         dimColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
-            FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnList.get(0), exp),
+            FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnList.get(0), exp,
+                configuration),
             metadata);
 
       } else if ((null != columnList.get(0).getDimension()) && (
@@ -174,14 +184,15 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
                   == org.apache.carbondata.core.metadata.datatype.DataType.ARRAY))) {
         dimColResolvedFilterInfo.setFilterValues(FilterUtil
             .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
-                isIncludeFilter, tableProvider));
+                isIncludeFilter, tableProvider, configuration));
 
         dimColResolvedFilterInfo.setColumnIndex(columnList.get(0).getDimension().getOrdinal());
         dimColResolvedFilterInfo.setDimension(columnList.get(0).getDimension());
       } else if (columnList.get(0).isMeasure()) {
         msrColResolvedFilterInfo.setMeasure(columnList.get(0).getMeasure());
         msrColResolvedFilterInfo.populateFilterInfoBasedOnColumnType(
-            FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnList.get(0), exp),
+            FilterInfoTypeVisitorFactory.getResolvedFilterInfoVisitor(columnList.get(0), exp,
+                configuration),
             metadata);
         msrColResolvedFilterInfo.setCarbonColumn(columnList.get(0).getCarbonColumn());
         msrColResolvedFilterInfo.setColumnIndex(columnList.get(0).getCarbonColumn().getOrdinal());

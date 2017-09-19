@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
 
@@ -53,22 +54,27 @@ public class CarbonTablePath extends Path {
 
   protected String tablePath;
   protected CarbonTableIdentifier carbonTableIdentifier;
+  protected Configuration configuration;
 
   /**
    *
    * @param carbonTableIdentifier
    * @param tablePathString
    */
-  public CarbonTablePath(CarbonTableIdentifier carbonTableIdentifier, String tablePathString) {
+  public CarbonTablePath(CarbonTableIdentifier carbonTableIdentifier, String tablePathString,
+      Configuration configuration) {
     super(tablePathString);
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.tablePath = tablePathString;
+    this.configuration = configuration;
   }
 
-  public CarbonTablePath(String storePath, String dbName, String tableName) {
+  public CarbonTablePath(String storePath, String dbName, String tableName,
+      Configuration configuration) {
     super(storePath + File.separator + dbName + File.separator + tableName);
     this.carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "");
     this.tablePath = storePath + File.separator + dbName + File.separator + tableName;
+    this.configuration = configuration;
   }
 
   /**
@@ -252,11 +258,11 @@ public class CarbonTablePath extends Path {
    * @param segmentId   segment number
    * @return full qualified carbon index path
    */
-  public String getCarbonIndexFilePath(final String taskId, final String partitionId,
-      final String segmentId, final String bucketNumber) {
+  public String getCarbonIndexFilePath(final String taskId,
+      final String partitionId, final String segmentId, final String bucketNumber) {
     String segmentDir = getSegmentDir(partitionId, segmentId);
     CarbonFile carbonFile =
-        FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir));
+        FileFactory.getCarbonFile(configuration, segmentDir, FileFactory.getFileType(segmentDir));
 
     CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
@@ -334,7 +340,7 @@ public class CarbonTablePath extends Path {
       final String segmentId) {
     String segmentDir = getSegmentDir(partitionId, segmentId);
     CarbonFile carbonFile =
-        FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir));
+        FileFactory.getCarbonFile(configuration, segmentDir, FileFactory.getFileType(segmentDir));
 
     CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
@@ -363,7 +369,7 @@ public class CarbonTablePath extends Path {
       final String segmentId) {
     String segmentDir = getSegmentDir(partitionId, segmentId);
     CarbonFile carbonFile =
-        FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir));
+        FileFactory.getCarbonFile(configuration, segmentDir, FileFactory.getFileType(segmentDir));
 
     CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
@@ -737,5 +743,9 @@ public class CarbonTablePath extends Path {
   public static String getCarbonIndexFileName(String actualBlockName) {
     return DataFileUtil.getTaskNo(actualBlockName) + "-" + DataFileUtil.getBucketNo(actualBlockName)
         + "-" + DataFileUtil.getTimeStampFromFileName(actualBlockName) + INDEX_FILE_EXT;
+  }
+
+  public Configuration getConfiguration() {
+    return configuration;
   }
 }

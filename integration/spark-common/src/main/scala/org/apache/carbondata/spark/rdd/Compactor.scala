@@ -65,7 +65,8 @@ object Compactor {
     )
     carbonLoadModel.setStorePath(carbonMergerMapping.hdfsStoreLocation)
     carbonLoadModel.setLoadMetadataDetails(
-      SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath).toList.asJava)
+      SegmentStatusManager.readLoadMetadata(compactionCallableModel.configuration,
+        carbonTable.getMetaDataFilepath).toList.asJava)
     var execInstance = "1"
     // in case of non dynamic executor allocation, number of executors are fixed.
     if (sc.sparkContext.getConf.contains("spark.executor.instances")) {
@@ -87,7 +88,8 @@ object Compactor {
         new MergeResultImpl(),
         carbonLoadModel,
         carbonMergerMapping,
-        execInstance
+        execInstance,
+        compactionCallableModel.configuration
       ).collect
     } else {
       new CarbonMergerRDD(
@@ -95,7 +97,8 @@ object Compactor {
         new MergeResultImpl(),
         carbonLoadModel,
         carbonMergerMapping,
-        execInstance
+        execInstance,
+        compactionCallableModel.configuration
       ).collect
     }
 
@@ -110,13 +113,12 @@ object Compactor {
       logger.info(s"time taken to merge $mergedLoadName is ${ endTime - startTime }")
       val statusFileUpdation =
         (((compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) &&
-          (CarbonDataMergerUtil
-            .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
-              carbonTable.getMetaDataFilepath(),
-              carbonLoadModel))) ||
-         (CarbonDataMergerUtil
-           .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath(),
-             mergedLoadName, carbonLoadModel, mergeLoadStartTime, compactionType))
+          (CarbonDataMergerUtil.updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
+            carbonTable.getMetaDataFilepath(), carbonLoadModel,
+            compactionCallableModel.configuration))) ||
+         (CarbonDataMergerUtil.updateLoadMetadataWithMergeStatus(loadsToMerge,
+           carbonTable.getMetaDataFilepath(), mergedLoadName, carbonLoadModel, mergeLoadStartTime,
+           compactionType, compactionCallableModel.configuration))
           )
 
       if (!statusFileUpdation) {

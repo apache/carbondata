@@ -304,16 +304,18 @@ case class CarbonRelation(
   private var sizeInBytesLocalValue = 0L
 
   def sizeInBytes: Long = {
+    val hadoopConf = sqlContext.sparkContext.hadoopConfiguration
     val tableStatusNewLastUpdatedTime = SegmentStatusManager.getTableStatusLastModifiedTime(
-      tableMeta.carbonTable.getAbsoluteTableIdentifier)
+      tableMeta.carbonTable.getAbsoluteTableIdentifier, hadoopConf)
     if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
       val tablePath = CarbonStorePath.getCarbonTablePath(
         tableMeta.storePath,
-        tableMeta.carbonTableIdentifier).getPath
+        tableMeta.carbonTableIdentifier,
+        hadoopConf).getPath
       val fileType = FileFactory.getFileType(tablePath)
-      if(FileFactory.isFileExist(tablePath, fileType)) {
+      if(FileFactory.isFileExist(hadoopConf, tablePath, fileType)) {
         tableStatusLastUpdateTime = tableStatusNewLastUpdatedTime
-        sizeInBytesLocalValue = FileFactory.getDirectorySize(tablePath)
+        sizeInBytesLocalValue = FileFactory.getDirectorySize(hadoopConf, tablePath)
       }
     }
     sizeInBytesLocalValue

@@ -33,6 +33,8 @@ import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class RowResultProcessor {
 
   private CarbonFactHandler dataHandler;
@@ -43,13 +45,14 @@ public class RowResultProcessor {
 
 
   public RowResultProcessor(CarbonTable carbonTable, CarbonLoadModel loadModel,
-      SegmentProperties segProp, String[] tempStoreLocation, Integer bucketId) {
+      SegmentProperties segProp, String[] tempStoreLocation, Integer bucketId,
+      Configuration configuration) {
     CarbonDataProcessorUtil.createLocations(tempStoreLocation);
     this.segmentProperties = segProp;
     String tableName = carbonTable.getFactTableName();
     CarbonFactDataHandlerModel carbonFactDataHandlerModel =
         CarbonFactDataHandlerModel.getCarbonFactDataHandlerModel(loadModel, carbonTable,
-            segProp, tableName, tempStoreLocation);
+            segProp, tableName, tempStoreLocation, configuration);
     CarbonDataFileAttributes carbonDataFileAttributes =
         new CarbonDataFileAttributes(Integer.parseInt(loadModel.getTaskNo()),
             loadModel.getFactTimeStamp());

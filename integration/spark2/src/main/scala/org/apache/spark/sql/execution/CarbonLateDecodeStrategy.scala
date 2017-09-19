@@ -45,8 +45,9 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  * Carbon specific optimization for late decode (convert dictionary key to value as late as
  * possible), which can improve the aggregation performance and reduce memory usage
  */
-private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
+private[sql] class CarbonLateDecodeStrategy(sparkSession: SparkSession) extends SparkStrategy {
   val PUSHED_FILTERS = "PushedFilters"
+
 
   def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
@@ -95,6 +96,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       newAttr
     }
 
+    rdd.sparkContext
+
     new CarbonDecoderRDD(
       Seq(relation),
       IncludeProfile(attrs),
@@ -102,7 +105,8 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       rdd,
       output,
       CarbonEnv.getInstance(SparkSession.getActiveSession.get).storePath,
-      table.carbonTable.getTableInfo.serialize())
+      table.carbonTable.getTableInfo.serialize(),
+      sparkSession.sessionState.newHadoopConf())
   }
 
   private[this] def toCatalystRDD(

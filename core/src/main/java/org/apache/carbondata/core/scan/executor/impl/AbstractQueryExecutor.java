@@ -138,15 +138,15 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         tableBlockInfos.add(blockInfo);
       }
       for (List<TableBlockInfo> tableBlockInfos: listMap.values()) {
-        indexList.add(new IndexWrapper(tableBlockInfos));
+        indexList.add(new IndexWrapper(tableBlockInfos, queryModel.getConfiguration()));
       }
       queryProperties.dataBlocks = indexList;
     } else {
       // get the table blocks
       CacheProvider cacheProvider = CacheProvider.getInstance();
       BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache =
-          (BlockIndexStore) cacheProvider
-              .createCache(CacheType.EXECUTOR_BTREE, queryModel.getTable().getStorePath());
+          (BlockIndexStore) cacheProvider.createCache(CacheType.EXECUTOR_BTREE,
+              queryModel.getTable().getStorePath(), queryModel.getConfiguration());
       // remove the invalid table blocks, block which is deleted or compacted
       cache.removeTableBlocks(queryModel.getInvalidSegmentIds(),
           queryModel.getAbsoluteTableIdentifier());
@@ -193,7 +193,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     queryProperties.columnToDictionayMapping = QueryUtil
         .getDimensionDictionaryDetail(queryModel.getQueryDimension(),
             queryProperties.complexFilterDimension, queryModel.getAbsoluteTableIdentifier(),
-            tableProvider);
+            tableProvider, queryModel.getConfiguration());
     queryStatistic
         .addStatistics(QueryStatisticsConstants.LOAD_DICTIONARY, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
@@ -259,10 +259,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .createDimensionInfoAndGetCurrentBlockQueryDimension(blockExecutionInfo,
             queryModel.getQueryDimension(), tableBlockDimensions,
             segmentProperties.getComplexDimensions());
-    int tableFactPathLength = CarbonStorePath
-        .getCarbonTablePath(queryModel.getAbsoluteTableIdentifier().getStorePath(),
-            queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier()).getFactDir()
-        .length() + 1;
+    int tableFactPathLength = CarbonStorePath.getCarbonTablePath(
+        queryModel.getAbsoluteTableIdentifier().getStorePath(),
+        queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier(),
+        queryModel.getConfiguration()).getFactDir().length() + 1;
     blockExecutionInfo.setBlockId(filePath.substring(tableFactPathLength));
     blockExecutionInfo.setDeleteDeltaFilePath(deleteDeltaFiles);
     blockExecutionInfo.setStartBlockletIndex(startBlockletIndex);
@@ -295,7 +295,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       // loading the filter executor tree for filter evaluation
       blockExecutionInfo.setFilterExecuterTree(FilterUtil
           .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), segmentProperties,
-              blockExecutionInfo.getComlexDimensionInfoMap()));
+              blockExecutionInfo.getComlexDimensionInfoMap(), queryModel.getConfiguration()));
     }
     try {
       startIndexKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);

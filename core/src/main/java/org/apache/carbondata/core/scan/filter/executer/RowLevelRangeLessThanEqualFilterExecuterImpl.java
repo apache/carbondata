@@ -46,6 +46,8 @@ import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilterExecuterImpl {
   protected byte[][] filterRangeValues;
   protected Object[] msrFilterRangeValues;
@@ -60,9 +62,10 @@ public class RowLevelRangeLessThanEqualFilterExecuterImpl extends RowLevelFilter
       List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, byte[][] filterRangeValues,
-      Object[] msrFilterRangeValues, SegmentProperties segmentProperties) {
+      Object[] msrFilterRangeValues, SegmentProperties segmentProperties,
+      Configuration configuration) {
     super(dimColEvaluatorInfoList, msrColEvalutorInfoList, exp, tableIdentifier, segmentProperties,
-        null);
+        null, configuration);
     lastDimensionColOrdinal = segmentProperties.getLastDimensionColOrdinal();
     this.filterRangeValues = filterRangeValues;
     this.msrFilterRangeValues = msrFilterRangeValues;

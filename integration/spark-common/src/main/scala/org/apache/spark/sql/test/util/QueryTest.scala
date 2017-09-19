@@ -87,6 +87,7 @@ class QueryTest extends PlanTest {
   def sql(sqlText: String): DataFrame = TestQueryExecutor.INSTANCE.sql(sqlText)
 
   val sqlContext: SQLContext = TestQueryExecutor.INSTANCE.sqlContext
+  val hadoopConf = TestQueryExecutor.hadoopConf
 
   lazy val storeLocation = CarbonProperties.getInstance().
     getProperty(CarbonCommonConstants.STORE_LOCATION)

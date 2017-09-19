@@ -22,6 +22,7 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -29,6 +30,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -77,9 +79,10 @@ private[sql] case class ProjectForDeleteCommand(
         .lookupRelation(deleteExecution.getTableIdentifier(identifier))(sparkSession).
         asInstanceOf[CarbonRelation]
     val carbonTable = relation.tableMeta.carbonTable
+    val hadoopConf = sparkSession.sessionState.newHadoopConf()
     val metadataLock = CarbonLockFactory
         .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-          LockUsage.METADATA_LOCK)
+          LockUsage.METADATA_LOCK, hadoopConf)
     var lockStatus = false
     try {
       lockStatus = metadataLock.lockWithRetries()
@@ -93,29 +96,31 @@ private[sql] case class ProjectForDeleteCommand(
       }
       val tablePath = CarbonStorePath.getCarbonTablePath(
         carbonTable.getStorePath,
-        carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier)
+        carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+        hadoopConf)
       var executorErrors = new ExecutionErrors(FailureCauses.NONE, "")
 
       // handle the clean up of IUD.
-      CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
+      CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false, hadoopConf)
 
       if (deleteExecution
           .deleteDeltaExecution(identifier, sparkSession, dataRdd, timestamp, relation,
-            false, executorErrors)) {
+            false, executorErrors, hadoopConf)) {
         // call IUD Compaction.
-        IUDCommon.tryHorizontalCompaction(sparkSession, relation, isUpdateOperation = false)
+        IUDCommon.tryHorizontalCompaction(sparkSession, relation, false, hadoopConf)
       }
     } catch {
       case e: HorizontalCompactionException =>
         LOGGER.error("Delete operation passed. Exception in Horizontal Compaction." +
             " Please check logs. " + e.getMessage)
-        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
+        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString,
+          hadoopConf)
 
       case e: Exception =>
         LOGGER.error(e, "Exception in Delete data operation " + e.getMessage)
         // ****** start clean up.
         // In case of failure , clean all related delete delta files
-        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
+        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp, hadoopConf)
 
         // clean up. Null check is required as for executor error some times message is null
         if (null != e.getMessage) {
@@ -167,9 +172,10 @@ private[sql] case class ProjectForUpdateCommand(
     //      .lookupRelation1(deleteExecution.getTableIdentifier(tableIdentifier))(sqlContext).
     //      asInstanceOf[CarbonRelation]
     val carbonTable = relation.tableMeta.carbonTable
+    val hadoopConf = sparkSession.sessionState.newHadoopConf()
     val metadataLock = CarbonLockFactory
         .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-          LockUsage.METADATA_LOCK)
+          LockUsage.METADATA_LOCK, hadoopConf)
     var lockStatus = false
     // get the current time stamp which should be same for delete and update.
     val currentTime = CarbonUpdateUtil.readCurrentTime
@@ -186,7 +192,8 @@ private[sql] case class ProjectForUpdateCommand(
       }
       val tablePath = CarbonStorePath.getCarbonTablePath(
         carbonTable.getStorePath,
-        carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier)
+        carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+        hadoopConf)
       // Get RDD.
 
       dataSet = if (isPersistEnabled) {
@@ -200,12 +207,12 @@ private[sql] case class ProjectForUpdateCommand(
 
 
       // handle the clean up of IUD.
-      CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
+      CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false, hadoopConf)
 
       // do delete operation.
       deleteExecution.deleteDeltaExecution(tableIdentifier, sparkSession, dataSet.rdd,
         currentTime + "",
-        relation, isUpdateOperation = true, executionErrors)
+        relation, isUpdateOperation = true, executionErrors, hadoopConf)
 
       if(executionErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executionErrors.errorMsg)
@@ -220,19 +227,20 @@ private[sql] case class ProjectForUpdateCommand(
       }
 
       // Do IUD Compaction.
-      IUDCommon.tryHorizontalCompaction(sparkSession, relation, isUpdateOperation = true)
+      IUDCommon.tryHorizontalCompaction(sparkSession, relation, true, hadoopConf)
     } catch {
       case e: HorizontalCompactionException =>
         LOGGER.error(
           "Update operation passed. Exception in Horizontal Compaction. Please check logs." + e)
         // In case of failure , clean all related delta files
-        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString)
+        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, e.compactionTimeStamp.toString,
+          hadoopConf)
 
       case e: Exception =>
         LOGGER.error("Exception in update operation" + e)
         // ****** start clean up.
         // In case of failure , clean all related delete delta files
-        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, currentTime + "")
+        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, currentTime + "", hadoopConf)
 
         // *****end clean up.
         if (null != e.getMessage) {
@@ -272,7 +280,8 @@ object IUDCommon {
    */
   def tryHorizontalCompaction(sparkSession: SparkSession,
       carbonRelation: CarbonRelation,
-      isUpdateOperation: Boolean): Unit = {
+      isUpdateOperation: Boolean,
+      configuration: Configuration): Unit = {
 
     var ishorizontalCompaction = CarbonDataMergerUtil.isHorizontalCompactionEnabled()
 
@@ -290,7 +299,7 @@ object IUDCommon {
     val deleteTimeStamp = updateTimeStamp + 1
 
     // get the valid segments
-    var segLists = CarbonDataMergerUtil.getValidSegmentList(absTableIdentifier)
+    var segLists = CarbonDataMergerUtil.getValidSegmentList(absTableIdentifier, configuration)
 
     if (segLists == null || segLists.size() == 0) {
       return
@@ -301,7 +310,7 @@ object IUDCommon {
     // SegmentUpdateStatusManager reads the Table Status File and Table Update Status
     // file and save the content in segmentDetails and updateDetails respectively.
     val segmentUpdateStatusManager: SegmentUpdateStatusManager = new SegmentUpdateStatusManager(
-      absTableIdentifier)
+      absTableIdentifier, configuration)
 
     if (isUpdateOperation == true) {
 
@@ -313,12 +322,13 @@ object IUDCommon {
         absTableIdentifier,
         segmentUpdateStatusManager,
         updateTimeStamp,
-        segLists)
+        segLists,
+        configuration)
     }
 
     // After Update Compaction perform delete compaction
     compactionTypeIUD = CompactionType.IUD_DELETE_DELTA_COMPACTION
-    segLists = CarbonDataMergerUtil.getValidSegmentList(absTableIdentifier)
+    segLists = CarbonDataMergerUtil.getValidSegmentList(absTableIdentifier, configuration)
     if (segLists == null || segLists.size() == 0) {
       return
     }
@@ -330,7 +340,8 @@ object IUDCommon {
       absTableIdentifier,
       segmentUpdateStatusManager,
       deleteTimeStamp,
-      segLists)
+      segLists,
+      configuration)
   }
 
   /**
@@ -348,14 +359,16 @@ object IUDCommon {
       absTableIdentifier: AbsoluteTableIdentifier,
       segmentUpdateStatusManager: SegmentUpdateStatusManager,
       factTimeStamp: Long,
-      segLists: util.List[String]): Unit = {
+      segLists: util.List[String],
+      configuration: Configuration): Unit = {
     val db = carbonTable.getDatabaseName
     val table = carbonTable.getFactTableName
     // get the valid segments qualified for update compaction.
     val validSegList = CarbonDataMergerUtil.getSegListIUDCompactionQualified(segLists,
       absTableIdentifier,
       segmentUpdateStatusManager,
-      compactionTypeIUD)
+      compactionTypeIUD,
+      configuration)
 
     if (validSegList.size() == 0) {
       return
@@ -404,14 +417,16 @@ object IUDCommon {
       absTableIdentifier: AbsoluteTableIdentifier,
       segmentUpdateStatusManager: SegmentUpdateStatusManager,
       factTimeStamp: Long,
-      segLists: util.List[String]): Unit = {
+      segLists: util.List[String],
+      configuration: Configuration): Unit = {
 
     val db = carbonTable.getDatabaseName
     val table = carbonTable.getFactTableName
     val deletedBlocksList = CarbonDataMergerUtil.getSegListIUDCompactionQualified(segLists,
       absTableIdentifier,
       segmentUpdateStatusManager,
-      compactionTypeIUD)
+      compactionTypeIUD,
+      configuration)
 
     if (deletedBlocksList.size() == 0) {
       return
@@ -441,7 +456,8 @@ object IUDCommon {
             val result = CarbonDataMergerUtil.compactBlockDeleteDeltaFiles(segment, blockName,
               absTableIdentifier,
               updateStatusDetails,
-              timestamp)
+              timestamp,
+              configuration)
 
             result.asScala.toList
 
@@ -458,7 +474,8 @@ object IUDCommon {
       val updateStatus = CarbonDataMergerUtil.updateStatusFile(resultList.toList.asJava,
         carbonTable,
         timestamp.toString,
-        segmentUpdateStatusManager)
+        segmentUpdateStatusManager,
+        configuration)
       if (updateStatus == false) {
         LOG.audit(s"Delete Compaction data operation is failed for [${db}.${table}].")
         LOG.error("Delete Compaction data operation is failed.")
@@ -505,7 +522,8 @@ object deleteExecution {
                            sparkSession: SparkSession,
                            dataRdd: RDD[Row],
                            timestamp: String, relation: CarbonRelation, isUpdateOperation: Boolean,
-                           executorErrors: ExecutionErrors): Boolean = {
+                           executorErrors: ExecutionErrors,
+                           configuration: Configuration): Boolean = {
 
     var res: Array[List[(String, (SegmentUpdateDetails, ExecutionErrors))]] = null
     val tableName = getTableIdentifier(identifier).table
@@ -518,12 +536,11 @@ object deleteExecution {
     val absoluteTableIdentifier: AbsoluteTableIdentifier = new
         AbsoluteTableIdentifier(storeLocation,
           relation.tableMeta.carbonTableIdentifier)
-    var tablePath = CarbonStorePath
-      .getCarbonTablePath(storeLocation,
-        absoluteTableIdentifier.getCarbonTableIdentifier())
+    var tablePath = CarbonStorePath.getCarbonTablePath(storeLocation,
+      absoluteTableIdentifier.getCarbonTableIdentifier(), configuration)
     var tableUpdateStatusPath = tablePath.getTableUpdateStatusFilePath
-    val totalSegments =
-      SegmentStatusManager.readLoadMetadata(tablePath.getMetadataDirectoryPath).length
+    val totalSegments = SegmentStatusManager.readLoadMetadata(configuration,
+      tablePath.getMetadataDirectoryPath).length
     var factPath = tablePath.getFactDir
 
     var carbonTable = relation.tableMeta.carbonTable
@@ -558,7 +575,8 @@ object deleteExecution {
     }
 
     var blockMappingVO = carbonInputFormat.getBlockRowCount(job, absoluteTableIdentifier)
-    val segmentUpdateStatusMngr = new SegmentUpdateStatusManager(absoluteTableIdentifier)
+    val segmentUpdateStatusMngr =
+      new SegmentUpdateStatusManager(absoluteTableIdentifier, configuration)
     CarbonUpdateUtil
       .createBlockDetailsMap(blockMappingVO, segmentUpdateStatusMngr)
 
@@ -575,10 +593,12 @@ object deleteExecution {
 
     // rdd.collect().foreach(println)
 
+    val confBytes = SparkUtil.compressConfiguration(configuration)
     res = rdd.mapPartitionsWithIndex(
       (index: Int, records: Iterator[((String), (RowCountDetailsVO, Iterable[Row]))]) =>
         Iterator[List[(String, (SegmentUpdateDetails, ExecutionErrors))]] {
 
+          val hadoopConf = SparkUtil.uncompressConfiguration(confBytes)
           var result = List[(String, (SegmentUpdateDetails, ExecutionErrors))]()
           while (records.hasNext) {
             val ((key), (rowCountDetailsVO, groupedRows)) = records.next
@@ -587,7 +607,8 @@ object deleteExecution {
                 key,
                 groupedRows.toIterator,
                 timestamp,
-                rowCountDetailsVO)
+                rowCountDetailsVO,
+                hadoopConf)
 
           }
           result
@@ -620,7 +641,7 @@ object deleteExecution {
           else {
             deleteStatus = false
             // In case of failure , clean all related delete delta files
-            CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
+            CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp, configuration)
             LOGGER.audit(s"Delete data operation is failed for ${ database }.${ tableName }")
             val errorMsg =
               "Delete data operation is failed due to failure in creating delete delta file for " +
@@ -646,21 +667,17 @@ object deleteExecution {
 
 
       // this is delete flow so no need of putting timestamp in the status file.
-      if (CarbonUpdateUtil
-        .updateSegmentStatus(blockUpdateDetailsList, carbonTable, timestamp, false) &&
-        CarbonUpdateUtil
-          .updateTableMetadataStatus(segmentDetails,
-            carbonTable,
-            timestamp,
-            !isUpdateOperation,
-            listOfSegmentToBeMarkedDeleted)
+      if (CarbonUpdateUtil.updateSegmentStatus(blockUpdateDetailsList, carbonTable, timestamp,
+        false, configuration) &&
+          CarbonUpdateUtil.updateTableMetadataStatus(segmentDetails, carbonTable, timestamp,
+            !isUpdateOperation, listOfSegmentToBeMarkedDeleted, configuration)
       ) {
         LOGGER.info(s"Delete data operation is successful for ${ database }.${ tableName }")
         LOGGER.audit(s"Delete data operation is successful for ${ database }.${ tableName }")
       }
       else {
         // In case of failure , clean all related delete delta files
-        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
+        CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp, configuration)
 
         val errorMessage = "Delete data operation is failed due to failure " +
           "in table status updation."
@@ -676,7 +693,8 @@ object deleteExecution {
                         key: String,
                         iter: Iterator[Row],
                         timestamp: String,
-                        rowCountDetailsVO: RowCountDetailsVO):
+                        rowCountDetailsVO: RowCountDetailsVO,
+                        configuration: Configuration):
     Iterator[(String, (SegmentUpdateDetails, ExecutionErrors))] = {
 
       val result = new DeleteDelataResultImpl()
@@ -718,7 +736,7 @@ object deleteExecution {
               CarbonCommonConstants.FACT_FILE_EXT)
           val deleteDeletaPath = CarbonUpdateUtil
             .getDeleteDeltaFilePath(blockPath, blockName, timestamp)
-          val carbonDeleteWriter = new CarbonDeleteDeltaWriterImpl(deleteDeletaPath,
+          val carbonDeleteWriter = new CarbonDeleteDeltaWriterImpl(configuration, deleteDeletaPath,
             FileFactory.getFileType(deleteDeletaPath))
 
 

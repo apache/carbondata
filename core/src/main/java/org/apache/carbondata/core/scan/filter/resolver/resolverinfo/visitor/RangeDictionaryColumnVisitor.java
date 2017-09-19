@@ -29,8 +29,14 @@ import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMe
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class RangeDictionaryColumnVisitor extends DictionaryColumnVisitor
     implements ResolvedFilterInfoVisitorIntf {
+  public RangeDictionaryColumnVisitor(Configuration configuration) {
+    super(configuration);
+  }
+
   /**
    * This Visitor method is used to populate the visitableObj with direct dictionary filter details
    * where the filters values will be resolve using dictionary cache.
@@ -51,7 +57,7 @@ public class RangeDictionaryColumnVisitor extends DictionaryColumnVisitor
       resolvedFilterObject = FilterUtil
           .getFilterListForAllValues(metadata.getTableIdentifier(), metadata.getExpression(),
               metadata.getColumnExpression(), metadata.isIncludeFilter(),
-              metadata.getTableProvider());
+              metadata.getTableProvider(), configuration);
 
       if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
         // Adding default surrogate key of null member inorder to not display the same while

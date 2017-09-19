@@ -20,6 +20,8 @@ import java.io.IOException
 
 import scala.collection.mutable
 
+import org.apache.hadoop.conf.Configuration
+
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
@@ -46,7 +48,8 @@ class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
     carbonStoreLocation: String,
     columnSchema: ColumnSchema,
     isDictionaryFileExist: Boolean,
-    var writer: CarbonDictionaryWriter = null) {
+    var writer: CarbonDictionaryWriter = null,
+    configuration: Configuration) {
 
   /**
    * execute the task
@@ -60,7 +63,7 @@ class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
     writer = dictService.getDictionaryWriter(
       carbonTableIdentifier,
       dictionaryColumnUniqueIdentifier,
-      carbonStoreLocation)
+      carbonStoreLocation, configuration)
     val distinctValues: java.util.List[String] = new java.util.ArrayList()
 
     try {

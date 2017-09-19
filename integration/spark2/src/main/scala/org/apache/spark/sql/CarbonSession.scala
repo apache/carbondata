@@ -158,7 +158,9 @@ object CarbonSession {
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
         CommonUtil.cleanInProgressSegments(
-          carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION), sparkContext)
+          carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION),
+          sparkContext,
+          session.sessionState.newHadoopConf())
         // Register a successfully instantiated context to the singleton. This should be at the
         // end of the class definition so that the singleton is updated only if there is no
         // exception in the construction of the instance.

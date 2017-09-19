@@ -46,6 +46,8 @@ import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConst
 import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.hadoop.conf.Configuration;
+
 // This class contains all the data required for processing and writing the carbon data
 // TODO: we should try to minimize this class as refactorying loading process
 public class CarbonFactDataHandlerModel {
@@ -162,6 +164,8 @@ public class CarbonFactDataHandlerModel {
 
   private DataMapWriterListener dataMapWriterlistener;
 
+  private Configuration hadoopConf;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
@@ -262,6 +266,7 @@ public class CarbonFactDataHandlerModel {
     listener.registerAllWriter(configuration.getTableIdentifier(), configuration.getSegmentId());
     carbonFactDataHandlerModel.dataMapWriterlistener = listener;
 
+    carbonFactDataHandlerModel.hadoopConf = configuration.getHadoopConf();
     return carbonFactDataHandlerModel;
   }
 
@@ -273,7 +278,7 @@ public class CarbonFactDataHandlerModel {
    */
   public static CarbonFactDataHandlerModel getCarbonFactDataHandlerModel(CarbonLoadModel loadModel,
       CarbonTable carbonTable, SegmentProperties segmentProperties, String tableName,
-      String[] tempStoreLocation) {
+      String[] tempStoreLocation, Configuration configuration) {
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     carbonFactDataHandlerModel.setDatabaseName(loadModel.getDatabaseName());
@@ -307,7 +312,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setMeasureDataType(aggType);
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
         .checkAndCreateCarbonStoreLocation(loadModel.getStorePath(), loadModel.getDatabaseName(),
-            tableName, loadModel.getPartitionId(), loadModel.getSegmentId());
+            tableName, loadModel.getPartitionId(), loadModel.getSegmentId(), configuration);
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     List<CarbonDimension> dimensionByTableName = carbonTable.getDimensionByTableName(tableName);
     boolean[] isUseInvertedIndexes = new boolean[dimensionByTableName.size()];
@@ -322,6 +327,8 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.tableSpec = new TableSpec(
         segmentProperties.getDimensions(),
         segmentProperties.getMeasures());
+
+    carbonFactDataHandlerModel.hadoopConf = configuration;
     return carbonFactDataHandlerModel;
   }
 
@@ -338,8 +345,8 @@ public class CarbonFactDataHandlerModel {
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
         tableIdentifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + tableIdentifier
             .getTableName());
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTable.getCarbonTableIdentifier());
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonStorePath,
+        carbonTable.getCarbonTableIdentifier(), configuration.getHadoopConf());
     return carbonTablePath.getCarbonDataDirectoryPath(configuration.getPartitionId(),
         configuration.getSegmentId() + "");
   }
@@ -570,6 +577,10 @@ public class CarbonFactDataHandlerModel {
 
   public DataMapWriterListener getDataMapWriterlistener() {
     return dataMapWriterlistener;
+  }
+
+  public Configuration getHadoopConf() {
+    return hadoopConf;
   }
 }
 

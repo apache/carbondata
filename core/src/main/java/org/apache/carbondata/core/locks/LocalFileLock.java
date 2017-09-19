@@ -103,13 +103,13 @@ public class LocalFileLock extends AbstractCarbonLock {
    */
   @Override public boolean lock() {
     try {
-      if (!FileFactory.isFileExist(location, FileFactory.getFileType(tmpPath))) {
-        FileFactory.mkdirs(location, FileFactory.getFileType(tmpPath));
+      if (!FileFactory.isFileExist(null, location, FileFactory.getFileType(tmpPath))) {
+        FileFactory.mkdirs(null, location, FileFactory.getFileType(tmpPath));
       }
       lockFilePath = location + CarbonCommonConstants.FILE_SEPARATOR +
           lockFile;
-      if (!FileFactory.isFileExist(lockFilePath, FileFactory.getFileType(location))) {
-        FileFactory.createNewLockFile(lockFilePath, FileFactory.getFileType(location));
+      if (!FileFactory.isFileExist(null, lockFilePath, FileFactory.getFileType(location))) {
+        FileFactory.createNewLockFile(null, lockFilePath, FileFactory.getFileType(location));
       }
 
       fileOutputStream = new FileOutputStream(lockFilePath);
@@ -151,7 +151,7 @@ public class LocalFileLock extends AbstractCarbonLock {
           fileOutputStream.close();
           // deleting the lock file after releasing the lock.
           CarbonFile lockFile = FileFactory
-                  .getCarbonFile(lockFilePath, FileFactory.getFileType(lockFilePath));
+                  .getCarbonFile(null, lockFilePath, FileFactory.getFileType(lockFilePath));
           if (!lockFile.exists() || lockFile.delete()) {
             LOGGER.info("Successfully deleted the lock file " + lockFilePath);
           } else {

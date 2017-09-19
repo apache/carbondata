@@ -23,6 +23,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This class is a Lock factory class which is used to provide lock objects.
  * Using this lock object client can request the lock and unlock.
@@ -51,7 +53,7 @@ public class CarbonLockFactory {
    * @return
    */
   public static ICarbonLock getCarbonLockObj(CarbonTableIdentifier tableIdentifier,
-      String lockFile) {
+      String lockFile, Configuration configuration) {
     switch (lockTypeConfigured) {
       case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
         return new LocalFileLock(tableIdentifier, lockFile);
@@ -60,7 +62,7 @@ public class CarbonLockFactory {
         return new ZooKeeperLocking(tableIdentifier, lockFile);
 
       case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
-        return new HdfsFileLock(tableIdentifier, lockFile);
+        return new HdfsFileLock(configuration, tableIdentifier, lockFile);
 
       default:
         throw new UnsupportedOperationException("Not supported the lock type");
@@ -73,7 +75,8 @@ public class CarbonLockFactory {
    * @param lockFile
    * @return carbon lock
    */
-  public static ICarbonLock getCarbonLockObj(String locFileLocation, String lockFile) {
+  public static ICarbonLock getCarbonLockObj(String locFileLocation, String lockFile,
+      Configuration configuration) {
     switch (lockTypeConfigured) {
       case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
         return new LocalFileLock(locFileLocation, lockFile);
@@ -82,7 +85,7 @@ public class CarbonLockFactory {
         return new ZooKeeperLocking(locFileLocation, lockFile);
 
       case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
-        return new HdfsFileLock(locFileLocation, lockFile);
+        return new HdfsFileLock(configuration, locFileLocation, lockFile);
 
       default:
         throw new UnsupportedOperationException("Not supported the lock type");

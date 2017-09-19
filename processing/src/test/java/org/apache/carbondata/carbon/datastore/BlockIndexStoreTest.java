@@ -63,7 +63,7 @@ public class BlockIndexStoreTest extends TestCase {
     CarbonProperties.getInstance().
         addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
     CacheProvider cacheProvider = CacheProvider.getInstance();
-    cache = (BlockIndexStore) cacheProvider.createCache(CacheType.EXECUTOR_BTREE, "");
+    cache = (BlockIndexStore) cacheProvider.createCache(CacheType.EXECUTOR_BTREE, "", StoreCreator.configuration);
   }
 
   @AfterClass public void tearDown() {

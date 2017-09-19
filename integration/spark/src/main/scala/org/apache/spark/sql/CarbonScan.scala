@@ -130,7 +130,9 @@ case class CarbonScan(
       buildCarbonPlan.getFilterExpression,
       carbonTable.getAbsoluteTableIdentifier,
       carbonTable.getTableInfo.serialize(),
-      carbonTable.getTableInfo, inputMetricsStats
+      carbonTable.getTableInfo,
+      inputMetricsStats,
+      ocRaw.sparkContext.hadoopConfiguration
     )
   }
 

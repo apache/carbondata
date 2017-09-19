@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.OutputStreamWriter;
 
 import org.apache.carbondata.core.datastore.impl.DFSFileHolderImpl;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -46,7 +47,7 @@ public class DFSFileHolderImplUnitTest {
   private static File fileWithEmptyContent;
 
   @BeforeClass public static void setup() {
-    dfsFileHolder = new DFSFileHolderImpl();
+    dfsFileHolder = new DFSFileHolderImpl(CarbonTestUtil.configuration);
     file = new File("Test.carbondata");
     fileWithEmptyContent = new File("TestEXception.carbondata");
 

@@ -34,6 +34,8 @@ import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ObjectSizeCalculator;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This class validate and load the B-Tree in the executor lru cache
  * @param <K> cache key
@@ -67,8 +69,11 @@ public abstract class AbstractBlockIndexStoreCache<K, V>
    */
   protected Map<String, Object> segmentIDLock;
 
-  public AbstractBlockIndexStoreCache(CarbonLRUCache lruCache) {
+  protected Configuration configuration;
+
+  public AbstractBlockIndexStoreCache(CarbonLRUCache lruCache, Configuration configuration) {
     this.lruCache = lruCache;
+    this.configuration = configuration;
     blockInfoLock = new ConcurrentHashMap<BlockInfo, Object>();
     segmentIDLock = new ConcurrentHashMap<String, Object>();
     segmentIdToBlockListMap = new ConcurrentHashMap<>();
@@ -87,11 +92,11 @@ public abstract class AbstractBlockIndexStoreCache<K, V>
       throws IOException {
     // calculate the required size is
     TableBlockInfo blockInfo = tableBlockUniqueIdentifier.getTableBlockInfo();
-    long requiredMetaSize = CarbonUtil.calculateMetaSize(blockInfo);
+    long requiredMetaSize = CarbonUtil.calculateMetaSize(blockInfo, configuration);
     if (requiredMetaSize > 0) {
       // load table blocks data
       // getting the data file meta data of the block
-      DataFileFooter footer = CarbonUtil.readMetadatFile(blockInfo);
+      DataFileFooter footer = CarbonUtil.readMetadatFile(blockInfo, configuration);
       footer.setBlockInfo(new BlockInfo(blockInfo));
       // building the block
       tableBlock.buildIndex(Collections.singletonList(footer));

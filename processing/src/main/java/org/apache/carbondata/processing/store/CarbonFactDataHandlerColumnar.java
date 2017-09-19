@@ -569,7 +569,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private CarbonFactDataWriter<?> getFactDataWriter() {
     return CarbonDataWriterFactory.getInstance()
-        .getFactDataWriter(version, getDataWriterVo());
+        .getFactDataWriter(version, getDataWriterVo(), model.getHadoopConf());
   }
 
   /**
@@ -681,7 +681,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
 
     /**
-     * @param encodedTablePage
+     * @param tablePage
      * @param index
      */
     public synchronized void put(TablePage tablePage, int index) {

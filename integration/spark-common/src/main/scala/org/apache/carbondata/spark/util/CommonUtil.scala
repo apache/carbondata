@@ -514,7 +514,8 @@ object CommonUtil {
 
   def readAndUpdateLoadProgressInTableMeta(model: CarbonLoadModel,
       storePath: String,
-      insertOverwrite: Boolean): Unit = {
+      insertOverwrite: Boolean,
+      configuration: Configuration): Unit = {
     val newLoadMetaEntry = new LoadMetadataDetails
     val status: String = if (insertOverwrite) {
       LoadStatusType.INSERT_OVERWRITE.getMessage
@@ -526,8 +527,8 @@ object CommonUtil {
     model.setFactTimeStamp(loadStartTime)
     CarbonLoaderUtil
       .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp, false)
-    val entryAdded: Boolean =
-      CarbonLoaderUtil.recordLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite)
+    val entryAdded: Boolean = CarbonLoaderUtil.recordLoadMetadata(newLoadMetaEntry, model, true,
+      insertOverwrite, configuration)
     if (!entryAdded) {
       sys
         .error(s"Failed to add entry in table status for ${ model.getDatabaseName }.${
@@ -537,9 +538,9 @@ object CommonUtil {
     }
   }
 
-  def readLoadMetadataDetails(model: CarbonLoadModel): Unit = {
+  def readLoadMetadataDetails(model: CarbonLoadModel, configuration: Configuration): Unit = {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
-    val details = SegmentStatusManager.readLoadMetadata(metadataPath)
+    val details = SegmentStatusManager.readLoadMetadata(configuration, metadataPath)
     model.setLoadMetadataDetails(details.toList.asJava)
   }
 
@@ -560,15 +561,15 @@ object CommonUtil {
   }
 
   def configSplitMaxSize(context: SparkContext, filePaths: String,
-      hadoopConfiguration: Configuration): Unit = {
+      configuration: Configuration): Unit = {
     val defaultParallelism = if (context.defaultParallelism < 1) {
       1
     } else {
       context.defaultParallelism
     }
-    val spaceConsumed = FileUtils.getSpaceOccupied(filePaths)
+    val spaceConsumed = FileUtils.getSpaceOccupied(configuration, filePaths)
     val blockSize =
-      hadoopConfiguration.getLongBytes("dfs.blocksize", CarbonCommonConstants.CARBON_256MB)
+      configuration.getLongBytes("dfs.blocksize", CarbonCommonConstants.CARBON_256MB)
     LOGGER.info("[Block Distribution]")
     // calculate new block size to allow use all the parallelism
     if (spaceConsumed < defaultParallelism * blockSize) {
@@ -576,14 +577,15 @@ object CommonUtil {
       if (newSplitSize < CarbonCommonConstants.CARBON_16MB) {
         newSplitSize = CarbonCommonConstants.CARBON_16MB
       }
-      hadoopConfiguration.set(FileInputFormat.SPLIT_MAXSIZE, newSplitSize.toString)
+      configuration.set(FileInputFormat.SPLIT_MAXSIZE, newSplitSize.toString)
       LOGGER.info(s"totalInputSpaceConsumed: $spaceConsumed , " +
                   s"defaultParallelism: $defaultParallelism")
       LOGGER.info(s"mapreduce.input.fileinputformat.split.maxsize: ${ newSplitSize.toString }")
     }
   }
 
-  def getCsvHeaderColumns(carbonLoadModel: CarbonLoadModel): Array[String] = {
+  def getCsvHeaderColumns(hadoopConfiguration: Configuration,
+      carbonLoadModel: CarbonLoadModel): Array[String] = {
     val delimiter = if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
       CarbonCommonConstants.COMMA
     } else {
@@ -594,7 +596,7 @@ object CommonUtil {
     val csvColumns = if (StringUtils.isBlank(csvHeader)) {
       // read header from csv file
       csvFile = carbonLoadModel.getFactFilePath.split(",")(0)
-      csvHeader = CarbonUtil.readHeader(csvFile)
+      csvHeader = CarbonUtil.readHeader(hadoopConfiguration, csvFile)
       if (StringUtils.isBlank(csvHeader)) {
         throw new CarbonDataLoadingException("First line of the csv is not valid.")
       }
@@ -737,7 +739,8 @@ object CommonUtil {
    * @param storePath
    * @param sparkContext
    */
-  def cleanInProgressSegments(storePath: String, sparkContext: SparkContext): Unit = {
+  def cleanInProgressSegments(storePath: String, sparkContext: SparkContext,
+      configuration: Configuration): Unit = {
     val loaderDriver = CarbonProperties.getInstance().
       getProperty(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER,
         CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT).toBoolean
@@ -746,8 +749,8 @@ object CommonUtil {
     }
     try {
       val fileType = FileFactory.getFileType(storePath)
-      if (FileFactory.isFileExist(storePath, fileType)) {
-        val file = FileFactory.getCarbonFile(storePath, fileType)
+      if (FileFactory.isFileExist(configuration, storePath, fileType)) {
+        val file = FileFactory.getCarbonFile(configuration, storePath, fileType)
         val databaseFolders = file.listFiles()
         databaseFolders.foreach { databaseFolder =>
           if (databaseFolder.isDirectory) {
@@ -757,10 +760,10 @@ object CommonUtil {
                 val identifier =
                   AbsoluteTableIdentifier.from(storePath,
                     databaseFolder.getName, tableFolder.getName)
-                val carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier)
+                val carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier, configuration)
                 val tableStatusFile = carbonTablePath.getTableStatusFilePath
-                if (FileFactory.isFileExist(tableStatusFile, fileType)) {
-                  val segmentStatusManager = new SegmentStatusManager(identifier)
+                if (FileFactory.isFileExist(configuration, tableStatusFile, fileType)) {
+                  val segmentStatusManager = new SegmentStatusManager(identifier, configuration)
                   val carbonLock = segmentStatusManager.getTableStatusLock
                   try {
                     if (carbonLock.lockWithRetries) {
@@ -768,7 +771,7 @@ object CommonUtil {
                         identifier.getCarbonTableIdentifier.getTableUniqueName
                         + " for table status updation")
                       val listOfLoadFolderDetailsArray =
-                        SegmentStatusManager.readLoadMetadata(
+                        SegmentStatusManager.readLoadMetadata(configuration,
                           carbonTablePath.getMetadataDirectoryPath)
                       var loadInprogressExist = false
                       val staleFolders: Seq[CarbonFile] = Seq()
@@ -776,14 +779,14 @@ object CommonUtil {
                         if (load.getLoadStatus.equals(LoadStatusType.IN_PROGRESS.getMessage) ||
                             load.getLoadStatus.equals(LoadStatusType.INSERT_OVERWRITE.getMessage)) {
                           load.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE)
-                          staleFolders :+ FileFactory.getCarbonFile(
+                          staleFolders :+ FileFactory.getCarbonFile(configuration,
                             carbonTablePath.getCarbonDataDirectoryPath("0", load.getLoadName))
                           loadInprogressExist = true
                         }
                       }
                       if (loadInprogressExist) {
-                        SegmentStatusManager
-                          .writeLoadDetailsIntoFile(tableStatusFile, listOfLoadFolderDetailsArray)
+                        SegmentStatusManager.writeLoadDetailsIntoFile(configuration,
+                          tableStatusFile, listOfLoadFolderDetailsArray)
                         staleFolders.foreach(CarbonUtil.deleteFoldersAndFiles(_))
                       }
                     }

@@ -19,6 +19,8 @@ package org.apache.carbondata.spark
 
 import scala.collection.mutable.HashMap
 
+import org.apache.hadoop.conf.Configuration
+
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
@@ -27,15 +29,16 @@ import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 
 class DictionaryDetailHelper extends DictionaryDetailService {
   def getDictionaryDetail(dictfolderPath: String, primDimensions: Array[CarbonDimension],
-      table: CarbonTableIdentifier, storePath: String): DictionaryDetail = {
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, table)
+      table: CarbonTableIdentifier, storePath: String,
+      configuration: Configuration): DictionaryDetail = {
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, table, configuration)
     val dictFilePaths = new Array[String](primDimensions.length)
     val dictFileExists = new Array[Boolean](primDimensions.length)
     val columnIdentifier = new Array[ColumnIdentifier](primDimensions.length)
 
     val fileType = FileFactory.getFileType(dictfolderPath)
     // Metadata folder
-    val metadataDirectory = FileFactory.getCarbonFile(dictfolderPath, fileType)
+    val metadataDirectory = FileFactory.getCarbonFile(configuration, dictfolderPath, fileType)
     // need list all dictionary file paths with exists flag
     val carbonFiles = metadataDirectory.listFiles(new CarbonFileFilter {
       @Override def accept(pathname: CarbonFile): Boolean = {

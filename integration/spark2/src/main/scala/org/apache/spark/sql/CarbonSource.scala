@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 import scala.language.implicitConversions
 
 import org.apache.commons.lang.StringUtils
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
@@ -143,7 +144,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
   private def addLateDecodeOptimization(ss: SparkSession): Unit = {
     if (ss.sessionState.experimentalMethods.extraStrategies.isEmpty) {
-      ss.sessionState.experimentalMethods.extraStrategies = Seq(new CarbonLateDecodeStrategy)
+      ss.sessionState.experimentalMethods.extraStrategies = Seq(new CarbonLateDecodeStrategy(ss))
       ss.sessionState.experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
     }
   }
@@ -167,8 +168,8 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     } catch {
       case ex: NoSuchTableException =>
         val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-        val updatedParams =
-          CarbonSource.updateAndCreateTable(dataSchema, sparkSession, metaStore, parameters)
+        val updatedParams = CarbonSource.updateAndCreateTable(dataSchema, sparkSession, metaStore,
+          parameters, sparkSession.sessionState.newHadoopConf())
         getPathForTable(sparkSession, dbName, tableName, updatedParams)
       case ex: Exception =>
         throw new Exception("do not have dbname and tablename for carbon table", ex)
@@ -233,12 +234,13 @@ object CarbonSource {
    * @return
    */
   def updateCatalogTableWithCarbonSchema(tableDesc: CatalogTable,
-      sparkSession: SparkSession): CatalogTable = {
+      sparkSession: SparkSession, configuration: Configuration): CatalogTable = {
     val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val storageFormat = tableDesc.storage
     val properties = storageFormat.properties
     if (!properties.contains("carbonSchemaPartsNo")) {
-      val map = updateAndCreateTable(tableDesc.schema, sparkSession, metaStore, properties)
+      val map =
+        updateAndCreateTable(tableDesc.schema, sparkSession, metaStore, properties, configuration)
       // updating params
       val updatedFormat = storageFormat.copy(properties = map)
       tableDesc.copy(storage = updatedFormat)
@@ -246,7 +248,7 @@ object CarbonSource {
       val tableInfo = CarbonUtil.convertGsonToTableInfo(properties.asJava)
       if (!metaStore.isReadFromHiveMetaStore) {
         // save to disk
-        metaStore.saveToDisk(tableInfo, properties.get("tablePath").get)
+        metaStore.saveToDisk(tableInfo, properties.get("tablePath").get, configuration)
         // remove schema string from map as we don't store carbon schema to hive metastore
         val map = CarbonUtil.removeSchemaFromMap(properties.asJava)
         val updatedFormat = storageFormat.copy(properties = map.asScala.toMap)
@@ -260,7 +262,8 @@ object CarbonSource {
   def updateAndCreateTable(dataSchema: StructType,
       sparkSession: SparkSession,
       metaStore: CarbonMetaStore,
-      properties: Map[String, String]): Map[String, String] = {
+      properties: Map[String, String],
+      configuration: Configuration): Map[String, String] = {
     val dbName: String = properties.getOrElse("dbName",
       CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
     val tableName: String = properties.getOrElse("tableName", "").toLowerCase
@@ -271,16 +274,17 @@ object CarbonSource {
     schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
     tableInfo.getFactTable.getSchemaEvalution.
       getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
+    val hadoopConf = sparkSession.sessionState.newHadoopConf()
     val map = if (metaStore.isReadFromHiveMetaStore) {
       val tableIdentifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
-      val carbonTablePath = CarbonStorePath.getCarbonTablePath(tableIdentifier)
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(tableIdentifier, hadoopConf)
       val schemaMetadataPath =
         CarbonTablePath.getFolderContainingFile(carbonTablePath.getSchemaFilePath)
       tableInfo.setMetaDataFilepath(schemaMetadataPath)
       tableInfo.setStorePath(tableIdentifier.getStorePath)
       CarbonUtil.convertToMultiStringMap(tableInfo)
     } else {
-      metaStore.saveToDisk(tableInfo, tablePath)
+      metaStore.saveToDisk(tableInfo, tablePath, configuration)
       new java.util.HashMap[String, String]()
     }
     properties.foreach(e => map.put(e._1, e._2))

@@ -33,6 +33,7 @@ import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.format.*;
 import org.apache.carbondata.format.ColumnSchema;
 
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -47,8 +48,8 @@ import static junit.framework.TestCase.*;
 public class DataFileFooterConverterTest {
 
   @Test public void testGetIndexInfo() throws Exception {
-    DataFileFooterConverter dataFileFooterConverter = new DataFileFooterConverter();
-    final ThriftReader thriftReader = new ThriftReader("file");
+    DataFileFooterConverter dataFileFooterConverter = new DataFileFooterConverter(CarbonTestUtil.configuration);
+    final ThriftReader thriftReader = new ThriftReader(CarbonTestUtil.configuration, "file");
     List<Encoding> encoders = new ArrayList<>();
     encoders.add(Encoding.INVERTED_INDEX);
     encoders.add(Encoding.BIT_PACKED);
@@ -109,7 +110,7 @@ public class DataFileFooterConverterTest {
         return temp;
       }
 
-      @SuppressWarnings("unused") @Mock public void openThriftReader(String filePath)
+      @SuppressWarnings("unused") @Mock public void openThriftReader(Configuration configuration, String filePath)
           throws IOException {
         thriftReader.open();
       }
@@ -136,7 +137,7 @@ public class DataFileFooterConverterTest {
     final DataInputStream dataInputStream = new DataInputStream(byteArrayInputStream);
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock
-      public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      public DataInputStream getDataInputStream(Configuration configuration, String path, FileFactory.FileType fileType,
           int bufferSize) {
         return dataInputStream;
       }
@@ -159,7 +160,7 @@ public class DataFileFooterConverterTest {
   }
 
   @Test public void testReadDataFileFooter() throws Exception {
-    DataFileFooterConverter dataFileFooterConverter = new DataFileFooterConverter();
+    DataFileFooterConverter dataFileFooterConverter = new DataFileFooterConverter(CarbonTestUtil.configuration);
     DataFileFooter dataFileFooter = new DataFileFooter();
     List<Integer> column_cardinalities = new ArrayList<>();
     column_cardinalities.add(new Integer("1"));
@@ -223,7 +224,7 @@ public class DataFileFooterConverterTest {
       }
 
       @SuppressWarnings("unused") @Mock
-      public FileHolder getFileHolder(FileFactory.FileType fileType) {
+      public FileHolder getFileHolder(Configuration configuration, FileFactory.FileType fileType) {
         return new FileHolderImpl();
       }
 

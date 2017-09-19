@@ -49,6 +49,8 @@ import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.TaskMetricsMap;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This class is used to load the B-Tree in Executor LRU Cache
  */
@@ -59,8 +61,9 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BlockIndexStore.class.getName());
-  public BlockIndexStore(String carbonStorePath, CarbonLRUCache lruCache) {
-    super(lruCache);
+  public BlockIndexStore(Configuration configuration, String carbonStorePath,
+      CarbonLRUCache lruCache) {
+    super(lruCache, configuration);
   }
 
   /**

@@ -159,7 +159,8 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
             identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
                 .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration
                 .getSegmentId() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo()),
-        badRecordsLogRedirect, badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
+        badRecordsLogRedirect, badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail,
+        configuration.getHadoopConf());
   }
 
   public static String getBadLogStoreLocation(CarbonDataLoadConfiguration configuration,

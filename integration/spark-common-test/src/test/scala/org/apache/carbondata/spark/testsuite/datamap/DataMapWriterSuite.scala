@@ -21,6 +21,7 @@ import java.util
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -36,7 +37,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 
 class C2DataMapFactory() extends DataMapFactory {
 
-  override def init(identifier: AbsoluteTableIdentifier,
+  override def init(configuration: Configuration, identifier: AbsoluteTableIdentifier,
       dataMapName: String): Unit = {}
 
   override def fireEvent(event: ChangeEvent[_]): Unit = ???
@@ -47,9 +48,11 @@ class C2DataMapFactory() extends DataMapFactory {
 
   override def getDataMap(distributable: DataMapDistributable): DataMap = ???
 
-  override def getDataMaps(segmentId: String): util.List[DataMap] = ???
+  override def getDataMaps(
+      configuration: Configuration, segmentId: String): util.List[DataMap] = ???
 
-  override def createWriter(segmentId: String): DataMapWriter = DataMapWriterSuite.dataMapWriterC2Mock
+  override def createWriter(
+      segmentId: String): DataMapWriter = DataMapWriterSuite.dataMapWriterC2Mock
 
   override def getMeta: DataMapMeta = new DataMapMeta(List("c2").asJava, FilterType.EQUALTO)
 
@@ -58,7 +61,8 @@ class C2DataMapFactory() extends DataMapFactory {
    *
    * @return
    */
-  override def toDistributable(segmentId: String): util.List[DataMapDistributable] = {
+  override def toDistributable(
+      configuration: Configuration, segmentId: String): util.List[DataMapDistributable] = {
     ???
   }
 }
@@ -86,7 +90,8 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
     DataMapStoreManager.getInstance().createAndRegisterDataMap(
       AbsoluteTableIdentifier.from(storeLocation, "default", "carbon1"),
       classOf[C2DataMapFactory].getName,
-      "test")
+      "test",
+      hadoopConf)
 
     val df = buildTestData(33000)
 
@@ -113,7 +118,8 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
     DataMapStoreManager.getInstance().createAndRegisterDataMap(
       AbsoluteTableIdentifier.from(storeLocation, "default", "carbon2"),
       classOf[C2DataMapFactory].getName,
-      "test")
+      "test",
+      hadoopConf)
 
     CarbonProperties.getInstance()
       .addProperty("carbon.blockletgroup.size.in.mb", "1")

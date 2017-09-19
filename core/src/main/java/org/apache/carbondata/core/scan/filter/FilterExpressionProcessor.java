@@ -66,6 +66,8 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.TrueConditio
 import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.Partitioner;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class FilterExpressionProcessor implements FilterProcessor {
 
   private static final LogService LOGGER =
@@ -80,10 +82,11 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @return a filter resolver tree
    */
   public FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider)
+      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider,
+      Configuration configuration)
       throws FilterUnsupportedException, IOException {
     if (null != expressionTree && null != tableIdentifier) {
-      return getFilterResolvertree(expressionTree, tableIdentifier, tableProvider);
+      return getFilterResolvertree(expressionTree, tableIdentifier, tableProvider, configuration);
     }
     return null;
   }
@@ -104,7 +107,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    */
   public List<DataRefNode> getFilterredBlocks(DataRefNode btreeNode,
       FilterResolverIntf filterResolver, AbstractIndex tableSegment,
-      AbsoluteTableIdentifier tableIdentifier) {
+      AbsoluteTableIdentifier tableIdentifier, Configuration configuration) {
     // Need to get the current dimension tables
     List<DataRefNode> listOfDataBlocksToScan = new ArrayList<DataRefNode>();
     // getting the start and end index key based on filter for hitting the
@@ -138,8 +141,8 @@ public class FilterExpressionProcessor implements FilterProcessor {
         tableSegment.getSegmentProperties().getNumberOfNoDictSortColumns());
     DataRefNode startBlock = blockFinder.findFirstDataBlock(btreeNode, searchStartKey);
     DataRefNode endBlock = blockFinder.findLastDataBlock(btreeNode, searchEndKey);
-    FilterExecuter filterExecuter =
-        FilterUtil.getFilterExecuterTree(filterResolver, tableSegment.getSegmentProperties(),null);
+    FilterExecuter filterExecuter = FilterUtil.getFilterExecuterTree(filterResolver,
+        tableSegment.getSegmentProperties(),null, configuration);
     while (startBlock != endBlock) {
       addBlockBasedOnMinMaxValue(filterExecuter, listOfDataBlocksToScan, startBlock);
       startBlock = startBlock.getNextDataRefNode();
@@ -306,10 +309,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @return FilterResolverIntf type.
    */
   private FilterResolverIntf getFilterResolvertree(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider)
-      throws FilterUnsupportedException, IOException {
+      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider,
+      Configuration configuration) throws FilterUnsupportedException, IOException {
     FilterResolverIntf filterEvaluatorTree =
-        createFilterResolverTree(expressionTree, tableIdentifier);
+        createFilterResolverTree(expressionTree, tableIdentifier, configuration);
     traverseAndResolveTree(filterEvaluatorTree, tableIdentifier, tableProvider);
     return filterEvaluatorTree;
   }
@@ -344,7 +347,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    * @return
    */
   private FilterResolverIntf createFilterResolverTree(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) {
+      AbsoluteTableIdentifier tableIdentifier, Configuration configuration) {
     ExpressionType filterExpressionType = expressionTree.getFilterExpressionType();
     BinaryExpression currentExpression = null;
     switch (filterExpressionType) {
@@ -352,37 +355,37 @@ public class FilterExpressionProcessor implements FilterProcessor {
       case AND:
         currentExpression = (BinaryExpression) expressionTree;
         return new LogicalFilterResolverImpl(
-            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier),
-            createFilterResolverTree(currentExpression.getRight(), tableIdentifier),
+            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier, configuration),
+            createFilterResolverTree(currentExpression.getRight(), tableIdentifier, configuration),
             currentExpression);
       case RANGE:
         return getFilterResolverBasedOnExpressionType(ExpressionType.RANGE, true,
-            expressionTree, tableIdentifier, expressionTree);
+            expressionTree, tableIdentifier, expressionTree, configuration);
       case EQUALS:
       case IN:
         return getFilterResolverBasedOnExpressionType(ExpressionType.EQUALS,
             ((BinaryConditionalExpression) expressionTree).isNull, expressionTree,
-            tableIdentifier, expressionTree);
+            tableIdentifier, expressionTree, configuration);
       case GREATERTHAN:
       case GREATERTHAN_EQUALTO:
       case LESSTHAN:
       case LESSTHAN_EQUALTO:
         return getFilterResolverBasedOnExpressionType(ExpressionType.EQUALS, true, expressionTree,
-            tableIdentifier, expressionTree);
+            tableIdentifier, expressionTree, configuration);
 
       case NOT_EQUALS:
       case NOT_IN:
         return getFilterResolverBasedOnExpressionType(ExpressionType.NOT_EQUALS, false,
-            expressionTree, tableIdentifier, expressionTree);
+            expressionTree, tableIdentifier, expressionTree, configuration);
       case FALSE:
         return getFilterResolverBasedOnExpressionType(ExpressionType.FALSE, false,
-            expressionTree, tableIdentifier, expressionTree);
+            expressionTree, tableIdentifier, expressionTree, configuration);
       case TRUE:
         return getFilterResolverBasedOnExpressionType(ExpressionType.TRUE, false,
-            expressionTree, tableIdentifier, expressionTree);
+            expressionTree, tableIdentifier, expressionTree, configuration);
       default:
         return getFilterResolverBasedOnExpressionType(ExpressionType.UNKNOWN, false, expressionTree,
-            tableIdentifier, expressionTree);
+            tableIdentifier, expressionTree, configuration);
     }
   }
 
@@ -392,14 +395,17 @@ public class FilterExpressionProcessor implements FilterProcessor {
    */
   private FilterResolverIntf getFilterResolverBasedOnExpressionType(
       ExpressionType filterExpressionType, boolean isExpressionResolve, Expression expression,
-      AbsoluteTableIdentifier tableIdentifier, Expression expressionTree) {
+      AbsoluteTableIdentifier tableIdentifier, Expression expressionTree,
+      Configuration configuration) {
     BinaryConditionalExpression currentCondExpression = null;
     ConditionalExpression condExpression = null;
     switch (filterExpressionType) {
       case FALSE:
-        return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
+        return new RowLevelFilterResolverImpl(
+            expression, false, false, tableIdentifier, configuration);
       case TRUE:
-        return new TrueConditionalResolverImpl(expression, false, false, tableIdentifier);
+        return new TrueConditionalResolverImpl(
+            expression, false, false, tableIdentifier, configuration);
       case EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
         if (currentCondExpression.isSingleColumn()
@@ -415,7 +421,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
                     || FilterUtil
                     .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
-                  tableIdentifier);
+                  tableIdentifier, configuration);
             }
             if (currentCondExpression.getFilterExpressionType() == ExpressionType.GREATERTHAN
                 || currentCondExpression.getFilterExpressionType() == ExpressionType.LESSTHAN
@@ -424,11 +430,12 @@ public class FilterExpressionProcessor implements FilterProcessor {
                 || currentCondExpression.getFilterExpressionType()
                 == ExpressionType.LESSTHAN_EQUALTO) {
               return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, true,
-                  tableIdentifier);
+                  tableIdentifier, configuration);
             }
             return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
                 tableIdentifier,
-                currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
+                currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure(),
+                configuration);
           }
           // getting new dim index.
           if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
@@ -440,7 +447,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
                     || FilterUtil
                     .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, true,
-                  tableIdentifier);
+                  tableIdentifier, configuration);
             }
             if (currentCondExpression.getFilterExpressionType() == ExpressionType.GREATERTHAN
                 || currentCondExpression.getFilterExpressionType() == ExpressionType.LESSTHAN
@@ -449,18 +456,19 @@ public class FilterExpressionProcessor implements FilterProcessor {
                 || currentCondExpression.getFilterExpressionType()
                 == ExpressionType.LESSTHAN_EQUALTO) {
               return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, true,
-                  tableIdentifier);
+                  tableIdentifier, configuration);
             }
           }
           return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
               tableIdentifier,
-              currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
+              currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure(),
+              configuration);
 
         }
         break;
       case RANGE:
         return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
-            tableIdentifier, false);
+            tableIdentifier, false, configuration);
       case NOT_EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
         if (currentCondExpression.isSingleColumn()
@@ -476,7 +484,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
                     || FilterUtil
                     .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
-                  tableIdentifier);
+                  tableIdentifier, configuration);
             }
             if (currentCondExpression.getFilterExpressionType() == ExpressionType.GREATERTHAN
                 || currentCondExpression.getFilterExpressionType() == ExpressionType.LESSTHAN
@@ -485,10 +493,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
                 || currentCondExpression.getFilterExpressionType()
                 == ExpressionType.LESSTHAN_EQUALTO) {
               return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, false,
-                  tableIdentifier);
+                  tableIdentifier, configuration);
             }
             return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false,
-                tableIdentifier, true);
+                tableIdentifier, true, configuration);
           }
 
           if (!currentCondExpression.getColumnList().get(0).getCarbonColumn()
@@ -500,7 +508,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
                     || FilterUtil
                     .checkIfLeftExpressionRequireEvaluation(currentCondExpression.getLeft()))) {
               return new RowLevelFilterResolverImpl(expression, isExpressionResolve, false,
-                  tableIdentifier);
+                  tableIdentifier, configuration);
             }
             if (expressionTree.getFilterExpressionType() == ExpressionType.GREATERTHAN
                 || expressionTree.getFilterExpressionType() == ExpressionType.LESSTHAN
@@ -508,14 +516,14 @@ public class FilterExpressionProcessor implements FilterProcessor {
                 || expressionTree.getFilterExpressionType() == ExpressionType.LESSTHAN_EQUALTO) {
 
               return new RowLevelRangeFilterResolverImpl(expression, isExpressionResolve, false,
-                  tableIdentifier);
+                  tableIdentifier, configuration);
             }
 
             return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false,
-                tableIdentifier, false);
+                tableIdentifier, false, configuration);
           }
           return new ConditionalFilterResolverImpl(expression, isExpressionResolve, false,
-              tableIdentifier, false);
+              tableIdentifier, false, configuration);
         }
         break;
 
@@ -533,11 +541,13 @@ public class FilterExpressionProcessor implements FilterProcessor {
                 .getCarbonColumn().hasEncoding(Encoding.DIRECT_DICTIONARY))
                 || (condExpression.getColumnList().get(0).getCarbonColumn().isMeasure())) {
               return new ConditionalFilterResolverImpl(expression, true, true, tableIdentifier,
-                  condExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
+                  condExpression.getColumnList().get(0).getCarbonColumn().isMeasure(),
+                  configuration);
             }
           }
         }
     }
-    return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
+    return new RowLevelFilterResolverImpl(
+        expression, false, false, tableIdentifier, configuration);
   }
 }

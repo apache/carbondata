@@ -29,7 +29,15 @@ import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMe
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
+
+  protected Configuration configuration;
+
+  public DictionaryColumnVisitor(Configuration configuration) {
+    this.configuration = configuration;
+  }
 
   /**
    * This Visitor method is used to populate the visitableObj with direct dictionary filter details
@@ -53,9 +61,9 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
       } catch (FilterIllegalMemberException e) {
         throw new FilterUnsupportedException(e);
       }
-      resolvedFilterObject = FilterUtil
-          .getFilterValues(metadata.getTableIdentifier(), metadata.getColumnExpression(),
-              evaluateResultListFinal, metadata.isIncludeFilter(), metadata.getTableProvider());
+      resolvedFilterObject = FilterUtil.getFilterValues(metadata.getTableIdentifier(),
+          metadata.getColumnExpression(), evaluateResultListFinal, metadata.isIncludeFilter(),
+          metadata.getTableProvider(), configuration);
       if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
         // Adding default surrogate key of null member inorder to not display the same while
         // displaying the report as per hive compatibility.

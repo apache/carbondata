@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.rdd
 
-import java.io.{File, IOException, ObjectInputStream, ObjectOutputStream}
+import java.io._
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
@@ -25,7 +25,6 @@ import java.util.{Date, UUID}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.util.Random
-import scala.util.control.NonFatal
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.{TaskAttemptID, TaskType}
@@ -41,6 +40,7 @@ import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.csvload.BlockDetails
@@ -53,39 +53,6 @@ import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.load.{CarbonLoaderUtil, FailureCauses}
 import org.apache.carbondata.spark.splits.TableSplit
 import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, CommonUtil}
-
-class SerializableConfiguration(@transient var value: Configuration) extends Serializable {
-
-  @transient
-  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
-  private def writeObject(out: ObjectOutputStream): Unit =
-    try {
-      out.defaultWriteObject()
-      value.write(out)
-    } catch {
-      case e: IOException =>
-        LOGGER.error(e, "Exception encountered")
-        throw e
-      case NonFatal(e) =>
-        LOGGER.error(e, "Exception encountered")
-        throw new IOException(e)
-    }
-
-
-  private def readObject(in: ObjectInputStream): Unit =
-    try {
-      value = new Configuration(false)
-      value.readFields(in)
-    } catch {
-      case e: IOException =>
-        LOGGER.error(e, "Exception encountered")
-        throw e
-      case NonFatal(e) =>
-        LOGGER.error(e, "Exception encountered")
-        throw new IOException(e)
-    }
-}
 
 /**
  * This partition class use to split by Host
@@ -180,8 +147,9 @@ class NewCarbonDataLoadRDD[K, V](
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     blocksGroupBy: Array[(String, Array[BlockDetails])],
-    isTableSplitPartition: Boolean)
-  extends CarbonRDD[(K, V)](sc, Nil) {
+    isTableSplitPartition: Boolean,
+    @transient hadoopConfiguration: Configuration)
+  extends CarbonRDD[(K, V)](sc, Nil, hadoopConfiguration) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
 
@@ -189,10 +157,6 @@ class NewCarbonDataLoadRDD[K, V](
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
     formatter.format(new Date())
   }
-
-  // A Hadoop Configuration can be about 10 KB, which is pretty big, so broadcast it
-  private val confBroadcast =
-    sc.broadcast(new SerializableConfiguration(sc.hadoopConfiguration))
 
   override def getPartitions: Array[Partition] = {
     if (isTableSplitPartition) {
@@ -227,6 +191,7 @@ class NewCarbonDataLoadRDD[K, V](
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val iter = new Iterator[(K, V)] {
+      var configuration: Configuration = getConf
       var partitionID = "0"
       val loadMetadataDetails = new LoadMetadataDetails()
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
@@ -253,7 +218,8 @@ class NewCarbonDataLoadRDD[K, V](
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
         executor.execute(model,
           loader.storeLocation,
-          recordReaders)
+          recordReaders,
+          configuration)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
@@ -279,7 +245,6 @@ class NewCarbonDataLoadRDD[K, V](
 
       def getInputIterators: Array[CarbonIterator[Array[AnyRef]]] = {
         val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, theSplit.index, 0)
-        var configuration: Configuration = confBroadcast.value.value
         if (configuration == null) {
           configuration = new Configuration()
         }
@@ -397,7 +362,8 @@ class NewDataFrameLoaderRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    prev: DataLoadCoalescedRDD[Row]) extends CarbonRDD[(K, V)](prev) {
+    prev: DataLoadCoalescedRDD[Row],
+    @transient configuration: Configuration) extends CarbonRDD[(K, V)](prev, configuration) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
 
@@ -439,7 +405,7 @@ class NewDataFrameLoaderRDD[K, V](
         // in case of success, failure or cancelation clear memory and stop execution
         context.addTaskCompletionListener { context => executor.close()
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
-        executor.execute(model, loader.storeLocation, recordReaders.toArray)
+        executor.execute(model, loader.storeLocation, recordReaders.toArray, getConf)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
@@ -590,7 +556,8 @@ class PartitionTableDataLoaderRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    prev: RDD[Row]) extends CarbonRDD[(K, V)](prev) {
+    prev: RDD[Row],
+    @transient configuration: Configuration) extends CarbonRDD[(K, V)](prev, configuration) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
@@ -624,7 +591,7 @@ class PartitionTableDataLoaderRDD[K, V](
         // in case of success, failure or cancelation clear memory and stop execution
         context.addTaskCompletionListener { context => executor.close()
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
-        executor.execute(model, loader.storeLocation, recordReaders)
+        executor.execute(model, loader.storeLocation, recordReaders, getConf)
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)

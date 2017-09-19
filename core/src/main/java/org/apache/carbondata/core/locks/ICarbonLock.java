@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.core.locks;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Carbon Lock Interface which handles the locking and unlocking.
  */
@@ -42,6 +44,6 @@ public interface ICarbonLock {
    * @param lockFile The path of the lock file.
    * @return True if the lock file is deleted, false otherwise.
    */
-  boolean releaseLockManually(String lockFile);
+  boolean releaseLockManually(Configuration configuration, String lockFile);
 
 }

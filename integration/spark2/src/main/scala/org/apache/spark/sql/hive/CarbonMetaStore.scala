@@ -16,6 +16,7 @@
  */
 package org.apache.spark.sql.hive
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{RuntimeConfig, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
@@ -48,7 +49,8 @@ trait CarbonMetaStore {
    */
   def createCarbonRelation(parameters: Map[String, String],
       absIdentifier: AbsoluteTableIdentifier,
-      sparkSession: SparkSession): CarbonRelation
+      sparkSession: SparkSession,
+      configuration: Configuration): CarbonRelation
 
 
   def tableExists(
@@ -70,7 +72,8 @@ trait CarbonMetaStore {
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       schemaEvolutionEntry: SchemaEvolutionEntry,
-      carbonStorePath: String)(sparkSession: SparkSession): String
+      carbonStorePath: String,
+      configuration: Configuration)(sparkSession: SparkSession): String
 
   /**
    * This method will is used to remove the evolution entry in case of failure.
@@ -82,13 +85,13 @@ trait CarbonMetaStore {
    */
   def revertTableSchema(carbonTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      tablePath: String)
+      tablePath: String, configuration: Configuration)
     (sparkSession: SparkSession): String
 
   /**
    * Prepare Thrift Schema from wrapper TableInfo and write to disk
    */
-  def saveToDisk(tableInfo: schema.table.TableInfo, tablePath: String)
+  def saveToDisk(tableInfo: schema.table.TableInfo, tablePath: String, configuration: Configuration)
 
   /**
    * Generates schema string to save it in hive metastore
@@ -96,7 +99,7 @@ trait CarbonMetaStore {
    * @return
    */
   def generateTableSchemaString(tableInfo: schema.table.TableInfo,
-      tablePath: String): String
+      tablePath: String, configuration: Configuration): String
 
   /**
    * This method will remove the table meta from catalog metadata array
@@ -109,14 +112,15 @@ trait CarbonMetaStore {
   def updateMetadataByThriftTable(schemaFilePath: String,
       tableInfo: TableInfo, dbName: String, tableName: String, tablePath: String): Unit
 
-  def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean
+  def isTablePathExists(tableIdentifier: TableIdentifier,
+      configuration: Configuration)(sparkSession: SparkSession): Boolean
 
-  def dropTable(tablePath: String, tableIdentifier: TableIdentifier)
+  def dropTable(tablePath: String, tableIdentifier: TableIdentifier, configuration: Configuration)
     (sparkSession: SparkSession)
 
-  def updateAndTouchSchemasUpdatedTime(basePath: String)
+  def updateAndTouchSchemasUpdatedTime(configuration: Configuration, basePath: String)
 
-  def checkSchemasModifiedTimeAndReloadTables(storePath: String)
+  def checkSchemasModifiedTimeAndReloadTables(configuration: Configuration, storePath: String)
 
   def isReadFromHiveMetaStore : Boolean
 

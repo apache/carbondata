@@ -26,6 +26,7 @@ import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
@@ -68,10 +69,13 @@ public class ThriftWriter {
    */
   private boolean append;
 
+  private Configuration configuration;
+
   /**
    * Constructor.
    */
-  public ThriftWriter(String fileName, boolean append) {
+  public ThriftWriter(Configuration configuration, String fileName, boolean append) {
+    this.configuration = configuration;
     this.fileName = fileName;
     this.append = append;
   }
@@ -81,7 +85,8 @@ public class ThriftWriter {
    */
   public void open() throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-    dataOutputStream = FileFactory.getDataOutputStream(fileName, fileType, bufferSize, append);
+    dataOutputStream =
+        FileFactory.getDataOutputStream(configuration, fileName, fileType, bufferSize, append);
     binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
   }
 
@@ -93,7 +98,7 @@ public class ThriftWriter {
    */
   public void open(FileWriteOperation fileWriteOperation) throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-    atomicFileOperationsWriter = new AtomicFileOperationsImpl(fileName, fileType);
+    atomicFileOperationsWriter = new AtomicFileOperationsImpl(configuration, fileName, fileType);
     dataOutputStream = atomicFileOperationsWriter.openForWrite(fileWriteOperation);
     binaryOut = new TCompactProtocol(new TIOStreamTransport(dataOutputStream));
   }

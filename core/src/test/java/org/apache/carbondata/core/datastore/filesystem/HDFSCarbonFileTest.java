@@ -21,6 +21,7 @@ import mockit.Mock;
 import mockit.MockUp;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -79,7 +80,7 @@ public class HDFSCarbonFileTest {
 
             fileStatus = new FileStatus(12L, true, 60, 120l, 180L, new Path(fileName));
             fileStatusWithOutDirectoryPermission = new FileStatus(12L, false, 60, 120l, 180L, new Path(fileName));
-            hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
+            hdfsCarbonFile = new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
 
         }
     }
@@ -103,13 +104,13 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
+        hdfsCarbonFile = new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         hdfsCarbonFile.renameForce(fileName);
     }
 
     @Test
     public void testListFilesWithOutDirectoryPermission() {
-        hdfsCarbonFile = new HDFSCarbonFile(fileStatusWithOutDirectoryPermission);
+        hdfsCarbonFile = new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatusWithOutDirectoryPermission);
         new MockUp<FileStatus>() {
             @Mock
             public boolean isDirectory() {
@@ -138,7 +139,7 @@ public class HDFSCarbonFileTest {
 
     @Test
     public void testConstructorWithFilePath() {
-        hdfsCarbonFile = new HDFSCarbonFile(fileName);
+        hdfsCarbonFile = new HDFSCarbonFile(CarbonTestUtil.configuration, fileName);
         assertTrue(hdfsCarbonFile instanceof HDFSCarbonFile);
     }
 
@@ -159,13 +160,13 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
+        hdfsCarbonFile = new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertEquals(hdfsCarbonFile.listFiles().length, 0);
     }
 
     @Test
     public void testListDirectory() {
-        hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
+        hdfsCarbonFile = new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
@@ -187,7 +188,7 @@ public class HDFSCarbonFileTest {
 
     @Test
     public void testListFilesForException() throws IOException {
-        new HDFSCarbonFile(fileStatusWithOutDirectoryPermission);
+        new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatusWithOutDirectoryPermission);
 
         new MockUp<FileStatus>() {
             @Mock
@@ -211,7 +212,7 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
+        hdfsCarbonFile = new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         hdfsCarbonFile.listFiles();
     }
 
@@ -255,7 +256,7 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
+        hdfsCarbonFile = new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertEquals(hdfsCarbonFile.listFiles(carbonFileFilter).length, 1);
     }
 
@@ -283,7 +284,7 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
+        hdfsCarbonFile = new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertEquals(hdfsCarbonFile.listFiles(carbonFileFilter).length, 0);
     }
 
@@ -319,7 +320,7 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
+        hdfsCarbonFile = new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertEquals(hdfsCarbonFile.getParentFile(), null);
     }
 
@@ -355,13 +356,13 @@ public class HDFSCarbonFileTest {
 
         };
 
-        hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
+        hdfsCarbonFile = new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertTrue(hdfsCarbonFile.getParentFile() instanceof CarbonFile);
     }
 
     @Test
     public void testForNonDisributedSystem() {
-        new HDFSCarbonFile(fileStatus);
+        new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
@@ -388,7 +389,7 @@ public class HDFSCarbonFileTest {
             }
 
         };
-        hdfsCarbonFile = new HDFSCarbonFile(fileStatus);
+        hdfsCarbonFile = new HDFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertEquals(hdfsCarbonFile.renameForce(fileName), true);
 
     }

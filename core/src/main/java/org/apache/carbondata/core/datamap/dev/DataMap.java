@@ -23,6 +23,8 @@ import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Datamap is an entity which can store and retrieve index data.
  */
@@ -31,7 +33,7 @@ public interface DataMap {
   /**
    * It is called to load the data map to memory or to initialize it.
    */
-  void init(String filePath) throws MemoryException, IOException;
+  void init(Configuration configuration, String filePath) throws MemoryException, IOException;
 
   /**
    * Prune the datamap with filter expression. It returns the list of

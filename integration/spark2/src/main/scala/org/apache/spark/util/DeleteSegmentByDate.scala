@@ -16,10 +16,10 @@
  */
  package org.apache.spark.util
 
- import org.apache.spark.sql.{CarbonEnv, SparkSession}
+ import org.apache.spark.sql.{CarbonEnv, SparkSession, SparkSQLUtil}
  import org.apache.spark.sql.hive.CarbonRelation
 
-import org.apache.carbondata.api.CarbonStore
+ import org.apache.carbondata.api.CarbonStore
 
 /**
  * delete segments before some date
@@ -33,7 +33,8 @@ object DeleteSegmentByDate {
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.
       lookupRelation(Some(dbName), tableName)(spark).asInstanceOf[CarbonRelation].
       tableMeta.carbonTable
-    CarbonStore.deleteLoadByDate(dateValue, dbName, tableName, carbonTable)
+    CarbonStore.deleteLoadByDate(dateValue, dbName, tableName, carbonTable,
+      SparkSQLUtil.newHadoopConf(spark))
   }
 
   def main(args: Array[String]): Unit = {
@@ -47,8 +48,8 @@ object DeleteSegmentByDate {
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     val dateValue = TableAPIUtil.escape(args(2))
     val spark = TableAPIUtil.spark(storePath, s"DeleteSegmentByDate: $dbName.$tableName")
-    CarbonEnv.getInstance(spark).carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(spark).storePath)
+    CarbonEnv.getInstance(spark).carbonMetastore.checkSchemasModifiedTimeAndReloadTables(
+      SparkSQLUtil.newHadoopConf(spark), CarbonEnv.getInstance(spark).storePath)
     deleteSegmentByDate(spark, dbName, tableName, dateValue)
   }
 }

@@ -103,8 +103,8 @@ class CarbonSessionCatalog(
       alias: Option[String],
       carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): Boolean = {
     var isRefreshed = false
-    carbonEnv.carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(sparkSession).storePath)
+    carbonEnv.carbonMetastore.checkSchemasModifiedTimeAndReloadTables(hadoopConf,
+      CarbonEnv.getInstance(sparkSession).storePath)
 
     val tableMeta = carbonEnv.carbonMetastore
       .getTableFromMetadataCache(carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
@@ -129,7 +129,7 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
   override lazy val sqlParser: ParserInterface = new CarbonSparkSqlParser(conf, sparkSession)
 
   experimentalMethods.extraStrategies =
-    Seq(new CarbonLateDecodeStrategy, new DDLStrategy(sparkSession))
+    Seq(new CarbonLateDecodeStrategy(sparkSession), new DDLStrategy(sparkSession))
   experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
 
   override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)

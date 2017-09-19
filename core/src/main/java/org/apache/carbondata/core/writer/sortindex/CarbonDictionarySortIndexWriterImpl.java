@@ -36,6 +36,8 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
 import org.apache.carbondata.format.ColumnSortInfo;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * The class responsible for writing the dictionary/column sort index and sort index inverted data
  * in the thrift format
@@ -76,6 +78,8 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonDictionarySortIndexWriterImpl.class.getName());
 
+  private Configuration configuration;
+
   /**
    * @param carbonStorePath       Carbon store path
    * @param carbonTableIdentifier table identifier which will give table name and database name
@@ -83,10 +87,12 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
    */
   public CarbonDictionarySortIndexWriterImpl(final CarbonTableIdentifier carbonTableIdentifier,
       final DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
-      final String carbonStorePath) {
+      final String carbonStorePath,
+      final Configuration configuration) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
     this.carbonStorePath = carbonStorePath;
+    this.configuration = configuration;
   }
 
   /**
@@ -125,14 +131,15 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
     if (isNotNull) {
       initPath();
       String folderContainingFile = CarbonTablePath.getFolderContainingFile(this.sortIndexFilePath);
-      boolean created = CarbonUtil.checkAndCreateFolder(folderContainingFile);
+      boolean created = CarbonUtil.checkAndCreateFolder(configuration, folderContainingFile);
       if (!created) {
         LOGGER.error("Database metadata folder creation status :: " + created);
         throw new IOException("Failed to created database metadata folder");
       }
       try {
 
-        this.sortIndexThriftWriter = new ThriftWriter(this.sortIndexFilePath, false);
+        this.sortIndexThriftWriter =
+            new ThriftWriter(configuration, this.sortIndexFilePath, false);
         this.sortIndexThriftWriter.open();
         sortIndexThriftWriter.write(columnSortInfo);
       } catch (IOException ie) {
@@ -150,12 +157,11 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
 
   protected void initPath() {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(carbonStorePath, carbonTableIdentifier,
-            dictionaryColumnUniqueIdentifier);
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
+        carbonTableIdentifier, dictionaryColumnUniqueIdentifier, configuration);
     String dictionaryPath = carbonTablePath.getDictionaryFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
-    long dictOffset = CarbonUtil.getFileSize(dictionaryPath);
+    long dictOffset = CarbonUtil.getFileSize(configuration, dictionaryPath);
     this.sortIndexFilePath = carbonTablePath
         .getSortIndexFilePath(dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(),
             dictOffset);
@@ -169,7 +175,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
    */
   protected void cleanUpOldSortIndex(CarbonTablePath carbonTablePath, String dictPath) {
     CarbonFile dictFile =
-        FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath));
+        FileFactory.getCarbonFile(configuration, dictPath, FileFactory.getFileType(dictPath));
     CarbonFile[] files = carbonTablePath.getSortIndexFiles(dictFile.getParentFile(),
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     int maxTime;

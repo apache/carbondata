@@ -34,6 +34,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -96,7 +97,7 @@ public class DictionaryClientTest {
     metadata.addCarbonTable(carbonTable);
 
     // Start the server for testing the client
-    server = DictionaryServer.getInstance(5678, carbonTable);
+    server = DictionaryServer.getInstance(5678, carbonTable, CarbonTestUtil.configuration);
   }
 
   @Test public void testClient() throws Exception {

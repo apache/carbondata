@@ -33,7 +33,7 @@ class TestLoadDataWithNotProperInputFile extends QueryTest {
   test("test loading data with input path exists but has nothing") {
     try {
       val dataPath = s"$resourcesPath/nullSample.csv"
-      FileUtils.getPaths(dataPath)
+      FileUtils.getPaths(hadoopConf, dataPath)
       assert(false)
     } catch {
       case e: Throwable =>
@@ -45,7 +45,7 @@ class TestLoadDataWithNotProperInputFile extends QueryTest {
   test("test loading data with input file not ends with '.csv'") {
     try {
       val dataPath = s"$resourcesPath/noneCsvFormat.cs"
-      FileUtils.getPaths(dataPath)
+      FileUtils.getPaths(hadoopConf, dataPath)
       assert(true)
     } catch {
       case e: Throwable =>
@@ -56,7 +56,7 @@ class TestLoadDataWithNotProperInputFile extends QueryTest {
   test("test loading data with input file does not exist") {
     try {
       val dataPath = s"$resourcesPath/input_file_does_not_exist.csv"
-      FileUtils.getPaths(dataPath)
+      FileUtils.getPaths(hadoopConf, dataPath)
       assert(false)
     } catch {
       case e: Throwable =>

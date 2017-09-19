@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.util
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.CarbonRelation
 import org.apache.spark.sql.test.TestQueryExecutor
 
@@ -43,9 +44,11 @@ object DictionaryTestCaseUtil {
     val tableIdentifier = new CarbonTableIdentifier(table.getDatabaseName, table.getFactTableName, "uniqueid")
     val columnIdentifier = new DictionaryColumnUniqueIdentifier(tableIdentifier,
       dimension.getColumnIdentifier, dimension.getDataType,
-      CarbonStorePath.getCarbonTablePath(table.getStorePath, table.getCarbonTableIdentifier)
+      CarbonStorePath.getCarbonTablePath(table.getStorePath, table.getCarbonTableIdentifier,
+        TestQueryExecutor.hadoopConf)
     )
-    val dict = CarbonLoaderUtil.getDictionary(columnIdentifier, TestQueryExecutor.storeLocation)
+    val dict = CarbonLoaderUtil.getDictionary(columnIdentifier, TestQueryExecutor.storeLocation,
+      TestQueryExecutor.hadoopConf)
     assert(dict.getSurrogateKey(value) != CarbonCommonConstants.INVALID_SURROGATE_KEY)
   }
 }

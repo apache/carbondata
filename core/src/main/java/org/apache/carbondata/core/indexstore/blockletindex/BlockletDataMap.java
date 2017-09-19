@@ -56,6 +56,8 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Datamap implementation for blocklet.
  */
@@ -90,10 +92,14 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private int[] columnCardinality;
 
+  private Configuration configuration;
+
   @Override
-  public void init(String filePath) throws IOException, MemoryException {
+  public void init(Configuration configuration,
+      String filePath) throws IOException, MemoryException {
     long startTime = System.currentTimeMillis();
-    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+    this.configuration = configuration;
+    DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter(this.configuration);
     List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(filePath);
     for (DataFileFooter fileFooter : indexInfo) {
       List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
@@ -106,7 +112,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
       if (fileFooter.getBlockletList() == null || fileFooter.getBlockletList().size() == 0) {
         LOGGER
             .info("Reading carbondata file footer to get blocklet info " + blockInfo.getFilePath());
-        fileFooter = CarbonUtil.readMetadatFile(blockInfo);
+        fileFooter = CarbonUtil.readMetadatFile(blockInfo, configuration);
       }
 
       loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath());
@@ -270,8 +276,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
     } else {
       int startIndex = findStartIndex(convertToRow(searchStartKey), comparator);
       int endIndex = findEndIndex(convertToRow(searchEndKey), comparator);
-      FilterExecuter filterExecuter =
-          FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
+      FilterExecuter filterExecuter = FilterUtil.getFilterExecuterTree(filterExp,
+          segmentProperties, null, configuration);
       while (startIndex <= endIndex) {
         DataMapRow unsafeRow = unsafeMemoryDMStore.getUnsafeRow(startIndex);
         BitSet bitSet = filterExecuter.isScanRequired(getMinMaxValue(unsafeRow, MAX_VALUES_INDEX),

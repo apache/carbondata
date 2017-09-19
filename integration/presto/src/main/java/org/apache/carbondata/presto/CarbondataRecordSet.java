@@ -75,8 +75,8 @@ public class CarbondataRecordSet implements RecordSet {
     queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
     try {
 
-      readSupport
-          .initialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
+      readSupport.initialize(queryModel.getProjectionColumns(),
+          queryModel.getAbsoluteTableIdentifier(), queryModel.getConfiguration());
       CarbonIterator iterator = queryExecutor.execute(queryModel);
       CarbonVectorizedRecordReader vectorReader =
           new CarbonVectorizedRecordReader(queryExecutor, queryModel,
