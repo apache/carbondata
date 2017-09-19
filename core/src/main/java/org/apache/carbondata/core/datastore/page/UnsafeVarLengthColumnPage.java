@@ -42,18 +42,6 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
     baseOffset = memoryBlock.getBaseOffset();
   }
 
-  /**
-   * create a page with initial capacity
-   */
-  UnsafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize,
-      int capacity) throws MemoryException {
-    super(columnSpec, dataType, pageSize);
-    this.capacity = capacity;
-    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long)(capacity));
-    baseAddress = memoryBlock.getBaseObject();
-    baseOffset = memoryBlock.getBaseOffset();
-  }
-
   @Override
   public void freeMemory() {
     if (memoryBlock != null) {

@@ -363,7 +363,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
    */
   protected void ensureMemory(int requestSize) throws MemoryException {
     if (totalLength + requestSize > capacity) {
-      int newSize = 2 * capacity;
+      int newSize = Math.max(2 * capacity, totalLength + requestSize);
       MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, newSize);
       CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset,
           newBlock.getBaseObject(), newBlock.getBaseOffset(), capacity);
