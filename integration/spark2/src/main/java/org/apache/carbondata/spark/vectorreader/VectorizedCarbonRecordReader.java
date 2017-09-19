@@ -72,9 +72,9 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
   private boolean returnColumnarBatch;
 
   /**
-   * The default config on whether columnarBatch should be offheap.
+   * The default config on whether columnarBatch should be onheap.
    */
-  private static final MemoryMode DEFAULT_MEMORY_MODE = MemoryMode.OFF_HEAP;
+  private static final MemoryMode DEFAULT_MEMORY_MODE = MemoryMode.ON_HEAP;
 
   private QueryModel queryModel;
 
