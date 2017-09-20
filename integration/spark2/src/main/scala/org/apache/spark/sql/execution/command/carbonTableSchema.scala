@@ -947,6 +947,17 @@ case class LoadTable(
         if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
           FileFactory.mkdirs(metadataDirectoryPath, fileType)
         }
+        // start dictionary server when use one pass load and dimension with DICTIONARY
+        // encoding is present.
+        val allDimensions = table.getAllDimensions.asScala.toList
+        val dictionaryColumnExists = allDimensions.exists {
+          carbonDimension => carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
+                             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
+        }
+        if(!dictionaryColumnExists && carbonLoadModel.getUseOnePass) {
+          LOGGER.warn("Skipping single_pass as dictionary column does not exist")
+          carbonLoadModel.setUseOnePass(false)
+        }
         if (carbonLoadModel.getUseOnePass) {
           val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
           val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
@@ -980,34 +991,22 @@ case class LoadTable(
               .getProperty(CarbonCommonConstants.DICTIONARY_SERVER_PORT,
                 CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT)
           val sparkDriverHost = sparkSession.sqlContext.sparkContext.
-              getConf.get("spark.driver.host")
+            getConf.get("spark.driver.host")
           carbonLoadModel.setDictionaryServerHost(sparkDriverHost)
-          // start dictionary server when use one pass load and dimension with DICTIONARY
-          // encoding is present.
-          val allDimensions = table.getAllDimensions.asScala.toList
-          val createDictionary = allDimensions.exists {
-            carbonDimension => carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
-                !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)
-          }
-          val server: Option[DictionaryServer] = if (createDictionary) {
-            val dictionaryServer = DictionaryServer
-              .getInstance(dictionaryServerPort.toInt, carbonTable)
-            carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
-            sparkSession.sparkContext.addSparkListener(new SparkListener() {
-              override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
-                dictionaryServer.shutdown()
-              }
-            })
-            Some(dictionaryServer)
-          } else {
-            None
-          }
+          val dictionaryServer = DictionaryServer
+            .getInstance(dictionaryServerPort.toInt, carbonTable)
+          carbonLoadModel.setDictionaryServerPort(dictionaryServer.getPort)
+          sparkSession.sparkContext.addSparkListener(new SparkListener() {
+            override def onApplicationEnd(applicationEnd: SparkListenerApplicationEnd) {
+              dictionaryServer.shutdown()
+            }
+          })
           CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
             carbonLoadModel,
             relation.tableMeta.storePath,
             columnar,
             partitionStatus,
-            server,
+            Some(dictionaryServer),
             isOverwriteTable,
             dataFrame,
             updateModel)
@@ -1038,11 +1037,11 @@ case class LoadTable(
             (dataFrame, dataFrame)
           }
 
-            GlobalDictionaryUtil.generateGlobalDictionary(
-                sparkSession.sqlContext,
-                carbonLoadModel,
-                relation.tableMeta.storePath,
-                dictionaryDataFrame)
+          GlobalDictionaryUtil.generateGlobalDictionary(
+            sparkSession.sqlContext,
+            carbonLoadModel,
+            relation.tableMeta.storePath,
+            dictionaryDataFrame)
           CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
             carbonLoadModel,
             relation.tableMeta.storePath,
