@@ -418,6 +418,30 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_table")
   }
 
+  test("test to check if intField returns correct result - dictionary exclude") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "ALTER TABLE carbon_table ADD COLUMNS(newField INT) TBLPROPERTIES" +
+      "('DEFAULT.VALUE.newField'='67890', 'DICTIONARY_EXCLUDE'='newField')")
+    checkAnswer(sql("SELECT DISTINCT(newField) FROM carbon_table"), Row(67890))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
+  test("test to check if bigintField returns correct result - dictionary exclude") {
+    sqlContext.setConf("carbon.enable.vector.reader", "true")
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED BY 'carbondata'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE carbon_table OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
+    sql(
+      "ALTER TABLE carbon_table ADD COLUMNS(newField bigint) TBLPROPERTIES" +
+      "('DEFAULT.VALUE.newField'='67890', 'DICTIONARY_EXCLUDE'='newField')")
+    checkAnswer(sql("SELECT DISTINCT(newField) FROM carbon_table"), Row(67890))
+    sql("DROP TABLE IF EXISTS carbon_table")
+  }
+
   test("test to check if shortField returns correct result") {
     sql("DROP TABLE IF EXISTS carbon_table")
     sql("CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField TIMESTAMP, decimalField DECIMAL(6,2)) STORED BY 'carbondata'")
