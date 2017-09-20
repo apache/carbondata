@@ -254,7 +254,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       nonDicArray[nonDicIndex++] = (byte[]) row.getObject(dimCount);
     }
 
-    Object[] measures = new Object[outputLength];
+    Object[] measures = new Object[measureCount];
     for (int i = 0; i < this.measureCount; i++) {
       measures[i] = row.getObject(i + this.dimensionWithComplexCount);
     }
