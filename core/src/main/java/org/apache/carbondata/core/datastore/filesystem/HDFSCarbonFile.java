@@ -107,8 +107,11 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
         ((DistributedFileSystem) fs).rename(fileStatus.getPath(), new Path(changetoName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);
         return true;
+      } else if (fileStatus.getPath().toString().startsWith("s3n")) {
+        fs.delete(new Path(changetoName), true);
+        return fs.rename(fileStatus.getPath(), new Path(changetoName));
       } else {
-        return false;
+        return fs.rename(fileStatus.getPath(), new Path(changetoName));
       }
     } catch (IOException e) {
       LOGGER.error("Exception occured: " + e.getMessage());
