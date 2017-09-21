@@ -369,7 +369,8 @@ public final class CarbonProperties {
     String defaultFs = configuration.get("fs.defaultFS");
     if (null != defaultFs && (defaultFs.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)
         || defaultFs.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || defaultFs
-        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX))
+        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX) || defaultFs
+        .startsWith(CarbonCommonConstants.S3A_PREFIX))
         && !CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS.equalsIgnoreCase(lockTypeConfigured)) {
       LOGGER.warn("The value \"" + lockTypeConfigured + "\" configured for key "
           + LOCK_TYPE + " is invalid for current file system. "
