@@ -14,21 +14,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.hadoop.api;
+package org.apache.carbondata.core.indexstore;
 
-import java.io.Serializable;
+import java.io.IOException;
 import java.util.List;
 
-import org.apache.carbondata.core.indexstore.DetailedBlocklet;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-
 /**
- * Distributable datamap job to execute the #DistributableDataMapFormat in cluster. it prunes the
- * datamaps distributably and returns the final blocklet list
+ * Fetches the detailed blocklet which has more information to execute the query
  */
-public interface DataMapJob extends Serializable {
+public interface BlockletDetailsFetcher {
 
-  List<DetailedBlocklet> execute(DistributableDataMapFormat dataMapFormat,
-      FilterResolverIntf resolverIntf);
+  /**
+   * Get the blocklet detail information based on blockletid, blockid and segmentid.
+   *
+   * @param blocklets
+   * @param segmentId
+   * @return
+   * @throws IOException
+   */
+  List<DetailedBlocklet> getDetailedBlocklets(List<Blocklet> blocklets, String segmentId)
+      throws IOException;
 
+  /**
+   * Get the blocklet detail information based on blockletid, blockid and segmentid.
+   *
+   * @param blocklet
+   * @param segmentId
+   * @return
+   * @throws IOException
+   */
+  DetailedBlocklet getDetailedBlocklet(Blocklet blocklet, String segmentId) throws IOException;
 }

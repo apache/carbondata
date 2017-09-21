@@ -39,6 +39,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
+import org.apache.carbondata.core.indexstore.DetailedBlocklet;
 import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
@@ -286,6 +287,12 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return blocklets;
   }
 
+  public DetailedBlocklet getDetailedBlocklet(String blockletId) {
+    int index = Integer.parseInt(blockletId);
+    DataMapRow unsafeRow = unsafeMemoryDMStore.getUnsafeRow(index);
+    return createBlocklet(unsafeRow, index);
+  }
+
   private byte[][] getMinMaxValue(DataMapRow row, int index) {
     DataMapRow minMaxRow = row.getRow(index);
     byte[][] minMax = new byte[minMaxRow.getColumnCount()][];
@@ -295,8 +302,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return minMax;
   }
 
-  private Blocklet createBlocklet(DataMapRow row, int blockletId) {
-    Blocklet blocklet = new Blocklet(
+  private DetailedBlocklet createBlocklet(DataMapRow row, int blockletId) {
+    DetailedBlocklet blocklet = new DetailedBlocklet(
         new String(row.getByteArray(FILE_PATH_INDEX), CarbonCommonConstants.DEFAULT_CHARSET_CLASS),
         blockletId + "");
     BlockletDetailInfo detailInfo = new BlockletDetailInfo();

@@ -34,8 +34,12 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.events.ChangeEvent;
+import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
+import org.apache.carbondata.core.indexstore.DetailedBlocklet;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
@@ -45,7 +49,7 @@ import org.apache.hadoop.fs.RemoteIterator;
 /**
  * Table map for blocklet
  */
-public class BlockletDataMapFactory implements DataMapFactory {
+public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFetcher {
 
   private AbsoluteTableIdentifier identifier;
 
@@ -69,6 +73,14 @@ public class BlockletDataMapFactory implements DataMapFactory {
   @Override
   public List<DataMap> getDataMaps(String segmentId) throws IOException {
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
+        getTableBlockIndexUniqueIdentifiers(segmentId);
+
+    return cache.getAll(tableBlockIndexUniqueIdentifiers);
+  }
+
+  private List<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(
+      String segmentId) {
+    List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         segmentMap.get(segmentId);
     if (tableBlockIndexUniqueIdentifiers == null) {
       tableBlockIndexUniqueIdentifiers = new ArrayList<>();
@@ -79,8 +91,59 @@ public class BlockletDataMapFactory implements DataMapFactory {
       }
       segmentMap.put(segmentId, tableBlockIndexUniqueIdentifiers);
     }
+    return tableBlockIndexUniqueIdentifiers;
+  }
 
-    return cache.getAll(tableBlockIndexUniqueIdentifiers);
+  /**
+   * Get the blocklet detail information based on blockletid, blockid and segmentid. This method is
+   * exclusively for BlockletDataMapFactory as detail information is only available in this default
+   * datamap.
+   * @param blocklets
+   * @param segmentId
+   * @return
+   * @throws IOException
+   */
+  @Override
+  public List<DetailedBlocklet> getDetailedBlocklets(List<Blocklet> blocklets, String segmentId)
+      throws IOException {
+    List<DetailedBlocklet> detailedBlocklets = new ArrayList<>();
+    // If it is already detailed blocklet then type cast and return same
+    if (blocklets.size() > 0 && blocklets.get(0) instanceof DetailedBlocklet) {
+      for (Blocklet blocklet : blocklets) {
+        detailedBlocklets.add((DetailedBlocklet) blocklet);
+      }
+      return detailedBlocklets;
+    }
+    List<TableBlockIndexUniqueIdentifier> identifiers =
+        getTableBlockIndexUniqueIdentifiers(segmentId);
+    // Retrieve each blocklets detail information from blocklet datamap
+    for (Blocklet blocklet : blocklets) {
+      detailedBlocklets.add(getDetailedBlocklet(identifiers, blocklet));
+    }
+    return detailedBlocklets;
+  }
+
+  @Override
+  public DetailedBlocklet getDetailedBlocklet(Blocklet blocklet, String segmentId)
+      throws IOException {
+    if (blocklet instanceof DetailedBlocklet) {
+      return (DetailedBlocklet) blocklet;
+    }
+    List<TableBlockIndexUniqueIdentifier> identifiers =
+        getTableBlockIndexUniqueIdentifiers(segmentId);
+    return getDetailedBlocklet(identifiers, blocklet);
+  }
+
+  private DetailedBlocklet getDetailedBlocklet(List<TableBlockIndexUniqueIdentifier> identifiers,
+      Blocklet blocklet) throws IOException {
+    String carbonIndexFileName = CarbonTablePath.getCarbonIndexFileName(blocklet.getPath());
+    for (TableBlockIndexUniqueIdentifier identifier : identifiers) {
+      if (identifier.getCarbonIndexFileName().equals(carbonIndexFileName)) {
+        DataMap dataMap = cache.get(identifier);
+        return ((BlockletDataMap) dataMap).getDetailedBlocklet(blocklet.getBlockletId());
+      }
+    }
+    throw new IOException("Blocklet with blockid " + blocklet.getPath() + " not found ");
   }
 
   private CarbonFile[] getCarbonIndexFiles(String segmentId) {
@@ -131,7 +194,7 @@ public class BlockletDataMapFactory implements DataMapFactory {
 
   @Override
   public void clear() {
-    for (String segmentId: segmentMap.keySet().toArray(new String[segmentMap.size()])) {
+    for (String segmentId : segmentMap.keySet().toArray(new String[segmentMap.size()])) {
       clear(segmentId);
     }
   }

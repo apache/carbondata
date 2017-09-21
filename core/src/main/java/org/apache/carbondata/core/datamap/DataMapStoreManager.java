@@ -25,6 +25,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
@@ -109,7 +112,13 @@ public final class DataMapStoreManager {
           (Class<? extends DataMapFactory>) Class.forName(factoryClassName);
       DataMapFactory dataMapFactory = factoryClass.newInstance();
       dataMapFactory.init(identifier, dataMapName);
-      dataMap = new TableDataMap(identifier, dataMapName, dataMapFactory);
+      BlockletDetailsFetcher blockletDetailsFetcher;
+      if (dataMapFactory instanceof BlockletDetailsFetcher) {
+        blockletDetailsFetcher = (BlockletDetailsFetcher) dataMapFactory;
+      } else {
+        blockletDetailsFetcher = getBlockletDetailsFetcher(identifier);
+      }
+      dataMap = new TableDataMap(identifier, dataMapName, dataMapFactory, blockletDetailsFetcher);
     } catch (Exception e) {
       LOGGER.error(e);
       throw new RuntimeException(e);
@@ -149,6 +158,17 @@ public final class DataMapStoreManager {
       }
       allDataMaps.remove(identifier.uniqueName());
     }
+  }
+
+  /**
+   * Get the blocklet datamap factory to get the detail information of blocklets
+   * @param identifier
+   * @return
+   */
+  private BlockletDetailsFetcher getBlockletDetailsFetcher(AbsoluteTableIdentifier identifier) {
+    TableDataMap blockletMap =
+        getDataMap(identifier, BlockletDataMap.NAME, BlockletDataMapFactory.class.getName());
+    return (BlockletDetailsFetcher) blockletMap.getDataMapFactory();
   }
 
   /**
