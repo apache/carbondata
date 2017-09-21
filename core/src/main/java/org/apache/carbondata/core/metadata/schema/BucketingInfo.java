@@ -17,21 +17,30 @@
 
 package org.apache.carbondata.core.metadata.schema;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
  * Bucketing information
  */
-public class BucketingInfo implements Serializable {
+public class BucketingInfo implements Serializable, Writable {
 
   private static final long serialVersionUID = -0L;
 
   private List<ColumnSchema> listOfColumns;
 
   private int numberOfBuckets;
+
+  public BucketingInfo() {
+
+  }
 
   public BucketingInfo(List<ColumnSchema> listOfColumns, int numberOfBuckets) {
     this.listOfColumns = listOfColumns;
@@ -44,6 +53,27 @@ public class BucketingInfo implements Serializable {
 
   public int getNumberOfBuckets() {
     return numberOfBuckets;
+  }
+
+  @Override
+  public void write(DataOutput output) throws IOException {
+    output.writeInt(numberOfBuckets);
+    output.writeInt(listOfColumns.size());
+    for (ColumnSchema aColSchema : listOfColumns) {
+      aColSchema.write(output);
+    }
+  }
+
+  @Override
+  public void readFields(DataInput input) throws IOException {
+    this.numberOfBuckets = input.readInt();
+    int colSchemaSize = input.readInt();
+    this.listOfColumns = new ArrayList<>(colSchemaSize);
+    for (int i = 0; i < colSchemaSize; i++) {
+      ColumnSchema aSchema = new ColumnSchema();
+      aSchema.readFields(input);
+      this.listOfColumns.add(aSchema);
+    }
   }
 
 }
