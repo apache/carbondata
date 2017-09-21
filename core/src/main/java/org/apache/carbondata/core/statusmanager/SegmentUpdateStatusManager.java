@@ -52,6 +52,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import com.amazonaws.services.s3.model.AmazonS3Exception;
 import com.google.gson.Gson;
 
 /**
@@ -703,7 +704,10 @@ public class SegmentUpdateStatusManager {
           gsonObjectToRead.fromJson(buffReader, SegmentUpdateDetails[].class);
     } catch (IOException e) {
       return new SegmentUpdateDetails[0];
-    } finally {
+    } catch (AmazonS3Exception e) {
+      return new SegmentUpdateDetails[0];
+    }
+    finally {
       closeStreams(buffReader, inStream, dataInputStream);
     }
 
