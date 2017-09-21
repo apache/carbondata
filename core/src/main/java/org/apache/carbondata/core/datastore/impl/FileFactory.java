@@ -246,7 +246,15 @@ public final class FileFactory {
    */
   public static DataOutputStream getDataOutputStreamUsingAppend(String path, FileType fileType)
       throws IOException {
-    return getCarbonFile(path).getDataOutputStreamUsingAppend(path, fileType);
+    if (FileType.S3 == fileType) {
+      CarbonFile carbonFile = getCarbonFile(path);
+      if (carbonFile.exists()) {
+        carbonFile.delete();
+      }
+      return carbonFile.getDataOutputStream(path,fileType);
+    } else {
+      return getCarbonFile(path).getDataOutputStreamUsingAppend(path, fileType);
+    }
   }
 
   /**
@@ -423,6 +431,7 @@ public final class FileFactory {
       throws IOException {
     FileFactory.FileType fileType = FileFactory.getFileType(directoryPath);
     switch (fileType) {
+      case S3:
       case HDFS:
       case VIEWFS:
         try {
