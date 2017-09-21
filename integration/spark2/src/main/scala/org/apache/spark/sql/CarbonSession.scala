@@ -119,6 +119,13 @@ object CarbonSession {
         }
       }
 
+      val carbonProperties = CarbonProperties.getInstance()
+      if(carbonProperties.getProperty(CarbonCommonConstants.S3_ACCESS_KEY) != ""){
+        options ++= Map[String, String]((CarbonCommonConstants.S3_ACCESS_KEY, carbonProperties.getProperty(CarbonCommonConstants.S3_ACCESS_KEY))
+          ,(CarbonCommonConstants.S3_SECRET_KEY, carbonProperties.getProperty(CarbonCommonConstants.S3_SECRET_KEY)),
+        (CarbonCommonConstants.S3_IMPLEMENTATION, carbonProperties.getProperty(CarbonCommonConstants.S3_IMPLEMENTATION)))
+      }
+
       // Get the session from current thread's active session.
       var session: SparkSession = SparkSession.getActiveSession match {
         case Some(sparkSession: CarbonSession) =>
