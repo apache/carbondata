@@ -77,6 +77,7 @@ public class BlockletDataMapFactory implements DataMapFactory {
         tableBlockIndexUniqueIdentifiers.add(
             new TableBlockIndexUniqueIdentifier(identifier, segmentId, listFiles[i].getName()));
       }
+      segmentMap.put(segmentId, tableBlockIndexUniqueIdentifiers);
     }
 
     return cache.getAll(tableBlockIndexUniqueIdentifiers);
@@ -120,15 +121,17 @@ public class BlockletDataMapFactory implements DataMapFactory {
     if (blockIndexes != null) {
       for (TableBlockIndexUniqueIdentifier blockIndex : blockIndexes) {
         DataMap dataMap = cache.getIfPresent(blockIndex);
-        dataMap.clear();
-        cache.invalidate(blockIndex);
+        if (dataMap != null) {
+          cache.invalidate(blockIndex);
+          dataMap.clear();
+        }
       }
     }
   }
 
   @Override
   public void clear() {
-    for (String segmentId: segmentMap.keySet()) {
+    for (String segmentId: segmentMap.keySet().toArray(new String[segmentMap.size()])) {
       clear(segmentId);
     }
   }

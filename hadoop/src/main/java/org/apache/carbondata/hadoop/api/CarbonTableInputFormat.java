@@ -272,16 +272,15 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     List<UpdateVO> invalidTimestampsList = new ArrayList<>();
     List<String> validSegments = Arrays.asList(getSegmentsToAccess(job));
     // get all valid segments and set them into the configuration
+    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
     if (validSegments.size() == 0) {
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
       SegmentStatusManager.ValidAndInvalidSegmentsInfo segments =
           segmentStatusManager.getValidAndInvalidSegments();
-      SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
       validSegments = segments.getValidSegments();
       if (validSegments.size() == 0) {
         return new ArrayList<>(0);
       }
-
       // remove entry in the segment index if there are invalid segments
       invalidSegments.addAll(segments.getInvalidSegments());
       for (String invalidSegmentId : invalidSegments) {
@@ -291,6 +290,26 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         blockletMap.clear(invalidSegments);
       }
     }
+
+    // Clean the updated segments from memory if the update happens on segments
+    List<String> toBeCleanedSegments = new ArrayList<>();
+    for (SegmentUpdateDetails segmentUpdateDetail : updateStatusManager
+        .getUpdateStatusDetails()) {
+      boolean refreshNeeded =
+          DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
+              .isRefreshNeeded(segmentUpdateDetail.getSegmentName(), updateStatusManager);
+      if (refreshNeeded) {
+        toBeCleanedSegments.add(segmentUpdateDetail.getSegmentName());
+      }
+    }
+    // Clean segments if refresh is needed
+    for (String segment : validSegments) {
+      if (DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
+          .isRefreshNeeded(segment)) {
+        toBeCleanedSegments.add(segment);
+      }
+    }
+    blockletMap.clear(toBeCleanedSegments);
 
     // process and resolve the expression
     Expression filter = getFilterPredicates(job.getConfiguration());

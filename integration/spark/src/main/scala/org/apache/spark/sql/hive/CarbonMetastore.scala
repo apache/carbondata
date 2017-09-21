@@ -35,10 +35,10 @@ import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType
-import org.apache.carbondata.core.locks.ZookeeperInit
-import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.reader.ThriftReader
@@ -383,6 +383,8 @@ class CarbonMetastore(hiveContext: HiveContext, val storePath: String,
       CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sqlContext)
       // discard cached table info in cachedDataSourceTables
       sqlContext.catalog.refreshTable(tableIdentifier)
+      DataMapStoreManager.getInstance().
+        clearDataMap(AbsoluteTableIdentifier.from(storePath, dbName, tableName))
     }
   }
 

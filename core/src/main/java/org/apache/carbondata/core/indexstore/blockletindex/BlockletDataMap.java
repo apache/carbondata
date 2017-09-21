@@ -429,9 +429,11 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   @Override
   public void clear() {
-    unsafeMemoryDMStore.freeMemory();
-    unsafeMemoryDMStore = null;
-    segmentProperties = null;
+    if (unsafeMemoryDMStore != null) {
+      unsafeMemoryDMStore.freeMemory();
+      unsafeMemoryDMStore = null;
+      segmentProperties = null;
+    }
   }
 
   @Override
@@ -446,7 +448,11 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   @Override
   public long getMemorySize() {
-    return unsafeMemoryDMStore.getMemoryUsed();
+    if (unsafeMemoryDMStore != null) {
+      return unsafeMemoryDMStore.getMemoryUsed();
+    } else {
+      return 0;
+    }
   }
 
 }
