@@ -16,28 +16,32 @@
  */
 package org.apache.carbondata.core.indexstore;
 
-import java.io.Serializable;
+import java.io.IOException;
+import java.util.List;
 
 /**
- * Blocklet
+ * Fetches the detailed blocklet which has more information to execute the query
  */
-public class Blocklet implements Serializable {
+public interface BlockletDetailsFetcher {
 
-  private String path;
+  /**
+   * Get the blocklet detail information based on blockletid, blockid and segmentid.
+   *
+   * @param blocklets
+   * @param segmentId
+   * @return
+   * @throws IOException
+   */
+  List<ExtendedBlocklet> getExtendedBlocklets(List<Blocklet> blocklets, String segmentId)
+      throws IOException;
 
-  private String blockletId;
-
-  public Blocklet(String path, String blockletId) {
-    this.path = path;
-    this.blockletId = blockletId;
-  }
-
-  public String getPath() {
-    return path;
-  }
-
-  public String getBlockletId() {
-    return blockletId;
-  }
-
+  /**
+   * Get the blocklet detail information based on blockletid, blockid and segmentid.
+   *
+   * @param blocklet
+   * @param segmentId
+   * @return
+   * @throws IOException
+   */
+  ExtendedBlocklet getExtendedBlocklet(Blocklet blocklet, String segmentId) throws IOException;
 }
