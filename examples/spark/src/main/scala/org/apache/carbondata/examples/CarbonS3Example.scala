@@ -31,9 +31,11 @@ object CarbonS3Example {
 
   def main(args: Array[String]) {
     if (args.length < 5) {
+      // scalastyle:off println
       System.err.println("Require 5 parameters")
       System.err.println("Usage: java CarbonS3Example <fs.s3a.endpoint> <fs.s3a.access.key>" +
                        " <fs.s3a.secret.key> <fs.s3a.impl> <carbon store location>")
+      // scalastyle:on println
       return
     }
 
