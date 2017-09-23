@@ -48,6 +48,7 @@ import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWrit
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfo;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfoPreparator;
 
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * This generator does not maintain the whole cache of dictionary. It just maintains the cache only
@@ -74,12 +75,15 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
 
   private CarbonTable carbonTable;
 
+  private Configuration configuration;
+
   public IncrementalColumnDictionaryGenerator(CarbonDimension dimension, int maxValue,
-      CarbonTable carbonTable) {
+      CarbonTable carbonTable, Configuration configuration) {
     this.carbonTable = carbonTable;
     this.maxValue = maxValue;
     this.currentDictionarySize = maxValue;
     this.dimension = dimension;
+    this.configuration = configuration;
   }
 
   @Override public Integer getOrGenerateKey(String value) throws DictionaryGenerationException {
@@ -116,8 +120,8 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
 
   @Override public void writeDictionaryData() throws IOException {
     // initialize params
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
+        carbonTable.getAbsoluteTableIdentifier(), configuration);
     CarbonTableIdentifier tableIdentifier = carbonTable.getCarbonTableIdentifier();
     ColumnIdentifier columnIdentifier = dimension.getColumnIdentifier();
     String storePath = carbonTable.getStorePath();
@@ -126,12 +130,13 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
     DictionaryColumnUniqueIdentifier identifier =
             new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier,
                     columnIdentifier.getDataType(), carbonTablePath);
-    Boolean isDictExists = CarbonUtil.isFileExistsForGivenColumn(storePath, identifier);
+    Boolean isDictExists =
+        CarbonUtil.isFileExistsForGivenColumn(configuration, storePath, identifier);
     Dictionary dictionary = null;
     long t1 = System.currentTimeMillis();
     if (isDictExists) {
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache = CacheProvider.getInstance()
-              .createCache(CacheType.REVERSE_DICTIONARY, storePath);
+              .createCache(CacheType.REVERSE_DICTIONARY, storePath, configuration);
       dictionary = dictCache.get(identifier);
     }
     long dictCacheTime = System.currentTimeMillis() - t1;
@@ -139,7 +144,7 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
     // write dictionary
     CarbonDictionaryWriter dictionaryWriter = null;
     dictionaryWriter = dictionaryService
-            .getDictionaryWriter(tableIdentifier, identifier, storePath);
+            .getDictionaryWriter(tableIdentifier, identifier, storePath, configuration);
     List<String> distinctValues = writeDictionary(dictionaryWriter, isDictExists);
     long dictWriteTime = System.currentTimeMillis() - t2;
     long t3 = System.currentTimeMillis();
@@ -220,9 +225,8 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
                               ColumnIdentifier columnIdentifier,
                               String storePath) throws IOException {
     CarbonDictionarySortIndexWriter carbonDictionarySortIndexWriter = null;
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(storePath, tableIdentifier.getDatabaseName(),
-            tableIdentifier.getTableName());
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath,
+        tableIdentifier.getDatabaseName(), tableIdentifier.getTableName(), configuration);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier,
             columnIdentifier.getDataType(), carbonTablePath);
@@ -233,7 +237,7 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
                       dimension.getDataType());
       carbonDictionarySortIndexWriter = dictionaryService
           .getDictionarySortIndexWriter(tableIdentifier, dictionaryColumnUniqueIdentifier,
-              storePath);
+              storePath, configuration);
       carbonDictionarySortIndexWriter.writeSortIndex(dictionarySortInfo.getSortIndex());
       carbonDictionarySortIndexWriter
               .writeInvertedSortIndex(dictionarySortInfo.getSortIndexInverted());

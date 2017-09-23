@@ -48,7 +48,8 @@ public abstract class AbstractResultProcessor {
     if (compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
       int taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegmentId(),
           CarbonStorePath.getCarbonTablePath(loadModel.getStorePath(),
-              carbonTable.getCarbonTableIdentifier()));
+              carbonTable.getCarbonTableIdentifier(), carbonFactDataHandlerModel.getHadoopConf()),
+          carbonFactDataHandlerModel.getHadoopConf());
       // Increase the Task Index as in IUD_UPDDEL_DELTA_COMPACTION the new file will
       // be written in same segment. So the TaskNo should be incremented by 1 from max val.
       int index = taskNo + 1;

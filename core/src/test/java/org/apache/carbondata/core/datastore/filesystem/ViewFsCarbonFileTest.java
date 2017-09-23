@@ -35,6 +35,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import org.apache.carbondata.core.util.CarbonTestUtil;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -67,7 +69,7 @@ public class ViewFsCarbonFileTest {
         fileStatus = new FileStatus(12L, true, 60, 120l, 180L, new Path(file.getAbsolutePath()));
         fileStatusWithOutDirectoryPermission = new FileStatus(12L, false, 60, 120l, 180L, new Path(file.getAbsolutePath()));
         fileName = file.getAbsolutePath();
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
     }
 
     @AfterClass
@@ -85,25 +87,25 @@ public class ViewFsCarbonFileTest {
             }
 
         };
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         viewFSCarbonFile.renameForce(fileName);
     }
 
     @Test
     public void testListFilesWithOutDirectoryPermission() {
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatusWithOutDirectoryPermission);
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, fileStatusWithOutDirectoryPermission);
         assertArrayEquals(viewFSCarbonFile.listFiles(), new CarbonFile[0]);
     }
 
     @Test
     public void testConstructorWithFilePath() {
-        viewFSCarbonFile = new ViewFSCarbonFile(file.getAbsolutePath());
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, file.getAbsolutePath());
         assertTrue(viewFSCarbonFile instanceof ViewFSCarbonFile);
     }
 
     @Test
     public void testListFilesForNullListStatus() {
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatusWithOutDirectoryPermission);
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, fileStatusWithOutDirectoryPermission);
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
@@ -128,13 +130,13 @@ public class ViewFsCarbonFileTest {
 
         };
         //public boolean delete(Path var1, boolean var2) throws IOException;
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertTrue(viewFSCarbonFile.listFiles().length == 0);
     }
 
     @Test
     public void testListDirectory() {
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
@@ -156,7 +158,7 @@ public class ViewFsCarbonFileTest {
 
     @Test
     public void testListFilesForException() throws IOException {
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatusWithOutDirectoryPermission);
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, fileStatusWithOutDirectoryPermission);
 
         new MockUp<FileStatus>() {
             @Mock
@@ -180,7 +182,7 @@ public class ViewFsCarbonFileTest {
             }
 
         };
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         viewFSCarbonFile.listFiles();
     }
 
@@ -193,7 +195,7 @@ public class ViewFsCarbonFileTest {
                 return true;
             }
         };
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertTrue(viewFSCarbonFile.listFiles(carbonFileFilter).length == 1);
     }
 
@@ -221,7 +223,7 @@ public class ViewFsCarbonFileTest {
             }
 
         };
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertTrue(viewFSCarbonFile.listFiles(carbonFileFilter).length == 0);
     }
 
@@ -258,13 +260,13 @@ public class ViewFsCarbonFileTest {
 
         };
 
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertFalse(viewFSCarbonFile.getParentFile().equals(null));
     }
 
     @Test
     public void testForNonDisributedSystem() {
-        viewFSCarbonFile = new ViewFSCarbonFile(fileStatus);
+        viewFSCarbonFile = new ViewFSCarbonFile(CarbonTestUtil.configuration, fileStatus);
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {

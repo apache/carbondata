@@ -26,6 +26,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * It maintains all the DataMaps in it.
  */
@@ -57,7 +59,7 @@ public final class DataMapStoreManager {
    * @return
    */
   public TableDataMap getDataMap(AbsoluteTableIdentifier identifier,
-      String dataMapName, String factoryClass) {
+      String dataMapName, String factoryClass, Configuration configuration) {
     String table = identifier.uniqueName();
     List<TableDataMap> tableDataMaps = allDataMaps.get(table);
     TableDataMap dataMap;
@@ -65,7 +67,7 @@ public final class DataMapStoreManager {
       synchronized (table.intern()) {
         tableDataMaps = allDataMaps.get(table);
         if (tableDataMaps == null) {
-          dataMap = createAndRegisterDataMap(identifier, factoryClass, dataMapName);
+          dataMap = createAndRegisterDataMap(identifier, factoryClass, dataMapName, configuration);
         } else {
           dataMap = getTableDataMap(dataMapName, tableDataMaps);
         }
@@ -85,7 +87,7 @@ public final class DataMapStoreManager {
    * The datamap is created using datamap name, datamap factory class and table identifier.
    */
   public TableDataMap createAndRegisterDataMap(AbsoluteTableIdentifier identifier,
-      String factoryClassName, String dataMapName) {
+      String factoryClassName, String dataMapName, Configuration configuration) {
     String table = identifier.uniqueName();
     List<TableDataMap> tableDataMaps = allDataMaps.get(table);
     if (tableDataMaps == null) {
@@ -100,8 +102,8 @@ public final class DataMapStoreManager {
       Class<? extends DataMapFactory> factoryClass =
           (Class<? extends DataMapFactory>) Class.forName(factoryClassName);
       DataMapFactory dataMapFactory = factoryClass.newInstance();
-      dataMapFactory.init(identifier, dataMapName);
-      dataMap = new TableDataMap(identifier, dataMapName, dataMapFactory);
+      dataMapFactory.init(configuration, identifier, dataMapName);
+      dataMap = new TableDataMap(identifier, dataMapName, dataMapFactory, configuration);
     } catch (Exception e) {
       LOGGER.error(e);
       throw new RuntimeException(e);

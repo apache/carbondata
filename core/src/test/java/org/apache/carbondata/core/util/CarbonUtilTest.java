@@ -47,6 +47,7 @@ import org.apache.carbondata.core.scan.model.QueryDimension;
 
 import mockit.Mock;
 import mockit.MockUp;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -308,7 +309,7 @@ public class CarbonUtilTest {
 
   @Test public void testToGetCardinalityFromLevelMetadataFileForInvalidPath()
       throws IOException, InterruptedException {
-    int[] cardinality = CarbonUtil.getCardinalityFromLevelMetadataFile("");
+    int[] cardinality = CarbonUtil.getCardinalityFromLevelMetadataFile(CarbonTestUtil.configuration, "");
     assertEquals(cardinality, null);
   }
 
@@ -342,7 +343,7 @@ public class CarbonUtilTest {
         return "BASE_URL";
       }
     };
-    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl(CarbonTestUtil.configuration, "../core/src/test/resources/testDatabase");
     assertEquals(hdfsURL, "file:///BASE_URL/../core/src/test/resources/testDatabase");
   }
 
@@ -357,7 +358,7 @@ public class CarbonUtilTest {
         return "BASE_URL/";
       }
     };
-    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl(CarbonTestUtil.configuration, "../core/src/test/resources/testDatabase");
     assertEquals(hdfsURL, "file:///BASE_URL/../core/src/test/resources/testDatabase");
   }
 
@@ -372,7 +373,7 @@ public class CarbonUtilTest {
         return null;
       }
     };
-    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl(CarbonTestUtil.configuration, "../core/src/test/resources/testDatabase");
     assertEquals(hdfsURL, "file:////../core/src/test/resources/testDatabase");
   }
 
@@ -387,7 +388,7 @@ public class CarbonUtilTest {
         return "hdfs://";
       }
     };
-    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("hdfs://ha/core/src/test/resources/testDatabase");
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl(CarbonTestUtil.configuration, "hdfs://ha/core/src/test/resources/testDatabase");
     assertEquals(hdfsURL, "hdfs://ha/core/src/test/resources/testDatabase");
   }
 
@@ -402,7 +403,7 @@ public class CarbonUtilTest {
         return "/opt/";
       }
     };
-    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("/core/src/test/resources/testDatabase");
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl(CarbonTestUtil.configuration, "/core/src/test/resources/testDatabase");
     assertEquals(hdfsURL, "file:////opt/core/src/test/resources/testDatabase");
   }
 
@@ -422,7 +423,7 @@ public class CarbonUtilTest {
         return "/opt/";
       }
     };
-    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("/core/src/test/resources/testDatabase");
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl(CarbonTestUtil.configuration, "/core/src/test/resources/testDatabase");
     assertEquals(hdfsURL, "hdfs:///opt/core/src/test/resources/testDatabase");
   }
 
@@ -437,7 +438,7 @@ public class CarbonUtilTest {
         return "hdfs://ha/opt/";
       }
     };
-    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("/core/src/test/resources/testDatabase");
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl(CarbonTestUtil.configuration, "/core/src/test/resources/testDatabase");
     assertEquals(hdfsURL, "hdfs://ha/opt/core/src/test/resources/testDatabase");
   }
 
@@ -452,17 +453,17 @@ public class CarbonUtilTest {
         return "file:///";
       }
     };
-    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("/core/src/test/resources/testDatabase");
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl(CarbonTestUtil.configuration, "/core/src/test/resources/testDatabase");
     assertEquals(hdfsURL, "file:///core/src/test/resources/testDatabase");
   }
 
   @Test public void testToCheckAndAppendHDFSUrlWithFilepathPrefix() {
-    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("file:///core/src/test/resources/testDatabase");
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl(CarbonTestUtil.configuration, "file:///core/src/test/resources/testDatabase");
     assertEquals(hdfsURL, "file:///core/src/test/resources/testDatabase");
   }
 
   @Test public void testForisFileExists() {
-    assertTrue(CarbonUtil.isFileExists("../core/src/test/resources/testFile.txt"));
+    assertTrue(CarbonUtil.isFileExists(CarbonTestUtil.configuration, "../core/src/test/resources/testFile.txt"));
   }
 
   @Test public void testForisFileExistsWithException() {
@@ -472,12 +473,12 @@ public class CarbonUtilTest {
         throw new IOException();
       }
     };
-    assertTrue(!CarbonUtil.isFileExists("../core/src/test/resources/testFile.txt"));
+    assertTrue(!CarbonUtil.isFileExists(CarbonTestUtil.configuration, "../core/src/test/resources/testFile.txt"));
   }
 
   @Test public void testToCheckAndCreateFolder() {
-    boolean exists = CarbonUtil.checkAndCreateFolder("../core/src/test/resources/testDatabase");
-    boolean created = CarbonUtil.checkAndCreateFolder("../core/src/test/resources/newDatabase");
+    boolean exists = CarbonUtil.checkAndCreateFolder(CarbonTestUtil.configuration, "../core/src/test/resources/testDatabase");
+    boolean created = CarbonUtil.checkAndCreateFolder(CarbonTestUtil.configuration, "../core/src/test/resources/newDatabase");
     assertTrue(exists);
     assertTrue(created);
   }
@@ -489,12 +490,12 @@ public class CarbonUtilTest {
         throw new IOException();
       }
     };
-    boolean exists = CarbonUtil.checkAndCreateFolder("../core/src/test/resources/testDatabase1");
+    boolean exists = CarbonUtil.checkAndCreateFolder(CarbonTestUtil.configuration, "../core/src/test/resources/testDatabase1");
     assertTrue(!exists);
   }
 
   @Test public void testToGetFileSize() {
-    assertEquals(CarbonUtil.getFileSize("../core/src/test/resources/testFile.txt"), 0);
+    assertEquals(CarbonUtil.getFileSize(CarbonTestUtil.configuration, "../core/src/test/resources/testFile.txt"), 0);
   }
 
   @Test public void testForHasEncoding() {
@@ -603,7 +604,7 @@ public class CarbonUtilTest {
     TableBlockInfo info =
         new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
 
-    assertEquals(CarbonUtil.readMetadatFile(info).getVersionId().number(), 1);
+    assertEquals(CarbonUtil.readMetadatFile(info, CarbonTestUtil.configuration).getVersionId().number(), 1);
   }
 
   @Test(expected = IOException.class)
@@ -611,7 +612,7 @@ public class CarbonUtilTest {
       throws Exception {
     TableBlockInfo info =
         new TableBlockInfo("file:/", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);
-    CarbonUtil.readMetadatFile(info);
+    CarbonUtil.readMetadatFile(info, CarbonTestUtil.configuration);
   }
 
   @Test public void testToFindDimension() {
@@ -671,7 +672,7 @@ public class CarbonUtilTest {
     FileWriter writer = new FileWriter(file);
     writer.write("id,name");
     writer.flush();
-    String headers = CarbonUtil.readHeader("../core/src/test/resources/sampleCSV.csv");
+    String headers = CarbonUtil.readHeader(CarbonTestUtil.configuration, "../core/src/test/resources/sampleCSV.csv");
     assertEquals(headers, "id,name");
     file.deleteOnExit();
   }
@@ -680,12 +681,12 @@ public class CarbonUtilTest {
   public void testToReadHeaderWithFileNotFoundException() throws IOException {
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock
-      public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType)
+      public DataInputStream getDataInputStream(Configuration configuration, String path, FileFactory.FileType fileType)
           throws FileNotFoundException {
         throw new FileNotFoundException();
       }
     };
-    String result = CarbonUtil.readHeader("../core/src/test/resources/sampleCSV");
+    String result = CarbonUtil.readHeader(CarbonTestUtil.configuration, "../core/src/test/resources/sampleCSV");
     assertEquals(null, result);
   }
 
@@ -693,12 +694,12 @@ public class CarbonUtilTest {
   public void testToReadHeaderWithIOException() throws IOException {
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock
-      public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType)
+      public DataInputStream getDataInputStream(Configuration configuration, String path, FileFactory.FileType fileType)
           throws IOException {
         throw new IOException();
       }
     };
-    String result = CarbonUtil.readHeader("../core/src/test/resources/sampleCSV.csv");
+    String result = CarbonUtil.readHeader(CarbonTestUtil.configuration, "../core/src/test/resources/sampleCSV.csv");
     assertEquals(null, result);
   }
 

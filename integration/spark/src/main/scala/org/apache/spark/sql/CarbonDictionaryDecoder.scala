@@ -19,6 +19,7 @@ package org.apache.spark.sql
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.TaskContext
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
@@ -28,6 +29,7 @@ import org.apache.spark.sql.execution.{SparkPlan, UnaryNode}
 import org.apache.spark.sql.hive.{CarbonMetastore, CarbonMetastoreTypes}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types._
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
@@ -166,12 +168,14 @@ case class CarbonDictionaryDecoder(
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder(queryId)
       if (isRequiredToDecode) {
         val dataTypes = child.output.map { attr => attr.dataType }
+        val confBytes = SparkUtil.compressConfiguration(sqlContext.sparkContext.hadoopConfiguration)
         child.execute().mapPartitions { iter =>
           val cacheProvider: CacheProvider = CacheProvider.getInstance
+          val hadoopConf = SparkUtil.uncompressConfiguration(confBytes)
           val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-            cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+            cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath, hadoopConf)
           val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
-            forwardDictionaryCache)
+            forwardDictionaryCache, hadoopConf)
           val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
           // add a task completion listener to clear dictionary that is a decisive factor for
           // LRU eviction policy
@@ -219,13 +223,13 @@ case class CarbonDictionaryDecoder(
   }
 
   private def getDictionary(atiMap: Map[String, AbsoluteTableIdentifier],
-      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
+      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary], hadoopConf: Configuration) = {
     val dictionaryColumnIds = getDictionaryColumnIds.map { dictionaryId =>
       if (dictionaryId._2 != null) {
         new DictionaryColumnUniqueIdentifier(
           atiMap(dictionaryId._1).getCarbonTableIdentifier,
           dictionaryId._2, dictionaryId._3,
-          CarbonStorePath.getCarbonTablePath(atiMap(dictionaryId._1)))
+          CarbonStorePath.getCarbonTablePath(atiMap(dictionaryId._1), hadoopConf))
       } else {
         null
       }

@@ -34,6 +34,8 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Dictionary generation for table.
  */
@@ -49,8 +51,11 @@ public class TableDictionaryGenerator
    */
   private Map<String, DictionaryGenerator<Integer, String>> columnMap = new ConcurrentHashMap<>();
 
-  public TableDictionaryGenerator(CarbonTable carbonTable) {
+  private Configuration configuration;
+
+  public TableDictionaryGenerator(CarbonTable carbonTable, Configuration configuration) {
     this.carbonTable = carbonTable;
+    this.configuration = configuration;
   }
 
   @Override
@@ -102,8 +107,8 @@ public class TableDictionaryGenerator
     if (null == columnMap.get(dimension.getColumnId())) {
       synchronized (columnMap) {
         if (null == columnMap.get(dimension.getColumnId())) {
-          columnMap.put(dimension.getColumnId(),
-              new IncrementalColumnDictionaryGenerator(dimension, 1, carbonTable));
+          columnMap.put(dimension.getColumnId(), new IncrementalColumnDictionaryGenerator(
+              dimension, 1, carbonTable, configuration));
         }
       }
     }

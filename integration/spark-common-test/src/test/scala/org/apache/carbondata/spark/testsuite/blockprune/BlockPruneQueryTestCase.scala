@@ -37,11 +37,11 @@ class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
     var writer: DataOutputStream = null
     try {
       val fileType = FileFactory.getFileType(outputPath)
-      val file = FileFactory.getCarbonFile(outputPath, fileType)
+      val file = FileFactory.getCarbonFile(hadoopConf, outputPath, fileType)
       if (!file.exists()) {
         file.createNewFile()
       }
-      writer = FileFactory.getDataOutputStream(outputPath, fileType)
+      writer = FileFactory.getDataOutputStream(hadoopConf, outputPath, fileType)
       for (i <- 0 to 2) {
         for (j <- 0 to 240000) {
           writer.writeBytes(testData(i) + "," + j + "\n")
@@ -96,7 +96,7 @@ class BlockPruneQueryTestCase extends QueryTest with BeforeAndAfterAll {
     // delete the temp data file
     try {
       val fileType = FileFactory.getFileType(outputPath)
-      val file = FileFactory.getCarbonFile(outputPath, fileType)
+      val file = FileFactory.getCarbonFile(hadoopConf, outputPath, fileType)
       if (file.exists()) {
         file.delete()
       }

@@ -33,6 +33,7 @@ import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.ColumnSortInfo;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 
 /**
@@ -76,18 +77,23 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
    */
   private ThriftReader dictionarySortIndexThriftReader;
 
+  private Configuration configuration;
+
   /**
    * @param carbonTableIdentifier            Carbon Table identifier holding the database name
    *                                         and table name
    * @param dictionaryColumnUniqueIdentifier column name
    * @param carbonStorePath                  carbon store path
+   * @param configuration
    */
   public CarbonDictionarySortIndexReaderImpl(final CarbonTableIdentifier carbonTableIdentifier,
       final DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
-      final String carbonStorePath) {
+      final String carbonStorePath,
+      Configuration configuration) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
     this.carbonStorePath = carbonStorePath;
+    this.configuration = configuration;
   }
 
   /**
@@ -155,15 +161,15 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath = pathService
         .getCarbonTablePath(carbonStorePath, carbonTableIdentifier,
-            dictionaryColumnUniqueIdentifier);
+            dictionaryColumnUniqueIdentifier, configuration);
     try {
       CarbonDictionaryColumnMetaChunk chunkMetaObjectForLastSegmentEntry =
           getChunkMetaObjectForLastSegmentEntry();
       long dictOffset = chunkMetaObjectForLastSegmentEntry.getEnd_offset();
       this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(
           dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(), dictOffset);
-      if (!FileFactory
-          .isFileExist(this.sortIndexFilePath, FileFactory.getFileType(this.sortIndexFilePath))) {
+      if (!FileFactory .isFileExist(
+          configuration, this.sortIndexFilePath, FileFactory.getFileType(this.sortIndexFilePath))) {
         this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(
             dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
       }
@@ -197,7 +203,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
    */
   protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
     return new CarbonDictionaryMetadataReaderImpl(carbonStorePath, carbonTableIdentifier,
-        dictionaryColumnUniqueIdentifier);
+        dictionaryColumnUniqueIdentifier, configuration);
   }
 
   /**
@@ -207,7 +213,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
    */
   private void openThriftReader() throws IOException {
     this.dictionarySortIndexThriftReader =
-        new ThriftReader(this.sortIndexFilePath, new ThriftReader.TBaseCreator() {
+        new ThriftReader(configuration, this.sortIndexFilePath, new ThriftReader.TBaseCreator() {
           @Override public TBase create() {
             return new ColumnSortInfo();
           }

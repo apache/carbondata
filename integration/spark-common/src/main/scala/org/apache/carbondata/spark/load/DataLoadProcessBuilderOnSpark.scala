@@ -27,6 +27,7 @@ import org.apache.spark.rdd.NewHadoopRDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.storage.StorageLevel
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -49,21 +50,21 @@ object DataLoadProcessBuilderOnSpark {
   def loadDataUsingGlobalSort(
       sc: SparkContext,
       dataFrame: Option[DataFrame],
-      model: CarbonLoadModel): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+      model: CarbonLoadModel,
+      hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     val originRDD = if (dataFrame.isDefined) {
       dataFrame.get.rdd
     } else {
       // input data from files
-      val hadoopConfiguration = new Configuration()
-      CommonUtil.configureCSVInputFormat(hadoopConfiguration, model)
-      hadoopConfiguration.set(FileInputFormat.INPUT_DIR, model.getFactFilePath)
+      CommonUtil.configureCSVInputFormat(hadoopConf, model)
+      hadoopConf.set(FileInputFormat.INPUT_DIR, model.getFactFilePath)
       val columnCount = model.getCsvHeaderColumns.length
       new NewHadoopRDD[NullWritable, StringArrayWritable](
         sc,
         classOf[CSVInputFormat],
         classOf[NullWritable],
         classOf[StringArrayWritable],
-        hadoopConfiguration)
+        hadoopConf)
         .map(x => DataLoadProcessorStepOnSpark.toStringArrayRow(x._2, columnCount))
     }
 
@@ -76,21 +77,23 @@ object DataLoadProcessBuilderOnSpark {
     val sortStepRowCounter = sc.accumulator(0, "Sort Processor Accumulator")
     val writeStepRowCounter = sc.accumulator(0, "Write Processor Accumulator")
 
+    val confBytes = SparkUtil.compressConfiguration(hadoopConf)
     // 1. Input
     val inputRDD = originRDD
       .mapPartitions(rows => DataLoadProcessorStepOnSpark.toRDDIterator(rows, modelBroadcast))
       .mapPartitionsWithIndex { case (index, rows) =>
-        DataLoadProcessorStepOnSpark.inputFunc(rows, index, modelBroadcast, inputStepRowCounter)
+        DataLoadProcessorStepOnSpark.inputFunc(rows, index, modelBroadcast, inputStepRowCounter,
+          confBytes)
       }
 
     // 2. Convert
     val convertRDD = inputRDD.mapPartitionsWithIndex { case (index, rows) =>
       DataLoadProcessorStepOnSpark.convertFunc(rows, index, modelBroadcast, partialSuccessAccum,
-        convertStepRowCounter)
+        convertStepRowCounter, confBytes)
     }.filter(_ != null)// Filter the bad record
 
     // 3. Sort
-    val configuration = DataLoadProcessBuilder.createConfiguration(model)
+    val configuration = DataLoadProcessBuilder.createConfiguration(model, hadoopConf)
     val sortParameters = SortParameters.createSortParameters(configuration)
     object RowOrdering extends Ordering[Array[AnyRef]] {
       def compare(rowA: Array[AnyRef], rowB: Array[AnyRef]): Int = {
@@ -122,13 +125,13 @@ object DataLoadProcessBuilderOnSpark {
       .sortBy(_.getData, numPartitions = numPartitions)(RowOrdering, classTag[Array[AnyRef]])
       .mapPartitionsWithIndex { case (index, rows) =>
         DataLoadProcessorStepOnSpark.convertTo3Parts(rows, index, modelBroadcast,
-          sortStepRowCounter)
+          sortStepRowCounter, confBytes)
       }
 
     // 4. Write
     sc.runJob(sortRDD, (context: TaskContext, rows: Iterator[CarbonRow]) =>
       DataLoadProcessorStepOnSpark.writeFunc(rows, context.partitionId, modelBroadcast,
-        writeStepRowCounter))
+        writeStepRowCounter, confBytes))
 
     // clean cache
     convertRDD.unpersist()

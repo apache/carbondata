@@ -26,6 +26,8 @@ import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This class is responsible for loading delete delta file cache based on
  * blocklet id of a particular block
@@ -34,14 +36,16 @@ public class BlockletDeleteDeltaCacheLoader implements DeleteDeltaCacheLoaderInt
   private String blockletID;
   private DataRefNode blockletNode;
   private AbsoluteTableIdentifier absoluteIdentifier;
+  private Configuration configuration;
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BlockletDeleteDeltaCacheLoader.class.getName());
 
   public BlockletDeleteDeltaCacheLoader(String blockletID, DataRefNode blockletNode,
-      AbsoluteTableIdentifier absoluteIdentifier) {
+      AbsoluteTableIdentifier absoluteIdentifier, Configuration configuration) {
     this.blockletID = blockletID;
     this.blockletNode = blockletNode;
     this.absoluteIdentifier = absoluteIdentifier;
+    this.configuration = configuration;
   }
 
   /**
@@ -50,7 +54,7 @@ public class BlockletDeleteDeltaCacheLoader implements DeleteDeltaCacheLoaderInt
    */
   public void loadDeleteDeltaFileDataToCache() {
     SegmentUpdateStatusManager segmentUpdateStatusManager =
-        new SegmentUpdateStatusManager(absoluteIdentifier);
+        new SegmentUpdateStatusManager(absoluteIdentifier, configuration);
     Map<Integer, Integer[]> deleteDeltaFileData = null;
     BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache = null;
     if (null == blockletNode.getDeleteDeltaDataCache()) {

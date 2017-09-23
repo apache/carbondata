@@ -37,6 +37,7 @@ import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
@@ -55,10 +56,11 @@ public class BlockletDataMapFactory implements DataMapFactory {
   private Cache<TableBlockIndexUniqueIdentifier, DataMap> cache;
 
   @Override
-  public void init(AbsoluteTableIdentifier identifier, String dataMapName) {
+  public void init(Configuration configuration, AbsoluteTableIdentifier identifier,
+      String dataMapName) {
     this.identifier = identifier;
     cache = CacheProvider.getInstance()
-        .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP, identifier.getStorePath());
+        .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP, identifier.getStorePath(), configuration);
   }
 
   @Override
@@ -67,12 +69,13 @@ public class BlockletDataMapFactory implements DataMapFactory {
   }
 
   @Override
-  public List<DataMap> getDataMaps(String segmentId) throws IOException {
+  public List<DataMap> getDataMaps(Configuration configuration,
+      String segmentId) throws IOException {
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         segmentMap.get(segmentId);
     if (tableBlockIndexUniqueIdentifiers == null) {
       tableBlockIndexUniqueIdentifiers = new ArrayList<>();
-      CarbonFile[] listFiles = getCarbonIndexFiles(segmentId);
+      CarbonFile[] listFiles = getCarbonIndexFiles(configuration, segmentId);
       for (int i = 0; i < listFiles.length; i++) {
         tableBlockIndexUniqueIdentifiers.add(
             new TableBlockIndexUniqueIdentifier(identifier, segmentId, listFiles[i].getName()));
@@ -82,9 +85,9 @@ public class BlockletDataMapFactory implements DataMapFactory {
     return cache.getAll(tableBlockIndexUniqueIdentifiers);
   }
 
-  private CarbonFile[] getCarbonIndexFiles(String segmentId) {
+  private CarbonFile[] getCarbonIndexFiles(Configuration configuration, String segmentId) {
     String path = identifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId;
-    CarbonFile carbonFile = FileFactory.getCarbonFile(path);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(configuration, path);
     return carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
         return file.getName().endsWith(".carbonindex");
@@ -93,13 +96,13 @@ public class BlockletDataMapFactory implements DataMapFactory {
   }
 
   @Override
-  public List<DataMapDistributable> toDistributable(String segmentId) {
-    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentId);
+  public List<DataMapDistributable> toDistributable(Configuration configuration, String segmentId) {
+    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(configuration, segmentId);
     List<DataMapDistributable> distributables = new ArrayList<>();
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       Path path = new Path(carbonIndexFiles[i].getPath());
       try {
-        FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+        FileSystem fs = path.getFileSystem(configuration);
         RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(path);
         LocatedFileStatus fileStatus = iter.next();
         String[] location = fileStatus.getBlockLocations()[0].getHosts();

@@ -43,9 +43,9 @@ object DictionaryTestCaseUtil {
     val tableIdentifier = new CarbonTableIdentifier(table.getDatabaseName, table.getFactTableName, "uniqueid")
     val columnIdentifier = new DictionaryColumnUniqueIdentifier(tableIdentifier,
       dimension.getColumnIdentifier, dimension.getDataType,
-      CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier)
+      CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier, TestQueryExecutor.hadoopConf)
     )
-    val dict = CarbonLoaderUtil.getDictionary(columnIdentifier, TestQueryExecutor.storeLocation)
+    val dict = CarbonLoaderUtil.getDictionary(columnIdentifier, TestQueryExecutor.storeLocation, TestQueryExecutor.hadoopConf)
     assert(dict.getSurrogateKey(value) != CarbonCommonConstants.INVALID_SURROGATE_KEY)
   }
 }

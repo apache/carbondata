@@ -79,8 +79,9 @@ public class CarbonRecordReader<T> extends AbstractRecordReader<T> {
     }
     List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
+    queryModel.setConfiguration(context.getConfiguration());
     readSupport.initialize(queryModel.getProjectionColumns(),
-        queryModel.getAbsoluteTableIdentifier());
+        queryModel.getAbsoluteTableIdentifier(), queryModel.getConfiguration());
     try {
       carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
     } catch (QueryExecutionException e) {

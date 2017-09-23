@@ -167,13 +167,13 @@ public class LocalCarbonFile implements CarbonFile {
     try {
       CarbonFile tempFile = null;
       // delete temporary file if it already exists at a given path
-      if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
-        tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+      if (FileFactory.isFileExist(null, tempWriteFilePath, fileType)) {
+        tempFile = FileFactory.getCarbonFile(null, tempWriteFilePath, fileType);
         tempFile.delete();
       }
       // create new temporary file
-      FileFactory.createNewFile(tempWriteFilePath, fileType);
-      tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+      FileFactory.createNewFile(null, tempWriteFilePath, fileType);
+      tempFile = FileFactory.getCarbonFile(null, tempWriteFilePath, fileType);
       source = new FileInputStream(fileName).getChannel();
       destination = new FileOutputStream(tempWriteFilePath).getChannel();
       long read = destination.transferFrom(source, 0, validDataEndOffset);

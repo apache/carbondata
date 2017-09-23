@@ -84,7 +84,8 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
               CarbonCommonConstants.DATABASE_DEFAULT_NAME, "stopmajor", noOfRetries + "")
           )
 
-      val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+      val segmentStatusManager: SegmentStatusManager =
+        new SegmentStatusManager(identifier, hadoopConf)
 
       val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 //      segments.foreach(seg =>
@@ -116,7 +117,8 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
           new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "stopmajor", "rrr")
         )
 
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+    val segmentStatusManager: SegmentStatusManager =
+      new SegmentStatusManager(identifier, hadoopConf)
 
     // merged segment should not be there
     val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList

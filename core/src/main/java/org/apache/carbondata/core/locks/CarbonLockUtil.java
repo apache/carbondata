@@ -21,6 +21,8 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This class contains all carbon lock utilities
  */
@@ -70,8 +72,10 @@ public class CarbonLockUtil {
    * @param lockType
    * @return
    */
-  public static ICarbonLock getLockObject(CarbonTableIdentifier identifier, String lockType) {
-    ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(identifier, lockType);
+  public static ICarbonLock getLockObject(CarbonTableIdentifier identifier, String lockType,
+      Configuration configuration) {
+    ICarbonLock carbonLock =
+        CarbonLockFactory.getCarbonLockObj(identifier, lockType, configuration);
     LOGGER.info("Trying to acquire lock: " + carbonLock);
     if (carbonLock.lockWithRetries()) {
       LOGGER.info("Successfully acquired the lock " + carbonLock);

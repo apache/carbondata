@@ -16,11 +16,10 @@
  */
 package org.apache.spark.util
 
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, SparkSession, SparkSQLUtil}
 import org.apache.spark.sql.execution.command.{AlterTableCompaction, AlterTableModel}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.processing.merger.CompactionType
 
 /**
  * table compaction api
@@ -56,8 +55,8 @@ object Compaction {
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     val compactionType = TableAPIUtil.escape(args(2))
     val spark = TableAPIUtil.spark(storePath, s"Compaction: $dbName.$tableName")
-    CarbonEnv.getInstance(spark).carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(spark).storePath)
+    CarbonEnv.getInstance(spark).carbonMetastore.checkSchemasModifiedTimeAndReloadTables(
+      SparkSQLUtil.newHadoopConf(spark), CarbonEnv.getInstance(spark).storePath)
     compaction(spark, dbName, tableName, compactionType)
   }
 }

@@ -36,6 +36,7 @@ import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -60,7 +61,7 @@ public class SegmentTaskIndexStoreTest {
     CacheProvider cacheProvider = CacheProvider.getInstance();
     taskIndexStore = (SegmentTaskIndexStore) cacheProvider.
         <TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
-            createCache(CacheType.DRIVER_BTREE, "");
+            createCache(CacheType.DRIVER_BTREE, "", CarbonTestUtil.configuration);
     tableBlockInfo = new TableBlockInfo("file", 0L, "SG100", locations, 10L,
         ColumnarFormatVersion.valueOf(version), null);
     absoluteTableIdentifier = new AbsoluteTableIdentifier("/tmp",

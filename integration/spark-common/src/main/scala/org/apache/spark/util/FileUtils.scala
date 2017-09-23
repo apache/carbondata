@@ -17,6 +17,8 @@
 
 package org.apache.spark.util
 
+import org.apache.hadoop.conf.Configuration
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
@@ -53,7 +55,7 @@ object FileUtils {
    * append all file path to a String, inputPath path separated by comma
    *
    */
-  def getPaths(inputPath: String): String = {
+  def getPaths(hadoopConfiguration: Configuration, inputPath: String): String = {
     if (inputPath == null || inputPath.isEmpty) {
       throw new DataLoadingException("Input file path cannot be empty.")
     } else {
@@ -61,7 +63,7 @@ object FileUtils {
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
         val fileType = FileFactory.getFileType(filePaths(i))
-        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
+        val carbonFile = FileFactory.getCarbonFile(hadoopConfiguration, filePaths(i), fileType)
         if (!carbonFile.exists()) {
           throw new DataLoadingException(s"The input file does not exist: ${filePaths(i)}" )
         }
@@ -76,7 +78,7 @@ object FileUtils {
     }
   }
 
-  def getSpaceOccupied(inputPath: String): Long = {
+  def getSpaceOccupied(hadoopConfiguration: Configuration, inputPath: String): Long = {
     var size : Long = 0
     if (inputPath == null || inputPath.isEmpty) {
       size
@@ -84,7 +86,7 @@ object FileUtils {
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
         val fileType = FileFactory.getFileType(filePaths(i))
-        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
+        val carbonFile = FileFactory.getCarbonFile(hadoopConfiguration, filePaths(i), fileType)
         size = size + carbonFile.getSize
       }
       size

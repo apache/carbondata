@@ -35,6 +35,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import org.apache.carbondata.core.util.CarbonTestUtil;
+
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -66,7 +68,7 @@ public class AlluxioCarbonFileTest {
         fileStatus = new FileStatus(12L, true, 60, 120l, 180L, new Path(file.getAbsolutePath()));
         fileStatusWithOutDirectoryPermission = new FileStatus(12L, false, 60, 120l, 180L, new Path(file.getAbsolutePath()));
         fileName = file.getAbsolutePath();
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatus);
     }
 
     @AfterClass
@@ -84,25 +86,25 @@ public class AlluxioCarbonFileTest {
             }
 
         };
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatus);
         alluxioCarbonFile.renameForce(fileName);
     }
 
     @Test
     public void testListFilesWithOutDirectoryPermission() {
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatusWithOutDirectoryPermission);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatusWithOutDirectoryPermission);
         assertArrayEquals(alluxioCarbonFile.listFiles(), new CarbonFile[0]);
     }
 
     @Test
     public void testConstructorWithFilePath() {
-        alluxioCarbonFile = new AlluxioCarbonFile(file.getAbsolutePath());
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, file.getAbsolutePath());
         assertTrue(alluxioCarbonFile instanceof AlluxioCarbonFile);
     }
 
     @Test
     public void testListFilesForNullListStatus() {
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatusWithOutDirectoryPermission);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatusWithOutDirectoryPermission);
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
@@ -118,13 +120,13 @@ public class AlluxioCarbonFileTest {
             }
 
         };
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertTrue(alluxioCarbonFile.listFiles().length == 0);
     }
 
     @Test
     public void testListDirectory() {
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatus);
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
@@ -146,7 +148,7 @@ public class AlluxioCarbonFileTest {
 
     @Test
     public void testListFilesForException() throws IOException {
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatusWithOutDirectoryPermission);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatusWithOutDirectoryPermission);
 
         new MockUp<FileStatus>() {
             @Mock
@@ -170,7 +172,7 @@ public class AlluxioCarbonFileTest {
             }
 
         };
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatus);
         alluxioCarbonFile.listFiles();
     }
 
@@ -183,7 +185,7 @@ public class AlluxioCarbonFileTest {
                 return true;
             }
         };
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertTrue(alluxioCarbonFile.listFiles(carbonFileFilter).length == 1);
     }
 
@@ -211,7 +213,7 @@ public class AlluxioCarbonFileTest {
             }
 
         };
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertTrue(alluxioCarbonFile.listFiles(carbonFileFilter).length == 0);
     }
 
@@ -248,13 +250,13 @@ public class AlluxioCarbonFileTest {
 
         };
 
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertFalse(alluxioCarbonFile.getParentFile().equals(null));
     }
 
     @Test
     public void testForNonDisributedSystem() {
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatus);
         new MockUp<Path>() {
             @Mock
             public FileSystem getFileSystem(Configuration conf) throws IOException {
@@ -282,7 +284,7 @@ public class AlluxioCarbonFileTest {
 
         };
 
-        alluxioCarbonFile = new AlluxioCarbonFile(fileStatus);
+        alluxioCarbonFile = new AlluxioCarbonFile(CarbonTestUtil.configuration, fileStatus);
         assertTrue(alluxioCarbonFile.renameForce(fileName));
 
     }

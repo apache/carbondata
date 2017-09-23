@@ -18,6 +18,7 @@ package org.apache.carbondata.core.writer;
 
 import java.io.IOException;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 
 /**
@@ -42,12 +43,13 @@ public class CarbonIndexFileWriter {
   /**
    * Below method will be used to open the thrift writer
    *
+   * @param configuration
    * @param filePath file path where data need to be written
    * @throws IOException throws io exception in case of any failure
    */
-  public void openThriftWriter(String filePath) throws IOException {
+  public void openThriftWriter(Configuration configuration, String filePath) throws IOException {
     // create thrift writer instance
-    thriftWriter = new ThriftWriter(filePath, true);
+    thriftWriter = new ThriftWriter(configuration, filePath, true);
     // open the file stream
     thriftWriter.open();
   }

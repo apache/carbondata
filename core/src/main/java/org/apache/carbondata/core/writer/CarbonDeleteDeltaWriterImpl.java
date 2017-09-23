@@ -30,6 +30,7 @@ import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import com.google.gson.Gson;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * This class is responsible for writing the delete delta file
@@ -48,11 +49,15 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
 
   private DataOutputStream dataOutStream = null;
 
+  private Configuration configuration;
+
   /**
    * @param filePath
    * @param fileType
    */
-  public CarbonDeleteDeltaWriterImpl(String filePath, FileFactory.FileType fileType) {
+  public CarbonDeleteDeltaWriterImpl(Configuration configuration, String filePath,
+      FileFactory.FileType fileType) {
+    this.configuration = configuration;
     this.filePath = filePath;
     this.fileType = fileType;
 
@@ -67,8 +72,8 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
   @Override public void write(String value) throws IOException {
     BufferedWriter brWriter = null;
     try {
-      FileFactory.createNewFile(filePath, fileType);
-      dataOutStream = FileFactory.getDataOutputStream(filePath, fileType);
+      FileFactory.createNewFile(configuration, filePath, fileType);
+      dataOutStream = FileFactory.getDataOutputStream(configuration, filePath, fileType);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutStream,
           CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
       brWriter.write(value);
@@ -94,8 +99,8 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
   @Override public void write(DeleteDeltaBlockDetails deleteDeltaBlockDetails) throws IOException {
     BufferedWriter brWriter = null;
     try {
-      FileFactory.createNewFile(filePath, fileType);
-      dataOutStream = FileFactory.getDataOutputStream(filePath, fileType);
+      FileFactory.createNewFile(configuration, filePath, fileType);
+      dataOutStream = FileFactory.getDataOutputStream(configuration, filePath, fileType);
       Gson gsonObjectToWrite = new Gson();
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutStream,
           CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));

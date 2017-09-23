@@ -29,9 +29,11 @@ import scala.util.control.Breaks.breakable
 import au.com.bytecode.opencsv.CSVReader
 import com.univocity.parsers.common.TextParsingException
 import org.apache.commons.lang3.{ArrayUtils, StringUtils}
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.Dictionary
@@ -333,8 +335,9 @@ class CarbonBlockDistinctValuesCombineRDD(
  */
 class CarbonGlobalDictionaryGenerateRDD(
     prev: RDD[(Int, ColumnDistinctValues)],
-    model: DictionaryLoadModel)
-  extends CarbonRDD[(Int, String)](prev) {
+    model: DictionaryLoadModel,
+    @transient configuration: Configuration)
+  extends CarbonRDD[(Int, String)](prev, configuration) {
 
   override def getPartitions: Array[Partition] = firstParent[(Int, ColumnDistinctValues)].partitions
 
@@ -348,16 +351,17 @@ class CarbonGlobalDictionaryGenerateRDD(
       var dictionaryForDistinctValueLookUp: Dictionary = _
       var dictionaryForSortIndexWriting: Dictionary = _
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
+      val hadoopConf = getConf
       val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
           DictionaryColumnUniqueIdentifier(
         model.table,
         model.columnIdentifier(split.index),
         model.columnIdentifier(split.index).getDataType,
-        CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
+        CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table, hadoopConf))
       val pathService: PathService = CarbonCommonFactory.getPathService
       val carbonTablePath: CarbonTablePath =
-        pathService
-          .getCarbonTablePath(model.hdfsLocation, model.table, dictionaryColumnUniqueIdentifier)
+        pathService.getCarbonTablePath(model.hdfsLocation, model.table,
+          dictionaryColumnUniqueIdentifier, hadoopConf)
       if (StringUtils.isNotBlank(model.hdfsTempLocation)) {
         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
           model.hdfsTempLocation)
@@ -370,9 +374,9 @@ class CarbonGlobalDictionaryGenerateRDD(
         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
           model.zooKeeperUrl)
       }
-      val dictLock = CarbonLockFactory
-        .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
-          model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK)
+      val dictLock = CarbonLockFactory.getCarbonLockObj(
+        carbonTablePath.getRelativeDictionaryDirectory,
+        model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK, hadoopConf)
       var isDictionaryLocked = false
       // generate distinct value list
       try {
@@ -401,12 +405,14 @@ class CarbonGlobalDictionaryGenerateRDD(
         }
         val t2 = System.currentTimeMillis
         val fileType = FileFactory.getFileType(model.dictFilePaths(split.index))
-        val isDictFileExists = FileFactory.isFileExist(model.dictFilePaths(split.index), fileType)
+        val isDictFileExists =
+          FileFactory.isFileExist(hadoopConf, model.dictFilePaths(split.index), fileType)
         dictionaryForDistinctValueLookUp = if (isDictFileExists) {
           CarbonLoaderUtil.getDictionary(model.table,
             model.columnIdentifier(split.index),
             model.hdfsLocation,
-            model.primDimensions(split.index).getDataType
+            model.primDimensions(split.index).getDataType,
+            hadoopConf
           )
         } else {
           null
@@ -419,7 +425,9 @@ class CarbonGlobalDictionaryGenerateRDD(
           dictionaryColumnUniqueIdentifier,
           model.hdfsLocation,
           model.primDimensions(split.index).getColumnSchema,
-          isDictFileExists
+          isDictFileExists,
+          null,
+          hadoopConf
         )
         // execute dictionary writer task to get distinct values
         val distinctValues = dictWriteTask.execute()
@@ -432,7 +440,9 @@ class CarbonGlobalDictionaryGenerateRDD(
             model.primDimensions(split.index).getDataType,
             model.hdfsLocation,
             dictionaryForDistinctValueLookUp,
-            distinctValues)
+            distinctValues,
+            null,
+            hadoopConf)
           sortIndexWriteTask.execute()
         }
         val sortIndexWriteTime = System.currentTimeMillis() - t4
@@ -525,8 +535,9 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
     table: CarbonTableIdentifier,
     dimensions: Array[CarbonDimension],
     hdfsLocation: String,
-    dictFolderPath: String)
-  extends CarbonRDD[(Int, ColumnDistinctValues)](sparkContext, Nil) {
+    dictFolderPath: String,
+    @transient configuration: Configuration)
+  extends CarbonRDD[(Int, ColumnDistinctValues)](sparkContext, Nil, configuration) {
 
   override def getPartitions: Array[Partition] = {
     val primDimensions = dictionaryLoadModel.primDimensions
@@ -548,7 +559,7 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
     var inputStream: DataInputStream = null
     var colDictData: java.util.Iterator[Array[String]] = null
     try {
-      inputStream = FileFactory.getDataInputStream(preDefDictFilePath,
+      inputStream = FileFactory.getDataInputStream(getConf, preDefDictFilePath,
         FileFactory.getFileType(preDefDictFilePath))
       csvReader = new CSVReader(new InputStreamReader(inputStream, Charset.defaultCharset),
         carbonLoadModel.getCsvDelimiter.charAt(0))

@@ -35,6 +35,8 @@ import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ObjectSizeCalculator;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This class implements methods to create dictionary cache which will hold
  * dictionary chunks for look up of surrogate keys and values
@@ -67,8 +69,9 @@ public class ReverseDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
    * @param carbonStorePath
    * @param carbonLRUCache
    */
-  public ReverseDictionaryCache(String carbonStorePath, CarbonLRUCache carbonLRUCache) {
-    super(carbonStorePath, carbonLRUCache);
+  public ReverseDictionaryCache(Configuration configuration, String carbonStorePath,
+      CarbonLRUCache carbonLRUCache) {
+    super(configuration, carbonStorePath, carbonLRUCache);
   }
 
   /**

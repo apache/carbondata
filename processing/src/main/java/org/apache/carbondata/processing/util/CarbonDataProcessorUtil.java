@@ -59,6 +59,7 @@ import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.conf.Configuration;
 
 public final class CarbonDataProcessorUtil {
   private static final LogService LOGGER =
@@ -108,13 +109,14 @@ public final class CarbonDataProcessorUtil {
 
     FileType fileType = FileFactory.getFileType(badLogStoreLocation);
     try {
-      if (!FileFactory.isFileExist(badLogStoreLocation, fileType)) {
+      if (!FileFactory.isFileExist(configuration.getHadoopConf(), badLogStoreLocation, fileType)) {
         return;
       }
     } catch (IOException e1) {
       LOGGER.info("bad record folder does not exist");
     }
-    CarbonFile carbonFile = FileFactory.getCarbonFile(badLogStoreLocation, fileType);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(configuration.getHadoopConf(),
+        badLogStoreLocation, fileType);
 
     CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile pathname) {
@@ -202,8 +204,8 @@ public final class CarbonDataProcessorUtil {
         .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     for (int i = 0 ; i < baseTmpStorePathArray.length; i++) {
       String tmpStore = baseTmpStorePathArray[i];
-      CarbonTablePath carbonTablePath =
-          CarbonStorePath.getCarbonTablePath(tmpStore, carbonTable.getCarbonTableIdentifier());
+      CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(tmpStore,
+          carbonTable.getCarbonTableIdentifier(), null);
       String carbonDataDirectoryPath =
           carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
 
@@ -439,15 +441,16 @@ public final class CarbonDataProcessorUtil {
    * @return data directory path
    */
   public static String checkAndCreateCarbonStoreLocation(String factStoreLocation,
-      String databaseName, String tableName, String partitionId, String segmentId) {
+      String databaseName, String tableName, String partitionId, String segmentId,
+      Configuration configuration) {
     CarbonTable carbonTable = CarbonMetadata.getInstance()
         .getCarbonTable(databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier);
+        CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier, configuration);
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
-    CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
+    CarbonUtil.checkAndCreateFolder(configuration, carbonDataDirectoryPath);
     return carbonDataDirectoryPath;
   }
 

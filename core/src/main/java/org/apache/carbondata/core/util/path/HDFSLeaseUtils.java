@@ -26,6 +26,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.viewfs.ViewFileSystem;
@@ -72,21 +73,24 @@ public class HDFSLeaseUtils {
    * @return
    * @throws IOException
    */
-  public static boolean recoverFileLease(String filePath) throws IOException {
+  public static boolean recoverFileLease(Configuration configuration,
+      String filePath) throws IOException {
     LOGGER.info("Trying to recover lease on file: " + filePath);
     FileFactory.FileType fileType = FileFactory.getFileType(filePath);
     switch (fileType) {
+      case S3:
       case ALLUXIO:
       case HDFS:
         Path path = FileFactory.getPath(filePath);
-        FileSystem fs = FileFactory.getFileSystem(path);
+        FileSystem fs = FileFactory.getFileSystem(configuration, path);
         return recoverLeaseOnFile(filePath, path, (DistributedFileSystem) fs);
       case VIEWFS:
         path = FileFactory.getPath(filePath);
-        fs = FileFactory.getFileSystem(path);
+        fs = FileFactory.getFileSystem(configuration, path);
         ViewFileSystem viewFileSystem = (ViewFileSystem) fs;
         Path targetFileSystemPath = viewFileSystem.resolvePath(path);
-        FileSystem targetFileSystem = FileFactory.getFileSystem(targetFileSystemPath);
+        FileSystem targetFileSystem =
+            FileFactory.getFileSystem(configuration, targetFileSystemPath);
         if (targetFileSystem instanceof DistributedFileSystem) {
           return recoverLeaseOnFile(filePath, path, (DistributedFileSystem) targetFileSystem);
         } else {

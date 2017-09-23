@@ -43,6 +43,8 @@ import org.apache.carbondata.processing.store.TablePage;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Below class will be used to write the data in V3 format
  * <Column1 Data ChunkV3><Column1<Page1><Page2><Page3><Page4>>
@@ -65,8 +67,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
    */
   private long blockletSizeThreshold;
 
-  public CarbonFactDataWriterImplV3(CarbonDataWriterVo dataWriterVo) {
-    super(dataWriterVo);
+  public CarbonFactDataWriterImplV3(CarbonDataWriterVo dataWriterVo, Configuration configuration) {
+    super(dataWriterVo, configuration);
     blockletSizeThreshold = Long.parseLong(CarbonProperties.getInstance()
         .getProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
             CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE))
@@ -307,7 +309,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
   protected void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
       long currentPosition) {
     int i = 0;
-    DataFileFooterConverterV3 converterV3 = new DataFileFooterConverterV3();
+    DataFileFooterConverterV3 converterV3 = new DataFileFooterConverterV3(configuration);
     for (org.apache.carbondata.format.BlockletIndex index : blockletIndex) {
       BlockletInfo3 blockletInfo3 = blockletMetadata.get(i);
       BlockletInfo blockletInfo = converterV3.getBlockletInfo(blockletInfo3,

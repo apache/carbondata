@@ -30,6 +30,8 @@ import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
 
   private static final long serialVersionUID = 176122729713729929L;
@@ -39,8 +41,9 @@ public class RowLevelFilterResolverImpl extends ConditionalFilterResolverImpl {
   private AbsoluteTableIdentifier tableIdentifier;
 
   public RowLevelFilterResolverImpl(Expression exp, boolean isExpressionResolve,
-      boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
-    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier, false);
+      boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier,
+      Configuration configuration) {
+    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier, false, configuration);
     dimColEvaluatorInfoList =
         new ArrayList<DimColumnResolvedFilterInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(

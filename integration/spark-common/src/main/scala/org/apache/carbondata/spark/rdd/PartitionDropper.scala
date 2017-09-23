@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.rdd
 
 import java.io.IOException
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.execution.command.{AlterPartitionModel, DropPartitionCallableModel}
 import org.apache.spark.util.PartitionUtils
 
@@ -70,7 +71,8 @@ object PartitionDropper {
           val rdd = new CarbonScanPartitionRDD(alterPartitionModel,
             carbonTableIdentifier,
             Seq(partitionId, targetPartitionId),
-            bucketId
+            bucketId,
+            dropPartitionCallableModel.configuration
           ).partitionBy(partitioner).map(_._2)
 
           val dropStatus = new AlterTableLoadPartitionRDD(alterPartitionModel,
@@ -78,7 +80,8 @@ object PartitionDropper {
             Seq(partitionId),
             bucketId,
             identifier,
-            rdd).collect()
+            rdd,
+            dropPartitionCallableModel.configuration).collect()
 
           if (dropStatus.length == 0) {
             finalDropStatus = false
@@ -97,7 +100,7 @@ object PartitionDropper {
           try {
             PartitionUtils.deleteOriginalCarbonFile(alterPartitionModel, identifier,
               Seq(partitionId, targetPartitionId).toList, dbName,
-              tableName, partitionInfo)
+              tableName, partitionInfo, dropPartitionCallableModel.configuration)
           } catch {
             case e: IOException => sys.error(s"Exception while delete original carbon files " +
                                              e.getMessage)
@@ -112,7 +115,8 @@ object PartitionDropper {
       }
     } else {
       PartitionUtils.deleteOriginalCarbonFile(alterPartitionModel, identifier,
-        Seq(partitionId).toList, dbName, tableName, partitionInfo)
+        Seq(partitionId).toList, dbName, tableName, partitionInfo,
+        dropPartitionCallableModel.configuration)
       logger.audit(s"Drop Partition request completed for table " +
                    s"${ dbName }.${ tableName }")
       logger.info(s"Drop Partition request completed for table " +

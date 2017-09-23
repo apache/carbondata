@@ -81,7 +81,8 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
         AbsoluteTableIdentifier.fromTablePath(validInputPath);
     // read the schema file to get the absoluteTableIdentifier having the correct table id
     // persisted in the schema
-    CarbonTable carbonTable = SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier);
+    CarbonTable carbonTable =
+        SchemaReader.readCarbonTableFromStore(absoluteTableIdentifier, configuration);
     configuration.set(CARBON_TABLE, ObjectSerializationUtil.convertObjectToString(carbonTable));
     setTableInfo(configuration, carbonTable.getTableInfo());
   }
@@ -133,11 +134,13 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     CarbonQueryPlan queryPlan = CarbonInputFormatUtil.createQueryPlan(carbonTable, projection);
     QueryModel queryModel =
         QueryModel.createModel(identifier, queryPlan, carbonTable, new DataTypeConverterImpl());
+    queryModel.setConfiguration(configuration);
+
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
     FilterResolverIntf filterIntf =
-        CarbonInputFormatUtil.resolveFilter(filter, identifier, tableProvider);
+        CarbonInputFormatUtil.resolveFilter(filter, identifier, tableProvider, configuration);
     queryModel.setFilterExpressionResolverTree(filterIntf);
 
     return queryModel;

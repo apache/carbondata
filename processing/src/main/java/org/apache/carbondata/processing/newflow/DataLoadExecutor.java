@@ -27,6 +27,8 @@ import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingExcep
 import org.apache.carbondata.processing.newflow.exception.NoRetryException;
 import org.apache.carbondata.processing.surrogatekeysgenerator.csvbased.BadRecordsLogger;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * It executes the data load.
  */
@@ -40,10 +42,10 @@ public class DataLoadExecutor {
   private boolean isClosed;
 
   public void execute(CarbonLoadModel loadModel, String[] storeLocation,
-      CarbonIterator<Object[]>[] inputIterators) throws Exception {
+      CarbonIterator<Object[]>[] inputIterators, Configuration hadoopConf) throws Exception {
     try {
-      loadProcessorStep =
-          new DataLoadProcessBuilder().build(loadModel, storeLocation, inputIterators);
+      loadProcessorStep = new DataLoadProcessBuilder().build(loadModel, storeLocation,
+          inputIterators, hadoopConf);
       // 1. initialize
       loadProcessorStep.initialize();
       LOGGER.info("Data Loading is started for table " + loadModel.getTableName());

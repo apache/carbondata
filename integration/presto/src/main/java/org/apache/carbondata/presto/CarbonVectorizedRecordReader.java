@@ -108,6 +108,7 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
     queryModel.setVectorReader(true);
+    queryModel.setConfiguration(taskAttemptContext.getConfiguration());
     try {
       queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
       iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);

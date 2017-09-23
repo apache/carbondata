@@ -58,7 +58,7 @@ object Spark2TestQueryExecutor {
       set("spark.executor.cores", "2").
       set("spark.executor.instances", "2").
       set("spark.cores.max", "4")
-    FileFactory.getConfiguration.
+    TestQueryExecutor.hadoopConf.
       set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
   }
   val metastoredb = s"$integrationPath/spark-common-cluster-test/target"
@@ -76,9 +76,10 @@ object Spark2TestQueryExecutor {
       CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
     ResourceRegisterAndCopier.
       copyResourcesifNotExists(hdfsUrl, s"$integrationPath/spark-common-test/src/test/resources",
-        s"$integrationPath//spark-common-cluster-test/src/test/resources/testdatafileslist.txt")
+        s"$integrationPath//spark-common-cluster-test/src/test/resources/testdatafileslist.txt",
+        TestQueryExecutor.hadoopConf)
   }
-  FileFactory.getConfiguration.
+  TestQueryExecutor.hadoopConf.
     set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
   spark.sparkContext.setLogLevel("ERROR")
 }

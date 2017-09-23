@@ -34,6 +34,8 @@ import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexStore;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Cache provider class which will create a cache based on given type
  */
@@ -89,7 +91,8 @@ public class CacheProvider {
    * @param <V>
    * @return
    */
-  public <K, V> Cache<K, V> createCache(CacheType cacheType, String carbonStorePath) {
+  public <K, V> Cache<K, V> createCache(CacheType cacheType, String carbonStorePath,
+      Configuration configuration) {
     //check if lru cache is null, if null create one
     //check if cache is null for given cache type, if null create one
     if (!dictionaryCacheAlreadyExists(cacheType)) {
@@ -98,7 +101,7 @@ public class CacheProvider {
           if (null == carbonLRUCache) {
             createLRULevelCacheInstance(cacheType);
           }
-          createDictionaryCacheForGivenType(cacheType, carbonStorePath);
+          createDictionaryCacheForGivenType(cacheType, carbonStorePath, configuration);
         }
       }
     }
@@ -111,24 +114,22 @@ public class CacheProvider {
    * @param cacheType       type of cache
    * @param carbonStorePath store path
    */
-  private void createDictionaryCacheForGivenType(CacheType cacheType, String carbonStorePath) {
+  private void createDictionaryCacheForGivenType(CacheType cacheType, String carbonStorePath,
+      Configuration configuration) {
     Cache cacheObject = null;
     if (cacheType.equals(CacheType.REVERSE_DICTIONARY)) {
-      cacheObject =
-          new ReverseDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonStorePath,
-              carbonLRUCache);
+      cacheObject = new ReverseDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(
+          configuration, carbonStorePath, carbonLRUCache);
     } else if (cacheType.equals(CacheType.FORWARD_DICTIONARY)) {
-      cacheObject =
-          new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonStorePath,
-              carbonLRUCache);
+      cacheObject = new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(
+              configuration, carbonStorePath, carbonLRUCache);
     } else if (cacheType.equals(cacheType.EXECUTOR_BTREE)) {
-      cacheObject = new BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex>(carbonStorePath,
-          carbonLRUCache);
+      cacheObject = new BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex>(
+          configuration, carbonStorePath, carbonLRUCache);
     } else if (cacheType.equals(cacheType.DRIVER_BTREE)) {
-      cacheObject =
-          new SegmentTaskIndexStore(carbonStorePath, carbonLRUCache);
+      cacheObject = new SegmentTaskIndexStore(configuration, carbonStorePath, carbonLRUCache);
     } else if (cacheType.equals(cacheType.DRIVER_BLOCKLET_DATAMAP)) {
-      cacheObject = new BlockletDataMapIndexStore(carbonStorePath, carbonLRUCache);
+      cacheObject = new BlockletDataMapIndexStore(configuration, carbonStorePath, carbonLRUCache);
     }
     cacheTypeToCacheMap.put(cacheType, cacheObject);
   }

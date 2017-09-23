@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.spark
 
+import org.apache.hadoop.conf.Configuration
+
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
 
@@ -30,7 +32,8 @@ trait ColumnValidator {
  */
 trait DictionaryDetailService {
   def getDictionaryDetail(dictFolderPath: String, primDimensions: Array[CarbonDimension],
-      table: CarbonTableIdentifier, storePath: String): DictionaryDetail
+      table: CarbonTableIdentifier, storePath: String,
+      configuration: Configuration): DictionaryDetail
 }
 
 /**

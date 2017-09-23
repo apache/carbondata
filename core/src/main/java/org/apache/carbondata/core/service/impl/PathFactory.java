@@ -22,6 +22,8 @@ import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Create helper to get path details
  */
@@ -37,12 +39,13 @@ public class PathFactory implements PathService {
    */
   @Override public CarbonTablePath getCarbonTablePath(String storeLocation,
       CarbonTableIdentifier tableIdentifier,
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
+      Configuration configuration) {
     if (null != dictionaryColumnUniqueIdentifier && null != dictionaryColumnUniqueIdentifier
         .getCarbonTablePath()) {
       return dictionaryColumnUniqueIdentifier.getCarbonTablePath();
     }
-    return CarbonStorePath.getCarbonTablePath(storeLocation, tableIdentifier);
+    return CarbonStorePath.getCarbonTablePath(storeLocation, tableIdentifier, configuration);
   }
 
   public static PathService getInstance() {

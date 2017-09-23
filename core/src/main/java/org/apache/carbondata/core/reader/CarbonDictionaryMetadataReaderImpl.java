@@ -29,6 +29,7 @@ import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.ColumnDictionaryChunkMeta;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 
 /**
@@ -61,6 +62,8 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    */
   private ThriftReader dictionaryMetadataFileReader;
 
+  private Configuration configuration;
+
   /**
    * Constructor
    *
@@ -70,10 +73,12 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    */
   public CarbonDictionaryMetadataReaderImpl(String storePath,
       CarbonTableIdentifier carbonTableIdentifier,
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
+      Configuration configuration) {
     this.storePath = storePath;
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
+    this.configuration = configuration;
     initFileLocation();
   }
 
@@ -170,9 +175,8 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    */
   protected void initFileLocation() {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(this.storePath, carbonTableIdentifier,
-            dictionaryColumnUniqueIdentifier);
+    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(this.storePath,
+        carbonTableIdentifier, dictionaryColumnUniqueIdentifier, configuration);
     this.columnDictionaryMetadataFilePath = carbonTablePath.getDictionaryMetaFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
   }
@@ -187,7 +191,8 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
     // dictionary thrift object contains a list of byte buffer
     if (null == dictionaryMetadataFileReader) {
       dictionaryMetadataFileReader =
-          new ThriftReader(this.columnDictionaryMetadataFilePath, new ThriftReader.TBaseCreator() {
+          new ThriftReader(configuration, this.columnDictionaryMetadataFilePath,
+              new ThriftReader.TBaseCreator() {
             @Override public TBase create() {
               return new ColumnDictionaryChunkMeta();
             }

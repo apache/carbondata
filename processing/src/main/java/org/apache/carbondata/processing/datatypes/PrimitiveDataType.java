@@ -48,6 +48,8 @@ import org.apache.carbondata.processing.newflow.dictionary.DictionaryServerClien
 import org.apache.carbondata.processing.newflow.dictionary.DirectDictionary;
 import org.apache.carbondata.processing.newflow.dictionary.PreCreatedDictionary;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Primitive DataType stateless object used in data loading
  */
@@ -123,7 +125,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public PrimitiveDataType(String name, String parentname, String columnId,
       CarbonDimension carbonDimension, Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, DictionaryClient client, Boolean useOnePass,
-      String storePath, Map<Object, Integer> localCache) {
+      String storePath, Map<Object, Integer> localCache, Configuration configuration) {
     this.name = name;
     this.parentname = parentname;
     this.columnId = columnId;
@@ -131,7 +133,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     DictionaryColumnUniqueIdentifier identifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
             carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(),
-            CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
+            CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier, configuration));
     try {
       if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory
@@ -139,7 +141,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       } else {
         Dictionary dictionary = null;
         if (useOnePass) {
-          if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
+          if (CarbonUtil.isFileExistsForGivenColumn(configuration, storePath, identifier)) {
             dictionary = cache.get(identifier);
           }
           DictionaryMessage dictionaryMessage = new DictionaryMessage();

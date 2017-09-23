@@ -51,15 +51,17 @@ import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
  * level filtering in driver side.
  */
 class CarbonScanRDD(
-    @transient sc: SparkContext,
+    sc: SparkContext,
     columnProjection: CarbonProjection,
     filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
-    @transient serializedTableInfo: Array[Byte],
-    @transient tableInfo: TableInfo, inputMetricsStats: InitInputMetrics)
-  extends CarbonRDDWithTableInfo[InternalRow](sc, Nil, serializedTableInfo) {
+    serializedTableInfo: Array[Byte],
+    tableInfo: TableInfo,
+    inputMetricsStats: InitInputMetrics,
+    @transient configuration: Configuration)
+  extends CarbonRDDWithTableInfo[InternalRow](sc, Nil, serializedTableInfo, configuration) {
 
-  private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
+  private val queryId = System.nanoTime() + ""
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
     formatter.format(new Date())
@@ -74,7 +76,7 @@ class CarbonScanRDD(
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def getPartitions: Array[Partition] = {
-    val job = Job.getInstance(new Configuration())
+    val job = Job.getInstance(configuration)
     val format = prepareInputFormatForDriver(job.getConfiguration)
 
     // initialise query_id for job
@@ -203,7 +205,7 @@ class CarbonScanRDD(
     }
 
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
-    val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
+    val attemptContext = new TaskAttemptContextImpl(getConf, attemptId)
     val format = prepareInputFormatForExecutor(attemptContext.getConfiguration)
     val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
     TaskMetricsMap.getInstance().registerThreadCallback()

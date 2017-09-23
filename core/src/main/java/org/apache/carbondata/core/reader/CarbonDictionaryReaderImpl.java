@@ -31,6 +31,7 @@ import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.ColumnDictionaryChunk;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 
 /**
@@ -64,6 +65,8 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    */
   private ThriftReader dictionaryFileReader;
 
+  private Configuration configuration;
+
   /**
    * Constructor
    *
@@ -72,10 +75,12 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    * @param dictionaryColumnUniqueIdentifier      column unique identifier
    */
   public CarbonDictionaryReaderImpl(String storePath, CarbonTableIdentifier carbonTableIdentifier,
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
+      Configuration configuration) {
     this.storePath = storePath;
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
+    this.configuration = configuration;
     initFileLocation();
   }
 
@@ -218,7 +223,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath = pathService
         .getCarbonTablePath(this.storePath, carbonTableIdentifier,
-            dictionaryColumnUniqueIdentifier);
+            dictionaryColumnUniqueIdentifier, configuration);
     this.columnDictionaryFilePath = carbonTablePath.getDictionaryFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
   }
@@ -304,7 +309,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    */
   protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
     return new CarbonDictionaryMetadataReaderImpl(this.storePath, carbonTableIdentifier,
-        this.dictionaryColumnUniqueIdentifier);
+        this.dictionaryColumnUniqueIdentifier, configuration);
   }
 
   /**
@@ -317,7 +322,8 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
       // initialise dictionary file reader which will return dictionary thrift object
       // dictionary thrift object contains a list of byte buffer
       dictionaryFileReader =
-          new ThriftReader(this.columnDictionaryFilePath, new ThriftReader.TBaseCreator() {
+          new ThriftReader(configuration, this.columnDictionaryFilePath,
+              new ThriftReader.TBaseCreator() {
             @Override public TBase create() {
               return new ColumnDictionaryChunk();
             }

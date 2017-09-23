@@ -27,6 +27,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
@@ -65,13 +66,15 @@ public class CarbonDictionarySortIndexReaderImplTest {
     		UUID.randomUUID().toString());
     ColumnIdentifier columnIdentifier = new ColumnIdentifier("Name", null, null);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier, columnIdentifier.getDataType(),
-        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
+        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier,
+            CarbonTestUtil.configuration));
     CarbonDictionaryWriter dictionaryWriter = new CarbonDictionaryWriterImpl(storePath,
-       carbonTableIdentifier, dictionaryColumnUniqueIdentifier);
+       carbonTableIdentifier, dictionaryColumnUniqueIdentifier, CarbonTestUtil.configuration);
     String metaFolderPath =storePath+File.separator+carbonTableIdentifier.getDatabaseName()+File.separator+carbonTableIdentifier.getTableName()+File.separator+"Metadata";
-    CarbonUtil.checkAndCreateFolder(metaFolderPath);
+    CarbonUtil.checkAndCreateFolder(CarbonTestUtil.configuration, metaFolderPath);
     CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier, storePath);
+        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier,
+            dictionaryColumnUniqueIdentifier, storePath, CarbonTestUtil.configuration);
     List<int[]> expectedData = prepareExpectedData();
     int[] data = expectedData.get(0);
     for(int i=0;i<data.length;i++) {
@@ -85,7 +88,7 @@ public class CarbonDictionarySortIndexReaderImplTest {
     dictionarySortIndexWriter.writeInvertedSortIndex(invertedSortIndex);
     dictionarySortIndexWriter.close();
     CarbonDictionarySortIndexReader dictionarySortIndexReader =
-        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier, storePath);
+        new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier, storePath, CarbonTestUtil.configuration);
     List<Integer> actualSortIndex = dictionarySortIndexReader.readSortIndex();
     List<Integer> actualInvertedSortIndex = dictionarySortIndexReader.readInvertedSortIndex();
     for (int i = 0; i < actualSortIndex.size(); i++) {
@@ -114,7 +117,8 @@ public class CarbonDictionarySortIndexReaderImplTest {
    */
   private void deleteStorePath() {
     FileFactory.FileType fileType = FileFactory.getFileType(this.storePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.storePath, fileType);
+    CarbonFile carbonFile =
+        FileFactory.getCarbonFile(CarbonTestUtil.configuration, this.storePath, fileType);
     deleteRecursiveSilent(carbonFile);
   }
 

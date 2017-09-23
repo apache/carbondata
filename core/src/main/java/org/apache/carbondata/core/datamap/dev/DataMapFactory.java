@@ -25,6 +25,8 @@ import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Interface for datamap factory, it is responsible for creating the datamap.
  */
@@ -33,7 +35,7 @@ public interface DataMapFactory {
   /**
    * Initialization of Datamap factory with the identifier and datamap name
    */
-  void init(AbsoluteTableIdentifier identifier, String dataMapName);
+  void init(Configuration configuration, AbsoluteTableIdentifier identifier, String dataMapName);
 
   /**
    * Return a new write for this datamap
@@ -43,7 +45,7 @@ public interface DataMapFactory {
   /**
    * Get the datamap for segmentid
    */
-  List<DataMap> getDataMaps(String segmentId) throws IOException;
+  List<DataMap> getDataMaps(Configuration configuration, String segmentId) throws IOException;
 
   /**
    * Get datamap for distributable object.
@@ -54,7 +56,7 @@ public interface DataMapFactory {
    * Get all distributable objects of a segmentid
    * @return
    */
-  List<DataMapDistributable> toDistributable(String segmentId);
+  List<DataMapDistributable> toDistributable(Configuration configuration, String segmentId);
 
   /**
    *

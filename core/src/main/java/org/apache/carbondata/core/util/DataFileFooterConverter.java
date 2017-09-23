@@ -33,11 +33,17 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonFooterReader;
 import org.apache.carbondata.format.FileFooter;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Below class will be used to convert the thrift object of data file
  * meta data to wrapper object
  */
 public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
+
+  public DataFileFooterConverter(Configuration configuration) {
+    this.configuration = configuration;
+  }
 
   /**
    * Below method will be used to convert thrift file meta to wrapper file meta
@@ -49,10 +55,11 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
     try {
       long completeBlockLength = tableBlockInfo.getBlockLength();
       long footerPointer = completeBlockLength - 8;
-      fileReader = FileFactory.getFileHolder(FileFactory.getFileType(tableBlockInfo.getFilePath()));
+      fileReader = FileFactory.getFileHolder(configuration,
+          FileFactory.getFileType(tableBlockInfo.getFilePath()));
       long actualFooterOffset = fileReader.readLong(tableBlockInfo.getFilePath(), footerPointer);
       CarbonFooterReader reader =
-          new CarbonFooterReader(tableBlockInfo.getFilePath(), actualFooterOffset);
+          new CarbonFooterReader(configuration, tableBlockInfo.getFilePath(), actualFooterOffset);
       FileFooter footer = reader.readFooter();
       dataFileFooter.setVersionId(ColumnarFormatVersion.valueOf((short) footer.getVersion()));
       dataFileFooter.setNumberOfRows(footer.getNum_rows());

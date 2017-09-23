@@ -38,7 +38,8 @@ object GenerateDictionaryExample {
     val cc = ExampleUtils.createCarbonContext("GenerateDictionaryExample")
     val factFilePath = ExampleUtils.currentPath + "/src/main/resources/factSample.csv"
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(ExampleUtils.storeLocation,
-      new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "dictSample", "1"))
+      new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "dictSample", "1"),
+      cc.sparkContext.hadoopConfiguration)
     val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
 
     // execute sql statement
@@ -78,9 +79,11 @@ object GenerateDictionaryExample {
       println(s"Key\t\t\tValue")
       val columnIdentifier = new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
         dimension.getColumnIdentifier, dimension.getDataType,
-        CarbonStorePath
-          .getCarbonTablePath(carbonTable.getStorePath, carbonTable.getCarbonTableIdentifier))
-      val dict = CarbonLoaderUtil.getDictionary(columnIdentifier, cc.storePath)
+        CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
+          carbonTable.getCarbonTableIdentifier,
+          cc.sparkContext.hadoopConfiguration))
+      val dict = CarbonLoaderUtil.getDictionary(columnIdentifier, cc.storePath,
+        cc.sparkContext.hadoopConfiguration)
       var index: Int = 1
       var distinctValue = dict.getDictionaryValueForKey(index)
       while (distinctValue != null) {

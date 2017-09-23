@@ -21,6 +21,8 @@ import mockit.Mock;
 import mockit.MockUp;
 
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+
+import org.apache.hadoop.conf.Configuration;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -154,7 +156,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public boolean isFileExist(String filePath, FileFactory.FileType fileType) throws IOException {
+            public boolean isFileExist(Configuration configuration, String filePath, FileFactory.FileType fileType) throws IOException {
                 {
                     return true;
                 }
@@ -168,7 +170,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public boolean createNewFile(String filePath, FileFactory.FileType fileType) throws IOException {
+            public boolean createNewFile(Configuration configuration, String filePath, FileFactory.FileType fileType) throws IOException {
                 {
                     return true;
                 }
@@ -176,7 +178,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public CarbonFile getCarbonFile(String path, FileFactory.FileType fileType) {
+            public CarbonFile getCarbonFile(Configuration configuration, String path, FileFactory.FileType fileType) {
                 {
                     return new LocalCarbonFile(path);
                 }
@@ -223,7 +225,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public boolean isFileExist(String filePath, FileFactory.FileType fileType) throws IOException {
+            public boolean isFileExist(Configuration configuration, String filePath, FileFactory.FileType fileType) throws IOException {
                 {
                     return true;
                 }
@@ -231,7 +233,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public CarbonFile getCarbonFile(String path, FileFactory.FileType fileType) {
+            public CarbonFile getCarbonFile(Configuration configuration, String path, FileFactory.FileType fileType) {
                 {
                     return new LocalCarbonFile(path);
                 }
@@ -245,7 +247,7 @@ public class LocalCarbonFileTest {
         };
         new MockUp<FileFactory>() {
             @Mock
-            public boolean createNewFile(String filePath, FileFactory.FileType fileType) throws IOException {
+            public boolean createNewFile(Configuration configuration, String filePath, FileFactory.FileType fileType) throws IOException {
                 {
                     throw new IOException();
                 }

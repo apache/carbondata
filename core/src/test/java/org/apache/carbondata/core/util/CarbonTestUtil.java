@@ -21,7 +21,11 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class CarbonTestUtil {
+
+  public static Configuration configuration = new Configuration();
 
   public static ValueEncoderMeta createValueEncoderMeta() {
     ColumnarFormatVersion version =

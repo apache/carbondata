@@ -29,6 +29,7 @@ import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.reader.CarbonDictionaryReaderImpl;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.format.ColumnDictionaryChunk;
 
@@ -54,9 +55,9 @@ public class DictionaryCacheLoaderImplTest {
     columnIdentifier = new ColumnIdentifier("1", columnProperties, DataType.STRING);
     dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
-            columnIdentifier.getDataType(), CarbonStorePath.getCarbonTablePath("/tmp", carbonTableIdentifier));
+            columnIdentifier.getDataType(), CarbonStorePath.getCarbonTablePath("/tmp", carbonTableIdentifier, CarbonTestUtil.configuration));
     dictionaryCacheLoader = new DictionaryCacheLoaderImpl(carbonTableIdentifier, "/tmp/",
-        dictionaryColumnUniqueIdentifier);
+        dictionaryColumnUniqueIdentifier, CarbonTestUtil.configuration);
     dictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
     new MockUp<CarbonDictionaryReaderImpl>() {
       @Mock @SuppressWarnings("unused") Iterator<byte[]> read(long startOffset, long endOffset)

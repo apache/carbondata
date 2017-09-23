@@ -100,6 +100,8 @@ import org.apache.carbondata.core.util.comparator.SerializableComparator;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.hadoop.conf.Configuration;
+
 public final class FilterUtil {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(FilterUtil.class.getName());
@@ -120,7 +122,7 @@ public final class FilterUtil {
    */
   private static FilterExecuter createFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
-      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+      Map<Integer, GenericQueryType> complexDimensionInfoMap, Configuration configuration) {
     FilterExecuterType filterExecuterType = filterExpressionResolverTree.getFilterExecuterType();
     if (null != filterExecuterType) {
       switch (filterExecuterType) {
@@ -135,22 +137,22 @@ public final class FilterUtil {
         case OR:
           return new OrFilterExecuterImpl(
               createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
-                  complexDimensionInfoMap),
+                  complexDimensionInfoMap, configuration),
               createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
-                  complexDimensionInfoMap));
+                  complexDimensionInfoMap, configuration));
         case AND:
           return new AndFilterExecuterImpl(
               createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
-                  complexDimensionInfoMap),
+                  complexDimensionInfoMap, configuration),
               createFilterExecuterTree(filterExpressionResolverTree.getRight(), segmentProperties,
-                  complexDimensionInfoMap));
+                  complexDimensionInfoMap, configuration));
         case ROWLEVEL_LESSTHAN:
         case ROWLEVEL_LESSTHAN_EQUALTO:
         case ROWLEVEL_GREATERTHAN_EQUALTO:
         case ROWLEVEL_GREATERTHAN:
           return RowLevelRangeTypeExecuterFacory
               .getRowLevelRangeTypeExecuter(filterExecuterType, filterExpressionResolverTree,
-                  segmentProperties);
+                  segmentProperties, configuration);
         case RANGE:
           return new RangeValueFilterExecuterImpl(
               ((ConditionalFilterResolverImpl) filterExpressionResolverTree)
@@ -170,7 +172,7 @@ public final class FilterUtil {
                   .getMsrColEvalutorInfoList(),
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
               ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
-              segmentProperties, complexDimensionInfoMap);
+              segmentProperties, complexDimensionInfoMap,  configuration);
 
       }
     }
@@ -179,7 +181,7 @@ public final class FilterUtil {
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getMsrColEvalutorInfoList(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getFilterExpresion(),
         ((RowLevelFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
-        segmentProperties, complexDimensionInfoMap);
+        segmentProperties, complexDimensionInfoMap, configuration);
 
   }
 
@@ -509,14 +511,13 @@ public final class FilterUtil {
    */
   public static ColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
       ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter,
-      TableProvider tableProvider)
+      TableProvider tableProvider, Configuration configuration)
       throws IOException {
     Dictionary forwardDictionary = null;
     try {
       // Reading the dictionary value from cache.
-      forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
-              tableProvider);
+      forwardDictionary = getForwardDictionaryCache(tableIdentifier,
+          columnExpression.getDimension(), tableProvider, configuration);
       return getFilterValues(columnExpression, evaluateResultList, forwardDictionary,
           isIncludeFilter);
     } finally {
@@ -578,15 +579,14 @@ public final class FilterUtil {
    */
   public static ColumnFilterInfo getFilterListForAllValues(
       AbsoluteTableIdentifier tableIdentifier, Expression expression,
-      final ColumnExpression columnExpression, boolean isIncludeFilter, TableProvider tableProvider)
-      throws IOException, FilterUnsupportedException {
+      final ColumnExpression columnExpression, boolean isIncludeFilter, TableProvider tableProvider,
+      Configuration configuration) throws IOException, FilterUnsupportedException {
     Dictionary forwardDictionary = null;
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     DictionaryChunksWrapper dictionaryWrapper = null;
     try {
-      forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
-              tableProvider);
+      forwardDictionary = getForwardDictionaryCache(
+          tableIdentifier, columnExpression.getDimension(), tableProvider, configuration);
       dictionaryWrapper = forwardDictionary.getDictionaryChunks();
       while (dictionaryWrapper.hasNext()) {
         byte[] columnVal = dictionaryWrapper.next();
@@ -1102,8 +1102,9 @@ public final class FilterUtil {
    * @return
    */
   public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
-      CarbonDimension carbonDimension) throws IOException {
-    return getForwardDictionaryCache(tableIdentifier, carbonDimension, null);
+      CarbonDimension carbonDimension, Configuration configuration) throws IOException {
+    return getForwardDictionaryCache(
+        tableIdentifier, carbonDimension, null, configuration);
   }
 
   /**
@@ -1113,20 +1114,22 @@ public final class FilterUtil {
    * @return
    */
   public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
-      CarbonDimension carbonDimension, TableProvider tableProvider) throws IOException {
+      CarbonDimension carbonDimension, TableProvider tableProvider,
+      Configuration configuration) throws IOException {
     CarbonTablePath carbonTablePath = null;
     if (null != tableProvider) {
       CarbonTable carbonTable =
           tableProvider.getCarbonTable(tableIdentifier.getCarbonTableIdentifier());
-      carbonTablePath =
-          CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
+      carbonTablePath = CarbonStorePath.getCarbonTablePath(
+          carbonTable.getAbsoluteTableIdentifier(), configuration);
     }
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(tableIdentifier.getCarbonTableIdentifier(),
             carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(), carbonTablePath);
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, tableIdentifier.getStorePath());
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, tableIdentifier.getStorePath(),
+            configuration);
     // get the forward dictionary object
     return forwardDictionaryCache.get(dictionaryColumnUniqueIdentifier);
   }
@@ -1152,9 +1155,9 @@ public final class FilterUtil {
    */
   public static FilterExecuter getFilterExecuterTree(
       FilterResolverIntf filterExpressionResolverTree, SegmentProperties segmentProperties,
-      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+      Map<Integer, GenericQueryType> complexDimensionInfoMap, Configuration configuration) {
     return createFilterExecuterTree(filterExpressionResolverTree, segmentProperties,
-        complexDimensionInfoMap);
+        complexDimensionInfoMap, configuration);
   }
 
   /**

@@ -34,7 +34,6 @@ object AlluxioExample {
   def main(args: Array[String]) {
     val cc = ExampleUtils.createCarbonContext("AlluxioExample")
     cc.sparkContext.hadoopConfiguration.set("fs.alluxio.impl", "alluxio.hadoop.FileSystem")
-    FileFactory.getConfiguration.set("fs.alluxio.impl", "alluxio.hadoop.FileSystem")
 
     // Specify date format based on raw data
     CarbonProperties.getInstance()

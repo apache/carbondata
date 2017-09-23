@@ -35,6 +35,7 @@ import java.util.UUID;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -103,7 +104,7 @@ public class CarbonDictionaryWriterImplTest {
     this.dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
             columnIdentifier.getDataType(),
-            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
+            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier, CarbonTestUtil.configuration));
     deleteStorePath();
     prepareDataSet();
   }
@@ -153,7 +154,7 @@ public class CarbonDictionaryWriterImplTest {
     CarbonDictionaryWriterImpl writer = prepareWriter();
     writeDictionaryFile(writer, dataSet1);
     // record file size from where data has to be read
-    long end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
+    long end_offset = CarbonUtil.getFileSize(CarbonTestUtil.configuration, this.dictionaryFilePath);
     // read metadata chunks from file
     List<CarbonDictionaryColumnMetaChunk> carbonDictionaryColumnMetaChunks =
         readDictionaryMetadataFile();
@@ -184,7 +185,7 @@ public class CarbonDictionaryWriterImplTest {
   private CarbonDictionaryWriterImpl prepareWriter() throws IOException {
     initDictionaryDirPaths();
     return new CarbonDictionaryWriterImpl(this.carbonStorePath, carbonTableIdentifier,
-        dictionaryColumnUniqueIdentifier);
+        dictionaryColumnUniqueIdentifier, CarbonTestUtil.configuration);
   }
 
   /**
@@ -222,7 +223,7 @@ public class CarbonDictionaryWriterImplTest {
     // prepare dictionary writer object
     CarbonDictionaryWriterImpl writer = prepareWriter();
     writeDictionaryFile(writer, dataSet1);
-    long endOffsetAfterFirstDictionaryChunk = CarbonUtil.getFileSize(dictionaryFilePath);
+    long endOffsetAfterFirstDictionaryChunk = CarbonUtil.getFileSize(CarbonTestUtil.configuration, dictionaryFilePath);
     // maintain the offset till end offset of first chunk
     writer = prepareWriter();
     writeDictionaryFile(writer, dataSet2);
@@ -249,7 +250,7 @@ public class CarbonDictionaryWriterImplTest {
    */
   private void overwriteDictionaryMetaFile(ColumnDictionaryChunkMeta firstDictionaryChunkMeta,
       String dictionaryFile) throws IOException {
-    ThriftWriter thriftMetaChunkWriter = new ThriftWriter(dictionaryFile, false);
+    ThriftWriter thriftMetaChunkWriter = new ThriftWriter(CarbonTestUtil.configuration, dictionaryFile, false);
     try {
       thriftMetaChunkWriter.open();
       thriftMetaChunkWriter.write(firstDictionaryChunkMeta);
@@ -276,7 +277,7 @@ public class CarbonDictionaryWriterImplTest {
     // write dataset2
     writeDictionaryFile(writer, dataSet2);
     // record the offset from where data has to be read
-    long dictionaryFileOffsetToRead = CarbonUtil.getFileSize(this.dictionaryFilePath);
+    long dictionaryFileOffsetToRead = CarbonUtil.getFileSize(CarbonTestUtil.configuration, this.dictionaryFilePath);
     // prepare writer to write dataset3
     writer = prepareWriter();
     // write dataset 3
@@ -305,13 +306,13 @@ public class CarbonDictionaryWriterImplTest {
     // write dataset1 data
     writeDictionaryFile(writer, dataSet1);
     // record dictionary file start offset
-    long dictionaryStartOffset = CarbonUtil.getFileSize(this.dictionaryFilePath);
+    long dictionaryStartOffset = CarbonUtil.getFileSize(CarbonTestUtil.configuration, this.dictionaryFilePath);
     // prepare the writer to write dataset2
     writer = prepareWriter();
     // write dataset2
     writeDictionaryFile(writer, dataSet2);
     // record the end offset for dictionary file
-    long dictionaryFileEndOffset = CarbonUtil.getFileSize(this.dictionaryFilePath);
+    long dictionaryFileEndOffset = CarbonUtil.getFileSize(CarbonTestUtil.configuration, this.dictionaryFilePath);
     // prepare writer to write dataset3
     writer = prepareWriter();
     // write dataset 3
@@ -376,7 +377,7 @@ public class CarbonDictionaryWriterImplTest {
     //write metadata
     writer.commit();
     // record end offset of file
-    long end_offset = CarbonUtil.getFileSize(this.dictionaryFilePath);
+    long end_offset = CarbonUtil.getFileSize(CarbonTestUtil.configuration, this.dictionaryFilePath);
     // read dictionary chunk from dictionary file
     List<byte[]> dictionaryData = readDictionaryFile(0L, 0L);
     // prepare the retrieved data
@@ -439,7 +440,7 @@ public class CarbonDictionaryWriterImplTest {
   private List<CarbonDictionaryColumnMetaChunk> readDictionaryMetadataFile() throws IOException {
     CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
         new CarbonDictionaryMetadataReaderImpl(this.carbonStorePath, this.carbonTableIdentifier,
-            this.dictionaryColumnUniqueIdentifier);
+            this.dictionaryColumnUniqueIdentifier, CarbonTestUtil.configuration);
     List<CarbonDictionaryColumnMetaChunk> dictionaryMetaChunkList = null;
     // read metadata file
     try {
@@ -458,7 +459,7 @@ public class CarbonDictionaryWriterImplTest {
       throws IOException {
     CarbonDictionaryReaderImpl dictionaryReader =
         new CarbonDictionaryReaderImpl(this.carbonStorePath, this.carbonTableIdentifier,
-            this.dictionaryColumnUniqueIdentifier);
+            this.dictionaryColumnUniqueIdentifier, CarbonTestUtil.configuration);
     List<byte[]> dictionaryValues = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     try {
       if (0 == dictionaryEndOffset) {
@@ -480,7 +481,7 @@ public class CarbonDictionaryWriterImplTest {
    */
   private void deleteStorePath() {
     FileFactory.FileType fileType = FileFactory.getFileType(this.carbonStorePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.carbonStorePath, fileType);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(CarbonTestUtil.configuration, this.carbonStorePath, fileType);
     deleteRecursiveSilent(carbonFile);
   }
 
@@ -529,11 +530,11 @@ public class CarbonDictionaryWriterImplTest {
    */
   private void initDictionaryDirPaths() throws IOException {
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(this.carbonStorePath, carbonTableIdentifier);
+        CarbonStorePath.getCarbonTablePath(this.carbonStorePath, carbonTableIdentifier, CarbonTestUtil.configuration);
     String dictionaryLocation = carbonTablePath.getMetadataDirectoryPath();
     FileFactory.FileType fileType = FileFactory.getFileType(dictionaryLocation);
-    if(!FileFactory.isFileExist(dictionaryLocation, fileType)) {
-      FileFactory.mkdirs(dictionaryLocation, fileType);
+    if(!FileFactory.isFileExist(CarbonTestUtil.configuration, dictionaryLocation, fileType)) {
+      FileFactory.mkdirs(CarbonTestUtil.configuration, dictionaryLocation, fileType);
     }
     this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId());
     this.dictionaryMetaFilePath = carbonTablePath.getDictionaryMetaFilePath(columnIdentifier.getColumnId());

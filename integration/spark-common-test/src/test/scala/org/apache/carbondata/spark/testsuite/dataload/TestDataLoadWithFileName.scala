@@ -52,7 +52,7 @@ class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {
         }
       })
     for (carbonIndexPath <- carbonIndexPaths) {
-      indexReader.openThriftReader(carbonIndexPath.getCanonicalPath)
+      indexReader.openThriftReader(hadoopConf, carbonIndexPath.getCanonicalPath)
       assert(indexReader.readIndexHeader().getVersion === 3)
       while (indexReader.hasNext) {
         val readBlockIndexInfo = indexReader.readBlockIndexInfo()

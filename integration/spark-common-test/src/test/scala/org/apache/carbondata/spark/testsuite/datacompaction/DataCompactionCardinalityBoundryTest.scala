@@ -77,7 +77,7 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
           AbsoluteTableIdentifier(
             CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
             new CarbonTableIdentifier("default", "cardinalityTest", "1")
-          )
+          ), hadoopConf
       )
       val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 

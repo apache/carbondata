@@ -49,6 +49,8 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverImpl {
 
   /**
@@ -60,8 +62,9 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
   private AbsoluteTableIdentifier tableIdentifier;
 
   public RowLevelRangeFilterResolverImpl(Expression exp, boolean isExpressionResolve,
-      boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier) {
-    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier, false);
+      boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier,
+      Configuration configuration) {
+    super(exp, isExpressionResolve, isIncludeFilter, tableIdentifier, false, configuration);
     dimColEvaluatorInfoList =
         new ArrayList<DimColumnResolvedFilterInfo>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(

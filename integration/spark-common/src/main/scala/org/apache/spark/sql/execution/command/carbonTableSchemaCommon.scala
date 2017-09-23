@@ -23,6 +23,7 @@ import java.util.UUID
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -123,7 +124,8 @@ case class CompactionCallableModel(carbonLoadModel: CarbonLoadModel,
     carbonTable: CarbonTable,
     loadsToMerge: util.List[LoadMetadataDetails],
     sqlContext: SQLContext,
-    compactionType: CompactionType)
+    compactionType: CompactionType,
+    configuration: Configuration)
 
 case class AlterPartitionModel(carbonLoadModel: CarbonLoadModel,
     segmentId: String,
@@ -135,7 +137,8 @@ case class SplitPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
     segmentId: String,
     partitionId: String,
     oldPartitionIds: List[Int],
-    sqlContext: SQLContext)
+    sqlContext: SQLContext,
+    configuration: Configuration)
 
 case class DropPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
     segmentId: String,
@@ -143,7 +146,8 @@ case class DropPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
     oldPartitionIds: List[Int],
     dropWithData: Boolean,
     carbonTable: CarbonTable,
-    sqlContext: SQLContext)
+    sqlContext: SQLContext,
+    configuration: Configuration)
 
 case class DataTypeInfo(dataType: String, precision: Int = 0, scale: Int = 0)
 

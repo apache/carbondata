@@ -62,6 +62,8 @@ import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class RowLevelFilterExecuterImpl implements FilterExecuter {
 
   private static final LogService LOGGER =
@@ -100,11 +102,14 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    */
   protected boolean isNaturalSorted;
 
+  protected Configuration configuration;
+
   public RowLevelFilterExecuterImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,
-      Map<Integer, GenericQueryType> complexDimensionInfoMap) {
+      Map<Integer, GenericQueryType> complexDimensionInfoMap, Configuration configuration) {
     this.segmentProperties = segmentProperties;
+    this.configuration = configuration;
     if (null == dimColEvaluatorInfoList) {
       this.dimColEvaluatorInfoList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     } else {
@@ -429,8 +434,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   private String getFilterActualValueFromDictionaryValue(
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo, int dictionaryValue) throws IOException {
     String memberString;
-    Dictionary forwardDictionary = FilterUtil
-        .getForwardDictionaryCache(tableIdentifier, dimColumnEvaluatorInfo.getDimension());
+    Dictionary forwardDictionary = FilterUtil.getForwardDictionaryCache(tableIdentifier,
+        dimColumnEvaluatorInfo.getDimension(), configuration);
 
     memberString = forwardDictionary.getDictionaryValueForKey(dictionaryValue);
     if (null != memberString) {

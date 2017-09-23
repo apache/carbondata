@@ -23,8 +23,8 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -39,16 +39,16 @@ public class AlluxioCarbonFile extends AbstractDFSCarbonFile {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AlluxioCarbonFile.class.getName());
 
-  public AlluxioCarbonFile(String filePath) {
-    super(filePath);
+  public AlluxioCarbonFile(Configuration configuration, String filePath) {
+    super(configuration, filePath);
   }
 
-  public AlluxioCarbonFile(Path path) {
-    super(path);
+  public AlluxioCarbonFile(Configuration configuration, Path path) {
+    super(configuration, path);
   }
 
-  public AlluxioCarbonFile(FileStatus fileStatus) {
-    super(fileStatus);
+  public AlluxioCarbonFile(Configuration configuration, FileStatus fileStatus) {
+    super(configuration, fileStatus);
   }
 
   /**
@@ -61,7 +61,7 @@ public class AlluxioCarbonFile extends AbstractDFSCarbonFile {
     }
     CarbonFile[] files = new CarbonFile[listStatus.length];
     for (int i = 0; i < files.length; i++) {
-      files[i] = new AlluxioCarbonFile(listStatus[i]);
+      files[i] = new AlluxioCarbonFile(configuration, listStatus[i]);
     }
     return files;
   }
@@ -72,7 +72,7 @@ public class AlluxioCarbonFile extends AbstractDFSCarbonFile {
     try {
       if (null != fileStatus && fileStatus.isDirectory()) {
         Path path = fileStatus.getPath();
-        listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
+        listStatus = path.getFileSystem(configuration).listStatus(path);
       } else {
         return new CarbonFile[0];
       }
@@ -105,14 +105,14 @@ public class AlluxioCarbonFile extends AbstractDFSCarbonFile {
   @Override
   public CarbonFile getParentFile() {
     Path parent = fileStatus.getPath().getParent();
-    return null == parent ? null : new AlluxioCarbonFile(parent);
+    return null == parent ? null : new AlluxioCarbonFile(configuration, parent);
   }
 
   @Override
   public boolean renameForce(String changetoName) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(configuration);
       if (fs instanceof DistributedFileSystem) {
         ((DistributedFileSystem) fs).rename(fileStatus.getPath(), new Path(changetoName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);

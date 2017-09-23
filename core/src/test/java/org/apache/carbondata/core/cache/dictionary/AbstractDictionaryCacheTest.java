@@ -33,6 +33,7 @@ import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -40,6 +41,8 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriterImpl;
+
+import org.apache.hadoop.conf.Configuration;
 
 public class AbstractDictionaryCacheTest {
 
@@ -106,7 +109,7 @@ public class AbstractDictionaryCacheTest {
 	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataType.STRING);
     return new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
         DataType.STRING,
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier, CarbonTestUtil.configuration));
   }
 
   /**
@@ -114,7 +117,7 @@ public class AbstractDictionaryCacheTest {
    */
   protected void deleteStorePath() {
     FileFactory.FileType fileType = FileFactory.getFileType(this.carbonStorePath);
-    CarbonFile carbonFile = FileFactory.getCarbonFile(this.carbonStorePath, fileType);
+    CarbonFile carbonFile = FileFactory.getCarbonFile(CarbonTestUtil.configuration, this.carbonStorePath, fileType);
     deleteRecursiveSilent(carbonFile);
   }
 
@@ -130,12 +133,12 @@ public class AbstractDictionaryCacheTest {
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
             columnIdentifier.getDataType(),
-            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
+            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier, CarbonTestUtil.configuration));
     CarbonDictionaryWriter carbonDictionaryWriter =
-        new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier);
+        new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier, CarbonTestUtil.configuration);
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
-    CarbonUtil.checkAndCreateFolder(carbonTablePath.getMetadataDirectoryPath());
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier, CarbonTestUtil.configuration);
+    CarbonUtil.checkAndCreateFolder(CarbonTestUtil.configuration, carbonTablePath.getMetadataDirectoryPath());
     List<byte[]> valueList = convertStringListToByteArray(data);
     try {
       carbonDictionaryWriter.write(valueList);

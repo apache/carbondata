@@ -31,6 +31,8 @@ import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.DictionaryService;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This class is responsible for loading the dictionary data for given columns
  */
@@ -48,15 +50,19 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    */
   private String carbonStorePath;
 
+  private Configuration configuration;
+
   /**
    * @param carbonTableIdentifier fully qualified table name
    * @param carbonStorePath       hdfs store path
    */
   public DictionaryCacheLoaderImpl(CarbonTableIdentifier carbonTableIdentifier,
-      String carbonStorePath, DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+      String carbonStorePath, DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
+      Configuration configuration) {
     this.carbonTableIdentifier = carbonTableIdentifier;
     this.carbonStorePath = carbonStorePath;
     this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
+    this.configuration = configuration;
   }
 
   /**
@@ -167,7 +173,7 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
     return dictService.getDictionaryReader(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
-        carbonStorePath);
+        carbonStorePath, configuration);
   }
 
   /**
@@ -179,6 +185,6 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
     DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
     return dictService
         .getDictionarySortIndexReader(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
-            carbonStorePath);
+            carbonStorePath, configuration);
   }
 }

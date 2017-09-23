@@ -167,18 +167,20 @@ object GlobalDictionaryUtil {
    */
   def writeGlobalDictionaryToFile(model: DictionaryLoadModel,
       columnIndex: Int,
-      iter: Iterator[String]): Unit = {
+      iter: Iterator[String],
+      configuration: Configuration): Unit = {
     val dictService = CarbonCommonFactory.getDictionaryService
     val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
         DictionaryColumnUniqueIdentifier(
       model.table,
       model.columnIdentifier(columnIndex),
       model.columnIdentifier(columnIndex).getDataType,
-      CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
+      CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table, configuration))
     val writer: CarbonDictionaryWriter = dictService.getDictionaryWriter(
       model.table,
       dictionaryColumnUniqueIdentifier,
-      model.hdfsLocation
+      model.hdfsLocation,
+      configuration
     )
     try {
       while (iter.hasNext) {
@@ -192,12 +194,14 @@ object GlobalDictionaryUtil {
   /**
    * read global dictionary from cache
    */
-  def readGlobalDictionaryFromCache(model: DictionaryLoadModel): HashMap[String, Dictionary] = {
+  def readGlobalDictionaryFromCache(model: DictionaryLoadModel,
+      configuration: Configuration): HashMap[String, Dictionary] = {
     val dictMap = new HashMap[String, Dictionary]
     model.primDimensions.zipWithIndex.filter(f => model.dictFileExists(f._2)).foreach { m =>
       val dict = CarbonLoaderUtil.getDictionary(model.table,
         m._1.getColumnIdentifier, model.hdfsLocation,
-        m._1.getDataType
+        m._1.getDataType,
+        configuration
       )
       dictMap.put(m._1.getColumnId, dict)
     }
@@ -209,7 +213,8 @@ object GlobalDictionaryUtil {
    *
    * @param model carbon dictionary load model
    */
-  def readGlobalDictionaryFromFile(model: DictionaryLoadModel): HashMap[String, HashSet[String]] = {
+  def readGlobalDictionaryFromFile(model: DictionaryLoadModel,
+      configuration: Configuration): HashMap[String, HashSet[String]] = {
     val dictMap = new HashMap[String, HashSet[String]]
     val dictService = CarbonCommonFactory.getDictionaryService
     for (i <- model.primDimensions.indices) {
@@ -218,11 +223,11 @@ object GlobalDictionaryUtil {
             model.table,
             model.columnIdentifier(i),
             model.columnIdentifier(i).getDataType,
-            CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
+            CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table, configuration))
       val set = new HashSet[String]
       if (model.dictFileExists(i)) {
         val reader: CarbonDictionaryReader = dictService.getDictionaryReader(model.table,
-          dictionaryColumnUniqueIdentifier, model.hdfsLocation
+          dictionaryColumnUniqueIdentifier, model.hdfsLocation, configuration
         )
         val values = reader.read
         if (values != null) {
@@ -304,7 +309,8 @@ object GlobalDictionaryUtil {
       dimensions: Array[CarbonDimension],
       hdfsLocation: String,
       dictfolderPath: String,
-      forPreDefDict: Boolean): DictionaryLoadModel = {
+      forPreDefDict: Boolean,
+      configuration: Configuration): DictionaryLoadModel = {
     val primDimensionsBuffer = new ArrayBuffer[CarbonDimension]
     val isComplexes = new ArrayBuffer[Boolean]
     for (i <- dimensions.indices) {
@@ -316,7 +322,7 @@ object GlobalDictionaryUtil {
     }
     val primDimensions = primDimensionsBuffer.map { x => x }.toArray
     val dictDetail = CarbonSparkFactory.getDictionaryDetailService.
-      getDictionaryDetail(dictfolderPath, primDimensions, table, hdfsLocation)
+      getDictionaryDetail(dictfolderPath, primDimensions, table, hdfsLocation, configuration)
     val dictFilePaths = dictDetail.dictFilePaths
     val dictFileExists = dictDetail.dictFileExists
     val columnIdentifier = dictDetail.columnIdentifiers
@@ -329,7 +335,7 @@ object GlobalDictionaryUtil {
       carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
     // get load count
     if (null == carbonLoadModel.getLoadMetadataDetails) {
-      CommonUtil.readLoadMetadataDetails(carbonLoadModel)
+      CommonUtil.readLoadMetadataDetails(carbonLoadModel, configuration)
     }
     DictionaryLoadModel(table,
       dimensions,
@@ -354,11 +360,12 @@ object GlobalDictionaryUtil {
    * load CSV files to DataFrame by using datasource "com.databricks.spark.csv"
    *
    * @param sqlContext      SQLContext
+   * @param hadoopConfiguration Configuration
    * @param carbonLoadModel carbon data load model
    */
   def loadDataFrame(sqlContext: SQLContext,
+      hadoopConfiguration: Configuration,
       carbonLoadModel: CarbonLoadModel): DataFrame = {
-    val hadoopConfiguration = new Configuration()
     CommonUtil.configureCSVInputFormat(hadoopConfiguration, carbonLoadModel)
     hadoopConfiguration.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
     val columnNames = carbonLoadModel.getCsvHeaderColumns
@@ -380,7 +387,7 @@ object GlobalDictionaryUtil {
 
   // Hack for spark2 integration
   var updateTableMetadataFunc: (CarbonLoadModel, SQLContext, DictionaryLoadModel,
-    Array[CarbonDimension]) => Unit = _
+    Array[CarbonDimension], Configuration) => Unit = _
 
   /**
    * check whether global dictionary have been generated successfully or not
@@ -418,7 +425,8 @@ object GlobalDictionaryUtil {
   private def setPredefinedColumnDictPath(carbonLoadModel: CarbonLoadModel,
       colDictFilePath: String,
       table: CarbonTableIdentifier,
-      dimensions: Array[CarbonDimension]) = {
+      dimensions: Array[CarbonDimension],
+      configuration: Configuration) = {
     val colFileMapArray = colDictFilePath.split(",")
     for (colPathMap <- colFileMapArray) {
       val colPathMapTrim = colPathMap.trim
@@ -430,9 +438,9 @@ object GlobalDictionaryUtil {
                                        " should be columnName:columnPath, please check")
       }
       setPredefineDict(carbonLoadModel, dimensions, table, colNameWithPath(0),
-        FileUtils
-          .getPaths(CarbonUtil
-            .checkAndAppendHDFSUrl(colPathMapTrim.substring(colNameWithPath(0).length + 1))))
+        FileUtils.getPaths(configuration,
+          CarbonUtil.checkAndAppendHDFSUrl(configuration,
+            colPathMapTrim.substring(colNameWithPath(0).length + 1))))
     }
   }
 
@@ -512,16 +520,18 @@ object GlobalDictionaryUtil {
       carbonLoadModel: CarbonLoadModel,
       sqlContext: SQLContext,
       hdfsLocation: String,
-      dictFolderPath: String): Unit = {
+      dictFolderPath: String,
+      configuration: Configuration): Unit = {
     // set pre defined dictionary column
-    setPredefinedColumnDictPath(carbonLoadModel, colDictFilePath, table, dimensions)
+    setPredefinedColumnDictPath(carbonLoadModel, colDictFilePath, table, dimensions, configuration)
     val dictLoadModel = createDictionaryLoadModel(carbonLoadModel, table, dimensions,
-      hdfsLocation, dictFolderPath, forPreDefDict = true)
+      hdfsLocation, dictFolderPath, forPreDefDict = true, configuration)
     // new RDD to achieve distributed column dict generation
     val extInputRDD = new CarbonColumnDictGenerateRDD(carbonLoadModel, dictLoadModel,
-      sqlContext.sparkContext, table, dimensions, hdfsLocation, dictFolderPath)
+      sqlContext.sparkContext, table, dimensions, hdfsLocation, dictFolderPath, configuration)
       .partitionBy(new ColumnPartitioner(dictLoadModel.primDimensions.length))
-    val statusList = new CarbonGlobalDictionaryGenerateRDD(extInputRDD, dictLoadModel).collect()
+    val statusList =
+      new CarbonGlobalDictionaryGenerateRDD(extInputRDD, dictLoadModel, configuration).collect()
     // check result status
     checkStatus(carbonLoadModel, sqlContext, dictLoadModel, statusList)
   }
@@ -635,11 +645,13 @@ object GlobalDictionaryUtil {
    * @param allDictionaryPath
    * @return (isNonempty, isDirectory)
    */
-  private def validateAllDictionaryPath(allDictionaryPath: String): Boolean = {
+  private def validateAllDictionaryPath(configuration: Configuration,
+      allDictionaryPath: String): Boolean = {
     val fileType = FileFactory.getFileType(allDictionaryPath)
     val filePath = new Path(allDictionaryPath)
-    val file = FileFactory.getCarbonFile(filePath.toString, fileType)
-    val parentFile = FileFactory.getCarbonFile(filePath.getParent.toString, fileType)
+    val file = FileFactory.getCarbonFile(configuration, filePath.toString, fileType)
+    val parentFile = FileFactory.getCarbonFile(configuration, filePath.getParent.toString,
+      fileType)
     // filepath regex, look like "/path/*.dictionary"
     if (filePath.getName.startsWith("*")) {
       val dictExt = filePath.getName.substring(1)
@@ -677,9 +689,11 @@ object GlobalDictionaryUtil {
    * generate global dictionary with SQLContext and CarbonLoadModel
    *
    * @param sqlContext      sql context
+   * @param configuration Configuration
    * @param carbonLoadModel carbon load model
    */
   def generateGlobalDictionary(sqlContext: SQLContext,
+      configuration: Configuration,
       carbonLoadModel: CarbonLoadModel,
       storePath: String,
       dataFrame: Option[DataFrame] = None): Unit = {
@@ -687,7 +701,8 @@ object GlobalDictionaryUtil {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
       val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier
       // create dictionary folder if not exists
-      val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
+      val carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier, configuration)
       val dictfolderPath = carbonTablePath.getMetadataDirectoryPath
       // columns which need to generate global dictionary file
       val dimensions = carbonTable.getDimensionByTableName(
@@ -699,14 +714,15 @@ object GlobalDictionaryUtil {
       if (StringUtils.isEmpty(allDictionaryPath)) {
         LOGGER.info("Generate global dictionary from source data files!")
         // load data by using dataSource com.databricks.spark.csv
-        var df = dataFrame.getOrElse(loadDataFrame(sqlContext, carbonLoadModel))
+        var df = dataFrame.getOrElse(
+          loadDataFrame(sqlContext, configuration, carbonLoadModel))
         var headers = carbonLoadModel.getCsvHeaderColumns
         headers = headers.map(headerName => headerName.trim)
         val colDictFilePath = carbonLoadModel.getColDictFilePath
         if (colDictFilePath != null) {
           // generate predefined dictionary
           generatePredefinedColDictionary(colDictFilePath, carbonTableIdentifier,
-            dimensions, carbonLoadModel, sqlContext, storePath, dictfolderPath)
+            dimensions, carbonLoadModel, sqlContext, storePath, dictfolderPath, configuration)
         }
         if (headers.length > df.columns.length) {
           val msg = "The number of columns in the file header do not match the " +
@@ -722,12 +738,13 @@ object GlobalDictionaryUtil {
           // select column to push down pruning
           df = df.select(requireColumnNames.head, requireColumnNames.tail: _*)
           val model = createDictionaryLoadModel(carbonLoadModel, carbonTableIdentifier,
-            requireDimension, storePath, dictfolderPath, false)
+            requireDimension, storePath, dictfolderPath, false, configuration)
           // combine distinct value in a block and partition by column
           val inputRDD = new CarbonBlockDistinctValuesCombineRDD(df.rdd, model)
             .partitionBy(new ColumnPartitioner(model.primDimensions.length))
           // generate global dictionary files
-          val statusList = new CarbonGlobalDictionaryGenerateRDD(inputRDD, model).collect()
+          val statusList =
+            new CarbonGlobalDictionaryGenerateRDD(inputRDD, model, configuration).collect()
           // check result status
           checkStatus(carbonLoadModel, sqlContext, model, statusList)
         } else {
@@ -735,6 +752,7 @@ object GlobalDictionaryUtil {
         }
       } else {
         generateDictionaryFromDictionaryFiles(sqlContext,
+          configuration,
           carbonLoadModel,
           storePath,
           carbonTableIdentifier,
@@ -762,6 +780,7 @@ object GlobalDictionaryUtil {
   }
 
   def generateDictionaryFromDictionaryFiles(sqlContext: SQLContext,
+      configuration: Configuration,
       carbonLoadModel: CarbonLoadModel,
       storePath: String,
       carbonTableIdentifier: CarbonTableIdentifier,
@@ -769,8 +788,9 @@ object GlobalDictionaryUtil {
       dimensions: Array[CarbonDimension],
       allDictionaryPath: String): Unit = {
     LOGGER.info("Generate global dictionary from dictionary files!")
-    val allDictionaryPathAppended = CarbonUtil.checkAndAppendHDFSUrl(allDictionaryPath)
-    val isNonempty = validateAllDictionaryPath(allDictionaryPathAppended)
+    val allDictionaryPathAppended =
+      CarbonUtil.checkAndAppendHDFSUrl(configuration, allDictionaryPath)
+    val isNonempty = validateAllDictionaryPath(configuration, allDictionaryPathAppended)
     if (isNonempty) {
       var headers = carbonLoadModel.getCsvHeaderColumns
       headers = headers.map(headerName => headerName.trim)
@@ -778,7 +798,7 @@ object GlobalDictionaryUtil {
       val (requireDimension, requireColumnNames) = pruneDimensions(dimensions, headers, headers)
       if (requireDimension.nonEmpty) {
         val model = createDictionaryLoadModel(carbonLoadModel, carbonTableIdentifier,
-          requireDimension, storePath, dictfolderPath, false)
+          requireDimension, storePath, dictfolderPath, false, configuration)
         // check if dictionary files contains bad record
         val accumulator = sqlContext.sparkContext.accumulator(0)
         // read local dictionary file, and group by key
@@ -788,7 +808,8 @@ object GlobalDictionaryUtil {
         val inputRDD = new CarbonAllDictionaryCombineRDD(allDictionaryRdd, model)
           .partitionBy(new ColumnPartitioner(model.primDimensions.length))
         // generate global dictionary files
-        val statusList = new CarbonGlobalDictionaryGenerateRDD(inputRDD, model).collect()
+        val statusList =
+          new CarbonGlobalDictionaryGenerateRDD(inputRDD, model, configuration).collect()
         // check result status
         checkStatus(carbonLoadModel, sqlContext, model, statusList)
         // if the dictionary contains wrong format record, throw ex
@@ -835,7 +856,7 @@ object GlobalDictionaryUtil {
 
     val dictLock = CarbonLockFactory
       .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
-        columnSchema.getColumnUniqueId + LockUsage.LOCK)
+        columnSchema.getColumnUniqueId + LockUsage.LOCK, carbonTablePath.getConfiguration)
     var isDictionaryLocked = false
     try {
       isDictionaryLocked = dictLock.lockWithRetries()
@@ -868,7 +889,9 @@ object GlobalDictionaryUtil {
         dictionaryColumnUniqueIdentifier,
         storePath,
         columnSchema,
-        false
+        false,
+        null,
+        carbonTablePath.getConfiguration
       )
       val distinctValues = dictWriteTask.execute
       LOGGER.info(s"Dictionary file writing is successful for new column ${
@@ -881,7 +904,9 @@ object GlobalDictionaryUtil {
           columnSchema.getDataType,
           storePath,
           dictionary,
-          distinctValues)
+          distinctValues,
+          null,
+          carbonTablePath.getConfiguration)
         sortIndexWriteTask.execute()
       }
 

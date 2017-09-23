@@ -21,6 +21,7 @@ import static junit.framework.TestCase.*;
 
 import mockit.Mock;
 import mockit.MockUp;
+import org.apache.hadoop.conf.Configuration;
 import org.junit.Test;
 
 import static org.apache.carbondata.core.util.CarbonMergerUtil.getCardinalityFromLevelMetadata;
@@ -31,11 +32,11 @@ public class CarbonMergerUtilTest {
     final int[] localCardinality = { 1, 2, 3, 4, 5, 6 };
     new MockUp<CarbonUtil>() {
       @SuppressWarnings("unused") @Mock
-      public int[] getCardinalityFromLevelMetadataFile(String levelPath) {
+      public int[] getCardinalityFromLevelMetadataFile(Configuration configuration, String levelPath) {
         return localCardinality;
       }
     };
-    int[] result = getCardinalityFromLevelMetadata("STORE_PATH", "table1");
+    int[] result = getCardinalityFromLevelMetadata(CarbonTestUtil.configuration, "STORE_PATH", "table1");
     assertEquals(result, localCardinality);
   }
 }

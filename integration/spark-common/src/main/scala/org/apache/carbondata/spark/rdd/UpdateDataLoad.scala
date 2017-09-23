@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.rdd
 
 import scala.collection.mutable
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.TaskContext
 import org.apache.spark.sql.Row
 
@@ -39,7 +40,8 @@ object UpdateDataLoad {
       index: Int,
       iter: Iterator[Row],
       carbonLoadModel: CarbonLoadModel,
-      loadMetadataDetails: LoadMetadataDetails): Unit = {
+      loadMetadataDetails: LoadMetadataDetails,
+      hadoopConf: Configuration): Unit = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     try {
       val recordReaders = mutable.Buffer[CarbonIterator[Array[AnyRef]]]()
@@ -57,7 +59,8 @@ object UpdateDataLoad {
       loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
       new DataLoadExecutor().execute(carbonLoadModel,
         loader.storeLocation,
-        recordReaders.toArray)
+        recordReaders.toArray,
+        hadoopConf)
 
     } catch {
       case e: Exception =>

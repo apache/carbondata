@@ -43,13 +43,12 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
       )
   val carbonTablePath: CarbonTablePath = CarbonStorePath
     .getCarbonTablePath(absoluteTableIdentifier.getStorePath,
-      absoluteTableIdentifier.getCarbonTableIdentifier
+      absoluteTableIdentifier.getCarbonTableIdentifier, hadoopConf
     )
   val dataPath: String = carbonTablePath.getMetadataDirectoryPath
 
-  val carbonLock: ICarbonLock =
-    CarbonLockFactory
-      .getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier, LockUsage.COMPACTION_LOCK)
+  val carbonLock: ICarbonLock = CarbonLockFactory.getCarbonLockObj(
+    absoluteTableIdentifier.getCarbonTableIdentifier, LockUsage.COMPACTION_LOCK, hadoopConf)
 
   override def beforeAll {
     CarbonProperties.getInstance()
@@ -101,7 +100,7 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
   test("check if compaction is failed or not.") {
 
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
-      absoluteTableIdentifier
+      absoluteTableIdentifier, hadoopConf
     )
     val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
 

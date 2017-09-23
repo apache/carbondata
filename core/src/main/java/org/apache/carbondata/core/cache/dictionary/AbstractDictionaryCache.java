@@ -35,6 +35,8 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.ObjectSizeCalculator;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Abstract class which implements methods common to reverse and forward dictionary cache
  */
@@ -57,11 +59,15 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    */
   protected String carbonStorePath;
 
+  protected Configuration configuration;
+
   /**
    * @param carbonStorePath
    * @param carbonLRUCache
    */
-  public AbstractDictionaryCache(String carbonStorePath, CarbonLRUCache carbonLRUCache) {
+  public AbstractDictionaryCache(Configuration configuration, String carbonStorePath,
+      CarbonLRUCache carbonLRUCache) {
+    this.configuration = configuration;
     this.carbonStorePath = carbonStorePath;
     this.carbonLRUCache = carbonLRUCache;
     initThreadPoolSize();
@@ -93,7 +99,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
     CarbonDictionaryMetadataReader columnMetadataReaderImpl = dictService
         .getDictionaryMetadataReader(dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-            dictionaryColumnUniqueIdentifier, carbonStorePath);
+            dictionaryColumnUniqueIdentifier, carbonStorePath, configuration);
 
     CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk = null;
     // read metadata file
@@ -118,10 +124,10 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
           DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier, long offsetRead)
           throws IOException {
     DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
-    CarbonDictionaryMetadataReader columnMetadataReaderImpl = dictService
-            .getDictionaryMetadataReader(
-                    dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-                    dictionaryColumnUniqueIdentifier, carbonStorePath);
+    CarbonDictionaryMetadataReader columnMetadataReaderImpl =
+        dictService.getDictionaryMetadataReader(
+            dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
+            dictionaryColumnUniqueIdentifier, carbonStorePath, configuration);
 
     CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk = null;
     // read metadata file
@@ -159,11 +165,11 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
         dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-        dictionaryColumnUniqueIdentifier);
+        dictionaryColumnUniqueIdentifier, configuration);
     String dictionaryFilePath = carbonTablePath.getDictionaryMetaFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     FileFactory.FileType fileType = FileFactory.getFileType(dictionaryFilePath);
-    CarbonFile dictFile = FileFactory.getCarbonFile(dictionaryFilePath, fileType);
+    CarbonFile dictFile = FileFactory.getCarbonFile(configuration, dictionaryFilePath, fileType);
     // When rename table triggered parallely with select query, dictionary files may not exist
     if (!dictFile.exists()) {
       throw new IOException("Dictionary file does not exist: " + dictionaryFilePath);
@@ -281,7 +287,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
       throws IOException {
     DictionaryCacheLoader dictionaryCacheLoader =
         new DictionaryCacheLoaderImpl(dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-            carbonStorePath, dictionaryColumnUniqueIdentifier);
+            carbonStorePath, dictionaryColumnUniqueIdentifier, configuration);
     dictionaryCacheLoader
         .load(dictionaryInfo, dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
             dictionaryChunkStartOffset, dictionaryChunkEndOffset, loadSortIndex);

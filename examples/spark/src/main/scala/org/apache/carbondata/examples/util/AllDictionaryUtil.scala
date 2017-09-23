@@ -21,6 +21,7 @@ import java.io.DataOutputStream
 
 import scala.collection.mutable.{ArrayBuffer, HashSet}
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.SparkContext
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -64,13 +65,13 @@ object AllDictionaryUtil {
       distinctValues
     })
     val dictionaryValues = dictionaryRdd.map(x => x._1 + "," + x._2).collect()
-    saveToFile(dictionaryValues, outputPath)
+    saveToFile(sc.hadoopConfiguration, dictionaryValues, outputPath)
   }
 
-  def cleanDictionary(outputPath: String): Unit = {
+  def cleanDictionary(hadoopConf: Configuration, outputPath: String): Unit = {
     try {
       val fileType = FileFactory.getFileType(outputPath)
-      val file = FileFactory.getCarbonFile(outputPath, fileType)
+      val file = FileFactory.getCarbonFile(hadoopConf, outputPath, fileType)
       if (file.exists()) {
         file.delete()
       }
@@ -80,15 +81,15 @@ object AllDictionaryUtil {
     }
   }
 
-  def saveToFile(contents: Array[String], outputPath: String): Unit = {
+  def saveToFile(hadoopConf: Configuration, contents: Array[String], outputPath: String): Unit = {
     var writer: DataOutputStream = null
     try {
       val fileType = FileFactory.getFileType(outputPath)
-      val file = FileFactory.getCarbonFile(outputPath, fileType)
+      val file = FileFactory.getCarbonFile(hadoopConf, outputPath, fileType)
       if (!file.exists()) {
         file.createNewFile()
       }
-      writer = FileFactory.getDataOutputStream(outputPath, fileType)
+      writer = FileFactory.getDataOutputStream(hadoopConf, outputPath, fileType)
       for (content <- contents) {
         writer.writeBytes(content + "\n")
       }

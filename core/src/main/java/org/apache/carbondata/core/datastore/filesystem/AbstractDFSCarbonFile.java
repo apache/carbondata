@@ -27,6 +27,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -37,31 +38,35 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AbstractDFSCarbonFile.class.getName());
+  protected Configuration configuration;
   protected FileStatus fileStatus;
 
-  public AbstractDFSCarbonFile(String filePath) {
+  public AbstractDFSCarbonFile(Configuration configuration, String filePath) {
+    this.configuration = configuration;
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
     FileSystem fs;
     try {
-      fs = path.getFileSystem(FileFactory.getConfiguration());
+      fs = path.getFileSystem(this.configuration);
       fileStatus = fs.getFileStatus(path);
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
     }
   }
 
-  public AbstractDFSCarbonFile(Path path) {
+  public AbstractDFSCarbonFile(Configuration configuration, Path path) {
+    this.configuration = configuration;
     FileSystem fs;
     try {
-      fs = path.getFileSystem(FileFactory.getConfiguration());
+      fs = path.getFileSystem(this.configuration);
       fileStatus = fs.getFileStatus(path);
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
     }
   }
 
-  public AbstractDFSCarbonFile(FileStatus fileStatus) {
+  public AbstractDFSCarbonFile(Configuration configuration, FileStatus fileStatus) {
+    this.configuration = configuration;
     this.fileStatus = fileStatus;
   }
 
@@ -69,7 +74,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
     Path path = fileStatus.getPath();
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(configuration);
       return fs.createNewFile(path);
     } catch (IOException e) {
       return false;
@@ -92,7 +97,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
     FileSystem fs;
     try {
       if (null != fileStatus) {
-        fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+        fs = fileStatus.getPath().getFileSystem(configuration);
         return fs.exists(fileStatus.getPath());
       }
     } catch (IOException e) {
@@ -116,7 +121,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   public boolean renameTo(String changetoName) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(configuration);
       return fs.rename(fileStatus.getPath(), new Path(changetoName));
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
@@ -127,7 +132,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   public boolean delete() {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(configuration);
       return fs.delete(fileStatus.getPath(), true);
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
@@ -142,7 +147,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   @Override public boolean setLastModifiedTime(long timestamp) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(configuration);
       fs.setTimes(fileStatus.getPath(), timestamp, timestamp);
     } catch (IOException e) {
       return false;
@@ -167,18 +172,19 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
     try {
       CarbonFile tempFile;
       // delete temporary file if it already exists at a given path
-      if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
-        tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+      if (FileFactory.isFileExist(configuration, tempWriteFilePath, fileType)) {
+        tempFile = FileFactory.getCarbonFile(configuration, tempWriteFilePath, fileType);
         tempFile.delete();
       }
       // create new temporary file
-      FileFactory.createNewFile(tempWriteFilePath, fileType);
-      tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+      FileFactory.createNewFile(configuration, tempWriteFilePath, fileType);
+      tempFile = FileFactory.getCarbonFile(configuration, tempWriteFilePath, fileType);
       byte[] buff = new byte[bufferSize];
-      dataInputStream = FileFactory.getDataInputStream(fileName, fileType);
+      dataInputStream = FileFactory.getDataInputStream(configuration, fileName, fileType);
       // read the data
       int read = dataInputStream.read(buff, 0, buff.length);
-      dataOutputStream = FileFactory.getDataOutputStream(tempWriteFilePath, fileType);
+      dataOutputStream = FileFactory.getDataOutputStream(configuration, tempWriteFilePath,
+          fileType);
       dataOutputStream.write(buff, 0, read);
       long remaining = validDataEndOffset - read;
       // anytime we should not cross the offset to be read

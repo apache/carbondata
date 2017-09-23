@@ -80,7 +80,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
           new CarbonTableIdentifier(
             CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
         )
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+    val segmentStatusManager: SegmentStatusManager =
+      new SegmentStatusManager(identifier, hadoopConf)
 
     // merged segment should not be there
     val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
@@ -88,7 +89,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     assert(segments.contains("2.1"))
     assert(!segments.contains("2"))
     assert(!segments.contains("3"))
-    val cacheClient = new CacheClient(CarbonProperties.getInstance.
+    val cacheClient = new CacheClient(hadoopConf, CarbonProperties.getInstance.
       getProperty(CarbonCommonConstants.STORE_LOCATION));
     val segmentIdentifier = new TableSegmentUniqueIdentifier(identifier, "2")
     val wrapper: SegmentTaskIndexWrapper = cacheClient.getSegmentAccessClient.
@@ -112,10 +113,10 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       .getCarbonTablePath(CarbonProperties.getInstance
         .getProperty(CarbonCommonConstants.STORE_LOCATION),
         new CarbonTableIdentifier(
-          CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
+          CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr"), hadoopConf
       )
       .getMetadataDirectoryPath
-    val segs = SegmentStatusManager.readLoadMetadata(carbontablePath)
+    val segs = SegmentStatusManager.readLoadMetadata(hadoopConf, carbontablePath)
 
     // status should remain as compacted.
     assert(segs(3).getLoadStatus.equalsIgnoreCase(CarbonCommonConstants.COMPACTED))
@@ -134,10 +135,10 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       .getCarbonTablePath(CarbonProperties.getInstance
         .getProperty(CarbonCommonConstants.STORE_LOCATION),
         new CarbonTableIdentifier(
-          CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr")
+          CarbonCommonConstants.DATABASE_DEFAULT_NAME, "ignoremajor", "rrr"), hadoopConf
       )
       .getMetadataDirectoryPath
-    val segs = SegmentStatusManager.readLoadMetadata(carbontablePath)
+    val segs = SegmentStatusManager.readLoadMetadata(hadoopConf, carbontablePath)
 
     // status should remain as compacted for segment 2.
     assert(segs(3).getLoadStatus.equalsIgnoreCase(CarbonCommonConstants.COMPACTED))
@@ -177,7 +178,8 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       new CarbonTableIdentifier(
         CarbonCommonConstants.DATABASE_DEFAULT_NAME, "testmajor", "ttt")
     )
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+    val segmentStatusManager: SegmentStatusManager =
+      new SegmentStatusManager(identifier, hadoopConf)
 
     // merged segment should not be there
     val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList

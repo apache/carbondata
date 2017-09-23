@@ -21,6 +21,7 @@ import java.io.File;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 
 /**
@@ -39,27 +40,29 @@ public class CarbonStorePath extends Path {
    * gets CarbonTablePath object to manage table paths
    */
   public static CarbonTablePath getCarbonTablePath(String storePath,
-      CarbonTableIdentifier tableIdentifier) {
+      CarbonTableIdentifier tableIdentifier, Configuration configuration) {
     return new CarbonTablePath(tableIdentifier,
         storePath + File.separator + tableIdentifier.getDatabaseName() + File.separator
-            + tableIdentifier.getTableName());
+            + tableIdentifier.getTableName(), configuration);
   }
 
   public static CarbonTablePath getCarbonTablePath(String storePath,
-      String dbName, String tableName) {
-    return new CarbonTablePath(storePath, dbName, tableName);
+      String dbName, String tableName, Configuration configuration) {
+    return new CarbonTablePath(storePath, dbName, tableName, configuration);
   }
 
-  public static CarbonTablePath getCarbonTablePath(AbsoluteTableIdentifier identifier) {
+  public static CarbonTablePath getCarbonTablePath(AbsoluteTableIdentifier identifier,
+      Configuration configuration) {
     CarbonTableIdentifier id = identifier.getCarbonTableIdentifier();
-    return new CarbonTablePath(id, identifier.getTablePath());
+    return new CarbonTablePath(id, identifier.getTablePath(), configuration);
   }
 
   /**
    * gets CarbonTablePath object to manage table paths
    */
-  public CarbonTablePath getCarbonTablePath(CarbonTableIdentifier tableIdentifier) {
-    return CarbonStorePath.getCarbonTablePath(storePath, tableIdentifier);
+  public CarbonTablePath getCarbonTablePath(CarbonTableIdentifier tableIdentifier,
+      Configuration configuration) {
+    return CarbonStorePath.getCarbonTablePath(storePath, tableIdentifier, configuration);
   }
 
   @Override public boolean equals(Object o) {

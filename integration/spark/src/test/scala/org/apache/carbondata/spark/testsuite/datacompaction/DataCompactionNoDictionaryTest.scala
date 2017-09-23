@@ -38,7 +38,8 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
           new CarbonTableIdentifier(databaseName, tableName.toLowerCase , tableId))
 
-    val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(identifier)
+    val segmentStatusManager: SegmentStatusManager =
+      new SegmentStatusManager(identifier, hadoopConf)
     segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
   }
 

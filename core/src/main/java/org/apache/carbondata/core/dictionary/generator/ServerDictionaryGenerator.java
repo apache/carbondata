@@ -24,6 +24,8 @@ import org.apache.carbondata.core.devapi.DictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * This is the dictionary generator for all tables. It generates dictionary
  * based on @{@link DictionaryMessage}.
@@ -43,14 +45,14 @@ public class ServerDictionaryGenerator implements DictionaryGenerator<Integer, D
     return generator.generateKey(value);
   }
 
-  public void initializeGeneratorForTable(CarbonTable carbonTable) {
+  public void initializeGeneratorForTable(CarbonTable carbonTable, Configuration configuration) {
     // initialize TableDictionaryGenerator first
     String tableId = carbonTable.getCarbonTableIdentifier().getTableId();
     if (tableMap.get(tableId) == null) {
       synchronized (tableMap) {
         if (tableMap.get(tableId) == null) {
           tableMap.put(tableId,
-              new TableDictionaryGenerator(carbonTable));
+              new TableDictionaryGenerator(carbonTable, configuration));
         }
       }
     }

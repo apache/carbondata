@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.spark.util
 
-import java.io.File
-
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
@@ -69,7 +67,8 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.CARBON_DATE_FORMAT,
       CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))  
-    carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
+    carbonLoadModel.setCsvHeaderColumns(
+      CommonUtil.getCsvHeaderColumns(hadoopConf, carbonLoadModel))
     carbonLoadModel.setMaxColumns("2000")
     carbonLoadModel
   }
@@ -157,7 +156,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
 
     val carbonLoadModel = buildCarbonLoadModel(sampleRelation, filePath, null)
     GlobalDictionaryUtil
-      .generateGlobalDictionary(sqlContext, carbonLoadModel,
+      .generateGlobalDictionary(sqlContext, hadoopConf, carbonLoadModel,
         sampleRelation.tableMeta.storePath
       )
 
@@ -174,7 +173,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
       "proddate,gamePointId,contractNumber"
     val carbonLoadModel = buildCarbonLoadModel(complexRelation, complexfilePath, header)
     GlobalDictionaryUtil
-      .generateGlobalDictionary(sqlContext, carbonLoadModel,
+      .generateGlobalDictionary(sqlContext, hadoopConf, carbonLoadModel,
         complexRelation.tableMeta.storePath
       )
   }
@@ -188,7 +187,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
       header
     )
     GlobalDictionaryUtil
-      .generateGlobalDictionary(sqlContext, carbonLoadModel,
+      .generateGlobalDictionary(sqlContext, hadoopConf, carbonLoadModel,
         sampleRelation.tableMeta.storePath
       )
     DictionaryTestCaseUtil.
@@ -200,7 +199,7 @@ class GlobalDictionaryUtilTestCase extends QueryTest with BeforeAndAfterAll {
       header
     )
     GlobalDictionaryUtil
-      .generateGlobalDictionary(sqlContext, carbonLoadModel,
+      .generateGlobalDictionary(sqlContext, hadoopConf, carbonLoadModel,
         sampleRelation.tableMeta.storePath
       )
     DictionaryTestCaseUtil.

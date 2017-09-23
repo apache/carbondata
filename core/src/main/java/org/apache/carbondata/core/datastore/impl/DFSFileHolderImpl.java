@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -39,10 +40,12 @@ public class DFSFileHolderImpl implements FileHolder {
 
   private String queryId;
 
+  private Configuration configuration;
 
-  public DFSFileHolderImpl() {
+  public DFSFileHolderImpl(Configuration configuration) {
     this.fileNameAndStreamCache =
         new HashMap<String, FSDataInputStream>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    this.configuration = configuration;
   }
 
   @Override public byte[] readByteArray(String filePath, long offset, int length)
@@ -63,7 +66,7 @@ public class DFSFileHolderImpl implements FileHolder {
     FSDataInputStream fileChannel = fileNameAndStreamCache.get(filePath);
     if (null == fileChannel) {
       Path pt = new Path(filePath);
-      FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+      FileSystem fs = pt.getFileSystem(configuration);
       fileChannel = fs.open(pt);
       fileNameAndStreamCache.put(filePath, fileChannel);
     }

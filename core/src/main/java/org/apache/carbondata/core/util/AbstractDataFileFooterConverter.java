@@ -42,11 +42,14 @@ import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Footer reader class
  */
 public abstract class AbstractDataFileFooterConverter {
 
+  protected Configuration configuration;
   /**
    * Below method will be used to convert the thrift presence meta to wrapper
    * presence meta
@@ -73,7 +76,7 @@ public abstract class AbstractDataFileFooterConverter {
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
     try {
       // open the reader
-      indexReader.openThriftReader(filePath);
+      indexReader.openThriftReader(configuration, filePath);
       // get the index header
       org.apache.carbondata.format.IndexHeader readIndexHeader = indexReader.readIndexHeader();
       List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
@@ -131,7 +134,7 @@ public abstract class AbstractDataFileFooterConverter {
     String parentPath = filePath.substring(0, filePath.lastIndexOf("/"));
     try {
       // open the reader
-      indexReader.openThriftReader(filePath);
+      indexReader.openThriftReader(configuration, filePath);
       // get the index header
       org.apache.carbondata.format.IndexHeader readIndexHeader = indexReader.readIndexHeader();
       List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
@@ -165,7 +168,7 @@ public abstract class AbstractDataFileFooterConverter {
         dataFileFooter.setVersionId(version);
         if (readBlockIndexInfo.isSetBlocklet_info()) {
           List<BlockletInfo> blockletInfoList = new ArrayList<BlockletInfo>();
-          BlockletInfo blockletInfo = new DataFileFooterConverterV3()
+          BlockletInfo blockletInfo = new DataFileFooterConverterV3(configuration)
               .getBlockletInfo(readBlockIndexInfo.getBlocklet_info(),
                   CarbonUtil.getNumberOfDimensionColumns(columnSchemaList));
           blockletInfo.setBlockletIndex(blockletIndex);

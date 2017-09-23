@@ -21,6 +21,7 @@ import java.net.URL
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.IOUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -41,14 +42,15 @@ object ResourceRegisterAndCopier {
 
   def copyResourcesifNotExists(hdfsPath: String,
       resourcePath: String,
-      dataFilesPath: String): Unit = {
+      dataFilesPath: String,
+      configuration: Configuration): Unit = {
     val fileType = FileFactory.getFileType(hdfsPath)
-    val file = FileFactory.getCarbonFile(hdfsPath, fileType)
+    val file = FileFactory.getCarbonFile(configuration, hdfsPath, fileType)
     if (!file.exists()) {
       sys.error(s"""Provided path $hdfsPath does not exist""")
     }
     LOGGER.audit("Try downloading resource data")
-    val lock = new HdfsFileLock(hdfsPath + "/resource.lock")
+    val lock = new HdfsFileLock(configuration, hdfsPath + "/resource.lock")
     var bool = false
     try {
       bool = lockWithRetries(lock)
@@ -56,7 +58,7 @@ object ResourceRegisterAndCopier {
         val resources = readDataFiles(dataFilesPath)
         resources.foreach { file =>
           val hdfsDataPath = hdfsPath + "/" + file
-          val rsFile = FileFactory.getCarbonFile(hdfsDataPath, fileType)
+          val rsFile = FileFactory.getCarbonFile(configuration, hdfsDataPath, fileType)
           if (!rsFile.exists()) {
             val target = resourcePath + "/" + file
             if (file.lastIndexOf("/") > -1) {
@@ -64,7 +66,7 @@ object ResourceRegisterAndCopier {
             }
             downloadFile(link, file, target)
             // copy it
-            copyLocalFile(hdfsDataPath, target)
+            copyLocalFile(hdfsDataPath, target, configuration)
             new File(target).delete()
           }
         }
@@ -107,12 +109,13 @@ object ResourceRegisterAndCopier {
   }
 
   def copyLocalFile(dst: String,
-      src: String): Unit = {
+      src: String,
+      configuration: Configuration): Unit = {
     LOGGER.info(s"Copying file : $src to  $dst")
-    if (FileFactory.isFileExist(src, FileFactory.getFileType(src))) {
-      val dataOutputStream = FileFactory.getDataOutputStream(dst,
+    if (FileFactory.isFileExist(configuration, src, FileFactory.getFileType(src))) {
+      val dataOutputStream = FileFactory.getDataOutputStream(configuration, dst,
         FileFactory.getFileType(dst))
-      val dataInputStream = FileFactory.getDataInputStream(src,
+      val dataInputStream = FileFactory.getDataInputStream(configuration, src,
         FileFactory.getFileType(src))
       IOUtils.copyBytes(dataInputStream, dataOutputStream, 8 * 1024)
       CarbonUtil.closeStream(dataInputStream)

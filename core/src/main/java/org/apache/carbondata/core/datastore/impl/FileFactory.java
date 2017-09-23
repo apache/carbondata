@@ -46,73 +46,67 @@ import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.GzipCodec;
 
 public final class FileFactory {
-  private static Configuration configuration = null;
-
-  static {
-    configuration = new Configuration();
-    configuration.addResource(new Path("../core-default.xml"));
-  }
-
   private FileFactory() {
 
   }
 
-  public static Configuration getConfiguration() {
-    return configuration;
-  }
-
-  public static FileHolder getFileHolder(FileType fileType) {
+  public static FileHolder getFileHolder(Configuration configuration, FileType fileType) {
     switch (fileType) {
       case LOCAL:
         return new FileHolderImpl();
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
-        return new DFSFileHolderImpl();
+        return new DFSFileHolderImpl(configuration);
       default:
         return new FileHolderImpl();
     }
   }
 
   public static FileType getFileType(String path) {
-    if (path.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
+    if (path.startsWith(CarbonCommonConstants.S3A_PREFIX) ||
+        path.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
+        path.startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      return FileType.S3;
+    } else if (path.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
       return FileType.HDFS;
-    }
-    else if (path.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
+    } else if (path.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
       return FileType.ALLUXIO;
-    }
-    else if (path.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
+    } else if (path.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
       return FileType.VIEWFS;
     }
     return FileType.LOCAL;
   }
 
-  public static CarbonFile getCarbonFile(String path) {
-    return getCarbonFile(path, getFileType(path));
+  public static CarbonFile getCarbonFile(Configuration configuration, String path) {
+    return getCarbonFile(configuration, path, getFileType(path));
   }
 
-  public static CarbonFile getCarbonFile(String path, FileType fileType) {
+  public static CarbonFile getCarbonFile(Configuration configuration, String path,
+      FileType fileType) {
     switch (fileType) {
       case LOCAL:
         return new LocalCarbonFile(getUpdatedFilePath(path, fileType));
+      case S3:
       case HDFS:
-        return new HDFSCarbonFile(path);
+        return new HDFSCarbonFile(configuration, path);
       case ALLUXIO:
-        return new AlluxioCarbonFile(path);
+        return new AlluxioCarbonFile(configuration, path);
       case VIEWFS:
-        return new ViewFSCarbonFile(path);
+        return new ViewFSCarbonFile(configuration, path);
       default:
         return new LocalCarbonFile(getUpdatedFilePath(path, fileType));
     }
   }
 
-  public static DataInputStream getDataInputStream(String path, FileType fileType)
-      throws IOException {
-    return getDataInputStream(path, fileType, -1);
+  public static DataInputStream getDataInputStream(Configuration configuration, String path,
+      FileType fileType) throws IOException {
+    return getDataInputStream(configuration, path, fileType, -1);
   }
 
-  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize)
-      throws IOException {
+  public static DataInputStream getDataInputStream(Configuration configuration, String path,
+      FileType fileType, int bufferSize) throws IOException {
     path = path.replace("\\", "/");
     boolean gzip = path.endsWith(".gz");
     boolean bzip2 = path.endsWith(".bz2");
@@ -128,6 +122,7 @@ public final class FileFactory {
           stream = new FileInputStream(path);
         }
         break;
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -166,10 +161,11 @@ public final class FileFactory {
    * @return DataInputStream
    * @throws IOException
    */
-  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
-      long offset) throws IOException {
+  public static DataInputStream getDataInputStream(Configuration configuration, String path,
+      FileType fileType, int bufferSize, long offset) throws IOException {
     path = path.replace("\\", "/");
     switch (fileType) {
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -191,12 +187,13 @@ public final class FileFactory {
     }
   }
 
-  public static DataOutputStream getDataOutputStream(String path, FileType fileType)
-      throws IOException {
+  public static DataOutputStream getDataOutputStream(Configuration configuration, String path,
+      FileType fileType) throws IOException {
     path = path.replace("\\", "/");
     switch (fileType) {
       case LOCAL:
         return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -208,14 +205,15 @@ public final class FileFactory {
     }
   }
 
-  public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
-      boolean append) throws IOException {
+  public static DataOutputStream getDataOutputStream(Configuration configuration, String path,
+      FileType fileType, int bufferSize, boolean append) throws IOException {
     path = path.replace("\\", "/");
     switch (fileType) {
       case LOCAL:
         path = getUpdatedFilePath(path, fileType);
         return new DataOutputStream(
             new BufferedOutputStream(new FileOutputStream(path, append), bufferSize));
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -225,7 +223,7 @@ public final class FileFactory {
         if (append) {
           // append to a file only if file already exists else file not found
           // exception will be thrown by hdfs
-          if (CarbonUtil.isFileExists(path)) {
+          if (CarbonUtil.isFileExists(configuration, path)) {
             stream = fs.append(pt, bufferSize);
           } else {
             stream = fs.create(pt, true, bufferSize);
@@ -241,14 +239,15 @@ public final class FileFactory {
     }
   }
 
-  public static DataOutputStream getDataOutputStream(String path, FileType fileType, int bufferSize,
-      long blockSize) throws IOException {
+  public static DataOutputStream getDataOutputStream(Configuration configuration, String path,
+      FileType fileType, int bufferSize, long blockSize) throws IOException {
     path = path.replace("\\", "/");
     switch (fileType) {
       case LOCAL:
         path = getUpdatedFilePath(path, fileType);
         return new DataOutputStream(
             new BufferedOutputStream(new FileOutputStream(path), bufferSize));
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -270,10 +269,11 @@ public final class FileFactory {
    * @param fileType         - FileType Local/HDFS
    * @param performFileCheck - Provide false for folders, true for files and
    */
-  public static boolean isFileExist(String filePath, FileType fileType, boolean performFileCheck)
-      throws IOException {
+  public static boolean isFileExist(Configuration configuration, String filePath,
+      FileType fileType, boolean performFileCheck) throws IOException {
     filePath = filePath.replace("\\", "/");
     switch (fileType) {
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -305,9 +305,11 @@ public final class FileFactory {
    * @param filePath - Path
    * @param fileType - FileType Local/HDFS
    */
-  public static boolean isFileExist(String filePath, FileType fileType) throws IOException {
+  public static boolean isFileExist(Configuration configuration, String filePath,
+      FileType fileType) throws IOException {
     filePath = filePath.replace("\\", "/");
     switch (fileType) {
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -323,9 +325,11 @@ public final class FileFactory {
     }
   }
 
-  public static boolean createNewFile(String filePath, FileType fileType) throws IOException {
+  public static boolean createNewFile(Configuration configuration, String filePath,
+      FileType fileType) throws IOException {
     filePath = filePath.replace("\\", "/");
     switch (fileType) {
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -341,9 +345,11 @@ public final class FileFactory {
     }
   }
 
-  public static boolean deleteFile(String filePath, FileType fileType) throws IOException {
+  public static boolean deleteFile(Configuration configuration, String filePath,
+      FileType fileType) throws IOException {
     filePath = filePath.replace("\\", "/");
     switch (fileType) {
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -390,9 +396,11 @@ public final class FileFactory {
     return path.delete();
   }
 
-  public static boolean mkdirs(String filePath, FileType fileType) throws IOException {
+  public static boolean mkdirs(Configuration configuration, String filePath,
+      FileType fileType) throws IOException {
     filePath = filePath.replace("\\", "/");
     switch (fileType) {
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -415,13 +423,14 @@ public final class FileFactory {
    * @return
    * @throws IOException
    */
-  public static DataOutputStream getDataOutputStreamUsingAppend(String path, FileType fileType)
-      throws IOException {
+  public static DataOutputStream getDataOutputStreamUsingAppend(Configuration configuration,
+      String path, FileType fileType) throws IOException {
     path = path.replace("\\", "/");
     switch (fileType) {
       case LOCAL:
         path = getUpdatedFilePath(path, fileType);
         return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path, true)));
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -442,9 +451,11 @@ public final class FileFactory {
    * @return
    * @throws IOException
    */
-  public static boolean createNewLockFile(String filePath, FileType fileType) throws IOException {
+  public static boolean createNewLockFile(Configuration configuration, String filePath,
+      FileType fileType) throws IOException {
     filePath = filePath.replace("\\", "/");
     switch (fileType) {
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -464,7 +475,7 @@ public final class FileFactory {
   }
 
   public enum FileType {
-    LOCAL, HDFS, ALLUXIO, VIEWFS
+    LOCAL, HDFS, ALLUXIO, VIEWFS, S3
   }
 
   /**
@@ -478,6 +489,7 @@ public final class FileFactory {
    */
   private static String getUpdatedFilePath(String filePath, FileType fileType) {
     switch (fileType) {
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -523,9 +535,11 @@ public final class FileFactory {
    * @return size in bytes
    * @throws IOException
    */
-  public static long getDirectorySize(String filePath) throws IOException {
+  public static long getDirectorySize(Configuration configuration,
+      String filePath) throws IOException {
     FileType fileType = getFileType(filePath);
     switch (fileType) {
+      case S3:
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
@@ -557,7 +571,8 @@ public final class FileFactory {
    * @return
    * @throws IOException
    */
-  public static FileSystem getFileSystem(Path path) throws IOException {
+  public static FileSystem getFileSystem(Configuration configuration,
+      Path path) throws IOException {
     return path.getFileSystem(configuration);
   }
 

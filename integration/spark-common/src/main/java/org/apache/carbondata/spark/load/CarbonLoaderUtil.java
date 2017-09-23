@@ -77,6 +77,7 @@ import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import com.google.gson.Gson;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.SparkConf;
 import org.apache.spark.util.Utils;
 
@@ -90,14 +91,15 @@ public final class CarbonLoaderUtil {
 
 
 
-  public static void deleteSegment(CarbonLoadModel loadModel, int currentLoad) {
+  public static void deleteSegment(CarbonLoadModel loadModel, int currentLoad,
+      Configuration configuration) {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier());
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(loadModel.getStorePath(),
+        carbonTable.getCarbonTableIdentifier(), configuration);
 
     for (int i = 0; i < carbonTable.getPartitionCount(); i++) {
       String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(i + "", currentLoad + "");
-      deleteStorePath(segmentPath);
+      deleteStorePath(configuration, segmentPath);
     }
   }
 
@@ -108,19 +110,19 @@ public final class CarbonLoaderUtil {
    * @param currentLoad
    * @return
    */
-  public static boolean isValidSegment(CarbonLoadModel loadModel,
-      int currentLoad) {
+  public static boolean isValidSegment(CarbonLoadModel loadModel, int currentLoad,
+      Configuration configuration) {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema()
         .getCarbonTable();
     CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
-        loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier());
+        loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier(), configuration);
 
     int fileCount = 0;
     int partitionCount = carbonTable.getPartitionCount();
     for (int i = 0; i < partitionCount; i++) {
       String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(i + "",
           currentLoad + "");
-      CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath,
+      CarbonFile carbonFile = FileFactory.getCarbonFile(configuration, segmentPath,
           FileFactory.getFileType(segmentPath));
       CarbonFile[] files = carbonFile.listFiles(new CarbonFileFilter() {
 
@@ -144,20 +146,21 @@ public final class CarbonLoaderUtil {
     return true;
   }
   public static void deletePartialLoadDataIfExist(CarbonLoadModel loadModel,
-      final boolean isCompactionFlow) throws IOException {
+      final boolean isCompactionFlow, Configuration configuration) throws IOException {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     String metaDataLocation = carbonTable.getMetaDataFilepath();
-    final LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier());
+    final LoadMetadataDetails[] details =
+        SegmentStatusManager.readLoadMetadata(configuration, metaDataLocation);
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(loadModel.getStorePath(),
+        carbonTable.getCarbonTableIdentifier(), configuration);
 
     //delete folder which metadata no exist in tablestatus
     for (int i = 0; i < carbonTable.getPartitionCount(); i++) {
       final String partitionCount = i + "";
       String partitionPath = carbonTablePath.getPartitionDir(partitionCount);
       FileType fileType = FileFactory.getFileType(partitionPath);
-      if (FileFactory.isFileExist(partitionPath, fileType)) {
-        CarbonFile carbonFile = FileFactory.getCarbonFile(partitionPath, fileType);
+      if (FileFactory.isFileExist(configuration, partitionPath, fileType)) {
+        CarbonFile carbonFile = FileFactory.getCarbonFile(configuration, partitionPath, fileType);
         CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
           @Override public boolean accept(CarbonFile path) {
             String segmentId =
@@ -178,11 +181,11 @@ public final class CarbonLoaderUtil {
               CarbonTablePath.DataPathUtil.getSegmentId(listFiles[k].getAbsolutePath() + "/dummy");
           if (isCompactionFlow) {
             if (segmentId.contains(".")) {
-              deleteStorePath(listFiles[k].getAbsolutePath());
+              deleteStorePath(configuration, listFiles[k].getAbsolutePath());
             }
           } else {
             if (!segmentId.contains(".")) {
-              deleteStorePath(listFiles[k].getAbsolutePath());
+              deleteStorePath(configuration, listFiles[k].getAbsolutePath());
             }
           }
         }
@@ -190,11 +193,11 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  private static void deleteStorePath(String path) {
+  private static void deleteStorePath(Configuration configuration, String path) {
     try {
       FileType fileType = FileFactory.getFileType(path);
-      if (FileFactory.isFileExist(path, fileType)) {
-        CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
+      if (FileFactory.isFileExist(configuration, path, fileType)) {
+        CarbonFile carbonFile = FileFactory.getCarbonFile(configuration, path, fileType);
         CarbonUtil.deleteFoldersAndFiles(carbonFile);
       }
     } catch (IOException | InterruptedException e) {
@@ -258,7 +261,8 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static boolean recordLoadMetadata(LoadMetadataDetails newMetaEntry,
-      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
+      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite,
+      Configuration configuration)
       throws IOException, InterruptedException {
     boolean status = false;
     String metaDataFilepath =
@@ -267,9 +271,10 @@ public final class CarbonLoaderUtil {
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
+            absoluteTableIdentifier.getCarbonTableIdentifier(), configuration);
     String tableStatusPath = carbonTablePath.getTableStatusFilePath();
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+    SegmentStatusManager segmentStatusManager =
+        new SegmentStatusManager(absoluteTableIdentifier, configuration);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     try {
       if (carbonLock.lockWithRetries()) {
@@ -277,7 +282,7 @@ public final class CarbonLoaderUtil {
             "Acquired lock for table" + loadModel.getDatabaseName() + "." + loadModel.getTableName()
                 + " for table status updation");
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
-            SegmentStatusManager.readLoadMetadata(metaDataFilepath);
+            SegmentStatusManager.readLoadMetadata(configuration, metaDataFilepath);
         List<LoadMetadataDetails> listOfLoadFolderDetails =
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         List<CarbonFile> staleFolders = new ArrayList<>();
@@ -318,13 +323,14 @@ public final class CarbonLoaderUtil {
                 // For insert overwrite, we will delete the old segment folder immediately
                 // So collect the old segments here
                 String path = carbonTablePath.getCarbonDataDirectoryPath("0", entry.getLoadName());
-                staleFolders.add(FileFactory.getCarbonFile(path));
+                staleFolders.add(FileFactory.getCarbonFile(configuration, path));
               }
             }
           }
           listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);
         }
-        SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
+        SegmentStatusManager.writeLoadDetailsIntoFile(configuration, tableStatusPath,
+            listOfLoadFolderDetails
             .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
         // Delete all old stale segment folders
         for (CarbonFile staleFolder : staleFolders) {
@@ -368,17 +374,18 @@ public final class CarbonLoaderUtil {
   }
 
   public static void writeLoadMetadata(String storeLocation, String dbName, String tableName,
-      List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
+      List<LoadMetadataDetails> listOfLoadFolderDetails,
+      Configuration configuration) throws IOException {
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(storeLocation, dbName, tableName);
+        CarbonStorePath.getCarbonTablePath(storeLocation, dbName, tableName, configuration);
     String dataLoadLocation = carbonTablePath.getTableStatusFilePath();
 
     DataOutputStream dataOutputStream;
     Gson gsonObjectToWrite = new Gson();
     BufferedWriter brWriter = null;
 
-    AtomicFileOperations writeOperation =
-        new AtomicFileOperationsImpl(dataLoadLocation, FileFactory.getFileType(dataLoadLocation));
+    AtomicFileOperations writeOperation = new AtomicFileOperationsImpl(configuration,
+        dataLoadLocation, FileFactory.getFileType(dataLoadLocation));
 
     try {
 
@@ -413,19 +420,20 @@ public final class CarbonLoaderUtil {
   }
 
   public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier,
-      String carbonStorePath) throws IOException {
-    Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
-        CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);
+      String carbonStorePath, Configuration configuration) throws IOException {
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache = CacheProvider.getInstance()
+        .createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath, configuration);
     return dictCache.get(columnIdentifier);
   }
 
   public static Dictionary getDictionary(CarbonTableIdentifier tableIdentifier,
-      ColumnIdentifier columnIdentifier, String carbonStorePath, DataType dataType)
+      ColumnIdentifier columnIdentifier, String carbonStorePath, DataType dataType,
+      Configuration configuration)
       throws IOException {
     return getDictionary(
         new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier, dataType,
-            CarbonStorePath.getCarbonTablePath(carbonStorePath, tableIdentifier)),
-        carbonStorePath);
+            CarbonStorePath.getCarbonTablePath(carbonStorePath, tableIdentifier, configuration)),
+        carbonStorePath, configuration);
   }
 
   /**
@@ -845,13 +853,13 @@ public final class CarbonLoaderUtil {
    * @param segmentId
    */
   public static void checkAndCreateCarbonDataLocation(String carbonStorePath,
-      String segmentId, CarbonTable carbonTable) {
+      String segmentId, CarbonTable carbonTable, Configuration configuration) {
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier);
+        CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier, configuration);
     String carbonDataDirectoryPath =
         carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
-    CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
+    CarbonUtil.checkAndCreateFolder(configuration, carbonDataDirectoryPath);
   }
 
   /**

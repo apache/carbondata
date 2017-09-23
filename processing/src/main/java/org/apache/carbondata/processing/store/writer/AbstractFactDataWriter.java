@@ -62,6 +62,7 @@ import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.store.file.FileData;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IOUtils;
 
 public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<T> {
@@ -155,8 +156,11 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
    */
   protected DataMapWriterListener listener;
 
-  public AbstractFactDataWriter(CarbonDataWriterVo dataWriterVo) {
+  protected Configuration configuration;
+
+  public AbstractFactDataWriter(CarbonDataWriterVo dataWriterVo, Configuration configuration) {
     this.dataWriterVo = dataWriterVo;
+    this.configuration = configuration;
     blockIndexInfoList = new ArrayList<>();
     // get max file size;
     CarbonProperties propInstance = CarbonProperties.getInstance();
@@ -182,9 +186,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     //TODO: We should delete the levelmetadata file after reading here.
     // so only data loading flow will need to read from cardinality file.
     if (null == this.localCardinality) {
-      this.localCardinality = CarbonMergerUtil
-          .getCardinalityFromLevelMetadata(dataWriterVo.getStoreLocation(),
-              dataWriterVo.getTableName());
+      this.localCardinality = CarbonMergerUtil.getCardinalityFromLevelMetadata(configuration,
+          dataWriterVo.getStoreLocation(), dataWriterVo.getTableName());
       List<Integer> cardinalityList = new ArrayList<Integer>();
       thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
           dataWriterVo.getWrapperColumnSchemaList());
@@ -437,7 +440,7 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
             "" + dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
     CarbonIndexFileWriter writer = new CarbonIndexFileWriter();
     // open file
-    writer.openThriftWriter(fileName);
+    writer.openThriftWriter(configuration, fileName);
     // write the header first
     writer.writeThrift(indexHeader);
     // write the indexes
@@ -498,8 +501,8 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
     long copyStartTime = System.currentTimeMillis();
     LOGGER.info("Copying " + localFileName + " --> " + dataWriterVo.getCarbonDataDirectoryPath());
     try {
-      CarbonFile localCarbonFile =
-          FileFactory.getCarbonFile(localFileName, FileFactory.getFileType(localFileName));
+      CarbonFile localCarbonFile = FileFactory.getCarbonFile(
+          configuration, localFileName, FileFactory.getFileType(localFileName));
       String carbonFilePath = dataWriterVo.getCarbonDataDirectoryPath() + localFileName
           .substring(localFileName.lastIndexOf(File.separator));
       copyLocalFileToCarbonStore(carbonFilePath, localFileName,
@@ -532,11 +535,10 @@ public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<
         LOGGER.debug("HDFS file block size for file: " + carbonStoreFilePath + " is " + blockSize
             + " (bytes");
       }
-      dataOutputStream = FileFactory
-          .getDataOutputStream(carbonStoreFilePath, FileFactory.getFileType(carbonStoreFilePath),
-              bufferSize, blockSize);
-      dataInputStream = FileFactory
-          .getDataInputStream(localFilePath, FileFactory.getFileType(localFilePath), bufferSize);
+      dataOutputStream = FileFactory.getDataOutputStream(configuration, carbonStoreFilePath,
+          FileFactory.getFileType(carbonStoreFilePath), bufferSize, blockSize);
+      dataInputStream = FileFactory.getDataInputStream(configuration, localFilePath,
+          FileFactory.getFileType(localFilePath), bufferSize);
       IOUtils.copyBytes(dataInputStream, dataOutputStream, bufferSize);
     } finally {
       CarbonUtil.closeStream(dataInputStream);

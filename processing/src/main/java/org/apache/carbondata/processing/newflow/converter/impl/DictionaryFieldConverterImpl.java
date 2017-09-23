@@ -45,6 +45,8 @@ import org.apache.carbondata.processing.newflow.dictionary.PreCreatedDictionary;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConverterImpl {
 
   private static final LogService LOGGER =
@@ -68,7 +70,8 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, String nullFormat, int index,
       DictionaryClient client, boolean useOnePass, String storePath,
-      Map<Object, Integer> localCache, boolean isEmptyBadRecord) throws IOException {
+      Map<Object, Integer> localCache, boolean isEmptyBadRecord,
+      Configuration configuration) throws IOException {
     this.index = index;
     this.carbonDimension = (CarbonDimension) dataField.getColumn();
     this.nullFormat = nullFormat;
@@ -76,11 +79,11 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
     DictionaryColumnUniqueIdentifier identifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
             dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType(),
-            CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
+            CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier, configuration));
 
     // if use one pass, use DictionaryServerClientDictionary
     if (useOnePass) {
-      if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
+      if (CarbonUtil.isFileExistsForGivenColumn(configuration, storePath, identifier)) {
         dictionary = cache.get(identifier);
       }
       dictionaryMessage = new DictionaryMessage();

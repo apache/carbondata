@@ -22,6 +22,8 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier;
 import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * CacheClient : Holds all the Cache access clients for Btree, Dictionary
  */
@@ -31,9 +33,9 @@ public class CacheClient {
   private CacheAccessClient<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
       segmentAccessClient;
 
-  public CacheClient(String storePath) {
+  public CacheClient(Configuration configuration, String storePath) {
     Cache<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper> segmentCache =
-        CacheProvider.getInstance().createCache(CacheType.DRIVER_BTREE, storePath);
+        CacheProvider.getInstance().createCache(CacheType.DRIVER_BTREE, storePath, configuration);
     segmentAccessClient = new CacheAccessClient<>(segmentCache);
   }
 

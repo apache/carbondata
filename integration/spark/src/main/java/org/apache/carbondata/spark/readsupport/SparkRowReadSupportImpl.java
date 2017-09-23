@@ -28,6 +28,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.catalyst.expressions.GenericRow;
 import org.apache.spark.unsafe.types.UTF8String;
@@ -35,8 +36,9 @@ import org.apache.spark.unsafe.types.UTF8String;
 public class SparkRowReadSupportImpl extends DictionaryDecodeReadSupport<Row> {
 
   @Override public void initialize(CarbonColumn[] carbonColumns,
-      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
-    super.initialize(carbonColumns, absoluteTableIdentifier);
+      AbsoluteTableIdentifier absoluteTableIdentifier,
+      Configuration configuration) throws IOException {
+    super.initialize(carbonColumns, absoluteTableIdentifier, configuration);
     //can initialize and generate schema here.
   }
 

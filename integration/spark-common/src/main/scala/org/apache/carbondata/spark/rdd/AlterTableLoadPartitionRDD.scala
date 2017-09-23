@@ -20,10 +20,11 @@ package org.apache.carbondata.spark.rdd
 import scala.collection.JavaConverters._
 import scala.util.Random
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{Partition, SparkContext, SparkEnv, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.AlterPartitionModel
-import org.apache.spark.util.PartitionUtils
+import org.apache.spark.util.{PartitionUtils, SparkUtil}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -38,7 +39,8 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
     partitionIds: Seq[String],
     bucketId: Int,
     identifier: AbsoluteTableIdentifier,
-    prev: RDD[Array[AnyRef]]) extends RDD[(K, V)](prev) {
+    prev: RDD[Array[AnyRef]],
+    @transient configuration: Configuration) extends RDD[(K, V)](prev) {
 
     var storeLocation: String = null
     val carbonLoadModel = alterPartitionModel.carbonLoadModel
@@ -48,6 +50,10 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
     val databaseName = carbonTable.getDatabaseName
     val factTableName = carbonTable.getFactTableName
     val partitionInfo = carbonTable.getPartitionInfo(factTableName)
+
+    val confBytes = SparkUtil.compressConfiguration(configuration)
+    private def getConf = SparkUtil.uncompressConfiguration(confBytes)
+
 
     override protected def getPartitions: Array[Partition] = {
         val sc = alterPartitionModel.sqlContext.sparkContext
@@ -105,14 +111,17 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
                 LOGGER.info("After repartition this split, NO target rows to write back.")
                 true
             } else {
+                val configuration = getConf
                 val segmentProperties = PartitionUtils.getSegmentProperties(identifier,
-                    segmentId, partitionIds.toList, oldPartitionIds, partitionInfo)
+                    segmentId, partitionIds.toList, oldPartitionIds, partitionInfo,
+                    configuration)
                 val processor = new RowResultProcessor(
                     carbonTable,
                     carbonLoadModel,
                     segmentProperties,
                     tempStoreLoc,
-                    bucketId)
+                    bucketId,
+                    configuration)
                 try {
                     processor.execute(rows)
                 } catch {

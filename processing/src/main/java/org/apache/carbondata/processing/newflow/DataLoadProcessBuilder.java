@@ -48,6 +48,7 @@ import org.apache.carbondata.processing.newflow.steps.SortProcessorStepImpl;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.hadoop.conf.Configuration;
 
 /**
  * It builds the pipe line of steps for loading data to carbon.
@@ -58,8 +59,9 @@ public final class DataLoadProcessBuilder {
       LogServiceFactory.getLogService(DataLoadProcessBuilder.class.getName());
 
   public AbstractDataLoadProcessorStep build(CarbonLoadModel loadModel, String[] storeLocation,
-      CarbonIterator[] inputIterators) throws Exception {
-    CarbonDataLoadConfiguration configuration = createConfiguration(loadModel, storeLocation);
+      CarbonIterator[] inputIterators, Configuration hadoopConf) throws Exception {
+    CarbonDataLoadConfiguration configuration =
+        createConfiguration(loadModel, storeLocation, hadoopConf);
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     if (!configuration.isSortTable() || sortScope.equals(SortScopeOptions.SortScope.NO_SORT)) {
       return buildInternalForNoSort(inputIterators, configuration);
@@ -136,7 +138,7 @@ public final class DataLoadProcessBuilder {
   }
 
   public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel,
-      String[] storeLocation) {
+      String[] storeLocation, Configuration hadoopConf) {
     CarbonDataProcessorUtil.createLocations(storeLocation);
 
     String databaseName = loadModel.getDatabaseName();
@@ -149,10 +151,11 @@ public final class DataLoadProcessBuilder {
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, loadModel.getStorePath());
 
-    return createConfiguration(loadModel);
+    return createConfiguration(loadModel, hadoopConf);
   }
 
-  public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel) {
+  public static CarbonDataLoadConfiguration createConfiguration(CarbonLoadModel loadModel,
+      Configuration hadoopConf) {
     CarbonDataLoadConfiguration configuration = new CarbonDataLoadConfiguration();
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     AbsoluteTableIdentifier identifier = carbonTable.getAbsoluteTableIdentifier();
@@ -225,6 +228,8 @@ public final class DataLoadProcessBuilder {
 
     TableSpec tableSpec = new TableSpec(dimensions, measures);
     configuration.setTableSpec(tableSpec);
+
+    configuration.setHadoopConf(hadoopConf);
     return configuration;
   }
 

@@ -58,7 +58,8 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
       CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-    carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
+    carbonLoadModel.setCsvHeaderColumns(
+      CommonUtil.getCsvHeaderColumns(hadoopConf, carbonLoadModel))
     carbonLoadModel
   }
 
@@ -114,6 +115,7 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
     val carbonLoadModel = buildCarbonLoadModel(sampleRelation, null, header, sampleAllDictionaryFile)
     GlobalDictionaryUtil
       .generateGlobalDictionary(sqlContext,
+        hadoopConf,
         carbonLoadModel,
         sampleRelation.tableMeta.storePath)
 
@@ -126,8 +128,9 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
     val carbonLoadModel = buildCarbonLoadModel(complexRelation, null, header, complexAllDictionaryFile)
     GlobalDictionaryUtil
       .generateGlobalDictionary(sqlContext,
-      carbonLoadModel,
-      complexRelation.tableMeta.storePath)
+        hadoopConf,
+        carbonLoadModel,
+        complexRelation.tableMeta.storePath)
 
     DictionaryTestCaseUtil.
       checkDictionary(complexRelation, "channelsId", "1650")

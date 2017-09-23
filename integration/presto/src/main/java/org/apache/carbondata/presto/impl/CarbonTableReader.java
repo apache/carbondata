@@ -80,6 +80,9 @@ public class CarbonTableReader {
     }
   };
   private CarbonTableConfig config;
+
+  private Configuration hadoopConf;
+
   /**
    * The names of the tables under the schema (this.carbonFileList).
    */
@@ -98,6 +101,7 @@ public class CarbonTableReader {
 
   @Inject public CarbonTableReader(CarbonTableConfig config) {
     this.config = requireNonNull(config, "CarbonTableConfig is null");
+    this.hadoopConf = new Configuration();
     this.cc = new ConcurrentHashMap<>();
   }
 
@@ -115,7 +119,8 @@ public class CarbonTableReader {
         if (carbonFileList == null) {
           fileType = FileFactory.getFileType(config.getStorePath());
           try {
-            carbonFileList = FileFactory.getCarbonFile(config.getStorePath(), fileType);
+            carbonFileList =
+                FileFactory.getCarbonFile(hadoopConf, config.getStorePath(), fileType);
           } catch (Exception ex) {
             throw new RuntimeException(ex);
           }
@@ -151,7 +156,7 @@ public class CarbonTableReader {
     if (carbonFileList == null) {
       fileType = FileFactory.getFileType(config.getStorePath());
       try {
-        carbonFileList = FileFactory.getCarbonFile(config.getStorePath(), fileType);
+        carbonFileList = FileFactory.getCarbonFile(hadoopConf, config.getStorePath(), fileType);
       } catch (Exception ex) {
         throw new RuntimeException(ex);
       }
@@ -275,8 +280,8 @@ public class CarbonTableReader {
           new CarbonTableIdentifier(table.getSchemaName(), table.getTableName(),
               UUID.randomUUID().toString());
       // get the store path of the table.
-      cache.carbonTablePath =
-          PathFactory.getInstance().getCarbonTablePath(storePath, cache.carbonTableIdentifier, null);
+      cache.carbonTablePath = PathFactory.getInstance().getCarbonTablePath(storePath,
+          cache.carbonTableIdentifier, null, hadoopConf);
       // cache the table
       cc.put(table, cache);
 
@@ -290,7 +295,7 @@ public class CarbonTableReader {
         }
       };
       ThriftReader thriftReader =
-          new ThriftReader(cache.carbonTablePath.getSchemaFilePath(), createTBase);
+          new ThriftReader(hadoopConf, cache.carbonTablePath.getSchemaFilePath(), createTBase);
       thriftReader.open();
       org.apache.carbondata.format.TableInfo tableInfo =
           (org.apache.carbondata.format.TableInfo) thriftReader.read();
@@ -328,9 +333,9 @@ public class CarbonTableReader {
     TableInfo tableInfo = tableCacheModel.tableInfo;
     Configuration config = new Configuration();
     config.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
-    String carbonTablePath = PathFactory.getInstance()
-        .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier().getStorePath(),
-            carbonTable.getCarbonTableIdentifier(), null).getPath();
+    String carbonTablePath = PathFactory.getInstance().getCarbonTablePath(
+        carbonTable.getAbsoluteTableIdentifier().getStorePath(),
+        carbonTable.getCarbonTableIdentifier(), null, hadoopConf).getPath();
     config.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
 
     try {

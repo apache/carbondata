@@ -84,13 +84,13 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
         )
     val carbonTablePath: CarbonTablePath = CarbonStorePath
       .getCarbonTablePath(absoluteTableIdentifier.getStorePath,
-        absoluteTableIdentifier.getCarbonTableIdentifier
+        absoluteTableIdentifier.getCarbonTableIdentifier, hadoopConf
       )
 
     val file = carbonTablePath.getMetadataDirectoryPath + CarbonCommonConstants
       .FILE_SEPARATOR + CarbonCommonConstants.majorCompactionRequiredFile
 
-    FileFactory.createNewFile(file, FileFactory.getFileType(file))
+    FileFactory.createNewFile(hadoopConf, file, FileFactory.getFileType(file))
 
     // compaction will happen here.
     sql("alter table table1 compact 'major'"
@@ -111,7 +111,7 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
         AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
           new CarbonTableIdentifier("default", "table1", "rrr")
-        )
+        ), hadoopConf
     )
     // merged segment should not be there
     val segments = segmentStatusManager.getValidAndInvalidSegments.getValidSegments.asScala.toList
@@ -123,7 +123,7 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
         AbsoluteTableIdentifier(
           CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
           new CarbonTableIdentifier("default", "table2", "rrr1")
-        )
+        ), hadoopConf
     )
     // merged segment should not be there
     val segments2 = segmentStatusManager2.getValidAndInvalidSegments.getValidSegments.asScala.toList

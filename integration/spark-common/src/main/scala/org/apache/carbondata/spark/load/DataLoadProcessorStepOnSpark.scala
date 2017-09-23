@@ -22,6 +22,7 @@ import scala.util.Random
 import org.apache.spark.{Accumulator, SparkEnv, TaskContext}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.Row
+import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException
@@ -63,9 +64,11 @@ object DataLoadProcessorStepOnSpark {
       rows: Iterator[Array[AnyRef]],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
+      rowCounter: Accumulator[Int],
+      confBytes: Array[Byte]): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
-    val conf = DataLoadProcessBuilder.createConfiguration(model)
+    val conf = DataLoadProcessBuilder.createConfiguration(model,
+      SparkUtil.uncompressConfiguration(confBytes))
     val rowParser = new RowParserImpl(conf.getDataFields, conf)
 
     TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
@@ -88,9 +91,11 @@ object DataLoadProcessorStepOnSpark {
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
       partialSuccessAccum: Accumulator[Int],
-      rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
+      rowCounter: Accumulator[Int],
+      confBytes: Array[Byte]): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
-    val conf = DataLoadProcessBuilder.createConfiguration(model)
+    val conf = DataLoadProcessBuilder.createConfiguration(model,
+      SparkUtil.uncompressConfiguration(confBytes))
     val badRecordLogger = DataConverterProcessorStepImpl.createBadRecordLogger(conf)
     val rowConverter = new RowConverterImpl(conf.getDataFields, conf, badRecordLogger)
     rowConverter.initialize()
@@ -122,9 +127,11 @@ object DataLoadProcessorStepOnSpark {
       rows: Iterator[CarbonRow],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
+      rowCounter: Accumulator[Int],
+      confBytes: Array[Byte]): Iterator[CarbonRow] = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
-    val conf = DataLoadProcessBuilder.createConfiguration(model)
+    val conf = DataLoadProcessBuilder.createConfiguration(model,
+      SparkUtil.uncompressConfiguration(confBytes))
     val sortParameters = SortParameters.createSortParameters(conf)
 
     TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
@@ -147,7 +154,8 @@ object DataLoadProcessorStepOnSpark {
       rows: Iterator[CarbonRow],
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowCounter: Accumulator[Int]) {
+      rowCounter: Accumulator[Int],
+      confBytes: Array[Byte]) {
     var model: CarbonLoadModel = null
     var tableName: String = null
     var rowConverter: RowConverterImpl = null
@@ -155,7 +163,8 @@ object DataLoadProcessorStepOnSpark {
     try {
       model = modelBroadcast.value.getCopyWithTaskNo(index.toString)
       val storeLocation = Array(getTempStoreLocation(index))
-      val conf = DataLoadProcessBuilder.createConfiguration(model, storeLocation)
+      val conf = DataLoadProcessBuilder.createConfiguration(model, storeLocation,
+        SparkUtil.uncompressConfiguration(confBytes))
 
       tableName = model.getTableName
 

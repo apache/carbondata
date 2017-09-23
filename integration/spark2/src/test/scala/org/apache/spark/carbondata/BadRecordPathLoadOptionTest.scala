@@ -68,7 +68,7 @@ class BadRecordPathLoadOptionTest extends Spark2QueryTest with BeforeAndAfterAll
   def isFilesWrittenAtBadStoreLocation: Boolean = {
     val badStorePath = badRecordPath + "/default/salestest/0/0"
     val carbonFile: CarbonFile = FileFactory
-      .getCarbonFile(badStorePath, FileFactory.getFileType(badStorePath))
+      .getCarbonFile(hadoopConf, badStorePath, FileFactory.getFileType(badStorePath))
     var exists: Boolean = carbonFile.exists()
     if (exists) {
       val listFiles: Array[CarbonFile] = carbonFile.listFiles(new CarbonFileFilter {

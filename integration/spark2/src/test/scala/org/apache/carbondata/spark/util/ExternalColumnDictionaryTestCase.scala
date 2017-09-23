@@ -173,15 +173,15 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     carbonLoadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.CARBON_DATE_FORMAT,
       CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
-    carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
+    carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(hadoopConf, carbonLoadModel))
     carbonLoadModel.setMaxColumns("100")
     // Create table and metadata folders if not exist
     val carbonTablePath = CarbonStorePath
-      .getCarbonTablePath(table.getStorePath, table.getCarbonTableIdentifier)
+      .getCarbonTablePath(table.getStorePath, table.getCarbonTableIdentifier, hadoopConf)
     val metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath
     val fileType = FileFactory.getFileType(metadataDirectoryPath)
-    if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
-      FileFactory.mkdirs(metadataDirectoryPath, fileType)
+    if (!FileFactory.isFileExist(hadoopConf, metadataDirectoryPath, fileType)) {
+      FileFactory.mkdirs(hadoopConf, metadataDirectoryPath, fileType)
     }
     carbonLoadModel
   }
@@ -197,7 +197,7 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     // load the first time
     var carbonLoadModel = buildCarbonLoadModel(extComplexRelation, complexFilePath1,
       header, extColDictFilePath1)
-    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, carbonLoadModel,
+    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, hadoopConf, carbonLoadModel,
       extComplexRelation.tableMeta.storePath)
     // check whether the dictionary is generated
     DictionaryTestCaseUtil.checkDictionary(
@@ -206,7 +206,7 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     // load the second time
     carbonLoadModel = buildCarbonLoadModel(extComplexRelation, complexFilePath1,
       header, extColDictFilePath2)
-    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, carbonLoadModel,
+    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, hadoopConf, carbonLoadModel,
       extComplexRelation.tableMeta.storePath)
     // check the old dictionary and whether the new distinct value is generated
     DictionaryTestCaseUtil.checkDictionary(
@@ -219,7 +219,7 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     //  when csv delimiter is comma
     var carbonLoadModel = buildCarbonLoadModel(extComplexRelation, complexFilePath1,
       header, extColDictFilePath3)
-    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, carbonLoadModel,
+    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, hadoopConf, carbonLoadModel,
       extComplexRelation.tableMeta.storePath)
     // check whether the dictionary is generated
     DictionaryTestCaseUtil.checkDictionary(
@@ -228,7 +228,7 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     //  when csv delimiter is not comma
     carbonLoadModel = buildCarbonLoadModel(verticalDelimiteRelation, complexFilePath2,
       header2, extColDictFilePath3, "|")
-    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, carbonLoadModel,
+    GlobalDictionaryUtil.generateGlobalDictionary(sqlContext, hadoopConf, carbonLoadModel,
       verticalDelimiteRelation.tableMeta.storePath)
     // check whether the dictionary is generated
     DictionaryTestCaseUtil.checkDictionary(

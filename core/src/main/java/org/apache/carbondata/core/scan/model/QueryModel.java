@@ -41,6 +41,8 @@ import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverter;
 
+import org.apache.hadoop.conf.Configuration;
+
 /**
  * Query model which will have all the detail
  * about the query, This will be sent from driver to executor '
@@ -108,6 +110,8 @@ public class QueryModel implements Serializable {
   private List<String> invalidSegmentIds;
   private Map<String, UpdateVO> invalidSegmentBlockIdMap =
       new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+
+  private transient Configuration configuration;
 
   public QueryModel() {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
@@ -377,5 +381,13 @@ public class QueryModel implements Serializable {
 
   public void setConverter(DataTypeConverter converter) {
     this.converter = converter;
+  }
+
+  public Configuration getConfiguration() {
+    return configuration;
+  }
+
+  public void setConfiguration(Configuration configuration) {
+    this.configuration = configuration;
   }
 }

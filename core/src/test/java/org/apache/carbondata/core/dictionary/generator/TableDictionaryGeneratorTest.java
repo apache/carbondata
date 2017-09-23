@@ -31,6 +31,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonTestUtil;
 
 import org.junit.After;
 import org.junit.Before;
@@ -91,7 +92,7 @@ public class TableDictionaryGeneratorTest {
   }
 
   @Test public void generateKeyOnce() throws Exception {
-    TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(carbonTable);
+    TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(carbonTable, CarbonTestUtil.configuration);
 
     // Generate dictionary for one key
     DictionaryMessage empKey = new DictionaryMessage();
@@ -104,7 +105,7 @@ public class TableDictionaryGeneratorTest {
   }
 
   @Test public void generateKeyTwice() throws Exception {
-    TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(carbonTable);
+    TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(carbonTable, CarbonTestUtil.configuration);
 
     // Generate dictionary for same key twice
     DictionaryMessage firstKey = new DictionaryMessage();
@@ -123,7 +124,7 @@ public class TableDictionaryGeneratorTest {
   }
 
   @Test public void generateKeyAgain() throws Exception {
-    TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(carbonTable);
+    TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(carbonTable, CarbonTestUtil.configuration);
 
     // Generate dictionary for two different keys
     DictionaryMessage firstKey = new DictionaryMessage();
@@ -143,7 +144,7 @@ public class TableDictionaryGeneratorTest {
   }
 
   @Test public void updateGenerator() throws Exception {
-    TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(carbonTable);
+    TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(carbonTable, CarbonTestUtil.configuration);
     DictionaryMessage firstKey = new DictionaryMessage();
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setData("FirstKey");
@@ -163,7 +164,7 @@ public class TableDictionaryGeneratorTest {
   }
 
   @Test public void size() throws Exception {
-    TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(carbonTable);
+    TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(carbonTable, CarbonTestUtil.configuration);
     //Add keys for first Column
     DictionaryMessage empKey = new DictionaryMessage();
     //Add key 1
@@ -192,7 +193,7 @@ public class TableDictionaryGeneratorTest {
   }
 
   @Test public void writeDictionaryData() throws Exception {
-    TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(carbonTable);
+    TableDictionaryGenerator tableDictionaryGenerator = new TableDictionaryGenerator(carbonTable, CarbonTestUtil.configuration);
     DictionaryMessage firstKey = new DictionaryMessage();
     firstKey.setColumnName(empColumnSchema.getColumnName());
     firstKey.setData("FirstKey");

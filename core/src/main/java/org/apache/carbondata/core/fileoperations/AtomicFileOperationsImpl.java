@@ -27,6 +27,8 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.conf.Configuration;
+
 public class AtomicFileOperationsImpl implements AtomicFileOperations {
 
   private String filePath;
@@ -37,14 +39,17 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
 
   private DataOutputStream dataOutStream;
 
-  public AtomicFileOperationsImpl(String filePath, FileType fileType) {
-    this.filePath = filePath;
+  private Configuration configuration;
 
+  public AtomicFileOperationsImpl(Configuration configuration, String filePath,
+      FileType fileType) {
+    this.configuration = configuration;
+    this.filePath = filePath;
     this.fileType = fileType;
   }
 
   @Override public DataInputStream openForRead() throws IOException {
-    return FileFactory.getDataInputStream(filePath, fileType);
+    return FileFactory.getDataInputStream(configuration, filePath, fileType);
   }
 
   @Override public DataOutputStream openForWrite(FileWriteOperation operation) throws IOException {
@@ -53,13 +58,13 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
 
     tempWriteFilePath = filePath + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
 
-    if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
-      FileFactory.getCarbonFile(tempWriteFilePath, fileType).delete();
+    if (FileFactory.isFileExist(configuration, tempWriteFilePath, fileType)) {
+      FileFactory.getCarbonFile(configuration, tempWriteFilePath, fileType).delete();
     }
 
-    FileFactory.createNewFile(tempWriteFilePath, fileType);
+    FileFactory.createNewFile(configuration, tempWriteFilePath, fileType);
 
-    dataOutStream = FileFactory.getDataOutputStream(tempWriteFilePath, fileType);
+    dataOutStream = FileFactory.getDataOutputStream(configuration, tempWriteFilePath, fileType);
 
     return dataOutStream;
 
@@ -69,7 +74,7 @@ public class AtomicFileOperationsImpl implements AtomicFileOperations {
 
     if (null != dataOutStream) {
       CarbonUtil.closeStream(dataOutStream);
-      CarbonFile tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+      CarbonFile tempFile = FileFactory.getCarbonFile(configuration, tempWriteFilePath, fileType);
       if (!tempFile.renameForce(filePath)) {
         throw new IOException("temporary file renaming failed, src="
             + tempFile.getPath() + ", dest=" + filePath);

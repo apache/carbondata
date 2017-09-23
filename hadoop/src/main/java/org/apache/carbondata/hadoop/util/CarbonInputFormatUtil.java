@@ -37,6 +37,7 @@ import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
@@ -132,12 +133,13 @@ public class CarbonInputFormatUtil {
    * @return
    */
   public static FilterResolverIntf resolveFilter(Expression filterExpression,
-      AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider) {
+      AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider,
+      Configuration configuration) {
     try {
       FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
       //get resolved filter
-      return filterExpressionProcessor
-          .getFilterResolver(filterExpression, absoluteTableIdentifier, tableProvider);
+      return filterExpressionProcessor.getFilterResolver(filterExpression, absoluteTableIdentifier,
+          tableProvider, configuration);
     } catch (Exception e) {
       throw new RuntimeException("Error while resolving filter expression", e);
     }

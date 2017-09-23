@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.IndexHeader;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.thrift.TBase;
 
 /**
@@ -74,8 +75,8 @@ public class CarbonIndexFileReader {
    * @param filePath
    * @throws IOException
    */
-  public void openThriftReader(String filePath) throws IOException {
-    thriftReader = new ThriftReader(filePath);
+  public void openThriftReader(Configuration configuration, String filePath) throws IOException {
+    thriftReader = new ThriftReader(configuration, filePath);
     thriftReader.open();
   }
 

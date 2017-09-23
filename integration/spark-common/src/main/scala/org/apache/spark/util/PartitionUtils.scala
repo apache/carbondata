@@ -128,10 +128,10 @@ object PartitionUtils {
    */
   def getSegmentProperties(identifier: AbsoluteTableIdentifier, segmentId: String,
       partitionIds: List[String], oldPartitionIdList: List[Int],
-      partitionInfo: PartitionInfo): SegmentProperties = {
+      partitionInfo: PartitionInfo, configuration: Configuration): SegmentProperties = {
     val tableBlockInfoList =
       getPartitionBlockList(identifier, segmentId, partitionIds, oldPartitionIdList, partitionInfo)
-    val footer = CarbonUtil.readMetadatFile(tableBlockInfoList.get(0))
+    val footer = CarbonUtil.readMetadatFile(tableBlockInfoList.get(0), configuration)
     val segmentProperties = new SegmentProperties(footer.getColumnInTable,
       footer.getSegmentInfo.getColumnCardinality)
     segmentProperties
@@ -155,7 +155,7 @@ object PartitionUtils {
   def deleteOriginalCarbonFile(alterPartitionModel: AlterPartitionModel,
       identifier: AbsoluteTableIdentifier,
       partitionIds: List[String], dbName: String, tableName: String,
-      partitionInfo: PartitionInfo): Unit = {
+      partitionInfo: PartitionInfo, configuration: Configuration): Unit = {
     val carbonLoadModel = alterPartitionModel.carbonLoadModel
     val segmentId = alterPartitionModel.segmentId
     val oldPartitionIds = alterPartitionModel.oldPartitionIds
@@ -165,7 +165,7 @@ object PartitionUtils {
       getPartitionBlockList(identifier, segmentId, partitionIds, oldPartitionIds,
         partitionInfo).asScala
     val pathList: util.List[String] = new util.ArrayList[String]()
-    val carbonTablePath = new CarbonTablePath(storePath, dbName, tableName)
+    val carbonTablePath = new CarbonTablePath(storePath, dbName, tableName, configuration)
     tableBlockInfoList.foreach{ tableBlockInfo =>
       val path = tableBlockInfo.getFilePath
       val timestamp = CarbonTablePath.DataFileUtil.getTimeStampFromFileName(path)

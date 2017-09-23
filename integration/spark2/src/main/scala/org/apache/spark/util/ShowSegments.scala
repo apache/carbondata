@@ -20,7 +20,7 @@ package org.apache.spark.util
 import java.text.SimpleDateFormat
 
 import org.apache.commons.lang3.StringUtils
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SparkSQLUtil}
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.api.CarbonStore
@@ -34,7 +34,8 @@ object ShowSegments {
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.
       lookupRelation(Some(dbName), tableName)(spark).asInstanceOf[CarbonRelation].
       tableMeta.carbonTable
-    CarbonStore.showSegments(dbName, tableName, limit, carbonTable.getMetaDataFilepath)
+    CarbonStore.showSegments(dbName, tableName, limit, carbonTable.getMetaDataFilepath,
+      SparkSQLUtil.newHadoopConf(spark))
   }
 
   def showString(rows: Seq[Row]): String = {
@@ -78,8 +79,8 @@ object ShowSegments {
       None
     }
     val spark = TableAPIUtil.spark(storePath, s"ShowSegments: $dbName.$tableName")
-    CarbonEnv.getInstance(spark).carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(spark).storePath)
+    CarbonEnv.getInstance(spark).carbonMetastore.checkSchemasModifiedTimeAndReloadTables(
+      SparkSQLUtil.newHadoopConf(spark), CarbonEnv.getInstance(spark).storePath)
     val rows = showSegments(spark, dbName, tableName, limit)
     System.out.println(showString(rows))
   }

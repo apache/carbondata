@@ -30,7 +30,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.AlterPartitionModel
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.util.PartitionUtils
+import org.apache.spark.util.{PartitionUtils, SparkUtil}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.block.{Distributable, SegmentProperties, TaskBlockInfo}
@@ -62,8 +62,12 @@ import org.apache.carbondata.spark.load.CarbonLoaderUtil
 class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
     carbonTableIdentifier: CarbonTableIdentifier,
     partitionIds: Seq[String],
-    bucketId: Int)
+    bucketId: Int,
+    @transient configuration: Configuration)
   extends RDD[(AnyRef, Array[AnyRef])](alterPartitionModel.sqlContext.sparkContext, Nil) {
+
+  val confBytes = SparkUtil.compressConfiguration(configuration)
+  private def getConf = SparkUtil.uncompressConfiguration(confBytes)
 
   private val queryId = alterPartitionModel.sqlContext.sparkContext.getConf
     .get("queryId", System.nanoTime() + "")
@@ -129,55 +133,56 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
   override def compute(split: Partition, context: TaskContext):
     Iterator[(AnyRef, Array[AnyRef])] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-      var exec : CarbonSplitExecutor = null
-      val rows : java.util.List[(AnyRef, Array[AnyRef])] = new ArrayList[(AnyRef, Array[AnyRef])]()
+    var exec : CarbonSplitExecutor = null
+    val rows : java.util.List[(AnyRef, Array[AnyRef])] = new ArrayList[(AnyRef, Array[AnyRef])]()
+    val hadoopConf = getConf
+    try {
+      val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
+      val splits = inputSplit.getAllSplits.asScala
+      val tableBlockInfoList = CarbonInputSplit.createBlocks(splits.asJava)
+      val segmentMapping: java.util.Map[String, TaskBlockInfo] =
+        CarbonCompactionUtil.createMappingForSegments(tableBlockInfoList)
+      val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+      var result : java.util.List[PartitionSpliterRawResultIterator] = null
       try {
-        val inputSplit = split.asInstanceOf[CarbonSparkPartition].split.value
-        val splits = inputSplit.getAllSplits.asScala
-        val tableBlockInfoList = CarbonInputSplit.createBlocks(splits.asJava)
-        val segmentMapping: java.util.Map[String, TaskBlockInfo] =
-          CarbonCompactionUtil.createMappingForSegments(tableBlockInfoList)
-        val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-        var result : java.util.List[PartitionSpliterRawResultIterator] = null
-        try {
-          exec = new CarbonSplitExecutor(segmentMapping, carbonTable)
-          result = exec.processDataBlocks(segmentId)
-        } catch {
-          case e: Throwable =>
-            LOGGER.error(e)
-            if (null != e.getMessage) {
-              sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
-            } else {
-              sys.error("Exception occurred in query execution. Please check logs.")
-            }
-        }
-        val segmentProperties = PartitionUtils.getSegmentProperties(identifier, segmentId,
-          partitionIds.toList, oldPartitionIdList, partitionInfo)
-        val partColIdx = getPartitionColumnIndex(partitionColumnName, segmentProperties)
-        indexInitialise()
-        for (iterator <- result.asScala) {
-          while (iterator.hasNext) {
-            val row = iterator.next()
-            val partitionColumnValue = getPartitionColumnValue(row, partColIdx,
-              segmentProperties)
-            rows.add((partitionColumnValue, row))
-          }
-        }
+        exec = new CarbonSplitExecutor(segmentMapping, carbonTable)
+        result = exec.processDataBlocks(segmentId)
       } catch {
-        case e: Exception =>
+        case e: Throwable =>
           LOGGER.error(e)
-          throw e
-      } finally {
-        if (null != exec) {
-          exec.finish
+          if (null != e.getMessage) {
+            sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
+          } else {
+            sys.error("Exception occurred in query execution. Please check logs.")
+          }
+      }
+      val segmentProperties = PartitionUtils.getSegmentProperties(identifier, segmentId,
+        partitionIds.toList, oldPartitionIdList, partitionInfo, hadoopConf)
+      val partColIdx = getPartitionColumnIndex(partitionColumnName, segmentProperties)
+      indexInitialise()
+      for (iterator <- result.asScala) {
+        while (iterator.hasNext) {
+          val row = iterator.next()
+          val partitionColumnValue = getPartitionColumnValue(row, partColIdx,
+            segmentProperties, hadoopConf)
+          rows.add((partitionColumnValue, row))
         }
       }
+    } catch {
+      case e: Exception =>
+        LOGGER.error(e)
+        throw e
+    } finally {
+      if (null != exec) {
+        exec.finish
+      }
+    }
     val iter = rows.iterator().asScala
     iter
   }
 
   def getPartitionColumnValue(row: Array[AnyRef], partColIdx: Int,
-      segmentProperties: SegmentProperties): AnyRef = {
+      segmentProperties: SegmentProperties, configuration: Configuration): AnyRef = {
     val dims: Array[Byte] = row(0).asInstanceOf[ByteArrayWrapper].getDictionaryKey
     val keyGen = segmentProperties.getDimensionKeyGenerator
     val keyArray: Array[Long] = keyGen.getKeyArray(dims)
@@ -204,7 +209,7 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
         }
       } else {  // normal dictionary
         val dict = CarbonLoaderUtil.getDictionary(carbonTableIdentifier,
-          dimension.getColumnIdentifier, storePath, partitionDataType)
+          dimension.getColumnIdentifier, storePath, partitionDataType, configuration)
         if (partitionDataType == DataType.STRING) {
           if (partitionType == PartitionType.RANGE) {
             partitionValue = ByteUtil.

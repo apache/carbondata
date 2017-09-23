@@ -17,12 +17,15 @@
 
 package org.apache.spark.util
 
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream, DataInputStream, DataOutputStream}
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.{NewHadoopPartition, NewHadoopRDD}
 
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.processing.csvload.BlockDetails
 
 /*
@@ -41,14 +44,14 @@ object SparkUtil {
    * get file splits,return Array[BlockDetails], if file path is empty,then return empty Array
    *
    */
-  def getSplits(path: String, sc: SparkContext): Array[BlockDetails] = {
-    val filePath = FileUtils.getPaths(path)
+  def getSplits(path: String, sc: SparkContext,
+      hadoopConfiguration: Configuration): Array[BlockDetails] = {
+    val filePath = FileUtils.getPaths(hadoopConfiguration, path)
     if (filePath == null || filePath.isEmpty) {
       // return a empty block details
       Array[BlockDetails]()
     } else {
       // clone the hadoop configuration
-      val hadoopConfiguration = new Configuration(sc.hadoopConfiguration)
       // set folder or file
       hadoopConfiguration.set(FileInputFormat.INPUT_DIR, filePath)
       hadoopConfiguration.set(FileInputFormat.INPUT_DIR_RECURSIVE, "true")
@@ -68,6 +71,33 @@ object SparkUtil {
           block.getLocations
         )
       }
+    }
+  }
+
+  def compressConfiguration(configuration: Configuration): Array[Byte] = {
+    if (null == configuration) {
+      null
+    } else {
+      val bao = new ByteArrayOutputStream()
+      val dos = new DataOutputStream(bao)
+      configuration.write(dos)
+      dos.close()
+      val bytes = bao.toByteArray
+      CompressorFactory.getInstance().getCompressor.compressByte(bytes)
+    }
+  }
+
+  def uncompressConfiguration(bytes: Array[Byte]): Configuration = {
+    if (null == bytes) {
+      null
+    } else {
+      val newBytes = CompressorFactory.getInstance().getCompressor.unCompressByte(bytes)
+      val bai = new ByteArrayInputStream(newBytes)
+      val dis = new DataInputStream(bai)
+      val configuration = new Configuration(false)
+      configuration.readFields(dis)
+      dis.close()
+      configuration
     }
   }
 }

@@ -44,6 +44,7 @@ import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.store.SingleThreadFinalSortFilesMerger;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.spark.sql.types.Decimal;
 
 /**
@@ -126,6 +127,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private SortIntermediateFileMerger intermediateFileMerger;
 
+  private Configuration configuration;
+
   /**
    * @param carbonLoadModel
    * @param carbonTable
@@ -134,13 +137,15 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @param tableName
    */
   public CompactionResultSortProcessor(CarbonLoadModel carbonLoadModel, CarbonTable carbonTable,
-      SegmentProperties segmentProperties, CompactionType compactionType, String tableName) {
+      SegmentProperties segmentProperties, CompactionType compactionType, String tableName,
+      Configuration configuration) {
     this.carbonLoadModel = carbonLoadModel;
     this.carbonTable = carbonTable;
     this.segmentProperties = segmentProperties;
     this.segmentId = carbonLoadModel.getSegmentId();
     this.compactionType = compactionType;
     this.tableName = tableName;
+    this.configuration = configuration;
   }
 
   /**
@@ -383,7 +388,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private void initDataHandler() throws Exception {
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
         .getCarbonFactDataHandlerModel(carbonLoadModel, carbonTable, segmentProperties, tableName,
-            tempStoreLocation);
+            tempStoreLocation, configuration);
     setDataFileAttributesInModel(carbonLoadModel, compactionType, carbonTable,
         carbonFactDataHandlerModel);
     dataHandler = CarbonFactHandlerFactory.createCarbonFactHandler(carbonFactDataHandlerModel,

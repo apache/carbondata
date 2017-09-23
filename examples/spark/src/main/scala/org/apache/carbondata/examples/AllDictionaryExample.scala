@@ -61,7 +61,7 @@ object AllDictionaryExample {
     cc.sql("DROP TABLE IF EXISTS t3")
 
     // clean local dictionary files
-    AllDictionaryUtil.cleanDictionary(allDictFile)
+    AllDictionaryUtil.cleanDictionary(cc.sparkContext.hadoopConfiguration, allDictFile)
   }
 
 }
