@@ -202,6 +202,9 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
         if (partitionValue.isInstanceOf[UTF8String]) {
           partitionValue = partitionValue.toString
         }
+        if (partitionDataType == DataType.TIMESTAMP) {
+          partitionValue = (partitionValue.asInstanceOf[Long] / 1000L).asInstanceOf[AnyRef]
+        }
       } else {  // normal dictionary
         val dict = CarbonLoaderUtil.getDictionary(carbonTableIdentifier,
           dimension.getColumnIdentifier, storePath, partitionDataType)
