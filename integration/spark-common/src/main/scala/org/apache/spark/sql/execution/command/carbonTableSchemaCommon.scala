@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.scan.executor.util.RestructureUtil
 import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.DataTypeUtil
@@ -197,30 +198,42 @@ class AlterTableColumnSchemaGenerator(
       true
     }
   }
+  val tableSchema = tableInfo.getFactTable
+  val tableCols = tableSchema.getListOfColumns.asScala
+  val existingColsSize = tableCols.size
+
+  def getAllChildren(fieldChildren: Option[List[Field]]): Seq[ColumnSchema] = {
+    var allColumns: Seq[ColumnSchema] = Seq[ColumnSchema]()
+    fieldChildren.foreach(fields => {
+      fields.foreach(field => {
+        val encoders = new java.util.ArrayList[Encoding]()
+        encoders.add(Encoding.DICTIONARY)
+        val columnSchema: ColumnSchema = getColumnSchema(
+          DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
+          field.name.getOrElse(field.column),
+          isCol = true,
+          encoders,
+          isDimensionCol = true,
+          -1,
+          field.precision,
+          field.scale,
+          field.schemaOrdinal + existingColsSize, isSortColumn(field.column))
+        allColumns ++= Seq(columnSchema)
+        if (field.children.get != null) {
+          columnSchema.setNumberOfChild(field.children.get.size)
+          allColumns ++= getAllChildren(field.children)
+        }
+      })
+    })
+    allColumns
+  }
+
   def process: Seq[ColumnSchema] = {
-    val tableSchema = tableInfo.getFactTable
-    val tableCols = tableSchema.getListOfColumns.asScala
-    val existingColsSize = tableCols.size
     var allColumns = tableCols.filter(x => x.isDimensionColumn)
     var newCols = Seq[ColumnSchema]()
 
-    alterTableModel.dimCols.foreach(field => {
-      val encoders = new java.util.ArrayList[Encoding]()
-      encoders.add(Encoding.DICTIONARY)
-      val columnSchema: ColumnSchema = getColumnSchema(
-        DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
-        field.name.getOrElse(field.column),
-        isCol = true,
-        encoders,
-        isDimensionCol = true,
-        -1,
-        field.precision,
-        field.scale,
-        field.schemaOrdinal + existingColsSize,
-        isSortColumn(field.name.getOrElse(field.column)))
-      allColumns ++= Seq(columnSchema)
-      newCols ++= Seq(columnSchema)
-    })
+    newCols ++= getAllChildren(Some(alterTableModel.dimCols.toList))
+    allColumns ++= newCols
 
     allColumns ++= tableCols.filter(x => !x.isDimensionColumn)
     alterTableModel.msrCols.foreach(field => {
@@ -276,7 +289,7 @@ class AlterTableColumnSchemaGenerator(
         if (elem._1.toLowerCase.startsWith(defaultValueString)) {
           if (col.getColumnName.equalsIgnoreCase(elem._1.substring(defaultValueString.length))) {
             rawData = elem._2
-            val data = DataTypeUtil.convertDataToBytesBasedOnDataType(elem._2, col)
+            val data = DataTypeUtil.convertDataToBytesBasedOnDataType(rawData, col)
             if (null != data) {
               col.setDefaultValue(data)
             } else {

@@ -521,6 +521,81 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_decimal_filter")
   }
 
+  test("test to check add struct column") {
+    sql("drop table if exists struct_table")
+    sql("create table struct_table(name string) stored by 'carbondata'")
+    sql("insert into struct_table select 'aaa'")
+    sql("alter table struct_table add columns(newField struct<f:string,l:string>) TBLPROPERTIES('default.value.newField.f'='bbb','default.value.newField.l'='ccc')")
+    sql("insert into struct_table select 'ddd','eee$fff'")
+    checkAnswer(sql("SELECT name,newField.f,newField.l FROM struct_table"),
+      Seq(Row("aaa","bbb","ccc"),
+        Row("ddd","eee","fff")))
+    sql("drop table if exists struct_table")
+  }
+
+  test("test to check add struct column - two level") {
+    sql("drop table if exists struct_table1")
+    sql("create table struct_table1(name string) stored by 'carbondata'")
+    sql("insert into struct_table1 select 'aaa'")
+    sql("alter table struct_table1 add columns(newField struct<f:string,l: struct<a:string,b:string>>) TBLPROPERTIES('default.value.newField.f'='bbb','default.value.newField.l.a'='ccc','default.value.newField.l.b'='ddd')")
+    sql("insert into struct_table1 select 'eee','fff$ggg:hhh'")
+    checkAnswer(sql("SELECT name,newField.f,newField.l.a,newField.l.b FROM struct_table1"),
+      Seq(Row("aaa","bbb","ccc","ddd"),
+        Row("eee","fff","ggg","hhh")))
+    sql("drop table if exists struct_table1")
+  }
+
+  test("test to check drop struct column") {
+    sql("drop table if exists struct_table2")
+    sql("create table struct_table2(name string) stored by 'carbondata'")
+    sql("insert into struct_table2 select 'aaa'")
+    sql("alter table struct_table2 add columns(newField struct<f:string,l:string>) TBLPROPERTIES('default.value.newField.f'='bbb','default.value.newField.l'='ccc')")
+    sql("insert into struct_table2 select 'ddd','eee$fff'")
+    sql("alter table struct_table2 drop columns(newField)")
+    checkAnswer(sql("SELECT * FROM struct_table2"),
+      Seq(Row("aaa"),
+        Row("ddd")))
+    sql("drop table if exists struct_table2")
+  }
+
+  test("test to check drop struct column - two level") {
+    sql("drop table if exists struct_table3")
+    sql("create table struct_table3(name string) stored by 'carbondata'")
+    sql("insert into struct_table3 select 'aaa'")
+    sql("alter table struct_table3 add columns(newField struct<f:string,l: struct<a:string,b:string>>) TBLPROPERTIES('default.value.newField.f'='bbb','default.value.newField.l.a'='ccc','default.value.newField.l.b'='ddd')")
+    sql("insert into struct_table3 select 'eee','fff$ggg:hhh'")
+    sql("alter table struct_table3 drop columns(newField)")
+    checkAnswer(sql("SELECT * FROM struct_table3"),
+      Seq(Row("aaa"),
+        Row("eee")))
+    sql("drop table if exists struct_table3")
+  }
+
+  test("test to check add array column") {
+    sql("drop table if exists array_table")
+    sql("create table array_table(name string) stored by 'carbondata'")
+    sql("insert into array_table select 'aaa'")
+    sql("alter table array_table add columns(newField array<string>)")
+    sql("insert into array_table select 'ddd','eee$fff'")
+    checkAnswer(sql("SELECT name,newField[0] FROM array_table"),
+      Seq(Row("aaa",null),
+        Row("ddd","eee")))
+    sql("drop table if exists array_table")
+  }
+
+  test("test to check drop array column") {
+    sql("drop table if exists array_table1")
+    sql("create table array_table1(name string) stored by 'carbondata'")
+    sql("insert into array_table1 select 'aaa'")
+    sql("alter table array_table1 add columns(newField array<string>)")
+    sql("insert into array_table1 select 'ddd','eee$fff'")
+    sql("alter table array_table1 drop columns(newField)")
+    checkAnswer(sql("SELECT * FROM array_table1"),
+      Seq(Row("aaa"),
+        Row("ddd")))
+    sql("drop table if exists array_table1")
+  }
+
   test("test add column with date") {
     sqlContext.setConf("carbon.enable.vector.reader", "true")
     sql("DROP TABLE IF EXISTS carbon_table")

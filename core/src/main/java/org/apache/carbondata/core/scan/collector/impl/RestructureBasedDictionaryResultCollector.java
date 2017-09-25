@@ -20,11 +20,17 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.util.RestructureUtil;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
+import org.apache.carbondata.core.util.DataTypeUtil;
+
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
+import org.apache.spark.sql.catalyst.util.GenericArrayData;
 
 /**
  * class for handling restructure scenarios for filling result
@@ -82,7 +88,21 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
         for (int i = 0; i < queryDimensions.length; i++) {
           // fill default value in case the dimension does not exist in the current block
           if (!dimensionInfo.getDimensionExists()[i]) {
-            if (dictionaryEncodingArray[i] || directDictionaryEncodingArray[i]) {
+            if (queryDimensions[i].getDimension().isComplex()) {
+              switch (queryDimensions[i].getDimension().getDataType()) {
+                case STRUCT:
+                  row[order[i]] = fillStructDefaultValue(queryDimensions[i].getDimension());
+                  dictionaryColumnIndex++;
+                  break;
+                case ARRAY:
+                  row[order[i]] = fillArrayDefaultValue(queryDimensions[i].getDimension());
+                  dictionaryColumnIndex++;
+                  break;
+                default:
+                  row[order[i]] = dimensionInfo.getDefaultValues()[i];
+                  dictionaryColumnIndex++;
+              }
+            } else if (dictionaryEncodingArray[i] || directDictionaryEncodingArray[i]) {
               row[order[i]] = dimensionInfo.getDefaultValues()[i];
               dictionaryColumnIndex++;
             } else {
@@ -104,6 +124,30 @@ public class RestructureBasedDictionaryResultCollector extends DictionaryBasedRe
       rowCounter++;
     }
     return listBasedResult;
+  }
+
+  private GenericInternalRow fillStructDefaultValue(CarbonDimension dimension) {
+    int childLength = dimension.getNumberOfChild();
+    List<CarbonDimension> children = dimension.getListOfChildDimensions();
+    Object[] fields = new Object[childLength];
+    for (int j = 0; j < childLength; j++) {
+      if (children.get(j).getNumberOfChild() == 0
+          && children.get(j).getDataType() != DataType.ARRAY) {
+        fields[j] =
+            DataTypeUtil.getDataBasedOnDataType(children.get(j).getDefaultValue(), children.get(j));
+      } else if (children.get(j).getDataType() == DataType.ARRAY) {
+        fields[j] = fillArrayDefaultValue(children.get(j));
+      } else {
+        fields[j] = fillStructDefaultValue(children.get(j));
+      }
+    }
+    return new GenericInternalRow(fields);
+  }
+
+  private GenericArrayData fillArrayDefaultValue(CarbonDimension dimension) {
+    int childLength = dimension.getNumberOfChild();
+    Object[] fields = new Object[childLength];
+    return new GenericArrayData(fields);
   }
 
   protected void fillMeasureData(Object[] msrValues, int offset,

@@ -334,12 +334,6 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (ADD ~> COLUMNS ~> "(" ~> repsep(anyFieldDef, ",") <~ ")") ~
     (TBLPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
       case dbName ~ table ~ fields ~ tblProp =>
-        fields.foreach{ f =>
-          if (isComplexDimDictionaryExclude(f.dataType.get)) {
-            throw new MalformedCarbonCommandException(
-              s"Add column is unsupported for complex datatype column: ${f.column}")
-          }
-        }
         val tableProps = if (tblProp.isDefined) {
           tblProp.get.groupBy(_._1.toLowerCase).foreach(f =>
             if (f._2.size > 1) {
@@ -364,14 +358,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
               throw new MalformedCarbonCommandException(
                 s"Unsupported Table property in add column: ${ f._1 }")
             } else if (f._1.toLowerCase.startsWith("default.value.")) {
-              if (fields.count(field => checkFieldDefaultValue(field.column,
-                f._1.toLowerCase)) == 1) {
-                 f._1 -> f._2
-            } else {
-                 throw new MalformedCarbonCommandException(
-                   s"Default.value property does not matches with the columns in ALTER command. " +
-                     s"Column name in property is: ${ f._1}")
-               }
+              f._1 -> f._2
             } else {
               f._1 -> f._2.toLowerCase
             })
