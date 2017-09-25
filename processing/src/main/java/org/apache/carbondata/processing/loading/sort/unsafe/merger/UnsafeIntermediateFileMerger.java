@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 import java.util.AbstractQueue;
 import java.util.Arrays;
 import java.util.PriorityQueue;
+import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -40,7 +41,7 @@ import org.apache.carbondata.processing.sort.sortdata.SortParameters;
 import org.apache.carbondata.processing.sort.sortdata.TempSortFileWriter;
 import org.apache.carbondata.processing.sort.sortdata.TempSortFileWriterFactory;
 
-public class UnsafeIntermediateFileMerger implements Runnable {
+public class UnsafeIntermediateFileMerger implements Callable<Void> {
   /**
    * LOGGER
    */
@@ -84,6 +85,8 @@ public class UnsafeIntermediateFileMerger implements Runnable {
 
   private ByteBuffer rowData;
 
+  private Throwable throwable;
+
   /**
    * IntermediateFileMerger Constructor
    */
@@ -99,11 +102,9 @@ public class UnsafeIntermediateFileMerger implements Runnable {
     rowData = ByteBuffer.allocate(2 * 1024 * 1024);
   }
 
-  @Override
-  public void run() {
+  @Override public Void call() throws Exception {
     long intermediateMergeStartTime = System.currentTimeMillis();
     int fileConterConst = fileCounter;
-    boolean isFailed = false;
     try {
       startSorting();
       initialize();
@@ -116,24 +117,30 @@ public class UnsafeIntermediateFileMerger implements Runnable {
           + " Sort Temp Files Cost Time: " + intermediateMergeCostTime + "(s)");
     } catch (Exception e) {
       LOGGER.error(e, "Problem while intermediate merging");
-      isFailed = true;
+      clear();
+      throwable = e;
     } finally {
       CarbonUtil.closeStreams(this.stream);
       if (null != writer) {
         writer.finish();
       }
-      if (!isFailed) {
+      if (null == throwable) {
         try {
           finish();
         } catch (CarbonSortKeyAndGroupByException e) {
           LOGGER.error(e, "Problem while deleting the merge file");
+          throwable = e;
         }
       } else {
-        if (outPutFile.delete()) {
+        if (!outPutFile.delete()) {
           LOGGER.error("Problem while deleting the merge file");
         }
       }
     }
+    if (null != throwable) {
+      throw new CarbonSortKeyAndGroupByException(throwable);
+    }
+    return null;
   }
 
   /**
@@ -351,17 +358,24 @@ public class UnsafeIntermediateFileMerger implements Runnable {
   }
 
   private void finish() throws CarbonSortKeyAndGroupByException {
-    if (recordHolderHeap != null) {
-      int size = recordHolderHeap.size();
-      for (int i = 0; i < size; i++) {
-        recordHolderHeap.poll().close();
-      }
-    }
+    clear();
     try {
       CarbonUtil.deleteFiles(intermediateFiles);
       rowData.clear();
     } catch (IOException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while deleting the intermediate files");
+    }
+  }
+
+  private void clear() {
+    if (null != recordHolderHeap) {
+      SortTempChunkHolder sortTempChunkHolder;
+      while (!recordHolderHeap.isEmpty()) {
+        sortTempChunkHolder = recordHolderHeap.poll();
+        if (null != sortTempChunkHolder) {
+          sortTempChunkHolder.close();
+        }
+      }
     }
   }
 }

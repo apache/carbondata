@@ -299,8 +299,9 @@ class NewCarbonDataLoadRDD[K, V](
                 split.serializableHadoopSplit.value.getPartition.getUniqueID)
           }
           partitionID = split.serializableHadoopSplit.value.getPartition.getUniqueID
-
-          StandardLogService.setThreadName(partitionID, null)
+          StandardLogService.setThreadName(StandardLogService
+            .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
+            , ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId + "")
           CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordPartitionBlockMap(
               partitionID, split.partitionBlocksDetail.length)
           val readers =
@@ -328,7 +329,9 @@ class NewCarbonDataLoadRDD[K, V](
           } else {
             model = carbonLoadModel.getCopyWithPartition(partitionID)
           }
-          StandardLogService.setThreadName(blocksID, null)
+          StandardLogService.setThreadName(StandardLogService
+            .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
+            , ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId + "")
           val readers =
             split.nodeBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
           readers.zipWithIndex.map { case (reader, index) =>

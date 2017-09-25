@@ -36,6 +36,7 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.loading.BadRecordsLogger;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
@@ -117,7 +118,9 @@ public class RowConverterImpl implements RowConverter {
     // for one pass load, start the dictionary client
     if (configuration.getUseOnePass()) {
       if (executorService == null) {
-        executorService = Executors.newCachedThreadPool();
+        executorService = Executors.newCachedThreadPool(new CarbonThreadFactory(
+            "DictionaryClientPool:" + configuration.getTableIdentifier().getCarbonTableIdentifier()
+                .getTableName()));
       }
       Future<DictionaryClient> result = executorService.submit(new Callable<DictionaryClient>() {
         @Override

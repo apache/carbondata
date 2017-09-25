@@ -383,7 +383,9 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
    */
   public void close() {
     CarbonUtil.closeStreams(stream);
-    executorService.shutdown();
+    if (null != executorService && !executorService.isShutdown()) {
+      executorService.shutdownNow();
+    }
   }
 
   /**

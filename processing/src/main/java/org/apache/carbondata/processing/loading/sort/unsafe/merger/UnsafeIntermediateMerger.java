@@ -20,14 +20,16 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
@@ -55,20 +57,19 @@ public class UnsafeIntermediateMerger {
 
   private final Object lockObject = new Object();
 
-  private boolean offHeap;
-
   private List<File> procFiles;
+
+  private List<Future<Void>> mergerTask;
 
   public UnsafeIntermediateMerger(SortParameters parameters) {
     this.parameters = parameters;
     // processed file list
     this.rowPages = new ArrayList<UnsafeCarbonRowPage>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
     this.mergedPages = new ArrayList<>();
-    this.executorService = Executors.newFixedThreadPool(parameters.getNumberOfCores());
-    this.offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-            CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
+    this.executorService = Executors.newFixedThreadPool(parameters.getNumberOfCores(),
+        new CarbonThreadFactory("UnsafeIntermediatePool:" + parameters.getTableName()));
     this.procFiles = new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    this.mergerTask = new ArrayList<>();
   }
 
   public void addDataChunkToMerge(UnsafeCarbonRowPage rowPage) {
@@ -116,7 +117,7 @@ public class UnsafeIntermediateMerger {
             .nanoTime() + CarbonCommonConstants.MERGERD_EXTENSION);
     UnsafeIntermediateFileMerger merger =
         new UnsafeIntermediateFileMerger(parameters, intermediateFiles, file);
-    executorService.execute(merger);
+    mergerTask.add(executorService.submit(merger));
   }
 
   public void startInmemoryMergingIfPossible() throws CarbonSortKeyAndGroupByException {
@@ -167,14 +168,26 @@ public class UnsafeIntermediateMerger {
     } catch (InterruptedException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while shutdown the server ", e);
     }
+    checkForFailure();
   }
 
   public void close() {
-    if (executorService.isShutdown()) {
+    if (!executorService.isShutdown()) {
       executorService.shutdownNow();
     }
     rowPages.clear();
     rowPages = null;
+  }
+
+  private void checkForFailure() throws CarbonSortKeyAndGroupByException {
+    for (int i = 0; i < mergerTask.size(); i++) {
+      try {
+        mergerTask.get(i).get();
+      } catch (InterruptedException | ExecutionException e) {
+        LOGGER.error(e, e.getMessage());
+        throw new CarbonSortKeyAndGroupByException(e.getMessage(), e);
+      }
+    }
   }
 
   public List<UnsafeCarbonRowPage> getRowPages() {

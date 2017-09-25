@@ -24,8 +24,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.CarbonIterator;
@@ -105,6 +108,12 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
 
   private boolean[] isNoDictionarySortColumn;
 
+  private int maxThreadForSorting;
+
+  private ExecutorService executorService;
+
+  private List<Future<Void>> mergerTask;
+
   public SingleThreadFinalSortFilesMerger(String[] tempFileLocation, String tableName,
       int dimensionCount, int complexDimensionCount, int measureCount, int noDictionaryCount,
       DataType[] type, boolean[] isNoDictionaryColumn, boolean[] isNoDictionarySortColumn) {
@@ -117,6 +126,15 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     this.noDictionaryCount = noDictionaryCount;
     this.isNoDictionaryColumn = isNoDictionaryColumn;
     this.isNoDictionarySortColumn = isNoDictionarySortColumn;
+    try {
+      maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD,
+              CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE));
+    } catch (NumberFormatException e) {
+      maxThreadForSorting =
+          Integer.parseInt(CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE);
+    }
+    this.mergerTask = new ArrayList<>();
   }
 
   /**
@@ -174,6 +192,8 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
         .getFileBufferSize(this.fileCounter, CarbonProperties.getInstance(),
             CarbonCommonConstants.CONSTANT_SIZE_TEN);
 
+    LOGGER.info("Started Final Merge");
+
     LOGGER.info("Number of temp file: " + this.fileCounter);
 
     LOGGER.info("File Buffer Size: " + this.fileBufferSize);
@@ -183,51 +203,51 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
 
     // iterate over file list and create chunk holder and add to heap
     LOGGER.info("Started adding first record from each file");
-    int maxThreadForSorting = 0;
-    try {
-      maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD,
-              CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE));
-    } catch (NumberFormatException e) {
-      maxThreadForSorting =
-          Integer.parseInt(CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE);
-    }
-    ExecutorService service = Executors.newFixedThreadPool(maxThreadForSorting);
+    this.executorService = Executors.newFixedThreadPool(maxThreadForSorting);
 
     for (final File tempFile : files) {
 
-      Runnable runnable = new Runnable() {
-        @Override public void run() {
-
+      Callable<Void> callable = new Callable<Void>() {
+        @Override public Void call() throws CarbonSortKeyAndGroupByException {
             // create chunk holder
             SortTempFileChunkHolder sortTempFileChunkHolder =
                 new SortTempFileChunkHolder(tempFile, dimensionCount, complexDimensionCount,
                     measureCount, fileBufferSize, noDictionaryCount, measureDataType,
-                    isNoDictionaryColumn, isNoDictionarySortColumn);
+                    isNoDictionaryColumn, isNoDictionarySortColumn, tableName);
           try {
             // initialize
             sortTempFileChunkHolder.initialize();
             sortTempFileChunkHolder.readRow();
           } catch (CarbonSortKeyAndGroupByException ex) {
-            LOGGER.error(ex);
+            sortTempFileChunkHolder.closeStream();
+            notifyFailure(ex);
           }
-
           synchronized (LOCKOBJECT) {
             recordHolderHeapLocal.add(sortTempFileChunkHolder);
           }
+          return null;
         }
       };
-      service.execute(runnable);
+      mergerTask.add(executorService.submit(callable));
     }
-    service.shutdown();
-
+    executorService.shutdown();
     try {
-      service.awaitTermination(2, TimeUnit.HOURS);
+      executorService.awaitTermination(2, TimeUnit.HOURS);
     } catch (Exception e) {
       throw new CarbonDataWriterException(e.getMessage(), e);
     }
+    checkFailure();
+    LOGGER.info("final merger Heap Size" + this.recordHolderHeapLocal.size());
+  }
 
-    LOGGER.info("Heap Size" + this.recordHolderHeapLocal.size());
+  private void checkFailure() {
+    for (int i = 0; i < mergerTask.size(); i++) {
+      try {
+        mergerTask.get(i).get();
+      } catch (InterruptedException | ExecutionException e) {
+        throw new CarbonDataWriterException(e);
+      }
+    }
   }
 
   /**
@@ -237,6 +257,11 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   private void createRecordHolderQueue() {
     // creating record holder heap
     this.recordHolderHeapLocal = new PriorityQueue<SortTempFileChunkHolder>(fileCounter);
+  }
+
+  private synchronized void notifyFailure(Throwable throwable) {
+    close();
+    LOGGER.error(throwable);
   }
 
   /**
@@ -284,6 +309,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     try {
       poll.readRow();
     } catch (CarbonSortKeyAndGroupByException e) {
+      close();
       throw new CarbonDataWriterException(e.getMessage(), e);
     }
 
@@ -304,9 +330,18 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     return this.fileCounter > 0;
   }
 
-  public void clear() {
+  public void close() {
+    if (null != executorService && !executorService.isShutdown()) {
+      executorService.shutdownNow();
+    }
     if (null != recordHolderHeapLocal) {
-      recordHolderHeapLocal = null;
+      SortTempFileChunkHolder sortTempFileChunkHolder;
+      while (!recordHolderHeapLocal.isEmpty()) {
+        sortTempFileChunkHolder = recordHolderHeapLocal.poll();
+        if (null != sortTempFileChunkHolder) {
+          sortTempFileChunkHolder.closeStream();
+        }
+      }
     }
   }
 }

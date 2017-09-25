@@ -35,6 +35,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
@@ -102,8 +103,9 @@ public class SortDataRows {
 
     // create new sort temp directory
     CarbonDataProcessorUtil.createLocations(parameters.getTempFileLocation());
-    this.dataSorterAndWriterExecutorService =
-        Executors.newFixedThreadPool(parameters.getNumberOfCores());
+    this.dataSorterAndWriterExecutorService = Executors
+        .newFixedThreadPool(parameters.getNumberOfCores(),
+            new CarbonThreadFactory("SortDataRowPool:" + parameters.getTableName()));
     semaphore = new Semaphore(parameters.getNumberOfCores());
   }
 
@@ -128,9 +130,9 @@ public class SortDataRows {
         semaphore.acquire();
         dataSorterAndWriterExecutorService.execute(new DataSorterAndWriter(recordHolderListLocal));
       } catch (InterruptedException e) {
-        LOGGER.error(
-            "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
-        throw new CarbonSortKeyAndGroupByException(e.getMessage());
+        LOGGER.error(e,
+            "exception occurred while trying to acquire a semaphore lock: ");
+        throw new CarbonSortKeyAndGroupByException(e);
       }
       // create the new holder Array
       this.recordHolderList = new Object[this.sortBufferSize][];
@@ -379,12 +381,19 @@ public class SortDataRows {
      * @throws CarbonSortKeyAndGroupByException
      */
     public void notifyFailed(Throwable exception) throws CarbonSortKeyAndGroupByException {
-      dataSorterAndWriterExecutorService.shutdownNow();
-      intermediateFileMerger.close();
+      close();
       parameters.getObserver().setFailed(true);
       LOGGER.error(exception);
       throw new CarbonSortKeyAndGroupByException(exception);
     }
+  }
+
+  public void close() {
+    if (null != dataSorterAndWriterExecutorService && !dataSorterAndWriterExecutorService
+        .isShutdown()) {
+      dataSorterAndWriterExecutorService.shutdownNow();
+    }
+    intermediateFileMerger.close();
   }
 
   /**

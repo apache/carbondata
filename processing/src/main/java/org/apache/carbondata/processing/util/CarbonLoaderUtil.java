@@ -67,6 +67,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -216,7 +217,8 @@ public final class CarbonLoaderUtil {
       throw new RuntimeException("Store location not set for the key " + tempLocationKey);
     }
     // submit local folder clean up in another thread so that main thread execution is not blocked
-    ExecutorService localFolderDeletionService = Executors.newFixedThreadPool(1);
+    ExecutorService localFolderDeletionService = Executors
+        .newFixedThreadPool(1, new CarbonThreadFactory("LocalFolderDeletionPool:" + tableName));
     try {
       localFolderDeletionService.submit(new Callable<Void>() {
         @Override public Void call() throws Exception {
