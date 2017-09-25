@@ -189,6 +189,14 @@ class AlterTableColumnSchemaGenerator(
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
+  def isSortColumn(columnName: String): Boolean = {
+    val sortColumns = alterTableModel.tableProperties.get("sort_columns")
+    if(sortColumns.isDefined) {
+      sortColumns.get.contains(columnName)
+    } else {
+      true
+    }
+  }
   def process: Seq[ColumnSchema] = {
     val tableSchema = tableInfo.getFactTable
     val tableCols = tableSchema.getListOfColumns.asScala
@@ -208,7 +216,8 @@ class AlterTableColumnSchemaGenerator(
         -1,
         field.precision,
         field.scale,
-        field.schemaOrdinal + existingColsSize)
+        field.schemaOrdinal + existingColsSize,
+        isSortColumn(field.name.getOrElse(field.column)))
       allColumns ++= Seq(columnSchema)
       newCols ++= Seq(columnSchema)
     })
@@ -225,7 +234,8 @@ class AlterTableColumnSchemaGenerator(
         -1,
         field.precision,
         field.scale,
-        field.schemaOrdinal + existingColsSize)
+        field.schemaOrdinal + existingColsSize,
+        false)
       allColumns ++= Seq(columnSchema)
       newCols ++= Seq(columnSchema)
     })
@@ -291,7 +301,8 @@ class AlterTableColumnSchemaGenerator(
 
   private def getColumnSchema(dataType: DataType, colName: String, isCol: Boolean,
       encoders: java.util.List[Encoding], isDimensionCol: Boolean,
-      colGroup: Integer, precision: Integer, scale: Integer, schemaOrdinal: Int): ColumnSchema = {
+      colGroup: Integer, precision: Integer, scale: Integer, schemaOrdinal: Int,
+      isSortColumn: Boolean): ColumnSchema = {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
@@ -319,6 +330,7 @@ class AlterTableColumnSchemaGenerator(
     columnSchema.setScale(scale)
     columnSchema.setSchemaOrdinal(schemaOrdinal)
     columnSchema.setUseInvertedIndex(isDimensionCol)
+    columnSchema.setSortColumn(isSortColumn)
     columnSchema
   }
 }
