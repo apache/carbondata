@@ -48,6 +48,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
@@ -238,11 +239,13 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
 
     blockletProcessingCount = new AtomicInteger(0);
-    producerExecutorService = Executors.newFixedThreadPool(numberOfCores);
+    producerExecutorService = Executors.newFixedThreadPool(numberOfCores,
+        new CarbonThreadFactory("ProducerPool:" + model.getTableName()));
     producerExecutorServiceTaskList =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     LOGGER.info("Initializing writer executors");
-    consumerExecutorService = Executors.newFixedThreadPool(1);
+    consumerExecutorService = Executors
+        .newFixedThreadPool(1, new CarbonThreadFactory("ConsumerPool:" + model.getTableName()));
     consumerExecutorServiceTaskList = new ArrayList<>(1);
     semaphore = new Semaphore(numberOfCores);
     tablePageList = new TablePageList();
@@ -357,12 +360,20 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   public void finish() throws CarbonDataWriterException {
     // still some data is present in stores if entryCount is more
     // than 0
+    if (null == dataWriter) {
+      return;
+    }
+    if (producerExecutorService.isShutdown()) {
+      return;
+    }
+    LOGGER.info("Started Finish Operation");
     try {
       semaphore.acquire();
       producerExecutorServiceTaskList.add(producerExecutorService
           .submit(new Producer(tablePageList, dataRows, ++writerTaskSequenceCounter, true)));
       blockletProcessingCount.incrementAndGet();
       processedDataCount += entryCount;
+      LOGGER.info("Total Number Of records added to store: " + processedDataCount);
       closeWriterExecutionService(producerExecutorService);
       processWriteTaskSubmitList(producerExecutorServiceTaskList);
       processingComplete = true;
@@ -666,6 +677,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       return tablePage;
     }
 
+    /**
+     * @param tablePage
+     * @param index
+     */
     public synchronized void put(TablePage tablePage, int index) {
       tablePages[index] = tablePage;
       // notify the consumer thread when index at which object is to be inserted

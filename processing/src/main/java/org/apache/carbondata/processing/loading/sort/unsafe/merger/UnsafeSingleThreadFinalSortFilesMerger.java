@@ -97,6 +97,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
         LOGGER.info("No files to merge sort");
         return;
       }
+      LOGGER.info("Starting final merger");
       LOGGER.info("Number of row pages: " + this.fileCounter);
 
       // create record holder heap
@@ -143,7 +144,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
       LOGGER.info("Heap Size" + this.recordHolderHeapLocal.size());
     } catch (Exception e) {
       LOGGER.error(e);
-      throw new CarbonDataWriterException(e.getMessage());
+      throw new CarbonDataWriterException(e);
     }
   }
 

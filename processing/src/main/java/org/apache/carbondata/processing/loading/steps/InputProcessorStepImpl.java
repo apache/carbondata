@@ -30,6 +30,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
@@ -64,7 +65,9 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
   @Override public void initialize() throws IOException {
     super.initialize();
     rowParser = new RowParserImpl(getOutput(), configuration);
-    executorService = Executors.newCachedThreadPool();
+    executorService = Executors.newCachedThreadPool(new CarbonThreadFactory(
+        "InputProcessorPool:" + configuration.getTableIdentifier().getCarbonTableIdentifier()
+            .getTableName()));
   }
 
   @Override public Iterator<CarbonRowBatch>[] execute() {
