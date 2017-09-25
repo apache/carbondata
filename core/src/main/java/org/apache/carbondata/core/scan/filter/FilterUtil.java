@@ -1066,12 +1066,16 @@ public final class FilterUtil {
         continue;
       }
       int keyOrdinalOfDimensionFromCurrentBlock = dimensionFromCurrentBlock.getKeyOrdinal();
+      int endFilterValue = 0;
       for (ColumnFilterInfo info : values) {
         if (keyOrdinalOfDimensionFromCurrentBlock < endKey.length) {
-          if (endKey[keyOrdinalOfDimensionFromCurrentBlock] > info.getFilterList()
-              .get(info.getFilterList().size() - 1)) {
-            endKey[keyOrdinalOfDimensionFromCurrentBlock] =
-                info.getFilterList().get(info.getFilterList().size() - 1);
+          endFilterValue = info.getFilterList().get(info.getFilterList().size() - 1);
+          if (endFilterValue == 0) {
+            endFilterValue =
+                segmentProperties.getDimColumnsCardinality()[keyOrdinalOfDimensionFromCurrentBlock];
+          }
+          if (endKey[keyOrdinalOfDimensionFromCurrentBlock] > endFilterValue) {
+            endKey[keyOrdinalOfDimensionFromCurrentBlock] = endFilterValue;
           }
         }
       }
