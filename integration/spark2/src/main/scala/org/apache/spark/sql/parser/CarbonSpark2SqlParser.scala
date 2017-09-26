@@ -253,7 +253,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           validateOptions(optionsList)
         }
         val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
-        LoadTable(convertDbNameToLowerCase(databaseNameOp), tableName, filePath, Seq(), optionsMap,
+        LoadTable(TableIdentifier(tableName, databaseNameOp), filePath, Seq(), optionsMap,
           isOverwrite.isDefined)
     }
 

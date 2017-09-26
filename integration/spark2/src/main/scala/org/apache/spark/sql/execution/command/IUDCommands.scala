@@ -837,11 +837,10 @@ object UpdateExecution {
     val header = getHeader(carbonRelation, plan)
 
     LoadTable(
-      Some(carbonRelation.identifier.getCarbonTableIdentifier.getDatabaseName),
+      TableIdentifier(carbonRelation.tableName, Some(carbonRelation.databaseName)),
       carbonRelation.identifier.getCarbonTableIdentifier.getTableName,
-      null,
       Seq(),
-      Map(("fileheader" -> header)),
+      Map("fileheader" -> header),
       false,
       null,
       Some(dataFrame),

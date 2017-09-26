@@ -24,10 +24,10 @@ import scala.collection.{immutable, mutable}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.LoadTable
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * load data api
@@ -61,7 +61,11 @@ object TableLoader {
 
   def loadTable(spark: SparkSession, dbName: Option[String], tableName: String, inputPaths: String,
       options: scala.collection.immutable.Map[String, String]): Unit = {
-    LoadTable(dbName, tableName, inputPaths, Nil, options, false).run(spark)
+    LoadTable(TableIdentifier(tableName, dbName),
+      inputPaths,
+      Nil,
+      options,
+      isOverwriteTable = false).run(spark)
   }
 
   def main(args: Array[String]): Unit = {

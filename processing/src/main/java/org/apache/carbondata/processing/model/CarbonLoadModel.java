@@ -39,6 +39,8 @@ public class CarbonLoadModel implements Serializable {
 
   private String partitionId;
 
+  private String metaDataDirectoryPath;
+
   private CarbonDataLoadSchema carbonDataLoadSchema;
 
   private boolean aggLoadRequest;
@@ -760,5 +762,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setBadRecordsLocation(String badRecordsLocation) {
     this.badRecordsLocation = badRecordsLocation;
+  }
+
+  public String getMetaDataDirectoryPath() {
+    return metaDataDirectoryPath;
+  }
+
+  public void setMetaDataDirectoryPath(String metaDataDirectoryPath) {
+    this.metaDataDirectoryPath = metaDataDirectoryPath;
   }
 }

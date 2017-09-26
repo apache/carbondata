@@ -36,7 +36,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case LoadDataCommand(identifier, path, isLocal, isOverwrite, partition)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(identifier)(sparkSession) =>
-        ExecutedCommandExec(LoadTable(identifier.database, identifier.table.toLowerCase, path,
+        ExecutedCommandExec(LoadTable(identifier, path,
           Seq(), Map(), isOverwrite)) :: Nil
       case alter@AlterTableRenameCommand(oldTableIdentifier, newTableIdentifier, _) =>
         val dbOption = oldTableIdentifier.database.map(_.toLowerCase)
