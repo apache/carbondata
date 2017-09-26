@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.integration.spark.testsuite.complexType
 
+import java.io.File
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -37,6 +39,7 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists structusingarrayhive")
     sql("drop table if exists complexcarbonwithspecialchardelimeter")
     sql("drop table if exists complexhivewithspecialchardelimeter")
+    sql("drop table if exists structinstruct")
     sql(
       "create table complexcarbontable(deviceInformationId int, channelsId string, ROMSize " +
       "string, ROMName String, purchasedate string, mobile struct<imei:string, imsi:string>, MAC " +
@@ -99,6 +102,12 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
       "terminated by ',' collection items terminated by '$' map keys terminated by '&'")
     sql("LOAD DATA local INPATH '" + resourcesPath +
         "/structusingstruct.csv' INTO table structusingstructhive")
+    sql(
+      ("create table structinstruct(id int, structelem struct<id1:int, structelem: struct<id2:int, name:string>>) " +
+       "stored by 'carbondata'").stripMargin)
+    sql(s"load data local inpath '"+ resourcesPath +"/structinstructnull.csv' into table structinstruct " +
+        "options('delimiter'=',' , 'fileheader'='id,structelem','COMPLEX_DELIMITER_LEVEL_1'='#', 'COMPLEX_DELIMITER_LEVEL_2'='|')")
+
 
   }
 
@@ -279,6 +288,13 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
         "mobile,channelsId order by channelsId limit 10"))
   }
 
+  test(" select * from structinstruct") {
+    checkAnswer(sql(
+      "select id,structelem.id1,structelem.structelem.id2,structelem.structelem.name from structinstruct "),
+      Seq(Row(1,111,1001,"abc"),Row(2,222,2002,"xyz"),Row(null,333,3003,"def"),Row(4,null,4004,"pqr"),Row(5,555,null,"ghi"),
+        Row(6,666,6006,"null") ,Row(7,null,null,null)))
+  }
+
   override def afterAll {
     sql("drop table if exists complexcarbontable")
     sql("drop table if exists complexhivetable")
@@ -286,6 +302,7 @@ class TestComplexTypeQuery extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists structusingstructHive")
     sql("drop table if exists structusingarraycarbon")
     sql("drop table if exists structusingarrayhive")
+    sql("DROP TABLE IF EXISTS structinstruct")
 
   }
 }
