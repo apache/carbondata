@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.datastore.block;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -45,6 +46,9 @@ public class TaskBlockInfo {
     return taskBlockInfoMapping.keySet();
   }
 
+  public Collection<List<TableBlockInfo>> getAllTableBlockInfoList() {
+    return taskBlockInfoMapping.values();
+  }
 
   /**
    * returns TableBlockInfoList of given task

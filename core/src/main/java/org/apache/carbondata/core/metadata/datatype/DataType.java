@@ -46,8 +46,8 @@ public enum DataType {
   // size of the value of this data type, negative value means variable length
   private int sizeInBytes;
 
-  DataType(int value ,String name, int sizeInBytes) {
-    this.precedenceOrder = value;
+  DataType(int precedenceOrder, String name, int sizeInBytes) {
+    this.precedenceOrder = precedenceOrder;
     this.name = name;
     this.sizeInBytes = sizeInBytes;
   }
@@ -69,6 +69,49 @@ public enum DataType {
   }
 
   public int getSizeBits() {
+    if (this == SHORT_INT) {
+      throw new UnsupportedOperationException("Should not call this from datatype " + SHORT_INT);
+    }
     return (int) (Math.log(getSizeInBytes()) / Math.log(2));
+  }
+
+  public static DataType valueOf(int ordinal) {
+    if (ordinal == STRING.ordinal()) {
+      return STRING;
+    } else if (ordinal == DATE.ordinal()) {
+      return DATE;
+    } else if (ordinal == TIMESTAMP.ordinal()) {
+      return TIMESTAMP;
+    } else if (ordinal == BOOLEAN.ordinal()) {
+      return BOOLEAN;
+    } else if (ordinal == SHORT.ordinal()) {
+      return SHORT;
+    } else if (ordinal == INT.ordinal()) {
+      return INT;
+    } else if (ordinal == FLOAT.ordinal()) {
+      return FLOAT;
+    } else if (ordinal == LONG.ordinal()) {
+      return LONG;
+    } else if (ordinal == DOUBLE.ordinal()) {
+      return DOUBLE;
+    } else if (ordinal == NULL.ordinal()) {
+      return NULL;
+    } else if (ordinal == DECIMAL.ordinal()) {
+      return DECIMAL;
+    } else if (ordinal == ARRAY.ordinal()) {
+      return ARRAY;
+    } else if (ordinal == STRUCT.ordinal()) {
+      return STRUCT;
+    } else if (ordinal == MAP.ordinal()) {
+      return MAP;
+    } else if (ordinal == BYTE.ordinal()) {
+      return BYTE;
+    } else if (ordinal == BYTE_ARRAY.ordinal()) {
+      return BYTE_ARRAY;
+    } else if (ordinal == SHORT_INT.ordinal()) {
+      return SHORT_INT;
+    } else {
+      throw new RuntimeException("create DataType with invalid ordinal: " + ordinal);
+    }
   }
 }

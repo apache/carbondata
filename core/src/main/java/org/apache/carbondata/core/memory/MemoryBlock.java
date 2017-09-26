@@ -30,15 +30,14 @@ public class MemoryBlock extends MemoryLocation {
   private final long length;
 
   /**
-   * Optional page number; used when this MemoryBlock represents a page allocated by a
-   * TaskMemoryManager. This field is public so that it can be modified by the TaskMemoryManager,
-   * which lives in a different package.
+   * whether freed or not
    */
-  public int pageNumber = -1;
+  private boolean isFreed = false;
 
   public MemoryBlock(@Nullable Object obj, long offset, long length) {
     super(obj, offset);
     this.length = length;
+    this.isFreed = false;
   }
 
   /**
@@ -46,6 +45,14 @@ public class MemoryBlock extends MemoryLocation {
    */
   public long size() {
     return length;
+  }
+
+  public boolean isFreedStatus() {
+    return this.isFreed;
+  }
+
+  public void setFreedStatus(boolean freedStatus) {
+    this.isFreed = freedStatus;
   }
 
   /**

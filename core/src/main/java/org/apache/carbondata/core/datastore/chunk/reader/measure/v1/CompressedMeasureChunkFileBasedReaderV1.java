@@ -21,11 +21,10 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReader;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
-import org.apache.carbondata.core.datastore.page.encoding.ColumnPageCodec;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
@@ -75,15 +74,15 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
    * Method to read the blocks data based on block index
    *
    * @param fileReader file reader to read the blocks
-   * @param blockIndex block to be read
+   * @param columnIndex column to be read
    * @return measure data chunk
    */
-  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int blockIndex)
+  @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader, int columnIndex)
       throws IOException {
-    DataChunk dataChunk = measureColumnChunks.get(blockIndex);
+    DataChunk dataChunk = measureColumnChunks.get(columnIndex);
     ByteBuffer buffer = fileReader
         .readByteBuffer(filePath, dataChunk.getDataPageOffset(), dataChunk.getDataPageLength());
-    MeasureRawColumnChunk rawColumnChunk = new MeasureRawColumnChunk(blockIndex, buffer, 0,
+    MeasureRawColumnChunk rawColumnChunk = new MeasureRawColumnChunk(columnIndex, buffer, 0,
         dataChunk.getDataPageLength(), this);
     rawColumnChunk.setFileReader(fileReader);
     rawColumnChunk.setPagesCount(1);
@@ -92,22 +91,16 @@ public class CompressedMeasureChunkFileBasedReaderV1 extends AbstractMeasureChun
   }
 
   @Override
-  public MeasureColumnDataChunk convertToMeasureChunk(MeasureRawColumnChunk measureRawColumnChunk,
+  public ColumnPage convertToColumnPage(MeasureRawColumnChunk measureRawColumnChunk,
       int pageNumber) throws IOException, MemoryException {
-    int blockIndex = measureRawColumnChunk.getBlockletId();
+    int blockIndex = measureRawColumnChunk.getColumnIndex();
     DataChunk dataChunk = measureColumnChunks.get(blockIndex);
     ValueEncoderMeta meta = dataChunk.getValueEncoderMeta().get(0);
-
-    ColumnPageCodec codec = strategy.createCodec(meta);
-    ColumnPage page = codec.decode(measureRawColumnChunk.getRawData().array(),
+    ColumnPageDecoder codec = encodingFactory.createDecoderLegacy(meta);
+    ColumnPage decodedPage = codec.decode(measureRawColumnChunk.getRawData().array(),
         measureRawColumnChunk.getOffSet(), dataChunk.getDataPageLength());
+    decodedPage.setNullBits(dataChunk.getNullValueIndexForColumn());
 
-    // create and set the data chunk
-    MeasureColumnDataChunk decodedChunk = new MeasureColumnDataChunk();
-    decodedChunk.setColumnPage(page);
-    // set the enun value indexes
-    decodedChunk
-        .setNullValueIndexHolder(dataChunk.getNullValueIndexForColumn());
-    return decodedChunk;
+    return decodedPage;
   }
 }

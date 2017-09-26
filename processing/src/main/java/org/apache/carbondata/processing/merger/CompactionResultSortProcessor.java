@@ -100,7 +100,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   /**
    * temp store location to be sued during data load
    */
-  private String tempStoreLocation;
+  private String[] tempStoreLocation;
   /**
    * table name
    */
@@ -178,10 +178,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void deleteTempStoreLocation() {
     if (null != tempStoreLocation) {
-      try {
-        CarbonUtil.deleteFoldersAndFiles(new File[] { new File(tempStoreLocation) });
-      } catch (IOException | InterruptedException e) {
-        LOGGER.error("Problem deleting local folders during compaction: " + e.getMessage());
+      for (String tempLoc : tempStoreLocation) {
+        try {
+          CarbonUtil.deleteFoldersAndFiles(new File(tempLoc));
+        } catch (IOException | InterruptedException e) {
+          LOGGER.error("Problem deleting local folders during compaction: " + e.getMessage());
+        }
       }
     }
   }
@@ -358,8 +360,6 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * sort temp files
    */
   private void initializeFinalThreadMergerForMergeSort() {
-    String sortTempFileLocation = tempStoreLocation + CarbonCommonConstants.FILE_SEPARATOR
-        + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
     boolean[] noDictionarySortColumnMapping = null;
     if (noDictionaryColMapping.length == this.segmentProperties.getNumberOfSortColumns()) {
       noDictionarySortColumnMapping = noDictionaryColMapping;
@@ -368,6 +368,9 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       System.arraycopy(noDictionaryColMapping, 0,
           noDictionarySortColumnMapping, 0, noDictionarySortColumnMapping.length);
     }
+
+    String[] sortTempFileLocation = CarbonDataProcessorUtil.arrayAppend(tempStoreLocation,
+        CarbonCommonConstants.FILE_SEPARATOR, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     finalMerger =
         new SingleThreadFinalSortFilesMerger(sortTempFileLocation, tableName, dimensionColumnCount,
             segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
@@ -399,7 +402,8 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private void initTempStoreLocation() {
     tempStoreLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(carbonLoadModel.getDatabaseName(), tableName,
-            carbonLoadModel.getTaskNo(), carbonLoadModel.getPartitionId(), segmentId, true);
+            carbonLoadModel.getTaskNo(), carbonLoadModel.getPartitionId(), segmentId,
+            true, false);
   }
 
   /**

@@ -20,12 +20,11 @@ package org.apache.carbondata.spark.testsuite.directdictionary
 import java.sql.Date
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.test.util.QueryTest
 
 /**
   * Test Class for detailed query on timestamp datatypes
@@ -54,7 +53,8 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
       case x: Throwable =>
         x.printStackTrace()
         CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
+        .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     }
   }
 
@@ -122,6 +122,17 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
     )
   }
 
+  test("select doj from directDictionaryTable with greater than filter with cast") {
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > date('2016-03-14')"),
+      Seq(Row(Date.valueOf("2016-04-14")))
+    )
+    checkAnswer(
+      sql("select doj from directDictionaryTable where doj > cast('2016-03-14' as date)"),
+      Seq(Row(Date.valueOf("2016-04-14")))
+    )
+  }
+
   test("select count(doj) from directDictionaryTable") {
     checkAnswer(
       sql("select count(doj) from directDictionaryTable"),
@@ -132,7 +143,8 @@ class DateDataTypeDirectDictionaryTest extends QueryTest with BeforeAndAfterAll 
   override def afterAll {
     sql("drop table directDictionaryTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
 }

@@ -144,7 +144,7 @@ public class StoreCreator {
       loadModel.setDateFormat(null);
       loadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
           CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+          CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS));
       loadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
           CarbonCommonConstants.CARBON_DATE_FORMAT,
           CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
@@ -270,7 +270,6 @@ public class StoreCreator {
             + absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
     tableInfo.setLastUpdatedTime(System.currentTimeMillis());
     tableInfo.setFactTable(tableSchema);
-    tableInfo.setAggregateTableList(new ArrayList<TableSchema>());
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
@@ -326,9 +325,13 @@ public class StoreCreator {
         .createCache(CacheType.REVERSE_DICTIONARY, absoluteTableIdentifier.getStorePath());
     for (int i = 0; i < set.length; i++) {
       ColumnIdentifier columnIdentifier = new ColumnIdentifier(dims.get(i).getColumnId(), null, null);
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+          new DictionaryColumnUniqueIdentifier(table.getCarbonTableIdentifier(), columnIdentifier,
+              columnIdentifier.getDataType(), CarbonStorePath
+              .getCarbonTablePath(table.getStorePath(), table.getCarbonTableIdentifier()));
       CarbonDictionaryWriter writer =
           new CarbonDictionaryWriterImpl(absoluteTableIdentifier.getStorePath(),
-              absoluteTableIdentifier.getCarbonTableIdentifier(), columnIdentifier);
+              absoluteTableIdentifier.getCarbonTableIdentifier(), dictionaryColumnUniqueIdentifier);
       for (String value : set[i]) {
         writer.write(value);
       }
@@ -336,7 +339,8 @@ public class StoreCreator {
       writer.commit();
       Dictionary dict = (Dictionary) dictCache.get(
           new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier(),
-        		  columnIdentifier, dims.get(i).getDataType()));
+        		  columnIdentifier, dims.get(i).getDataType(),CarbonStorePath
+              .getCarbonTablePath(table.getStorePath(), table.getCarbonTableIdentifier())));
       CarbonDictionarySortInfoPreparator preparator =
           new CarbonDictionarySortInfoPreparator();
       List<String> newDistinctValues = new ArrayList<String>();
@@ -344,7 +348,7 @@ public class StoreCreator {
           preparator.getDictionarySortInfo(newDistinctValues, dict, dims.get(i).getDataType());
       CarbonDictionarySortIndexWriter carbonDictionaryWriter =
           new CarbonDictionarySortIndexWriterImpl(
-              absoluteTableIdentifier.getCarbonTableIdentifier(), columnIdentifier,
+              absoluteTableIdentifier.getCarbonTableIdentifier(), dictionaryColumnUniqueIdentifier,
               absoluteTableIdentifier.getStorePath());
       try {
         carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex());
@@ -413,7 +417,7 @@ public class StoreCreator {
 
     CSVRecordReaderIterator readerIterator = new CSVRecordReaderIterator(recordReader, blockDetails, hadoopAttemptContext);
     new DataLoadExecutor().execute(loadModel,
-        storeLocation,
+        new String[] {storeLocation},
         new CarbonIterator[]{readerIterator});
 
     info.setDatabaseName(databaseName);
@@ -491,7 +495,7 @@ public class StoreCreator {
   }
 
   public static String readCurrentTime() {
-    SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
+    SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS);
     String date = null;
 
     date = sdf.format(new Date());

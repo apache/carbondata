@@ -40,7 +40,7 @@ public class ListPartitioner implements Partitioner {
           CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
 
   /**
-   * map the value of ListPartition to partition id.
+   * Map the value of ListPartition to partition id.
    */
   private Map<Object, Integer> map = new java.util.HashMap<Object, Integer>();
 
@@ -53,13 +53,13 @@ public class ListPartitioner implements Partitioner {
     for (int i = 0; i < numPartitions; i++) {
       for (String value : values.get(i)) {
         map.put(PartitionUtil.getDataBasedOnDataType(value, partitionColumnDataType,
-            timestampFormatter, dateFormatter), i);
+            timestampFormatter, dateFormatter), i + 1);
       }
     }
   }
 
   /**
-   * number of partitions
+   * Number of partitions
    * add extra default partition
    * @return
    */
@@ -70,7 +70,7 @@ public class ListPartitioner implements Partitioner {
   @Override public int getPartition(Object key) {
     Integer partition = map.get(key);
     if (partition == null) {
-      return numPartitions;
+      return 0;
     }
     return partition;
   }

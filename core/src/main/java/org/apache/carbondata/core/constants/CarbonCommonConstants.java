@@ -71,10 +71,6 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String SORT_SIZE = "carbon.sort.size";
   /**
-   * default location of the carbon member, hierarchy and fact files
-   */
-  public static final String STORE_LOCATION_DEFAULT_VAL = "../carbon.store";
-  /**
    * CARDINALITY_INCREMENT_DEFAULT_VALUE
    */
   public static final int CARDINALITY_INCREMENT_VALUE_DEFAULT_VAL = 10;
@@ -143,6 +139,11 @@ public final class CarbonCommonConstants {
    * VIEWFSURL_PREFIX
    */
   public static final String VIEWFSURL_PREFIX = "viewfs://";
+
+  /**
+   * ALLUXIO_PREFIX
+   */
+  public static final String ALLUXIOURL_PREFIX = "alluxio://";
   /**
    * FS_DEFAULT_FS
    */
@@ -175,14 +176,26 @@ public final class CarbonCommonConstants {
   public static final String MEMBER_DEFAULT_VAL = "@NU#LL$!";
 
   /**
+   * default charset to be used for reading and writing
+   */
+  public static final String DEFAULT_CHARSET = "UTF-8";
+
+  /**
    * MEMBER_DEFAULT_VAL_ARRAY
    */
-  public static final byte[] MEMBER_DEFAULT_VAL_ARRAY = MEMBER_DEFAULT_VAL.getBytes();
+  public static final byte[] MEMBER_DEFAULT_VAL_ARRAY =
+      MEMBER_DEFAULT_VAL.getBytes(Charset.forName(DEFAULT_CHARSET));
 
   /**
    * Bytes for string 0, it is used in codegen in case of null values.
    */
-  public static final byte[] ZERO_BYTE_ARRAY = "0".getBytes();
+  public static final byte[] ZERO_BYTE_ARRAY = "0".getBytes(Charset.forName(DEFAULT_CHARSET));
+
+  /**
+   * Empty byte array
+   */
+  public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
   /**
    * FILE STATUS IN-PROGRESS
    */
@@ -303,6 +316,10 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String NUM_CORES_COMPACTING = "carbon.number.of.cores.while.compacting";
   /**
+   * Number of cores to be used while alter partition
+   */
+  public static final String NUM_CORES_ALT_PARTITION = "carbon.number.of.cores.while.altPartition";
+  /**
    * Number of cores to be used for block sort
    */
   @CarbonProperty
@@ -328,6 +345,15 @@ public final class CarbonCommonConstants {
    * CSV_READ_BUFFER_SIZE
    */
   public static final String CSV_READ_BUFFER_SIZE_DEFAULT = "50000";
+  /**
+   * min value for csv read buffer size
+   */
+  public static final int CSV_READ_BUFFER_SIZE_MIN = 10240; //10 kb
+  /**
+   * max value for csv read buffer size
+   */
+  public static final int CSV_READ_BUFFER_SIZE_MAX = 10485760; // 10 mb
+
   /**
    * CSV_READ_COPIES
    */
@@ -523,6 +549,10 @@ public final class CarbonCommonConstants {
    */
   public static final String UNDERSCORE = "_";
   /**
+   * DASH
+   */
+  public static final String DASH = "-";
+  /**
    * POINT
    */
   public static final String POINT = ".";
@@ -640,6 +670,7 @@ public final class CarbonCommonConstants {
   public static final String DEFAULT_INVISIBLE_DUMMY_MEASURE = "default_dummy_measure";
   public static final String CARBON_IMPLICIT_COLUMN_POSITIONID = "positionId";
   public static final String CARBON_IMPLICIT_COLUMN_TUPLEID = "tupleId";
+  public static final String CARBON_IMPLICIT_COLUMN_SEGMENTID = "segId";
   /**
    * max driver lru cache size upto which lru cache will be loaded in memory
    */
@@ -677,12 +708,10 @@ public final class CarbonCommonConstants {
    * BIG_DECIMAL_MEASURE
    */
   public static final char BIG_DECIMAL_MEASURE = 'b';
-
   /**
    * BIG_INT_MEASURE
    */
   public static final char BIG_INT_MEASURE = 'd';
-
   /**
    * CARBON_PREFETCH_BUFFERSIZE
    */
@@ -760,11 +789,6 @@ public final class CarbonCommonConstants {
    * xxhash algorithm property for hashmap. Default value false
    */
   public static final String ENABLE_XXHASH_DEFAULT = "true";
-
-  /**
-   * default charset to be used for reading and writing
-   */
-  public static final String DEFAULT_CHARSET = "UTF-8";
 
   /**
    * default charset class to be used for reading and writing
@@ -870,29 +894,6 @@ public final class CarbonCommonConstants {
   public static final String NO_INVERTED_INDEX = "no_inverted_index";
 
   /**
-   * this variable is to enable/disable identify high cardinality during first data loading
-   */
-  @CarbonProperty
-  public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE = "high.cardinality.identify.enable";
-  public static final String HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT = "true";
-
-  /**
-   * threshold of high cardinality
-   */
-  @CarbonProperty
-  public static final String HIGH_CARDINALITY_THRESHOLD = "high.cardinality.threshold";
-  public static final String HIGH_CARDINALITY_THRESHOLD_DEFAULT = "1000000";
-  public static final int HIGH_CARDINALITY_THRESHOLD_MIN = 10000;
-
-  /**
-   * percentage of cardinality in row count
-   */
-  @CarbonProperty
-  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE =
-      "high.cardinality.row.count.percentage";
-  public static final String HIGH_CARDINALITY_IN_ROW_COUNT_PERCENTAGE_DEFAULT = "80";
-
-  /**
    * 16 mb size
    */
   public static final long CARBON_16MB = 16 * 1024 * 1024;
@@ -977,12 +978,17 @@ public final class CarbonCommonConstants {
   /**
    * If the level 2 compaction is done in minor then new compacted segment will end with .2
    */
-  public static String LEVEL2_COMPACTION_INDEX = ".2";
+  public static final String LEVEL2_COMPACTION_INDEX = ".2";
 
   /**
    * Indicates compaction
    */
-  public static String COMPACTION_KEY_WORD = "COMPACTION";
+  public static final String COMPACTION_KEY_WORD = "COMPACTION";
+
+  /**
+   * Indicates alter partition
+   */
+  public static String ALTER_PARTITION_KEY_WORD = "ALTER_PARTITION";
 
   /**
    * hdfs temporary directory key
@@ -999,30 +1005,30 @@ public final class CarbonCommonConstants {
   /**
    * File created in case of minor compaction request
    */
-  public static String minorCompactionRequiredFile = "compactionRequired_minor";
+  public static final String minorCompactionRequiredFile = "compactionRequired_minor";
 
   /**
    * File created in case of major compaction request
    */
-  public static String majorCompactionRequiredFile = "compactionRequired_major";
+  public static final String majorCompactionRequiredFile = "compactionRequired_major";
 
   /**
    * @Deprecated : This property has been deprecated.
    * Property for enabling system level compaction lock.1 compaction can run at once.
    */
   @CarbonProperty
-  public static String ENABLE_CONCURRENT_COMPACTION = "carbon.concurrent.compaction";
+  public static final String ENABLE_CONCURRENT_COMPACTION = "carbon.concurrent.compaction";
 
   /**
    * Default value of Property for enabling system level compaction lock.1 compaction can run
    * at once.
    */
-  public static String DEFAULT_ENABLE_CONCURRENT_COMPACTION = "true";
+  public static final String DEFAULT_ENABLE_CONCURRENT_COMPACTION = "true";
 
   /**
    * Compaction system level lock folder.
    */
-  public static String SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER = "SystemCompactionLock";
+  public static final String SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER = "SystemCompactionLock";
 
   /**
    * This batch size is used to send rows from load step to another step in batches.
@@ -1062,34 +1068,54 @@ public final class CarbonCommonConstants {
   /**
    * columns which gets updated in update will have header ends with this extension.
    */
-  public static String UPDATED_COL_EXTENSION = "-updatedColumn";
+  public static final String UPDATED_COL_EXTENSION = "-updatedColumn";
 
   /**
    * appending the key to differentiate the update flow with insert flow.
    */
-  public static String RDDUTIL_UPDATE_KEY = "UPDATE_";
+  public static final String RDDUTIL_UPDATE_KEY = "UPDATE_";
 
   /**
    * to determine to use the rdd persist or not.
    */
   @CarbonProperty
-  public static String isPersistEnabled = "carbon.update.persist.enable";
+  public static final String isPersistEnabled = "carbon.update.persist.enable";
 
   /**
    * for enabling or disabling Horizontal Compaction.
    */
   @CarbonProperty
-  public static String isHorizontalCompactionEnabled = "carbon.horizontal.compaction.enable";
+  public static final String isHorizontalCompactionEnabled = "carbon.horizontal.compaction.enable";
 
   /**
    * Default value for HorizontalCompaction is true.
    */
-  public static String defaultIsHorizontalCompactionEnabled = "true";
+  public static final String defaultIsHorizontalCompactionEnabled = "true";
 
   /**
    * by default rdd will be persisted in the update case.
    */
-  public static String defaultValueIsPersistEnabled = "true";
+  public static final String defaultValueIsPersistEnabled = "true";
+
+  /**
+   * Which storage level to persist dataset when updating data
+   * with 'carbon.update.persist.enable'='true'
+   */
+  @CarbonProperty
+  public static final String CARBON_UPDATE_STORAGE_LEVEL =
+      "carbon.update.storage.level";
+
+  /**
+   * The default value(MEMORY_AND_DISK) is the same as the default storage level of Dataset.
+   * Unlike `RDD.cache()`, the default storage level is set to be `MEMORY_AND_DISK` because
+   * recomputing the in-memory columnar representation of the underlying table is expensive.
+   *
+   * if user's executor has less memory, set the CARBON_UPDATE_STORAGE_LEVEL
+   * to MEMORY_AND_DISK_SER or other storage level to correspond to different environment.
+   * You can get more recommendations about storage level in spark website:
+   * http://spark.apache.org/docs/latest/rdd-programming-guide.html#rdd-persistence.
+   */
+  public static final String CARBON_UPDATE_STORAGE_LEVEL_DEFAULT = "MEMORY_AND_DISK";
 
   /**
    * current data file version
@@ -1103,7 +1129,7 @@ public final class CarbonCommonConstants {
   /**
    * Maximum no of column supported
    */
-  public static int DEFAULT_MAX_NUMBER_OF_COLUMNS = 20000;
+  public static final int DEFAULT_MAX_NUMBER_OF_COLUMNS = 20000;
 
   /**
    * Maximum waiting time (in seconds) for a query for requested executors to be started
@@ -1170,16 +1196,16 @@ public final class CarbonCommonConstants {
   public static final String OFFHEAP_SORT_CHUNK_SIZE_IN_MB_DEFAULT = "64";
   @CarbonProperty
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB = "sort.inmemory.size.inmb";
-
   public static final String IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT = "1024";
 
+  @CarbonProperty
+  public static final String UNSAFE_WORKING_MEMORY_IN_MB = "carbon.unsafe.working.memory.in.mb";
+  public static final String UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT = "512";
   /**
    * Sorts the data in batches and writes the batch data to store with index file.
    */
   @CarbonProperty
   public static final String LOAD_SORT_SCOPE = "carbon.load.sort.scope";
-  @CarbonProperty
-  public static final String LOAD_USE_BATCH_SORT = "carbon.load.use.batch.sort";
 
   /**
    * If set to BATCH_SORT, the sorting scope is smaller and more index tree will be created,
@@ -1286,6 +1312,75 @@ public final class CarbonCommonConstants {
   public static final String CARBON_BAD_RECORDS_ACTION = "carbon.bad.records.action";
 
   public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
+
+  public static final String ENABLE_HIVE_SCHEMA_META_STORE = "spark.carbon.hive.schema.store";
+
+  public static final String ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT = "false";
+
+  /**
+   * There is more often that in production uses different drivers for load and queries. So in case
+   * of load driver user should set this property to enable loader specific clean up.
+   */
+  public static final String DATA_MANAGEMENT_DRIVER = "spark.carbon.datamanagement.driver";
+
+  public static final String DATA_MANAGEMENT_DRIVER_DEFAULT = "false";
+
+  @CarbonProperty
+  public static final String CARBON_LEASE_RECOVERY_RETRY_COUNT =
+      "carbon.lease.recovery.retry.count";
+  @CarbonProperty
+  public static final String CARBON_LEASE_RECOVERY_RETRY_INTERVAL =
+      "carbon.lease.recovery.retry.interval";
+
+  /**
+   * whether to use multi directories when loading data,
+   * the main purpose is to avoid single-disk-hot-spot
+   */
+  @CarbonProperty
+  public static final String CARBON_USE_MULTI_TEMP_DIR = "carbon.use.multiple.temp.dir";
+
+  /**
+   * default value for multi temp dir
+   */
+  public static final String CARBON_USE_MULTI_TEMP_DIR_DEFAULT = "false";
+
+  /**
+   * Which storage level to persist rdd when sort_scope=global_sort
+   */
+  @CarbonProperty
+  public static final String CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL =
+      "carbon.global.sort.rdd.storage.level";
+
+  /**
+   * The default value(MEMORY_ONLY) is designed for executors with big memory, if user's executor
+   * has less memory, set the CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL to MEMORY_AND_DISK_SER or
+   * other storage level to correspond to different environment.
+   * You can get more recommendations about storage level in spark website:
+   * http://spark.apache.org/docs/latest/rdd-programming-guide.html#rdd-persistence.
+   */
+  public static final String CARBON_GLOBAL_SORT_RDD_STORAGE_LEVEL_DEFAULT = "MEMORY_ONLY";
+
+  /**
+   * property for configuring parallelism per segment when doing an update. Increase this
+   * value will avoid data screw problem for a large segment.
+   * Refer to CARBONDATA-1373 for more details.
+   */
+  @CarbonProperty
+  public static final String CARBON_UPDATE_SEGMENT_PARALLELISM =
+      "carbon.update.segment.parallelism";
+
+  /**
+   * In default we will not optimize the update
+   */
+  public static final String CARBON_UPDATE_SEGMENT_PARALLELISM_DEFAULT = "1";
+
+  public static final String USE_DISTRIBUTED_DATAMAP = "carbon.enable.distributed.datamap";
+
+  public static final String USE_DISTRIBUTED_DATAMAP_DEFAULT = "false";
+
+  public static final String CARBON_USE_BLOCKLET_DISTRIBUTION = "carbon.blocklet.distribution";
+
+  public static final String CARBON_USE_BLOCKLET_DISTRIBUTION_DEFAULT = "true";
 
   private CarbonCommonConstants() {
   }

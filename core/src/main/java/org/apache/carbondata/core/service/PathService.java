@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.service;
 
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -27,7 +28,9 @@ public interface PathService {
   /**
    * @param storeLocation
    * @param tableIdentifier
+   * @param dictionaryColumnUniqueIdentifier
    * @return store path related to tables
    */
-  CarbonTablePath getCarbonTablePath(String storeLocation, CarbonTableIdentifier tableIdentifier);
+  CarbonTablePath getCarbonTablePath(String storeLocation, CarbonTableIdentifier tableIdentifier,
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier);
 }

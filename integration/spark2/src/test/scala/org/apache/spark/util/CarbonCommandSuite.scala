@@ -21,14 +21,66 @@ import java.io.File
 import java.sql.Timestamp
 import java.util.Date
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.api.CarbonStore
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 
-class CarbonCommandSuite extends QueryTest with BeforeAndAfterAll {
+class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
+
+  protected def createAndLoadInputTable(inputTableName: String, inputPath: String): Unit = {
+    sql(
+      s"""
+         | CREATE TABLE $inputTableName
+         | (  shortField short,
+         |    intField int,
+         |    bigintField long,
+         |    doubleField double,
+         |    stringField string,
+         |    timestampField string,
+         |    decimalField decimal(18,2),
+         |    dateField string,
+         |    charField char(5)
+         | )
+         | ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+       """.stripMargin)
+
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '$inputPath'
+         | INTO TABLE $inputTableName
+       """.stripMargin)
+  }
+
+  protected def createAndLoadTestTable(tableName: String, inputTableName: String): Unit = {
+    sql(
+      s"""
+         | CREATE TABLE $tableName(
+         |    shortField short,
+         |    intField int,
+         |    bigintField long,
+         |    doubleField double,
+         |    stringField string,
+         |    timestampField timestamp,
+         |    decimalField decimal(18,2),
+         |    dateField date,
+         |    charField char(5)
+         | )
+         | USING org.apache.spark.sql.CarbonSource
+         | OPTIONS ('tableName' '$tableName')
+       """.stripMargin)
+    sql(
+      s"""
+         | INSERT INTO TABLE $tableName
+         | SELECT shortField, intField, bigintField, doubleField, stringField,
+         | from_unixtime(unix_timestamp(timestampField,'yyyy/M/dd')) timestampField, decimalField,
+         | cast(to_date(from_unixtime(unix_timestamp(dateField,'yyyy/M/dd'))) as date), charField
+         | FROM $inputTableName
+       """.stripMargin)
+  }
 
   override def beforeAll(): Unit = {
     dropTable("csv_table")
@@ -42,37 +94,55 @@ class CarbonCommandSuite extends QueryTest with BeforeAndAfterAll {
     dropTable("carbon_table")
   }
 
+  private lazy val location =
+    CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
   test("show segment") {
-    ShowSegments.main(Array(s"${CarbonUtil.getCarbonStorePath}", "carbon_table"))
+    ShowSegments.main(Array(s"${location}", "carbon_table"))
   }
 
   test("delete segment by id") {
-    DeleteSegmentById.main(Array(s"${CarbonUtil.getCarbonStorePath}", "carbon_table", "0"))
-    assert(!CarbonStore.isSegmentValid("default", "carbon_table", "0"))
+    DeleteSegmentById.main(Array(s"${location}", "carbon_table", "0"))
+    assert(!CarbonStore.isSegmentValid("default", "carbon_table",location,  "0"))
   }
 
   test("delete segment by date") {
     createAndLoadTestTable("carbon_table2", "csv_table")
     val time = new Timestamp(new Date().getTime)
-    DeleteSegmentByDate.main(Array(s"${CarbonUtil.getCarbonStorePath}", "carbon_table2", time.toString))
-    assert(!CarbonStore.isSegmentValid("default", "carbon_table2", "0"))
+    DeleteSegmentByDate.main(Array(s"${location}", "carbon_table2", time.toString))
+    assert(!CarbonStore.isSegmentValid("default", "carbon_table2", location, "0"))
     dropTable("carbon_table2")
   }
 
   test("clean files") {
     val table = "carbon_table3"
     createAndLoadTestTable(table, "csv_table")
-    ShowSegments.main(Array(s"${CarbonUtil.getCarbonStorePath}", table))
-    DeleteSegmentById.main(Array(s"${CarbonUtil.getCarbonStorePath}", table, "0"))
-    ShowSegments.main(Array(s"${CarbonUtil.getCarbonStorePath}", table))
-    CleanFiles.main(Array(s"${CarbonUtil.getCarbonStorePath}", table))
-    ShowSegments.main(Array(s"${CarbonUtil.getCarbonStorePath}", table))
-    val tablePath = s"${CarbonUtil.getCarbonStorePath}${File.separator}default${File.separator}$table"
+    ShowSegments.main(Array(s"${location}", table))
+    DeleteSegmentById.main(Array(s"${location}", table, "0"))
+    ShowSegments.main(Array(s"${location}", table))
+    CleanFiles.main(Array(s"${location}", table))
+    ShowSegments.main(Array(s"${location}", table))
+    val tablePath = s"${location}${File.separator}default${File.separator}$table"
     val f = new File(s"$tablePath/Fact/Part0")
     assert(f.isDirectory)
 
     // all segment folders should be deleted after CleanFiles command
     assert(f.list().length == 0)
     dropTable(table)
+  }
+
+  test("clean files with force clean option") {
+    val table = "carbon_table4"
+    dropTable(table)
+    createAndLoadTestTable(table, "csv_table")
+    CleanFiles.main(Array(s"${location}", table, "true"))
+    val tablePath = s"${location}${File.separator}default${File.separator}$table"
+    val f = new File(tablePath)
+    assert(!f.exists())
+
+    dropTable(table)
+  }
+
+  protected def dropTable(tableName: String): Unit ={
+    sql(s"DROP TABLE IF EXISTS $tableName")
   }
 }

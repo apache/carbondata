@@ -20,7 +20,7 @@ import java.io.IOException
 
 import scala.collection.mutable
 
-import org.apache.carbondata.core.cache.dictionary.Dictionary
+import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
@@ -33,7 +33,7 @@ import org.apache.carbondata.core.writer.CarbonDictionaryWriter
  * @param valuesBuffer
  * @param dictionary
  * @param carbonTableIdentifier
- * @param columnIdentifier
+ * @param dictionaryColumnUniqueIdentifier
  * @param carbonStoreLocation
  * @param columnSchema
  * @param isDictionaryFileExist
@@ -42,7 +42,7 @@ import org.apache.carbondata.core.writer.CarbonDictionaryWriter
 class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
     dictionary: Dictionary,
     carbonTableIdentifier: CarbonTableIdentifier,
-    columnIdentifier: ColumnIdentifier,
+    dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier,
     carbonStoreLocation: String,
     columnSchema: ColumnSchema,
     isDictionaryFileExist: Boolean,
@@ -59,7 +59,7 @@ class DictionaryWriterTask(valuesBuffer: mutable.HashSet[String],
     val dictService = CarbonCommonFactory.getDictionaryService
     writer = dictService.getDictionaryWriter(
       carbonTableIdentifier,
-      columnIdentifier,
+      dictionaryColumnUniqueIdentifier,
       carbonStoreLocation)
     val distinctValues: java.util.List[String] = new java.util.ArrayList()
 

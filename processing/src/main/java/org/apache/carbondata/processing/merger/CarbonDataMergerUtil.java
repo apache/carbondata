@@ -37,9 +37,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
-import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -169,8 +167,7 @@ public final class CarbonDataMergerUtil {
 
     String timestamp = "" + carbonLoadModel.getFactTimeStamp();
 
-    List<String> updatedDeltaFilesList =
-        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    List<String> updatedDeltaFilesList = null;
 
     // This routine updateLoadMetadataIUDCompactionMergeStatus is suppose to update
     // two files as it is only called during IUD_UPDDEL_DELTA_COMPACTION. Along with
@@ -206,7 +203,7 @@ public final class CarbonDataMergerUtil {
     // Update the Compacted Blocks with Compacted Status.
     try {
       updatedDeltaFilesList = segmentUpdateStatusManager
-          .getUpdateDeltaFiles(loadsToMerge.get(0).getLoadName().toString());
+          .getUpdateDeltaFiles(loadsToMerge.get(0).getLoadName());
     } catch (Exception e) {
       LOGGER.error("Error while getting the Update Delta Blocks.");
       status = false;
@@ -259,23 +256,16 @@ public final class CarbonDataMergerUtil {
             }
           }
 
-          try {
-            segmentUpdateStatusManager
-                .writeLoadDetailsIntoFile(Arrays.asList(updateLists), timestamp);
-            segmentStatusManager
-                .writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath(), loadDetails);
-            status = true;
-          } catch (IOException e) {
-            LOGGER.error(
-                "Error while writing metadata. The metadata file path is " + carbonTablePath
-                    .getMetadataDirectoryPath());
-            status = false;
-          }
+          segmentUpdateStatusManager
+              .writeLoadDetailsIntoFile(Arrays.asList(updateLists), timestamp);
+          segmentStatusManager
+              .writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath(), loadDetails);
+          status = true;
         } else {
           LOGGER.error("Not able to acquire the lock.");
           status = false;
         }
-      } catch (Exception e) {
+      } catch (IOException e) {
         LOGGER.error("Error while updating metadata. The metadata file path is " + carbonTablePath
             .getMetadataDirectoryPath());
         status = false;
@@ -403,15 +393,14 @@ public final class CarbonDataMergerUtil {
   /**
    * To identify which all segments can be merged.
    *
-   * @param storeLocation
    * @param carbonLoadModel
    * @param compactionSize
    * @return
    */
-  public static List<LoadMetadataDetails> identifySegmentsToBeMerged(String storeLocation,
+  public static List<LoadMetadataDetails> identifySegmentsToBeMerged(
       CarbonLoadModel carbonLoadModel, long compactionSize,
       List<LoadMetadataDetails> segments, CompactionType compactionType) {
-
+    String storeLocation = carbonLoadModel.getStorePath();
     List<LoadMetadataDetails> sortedSegments = new ArrayList<LoadMetadataDetails>(segments);
 
     sortSegments(sortedSegments);
@@ -456,13 +445,7 @@ public final class CarbonDataMergerUtil {
       @Override public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
         double seg1Id = Double.parseDouble(seg1.getLoadName());
         double seg2Id = Double.parseDouble(seg2.getLoadName());
-        if (seg1Id - seg2Id < 0) {
-          return -1;
-        }
-        if (seg1Id - seg2Id > 0) {
-          return 1;
-        }
-        return 0;
+        return Double.compare(seg1Id, seg2Id);
       }
     });
   }
@@ -949,10 +932,8 @@ public final class CarbonDataMergerUtil {
         for (String segName : deleteSegments) {
           List<String> tempSegments = getDeleteDeltaFilesInSeg(segName, segmentUpdateStatusManager,
               numberDeleteDeltaFilesThreshold);
-          if (tempSegments != null) {
-            for (String tempSeg : tempSegments) {
-              validSegments.add(tempSeg);
-            }
+          for (String tempSeg : tempSegments) {
+            validSegments.add(tempSeg);
           }
         }
       }
@@ -1316,64 +1297,4 @@ public final class CarbonDataMergerUtil {
     return true;
   }
 
-  /**
-   * This will update the property of segments as major compacted.
-   * @param model
-   * @param changedSegDetails
-   */
-  public static void updateMajorCompactionPropertyInSegment(CarbonLoadModel model,
-      List<LoadMetadataDetails> changedSegDetails,
-      List<LoadMetadataDetails> preservedSegment) throws Exception {
-
-    String metadataPath = model.getCarbonDataLoadSchema().getCarbonTable().getMetaDataFilepath();
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-            model.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
-    SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
-    LoadMetadataDetails[] details = segmentStatusManager.readLoadMetadata(metadataPath);
-    List<LoadMetadataDetails> originalList = Arrays.asList(details);
-    for (LoadMetadataDetails segment : changedSegDetails) {
-      if (preservedSegment.contains(segment)) {
-        continue;
-      }
-      originalList.get(originalList.indexOf(segment)).setMajorCompacted("true");
-
-    }
-
-
-    ICarbonLock carbonTableStatusLock = CarbonLockFactory.getCarbonLockObj(
-            model.getCarbonDataLoadSchema().getCarbonTable().getCarbonTableIdentifier(),
-            LockUsage.TABLE_STATUS_LOCK);
-
-    try {
-      if (carbonTableStatusLock.lockWithRetries()) {
-        LOGGER.info(
-            "Acquired lock for the table " + model.getDatabaseName() + "." + model.getTableName()
-                        + " for table status updation ");
-        CarbonTablePath carbonTablePath = CarbonStorePath
-                .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-                        absoluteTableIdentifier.getCarbonTableIdentifier());
-
-        segmentStatusManager.writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath(),
-                originalList.toArray(new LoadMetadataDetails[originalList.size()]));
-      } else {
-        LOGGER.error(
-                "Could not able to obtain lock for table" + model.getDatabaseName() + "." + model
-                        .getTableName() + "for table status updation");
-        throw new Exception("Failed to update the MajorCompactionStatus.");
-      }
-    } catch (IOException e) {
-      LOGGER.error("Error while writing metadata");
-      throw new Exception("Failed to update the MajorCompactionStatus." + e.getMessage());
-    } finally {
-      if (carbonTableStatusLock.unlock()) {
-        LOGGER.info(
-                "Table unlocked successfully after table status updation" + model.getDatabaseName()
-                        + "." + model.getTableName());
-      } else {
-        LOGGER.error("Unable to unlock Table lock for table" + model.getDatabaseName() + "." + model
-                .getTableName() + " during table status updation");
-      }
-    }
-
-  }
 }

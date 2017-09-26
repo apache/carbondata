@@ -17,8 +17,7 @@
 
 package org.apache.spark.carbondata.bucketing
 
-import org.apache.spark.sql.common.util.QueryTest
-import org.apache.spark.sql.execution.command.LoadTable
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.execution.exchange.ShuffleExchange
 import org.scalatest.BeforeAndAfterAll
 
@@ -28,7 +27,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
-class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
+class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   var threshold: Int = _
 
@@ -38,7 +37,6 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     threshold = sqlContext.getConf("spark.sql.autoBroadcastJoinThreshold").toInt
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", "-1")
-    sql("DROP TABLE IF EXISTS t3")
     sql("DROP TABLE IF EXISTS t4")
     sql("DROP TABLE IF EXISTS t5")
     sql("DROP TABLE IF EXISTS t6")
@@ -46,19 +44,14 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t8")
     sql("DROP TABLE IF EXISTS t9")
     sql("DROP TABLE IF EXISTS t10")
+    sql("DROP TABLE IF EXISTS t11")
   }
 
   test("test create table with buckets") {
-    sql(
-      """
-           CREATE TABLE t4
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
-           USING org.apache.spark.sql.CarbonSource
-           OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t4")
-      """)
-    LoadTable(Some("default"), "t4", s"$resourcesPath/source.csv", Nil,
-      Map()).run(sqlContext.sparkSession)
+    sql("CREATE TABLE t4 (ID Int, date Timestamp, country String, name String, phonetype String," +
+        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t4")
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t4")
     if (table != null && table.getBucketingInfo("t4") != null) {
       assert(true)
@@ -69,16 +62,10 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test create table with buckets unsafe") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
-    sql(
-      """
-           CREATE TABLE t10
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
-           USING org.apache.spark.sql.CarbonSource
-           OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t10")
-      """)
-    LoadTable(Some("default"), "t10", s"$resourcesPath/source.csv", Nil,
-      Map(("use_kettle", "false"))).run(sqlContext.sparkSession)
+    sql("CREATE TABLE t10 (ID Int, date Timestamp, country String, name String, phonetype String," +
+        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t10")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t10")
     if (table != null && table.getBucketingInfo("t10") != null) {
@@ -105,18 +92,33 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
     }
   }
 
-  test("test create table with no bucket join of carbon tables") {
-    sql(
-      """
-           CREATE TABLE t5
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
-           USING org.apache.spark.sql.CarbonSource
-           OPTIONS("tableName"="t5")
-      """)
-    LoadTable(Some("default"), "t5", s"$resourcesPath/source.csv", Nil,
-      Map()).run(sqlContext.sparkSession)
+  test("must unable to create table if number of buckets is 0") {
+    try{
+      sql(
+        """
+          |CREATE TABLE t11
+          |(ID Int,
+          | date Timestamp,
+          | country String,
+          | name String,
+          | phonetype String,
+          | serialname String,
+          | salary Int)
+          | STORED BY 'CARBONDATA'
+          | TBLPROPERTIES('bucketnumber'='0', 'bucketcolumns'='name')
+        """.stripMargin
+      )
+      assert(false)
+    }
+    catch {
+      case malformedCarbonCommandException: MalformedCarbonCommandException => assert(true)
+    }
+  }
 
+  test("test create table with no bucket join of carbon tables") {
+    sql("CREATE TABLE t5 (ID Int, date Timestamp, country String, name String, phonetype String," +
+        "serialname String, salary Int) STORED BY 'carbondata'")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t5")
     val plan = sql(
       """
         |select t1.*, t2.*
@@ -131,17 +133,10 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test create table with bucket join of carbon tables") {
-    sql(
-      """
-           CREATE TABLE t6
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
-           USING org.apache.spark.sql.CarbonSource
-           OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t6")
-      """)
-    LoadTable(Some("default"), "t6", s"$resourcesPath/source.csv", Nil,
-      Map()).run(sqlContext.sparkSession)
-
+    sql("CREATE TABLE t6 (ID Int, date Timestamp, country String, name String, phonetype String," +
+        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t6")
     val plan = sql(
       """
         |select t1.*, t2.*
@@ -156,16 +151,10 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test create table with bucket join of carbon table and parquet table") {
-    sql(
-      """
-           CREATE TABLE t7
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
-           USING org.apache.spark.sql.CarbonSource
-           OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t7")
-      """)
-    LoadTable(Some("default"), "t7", s"$resourcesPath/source.csv", Nil,
-      Map()).run(sqlContext.sparkSession)
+    sql("CREATE TABLE t7 (ID Int, date Timestamp, country String, name String, phonetype String," +
+        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t7")
 
     sql("DROP TABLE IF EXISTS bucketed_parquet_table")
     sql("select * from t7").write
@@ -187,16 +176,10 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test create table with bucket join of carbon table and non bucket parquet table") {
-    sql(
-      """
-           CREATE TABLE t8
-           (ID Int, date Timestamp, country String,
-           name String, phonetype String, serialname String, salary Int)
-           USING org.apache.spark.sql.CarbonSource
-           OPTIONS("bucketnumber"="4", "bucketcolumns"="name", "tableName"="t8")
-      """)
-    LoadTable(Some("default"), "t8", s"$resourcesPath/source.csv", Nil,
-      Map()).run(sqlContext.sparkSession)
+    sql("CREATE TABLE t8 (ID Int, date Timestamp, country String, name String, phonetype String," +
+        "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
+        "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
+    sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t8")
 
     sql("DROP TABLE IF EXISTS parquet_table")
     sql("select * from t8").write
@@ -231,7 +214,6 @@ class TableBucketingTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-    sql("DROP TABLE IF EXISTS t3")
     sql("DROP TABLE IF EXISTS t4")
     sql("DROP TABLE IF EXISTS t5")
     sql("DROP TABLE IF EXISTS t6")

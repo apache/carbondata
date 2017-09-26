@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.rdd
 
-import java.io.{IOException, ObjectInputStream, ObjectOutputStream}
+import java.io.{File, IOException, ObjectInputStream, ObjectOutputStream}
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
@@ -42,13 +42,13 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.csvload.BlockDetails
 import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.csvload.CSVRecordReaderIterator
 import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.processing.newflow.DataLoadExecutor
-import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException
+import org.apache.carbondata.processing.newflow.exception.NoRetryException
 import org.apache.carbondata.spark.DataLoadResult
 import org.apache.carbondata.spark.load.{CarbonLoaderUtil, FailureCauses}
 import org.apache.carbondata.spark.splits.TableSplit
@@ -120,11 +120,10 @@ class CarbonTableSplitPartition(rddId: Int, val idx: Int, @transient val tableSp
 class SparkPartitionLoader(model: CarbonLoadModel,
     splitIndex: Int,
     storePath: String,
-    loadCount: String,
     loadMetadataDetails: LoadMetadataDetails) {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  var storeLocation: String = ""
+  var storeLocation: Array[String] = Array[String]()
 
   def initialize(): Unit = {
     val carbonPropertiesFilePath = System.getProperty("carbon.properties.filepath", null)
@@ -144,22 +143,33 @@ class SparkPartitionLoader(model: CarbonLoadModel,
 
     // this property is used to determine whether temp location for carbon is inside
     // container temp dir or is yarn application directory.
-    val carbonUseLocalDir = CarbonProperties.getInstance()
-      .getProperty("carbon.use.local.dir", "false")
-    if (carbonUseLocalDir.equalsIgnoreCase("true")) {
-      val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
-      if (null != storeLocations && storeLocations.nonEmpty) {
-        storeLocation = storeLocations(Random.nextInt(storeLocations.length))
-      }
-      if (storeLocation == null) {
-        storeLocation = System.getProperty("java.io.tmpdir")
+    val isCarbonUseLocalDir = CarbonProperties.getInstance()
+      .getProperty("carbon.use.local.dir", "false").equalsIgnoreCase("true")
+
+    val isCarbonUseMultiDir = CarbonProperties.getInstance().isUseMultiTempDir
+
+    if (isCarbonUseLocalDir) {
+      val yarnStoreLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+
+      if (!isCarbonUseMultiDir && null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
+        // use single dir
+        storeLocation = storeLocation :+
+            (yarnStoreLocations(Random.nextInt(yarnStoreLocations.length)) + tmpLocationSuffix)
+        if (storeLocation == null || storeLocation.isEmpty) {
+          storeLocation = storeLocation :+
+              (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
+        }
+      } else {
+        // use all the yarn dirs
+        storeLocation = yarnStoreLocations.map(_ + tmpLocationSuffix)
       }
     } else {
-      storeLocation = System.getProperty("java.io.tmpdir")
+      storeLocation = storeLocation :+ (System.getProperty("java.io.tmpdir") + tmpLocationSuffix)
     }
-    storeLocation = storeLocation + '/' + System.nanoTime() + '/' + splitIndex
+    LOGGER.info("Temp location for loading data: " + storeLocation.mkString(","))
   }
 
+  private def tmpLocationSuffix = File.separator + System.nanoTime() + "_" + splitIndex
 }
 
 /**
@@ -169,7 +179,6 @@ class NewCarbonDataLoadRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    loadCount: Integer,
     blocksGroupBy: Array[(String, Array[BlockDetails])],
     isTableSplitPartition: Boolean)
   extends CarbonRDD[(K, V)](sc, Nil) {
@@ -228,7 +237,6 @@ class NewCarbonDataLoadRDD[K, V](
         loadMetadataDetails.setPartitionCount(partitionID)
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
 
-        carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         val preFetch = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
           .USE_PREFETCH_WHILE_LOADING, CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING_DEFAULT)
         carbonLoadModel.setPreFetch(preFetch.toBoolean)
@@ -236,15 +244,18 @@ class NewCarbonDataLoadRDD[K, V](
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
           null,
-          String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
-        new DataLoadExecutor().execute(model,
+        val executor = new DataLoadExecutor()
+        // in case of success, failure or cancelation clear memory and stop execution
+        context.addTaskCompletionListener { context => executor.close()
+          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
+        executor.execute(model,
           loader.storeLocation,
           recordReaders)
       } catch {
-        case e: BadRecordFoundException =>
+        case e: NoRetryException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
@@ -256,7 +267,7 @@ class NewCarbonDataLoadRDD[K, V](
           throw e
       } finally {
         // clean up the folders and files created locally for data load operation
-        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false)
+        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
         if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
@@ -327,7 +338,6 @@ class NewCarbonDataLoadRDD[K, V](
           }
         }
       }
-
       /**
        * generate blocks id
        *
@@ -387,9 +397,6 @@ class NewDataFrameLoaderRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    loadCount: Integer,
-    tableCreationTime: Long,
-    schemaLastUpdatedTime: Long,
     prev: DataLoadCoalescedRDD[Row]) extends CarbonRDD[(K, V)](prev) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
@@ -407,7 +414,6 @@ class NewDataFrameLoaderRDD[K, V](
         loadMetadataDetails.setPartitionCount(partitionID)
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
         carbonLoadModel.setPartitionId(partitionID)
-        carbonLoadModel.setSegmentId(String.valueOf(loadCount))
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         carbonLoadModel.setPreFetch(false)
 
@@ -423,17 +429,19 @@ class NewDataFrameLoaderRDD[K, V](
           recordReaders += new LazyRddIterator(serializer, serializeBytes, value.partition,
               carbonLoadModel, context)
         }
-
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
           null,
-          String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
-        new DataLoadExecutor().execute(model, loader.storeLocation, recordReaders.toArray)
+        val executor = new DataLoadExecutor
+        // in case of success, failure or cancelation clear memory and stop execution
+        context.addTaskCompletionListener { context => executor.close()
+          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
+        executor.execute(model, loader.storeLocation, recordReaders.toArray)
       } catch {
-        case e: BadRecordFoundException =>
+        case e: NoRetryException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
@@ -445,7 +453,7 @@ class NewDataFrameLoaderRDD[K, V](
           throw e
       } finally {
         // clean up the folders and files created locally for data load operation
-        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false)
+        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
         if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
@@ -582,9 +590,6 @@ class PartitionTableDataLoaderRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    loadCount: Integer,
-    tableCreationTime: Long,
-    schemaLastUpdatedTime: Long,
     prev: RDD[Row]) extends CarbonRDD[(K, V)](prev) {
 
   override def internalCompute(theSplit: Partition, context: TaskContext): Iterator[(K, V)] = {
@@ -594,6 +599,8 @@ class PartitionTableDataLoaderRDD[K, V](
       val loadMetadataDetails = new LoadMetadataDetails()
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
       val model: CarbonLoadModel = carbonLoadModel
+      val carbonTable = model.getCarbonDataLoadSchema.getCarbonTable
+      val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
       val uniqueLoadStatusId =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
@@ -601,10 +608,8 @@ class PartitionTableDataLoaderRDD[K, V](
         loadMetadataDetails.setPartitionCount(partitionID)
         loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
         carbonLoadModel.setPartitionId(partitionID)
-        carbonLoadModel.setSegmentId(String.valueOf(loadCount))
-        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+        carbonLoadModel.setTaskNo(String.valueOf(partitionInfo.getPartitionId(theSplit.index)))
         carbonLoadModel.setPreFetch(false)
-
         val recordReaders = Array[CarbonIterator[Array[AnyRef]]] {
           new NewRddIterator(firstParent[Row].iterator(theSplit, context), carbonLoadModel, context)
         }
@@ -612,13 +617,16 @@ class PartitionTableDataLoaderRDD[K, V](
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
           null,
-          String.valueOf(loadCount),
           loadMetadataDetails)
         // Intialize to set carbon properties
         loader.initialize()
-        new DataLoadExecutor().execute(model, loader.storeLocation, recordReaders)
+        val executor = new DataLoadExecutor
+        // in case of success, failure or cancelation clear memory and stop execution
+        context.addTaskCompletionListener { context => executor.close()
+          CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
+        executor.execute(model, loader.storeLocation, recordReaders)
       } catch {
-        case e: BadRecordFoundException =>
+        case e: NoRetryException =>
           loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
@@ -630,7 +638,7 @@ class PartitionTableDataLoaderRDD[K, V](
           throw e
       } finally {
         // clean up the folders and files created locally for data load operation
-        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false)
+        CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
         if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
@@ -640,7 +648,6 @@ class PartitionTableDataLoaderRDD[K, V](
         }
       }
       var finished = false
-
       override def hasNext: Boolean = !finished
 
       override def next(): (K, V) = {

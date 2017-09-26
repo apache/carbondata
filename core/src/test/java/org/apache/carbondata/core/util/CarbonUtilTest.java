@@ -27,6 +27,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
@@ -342,7 +343,7 @@ public class CarbonUtilTest {
       }
     };
     String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
-    assertEquals(hdfsURL, "/BASE_URL/../core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "file:///BASE_URL/../core/src/test/resources/testDatabase");
   }
 
   @Test public void testToCheckAndAppendHDFSUrlWithBlackSlash() {
@@ -357,7 +358,7 @@ public class CarbonUtilTest {
       }
     };
     String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
-    assertEquals(hdfsURL, "/BASE_URL/../core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "file:///BASE_URL/../core/src/test/resources/testDatabase");
   }
 
   @Test public void testToCheckAndAppendHDFSUrlWithNull() {
@@ -373,6 +374,91 @@ public class CarbonUtilTest {
     };
     String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("../core/src/test/resources/testDatabase");
     assertEquals(hdfsURL, "file:////../core/src/test/resources/testDatabase");
+  }
+
+  @Test public void testToCheckAndAppendHDFSUrlWithHdfs() {
+    new MockUp<FileFactory>() {
+      @SuppressWarnings("unused") @Mock public FileFactory.FileType getFileType(String path) {
+        return FileFactory.FileType.HDFS;
+      }
+    };
+    new MockUp<org.apache.hadoop.conf.Configuration>() {
+      @SuppressWarnings("unused") @Mock public String get(String name) {
+        return "hdfs://";
+      }
+    };
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("hdfs://ha/core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "hdfs://ha/core/src/test/resources/testDatabase");
+  }
+
+  @Test public void testToCheckAndAppendHDFSUrlWithDoubleSlashLocal() {
+    new MockUp<FileFactory>() {
+      @SuppressWarnings("unused") @Mock public FileFactory.FileType getFileType(String path) {
+        return FileFactory.FileType.LOCAL;
+      }
+    };
+    new MockUp<CarbonProperties>() {
+      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+        return "/opt/";
+      }
+    };
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("/core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "file:////opt/core/src/test/resources/testDatabase");
+  }
+
+  @Test public void testToCheckAndAppendHDFSUrlWithDoubleSlashHDFS() {
+    new MockUp<FileFactory>() {
+      @SuppressWarnings("unused") @Mock public FileFactory.FileType getFileType(String path) {
+        return FileFactory.FileType.HDFS;
+      }
+    };
+    new MockUp<org.apache.hadoop.conf.Configuration>() {
+      @SuppressWarnings("unused") @Mock public String get(String name) {
+        return "hdfs://";
+      }
+    };
+    new MockUp<CarbonProperties>() {
+      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+        return "/opt/";
+      }
+    };
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("/core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "hdfs:///opt/core/src/test/resources/testDatabase");
+  }
+
+  @Test public void testToCheckAndAppendHDFSUrlWithBaseURLPrefix() {
+    new MockUp<FileFactory>() {
+      @SuppressWarnings("unused") @Mock public FileFactory.FileType getFileType(String path) {
+        return FileFactory.FileType.HDFS;
+      }
+    };
+    new MockUp<CarbonProperties>() {
+      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+        return "hdfs://ha/opt/";
+      }
+    };
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("/core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "hdfs://ha/opt/core/src/test/resources/testDatabase");
+  }
+
+  @Test public void testToCheckAndAppendHDFSUrlWithBaseURLFile() {
+    new MockUp<FileFactory>() {
+      @SuppressWarnings("unused") @Mock public FileFactory.FileType getFileType(String path) {
+        return FileFactory.FileType.HDFS;
+      }
+    };
+    new MockUp<CarbonProperties>() {
+      @SuppressWarnings("unused") @Mock public String getProperty(String key) {
+        return "file:///";
+      }
+    };
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("/core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "file:///core/src/test/resources/testDatabase");
+  }
+
+  @Test public void testToCheckAndAppendHDFSUrlWithFilepathPrefix() {
+    String hdfsURL = CarbonUtil.checkAndAppendHDFSUrl("file:///core/src/test/resources/testDatabase");
+    assertEquals(hdfsURL, "file:///core/src/test/resources/testDatabase");
   }
 
   @Test public void testForisFileExists() {
@@ -917,6 +1003,50 @@ public class CarbonUtilTest {
 
   }
 
+  @Test
+  public void testSplitSchemaStringToMapWithLessThanSplitLen() {
+    String schema = generateString(399);
+    Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
+    assert (map.size() == 2);
+    String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
+    assert (schemaString.length() > schema.length());
+  }
+
+  @Test
+  public void testSplitSchemaStringToMapWithEqualThanSplitLen() {
+    String schema = generateString(4000);
+    Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
+    assert (map.size() == 2);
+    String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
+    assert (schemaString.length() > schema.length());
+  }
+
+  @Test
+  public void testSplitSchemaStringToMapWithMoreThanSplitLen() {
+    String schema = generateString(7999);
+    Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
+    assert (map.size() == 3);
+    String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
+    assert (schemaString.length() > schema.length());
+  }
+
+  @Test
+  public void testSplitSchemaStringToMapWithMultiplesOfSplitLen() {
+    String schema = generateString(12000);
+    Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
+    assert (map.size() == 4);
+    String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
+    assert (schemaString.length() > schema.length());
+  }
+
+  private String generateString(int length) {
+    StringBuilder builder = new StringBuilder();
+    for (int i = 0; i < length; i++) {
+      builder.append("a");
+    }
+    return builder.toString();
+  }
+
   private void assertRangeIndex(byte[][] dataArr, byte[] dataChunk,
       FixedLengthDimensionDataChunk fixedLengthDimensionDataChunk, byte[] keyWord, int[] expectRangeIndex) {
     int[] range;
@@ -928,7 +1058,7 @@ public class CarbonUtilTest {
     int index = CarbonUtil.binarySearch(dataArr, 0, dataChunk.length / keyWord.length - 1, keyWord);
     assertTrue(expectRangeIndex[0] <= index && index <= range[1]);
   }
- 	
+
  	
   @AfterClass public static void testcleanUp() {
     new File("../core/src/test/resources/testFile.txt").deleteOnExit();

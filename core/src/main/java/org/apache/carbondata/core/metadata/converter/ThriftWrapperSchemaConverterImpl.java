@@ -219,6 +219,9 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     externalPartitionInfo.setList_info(wrapperPartitionInfo.getListInfo());
     externalPartitionInfo.setRange_info(wrapperPartitionInfo.getRangeInfo());
     externalPartitionInfo.setNum_partitions(wrapperPartitionInfo.getNumPartitions());
+    externalPartitionInfo.setMax_partition(wrapperPartitionInfo.getMaxPartitionId());
+    externalPartitionInfo.setPartition_ids(wrapperPartitionInfo
+        .getPartitionIds());
     return externalPartitionInfo;
   }
 
@@ -269,12 +272,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
 
     org.apache.carbondata.format.TableSchema thriftFactTable =
         fromWrapperToExternalTableSchema(wrapperTableInfo.getFactTable());
-    List<org.apache.carbondata.format.TableSchema> thriftAggTables =
-        new ArrayList<org.apache.carbondata.format.TableSchema>();
-    for (TableSchema wrapperAggTableSchema : wrapperTableInfo.getAggregateTableList()) {
-      thriftAggTables.add(fromWrapperToExternalTableSchema(wrapperAggTableSchema));
-    }
-    return new org.apache.carbondata.format.TableInfo(thriftFactTable, thriftAggTables);
+    return new org.apache.carbondata.format.TableInfo(thriftFactTable, new ArrayList<org.apache
+        .carbondata.format.TableSchema>());
   }
 
   /* (non-Javadoc)
@@ -453,6 +452,9 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperPartitionInfo.setListInfo(externalPartitionInfo.getList_info());
     wrapperPartitionInfo.setRangeInfo(externalPartitionInfo.getRange_info());
     wrapperPartitionInfo.setNumPartitions(externalPartitionInfo.getNum_partitions());
+    wrapperPartitionInfo.setPartitionIds(externalPartitionInfo
+        .getPartition_ids());
+    wrapperPartitionInfo.setMaxPartitionId(externalPartitionInfo.getMax_partition());
     return wrapperPartitionInfo;
   }
 
@@ -511,13 +513,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperTableInfo.setStorePath(storePath);
     wrapperTableInfo.setFactTable(
         fromExternalToWrapperTableSchema(externalTableInfo.getFact_table(), tableName));
-    List<TableSchema> aggTablesList = new ArrayList<TableSchema>();
-    int index = 0;
-    for (org.apache.carbondata.format.TableSchema aggTable : externalTableInfo
-        .getAggregate_table_list()) {
-      aggTablesList.add(fromExternalToWrapperTableSchema(aggTable, "agg_table_" + index));
-      index++;
-    }
     return wrapperTableInfo;
   }
 

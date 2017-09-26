@@ -80,11 +80,11 @@ public abstract class BinaryLogicalExpression extends BinaryExpression {
     }
   }
 
-  public boolean isSingleDimension() {
+  public boolean isSingleColumn() {
     List<ColumnExpression> listOfExp =
         new ArrayList<ColumnExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     getColumnList(this, listOfExp);
-    if (listOfExp.size() == 1 && listOfExp.get(0).isDimension()) {
+    if (listOfExp.size() == 1 && (listOfExp.get(0).isDimension() || listOfExp.get(0).isMeasure())) {
       return true;
     }
     return false;

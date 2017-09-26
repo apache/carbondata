@@ -117,7 +117,7 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     } else {
       list.add(rowIds[i - 1]);
     }
-    double compressionPercentage = (((list.size() + map.size()) * 100) / rowIds.length);
+    int compressionPercentage = (((list.size() + map.size()) * 100) / rowIds.length);
     if (compressionPercentage > 70) {
       rowIdPage = rowIds;
     } else {
@@ -155,11 +155,29 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     return rowIdPage;
   }
 
+  @Override
+  public int getRowIdPageLengthInBytes() {
+    if (rowIdPage != null) {
+      return rowIdPage.length * 2;
+    } else {
+      return 0;
+    }
+  }
+
   /**
    * @return the rowIdRlePage
    */
   public short[] getRowIdRlePage() {
     return rowIdRlePage;
+  }
+
+  @Override
+  public int getRowIdRlePageLengthInBytes() {
+    if (rowIdRlePage != null) {
+      return rowIdRlePage.length * 2;
+    } else {
+      return 0;
+    }
   }
 
   /**
@@ -222,6 +240,15 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
 
   public short[] getDataRlePage() {
     return dataRlePage;
+  }
+
+  @Override
+  public int getDataRlePageLengthInBytes() {
+    if (dataRlePage != null) {
+      return dataRlePage.length * 2;
+    } else {
+      return 0;
+    }
   }
 
   @Override public int getTotalSize() {

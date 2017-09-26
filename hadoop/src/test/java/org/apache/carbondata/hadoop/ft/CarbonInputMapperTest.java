@@ -74,8 +74,8 @@ public class CarbonInputMapperTest extends TestCase {
       Assert.assertEquals("Count lines are not matching", 1000, countTheLines(outPath));
       Assert.assertEquals("Column count are not matching", 7, countTheColumns(outPath));
     } catch (Exception e) {
-      Assert.assertTrue("failed", false);
       e.printStackTrace();
+      Assert.assertTrue("failed", false);
       throw e;
     }
   }

@@ -32,6 +32,7 @@ import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.DictionaryService;
 import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.ObjectSizeCalculator;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
@@ -92,7 +93,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
     CarbonDictionaryMetadataReader columnMetadataReaderImpl = dictService
         .getDictionaryMetadataReader(dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-            dictionaryColumnUniqueIdentifier.getColumnIdentifier(), carbonStorePath);
+            dictionaryColumnUniqueIdentifier, carbonStorePath);
 
     CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk = null;
     // read metadata file
@@ -104,6 +105,34 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
       columnMetadataReaderImpl.close();
     }
     return carbonDictionaryColumnMetaChunk;
+  }
+
+  /**
+   * get the dictionary column meta chunk for object already read and stored in LRU cache
+   * @param dictionaryColumnUniqueIdentifier
+   * @param offsetRead
+   * @return
+   * @throws IOException
+   */
+  protected long getNumRecordsInCarbonDictionaryColumnMetaChunk(
+          DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier, long offsetRead)
+          throws IOException {
+    DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
+    CarbonDictionaryMetadataReader columnMetadataReaderImpl = dictService
+            .getDictionaryMetadataReader(
+                    dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
+                    dictionaryColumnUniqueIdentifier, carbonStorePath);
+
+    CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk = null;
+    // read metadata file
+    try {
+      carbonDictionaryColumnMetaChunk =
+              columnMetadataReaderImpl.readEntryOfDictionaryMetaChunk(offsetRead);
+    } finally {
+      // close the metadata reader
+      columnMetadataReaderImpl.close();
+    }
+    return carbonDictionaryColumnMetaChunk.getMax_surrogate_key();
   }
 
   /**
@@ -129,7 +158,8 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) throws IOException {
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
-        dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier());
+        dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
+        dictionaryColumnUniqueIdentifier);
     String dictionaryFilePath = carbonTablePath.getDictionaryMetaFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     FileFactory.FileType fileType = FileFactory.getFileType(dictionaryFilePath);
@@ -139,6 +169,12 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
       throw new IOException("Dictionary file does not exist: " + dictionaryFilePath);
     }
     return dictFile;
+  }
+
+  protected long getSortIndexSize(long numOfRecords) {
+    // sort index has sort index and reverse sort index,each is 4 byte integer.
+    // 32 byte is the array header of both the integer arrays
+    return numOfRecords * ObjectSizeCalculator.estimate(0, 16) * 2 + 32;
   }
 
   /**
@@ -176,28 +212,37 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
         if (dictionaryMetaFileModified) {
           CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk =
               readLastChunkFromDictionaryMetadataFile(dictionaryColumnUniqueIdentifier);
-          // required size will be size total size of file - offset till file is
-          // already read
-          long requiredSize =
-              carbonDictionaryColumnMetaChunk.getEnd_offset() - dictionaryInfo.getMemorySize();
+
+          long requiredSize = getEstimatedDictionarySize(dictionaryInfo,
+              carbonDictionaryColumnMetaChunk,
+              dictionaryColumnUniqueIdentifier, loadSortIndex);
+
           if (requiredSize > 0) {
-            boolean columnAddedToLRUCache =
-                carbonLRUCache.put(lruCacheKey, dictionaryInfo, requiredSize);
-            // if column is successfully added to lru cache then only load the
+            dictionaryInfo.setMemorySize(requiredSize);
+            boolean colCanBeAddedToLRUCache =
+                    carbonLRUCache.tryPut(lruCacheKey, requiredSize);
+            // if column can be added to lru cache then only load the
             // dictionary data
-            if (columnAddedToLRUCache) {
+            if (colCanBeAddedToLRUCache) {
               // load dictionary data
               loadDictionaryData(dictionaryInfo, dictionaryColumnUniqueIdentifier,
-                  dictionaryInfo.getMemorySize(), carbonDictionaryColumnMetaChunk.getEnd_offset(),
-                  loadSortIndex);
+                      dictionaryInfo.getOffsetTillFileIsRead(),
+                      carbonDictionaryColumnMetaChunk.getEnd_offset(),
+                      loadSortIndex);
               // set the end offset till where file is read
               dictionaryInfo
-                  .setOffsetTillFileIsRead(carbonDictionaryColumnMetaChunk.getEnd_offset());
+                      .setOffsetTillFileIsRead(carbonDictionaryColumnMetaChunk.getEnd_offset());
+              long updateRequiredSize = ObjectSizeCalculator.estimate(dictionaryInfo, requiredSize);
+              dictionaryInfo.setMemorySize(updateRequiredSize);
+              if (!carbonLRUCache.put(lruCacheKey, dictionaryInfo, updateRequiredSize)) {
+                throw new DictionaryBuilderException(
+                        "Cannot load dictionary into memory. Not enough memory available");
+              }
               dictionaryInfo.setFileTimeStamp(carbonFile.getLastModifiedTime());
               dictionaryInfo.setDictionaryMetaFileLength(carbonFile.getSize());
             } else {
               throw new DictionaryBuilderException(
-                  "Cannot load dictionary into memory. Not enough memory available");
+                      "Cannot load dictionary into memory. Not enough memory available");
             }
           }
         }
@@ -236,7 +281,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
       throws IOException {
     DictionaryCacheLoader dictionaryCacheLoader =
         new DictionaryCacheLoaderImpl(dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-            carbonStorePath);
+            carbonStorePath, dictionaryColumnUniqueIdentifier);
     dictionaryCacheLoader
         .load(dictionaryInfo, dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
             dictionaryChunkStartOffset, dictionaryChunkEndOffset, loadSortIndex);
@@ -261,5 +306,26 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
     for (Dictionary dictionary : dictionaryList) {
       dictionary.clear();
     }
+  }
+
+  /**
+   * calculate the probable size of Dictionary in java heap
+   * Use the value to check if can be added to lru cache
+   * This helps to avoid unnecessary loading of dictionary files
+   * if estimated size more than that can be fit into lru cache
+   * Estimated size can be less or greater than the actual size
+   * due to java optimizations
+   * @param dictionaryInfo
+   * @param carbonDictionaryColumnMetaChunk
+   * @param dictionaryColumnUniqueIdentifier
+   * @param readSortIndexSize
+   * @return
+   * @throws IOException
+   */
+  protected long getEstimatedDictionarySize(DictionaryInfo dictionaryInfo,
+      CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk,
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier, boolean
+      readSortIndexSize) throws IOException {
+    return 0;
   }
 }

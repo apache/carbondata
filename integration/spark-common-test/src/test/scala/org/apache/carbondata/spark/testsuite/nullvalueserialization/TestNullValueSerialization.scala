@@ -17,11 +17,10 @@
 
 package org.apache.carbondata.spark.testsuite.nullvalueserialization
 
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.test.util.QueryTest
 
 /**
   * Test cases for testing columns having \N or \null values for non numeric columns

@@ -18,7 +18,7 @@
 package org.apache.carbondata.spark.testsuite.createtable
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -92,19 +92,12 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
       }
     }
   }
-    test("test carbon table create with int datatype as dictionary exclude") {
-    try {
-      sql("drop table if exists carbontable")
-      sql("create table carbontable(id int, name string, dept string, mobile array<string>, "+
+  test("test carbon table create with int datatype as dictionary exclude") {
+    sql("drop table if exists carbontable")
+    sql("create table carbontable(id int, name string, dept string, mobile array<string>, " +
         "country string, salary double) STORED BY 'org.apache.carbondata.format' " +
         "TBLPROPERTIES('DICTIONARY_EXCLUDE'='id')")
-      assert(false)
-    } catch {
-      case e : MalformedCarbonCommandException => {
-        assert(e.getMessage.equals("DICTIONARY_EXCLUDE is unsupported for int " +
-          "data type column: id"))
-      }
-    }
+    assert(true)
   }
 
   test("test carbon table create with decimal datatype as dictionary exclude") {
@@ -153,7 +146,7 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
       sql("drop table if exists carbontable")
       sql("create table carbontable(msr1 int, msr2 double, msr3 bigint, msr4 decimal)" +
         " stored by 'org.apache.carbondata.format'")
-      assert(false)
+      assert(true)
     } catch {
       case e : MalformedCarbonCommandException => {
         assert(e.getMessage.equals("Table default.carbontable can not be created without " +

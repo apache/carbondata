@@ -21,12 +21,12 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
@@ -55,7 +55,9 @@ import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
@@ -70,6 +72,7 @@ import org.apache.carbondata.core.scan.filter.executer.ExcludeFilterExecuterImpl
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.IncludeColGroupFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.IncludeFilterExecuterImpl;
+import org.apache.carbondata.core.scan.filter.executer.MeasureColumnExecuterFilterInfo;
 import org.apache.carbondata.core.scan.filter.executer.OrFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.RangeValueFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.RestructureExcludeFilterExecutorImpl;
@@ -85,11 +88,17 @@ import org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolver
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImpl;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.comparator.Comparator;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 public final class FilterUtil {
   private static final LogService LOGGER =
@@ -117,10 +126,12 @@ public final class FilterUtil {
       switch (filterExecuterType) {
         case INCLUDE:
           return getIncludeFilterExecuter(
-              filterExpressionResolverTree.getDimColResolvedFilterInfo(), segmentProperties);
+              filterExpressionResolverTree.getDimColResolvedFilterInfo(),
+              filterExpressionResolverTree.getMsrColResolvedFilterInfo(), segmentProperties);
         case EXCLUDE:
           return getExcludeFilterExecuter(
-              filterExpressionResolverTree.getDimColResolvedFilterInfo(), segmentProperties);
+              filterExpressionResolverTree.getDimColResolvedFilterInfo(),
+              filterExpressionResolverTree.getMsrColResolvedFilterInfo(), segmentProperties);
         case OR:
           return new OrFilterExecuterImpl(
               createFilterExecuterTree(filterExpressionResolverTree.getLeft(), segmentProperties,
@@ -180,9 +191,27 @@ public final class FilterUtil {
    * @return
    */
   private static FilterExecuter getIncludeFilterExecuter(
-      DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties) {
-
-    if (dimColResolvedFilterInfo.getDimension().isColumnar()) {
+      DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
+      MeasureColumnResolvedFilterInfo msrColResolvedFilterInfo,
+      SegmentProperties segmentProperties) {
+    if (null != msrColResolvedFilterInfo && msrColResolvedFilterInfo.getMeasure().isColumnar()) {
+      CarbonMeasure measuresFromCurrentBlock = segmentProperties
+          .getMeasureFromCurrentBlock(msrColResolvedFilterInfo.getMeasure().getColumnId());
+      if (null != measuresFromCurrentBlock) {
+        // update dimension and column index according to the dimension position in current block
+        MeasureColumnResolvedFilterInfo msrColResolvedFilterInfoCopyObject =
+            msrColResolvedFilterInfo.getCopyObject();
+        msrColResolvedFilterInfoCopyObject.setMeasure(measuresFromCurrentBlock);
+        msrColResolvedFilterInfoCopyObject.setColumnIndex(measuresFromCurrentBlock.getOrdinal());
+        msrColResolvedFilterInfoCopyObject.setType(measuresFromCurrentBlock.getDataType());
+        return new IncludeFilterExecuterImpl(null, msrColResolvedFilterInfoCopyObject,
+            segmentProperties, true);
+      } else {
+        return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
+            msrColResolvedFilterInfo, true);
+      }
+    }
+    if (null != dimColResolvedFilterInfo && dimColResolvedFilterInfo.getDimension().isColumnar()) {
       CarbonDimension dimensionFromCurrentBlock =
           segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
       if (null != dimensionFromCurrentBlock) {
@@ -191,10 +220,11 @@ public final class FilterUtil {
             dimColResolvedFilterInfo.getCopyObject();
         dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
         dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
-        return new IncludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, segmentProperties);
+        return new IncludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
+            segmentProperties, false);
       } else {
         return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
-            segmentProperties);
+            msrColResolvedFilterInfo, false);
       }
     } else {
       return new IncludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
@@ -209,9 +239,29 @@ public final class FilterUtil {
    * @return
    */
   private static FilterExecuter getExcludeFilterExecuter(
-      DimColumnResolvedFilterInfo dimColResolvedFilterInfo, SegmentProperties segmentProperties) {
+      DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
+      MeasureColumnResolvedFilterInfo msrColResolvedFilterInfo,
+      SegmentProperties segmentProperties) {
 
-    if (dimColResolvedFilterInfo.getDimension().isColumnar()) {
+    if (null != msrColResolvedFilterInfo && msrColResolvedFilterInfo.getMeasure().isColumnar()) {
+      CarbonMeasure measuresFromCurrentBlock = segmentProperties
+          .getMeasureFromCurrentBlock(msrColResolvedFilterInfo.getMeasure().getColumnId());
+      if (null != measuresFromCurrentBlock) {
+        // update dimension and column index according to the dimension position in current block
+        MeasureColumnResolvedFilterInfo msrColResolvedFilterInfoCopyObject =
+            msrColResolvedFilterInfo.getCopyObject();
+        msrColResolvedFilterInfoCopyObject.setMeasure(measuresFromCurrentBlock);
+        msrColResolvedFilterInfoCopyObject.setColumnIndex(measuresFromCurrentBlock.getOrdinal());
+        msrColResolvedFilterInfoCopyObject.setType(measuresFromCurrentBlock.getDataType());
+        return new ExcludeFilterExecuterImpl(null, msrColResolvedFilterInfoCopyObject,
+            segmentProperties, true);
+      } else {
+        return new RestructureExcludeFilterExecutorImpl(dimColResolvedFilterInfo,
+            msrColResolvedFilterInfo, true);
+      }
+    }
+    if ((null != dimColResolvedFilterInfo) && (dimColResolvedFilterInfo.getDimension()
+        .isColumnar())) {
       CarbonDimension dimensionFromCurrentBlock =
           segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
       if (null != dimensionFromCurrentBlock) {
@@ -220,10 +270,11 @@ public final class FilterUtil {
             dimColResolvedFilterInfo.getCopyObject();
         dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
         dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
-        return new ExcludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, segmentProperties);
+        return new ExcludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
+            segmentProperties, false);
       } else {
         return new RestructureExcludeFilterExecutorImpl(dimColResolvedFilterInfo,
-            segmentProperties);
+            msrColResolvedFilterInfo, false);
       }
     } else {
       return new ExcludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
@@ -275,7 +326,8 @@ public final class FilterUtil {
    * @return
    */
   public static boolean checkIfDataTypeNotTimeStamp(Expression expression) {
-    if (expression.getFilterExpressionType() == ExpressionType.LITERAL) {
+    if (expression.getFilterExpressionType() == ExpressionType.LITERAL
+        && expression instanceof LiteralExpression) {
       DataType dataType = ((LiteralExpression) expression).getLiteralExpDataType();
       if (!(dataType == DataType.TIMESTAMP || dataType == DataType.DATE)) {
         return true;
@@ -349,33 +401,40 @@ public final class FilterUtil {
 
   /**
    * This method will get the no dictionary data based on filters and same
-   * will be in DimColumnFilterInfo
+   * will be in ColumnFilterInfo
    *
    * @param evaluateResultListFinal
    * @param isIncludeFilter
-   * @return DimColumnFilterInfo
+   * @return ColumnFilterInfo
    */
-  public static DimColumnFilterInfo getNoDictionaryValKeyMemberForFilter(
+  public static ColumnFilterInfo getNoDictionaryValKeyMemberForFilter(
       List<String> evaluateResultListFinal, boolean isIncludeFilter, DataType dataType)
       throws FilterUnsupportedException {
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     String result = null;
     try {
       int length = evaluateResultListFinal.size();
+      String timeFormat = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
       for (int i = 0; i < length; i++) {
         result = evaluateResultListFinal.get(i);
         if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(result)) {
-          filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+          if (dataType == DataType.STRING) {
+            filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+          } else {
+            filterValuesList.add(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
+          }
           continue;
         }
-        filterValuesList.add(
-              DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(result, dataType));
+        filterValuesList.add(DataTypeUtil
+            .getBytesBasedOnDataTypeForNoDictionaryColumn(result, dataType, timeFormat));
       }
     } catch (Throwable ex) {
       throw new FilterUnsupportedException("Unsupported Filter condition: " + result, ex);
     }
 
-    Comparator<byte[]> filterNoDictValueComaparator = new Comparator<byte[]>() {
+    java.util.Comparator<byte[]> filterNoDictValueComaparator = new java.util.Comparator<byte[]>() {
 
       @Override public int compare(byte[] filterMember1, byte[] filterMember2) {
         // TODO Auto-generated method stub
@@ -384,11 +443,54 @@ public final class FilterUtil {
 
     };
     Collections.sort(filterValuesList, filterNoDictValueComaparator);
-    DimColumnFilterInfo columnFilterInfo = null;
+    ColumnFilterInfo columnFilterInfo = null;
     if (filterValuesList.size() > 0) {
-      columnFilterInfo = new DimColumnFilterInfo();
+      columnFilterInfo = new ColumnFilterInfo();
       columnFilterInfo.setIncludeFilter(isIncludeFilter);
       columnFilterInfo.setFilterListForNoDictionaryCols(filterValuesList);
+
+    }
+    return columnFilterInfo;
+  }
+
+  /**
+   * This method will get the no dictionary data based on filters and same
+   * will be in ColumnFilterInfo
+   *
+   * @param evaluateResultListFinal
+   * @param isIncludeFilter
+   * @return ColumnFilterInfo
+   */
+  public static ColumnFilterInfo getMeasureValKeyMemberForFilter(
+      List<String> evaluateResultListFinal, boolean isIncludeFilter, DataType dataType,
+      CarbonMeasure carbonMeasure) throws FilterUnsupportedException {
+    List<Object> filterValuesList = new ArrayList<>(20);
+    String result = null;
+    try {
+      int length = evaluateResultListFinal.size();
+      for (int i = 0; i < length; i++) {
+        result = evaluateResultListFinal.get(i);
+        if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(result)) {
+          filterValuesList.add(null);
+          continue;
+        }
+
+        filterValuesList
+            .add(DataTypeUtil.getMeasureValueBasedOnDataType(result, dataType, carbonMeasure));
+
+      }
+    } catch (Throwable ex) {
+      throw new FilterUnsupportedException("Unsupported Filter condition: " + result, ex);
+    }
+
+    SerializableComparator filterMeasureComaparator =
+        Comparator.getComparatorByDataTypeForMeasure(dataType);
+    Collections.sort(filterValuesList, filterMeasureComaparator);
+    ColumnFilterInfo columnFilterInfo = null;
+    if (filterValuesList.size() > 0) {
+      columnFilterInfo = new ColumnFilterInfo();
+      columnFilterInfo.setIncludeFilter(isIncludeFilter);
+      columnFilterInfo.setMeasuresFilterValuesList(filterValuesList);
 
     }
     return columnFilterInfo;
@@ -405,14 +507,16 @@ public final class FilterUtil {
    * @return
    * @throws IOException
    */
-  public static DimColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
-      ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter)
+  public static ColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
+      ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter,
+      TableProvider tableProvider)
       throws IOException {
     Dictionary forwardDictionary = null;
     try {
       // Reading the dictionary value from cache.
       forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
+          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
+              tableProvider);
       return getFilterValues(columnExpression, evaluateResultList, forwardDictionary,
           isIncludeFilter);
     } finally {
@@ -430,7 +534,7 @@ public final class FilterUtil {
    * @param isIncludeFilter
    * @return
    */
-  private static DimColumnFilterInfo getFilterValues(ColumnExpression columnExpression,
+  private static ColumnFilterInfo getFilterValues(ColumnExpression columnExpression,
       List<String> evaluateResultList, Dictionary forwardDictionary, boolean isIncludeFilter) {
     sortFilterModelMembers(columnExpression, evaluateResultList);
     List<Integer> surrogates =
@@ -438,9 +542,9 @@ public final class FilterUtil {
     // Reading the dictionary value from cache.
     getDictionaryValue(evaluateResultList, forwardDictionary, surrogates);
     Collections.sort(surrogates);
-    DimColumnFilterInfo columnFilterInfo = null;
+    ColumnFilterInfo columnFilterInfo = null;
     if (surrogates.size() > 0) {
-      columnFilterInfo = new DimColumnFilterInfo();
+      columnFilterInfo = new ColumnFilterInfo();
       columnFilterInfo.setIncludeFilter(isIncludeFilter);
       columnFilterInfo.setFilterList(surrogates);
     }
@@ -468,20 +572,21 @@ public final class FilterUtil {
    * @param expression
    * @param columnExpression
    * @param isIncludeFilter
-   * @return DimColumnFilterInfo
+   * @return ColumnFilterInfo
    * @throws FilterUnsupportedException
    * @throws IOException
    */
-  public static DimColumnFilterInfo getFilterListForAllValues(
+  public static ColumnFilterInfo getFilterListForAllValues(
       AbsoluteTableIdentifier tableIdentifier, Expression expression,
-      final ColumnExpression columnExpression, boolean isIncludeFilter)
+      final ColumnExpression columnExpression, boolean isIncludeFilter, TableProvider tableProvider)
       throws IOException, FilterUnsupportedException {
     Dictionary forwardDictionary = null;
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     DictionaryChunksWrapper dictionaryWrapper = null;
     try {
       forwardDictionary =
-          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension());
+          getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
+              tableProvider);
       dictionaryWrapper = forwardDictionary.getDictionaryChunks();
       while (dictionaryWrapper.hasNext()) {
         byte[] columnVal = dictionaryWrapper.next();
@@ -517,7 +622,7 @@ public final class FilterUtil {
 
   private static void sortFilterModelMembers(final ColumnExpression columnExpression,
       List<String> evaluateResultListFinal) {
-    Comparator<String> filterActualValueComaparator = new Comparator<String>() {
+    java.util.Comparator<String> filterActualValueComaparator = new java.util.Comparator<String>() {
 
       @Override public int compare(String filterMember1, String filterMember2) {
         return compareFilterMembersBasedOnActualDataType(filterMember1, filterMember2,
@@ -539,11 +644,11 @@ public final class FilterUtil {
    * @return
    * @throws FilterUnsupportedException
    */
-  public static DimColumnFilterInfo getFilterListForRS(Expression expression,
+  public static ColumnFilterInfo getFilterListForRS(Expression expression,
       ColumnExpression columnExpression, String defaultValues, int defaultSurrogate)
       throws FilterUnsupportedException {
     List<Integer> filterValuesList = new ArrayList<Integer>(20);
-    DimColumnFilterInfo columnFilterInfo = null;
+    ColumnFilterInfo columnFilterInfo = null;
     // List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
     // KeyGenerator keyGenerator =
@@ -565,7 +670,7 @@ public final class FilterUtil {
         }
       }
       if (filterValuesList.size() > 0) {
-        columnFilterInfo = new DimColumnFilterInfo();
+        columnFilterInfo = new ColumnFilterInfo();
         columnFilterInfo.setFilterList(filterValuesList);
       }
     } catch (FilterIllegalMemberException e) {
@@ -586,12 +691,12 @@ public final class FilterUtil {
    * @return
    * @throws FilterUnsupportedException
    */
-  public static DimColumnFilterInfo getFilterListForAllMembersRS(Expression expression,
+  public static ColumnFilterInfo getFilterListForAllMembersRS(Expression expression,
       ColumnExpression columnExpression, String defaultValues, int defaultSurrogate,
       boolean isIncludeFilter) throws FilterUnsupportedException {
     List<Integer> filterValuesList = new ArrayList<Integer>(20);
     List<String> evaluateResultListFinal = new ArrayList<String>(20);
-    DimColumnFilterInfo columnFilterInfo = null;
+    ColumnFilterInfo columnFilterInfo = null;
 
     // KeyGenerator keyGenerator =
     // KeyGeneratorFactory.getKeyGenerator(new int[] { defaultSurrogate });
@@ -617,7 +722,7 @@ public final class FilterUtil {
     if (null == defaultValues) {
       defaultValues = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
     }
-    columnFilterInfo = new DimColumnFilterInfo();
+    columnFilterInfo = new ColumnFilterInfo();
     for (int i = 0; i < evaluateResultListFinal.size(); i++) {
       if (evaluateResultListFinal.get(i).equals(defaultValues)) {
         filterValuesList.add(defaultSurrogate);
@@ -632,16 +737,16 @@ public final class FilterUtil {
    * Below method will be used to covert the filter surrogate keys
    * to mdkey
    *
-   * @param dimColumnFilterInfo
+   * @param columnFilterInfo
    * @param carbonDimension
    * @param segmentProperties
    * @return
    */
-  public static byte[][] getKeyArray(DimColumnFilterInfo dimColumnFilterInfo,
+  public static byte[][] getKeyArray(ColumnFilterInfo columnFilterInfo,
       CarbonDimension carbonDimension, SegmentProperties segmentProperties) {
     if (!carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
-      return dimColumnFilterInfo.getNoDictionaryFilterValuesList()
-          .toArray((new byte[dimColumnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
+      return columnFilterInfo.getNoDictionaryFilterValuesList()
+          .toArray((new byte[columnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
     }
     KeyGenerator blockLevelKeyGenerator = segmentProperties.getDimensionKeyGenerator();
     int[] dimColumnsCardinality = segmentProperties.getDimColumnsCardinality();
@@ -649,10 +754,10 @@ public final class FilterUtil {
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     Arrays.fill(keys, 0);
     int keyOrdinalOfDimensionFromCurrentBlock = carbonDimension.getKeyOrdinal();
-    if (null != dimColumnFilterInfo) {
+    if (null != columnFilterInfo) {
       int[] rangesForMaskedByte =
           getRangesForMaskedByte(keyOrdinalOfDimensionFromCurrentBlock, blockLevelKeyGenerator);
-      for (Integer surrogate : dimColumnFilterInfo.getFilterList()) {
+      for (Integer surrogate : columnFilterInfo.getFilterList()) {
         try {
           if (surrogate <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
             keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
@@ -705,7 +810,7 @@ public final class FilterUtil {
    * @param startKeyList
    * @return long[] start key
    */
-  public static void getStartKey(Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
+  public static void getStartKey(Map<CarbonDimension, List<ColumnFilterInfo>> dimensionFilter,
       SegmentProperties segmentProperties, long[] startKey, List<long[]> startKeyList) {
     for (int i = 0; i < startKey.length; i++) {
       // The min surrogate key is 1, set it as the init value for starkey of each column level
@@ -734,17 +839,17 @@ public final class FilterUtil {
       DimColumnResolvedFilterInfo dimColResolvedFilterInfo,
       SegmentProperties segmentProperties,
       SortedMap<Integer, byte[]> setOfStartKeyByteArray) {
-    Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
+    Map<CarbonDimension, List<ColumnFilterInfo>> dimensionFilter =
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
     // step 1
-    for (Map.Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
+    for (Map.Entry<CarbonDimension, List<ColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
       if (!entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
-        List<DimColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
+        List<ColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
         if (null == listOfDimColFilterInfo) {
           continue;
         }
         boolean isExcludePresent = false;
-        for (DimColumnFilterInfo info : listOfDimColFilterInfo) {
+        for (ColumnFilterInfo info : listOfDimColFilterInfo) {
           if (!info.isIncludeFilter()) {
             isExcludePresent = true;
           }
@@ -797,17 +902,17 @@ public final class FilterUtil {
       SegmentProperties segmentProperties,
       SortedMap<Integer, byte[]> setOfEndKeyByteArray) {
 
-    Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter =
+    Map<CarbonDimension, List<ColumnFilterInfo>> dimensionFilter =
         dimColResolvedFilterInfo.getDimensionResolvedFilterInstance();
     // step 1
-    for (Map.Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
+    for (Map.Entry<CarbonDimension, List<ColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
       if (!entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
-        List<DimColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
+        List<ColumnFilterInfo> listOfDimColFilterInfo = entry.getValue();
         if (null == listOfDimColFilterInfo) {
           continue;
         }
         boolean isExcludePresent = false;
-        for (DimColumnFilterInfo info : listOfDimColFilterInfo) {
+        for (ColumnFilterInfo info : listOfDimColFilterInfo) {
           if (!info.isIncludeFilter()) {
             isExcludePresent = true;
           }
@@ -869,15 +974,15 @@ public final class FilterUtil {
    * @param startKey
    */
   private static void getStartKeyWithFilter(
-      Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
+      Map<CarbonDimension, List<ColumnFilterInfo>> dimensionFilter,
       SegmentProperties segmentProperties, long[] startKey, List<long[]> startKeyList) {
-    for (Map.Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
-      List<DimColumnFilterInfo> values = entry.getValue();
+    for (Map.Entry<CarbonDimension, List<ColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
+      List<ColumnFilterInfo> values = entry.getValue();
       if (null == values || !entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
         continue;
       }
       boolean isExcludePresent = false;
-      for (DimColumnFilterInfo info : values) {
+      for (ColumnFilterInfo info : values) {
         if (!info.isIncludeFilter()) {
           isExcludePresent = true;
         }
@@ -894,7 +999,7 @@ public final class FilterUtil {
         continue;
       }
       int keyOrdinalOfDimensionFromCurrentBlock = dimensionFromCurrentBlock.getKeyOrdinal();
-      for (DimColumnFilterInfo info : values) {
+      for (ColumnFilterInfo info : values) {
         if (keyOrdinalOfDimensionFromCurrentBlock < startKey.length) {
           if (startKey[keyOrdinalOfDimensionFromCurrentBlock] < info.getFilterList().get(0)) {
             startKey[keyOrdinalOfDimensionFromCurrentBlock] = info.getFilterList().get(0);
@@ -907,7 +1012,7 @@ public final class FilterUtil {
     }
   }
 
-  public static void getEndKey(Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
+  public static void getEndKey(Map<CarbonDimension, List<ColumnFilterInfo>> dimensionFilter,
       long[] endKey, SegmentProperties segmentProperties,
       List<long[]> endKeyList) {
 
@@ -936,15 +1041,15 @@ public final class FilterUtil {
   }
 
   private static void getEndKeyWithFilter(
-      Map<CarbonDimension, List<DimColumnFilterInfo>> dimensionFilter,
+      Map<CarbonDimension, List<ColumnFilterInfo>> dimensionFilter,
       SegmentProperties segmentProperties, long[] endKey, List<long[]> endKeyList) {
-    for (Map.Entry<CarbonDimension, List<DimColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
-      List<DimColumnFilterInfo> values = entry.getValue();
+    for (Map.Entry<CarbonDimension, List<ColumnFilterInfo>> entry : dimensionFilter.entrySet()) {
+      List<ColumnFilterInfo> values = entry.getValue();
       if (null == values || !entry.getKey().hasEncoding(Encoding.DICTIONARY)) {
         continue;
       }
       boolean isExcludeFilterPresent = false;
-      for (DimColumnFilterInfo info : values) {
+      for (ColumnFilterInfo info : values) {
         if (!info.isIncludeFilter()) {
           isExcludeFilterPresent = true;
         }
@@ -961,7 +1066,7 @@ public final class FilterUtil {
         continue;
       }
       int keyOrdinalOfDimensionFromCurrentBlock = dimensionFromCurrentBlock.getKeyOrdinal();
-      for (DimColumnFilterInfo info : values) {
+      for (ColumnFilterInfo info : values) {
         if (keyOrdinalOfDimensionFromCurrentBlock < endKey.length) {
           if (endKey[keyOrdinalOfDimensionFromCurrentBlock] > info.getFilterList()
               .get(info.getFilterList().size() - 1)) {
@@ -998,9 +1103,27 @@ public final class FilterUtil {
    */
   public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
       CarbonDimension carbonDimension) throws IOException {
+    return getForwardDictionaryCache(tableIdentifier, carbonDimension, null);
+  }
+
+  /**
+   * @param tableIdentifier
+   * @param carbonDimension
+   * @param tableProvider
+   * @return
+   */
+  public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
+      CarbonDimension carbonDimension, TableProvider tableProvider) throws IOException {
+    CarbonTablePath carbonTablePath = null;
+    if (null != tableProvider) {
+      CarbonTable carbonTable =
+          tableProvider.getCarbonTable(tableIdentifier.getCarbonTableIdentifier());
+      carbonTablePath =
+          CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
+    }
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(tableIdentifier.getCarbonTableIdentifier(),
-            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType());
+            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(), carbonTablePath);
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, tableIdentifier.getStorePath());
@@ -1042,13 +1165,29 @@ public final class FilterUtil {
    * @param dimension
    * @param dimColumnExecuterInfo
    */
-  public static void prepareKeysFromSurrogates(DimColumnFilterInfo filterValues,
+  public static void prepareKeysFromSurrogates(ColumnFilterInfo filterValues,
       SegmentProperties segmentProperties, CarbonDimension dimension,
-      DimColumnExecuterFilterInfo dimColumnExecuterInfo) {
-    byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, segmentProperties);
-    dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
-
+      DimColumnExecuterFilterInfo dimColumnExecuterInfo, CarbonMeasure measures,
+      MeasureColumnExecuterFilterInfo msrColumnExecuterInfo) {
+    if (null != measures) {
+      DataTypeConverterImpl converter = new DataTypeConverterImpl();
+      Object[] keysBasedOnFilter = filterValues.getMeasuresFilterValuesList()
+          .toArray((new Object[filterValues.getMeasuresFilterValuesList().size()]));
+      for (int i = 0; i < keysBasedOnFilter.length; i++) {
+        if (keysBasedOnFilter[i] != null) {
+          keysBasedOnFilter[i] = DataTypeUtil
+              .getDataBasedOnDataType(keysBasedOnFilter[i].toString(), measures.getDataType(),
+                  converter);
+        }
+      }
+      msrColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+    } else {
+      byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, segmentProperties);
+      dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+    }
   }
+
+
 
   /**
    * method will create a default end key in case of no end key is been derived using existing
@@ -1097,7 +1236,7 @@ public final class FilterUtil {
       startPoint++;
     }
     for (int i = 0; i < numberOfNoDictionaryDimension; i++) {
-      noDictionaryEndKeyBuffer.put((byte) 127);
+      noDictionaryEndKeyBuffer.put((byte) 0xFF);
     }
     return noDictionaryEndKeyBuffer.array();
   }
@@ -1182,7 +1321,9 @@ public final class FilterUtil {
         default:
           return -1;
       }
-    } catch (Exception e) {
+    } catch (ParseException e) {
+      return -1;
+    } catch (NumberFormatException e) {
       return -1;
     }
   }
@@ -1255,8 +1396,7 @@ public final class FilterUtil {
     if (segmentProperties.getNumberOfNoDictSortColumns() == 0) {
       listOfStartKeyByteArray = new ArrayList<byte[]>();
       listOfEndKeyByteArray = new ArrayList<byte[]>();
-    } else if (segmentProperties.getNumberOfNoDictSortColumns() < listOfStartKeyByteArray
-        .size()) {
+    } else {
       while (segmentProperties.getNumberOfNoDictSortColumns() < listOfStartKeyByteArray.size()) {
         listOfStartKeyByteArray.remove(listOfStartKeyByteArray.size() - 1);
         listOfEndKeyByteArray.remove(listOfEndKeyByteArray.size() - 1);
@@ -1322,7 +1462,9 @@ public final class FilterUtil {
         default:
           return filterMember1.compareTo(filterMember2);
       }
-    } catch (Exception e) {
+    } catch (ParseException e) {
+      return -1;
+    } catch (NumberFormatException e) {
       return -1;
     }
   }
@@ -1349,7 +1491,7 @@ public final class FilterUtil {
         continue;
       }
       if (null == setOfStartKeyByteArray.get(dimension.getOrdinal())) {
-        setOfStartKeyByteArray.put(dimension.getOrdinal(), new byte[] { 127 });
+        setOfStartKeyByteArray.put(dimension.getOrdinal(), new byte[] { (byte) 0xFF });
       }
 
     }
@@ -1381,7 +1523,7 @@ public final class FilterUtil {
       if (CarbonUtil.hasEncoding(dimension.getEncoder(), Encoding.DICTIONARY)) {
         continue;
       }
-      setOfEndKeyByteArray.put(dimension.getOrdinal(), new byte[] { 127 });
+      setOfEndKeyByteArray.put(dimension.getOrdinal(), new byte[] { (byte) 0xFF });
     }
   }
 
@@ -1467,8 +1609,7 @@ public final class FilterUtil {
   public static BitSetGroup createBitSetGroupWithDefaultValue(int pageCount, int totalRowCount,
       boolean defaultValue) {
     BitSetGroup bitSetGroup = new BitSetGroup(pageCount);
-    int numberOfRows = Integer
-        .parseInt(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT);
+    int numberOfRows = CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
     int pagesTobeFullFilled = totalRowCount / numberOfRows;
     int rowCountForLastPage = totalRowCount % numberOfRows;
     for (int i = 0; i < pagesTobeFullFilled; i++) {

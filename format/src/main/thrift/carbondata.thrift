@@ -119,7 +119,7 @@ struct DataChunk{
  * in Row Major format.
  *
  * For V3, one data chunk is one page data of 32K rows.
- * For V2 & V1, one data chunk is one blocklet data.
+ * For V2, one data chunk is one blocklet data.
  */
 struct DataChunk2{
     1: required ChunkCompressionMeta chunk_meta; // The metadata of a chunk

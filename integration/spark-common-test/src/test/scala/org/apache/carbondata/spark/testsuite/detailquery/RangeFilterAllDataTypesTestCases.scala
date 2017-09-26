@@ -20,12 +20,11 @@ package org.apache.carbondata.spark.testsuite.detailquery
 import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * Test Class for Range Filters.
@@ -657,6 +656,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists NO_DICTIONARY_CARBON_1")
     sql("drop table if exists NO_DICTIONARY_CARBON_2")
     sql("drop table if exists NO_DICTIONARY_HIVE_6")
+    sql("drop table if exists directdictionarytable")
     sql("drop table if exists dictionary_hive_6")
     sql("drop table if exists NO_DICTIONARY_HIVE_7")
     sql("drop table if exists NO_DICTIONARY_CARBON_6")

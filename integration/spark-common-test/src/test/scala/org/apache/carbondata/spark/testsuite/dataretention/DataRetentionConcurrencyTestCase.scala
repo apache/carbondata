@@ -20,11 +20,10 @@ package org.apache.carbondata.spark.testsuite.dataretention
 import java.util
 import java.util.concurrent.{Callable, Executors}
 
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * This class contains DataRetention concurrency test cases
@@ -57,7 +56,7 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
     val tasks = new util.ArrayList[Callable[String]]()
     tasks
       .add(new QueryTask(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE concurrent OPTIONS('DELIMITER' =  ',')"))
-    tasks.add(new QueryTask("Delete segment 0 from table concurrent"))
+    tasks.add(new QueryTask("delete from table concurrent where segment.id in (0)"))
     tasks.add(new QueryTask("clean files for table concurrent"))
     val results = executorService.invokeAll(tasks)
     for (i <- 0 until tasks.size()) {
@@ -77,7 +76,7 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
       .add(new QueryTask(s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE concurrent OPTIONS('DELIMITER' =  ',')"))
     tasks
       .add(new QueryTask(
-        "DELETE SEGMENTS FROM TABLE concurrent where STARTTIME before '2099-01-01 00:00:00'"))
+        "delete from table concurrent where segment.starttime before '2099-01-01 00:00:00'"))
     tasks.add(new QueryTask("clean files for table concurrent"))
     val results = executorService.invokeAll(tasks)
     for (i <- 0 until tasks.size()) {

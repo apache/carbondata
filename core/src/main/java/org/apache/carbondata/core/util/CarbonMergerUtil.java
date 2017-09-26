@@ -46,4 +46,20 @@ public class CarbonMergerUtil {
     return localCardinality;
   }
 
+  /**
+   * read from the first non-empty level metadata
+   * @param paths paths
+   * @param tableName table name
+   * @return cardinality
+   */
+  public static int[] getCardinalityFromLevelMetadata(String[] paths, String tableName) {
+    int[] localCardinality = null;
+    for (String path : paths) {
+      localCardinality = getCardinalityFromLevelMetadata(path, tableName);
+      if (null != localCardinality) {
+        break;
+      }
+    }
+    return localCardinality;
+  }
 }

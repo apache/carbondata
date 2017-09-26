@@ -36,15 +36,13 @@ object Compactor {
 
   def triggerCompaction(compactionCallableModel: CompactionCallableModel): Unit = {
 
-    val storePath = compactionCallableModel.storePath
     val storeLocation = compactionCallableModel.storeLocation
     val carbonTable = compactionCallableModel.carbonTable
-    val cubeCreationTime = compactionCallableModel.cubeCreationTime
     val loadsToMerge = compactionCallableModel.loadsToMerge
     val sc = compactionCallableModel.sqlContext
     val carbonLoadModel = compactionCallableModel.carbonLoadModel
     val compactionType = compactionCallableModel.compactionType
-
+    val storePath = carbonLoadModel.getStorePath
     val startTime = System.nanoTime()
     val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
     var finalMergeStatus = false
@@ -57,7 +55,6 @@ object Compactor {
       storePath,
       carbonTable.getMetaDataFilepath,
       mergedLoadName,
-      cubeCreationTime,
       databaseName,
       factTableName,
       validSegments,
@@ -133,15 +130,15 @@ object Compactor {
       } else {
         logger.audit(s"Compaction request completed for table " +
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-        logger.info("Compaction request completed for table ${ carbonLoadModel.getDatabaseName } " +
-                    s".${ carbonLoadModel.getTableName }")
+        logger.info(s"Compaction request completed for table " +
+                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       }
     } else {
-      logger.audit("Compaction request failed for table ${ carbonLoadModel.getDatabaseName } " +
-                   s".${ carbonLoadModel.getTableName }"
+      logger.audit(s"Compaction request failed for table " +
+                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }"
       )
-      logger.error("Compaction request failed for table ${ carbonLoadModel.getDatabaseName } " +
-                   s".${ carbonLoadModel.getTableName }")
+      logger.error(s"Compaction request failed for table " +
+                   s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       throw new Exception("Compaction Failure in Merger Rdd.")
     }
   }

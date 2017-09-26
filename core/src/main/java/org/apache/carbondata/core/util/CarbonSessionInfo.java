@@ -24,6 +24,7 @@ import java.io.Serializable;
  */
 public class CarbonSessionInfo implements Serializable {
 
+  private static final long serialVersionUID = 7738818814501121256L;
   // contains carbon session param details
   private SessionParams sessionParams;
 

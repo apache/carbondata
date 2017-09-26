@@ -20,11 +20,10 @@ package org.apache.carbondata.spark.testsuite.dataload
 import java.io.File
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.test.util.QueryTest
 
 /**
   * Test Class for data loading with Unsafe ColumnPage
@@ -65,6 +64,8 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
     sql("drop table if exists comment_test")
     sql("drop table if exists smallinttable")
     sql("drop table if exists smallinthivetable")
+    sql("drop table if exists decimal_varlength")
+    sql("drop table if exists decimal_varlength_hive")
     sql(
       "CREATE table carbontable (empno int, empname String, designation String, doj String, " +
           "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
@@ -77,7 +78,18 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
           "projectcode int, projectjoindate String,projectenddate String, attendance String," +
           "utilization String,salary String)row format delimited fields terminated by ','"
     )
-
+    sql(
+      """
+        | CREATE TABLE decimal_varlength(id string, value decimal(30,10))
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin
+    )
+    sql(
+      """
+        | CREATE TABLE decimal_varlength_hive(id string, value decimal(30,10))
+        | ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+      """.stripMargin
+    )
   }
 
   test("create table with smallint type and query smallint table") {
@@ -674,6 +686,14 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
       Row("~carbon,")))
   }
 
+  test("test decimal var lenght comlumn page") {
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/big_decimal_without_header.csv' INTO TABLE decimal_varlength" +
+        s" OPTIONS('FILEHEADER'='id,value')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/big_decimal_without_header.csv' INTO TABLE decimal_varlength_hive")
+    checkAnswer(sql("select value from decimal_varlength"), sql("select value from decimal_varlength_hive"))
+    checkAnswer(sql("select sum(value) from decimal_varlength"), sql("select sum(value) from decimal_varlength_hive"))
+  }
+
   override def afterAll {
     sql("drop table if exists escapechar1")
     sql("drop table if exists escapechar2")
@@ -701,6 +721,8 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
     sql("drop table if exists carbontable1")
     sql("drop table if exists hivetable1")
     sql("drop table if exists comment_test")
+    sql("drop table if exists decimal_varlength")
+    sql("drop table if exists decimal_varlength_hive")
     CarbonProperties.getInstance().addProperty(
       CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
       CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT

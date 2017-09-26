@@ -165,7 +165,7 @@ public class StoreCreator {
       loadModel.setFactTimeStamp(System.currentTimeMillis());
       loadModel.setMaxColumns("10");
 
-      executeGraph(loadModel, absoluteTableIdentifier.getStorePath());
+      loadData(loadModel, absoluteTableIdentifier.getStorePath());
 
     } catch (Exception e) {
       e.printStackTrace();
@@ -261,7 +261,6 @@ public class StoreCreator {
             + absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
     tableInfo.setLastUpdatedTime(System.currentTimeMillis());
     tableInfo.setFactTable(tableSchema);
-    tableInfo.setAggregateTableList(new ArrayList<TableSchema>());
 
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
@@ -318,9 +317,11 @@ public class StoreCreator {
         .createCache(CacheType.REVERSE_DICTIONARY, absoluteTableIdentifier.getStorePath());
     for (int i = 0; i < set.length; i++) {
       ColumnIdentifier columnIdentifier = new ColumnIdentifier(dims.get(i).getColumnId(), null, null);
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(table.getCarbonTableIdentifier(), columnIdentifier, columnIdentifier.getDataType(),
+          CarbonStorePath.getCarbonTablePath(table.getStorePath(), table.getCarbonTableIdentifier()));
       CarbonDictionaryWriter writer =
           new CarbonDictionaryWriterImpl(absoluteTableIdentifier.getStorePath(),
-              absoluteTableIdentifier.getCarbonTableIdentifier(), columnIdentifier);
+              absoluteTableIdentifier.getCarbonTableIdentifier(), dictionaryColumnUniqueIdentifier);
       for (String value : set[i]) {
         writer.write(value);
       }
@@ -328,7 +329,8 @@ public class StoreCreator {
       writer.commit();
       Dictionary dict = (Dictionary) dictCache.get(
           new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier(),
-        		  columnIdentifier, dims.get(i).getDataType()));
+        		  columnIdentifier, dims.get(i).getDataType(),
+              CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)));
       CarbonDictionarySortInfoPreparator preparator =
           new CarbonDictionarySortInfoPreparator();
       List<String> newDistinctValues = new ArrayList<String>();
@@ -336,7 +338,7 @@ public class StoreCreator {
           preparator.getDictionarySortInfo(newDistinctValues, dict, dims.get(i).getDataType());
       CarbonDictionarySortIndexWriter carbonDictionaryWriter =
           new CarbonDictionarySortIndexWriterImpl(
-              absoluteTableIdentifier.getCarbonTableIdentifier(), columnIdentifier,
+              absoluteTableIdentifier.getCarbonTableIdentifier(), dictionaryColumnUniqueIdentifier,
               absoluteTableIdentifier.getStorePath());
       try {
         carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex());
@@ -355,7 +357,7 @@ public class StoreCreator {
    * @param storeLocation
    * @throws Exception
    */
-  public static void executeGraph(CarbonLoadModel loadModel, String storeLocation)
+  public static void loadData(CarbonLoadModel loadModel, String storeLocation)
       throws Exception {
     new File(storeLocation).mkdirs();
     String outPutLoc = storeLocation + "/etl";
@@ -404,8 +406,9 @@ public class StoreCreator {
         format.createRecordReader(blockDetails, hadoopAttemptContext);
 
     CSVRecordReaderIterator readerIterator = new CSVRecordReaderIterator(recordReader, blockDetails, hadoopAttemptContext);
+    String[] storeLocationArray = new String[] {storeLocation};
     new DataLoadExecutor().execute(loadModel,
-        storeLocation,
+        storeLocationArray,
         new CarbonIterator[]{readerIterator});
 
     info.setDatabaseName(databaseName);

@@ -24,8 +24,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.core.cache.dictionary.ColumnDictionaryChunkIterator;
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -52,7 +52,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
   /**
    * column name
    */
-  protected ColumnIdentifier columnIdentifier;
+  protected DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier;
 
   /**
    * dictionary file path
@@ -69,13 +69,13 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    *
    * @param storePath         carbon dictionary data store path
    * @param carbonTableIdentifier table identifier which will give table name and database name
-   * @param columnIdentifier      column unique identifier
+   * @param dictionaryColumnUniqueIdentifier      column unique identifier
    */
-  public CarbonDictionaryReaderImpl(String storePath,
-      CarbonTableIdentifier carbonTableIdentifier, ColumnIdentifier columnIdentifier) {
+  public CarbonDictionaryReaderImpl(String storePath, CarbonTableIdentifier carbonTableIdentifier,
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     this.storePath = storePath;
     this.carbonTableIdentifier = carbonTableIdentifier;
-    this.columnIdentifier = columnIdentifier;
+    this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
     initFileLocation();
   }
 
@@ -216,10 +216,11 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    */
   protected void initFileLocation() {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(
-            this.storePath, carbonTableIdentifier);
-    this.columnDictionaryFilePath = carbonTablePath
-        .getDictionaryFilePath(columnIdentifier.getColumnId());
+    CarbonTablePath carbonTablePath = pathService
+        .getCarbonTablePath(this.storePath, carbonTableIdentifier,
+            dictionaryColumnUniqueIdentifier);
+    this.columnDictionaryFilePath = carbonTablePath.getDictionaryFilePath(
+        dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
   }
 
   /**
@@ -303,7 +304,7 @@ public class CarbonDictionaryReaderImpl implements CarbonDictionaryReader {
    */
   protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
     return new CarbonDictionaryMetadataReaderImpl(this.storePath, carbonTableIdentifier,
-        this.columnIdentifier);
+        this.dictionaryColumnUniqueIdentifier);
   }
 
   /**

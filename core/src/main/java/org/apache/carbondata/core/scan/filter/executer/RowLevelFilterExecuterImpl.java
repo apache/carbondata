@@ -35,8 +35,8 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.VariableLengthDimensionDataChunk;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
@@ -104,17 +104,31 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,
       Map<Integer, GenericQueryType> complexDimensionInfoMap) {
-    this.dimColEvaluatorInfoList = dimColEvaluatorInfoList;
     this.segmentProperties = segmentProperties;
-    this.dimensionBlocksIndex = new int[dimColEvaluatorInfoList.size()];
-    this.isDimensionPresentInCurrentBlock = new boolean[dimColEvaluatorInfoList.size()];
+    if (null == dimColEvaluatorInfoList) {
+      this.dimColEvaluatorInfoList = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    } else {
+      this.dimColEvaluatorInfoList = dimColEvaluatorInfoList;
+    }
+    if (this.dimColEvaluatorInfoList.size() > 0) {
+      this.isDimensionPresentInCurrentBlock = new boolean[dimColEvaluatorInfoList.size()];
+      this.dimensionBlocksIndex = new int[dimColEvaluatorInfoList.size()];
+    } else {
+      this.isDimensionPresentInCurrentBlock = new boolean[]{false};
+      this.dimensionBlocksIndex = new int[]{0};
+    }
     if (null == msrColEvalutorInfoList) {
       this.msrColEvalutorInfoList = new ArrayList<MeasureColumnResolvedFilterInfo>(20);
     } else {
       this.msrColEvalutorInfoList = msrColEvalutorInfoList;
     }
-    this.measureBlocksIndex = new int[msrColEvalutorInfoList.size()];
-    this.isMeasurePresentInCurrentBlock = new boolean[msrColEvalutorInfoList.size()];
+    if (this.msrColEvalutorInfoList.size() > 0) {
+      this.isMeasurePresentInCurrentBlock = new boolean[msrColEvalutorInfoList.size()];
+      this.measureBlocksIndex = new int[msrColEvalutorInfoList.size()];
+    } else {
+      this.isMeasurePresentInCurrentBlock = new boolean[]{false};
+      this.measureBlocksIndex = new int[] {0};
+    }
     this.exp = exp;
     this.tableIdentifier = tableIdentifier;
     this.complexDimensionInfoMap = complexDimensionInfoMap;
@@ -255,6 +269,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           if (null != memberBytes) {
             if (Arrays.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, memberBytes)) {
               memberBytes = null;
+            } else if (memberBytes.length == 0) {
+              memberBytes = null;
             }
             record[dimColumnEvaluatorInfo.getRowIndex()] = DataTypeUtil
                 .getDataBasedOnDataTypeForNoDictionaryColumn(memberBytes,
@@ -326,21 +342,21 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       }
 
       Object msrValue;
-      MeasureColumnDataChunk measureColumnDataChunk =
+      ColumnPage columnPage =
           blockChunkHolder.getMeasureRawDataChunk()[measureBlocksIndex[0]]
-              .convertToMeasureColDataChunk(pageIndex);
+              .convertToColumnPage(pageIndex);
       switch (msrType) {
         case SHORT:
-          msrValue = (short) measureColumnDataChunk.getColumnPage().getLong(index);
+          msrValue = (short) columnPage.getLong(index);
           break;
         case INT:
-          msrValue = (int) measureColumnDataChunk.getColumnPage().getLong(index);
+          msrValue = (int) columnPage.getLong(index);
           break;
         case LONG:
-          msrValue = measureColumnDataChunk.getColumnPage().getLong(index);
+          msrValue = columnPage.getLong(index);
           break;
         case DECIMAL:
-          BigDecimal bigDecimalValue = measureColumnDataChunk.getColumnPage().getDecimal(index);
+          BigDecimal bigDecimalValue = columnPage.getDecimal(index);
           if (null != bigDecimalValue &&
               msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale() >
                   bigDecimalValue.scale()) {
@@ -352,10 +368,10 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
           msrValue = bigDecimalValue;
           break;
         default:
-          msrValue = measureColumnDataChunk.getColumnPage().getDouble(index);
+          msrValue = columnPage.getDouble(index);
       }
       record[msrColumnEvalutorInfo.getRowIndex()] =
-          measureColumnDataChunk.getNullValueIndexHolder().getBitSet().get(index) ? null : msrValue;
+          columnPage.getNullBits().get(index) ? null : msrValue;
     }
     row.setValues(record);
   }

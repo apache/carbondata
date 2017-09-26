@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions
-import org.apache.spark.sql.catalyst.expressions.{AttributeSet, _}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSet, ScalaUDF, _}
 import org.apache.spark.sql.catalyst.planning.{PhysicalOperation, QueryPlanner}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter => LogicalFilter, LogicalPlan}
 import org.apache.spark.sql.execution.{ExecutedCommand, Filter, Project, SparkPlan}
@@ -35,8 +35,7 @@ import org.apache.spark.sql.execution.datasources.{DescribeCommand => LogicalDes
 import org.apache.spark.sql.hive.execution.{DropTable, HiveNativeCommand}
 import org.apache.spark.sql.hive.execution.command._
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
-import org.apache.spark.sql.types.IntegerType
-import org.apache.spark.sql.types.StringType
+import org.apache.spark.sql.types.{IntegerType, StringType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -63,16 +62,15 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     def apply(plan: LogicalPlan): Seq[SparkPlan] = {
       plan match {
         case PhysicalOperation(projectList, predicates, l: LogicalRelation)
-            if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
+          if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
           if (isStarQuery(plan)) {
             carbonRawScanForStarQuery(projectList, predicates, l)(sqlContext) :: Nil
           } else {
             carbonRawScan(projectList, predicates, l)(sqlContext) :: Nil
           }
         case InsertIntoCarbonTable(relation: CarbonDatasourceRelation,
-            _, child: LogicalPlan, _, _) =>
-            ExecutedCommand(LoadTableByInsert(relation,
-                child)) :: Nil
+        _, child: LogicalPlan, overwrite, _) =>
+          ExecutedCommand(LoadTableByInsert(relation, child, overwrite)) :: Nil
         case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
           CarbonDictionaryDecoder(relations,
             profile,
@@ -86,24 +84,38 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     /**
      * Create carbon scan
      */
-    private def carbonRawScan(projectList: Seq[NamedExpression],
-      predicates: Seq[Expression],
-      logicalRelation: LogicalRelation)(sc: SQLContext): SparkPlan = {
+    private def carbonRawScan(projectListRaw: Seq[NamedExpression],
+        predicates: Seq[Expression],
+        logicalRelation: LogicalRelation)(sc: SQLContext): SparkPlan = {
 
       val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceRelation]
       val tableName: String =
         relation.carbonRelation.metaData.carbonTable.getFactTableName.toLowerCase
       // Check out any expressions are there in project list. if they are present then we need to
       // decode them as well.
-      val newProjectList = projectList.map { element =>
-        element match {
-          case a@Alias(s: ScalaUDF, name)
-            if (name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
-              name.equalsIgnoreCase(
-                CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)) =>
-            AttributeReference(name, StringType, true)().withExprId(a.exprId)
-          case other => other
+
+      val projectList = projectListRaw.map {p =>
+        p.transform {
+          case CustomDeterministicExpression(exp) => exp
         }
+      }.asInstanceOf[Seq[NamedExpression]]
+      val newProjectList = projectList.map {
+        case a@Alias(s: ScalaUDF, name)
+          if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
+             name.equalsIgnoreCase(
+               CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
+          AttributeReference(name, StringType, true)().withExprId(a.exprId)
+        case a@Alias(s: ScalaUDF, name)
+          if name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_SEGMENTID) =>
+          val reference =
+            AttributeReference(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID,
+              StringType, true)().withExprId(a.exprId)
+          val alias = a.transform {
+            case s: ScalaUDF =>
+              ScalaUDF(s.function, s.dataType, Seq(reference), s.inputTypes)
+          }.asInstanceOf[Alias]
+          Alias(alias.child, alias.name)(alias.exprId, alias.qualifiers, alias.explicitMetadata)
+        case other => other
       }
       val projectSet = AttributeSet(newProjectList.flatMap(_.references))
       val filterSet = AttributeSet(predicates.flatMap(_.references))
@@ -155,8 +167,8 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
      * Create carbon scan for star query
      */
     private def carbonRawScanForStarQuery(projectList: Seq[NamedExpression],
-      predicates: Seq[Expression],
-      logicalRelation: LogicalRelation)(sc: SQLContext): SparkPlan = {
+        predicates: Seq[Expression],
+        logicalRelation: LogicalRelation)(sc: SQLContext): SparkPlan = {
       val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceRelation]
       val tableName: String =
         relation.carbonRelation.metaData.carbonTable.getFactTableName.toLowerCase
@@ -195,10 +207,10 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     }
 
     def getCarbonDecoder(logicalRelation: LogicalRelation,
-      sc: SQLContext,
-      tableName: String,
-      projectExprsNeedToDecode: Seq[Attribute],
-      scan: CarbonScan): CarbonDictionaryDecoder = {
+        sc: SQLContext,
+        tableName: String,
+        projectExprsNeedToDecode: Seq[Attribute],
+        scan: CarbonScan): CarbonDictionaryDecoder = {
       val relation = CarbonDecoderRelation(logicalRelation.attributeMap,
         logicalRelation.relation.asInstanceOf[CarbonDatasourceRelation])
       val attrs = projectExprsNeedToDecode.map { attr =>
@@ -228,7 +240,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         relation: CarbonDatasourceRelation,
         allAttrsNotDecode: util.Set[Attribute]): AttributeReference = {
       if (relation.carbonRelation.metaData.dictionaryMap.get(attr.name).getOrElse(false) &&
-        !allAttrsNotDecode.asScala.exists(p => p.name.equals(attr.name))) {
+          !allAttrsNotDecode.asScala.exists(p => p.name.equals(attr.name))) {
         AttributeReference(attr.name,
           IntegerType,
           attr.nullable,
@@ -241,7 +253,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     private def isStarQuery(plan: LogicalPlan) = {
       plan match {
         case LogicalFilter(condition, l: LogicalRelation)
-            if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
+          if l.relation.isInstanceOf[CarbonDatasourceRelation] =>
           true
         case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceRelation] => true
         case _ => false
@@ -253,7 +265,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
     def apply(plan: LogicalPlan): Seq[SparkPlan] = plan match {
       case DropTable(tableName, ifNotExists)
         if CarbonEnv.get.carbonMetastore
-            .isTablePathExists(toTableIdentifier(tableName.toLowerCase))(sqlContext) =>
+          .isTablePathExists(toTableIdentifier(tableName.toLowerCase))(sqlContext) =>
         val identifier = toTableIdentifier(tableName.toLowerCase)
         ExecutedCommand(DropTableCommand(ifNotExists, identifier.database, identifier.table)) :: Nil
       case ShowLoadsCommand(databaseName, table, limit) =>
@@ -261,7 +273,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
       case LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
       options, isOverwriteExist, inputSqlString, dataFrame, _) =>
         val isCarbonTable = CarbonEnv.get.carbonMetastore
-            .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
+          .tableExists(TableIdentifier(tableName, databaseNameOp))(sqlContext)
         if (isCarbonTable || options.nonEmpty) {
           ExecutedCommand(LoadTable(databaseNameOp, tableName, factPathFromUser, dimFilesPath,
             options, isOverwriteExist, inputSqlString, dataFrame)) :: Nil
@@ -270,15 +282,15 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         }
       case alterTable@AlterTableCompaction(altertablemodel) =>
         val isCarbonTable = CarbonEnv.get.carbonMetastore
-            .tableExists(TableIdentifier(altertablemodel.tableName,
-                 altertablemodel.dbName))(sqlContext)
+          .tableExists(TableIdentifier(altertablemodel.tableName,
+            altertablemodel.dbName))(sqlContext)
         if (isCarbonTable) {
           if (altertablemodel.compactionType.equalsIgnoreCase("minor") ||
               altertablemodel.compactionType.equalsIgnoreCase("major")) {
             ExecutedCommand(alterTable) :: Nil
           } else {
             throw new MalformedCarbonCommandException(
-                "Unsupported alter operation on carbon table")
+              "Unsupported alter operation on carbon table")
           }
         } else {
           ExecutedCommand(HiveNativeCommand(altertablemodel.alterSql)) :: Nil
@@ -306,7 +318,7 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
         }
       case DescribeFormattedCommand(sql, tblIdentifier) =>
         val isTable = CarbonEnv.get.carbonMetastore
-            .tableExists(tblIdentifier)(sqlContext)
+          .tableExists(tblIdentifier)(sqlContext)
         if (isTable) {
           val describe =
             LogicalDescribeCommand(UnresolvedRelation(tblIdentifier, None), isExtended = false)
@@ -314,6 +326,22 @@ class CarbonStrategies(sqlContext: SQLContext) extends QueryPlanner[SparkPlan] {
           val resultPlan = sqlContext.executePlan(resolvedTable).executedPlan
           ExecutedCommand(DescribeCommandFormatted(resultPlan, plan.output, tblIdentifier)) :: Nil
         } else {
+          ExecutedCommand(HiveNativeCommand(sql)) :: Nil
+        }
+      case ShowPartitions(t) =>
+        val isCarbonTable = CarbonEnv.get.carbonMetastore
+          .tableExists(t)(sqlContext)
+        if (isCarbonTable) {
+          ExecutedCommand(ShowCarbonPartitionsCommand(t)) :: Nil
+        } else {
+          var tableName = t.table
+          var database = t.database
+          var sql: String = null
+          if (database.isEmpty) {
+            sql = s"show partitions $tableName"
+          } else {
+            sql = s"show partitions $database.$tableName"
+          }
           ExecutedCommand(HiveNativeCommand(sql)) :: Nil
         }
       case _ =>

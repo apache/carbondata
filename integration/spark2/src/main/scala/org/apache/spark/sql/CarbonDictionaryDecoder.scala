@@ -39,8 +39,10 @@ import org.apache.carbondata.core.metadata.datatype.DataType
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
-import org.apache.carbondata.spark.rdd.CarbonRDD
+import org.apache.carbondata.spark.rdd.{CarbonRDD, CarbonRDDWithTableInfo}
+import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
 
 /**
  * It decodes the data.
@@ -67,7 +69,7 @@ case class CarbonDictionaryDecoder(
 
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
-      val storePath = CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath
+      val storePath = CarbonEnv.getInstance(sparkSession).storePath
       val absoluteTableIdentifiers = relations.map { relation =>
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
         (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
@@ -121,7 +123,7 @@ case class CarbonDictionaryDecoder(
 
   override def doConsume(ctx: CodegenContext, input: Seq[ExprCode], row: ExprCode): String = {
 
-    val storePath = CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath
+    val storePath = CarbonEnv.getInstance(sparkSession).storePath
     val absoluteTableIdentifiers = relations.map { relation =>
       val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
       (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
@@ -247,7 +249,8 @@ case class CarbonDictionaryDecoder(
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
             atiMap(f._1).getCarbonTableIdentifier,
-            f._2, f._3.getDataType))
+            f._2, f._3.getDataType,
+            CarbonStorePath.getCarbonTablePath(atiMap(f._1))))
         } catch {
           case _: Throwable => null
         }
@@ -267,7 +270,8 @@ case class CarbonDictionaryDecoder(
           try {
             val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
               atiMap(tableName).getCarbonTableIdentifier,
-              columnIdentifier, carbonDimension.getDataType)
+              columnIdentifier, carbonDimension.getDataType,
+              CarbonStorePath.getCarbonTablePath(atiMap(tableName)))
             allDictIdentifiers += dictionaryColumnUniqueIdentifier;
             new ForwardDictionaryWrapper(
               storePath,
@@ -444,10 +448,9 @@ class CarbonDecoderRDD(
     aliasMap: CarbonAliasDecoderRelation,
     prev: RDD[InternalRow],
     output: Seq[Attribute],
-    sparkSession: SparkSession)
-  extends CarbonRDD[InternalRow](prev) {
-
-  private val storepath = CarbonEnv.getInstance(sparkSession).carbonMetastore.storePath
+    storePath: String,
+    serializedTableInfo: Array[Byte])
+  extends CarbonRDDWithTableInfo[InternalRow](prev, serializedTableInfo) {
 
   def canBeDecoded(attr: Attribute): Boolean = {
     profile match {
@@ -516,13 +519,13 @@ class CarbonDecoderRDD(
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
     val absoluteTableIdentifiers = relations.map { relation =>
-      val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
-      (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
+      val tableInfo = getTableInfo
+      (tableInfo.getFactTable.getTableName, tableInfo.getOrCreateAbsoluteTableIdentifier)
     }.toMap
 
     val cacheProvider: CacheProvider = CacheProvider.getInstance
     val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storepath)
+      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
     val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
       forwardDictionaryCache)
     val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
@@ -566,7 +569,8 @@ class CarbonDecoderRDD(
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
             atiMap(f._1).getCarbonTableIdentifier,
-            f._2, f._3.getDataType))
+            f._2, f._3.getDataType,
+            CarbonStorePath.getCarbonTablePath(atiMap(f._1))))
         } catch {
           case _: Throwable => null
         }

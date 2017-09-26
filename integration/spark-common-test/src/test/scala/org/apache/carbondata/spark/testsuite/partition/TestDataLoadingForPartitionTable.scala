@@ -17,16 +17,15 @@
 package org.apache.carbondata.spark.testsuite.partition
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.spark.sql.test.util.QueryTest
 
 class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll {
 
@@ -60,11 +59,11 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE originMultiLoads OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
   }
 
-  def validateDataFiles(tableUniqueName: String, sgementId: String, partitions: Seq[Int]): Unit = {
+  def validateDataFiles(tableUniqueName: String, segmentId: String, partitions: Seq[Int]): Unit = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
     val tablePath = new CarbonTablePath(carbonTable.getStorePath, carbonTable.getDatabaseName,
       carbonTable.getFactTableName)
-    val segmentDir = tablePath.getCarbonDataDirectoryPath("0", sgementId)
+    val segmentDir = tablePath.getCarbonDataDirectoryPath("0", segmentId)
     val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
     val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
       override def accept(file: CarbonFile): Boolean = {
@@ -114,7 +113,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE rangeTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    validateDataFiles("default_rangeTable", "0", Seq(0, 1, 3, 4))
+    validateDataFiles("default_rangeTable", "0", Seq(0, 1, 2, 4))
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeTable order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -135,7 +134,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE listTable OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
-    validateDataFiles("default_listTable", "0", Seq(1, 2))
+    validateDataFiles("default_listTable", "0", Seq(2, 3))
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from listTable order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -175,7 +174,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE rangeTableSinglePass OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"', 'SINGLE_PASS'='TRUE')""")
 
-    validateDataFiles("default_rangeTableSinglePass", "0", Seq(0, 1, 3, 4))
+    validateDataFiles("default_rangeTableSinglePass", "0", Seq(0, 1, 2, 4))
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeTableSinglePass order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -196,7 +195,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE listTableSinglePass OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"', 'SINGLE_PASS'='TRUE')""")
 
-    validateDataFiles("default_listTableSinglePass", "0", Seq(1, 2))
+    validateDataFiles("default_listTableSinglePass", "0", Seq(2, 3))
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from listTableSinglePass order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -236,7 +235,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       """.stripMargin)
     sql("insert into rangeTableForInsert select empno, empname, designation, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary, doj from originTable")
 
-    validateDataFiles("default_rangeTableForInsert", "0", Seq(0, 1, 3, 4))
+    validateDataFiles("default_rangeTableForInsert", "0", Seq(0, 1, 2, 4))
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from rangeTableForInsert order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -257,7 +256,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
       """.stripMargin)
     sql("insert into listTableForInsert select empno, empname, designation, doj, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary, workgroupcategory from originTable")
 
-    validateDataFiles("default_listTableForInsert", "0", Seq(1, 2))
+    validateDataFiles("default_listTableForInsert", "0", Seq(2, 3))
 
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from listTableForInsert order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable order by empno"))
@@ -372,8 +371,6 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
 
   override def afterAll = {
     dropTable
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, TestQueryExecutor.timestampFormat)
   }
 
   def dropTable = {

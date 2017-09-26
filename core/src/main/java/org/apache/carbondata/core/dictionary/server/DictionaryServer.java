@@ -21,6 +21,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 import io.netty.bootstrap.ServerBootstrap;
@@ -47,13 +48,13 @@ public class DictionaryServer {
   private EventLoopGroup worker;
   private int port;
   private static Object lock = new Object();
-  private static DictionaryServer INSTANCE = null;
+  private static volatile DictionaryServer INSTANCE = null;
 
   private DictionaryServer(int port) {
     startServer(port);
   }
 
-  public static DictionaryServer getInstance(int port) {
+  public static DictionaryServer getInstance(int port, CarbonTable carbonTable) throws Exception {
     if (INSTANCE == null) {
       synchronized (lock) {
         if (INSTANCE == null) {
@@ -61,6 +62,7 @@ public class DictionaryServer {
         }
       }
     }
+    INSTANCE.initializeDictionaryGenerator(carbonTable);
     return INSTANCE;
   }
 
@@ -140,26 +142,17 @@ public class DictionaryServer {
     boss.shutdownGracefully();
   }
 
-
-
-  /**
-   * Write dictionary to the store.
-   * @throws Exception
-   */
-  public void writeDictionary() throws Exception {
-    DictionaryMessage key = new DictionaryMessage();
-    key.setType(DictionaryMessageType.WRITE_DICTIONARY);
-    dictionaryServerHandler.processMessage(key);
+  public void initializeDictionaryGenerator(CarbonTable carbonTable) throws Exception {
+    dictionaryServerHandler.initializeTable(carbonTable);
   }
 
   /**
    *  Write Dictionary for one table.
    * @throws Exception
    */
-
-  public void writeTableDictionary(String uniqueTableName) throws Exception {
+  public void writeTableDictionary(String tableId) throws Exception {
     DictionaryMessage key = new DictionaryMessage();
-    key.setTableUniqueName(uniqueTableName);
+    key.setTableUniqueId(tableId);
     key.setType(DictionaryMessageType.WRITE_TABLE_DICTIONARY);
     dictionaryServerHandler.processMessage(key);
   }

@@ -54,12 +54,15 @@ import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -273,7 +276,8 @@ public class QueryUtil {
    */
   public static Map<String, Dictionary> getDimensionDictionaryDetail(
       List<QueryDimension> queryDimensions, Set<CarbonDimension> filterComplexDimensions,
-      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
+      AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider)
+      throws IOException {
     // to store dimension unique column id list, this is required as
     // dimension can be present in
     // query dimension, as well as some aggregation function will be applied
@@ -307,7 +311,7 @@ public class QueryUtil {
     List<String> dictionaryColumnIdList =
         new ArrayList<String>(dictionaryDimensionFromQuery.size());
     dictionaryColumnIdList.addAll(dictionaryDimensionFromQuery);
-    return getDictionaryMap(dictionaryColumnIdList, absoluteTableIdentifier);
+    return getDictionaryMap(dictionaryColumnIdList, absoluteTableIdentifier, tableProvider);
   }
 
   /**
@@ -339,11 +343,12 @@ public class QueryUtil {
    * @throws IOException
    */
   private static Map<String, Dictionary> getDictionaryMap(List<String> dictionaryColumnIdList,
-      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
+      AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider)
+      throws IOException {
     // this for dictionary unique identifier
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
         getDictionaryColumnUniqueIdentifierList(dictionaryColumnIdList,
-            absoluteTableIdentifier.getCarbonTableIdentifier());
+            absoluteTableIdentifier.getCarbonTableIdentifier(), tableProvider);
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
         .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath());
@@ -367,9 +372,11 @@ public class QueryUtil {
    * @return
    */
   private static List<DictionaryColumnUniqueIdentifier> getDictionaryColumnUniqueIdentifierList(
-      List<String> dictionaryColumnIdList, CarbonTableIdentifier carbonTableIdentifier) {
-    CarbonTable carbonTable =
-        CarbonMetadata.getInstance().getCarbonTable(carbonTableIdentifier.getTableUniqueName());
+      List<String> dictionaryColumnIdList, CarbonTableIdentifier carbonTableIdentifier,
+      TableProvider tableProvider) throws IOException {
+    CarbonTable carbonTable = tableProvider.getCarbonTable(carbonTableIdentifier);
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath(), carbonTableIdentifier);
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
         new ArrayList<>(dictionaryColumnIdList.size());
     for (String columnId : dictionaryColumnIdList) {
@@ -380,7 +387,8 @@ public class QueryUtil {
             new DictionaryColumnUniqueIdentifier(
                 carbonTableIdentifier,
                 dimension.getColumnIdentifier(),
-                dimension.getDataType()
+                dimension.getDataType(),
+                carbonTablePath
             )
         );
       }
@@ -775,8 +783,7 @@ public class QueryUtil {
         new StructQueryType(dimension.getColName(), dimension.getColName(),
             dimensionToBlockIndexMap.get(dimension.getOrdinal()));
     complexTypeMap.put(dimension.getOrdinal(), parentQueryType);
-    parentBlockIndex =
-        fillChildrenDetails(eachComplexColumnValueSize, columnIdToDictionaryMap, parentBlockIndex,
+    fillChildrenDetails(eachComplexColumnValueSize, columnIdToDictionaryMap, parentBlockIndex,
             dimension, parentQueryType);
   }
 

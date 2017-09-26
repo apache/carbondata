@@ -22,9 +22,9 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.core.scan.model._
-import org.apache.carbondata.spark.CarbonFilters
 
 case class CarbonScan(
     var attributesRaw: Seq[Attribute],

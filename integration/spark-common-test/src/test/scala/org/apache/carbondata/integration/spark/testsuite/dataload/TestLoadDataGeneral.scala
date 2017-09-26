@@ -22,12 +22,11 @@ import java.math.BigDecimal
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.spark.sql.test.util.QueryTest
 
 class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
 

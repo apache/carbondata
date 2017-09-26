@@ -17,18 +17,21 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
 public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   // for string and decimal data
   private byte[][] byteArrayData;
 
-  SafeVarLengthColumnPage(DataType dataType, int pageSize) {
-    super(dataType, pageSize);
+  SafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
+    super(columnSpec, dataType, pageSize);
     byteArrayData = new byte[pageSize][];
   }
 
@@ -47,15 +50,34 @@ public class SafeVarLengthColumnPage extends VarLengthColumnPageBase {
     System.arraycopy(bytes, offset, byteArrayData[rowId], 0, length);
   }
 
+  @Override public void putDecimal(int rowId, BigDecimal decimal) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
   @Override
   public BigDecimal getDecimal(int rowId) {
-    byte[] bytes = byteArrayData[rowId];
-    return DataTypeUtil.byteToBigDecimal(bytes);
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
+  public byte[] getBytes(int rowId) {
+    return byteArrayData[rowId];
   }
 
   @Override
   public void setByteArrayPage(byte[][] byteArray) {
     byteArrayData = byteArray;
+  }
+
+  @Override
+  public byte[] getLVFlattenedBytePage() throws IOException {
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    DataOutputStream out = new DataOutputStream(stream);
+    for (byte[] byteArrayDatum : byteArrayData) {
+      out.writeInt(byteArrayDatum.length);
+      out.write(byteArrayDatum);
+    }
+    return stream.toByteArray();
   }
 
   @Override

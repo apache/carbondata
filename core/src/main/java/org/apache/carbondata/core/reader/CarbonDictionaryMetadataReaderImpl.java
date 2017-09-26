@@ -21,9 +21,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -49,7 +49,7 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
   /**
    * column identifier
    */
-  protected ColumnIdentifier columnIdentifier;
+  protected DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier;
 
   /**
    * dictionary metadata file path
@@ -66,13 +66,14 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    *
    * @param storePath             carbon dictionary meta data store path
    * @param carbonTableIdentifier table identifier which will give table name and database name
-   * @param columnIdentifier      column unique identifier
+   * @param dictionaryColumnUniqueIdentifier      column unique identifier
    */
   public CarbonDictionaryMetadataReaderImpl(String storePath,
-      CarbonTableIdentifier carbonTableIdentifier, ColumnIdentifier columnIdentifier) {
+      CarbonTableIdentifier carbonTableIdentifier,
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     this.storePath = storePath;
     this.carbonTableIdentifier = carbonTableIdentifier;
-    this.columnIdentifier = columnIdentifier;
+    this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
     initFileLocation();
   }
 
@@ -133,6 +134,23 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
     return getNewInstanceOfCarbonDictionaryColumnMetaChunk(dictionaryChunkMeta);
   }
 
+  @Override public CarbonDictionaryColumnMetaChunk readEntryOfDictionaryMetaChunk(long end_Offset)
+          throws IOException {
+    ColumnDictionaryChunkMeta dictionaryChunkMeta = null;
+    // open dictionary meta thrift reader
+    openThriftReader();
+    // at the completion of while loop we will get the last dictionary chunk entry
+    while (dictionaryMetadataFileReader.hasNext()) {
+      // get the thrift object for dictionary chunk
+      dictionaryChunkMeta = (ColumnDictionaryChunkMeta) dictionaryMetadataFileReader.read();
+      if (dictionaryChunkMeta.end_offset >= end_Offset) {
+        break;
+      }
+    }
+    // create a new instance of chunk meta wrapper using thrift object
+    return getNewInstanceOfCarbonDictionaryColumnMetaChunk(dictionaryChunkMeta);
+  }
+
   /**
    * Closes this stream and releases any system resources associated
    * with it. If the stream is already closed then invoking this
@@ -152,10 +170,11 @@ public class CarbonDictionaryMetadataReaderImpl implements CarbonDictionaryMetad
    */
   protected void initFileLocation() {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath =
-        pathService.getCarbonTablePath(this.storePath, carbonTableIdentifier);
-    this.columnDictionaryMetadataFilePath =
-        carbonTablePath.getDictionaryMetaFilePath(columnIdentifier.getColumnId());
+    CarbonTablePath carbonTablePath = pathService
+        .getCarbonTablePath(this.storePath, carbonTableIdentifier,
+            dictionaryColumnUniqueIdentifier);
+    this.columnDictionaryMetadataFilePath = carbonTablePath.getDictionaryMetaFilePath(
+        dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
   }
 
   /**

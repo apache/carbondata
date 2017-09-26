@@ -16,6 +16,9 @@
  */
 package org.apache.carbondata.core.metadata.schema.table;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,7 +33,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 /**
  * Persisting the table information
  */
-public class TableSchema implements Serializable {
+public class TableSchema implements Serializable, Writable {
 
   /**
    * serialization version
@@ -198,4 +201,53 @@ public class TableSchema implements Serializable {
   public void setPartitionInfo(PartitionInfo partitionInfo) {
     this.partitionInfo = partitionInfo;
   }
+
+  @Override
+  public void write(DataOutput out) throws IOException {
+    out.writeUTF(tableId);
+    out.writeUTF(tableName);
+    out.writeInt(listOfColumns.size());
+    for (ColumnSchema column : listOfColumns) {
+      column.write(out);
+    }
+
+    if (null != partitionInfo) {
+      out.writeBoolean(true);
+      partitionInfo.write(out);
+    } else {
+      out.writeBoolean(false);
+    }
+    if (null != bucketingInfo) {
+      out.writeBoolean(true);
+      bucketingInfo.write(out);
+    } else {
+      out.writeBoolean(false);
+    }
+  }
+
+  @Override
+  public void readFields(DataInput in) throws IOException {
+    this.tableId = in.readUTF();
+    this.tableName = in.readUTF();
+    int listSize = in.readInt();
+    this.listOfColumns = new ArrayList<>(listSize);
+    for (int i = 0; i < listSize; i++) {
+      ColumnSchema schema = new ColumnSchema();
+      schema.readFields(in);
+      this.listOfColumns.add(schema);
+    }
+
+    boolean partitionExists = in.readBoolean();
+    if (partitionExists) {
+      this.partitionInfo = new PartitionInfo();
+      this.partitionInfo.readFields(in);
+    }
+
+    boolean bucketingExists = in.readBoolean();
+    if (bucketingExists) {
+      this.bucketingInfo = new BucketingInfo();
+      this.bucketingInfo.readFields(in);
+    }
+  }
+
 }

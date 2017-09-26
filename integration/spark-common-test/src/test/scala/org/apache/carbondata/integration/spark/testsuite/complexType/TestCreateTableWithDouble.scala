@@ -18,12 +18,11 @@
 package org.apache.carbondata.integration.spark.testsuite.complexType
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.metadata.{CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * Test class of creating and loading for carbon table with double
@@ -55,8 +54,8 @@ class TestCreateTableWithDouble extends QueryTest with BeforeAndAfterAll {
       case e : Throwable => fail(e)
     }
     // assert that load and query is successful
-    assertResult(countNum)(Array(Row(3)))
-    assertResult(doubleField)(Array(Row(1.5), Row(2.0), Row(3.0)))
+    assertResult(Array(Row(3)))(countNum)
+    assertResult(Array(Row(1.5), Row(2.0), Row(3.0)))(doubleField)
   }
 
   test("test creating carbon table with double as dimension") {

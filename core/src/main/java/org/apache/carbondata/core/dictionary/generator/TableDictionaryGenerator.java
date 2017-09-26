@@ -16,14 +16,11 @@
  */
 package org.apache.carbondata.core.dictionary.generator;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -33,7 +30,6 @@ import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.devapi.DictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -47,23 +43,20 @@ public class TableDictionaryGenerator
   private static final LogService LOGGER =
           LogServiceFactory.getLogService(TableDictionaryGenerator.class.getName());
 
+  private CarbonTable carbonTable;
   /**
    * the map of columnName to dictionaryGenerator
    */
   private Map<String, DictionaryGenerator<Integer, String>> columnMap = new ConcurrentHashMap<>();
 
-  public TableDictionaryGenerator(CarbonDimension dimension) {
-    columnMap.put(dimension.getColumnId(),
-            new IncrementalColumnDictionaryGenerator(dimension, 1));
+  public TableDictionaryGenerator(CarbonTable carbonTable) {
+    this.carbonTable = carbonTable;
   }
 
   @Override
   public Integer generateKey(DictionaryMessage value)
       throws DictionaryGenerationException {
-    CarbonMetadata metadata = CarbonMetadata.getInstance();
-    CarbonTable carbonTable = metadata.getCarbonTable(value.getTableUniqueName());
-    CarbonDimension dimension = carbonTable.getPrimitiveDimensionByName(
-            value.getTableUniqueName(), value.getColumnName());
+    CarbonDimension dimension = carbonTable.getPrimitiveDimensionByName(value.getColumnName());
 
     DictionaryGenerator<Integer, String> generator =
             columnMap.get(dimension.getColumnId());
@@ -71,19 +64,15 @@ public class TableDictionaryGenerator
   }
 
   public Integer size(DictionaryMessage key) {
-    CarbonMetadata metadata = CarbonMetadata.getInstance();
-    CarbonTable carbonTable = metadata.getCarbonTable(key.getTableUniqueName());
-    CarbonDimension dimension = carbonTable.getPrimitiveDimensionByName(
-            key.getTableUniqueName(), key.getColumnName());
+    CarbonDimension dimension = carbonTable.getPrimitiveDimensionByName(key.getColumnName());
 
     DictionaryGenerator<Integer, String> generator =
             columnMap.get(dimension.getColumnId());
     return ((BiDictionary) generator).size();
   }
 
-  @Override public void writeDictionaryData(String tableUniqueName) {
+  @Override public void writeDictionaryData() {
     int numOfCores = 1;
-    final String tableName = tableUniqueName;
     try {
       numOfCores = Integer.parseInt(CarbonProperties.getInstance()
               .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
@@ -92,16 +81,9 @@ public class TableDictionaryGenerator
       numOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     }
     long start = System.currentTimeMillis();
-    List<Future<Void>> taskSubmitList =
-            new ArrayList<>(columnMap.size());
     ExecutorService executorService = Executors.newFixedThreadPool(numOfCores);
-    for (final DictionaryGenerator generator: columnMap.values()) {
-      taskSubmitList.add(executorService.submit(new Callable<Void>() {
-        @Override public Void call() throws Exception {
-          ((DictionaryWriter) (generator)).writeDictionaryData(tableName);
-          return null;
-        }
-      }));
+    for (final DictionaryGenerator generator : columnMap.values()) {
+      executorService.execute(new WriteDictionaryDataRunnable(generator));
     }
 
     try {
@@ -114,15 +96,36 @@ public class TableDictionaryGenerator
             (System.currentTimeMillis() - start));
   }
 
-  public void updateGenerator(CarbonDimension dimension) {
-    // reuse dictionary generator
+  public void updateGenerator(DictionaryMessage key) {
+    CarbonDimension dimension = carbonTable
+        .getPrimitiveDimensionByName(key.getColumnName());
     if (null == columnMap.get(dimension.getColumnId())) {
       synchronized (columnMap) {
         if (null == columnMap.get(dimension.getColumnId())) {
           columnMap.put(dimension.getColumnId(),
-              new IncrementalColumnDictionaryGenerator(dimension, 1));
+              new IncrementalColumnDictionaryGenerator(dimension, 1, carbonTable));
         }
       }
     }
   }
+
+  private static class WriteDictionaryDataRunnable implements Runnable {
+    private final DictionaryGenerator generator;
+
+    public WriteDictionaryDataRunnable(DictionaryGenerator generator) {
+      this.generator = generator;
+    }
+
+    @Override public void run() {
+      try {
+        ((DictionaryWriter)generator).writeDictionaryData();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+  }
+  public String getTableUniqueName() {
+    return carbonTable.getTableUniqueName();
+  }
+
 }

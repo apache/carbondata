@@ -18,10 +18,9 @@
   */
 package org.apache.carbondata.spark.util
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.constants.TableOptionConstant
@@ -59,8 +58,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       s"locationInfo.ActiveCountry:${resourcesPath}/locationInfoActiveCountry.csv"
     extColDictFilePath2 = s"deviceInformationId:${resourcesPath}/deviceInformationId2.csv"
     extColDictFilePath3 = s"channelsId:${resourcesPath}/channelsId.csv"
-    header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC," +
-      "locationinfo,proddate,gamePointId,contractNumber"
+    header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber"
     header2 = "deviceInformationId,channelsId,contractNumber"
   }
 
@@ -74,7 +72,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      proddate struct<productionDate:string,activeDeactivedate:array<string>>,
      gamePointId double,contractNumber double)
      STORED BY 'org.apache.carbondata.format'
-     TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
+     TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId, channelsId')
       """)
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
@@ -84,7 +82,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       sql("""CREATE TABLE verticalDelimitedTable (deviceInformationId int,
      channelsId string,contractNumber double)
      STORED BY 'org.apache.carbondata.format'
-     TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
+     TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId, channelsId')
       """)
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)

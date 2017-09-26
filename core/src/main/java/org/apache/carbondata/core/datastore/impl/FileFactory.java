@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.filesystem.*;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -74,16 +75,20 @@ public final class FileFactory {
   }
 
   public static FileType getFileType(String path) {
-    if (path.startsWith(CarbonUtil.HDFS_PREFIX)) {
+    if (path.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
       return FileType.HDFS;
     }
-    else if (path.startsWith(CarbonUtil.ALLUXIO_PREFIX)) {
+    else if (path.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
       return FileType.ALLUXIO;
     }
-    else if (path.startsWith(CarbonUtil.VIEWFS_PREFIX)) {
+    else if (path.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
       return FileType.VIEWFS;
     }
     return FileType.LOCAL;
+  }
+
+  public static CarbonFile getCarbonFile(String path) {
+    return getCarbonFile(path, getFileType(path));
   }
 
   public static CarbonFile getCarbonFile(String path, FileType fileType) {
@@ -362,8 +367,25 @@ public final class FileFactory {
       return path.delete();
     }
     File[] files = path.listFiles();
+    if (null == files) {
+      return true;
+    }
     for (int i = 0; i < files.length; i++) {
       deleteAllFilesOfDir(files[i]);
+    }
+    return path.delete();
+  }
+
+  public static boolean deleteAllCarbonFilesOfDir(CarbonFile path) {
+    if (!path.exists()) {
+      return true;
+    }
+    if (!path.isDirectory()) {
+      return path.delete();
+    }
+    CarbonFile[] files = path.listFiles();
+    for (int i = 0; i < files.length; i++) {
+      deleteAllCarbonFilesOfDir(files[i]);
     }
     return path.delete();
   }
@@ -516,6 +538,27 @@ public final class FileFactory {
         File file = new File(filePath);
         return FileUtils.sizeOfDirectory(file);
     }
+  }
+
+  /**
+   * This method will create the path object for a given file
+   *
+   * @param filePath
+   * @return
+   */
+  public static Path getPath(String filePath) {
+    return new Path(filePath);
+  }
+
+  /**
+   * This method will return the filesystem instance
+   *
+   * @param path
+   * @return
+   * @throws IOException
+   */
+  public static FileSystem getFileSystem(Path path) throws IOException {
+    return path.getFileSystem(configuration);
   }
 
 }

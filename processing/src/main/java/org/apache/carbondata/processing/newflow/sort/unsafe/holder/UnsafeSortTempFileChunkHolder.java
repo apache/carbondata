@@ -35,6 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.newflow.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.NewRowComparator;
@@ -341,13 +342,16 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
               short aShort = stream.readShort();
               byte[] bigDecimalInBytes = new byte[aShort];
               stream.readFully(bigDecimalInBytes);
-              row[dimensionCount + mesCount] = bigDecimalInBytes;
+              row[dimensionCount + mesCount] = DataTypeUtil.byteToBigDecimal(bigDecimalInBytes);
               break;
+            default:
+              throw new IllegalArgumentException("unsupported data type:" +
+                  measureDataType[mesCount]);
           }
         }
       }
       return row;
-    } catch (Exception e) {
+    } catch (IOException e) {
       throw new CarbonSortKeyAndGroupByException(e);
     }
   }
@@ -396,12 +400,16 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
   }
 
   @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+
     if (!(obj instanceof UnsafeSortTempFileChunkHolder)) {
       return false;
     }
     UnsafeSortTempFileChunkHolder o = (UnsafeSortTempFileChunkHolder) obj;
 
-    return o.compareTo(o) == 0;
+    return this == o;
   }
 
   @Override public int hashCode() {

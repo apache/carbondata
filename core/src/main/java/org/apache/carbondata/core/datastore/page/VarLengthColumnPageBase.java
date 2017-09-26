@@ -17,16 +17,41 @@
 
 package org.apache.carbondata.core.datastore.page;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.datastore.TableSpec;
+import org.apache.carbondata.core.memory.CarbonUnsafe;
+import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
+import static org.apache.carbondata.core.metadata.datatype.DataType.BYTE;
 import static org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL;
 
 public abstract class VarLengthColumnPageBase extends ColumnPage {
+
+  static final int byteBits = BYTE.getSizeBits();
+  static final int shortBits = DataType.SHORT.getSizeBits();
+  static final int intBits = DataType.INT.getSizeBits();
+  static final int longBits = DataType.LONG.getSizeBits();
+  // default size for each row, grows as needed
+  static final int DEFAULT_ROW_SIZE = 8;
+
+  static final double FACTOR = 1.25;
+
+  final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+
+  // memory allocated by Unsafe
+  MemoryBlock memoryBlock;
+
+  // base address of memoryBlock
+  Object baseAddress;
 
   // the offset of row in the unsafe memory, its size is pageSize + 1
   int[] rowOffset;
@@ -34,8 +59,13 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   // the length of bytes added in the page
   int totalLength;
 
-  VarLengthColumnPageBase(DataType dataType, int pageSize) {
-    super(dataType, pageSize);
+  // base offset of memoryBlock
+  long baseOffset;
+
+  // size of the allocated memory, in bytes
+  int capacity;
+  VarLengthColumnPageBase(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
+    super(columnSpec, dataType, pageSize);
     rowOffset = new int[pageSize + 1];
     totalLength = 0;
   }
@@ -75,15 +105,64 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
-  @Override
-  public void setByteArrayPage(byte[][] byteArray) {
-    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  /**
+   * Create a new column page for decimal page
+   */
+  static ColumnPage newDecimalColumnPage(TableSpec.ColumnSpec columnSpec, byte[] lvEncodedBytes)
+      throws MemoryException {
+    DecimalConverterFactory.DecimalConverter decimalConverter =
+        DecimalConverterFactory.INSTANCE.getDecimalConverter(columnSpec.getPrecision(),
+            columnSpec.getScale());
+    int size = decimalConverter.getSize();
+    if (size < 0) {
+      return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataType.DECIMAL);
+    } else {
+      // Here the size is always fixed.
+      return getDecimalColumnPage(columnSpec, lvEncodedBytes, size);
+    }
   }
 
   /**
    * Create a new column page based on the LV (Length Value) encoded bytes
    */
-  static ColumnPage newDecimalColumnPage(byte[] lvEncodedBytes) throws MemoryException {
+  static ColumnPage newLVBytesColumnPage(TableSpec.ColumnSpec columnSpec, byte[] lvEncodedBytes)
+      throws MemoryException {
+    return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataType.BYTE_ARRAY);
+  }
+
+  private static ColumnPage getDecimalColumnPage(TableSpec.ColumnSpec columnSpec,
+      byte[] lvEncodedBytes, int size) throws MemoryException {
+    List<Integer> rowOffset = new ArrayList<>();
+    int offset;
+    int rowId = 0;
+    for (offset = 0; offset < lvEncodedBytes.length; offset += size) {
+      rowOffset.add(offset);
+      rowId++;
+    }
+    rowOffset.add(offset);
+
+    VarLengthColumnPageBase page;
+    if (unsafe) {
+      page = new UnsafeDecimalColumnPage(columnSpec, DECIMAL, rowId);
+    } else {
+      page = new SafeDecimalColumnPage(columnSpec, DECIMAL, rowId);
+    }
+
+    // set total length and rowOffset in page
+    page.totalLength = offset;
+    page.rowOffset = new int[rowId + 1];
+    for (int i = 0; i < rowId + 1; i++) {
+      page.rowOffset[i] = rowOffset.get(i);
+    }
+    for (int i = 0; i < rowId; i++) {
+      page.putBytes(i, lvEncodedBytes, i * size, size);
+    }
+    return page;
+  }
+
+  private static ColumnPage getLVBytesColumnPage(TableSpec.ColumnSpec columnSpec,
+      byte[] lvEncodedBytes, DataType dataType)
+      throws MemoryException {
     // extract length and data, set them to rowOffset and unsafe memory correspondingly
     int rowId = 0;
     List<Integer> rowOffset = new ArrayList<>();
@@ -105,10 +184,11 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     int numRows = rowId;
 
     VarLengthColumnPageBase page;
+    int inputDataLength = offset;
     if (unsafe) {
-      page = new UnsafeVarLengthColumnPage(DECIMAL, numRows);
+      page = new UnsafeDecimalColumnPage(columnSpec, DECIMAL, numRows, inputDataLength);
     } else {
-      page = new SafeVarLengthColumnPage(DECIMAL, numRows);
+      page = new SafeDecimalColumnPage(columnSpec, dataType, numRows);
     }
 
     // set total length and rowOffset in page
@@ -241,13 +321,26 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
+  @Override
+  public byte[] getDecimalPage() {
+    // output LV encoded byte array
+    int offset = 0;
+    byte[] data = new byte[totalLength];
+    for (int rowId = 0; rowId < pageSize; rowId++) {
+      int length = rowOffset[rowId + 1] - rowOffset[rowId];
+      copyBytes(rowId, data, offset, length);
+      offset += length;
+    }
+    return data;
+  }
+
   /**
    * Copy `length` bytes from data at rowId to dest start from destOffset
    */
   abstract void copyBytes(int rowId, byte[] dest, int destOffset, int length);
 
   @Override
-  public byte[] getFlattenedBytePage() {
+  public byte[] getLVFlattenedBytePage() throws IOException {
     // output LV encoded byte array
     int offset = 0;
     byte[] data = new byte[totalLength + pageSize * 4];
@@ -261,7 +354,24 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
   }
 
   @Override
-  public void encode(PrimitiveCodec codec) {
+  public void convertValue(ColumnPageValueConverter codec) {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  /**
+   * reallocate memory if capacity length than current size + request size
+   */
+  protected void ensureMemory(int requestSize) throws MemoryException {
+    if (totalLength + requestSize > capacity) {
+      int newSize = Math.max(2 * capacity, totalLength + requestSize);
+      MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, newSize);
+      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset,
+          newBlock.getBaseObject(), newBlock.getBaseOffset(), capacity);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
+      memoryBlock = newBlock;
+      baseAddress = newBlock.getBaseObject();
+      baseOffset = newBlock.getBaseOffset();
+      capacity = newSize;
+    }
   }
 }

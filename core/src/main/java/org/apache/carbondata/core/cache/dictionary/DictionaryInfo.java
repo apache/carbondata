@@ -41,6 +41,18 @@ public interface DictionaryInfo extends Cacheable, Dictionary {
   void setOffsetTillFileIsRead(long offsetTillFileIsRead);
 
   /**
+   * offset till the file is read
+   * @return
+   */
+  long getOffsetTillFileIsRead();
+
+  /**
+   * the memory size of this object after loaded into memory
+   * @param memorySize
+   */
+  void setMemorySize(long memorySize);
+
+  /**
    * This method will update the timestamp of a file if a file is modified
    * like in case of incremental load
    *

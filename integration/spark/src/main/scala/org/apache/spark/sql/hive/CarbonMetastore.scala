@@ -236,7 +236,7 @@ class CarbonMetastore(hiveContext: HiveContext, val storePath: String,
                   CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
                   val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
                   metaDataBuffer += new TableMeta(carbonTable.getCarbonTableIdentifier, storePath,
-                    carbonTable)
+                    null, carbonTable)
                 }
               }
             })
@@ -281,7 +281,7 @@ class CarbonMetastore(hiveContext: HiveContext, val storePath: String,
     tableInfo.setMetaDataFilepath(schemaMetadataPath)
     tableInfo.setStorePath(storePath)
     CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
-    val tableMeta = new TableMeta(carbonTableIdentifier, storePath,
+    val tableMeta = new TableMeta(carbonTableIdentifier, storePath, null,
       CarbonMetadata.getInstance().getCarbonTable(dbName + "_" + tableName))
 
     val fileType = FileFactory.getFileType(schemaMetadataPath)

@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
 import org.apache.carbondata.processing.store.file.IFileManagerComposite;
 
@@ -28,7 +29,7 @@ import org.apache.carbondata.processing.store.file.IFileManagerComposite;
  */
 public class CarbonDataWriterVo {
 
-  private String storeLocation;
+  private String[] storeLocation;
 
   private int measureCount;
 
@@ -64,17 +65,19 @@ public class CarbonDataWriterVo {
 
   private int taskExtension;
 
+  private DataMapWriterListener listener;
+
   /**
    * @return the storeLocation
    */
-  public String getStoreLocation() {
+  public String[] getStoreLocation() {
     return storeLocation;
   }
 
   /**
    * @param storeLocation the storeLocation to set
    */
-  public void setStoreLocation(String storeLocation) {
+  public void setStoreLocation(String[] storeLocation) {
     this.storeLocation = storeLocation;
   }
 
@@ -302,5 +305,13 @@ public class CarbonDataWriterVo {
 
   public void setTaskExtension(int taskExtension) {
     this.taskExtension = taskExtension;
+  }
+
+  public void setListener(DataMapWriterListener listener) {
+    this.listener = listener;
+  }
+
+  public DataMapWriterListener getListener() {
+    return listener;
   }
 }

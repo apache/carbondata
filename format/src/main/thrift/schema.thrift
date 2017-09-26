@@ -47,6 +47,12 @@ enum Encoding{
 	INVERTED_INDEX = 3; // Identifies that a column is encoded using inverted index, can be used only along with dictionary encoding
 	BIT_PACKED = 4;	// Identifies that a column is encoded using bit packing, can be used only along with dictionary encoding
 	DIRECT_DICTIONARY = 5; // Identifies that a column is direct dictionary encoded
+	DIRECT_COMPRESS = 6;  // Identifies that a columm is encoded using DirectCompressCodec
+	ADAPTIVE_INTEGRAL = 7; // Identifies that a column is encoded using AdaptiveIntegralCodec
+	ADAPTIVE_DELTA_INTEGRAL = 8; // Identifies that a column is encoded using AdaptiveDeltaIntegralCodec
+	RLE_INTEGRAL = 9;     // Identifies that a column is encoded using RLECodec
+	DIRECT_STRING = 10;   // Stores string value and string length separately in page data
+  ADAPTIVE_FLOATING = 11; // Identifies that a column is encoded using AdaptiveFloatingCodec
 }
 
 enum PartitionType{
@@ -132,9 +138,11 @@ struct SchemaEvolution{
 struct PartitionInfo{
     1: required list<ColumnSchema> partition_columns;
     2: required PartitionType partition_type;
-    3: optional i32 num_partitions;  // number of partitions defined in hash partition table
-    4: optional list<list<string>> list_info; // value list of list partition table
-    5: optional list<string> range_info;  // range value list of range partition table
+    3: optional list<list<string>> list_info; // value list of list partition table
+    4: optional list<string> range_info;  // range value list of range partition table
+    5: optional list<i32> partition_ids; // partition id list
+    6: optional i32 num_partitions;  // total partition count
+    7: optional i32 max_partition;  // max partition id for now
 }
 
 /**

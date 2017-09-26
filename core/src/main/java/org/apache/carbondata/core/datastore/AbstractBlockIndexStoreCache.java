@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.datastore.exception.IndexBuilderException;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.ObjectSizeCalculator;
 
 /**
  * This class validate and load the B-Tree in the executor lru cache
@@ -40,10 +41,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
  */
 public abstract class AbstractBlockIndexStoreCache<K, V>
     implements Cache<TableBlockUniqueIdentifier, AbstractIndex> {
-  /**
-   * carbon store path
-   */
-  protected String carbonStorePath;
+
   /**
    * CarbonLRU cache
    */
@@ -69,8 +67,7 @@ public abstract class AbstractBlockIndexStoreCache<K, V>
    */
   protected Map<String, Object> segmentIDLock;
 
-  public AbstractBlockIndexStoreCache(String carbonStorePath, CarbonLRUCache lruCache) {
-    this.carbonStorePath = carbonStorePath;
+  public AbstractBlockIndexStoreCache(CarbonLRUCache lruCache) {
     this.lruCache = lruCache;
     blockInfoLock = new ConcurrentHashMap<BlockInfo, Object>();
     segmentIDLock = new ConcurrentHashMap<String, Object>();
@@ -92,13 +89,14 @@ public abstract class AbstractBlockIndexStoreCache<K, V>
     TableBlockInfo blockInfo = tableBlockUniqueIdentifier.getTableBlockInfo();
     long requiredMetaSize = CarbonUtil.calculateMetaSize(blockInfo);
     if (requiredMetaSize > 0) {
-      tableBlock.setMemorySize(requiredMetaSize);
       // load table blocks data
       // getting the data file meta data of the block
       DataFileFooter footer = CarbonUtil.readMetadatFile(blockInfo);
       footer.setBlockInfo(new BlockInfo(blockInfo));
       // building the block
       tableBlock.buildIndex(Collections.singletonList(footer));
+      requiredMetaSize = ObjectSizeCalculator.estimate(blockInfo, requiredMetaSize);
+      tableBlock.setMemorySize(requiredMetaSize);
       tableBlock.incrementAccessCount();
       boolean isTableBlockAddedToLruCache = lruCache.put(lruCacheKey, tableBlock, requiredMetaSize);
       if (!isTableBlockAddedToLruCache) {

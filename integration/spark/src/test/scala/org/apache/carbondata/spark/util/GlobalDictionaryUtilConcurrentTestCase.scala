@@ -20,14 +20,17 @@ import java.util.concurrent.{Callable, Executors}
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier
 import org.apache.carbondata.core.service.impl.PathFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
 
@@ -76,7 +79,8 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
   def buildTable() = {
     try {
       sql(
-        "CREATE TABLE IF NOT EXISTS employee (empid STRING) STORED BY 'org.apache.carbondata.format'")
+        "CREATE TABLE IF NOT EXISTS employee (empid STRING) STORED BY 'org.apache.carbondata.format' " +
+          "tblproperties('dictionary_include'='empid')")
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
     }
@@ -129,8 +133,13 @@ class GlobalDictionaryUtilConcurrentTestCase extends QueryTest with BeforeAndAft
     }
     val carbonTableIdentifier = sampleRelation.tableMeta.carbonTable.getCarbonTableIdentifier
     val columnIdentifier = sampleRelation.tableMeta.carbonTable.getDimensionByName("employee", "empid").getColumnIdentifier
+    val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
+      carbonTableIdentifier,
+      columnIdentifier,
+      columnIdentifier.getDataType,
+      CarbonStorePath.getCarbonTablePath(storeLocation, carbonTableIdentifier))
     val carbonTablePath = PathFactory.getInstance()
-        .getCarbonTablePath(sampleRelation.tableMeta.storePath, carbonTableIdentifier)
+        .getCarbonTablePath(sampleRelation.tableMeta.storePath, carbonTableIdentifier, dictionaryColumnUniqueIdentifier)
     val dictPath = carbonTablePath.getDictionaryFilePath(columnIdentifier.getColumnId)
     val dictFile = FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath))
     val offSet = dictFile.getSize

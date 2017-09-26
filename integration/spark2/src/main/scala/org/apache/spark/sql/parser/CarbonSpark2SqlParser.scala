@@ -63,13 +63,51 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    loadManagement| showLoads | alterTable | restructure | updateTable | deleteRecords
+    loadManagement|showLoads|alterTable|restructure|updateTable|deleteRecords|alterPartition
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
 
   protected lazy val restructure: Parser[LogicalPlan] =
     alterTableModifyDataType | alterTableDropColumn | alterTableAddColumns
+
+  protected lazy val alterPartition: Parser[LogicalPlan] =
+    alterAddPartition | alterSplitPartition | alterDropPartition
+
+  protected lazy val alterAddPartition: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> PARTITION ~>
+      "(" ~> repsep(stringLit, ",") <~ ")") <~ opt(";") ^^ {
+      case dbName ~ table ~ addInfo =>
+        val alterTableAddPartitionModel =
+          AlterTableSplitPartitionModel(dbName, table, "0", addInfo)
+        AlterTableSplitPartitionCommand(alterTableAddPartitionModel)
+    }
+
+  protected lazy val alterSplitPartition: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (SPLIT ~> PARTITION ~>
+       "(" ~> numericLit <~ ")") ~ (INTO ~> "(" ~> repsep(stringLit, ",") <~ ")") <~ opt(";") ^^ {
+      case dbName ~ table ~ partitionId ~ splitInfo =>
+        val alterTableSplitPartitionModel =
+          AlterTableSplitPartitionModel(dbName, table, partitionId, splitInfo)
+        if (partitionId == 0) {
+          sys.error("Please use [Alter Table Add Partition] statement to split default partition!")
+        }
+        AlterTableSplitPartitionCommand(alterTableSplitPartitionModel)
+    }
+
+  protected lazy val alterDropPartition: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (DROP ~> PARTITION ~>
+      "(" ~> numericLit <~ ")") ~ (WITH ~> DATA).? <~ opt(";") ^^ {
+      case dbName ~ table ~ partitionId ~ withData =>
+        val dropWithData = withData.getOrElse("NO") match {
+          case "NO" => false
+          case _ => true
+        }
+        val alterTableDropPartitionModel =
+          AlterTableDropPartitionModel(dbName, table, partitionId, dropWithData)
+        AlterTableDropPartition(alterTableDropPartitionModel)
+    }
+
 
   protected lazy val alterTable: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (COMPACT ~ stringLit) <~ opt(";")  ^^ {
@@ -220,23 +258,21 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
-    DELETE ~> SEGMENT ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
-                                                   (ident <~ ".").? ~ ident) <~
+    DELETE ~> FROM ~ TABLE ~> (ident <~ ".").? ~ ident ~
+    (WHERE ~> (SEGMENT ~ "." ~ ID) ~> IN ~> "(" ~> repsep(segmentId, ",")) <~ ")" ~
     opt(";") ^^ {
-      case loadids ~ table => table match {
-        case databaseName ~ tableName =>
-          DeleteLoadsById(loadids, convertDbNameToLowerCase(databaseName), tableName.toLowerCase())
-      }
+      case dbName ~ tableName ~ loadids =>
+        DeleteLoadsById(loadids, dbName, tableName.toLowerCase())
     }
 
   protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
-    DELETE ~> SEGMENTS ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
-    (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
+    DELETE ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
+    (WHERE ~> (SEGMENT ~ "." ~ STARTTIME ~> BEFORE) ~ stringLit) <~
     opt(";") ^^ {
-      case schema ~ table ~ condition =>
+      case database ~ table ~ condition =>
         condition match {
           case dateField ~ dateValue =>
-            DeleteLoadsByLoadDate(convertDbNameToLowerCase(schema),
+            DeleteLoadsByLoadDate(convertDbNameToLowerCase(database),
               table.toLowerCase(),
               dateField,
               dateValue)
@@ -319,7 +355,14 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
               throw new MalformedCarbonCommandException(
                 s"Unsupported Table property in add column: ${ f._1 }")
             } else if (f._1.toLowerCase.startsWith("default.value.")) {
-              f._1 -> f._2
+              if (fields.count(field => checkFieldDefaultValue(field.column,
+                f._1.toLowerCase)) == 1) {
+                 f._1 -> f._2
+            } else {
+                 throw new MalformedCarbonCommandException(
+                   s"Default.value property does not matches with the columns in ALTER command. " +
+                     s"Column name in property is: ${ f._1}")
+               }
             } else {
               f._1 -> f._2.toLowerCase
             })
@@ -345,6 +388,10 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           tableModel.highcardinalitydims.getOrElse(Seq.empty))
         AlterTableAddColumns(alterTableAddColumnsModel)
     }
+
+  private def checkFieldDefaultValue(fieldName: String, defaultValueColumnName: String): Boolean = {
+    defaultValueColumnName.equalsIgnoreCase("default.value." + fieldName)
+  }
 
   private def convertFieldNamesToLowercase(field: Field): Field = {
     val name = field.column.toLowerCase
@@ -409,7 +456,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
     if (options.isBucketingEnabled) {
       if (options.bucketNumber.toString.contains("-") ||
-          options.bucketNumber.toString.contains("+")) {
+          options.bucketNumber.toString.contains("+") ||  options.bucketNumber == 0) {
         throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED")
       }
       else {

@@ -28,7 +28,6 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
-import org.apache.carbondata.core.scan.partition.Partitioner;
 
 public interface FilterProcessor {
 
@@ -42,7 +41,8 @@ public interface FilterProcessor {
    * @throws FilterUnsupportedException
    */
   FilterResolverIntf getFilterResolver(Expression expressionTree,
-      AbsoluteTableIdentifier tableIdentifier) throws FilterUnsupportedException, IOException;
+      AbsoluteTableIdentifier tableIdentifier, TableProvider tableProvider)
+      throws FilterUnsupportedException, IOException;
 
   /**
    * This API is exposed inorder to get the required block reference node
@@ -59,6 +59,5 @@ public interface FilterProcessor {
    * This API will get the map of required partitions.
    * @return BitSet the value "1" represent the required partition.
    */
-  BitSet getFilteredPartitions(Expression expressionTree, PartitionInfo partitionInfo,
-      Partitioner partitioner);
+  BitSet getFilteredPartitions(Expression expressionTree, PartitionInfo partitionInfo);
 }

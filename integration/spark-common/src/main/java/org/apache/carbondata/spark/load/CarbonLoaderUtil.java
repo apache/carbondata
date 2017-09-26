@@ -53,6 +53,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
+import org.apache.carbondata.core.datastore.row.LoadStatusType;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
@@ -75,6 +76,7 @@ import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 import com.google.gson.Gson;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.spark.SparkConf;
 import org.apache.spark.util.Utils;
 
@@ -207,29 +209,34 @@ public final class CarbonLoaderUtil {
    * @param loadModel
    */
   public static void deleteLocalDataLoadFolderLocation(CarbonLoadModel loadModel,
-      boolean isCompactionFlow) {
+      boolean isCompactionFlow, boolean isAltPartitionFlow) {
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
     String tempLocationKey = CarbonDataProcessorUtil
-        .getTempStoreLocationKey(databaseName, tableName, loadModel.getTaskNo(), isCompactionFlow);
+        .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
+            loadModel.getTaskNo(), isCompactionFlow, isAltPartitionFlow);
     // form local store location
-    final String localStoreLocation = CarbonProperties.getInstance()
-        .getProperty(tempLocationKey, CarbonCommonConstants.STORE_LOCATION_DEFAULT_VAL);
+    final String localStoreLocations = CarbonProperties.getInstance().getProperty(tempLocationKey);
+    if (localStoreLocations == null) {
+      throw new RuntimeException("Store location not set for the key " + tempLocationKey);
+    }
     // submit local folder clean up in another thread so that main thread execution is not blocked
     ExecutorService localFolderDeletionService = Executors.newFixedThreadPool(1);
     try {
       localFolderDeletionService.submit(new Callable<Void>() {
         @Override public Void call() throws Exception {
-          try {
-            long startTime = System.currentTimeMillis();
-            File file = new File(localStoreLocation);
-            CarbonUtil.deleteFoldersAndFiles(file);
-            LOGGER.info(
-                "Deleted the local store location" + localStoreLocation + " : TIme taken: " + (
-                    System.currentTimeMillis() - startTime));
-          } catch (IOException | InterruptedException e) {
-            LOGGER.error(e, "Failed to delete local data load folder location");
+          long startTime = System.currentTimeMillis();
+          String[] locArray = StringUtils.split(localStoreLocations, File.pathSeparator);
+          for (String loc : locArray) {
+            try {
+              CarbonUtil.deleteFoldersAndFiles(new File(loc));
+            } catch (IOException | InterruptedException e) {
+              LOGGER.error(e,
+                  "Failed to delete local data load folder location: " + loc);
+            }
           }
+          LOGGER.info("Deleted the local store location: " + localStoreLocations
+                + " : Time taken: " + (System.currentTimeMillis() - startTime));
           return null;
         }
       });
@@ -245,29 +252,22 @@ public final class CarbonLoaderUtil {
    * This API will write the load level metadata for the loadmanagement module inorder to
    * manage the load and query execution management smoothly.
    *
-   * @param loadCount
-   * @param loadMetadataDetails
+   * @param newMetaEntry
    * @param loadModel
-   * @param loadStatus
-   * @param startLoadTime
    * @return boolean which determines whether status update is done or not.
    * @throws IOException
    */
-  public static boolean recordLoadMetadata(int loadCount, LoadMetadataDetails loadMetadataDetails,
-      CarbonLoadModel loadModel, String loadStatus, long startLoadTime) throws IOException {
-
+  public static boolean recordLoadMetadata(LoadMetadataDetails newMetaEntry,
+      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
+      throws IOException, InterruptedException {
     boolean status = false;
-
     String metaDataFilepath =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getMetaDataFilepath();
-
     AbsoluteTableIdentifier absoluteTableIdentifier =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
-
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
-
     String tableStatusPath = carbonTablePath.getTableStatusFilePath();
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
@@ -278,28 +278,63 @@ public final class CarbonLoaderUtil {
                 + " for table status updation");
         LoadMetadataDetails[] listOfLoadFolderDetailsArray =
             SegmentStatusManager.readLoadMetadata(metaDataFilepath);
-
-        long loadEnddate = CarbonUpdateUtil.readCurrentTime();
-        loadMetadataDetails.setLoadEndTime(loadEnddate);
-        loadMetadataDetails.setLoadStatus(loadStatus);
-        loadMetadataDetails.setLoadName(String.valueOf(loadCount));
-        loadMetadataDetails.setLoadStartTime(startLoadTime);
         List<LoadMetadataDetails> listOfLoadFolderDetails =
             new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-
-        if (null != listOfLoadFolderDetailsArray) {
-          Collections.addAll(listOfLoadFolderDetails, listOfLoadFolderDetailsArray);
+        List<CarbonFile> staleFolders = new ArrayList<>();
+        Collections.addAll(listOfLoadFolderDetails, listOfLoadFolderDetailsArray);
+        // create a new segment Id if load has just begun else add the already generated Id
+        if (loadStartEntry) {
+          String segmentId =
+              String.valueOf(SegmentStatusManager.createNewSegmentId(listOfLoadFolderDetailsArray));
+          newMetaEntry.setLoadName(segmentId);
+          loadModel.setLoadMetadataDetails(listOfLoadFolderDetails);
+          loadModel.setSegmentId(segmentId);
+          for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
+            if (entry.getLoadStatus().equals(LoadStatusType.INSERT_OVERWRITE.getMessage())) {
+              throw new RuntimeException("Already insert overwrite is in progress");
+            }
+          }
+          listOfLoadFolderDetails.add(newMetaEntry);
+        } else {
+          newMetaEntry.setLoadName(String.valueOf(loadModel.getSegmentId()));
+          // existing entry needs to be overwritten as the entry will exist with some
+          // intermediate status
+          int indexToOverwriteNewMetaEntry = 0;
+          for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
+            if (entry.getLoadName().equals(newMetaEntry.getLoadName())
+                && entry.getLoadStartTime() == newMetaEntry.getLoadStartTime()) {
+              break;
+            }
+            indexToOverwriteNewMetaEntry++;
+          }
+          if (listOfLoadFolderDetails.get(indexToOverwriteNewMetaEntry).getLoadStatus()
+              .equals(CarbonCommonConstants.MARKED_FOR_DELETE)) {
+            throw new RuntimeException("It seems insert overwrite has been issued during load");
+          }
+          if (insertOverwrite) {
+            for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
+              if (!entry.getLoadStatus().equals(LoadStatusType.INSERT_OVERWRITE.getMessage())) {
+                entry.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
+                // For insert overwrite, we will delete the old segment folder immediately
+                // So collect the old segments here
+                String path = carbonTablePath.getCarbonDataDirectoryPath("0", entry.getLoadName());
+                staleFolders.add(FileFactory.getCarbonFile(path));
+              }
+            }
+          }
+          listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);
         }
-        listOfLoadFolderDetails.add(loadMetadataDetails);
-
         SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
             .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
-
+        // Delete all old stale segment folders
+        for (CarbonFile staleFolder : staleFolders) {
+          CarbonUtil.deleteFoldersAndFiles(staleFolder);
+        }
         status = true;
       } else {
         LOGGER.error("Not able to acquire the lock for Table status updation for table " + loadModel
             .getDatabaseName() + "." + loadModel.getTableName());
-      }
+      };
     } finally {
       if (carbonLock.unlock()) {
         LOGGER.info(
@@ -312,6 +347,24 @@ public final class CarbonLoaderUtil {
       }
     }
     return status;
+  }
+
+  /**
+   * Method to create new entry for load in table status file
+   *
+   * @param loadMetadataDetails
+   * @param loadStatus
+   * @param loadStartTime
+   * @param addLoadEndTime
+   */
+  public static void populateNewLoadMetaEntry(LoadMetadataDetails loadMetadataDetails,
+      String loadStatus, long loadStartTime, boolean addLoadEndTime) {
+    if (addLoadEndTime) {
+      long loadEndDate = CarbonUpdateUtil.readCurrentTime();
+      loadMetadataDetails.setLoadEndTime(loadEndDate);
+    }
+    loadMetadataDetails.setLoadStatus(loadStatus);
+    loadMetadataDetails.setLoadStartTime(loadStartTime);
   }
 
   public static void writeLoadMetadata(String storeLocation, String dbName, String tableName,
@@ -370,7 +423,8 @@ public final class CarbonLoaderUtil {
       ColumnIdentifier columnIdentifier, String carbonStorePath, DataType dataType)
       throws IOException {
     return getDictionary(
-        new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier, dataType),
+        new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier, dataType,
+            CarbonStorePath.getCarbonTablePath(carbonStorePath, tableIdentifier)),
         carbonStorePath);
   }
 
@@ -742,13 +796,19 @@ public final class CarbonLoaderUtil {
       if (null == nodeAndBlockMapping.get(node)) {
         list = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
         list.add(nbr.getBlock());
-        Collections.sort(list);
         nodeAndBlockMapping.put(node, list);
       } else {
         list = nodeAndBlockMapping.get(node);
         list.add(nbr.getBlock());
-        Collections.sort(list);
       }
+    }
+    /*for resolving performance issue, removed values() with entrySet () iterating the values and
+    sorting it.entrySet will give the logical view for hashMap and we dont query the map twice for
+    each key whereas values () iterate twice*/
+    Iterator<Map.Entry<String, List<Distributable>>> iterator =
+        nodeAndBlockMapping.entrySet().iterator();
+    while (iterator.hasNext()) {
+      Collections.sort(iterator.next().getValue());
     }
   }
 

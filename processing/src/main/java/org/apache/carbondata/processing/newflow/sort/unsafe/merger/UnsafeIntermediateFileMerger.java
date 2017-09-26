@@ -27,7 +27,6 @@ import java.nio.ByteBuffer;
 import java.util.AbstractQueue;
 import java.util.Arrays;
 import java.util.PriorityQueue;
-import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -41,7 +40,7 @@ import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.TempSortFileWriter;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.TempSortFileWriterFactory;
 
-public class UnsafeIntermediateFileMerger implements Callable<Void> {
+public class UnsafeIntermediateFileMerger implements Runnable {
   /**
    * LOGGER
    */
@@ -100,7 +99,8 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     rowData = ByteBuffer.allocate(2 * 1024 * 1024);
   }
 
-  @Override public Void call() throws Exception {
+  @Override
+  public void run() {
     long intermediateMergeStartTime = System.currentTimeMillis();
     int fileConterConst = fileCounter;
     boolean isFailed = false;
@@ -134,8 +134,6 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
         }
       }
     }
-
-    return null;
   }
 
   /**

@@ -113,8 +113,7 @@ public class CarbonHiveInputSplit extends FileSplit
   }
 
   public static CarbonHiveInputSplit from(String segmentId, FileSplit split,
-      ColumnarFormatVersion version)
-      throws IOException {
+      ColumnarFormatVersion version) throws IOException {
     return new CarbonHiveInputSplit(segmentId, split.getPath(), split.getStart(), split.getLength(),
         split.getLocations(), version);
   }
@@ -151,8 +150,7 @@ public class CarbonHiveInputSplit extends FileSplit
     return segmentId;
   }
 
-  @Override
-  public void readFields(DataInput in) throws IOException {
+  @Override public void readFields(DataInput in) throws IOException {
     super.readFields(in);
     this.segmentId = in.readUTF();
     this.version = ColumnarFormatVersion.valueOf(in.readShort());
@@ -162,10 +160,10 @@ public class CarbonHiveInputSplit extends FileSplit
     for (int i = 0; i < numInvalidSegment; i++) {
       invalidSegments.add(in.readUTF());
     }
+    this.numberOfBlocklets = in.readInt();
   }
 
-  @Override
-  public void write(DataOutput out) throws IOException {
+  @Override public void write(DataOutput out) throws IOException {
     super.write(out);
     out.writeUTF(segmentId);
     out.writeShort(version.number());
@@ -174,6 +172,7 @@ public class CarbonHiveInputSplit extends FileSplit
     for (String invalidSegment : invalidSegments) {
       out.writeUTF(invalidSegment);
     }
+    out.writeInt(numberOfBlocklets);
   }
 
   public List<String> getInvalidSegments() {
@@ -213,8 +212,7 @@ public class CarbonHiveInputSplit extends FileSplit
     return bucketId;
   }
 
-  @Override
-  public int compareTo(Distributable o) {
+  @Override public int compareTo(Distributable o) {
     if (o == null) {
       return -1;
     }
@@ -225,10 +223,10 @@ public class CarbonHiveInputSplit extends FileSplit
 
     double seg1 = Double.parseDouble(segmentId);
     double seg2 = Double.parseDouble(other.getSegmentId());
-    if (seg1 - seg2 < 0) {
+    if (Double.compare(seg1, seg2) < 0) {
       return -1;
     }
-    if (seg1 - seg2 > 0) {
+    if (Double.compare(seg1, seg2) > 0) {
       return 1;
     }
 
@@ -264,18 +262,37 @@ public class CarbonHiveInputSplit extends FileSplit
     return 0;
   }
 
-  @Override
-  public String getBlockPath() {
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+
+    if (!(obj instanceof CarbonHiveInputSplit)) {
+      return false;
+    }
+
+    CarbonHiveInputSplit other = (CarbonHiveInputSplit) obj;
+    return 0 == this.compareTo(other);
+  }
+
+  @Override public int hashCode() {
+    int result = taskId.hashCode();
+    result = 31 * result + segmentId.hashCode();
+    result = 31 * result + bucketId.hashCode();
+    result = 31 * result + invalidSegments.hashCode();
+    result = 31 * result + numberOfBlocklets;
+    return result;
+  }
+
+  @Override public String getBlockPath() {
     return getPath().getName();
   }
 
-  @Override
-  public List<Long> getMatchedBlocklets() {
+  @Override public List<Long> getMatchedBlocklets() {
     return null;
   }
 
-  @Override
-  public boolean fullScan() {
+  @Override public boolean fullScan() {
     return true;
   }
 

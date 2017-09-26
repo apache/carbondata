@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil;
 
@@ -36,8 +37,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   private double[] doubleData;
   private byte[] shortIntData;
 
-  SafeFixLengthColumnPage(DataType dataType, int pageSize) {
-    super(dataType, pageSize);
+  SafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize) {
+    super(columnSpec, dataType, pageSize);
   }
 
   /**
@@ -99,6 +100,16 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
+  @Override
+  public void putDecimal(int rowId, BigDecimal decimal) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
+  public byte[] getDecimalPage() {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
   /**
    * Get byte value at rowId
    */
@@ -155,8 +166,12 @@ public class SafeFixLengthColumnPage extends ColumnPage {
     return doubleData[rowId];
   }
 
+  @Override public BigDecimal getDecimal(int rowId) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
   @Override
-  public BigDecimal getDecimal(int rowId) {
+  public byte[] getBytes(int rowId) {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
@@ -225,7 +240,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
-  public byte[] getFlattenedBytePage() {
+  public byte[] getLVFlattenedBytePage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
@@ -302,7 +317,7 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    * @param codec type of transformation
    */
   @Override
-  public void encode(PrimitiveCodec codec) {
+  public void convertValue(ColumnPageValueConverter codec) {
     switch (dataType) {
       case BYTE:
         for (int i = 0; i < pageSize; i++) {
@@ -335,7 +350,8 @@ public class SafeFixLengthColumnPage extends ColumnPage {
         }
         break;
       default:
-        throw new UnsupportedOperationException("not support encode on " + dataType + " page");
+        throw new UnsupportedOperationException("not support value conversion on " +
+            dataType + " page");
     }
   }
 

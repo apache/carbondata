@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.spark.util
 
-import java.io.{FileNotFoundException, IOException}
 import java.nio.charset.Charset
 import java.util.regex.Pattern
 
@@ -39,7 +38,7 @@ import org.apache.spark.sql.types.{StringType, StructField, StructType}
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.cache.dictionary.Dictionary
+import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
@@ -57,6 +56,7 @@ import org.apache.carbondata.processing.csvload.CSVInputFormat
 import org.apache.carbondata.processing.csvload.StringArrayWritable
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.processing.newflow.exception.NoRetryException
 import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.rdd._
@@ -169,9 +169,15 @@ object GlobalDictionaryUtil {
       columnIndex: Int,
       iter: Iterator[String]): Unit = {
     val dictService = CarbonCommonFactory.getDictionaryService
-    val writer: CarbonDictionaryWriter = dictService.getDictionaryWriter(
+    val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
+        DictionaryColumnUniqueIdentifier(
       model.table,
       model.columnIdentifier(columnIndex),
+      model.columnIdentifier(columnIndex).getDataType,
+      CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
+    val writer: CarbonDictionaryWriter = dictService.getDictionaryWriter(
+      model.table,
+      dictionaryColumnUniqueIdentifier,
       model.hdfsLocation
     )
     try {
@@ -207,10 +213,16 @@ object GlobalDictionaryUtil {
     val dictMap = new HashMap[String, HashSet[String]]
     val dictService = CarbonCommonFactory.getDictionaryService
     for (i <- model.primDimensions.indices) {
+      val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
+          DictionaryColumnUniqueIdentifier(
+            model.table,
+            model.columnIdentifier(i),
+            model.columnIdentifier(i).getDataType,
+            CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
       val set = new HashSet[String]
       if (model.dictFileExists(i)) {
         val reader: CarbonDictionaryReader = dictService.getDictionaryReader(model.table,
-          model.columnIdentifier(i), model.hdfsLocation
+          dictionaryColumnUniqueIdentifier, model.hdfsLocation
         )
         val values = reader.read
         if (values != null) {
@@ -278,11 +290,6 @@ object GlobalDictionaryUtil {
     }
   }
 
-  def isHighCardinalityColumn(columnCardinality: Int,
-      model: DictionaryLoadModel): Boolean = {
-    columnCardinality > model.highCardThreshold
-  }
-
   /**
    * create a instance of DictionaryLoadModel
    *
@@ -307,9 +314,8 @@ object GlobalDictionaryUtil {
         isComplexes += dimensions(i).isComplex
       }
     }
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(hdfsLocation, table)
     val primDimensions = primDimensionsBuffer.map { x => x }.toArray
-    val dictDetail = CarbonSparkFactory.getDictionaryDetailService().
+    val dictDetail = CarbonSparkFactory.getDictionaryDetailService.
       getDictionaryDetail(dictfolderPath, primDimensions, table, hdfsLocation)
     val dictFilePaths = dictDetail.dictFilePaths
     val dictFileExists = dictDetail.dictFileExists
@@ -319,19 +325,11 @@ object GlobalDictionaryUtil {
     val lockType = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
     val zookeeperUrl = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.ZOOKEEPER_URL)
-    // load high cardinality identify configure
-    val highCardIdentifyEnable = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE,
-      CarbonCommonConstants.HIGH_CARDINALITY_IDENTIFY_ENABLE_DEFAULT).toBoolean
-    val highCardThreshold = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD,
-      CarbonCommonConstants.HIGH_CARDINALITY_THRESHOLD_DEFAULT).toInt
-
     val serializationNullFormat =
       carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
     // get load count
     if (null == carbonLoadModel.getLoadMetadataDetails) {
-      CommonUtil.readLoadMetadataDetails(carbonLoadModel, hdfsLocation)
+      CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     }
     DictionaryLoadModel(table,
       dimensions,
@@ -342,8 +340,6 @@ object GlobalDictionaryUtil {
       isComplexes.toArray,
       primDimensions,
       carbonLoadModel.getDelimiters,
-      highCardIdentifyEnable,
-      highCardThreshold,
       columnIdentifier,
       carbonLoadModel.getLoadMetadataDetails.size() == 0,
       hdfsTempLocation,
@@ -394,9 +390,8 @@ object GlobalDictionaryUtil {
   private def checkStatus(carbonLoadModel: CarbonLoadModel,
       sqlContext: SQLContext,
       model: DictionaryLoadModel,
-      status: Array[(Int, String, Boolean)]) = {
+      status: Array[(Int, String)]) = {
     var result = false
-    val noDictionaryColumns = new ArrayBuffer[CarbonDimension]
     val tableName = model.table.getTableName
     status.foreach { x =>
       val columnName = model.primDimensions(x._1).getColName
@@ -404,12 +399,6 @@ object GlobalDictionaryUtil {
         result = true
         LOGGER.error(s"table:$tableName column:$columnName generate global dictionary file failed")
       }
-      if (x._3) {
-        noDictionaryColumns += model.primDimensions(x._1)
-      }
-    }
-    if (noDictionaryColumns.nonEmpty) {
-      updateTableMetadataFunc(carbonLoadModel, sqlContext, model, noDictionaryColumns.toArray)
     }
     if (result) {
       LOGGER.error("generate global dictionary files failed")
@@ -755,6 +744,11 @@ object GlobalDictionaryUtil {
       }
     } catch {
       case ex: Exception =>
+        if (ex.getCause != null && ex.getCause.isInstanceOf[NoRetryException]) {
+          LOGGER.error(ex.getCause, "generate global dictionary failed")
+          throw new Exception("generate global dictionary failed, " +
+                              ex.getCause.getMessage)
+        }
         ex match {
           case spx: SparkException =>
             LOGGER.error(spx, "generate global dictionary failed")
@@ -857,6 +851,12 @@ object GlobalDictionaryUtil {
       val columnIdentifier = new ColumnIdentifier(columnSchema.getColumnUniqueId,
         null,
         columnSchema.getDataType)
+      val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
+          DictionaryColumnUniqueIdentifier(
+            tableIdentifier,
+            columnIdentifier,
+            columnIdentifier.getDataType,
+            carbonTablePath)
       val parsedValue = DataTypeUtil.normalizeColumnValueForItsDataType(defaultValue, columnSchema)
       val valuesBuffer = new mutable.HashSet[String]
       if (null != parsedValue) {
@@ -865,7 +865,7 @@ object GlobalDictionaryUtil {
       val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
         dictionary,
         tableIdentifier,
-        columnIdentifier,
+        dictionaryColumnUniqueIdentifier,
         storePath,
         columnSchema,
         false
@@ -877,7 +877,7 @@ object GlobalDictionaryUtil {
 
       if (distinctValues.size() > 0) {
         val sortIndexWriteTask = new SortIndexWriterTask(tableIdentifier,
-          columnIdentifier,
+          dictionaryColumnUniqueIdentifier,
           columnSchema.getDataType,
           storePath,
           dictionary,

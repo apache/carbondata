@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark
+package org.apache.spark.sql
 
 import java.util.{ArrayList, List}
 
@@ -98,7 +98,7 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
     lst
   }
 
-  def isSingleDimension: Boolean = {
+  def isSingleColumn: Boolean = {
     val lst = new java.util.ArrayList[ColumnExpression]()
     getAllColumnListFromExpressionTree(sparkExp, lst)
     if (lst.size == 1 && lst.get(0).isDimension) {

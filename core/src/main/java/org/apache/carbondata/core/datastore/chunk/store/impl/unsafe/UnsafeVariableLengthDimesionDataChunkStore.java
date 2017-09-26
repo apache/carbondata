@@ -26,14 +26,11 @@ import org.apache.carbondata.core.util.ByteUtil;
 
 import org.apache.spark.sql.types.BooleanType;
 import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.Decimal;
-import org.apache.spark.sql.types.DecimalType;
-import org.apache.spark.sql.types.DoubleType;
-import org.apache.spark.sql.types.FloatType;
 import org.apache.spark.sql.types.IntegerType;
 import org.apache.spark.sql.types.LongType;
 import org.apache.spark.sql.types.ShortType;
 import org.apache.spark.sql.types.StringType;
+import org.apache.spark.sql.types.TimestampType;
 
 /**
  * Below class is responsible to store variable length dimension data chunk in
@@ -72,7 +69,7 @@ public class UnsafeVariableLengthDimesionDataChunkStore
     // position from where offsets will start
     this.dataPointersOffsets = this.invertedIndexReverseOffset;
     if (isExplicitSorted) {
-      this.dataPointersOffsets += numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE;
+      this.dataPointersOffsets += (long)numberOfRows * CarbonCommonConstants.INT_SIZE_IN_BYTE;
     }
     // As data is of variable length and data format is
     // <length in short><data><length in short><data>
@@ -91,7 +88,7 @@ public class UnsafeVariableLengthDimesionDataChunkStore
     // as first position will be start from 2 byte as data is stored first in the memory block
     // we need to skip first two bytes this is because first two bytes will be length of the data
     // which we have to skip
-    CarbonUnsafe.unsafe.putInt(dataPageMemoryBlock.getBaseObject(),
+    CarbonUnsafe.getUnsafe().putInt(dataPageMemoryBlock.getBaseObject(),
         dataPageMemoryBlock.getBaseOffset() + pointerOffsets,
         CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
     // incrementing the pointers as first value is already filled and as we are storing as int
@@ -105,7 +102,7 @@ public class UnsafeVariableLengthDimesionDataChunkStore
     // as first offset is already stored, we need to start from the 2nd row in data array
     for (int i = 1; i < numberOfRows; i++) {
       // first copy the length of previous row
-      CarbonUnsafe.unsafe.copyMemory(dataPageMemoryBlock.getBaseObject(),
+      CarbonUnsafe.getUnsafe().copyMemory(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + startOffset, length, CarbonUnsafe.BYTE_ARRAY_OFFSET,
           CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
       buffer.put(length);
@@ -118,7 +115,7 @@ public class UnsafeVariableLengthDimesionDataChunkStore
       buffer.clear();
       // now put the offset of current row, here we need to add 2 more bytes as current will
       // also have length part so we have to skip length
-      CarbonUnsafe.unsafe.putInt(dataPageMemoryBlock.getBaseObject(),
+      CarbonUnsafe.getUnsafe().putInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + pointerOffsets,
           startOffset + CarbonCommonConstants.SHORT_SIZE_IN_BYTE);
       // incrementing the pointers as first value is already filled and as we are storing as int
@@ -137,8 +134,8 @@ public class UnsafeVariableLengthDimesionDataChunkStore
   @Override public byte[] getRow(int rowId) {
     // if column was explicitly sorted we need to get the rowid based inverted index reverse
     if (isExplicitSorted) {
-      rowId = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
-          dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + (rowId
+      rowId = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
+          dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
     }
     // now to get the row from memory block we need to do following thing
@@ -147,13 +144,13 @@ public class UnsafeVariableLengthDimesionDataChunkStore
     // Subtract the current row offset + 2 bytes(to skip the data length) with next row offset
     // else subtract the current row offset + 2 bytes(to skip the data length)
     // with complete data length
-    int currentDataOffset = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
+    int currentDataOffset = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
         dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + (rowId
             * CarbonCommonConstants.INT_SIZE_IN_BYTE));
     short length = 0;
     // calculating the length of data
     if (rowId < numberOfRows - 1) {
-      int OffsetOfNextdata = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
+      int OffsetOfNextdata = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + ((rowId + 1)
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
       length = (short) (OffsetOfNextdata - (currentDataOffset
@@ -163,7 +160,7 @@ public class UnsafeVariableLengthDimesionDataChunkStore
       length = (short) (this.dataLength - currentDataOffset);
     }
     byte[] data = new byte[length];
-    CarbonUnsafe.unsafe.copyMemory(dataPageMemoryBlock.getBaseObject(),
+    CarbonUnsafe.getUnsafe().copyMemory(dataPageMemoryBlock.getBaseObject(),
         dataPageMemoryBlock.getBaseOffset() + currentDataOffset, data,
         CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
     return data;
@@ -171,11 +168,11 @@ public class UnsafeVariableLengthDimesionDataChunkStore
 
   @Override public void fillRow(int rowId, CarbonColumnVector vector, int vectorRow) {
     byte[] value = getRow(rowId);
-    if (ByteUtil.UnsafeComparer.INSTANCE
+    DataType dt = vector.getType();
+    if ((!(dt instanceof StringType) && value.length == 0) || ByteUtil.UnsafeComparer.INSTANCE
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, value)) {
       vector.putNull(vectorRow);
     } else {
-      DataType dt = vector.getType();
       if (dt instanceof StringType) {
         vector.putBytes(vectorRow, 0, value.length, value);
       } else if (dt instanceof BooleanType) {
@@ -184,16 +181,10 @@ public class UnsafeVariableLengthDimesionDataChunkStore
         vector.putShort(vectorRow, ByteUtil.toShort(value, 0, value.length));
       } else if (dt instanceof IntegerType) {
         vector.putInt(vectorRow, ByteUtil.toInt(value, 0, value.length));
-      } else if (dt instanceof FloatType) {
-        vector.putFloat(vectorRow, ByteUtil.toFloat(value, 0));
-      } else if (dt instanceof DoubleType) {
-        vector.putDouble(vectorRow, ByteUtil.toDouble(value, 0));
       } else if (dt instanceof LongType) {
         vector.putLong(vectorRow, ByteUtil.toLong(value, 0, value.length));
-      } else if (dt instanceof DecimalType) {
-        vector.putDecimal(vectorRow,
-            Decimal.apply(ByteUtil.toBigDecimal(value, 0, value.length)),
-            DecimalType.MAX_PRECISION());
+      } else if (dt instanceof TimestampType) {
+        vector.putLong(vectorRow, ByteUtil.toLong(value, 0, value.length) * 1000L);
       }
     }
   }
@@ -212,13 +203,13 @@ public class UnsafeVariableLengthDimesionDataChunkStore
     // Subtract the current row offset + 2 bytes(to skip the data length) with next row offset
     // else subtract the current row offset
     // with complete data length get the offset of set of data
-    int currentDataOffset = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
-        dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + (index
-            * CarbonCommonConstants.INT_SIZE_IN_BYTE));
+    int currentDataOffset = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
+        dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + ((long)index
+            * CarbonCommonConstants.INT_SIZE_IN_BYTE * 1L));
     short length = 0;
     // calculating the length of data
     if (index < numberOfRows - 1) {
-      int OffsetOfNextdata = CarbonUnsafe.unsafe.getInt(dataPageMemoryBlock.getBaseObject(),
+      int OffsetOfNextdata = CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + this.dataPointersOffsets + ((index + 1)
               * CarbonCommonConstants.INT_SIZE_IN_BYTE));
       length = (short) (OffsetOfNextdata - (currentDataOffset
@@ -232,7 +223,7 @@ public class UnsafeVariableLengthDimesionDataChunkStore
     int compareResult;
     int compareLength = Math.min(length , compareValue.length);
     for (int i = 0; i < compareLength; i++) {
-      compareResult = (CarbonUnsafe.unsafe.getByte(dataPageMemoryBlock.getBaseObject(),
+      compareResult = (CarbonUnsafe.getUnsafe().getByte(dataPageMemoryBlock.getBaseObject(),
           dataPageMemoryBlock.getBaseOffset() + currentDataOffset) & 0xff) - (compareValue[i]
           & 0xff);
       // if compare result is not equal we can break

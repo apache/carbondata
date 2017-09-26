@@ -89,7 +89,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     }
     long cutOffTimeStampLocal;
     if (null == cutOffTimeStampString) {
-      cutOffTimeStampLocal = -1;
+      cutOffTimeStampLocal = 0;
     } else {
       try {
         SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
@@ -102,7 +102,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
         LOGGER.warn("Cannot convert" + cutOffTimeStampString
             + " to Time/Long type value. Value considered for cutOffTimeStamp is -1." + e
             .getMessage());
-        cutOffTimeStampLocal = -1;
+        cutOffTimeStampLocal = 0;
       }
     }
     granularityFactor = granularityFactorLocal;
@@ -187,19 +187,14 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
     if (key == 1) {
       return null;
     }
-    long timeStamp = 0;
-    if (cutOffTimeStamp >= 0) {
-      timeStamp = ((key - 2) * granularityFactor + cutOffTimeStamp);
-    } else {
-      timeStamp = (key - 2) * granularityFactor;
-    }
+    long timeStamp = ((key - 2) * granularityFactor + cutOffTimeStamp);
     return timeStamp * 1000L;
   }
 
   private int generateDirectSurrogateKeyForNonTimestampType(String memberStr) {
     long timeValue = -1;
     try {
-      timeValue = Long.valueOf(memberStr) / 1000;
+      timeValue = Long.parseLong(memberStr) / 1000;
     } catch (NumberFormatException e) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(
@@ -215,13 +210,12 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
   }
 
   private int generateKey(long timeValue) {
-    if (cutOffTimeStamp >= 0) {
-      int keyValue = (int) ((timeValue - cutOffTimeStamp) / granularityFactor);
-      return keyValue < 0 ? 1 : keyValue + 2;
-    } else {
-      int keyValue = (int) (timeValue / granularityFactor);
-      return keyValue < 0 ? 1 : keyValue + 2;
+    long time = (timeValue - cutOffTimeStamp) / granularityFactor;
+    int keyValue = -1;
+    if (time >= (long) Integer.MIN_VALUE && time <= (long) Integer.MAX_VALUE) {
+      keyValue = (int) time;
     }
+    return keyValue < 0 ? 1 : keyValue + 2;
   }
 
   public void initialize() {

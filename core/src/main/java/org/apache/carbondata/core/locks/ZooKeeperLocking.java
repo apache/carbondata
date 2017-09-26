@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.locks;
 
-import java.io.File;
 import java.util.Collections;
 import java.util.List;
 
@@ -70,8 +69,16 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   private String lockTypeFolder;
 
   public ZooKeeperLocking(CarbonTableIdentifier tableIdentifier, String lockFile) {
-    this(tableIdentifier.getDatabaseName() + File.separator + tableIdentifier.getTableName(),
-        lockFile);
+    this(tableIdentifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + tableIdentifier
+        .getTableName(), lockFile);
+  }
+
+  public static void initialize() {
+    String zooKeeperUrl =
+        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ZOOKEEPER_URL);
+    if (null == zk) {
+      zk = ZookeeperInit.getInstance(zooKeeperUrl).getZookeeper();
+    }
   }
 
   /**
@@ -82,9 +89,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
     this.lockName = lockFile;
     this.tableIdFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation;
 
-    String zooKeeperUrl =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ZOOKEEPER_URL);
-    zk = ZookeeperInit.getInstance(zooKeeperUrl).getZookeeper();
+    initialize();
 
     this.lockTypeFolder = zooKeeperLocation + CarbonCommonConstants.FILE_SEPARATOR + lockLocation
         + CarbonCommonConstants.FILE_SEPARATOR + lockFile;
@@ -123,7 +128,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   private void createRecursivly(String path) throws KeeperException, InterruptedException {
     try {
       if (zk.exists(path, true) == null && path.length() > 0) {
-        String temp = path.substring(0, path.lastIndexOf(File.separator));
+        String temp = path.substring(0, path.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
         createRecursivly(temp);
         zk.create(path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
       } else {

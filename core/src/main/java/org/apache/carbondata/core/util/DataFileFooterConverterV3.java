@@ -76,13 +76,24 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     List<BlockletInfo> blockletInfoList = new ArrayList<BlockletInfo>();
     for (int i = 0; i < leaf_node_infos_Thrift.size(); i++) {
       BlockletInfo blockletInfo = getBlockletInfo(leaf_node_infos_Thrift.get(i),
-          getNumberOfDimensionColumns(columnSchemaList));
+          CarbonUtil.getNumberOfDimensionColumns(columnSchemaList));
       blockletInfo.setBlockletIndex(blockletIndexList.get(i));
       blockletInfoList.add(blockletInfo);
     }
     dataFileFooter.setBlockletList(blockletInfoList);
     dataFileFooter.setBlockletIndex(getBlockletIndexForDataFileFooter(blockletIndexList));
     return dataFileFooter;
+  }
+
+  @Override public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
+    CarbonHeaderReader carbonHeaderReader = new CarbonHeaderReader(tableBlockInfo.getFilePath());
+    FileHeader fileHeader = carbonHeaderReader.readHeader();
+    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+    List<org.apache.carbondata.format.ColumnSchema> table_columns = fileHeader.getColumn_schema();
+    for (int i = 0; i < table_columns.size(); i++) {
+      columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+    }
+    return columnSchemaList;
   }
 
   /**
@@ -92,7 +103,7 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
    * @param blockletInfoThrift blocklet info of the thrift
    * @return blocklet info wrapper
    */
-  private BlockletInfo getBlockletInfo(
+  public BlockletInfo getBlockletInfo(
       org.apache.carbondata.format.BlockletInfo3 blockletInfoThrift, int numberOfDimensionColumns) {
     BlockletInfo blockletInfo = new BlockletInfo();
     List<Long> dimensionColumnChunkOffsets =
@@ -114,33 +125,6 @@ public class DataFileFooterConverterV3 extends AbstractDataFileFooterConverter {
     blockletInfo.setMeasureOffsets(blockletInfoThrift.getMeasure_offsets());
     blockletInfo.setNumberOfPages(blockletInfoThrift.getNumber_number_of_pages());
     return blockletInfo;
-  }
-
-  /**
-   * Below method will be used to get the number of dimension column
-   * in carbon column schema
-   *
-   * @param columnSchemaList column schema list
-   * @return number of dimension column
-   */
-  private int getNumberOfDimensionColumns(List<ColumnSchema> columnSchemaList) {
-    int numberOfDimensionColumns = 0;
-    int previousColumnGroupId = -1;
-    ColumnSchema columnSchema = null;
-    for (int i = 0; i < columnSchemaList.size(); i++) {
-      columnSchema = columnSchemaList.get(i);
-      if (columnSchema.isDimensionColumn() && columnSchema.isColumnar()) {
-        numberOfDimensionColumns++;
-      } else if (columnSchema.isDimensionColumn()) {
-        if (previousColumnGroupId != columnSchema.getColumnGroupId()) {
-          previousColumnGroupId = columnSchema.getColumnGroupId();
-          numberOfDimensionColumns++;
-        }
-      } else {
-        break;
-      }
-    }
-    return numberOfDimensionColumns;
   }
 
 }

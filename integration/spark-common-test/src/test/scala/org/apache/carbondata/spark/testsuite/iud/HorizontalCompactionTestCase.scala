@@ -18,11 +18,10 @@
 package org.apache.carbondata.spark.testsuite.iud
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.test.util.QueryTest
 
 
 class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
@@ -321,7 +320,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"""load data local inpath '$resourcesPath/IUD/comp4.csv' INTO table dest2""")
     sql(
       """delete from dest2 where (c2 < 3) or (c2 > 10 and c2 < 13) or (c2 > 20 and c2 < 23) or (c2 > 30 and c2 < 33)""").show()
-    sql("""DELETE SEGMENT 0 FROM TABLE dest2""")
+    sql("""delete from table dest2 where segment.id in (0) """)
     sql("""clean files for table dest2""")
     sql(
       """update dest2 set (c5) = ('8RAM size') where (c2 > 3 and c2 < 5) or (c2 > 13 and c2 < 15) or (c2 > 23 and c2 < 25) or (c2 > 33 and c2 < 35)""")

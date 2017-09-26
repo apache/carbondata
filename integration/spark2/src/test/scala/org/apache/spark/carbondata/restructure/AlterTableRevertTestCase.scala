@@ -20,14 +20,13 @@ package org.apache.spark.carbondata.restructure
 import java.io.File
 
 import org.apache.spark.sql.AnalysisException
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.apache.spark.util.AlterTableUtil
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.metadata.CarbonMetadata
 
-class AlterTableRevertTestCase extends QueryTest with BeforeAndAfterAll {
+class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll() {
     sql("drop table if exists reverttest")

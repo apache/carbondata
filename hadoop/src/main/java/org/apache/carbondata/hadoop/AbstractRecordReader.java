@@ -39,7 +39,5 @@ public abstract class AbstractRecordReader<T> extends RecordReader<Void, T> {
     QueryStatistic queryStatistic = new QueryStatistic();
     queryStatistic.addCountStatistic(QueryStatisticsConstants.RESULT_SIZE, recordCount);
     recorder.recordStatistics(queryStatistic);
-    // print executor query statistics for each task_id
-    recorder.logStatisticsAsTableExecutor();
   }
 }

@@ -18,6 +18,7 @@ package org.apache.carbondata.core.scan.collector.impl;
 
 import java.util.List;
 
+import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -30,6 +31,7 @@ import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
 
 import org.apache.spark.sql.types.Decimal;
+import org.apache.spark.unsafe.types.UTF8String;
 
 /**
  * It is not a collector it is just a scanned result holder.
@@ -57,6 +59,12 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
       if (!dimensionInfo.getDimensionExists()[i]) {
         // add a dummy column vector result collector object
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
+        columnVectorInfo.dimension = queryDimensions[i];
+        if (queryDimensions[i].getDimension().getDataType().equals(DataType.TIMESTAMP)
+            || queryDimensions[i].getDimension().getDataType().equals(DataType.DATE)) {
+          columnVectorInfo.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+              .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
+        }
         allColumnInfo[queryDimensions[i].getQueryOrder()] = columnVectorInfo;
       }
     }
@@ -71,6 +79,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
         // add a dummy column vector result collector object
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
         allColumnInfo[queryMeasures[i].getQueryOrder()] = columnVectorInfo;
+        columnVectorInfo.measure = queryMeasures[i];
         measureDefaultValues[i] = getMeasureDefaultValue(queryMeasures[i].getMeasure());
       }
     }
@@ -103,7 +112,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
       }
       int rowCounter = scannedResult.getRowCounter();
       int availableRows = currentPageRowCount - rowCounter;
-      int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getActualSize();
+      int requiredRows = columnarBatch.getBatchSize() - columnarBatch.getRowCounter();
       requiredRows = Math.min(requiredRows, availableRows);
       if (requiredRows < 1) {
         return;
@@ -140,7 +149,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
         } else {
           // fill no dictionary data
           fillNoDictionaryData(allColumnInfo[queryOrder].vector, allColumnInfo[queryOrder],
-              dimension.getDefaultValue());
+              dimensionInfo.getDefaultValues()[i]);
         }
       }
     }
@@ -186,9 +195,21 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
    * @param defaultValue
    */
   private void fillNoDictionaryData(CarbonColumnVector vector, ColumnVectorInfo columnVectorInfo,
-      byte[] defaultValue) {
+      Object defaultValue) {
     if (null != defaultValue) {
-      vector.putBytes(columnVectorInfo.vectorOffset, columnVectorInfo.size, defaultValue);
+      switch (columnVectorInfo.dimension.getDimension().getDataType()) {
+        case INT:
+          vector.putInts(columnVectorInfo.vectorOffset, columnVectorInfo.size, (int) defaultValue);
+          break;
+        case LONG:
+        case TIMESTAMP:
+          vector
+              .putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size, (long) defaultValue);
+          break;
+        default:
+          vector.putBytes(columnVectorInfo.vectorOffset, columnVectorInfo.size,
+              ((UTF8String) defaultValue).getBytes());
+      }
     } else {
       vector.putNulls(columnVectorInfo.vectorOffset, columnVectorInfo.size);
     }

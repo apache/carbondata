@@ -25,7 +25,6 @@ The following sections will elaborate on the above topics :
 * [Configuration for Optimizing Data Loading performance for Massive Data](#configuration-for-optimizing-data-loading-performance-for-massive-data)
 * [Optimizing Mass Data Loading](#configurations-for-optimizing-carbondata-performance)
 
-
 ## Suggestions to Create CarbonData Table
 
 Recently CarbonData was used to analyze performance of Telecommunication field.
@@ -63,6 +62,15 @@ The create table command can be modified as suggested below :
   )STORED BY 'org.apache.carbondata.format'
   TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,..',
   'DICTIONARY_INCLUDE'='...');
+
+  Example:
+  create table carbondata_table(
+    msisdn String,
+    BEGIN_TIME bigint
+    )STORED BY 'org.apache.carbondata.format'
+    TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN',
+    'DICTIONARY_INCLUDE'='BEGIN_TIME');
+
 ```
 
   Now the query with MSISDN in the filter will be more efficient.
@@ -87,6 +95,17 @@ The create table command can be modified as suggested below :
   )STORED BY 'org.apache.carbondata.format'
   TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST..',
   'DICTIONARY_INCLUDE'='Dime_1..');
+
+  Example:
+  create table carbondata_table(
+    Dime_1 String,
+    HOST String,
+    MSISDN String
+    )STORED BY 'org.apache.carbondata.format'
+    TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST',
+    'DICTIONARY_INCLUDE'='Dime_1');
+
+
 ```
 
 
@@ -97,14 +116,15 @@ The create table command can be modified as below :
 
 ```
   create table carbondata_table(
-  Dime_1 String,
-  BEGIN_TIME bigint,
-  HOST String,
-  MSISDN String,
-  ...
-  )STORED BY 'org.apache.carbondata.format'
-  TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST,IMSI..',
-  'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME..');
+    Dime_1 String,
+    BEGIN_TIME bigint,
+    END_TIME bigint,
+    HOST String,
+    MSISDN String
+    ...
+    )STORED BY 'org.apache.carbondata.format'
+    TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST...',
+    'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME...');
 ```
 
 
@@ -115,17 +135,18 @@ query performance. The create table command can be modified as below :
 
 ```
   create table carbondata_table(
-  Dime_1 String,
-  BEGIN_TIME bigint,
-  HOST String,
-  MSISDN String,
-  counter_1 double,
-  counter_2 double,
-  ...
-  counter_100 double
-  )STORED BY 'org.apache.carbondata.format'
-  TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST,IMSI',
-  'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME');
+    Dime_1 String,
+    BEGIN_TIME bigint,
+    END_TIME bigint,
+    HOST String,
+    MSISDN String,
+    counter_1 double,
+    counter_2 double,
+    ...
+    counter_100 double
+    )STORED BY 'org.apache.carbondata.format'
+    TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST...',
+    'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME...');
 ```
   The result of performance analysis of test-case shows reduction in query execution time from 15 to 3 seconds, thereby improving performance by nearly 5 times.
 
@@ -139,17 +160,18 @@ suggested to put begin_time at the end of dimensions.
 
 ```
   create table carbondata_table(
-  Dime_1 String,
-  HOST String,
-  MSISDN String,
-  counter_1 double,
-  counter_2 double,
-  BEGIN_TIME bigint,
-  ...
-  counter_100 double
-  )STORED BY 'org.apache.carbondata.format'
-  TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST,IMSI',
-  'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME');
+    Dime_1 String,
+    HOST String,
+    MSISDN String,
+    counter_1 double,
+    counter_2 double,
+    BEGIN_TIME bigint,
+    END_TIME bigint,
+    ...
+    counter_100 double
+    )STORED BY 'org.apache.carbondata.format'
+    TBLPROPERTIES ( 'DICTIONARY_EXCLUDE'='MSISDN,HOST...',
+    'DICTIONARY_INCLUDE'='Dime_1,END_TIME,BEGIN_TIME....');
 ```
 
 
@@ -208,5 +230,6 @@ scenarios. After the completion of POC, some of the configurations impacting the
 | spark.executor.instances/spark.executor.cores/spark.executor.memory | spark/conf/spark-defaults.conf | Querying | The number of executors, CPU cores, and memory used for CarbonData query. | In the bank scenario, we provide the 4 CPUs cores and 15 GB for each executor which can get good performance. This 2 value does not mean more the better. It needs to be configured properly in case of limited resources. For example, In the bank scenario, it has enough CPU 32 cores each node but less memory 64 GB each node. So we cannot give more CPU but less memory. For example, when 4 cores and 12GB for each executor. It sometimes happens GC during the query which impact the query performance very much from the 3 second to more than 15 seconds. In this scenario need to increase the memory or decrease the CPU cores. |
 | carbon.detail.batch.size | spark/carbonlib/carbon.properties | Data loading | The buffer size to store records, returned from the block scan. | In limit scenario this parameter is very important. For example your query limit is 1000. But if we set this value to 3000 that means we get 3000 records from scan but spark will only take 1000 rows. So the 2000 remaining are useless. In one Finance test case after we set it to 100, in the limit 1000 scenario the performance increase about 2 times in comparison to if we set this value to 12000. |
 | carbon.use.local.dir | spark/carbonlib/carbon.properties | Data loading | Whether use YARN local directories for multi-table load disk load balance | If this is set it to true CarbonData will use YARN local directories for multi-table load disk load balance, that will improve the data load performance. |
+| carbon.use.multiple.temp.dir | spark/carbonlib/carbon.properties | Data loading | Whether to use multiple YARN local directories during table data loading for disk load balance | After enabling 'carbon.use.local.dir', if this is set to true, CarbonData will use all YARN local directories during data load for disk load balance, that will improve the data load performance. Please enable this property when you encounter disk hotspot problem during data loading. |
 
 Note: If your CarbonData instance is provided only for query, you may specify the property 'spark.speculation=true' which is in conf directory of spark.

@@ -23,9 +23,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
-import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
+import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
@@ -42,33 +43,36 @@ public class NoDictionaryTypeVisitor implements ResolvedFilterInfoVisitorIntf {
    * @throws FilterUnsupportedException,if exception occurs while evaluating
    * filter models.
    */
-  public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
+  public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
-    DimColumnFilterInfo resolvedFilterObject = null;
-    List<String> evaluateResultListFinal = null;
-    try {
-      // handling for is null case scenarios
-      if (metadata.getExpression() instanceof EqualToExpression) {
-        EqualToExpression expression = (EqualToExpression) metadata.getExpression();
-        if (expression.isNull) {
-          evaluateResultListFinal = new ArrayList<>(1);
+    if (visitableObj instanceof DimColumnResolvedFilterInfo) {
+      DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
+      ColumnFilterInfo resolvedFilterObject = null;
+      List<String> evaluateResultListFinal = new ArrayList<>(1);
+      try {
+        // handling for is null case scenarios
+        if (metadata.getExpression() instanceof EqualToExpression) {
+          EqualToExpression expression = (EqualToExpression) metadata.getExpression();
+          if (expression.isNull) {
+            evaluateResultListFinal = new ArrayList<>(1);
+            evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
+          }
+        } else {
+          evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+        }
+        // Adding default  null member inorder to not display the same while
+        // displaying the report as per hive compatibility.
+        if (!metadata.isIncludeFilter() && !evaluateResultListFinal
+            .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
           evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
         }
-      } else {
-        evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+      } catch (FilterIllegalMemberException e) {
+        throw new FilterUnsupportedException(e);
       }
-      // Adding default  null member inorder to not display the same while
-      // displaying the report as per hive compatibility.
-      if (!metadata.isIncludeFilter() && !evaluateResultListFinal
-          .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-        evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
-      }
-    } catch (FilterIllegalMemberException e) {
-      throw new FilterUnsupportedException(e);
+      resolvedFilterObject = FilterUtil
+          .getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter(),
+              metadata.getColumnExpression().getDataType());
+      resolveDimension.setFilterValues(resolvedFilterObject);
     }
-    resolvedFilterObject = FilterUtil
-        .getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, metadata.isIncludeFilter(),
-            metadata.getColumnExpression().getDataType());
-    visitableObj.setFilterValues(resolvedFilterObject);
   }
 }

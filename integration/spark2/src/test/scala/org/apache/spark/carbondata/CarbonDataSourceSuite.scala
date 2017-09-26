@@ -19,14 +19,14 @@ package org.apache.spark.carbondata
 
 import scala.collection.mutable
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.util.CarbonProperties
 
-class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
+class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     // Drop table
     sql("DROP TABLE IF EXISTS carbon_testtable")
@@ -195,6 +195,7 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test create table with complex datatype") {
+    sql("drop table if exists create_source")
     sql("create table create_source(intField int, stringField string, complexField array<string>) USING org.apache.spark.sql.CarbonSource OPTIONS('tableName'='create_source')")
     sql("drop table create_source")
   }
@@ -215,7 +216,8 @@ class CarbonDataSourceSuite extends QueryTest with BeforeAndAfterAll {
 
   test("test check results of table with complex data type and bucketing") {
     sql("drop table if exists create_source")
-    sql("create table create_source(intField int, stringField string, complexField array<int>) USING org.apache.spark.sql.CarbonSource OPTIONS('bucketnumber'='1', 'bucketcolumns'='stringField', 'tableName'='create_source')")
+    sql("create table create_source(intField int, stringField string, complexField array<int>) " +
+        "USING org.apache.spark.sql.CarbonSource OPTIONS('bucketnumber'='1', 'bucketcolumns'='stringField', 'tableName'='create_source')")
     sql("""insert into create_source values(1,"source","1$2$3")""")
     checkAnswer(sql("select * from create_source"), Row(1,"source", mutable.WrappedArray.newBuilder[Int].+=(1,2,3)))
     sql("drop table if exists create_source")

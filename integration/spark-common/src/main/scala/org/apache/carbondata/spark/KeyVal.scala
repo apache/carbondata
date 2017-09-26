@@ -107,6 +107,14 @@ class MergeResultImpl extends MergeResult[String, Boolean] {
   override def getKey(key: String, value: Boolean): (String, Boolean) = (key, value)
 }
 
+trait AlterPartitionResult[K, V] extends Serializable {
+  def getKey(key: String, value: Boolean): (K, V)
+}
+
+class AlterPartitionResultImpl extends AlterPartitionResult[String, Boolean] {
+  override def getKey(key: String, value: Boolean): (String, Boolean) = (key, value)
+}
+
 trait DeletedLoadResult[K, V] extends Serializable {
   def getKey(key: String, value: String): (K, V)
 }

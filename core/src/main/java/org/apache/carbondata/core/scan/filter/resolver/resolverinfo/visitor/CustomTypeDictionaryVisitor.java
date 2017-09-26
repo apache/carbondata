@@ -27,8 +27,9 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
-import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
+import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
 
@@ -44,31 +45,34 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
    * @throws FilterUnsupportedException,if exception occurs while evaluating
    *                                       filter models.
    */
-  public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
+  public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException {
-    DimColumnFilterInfo resolvedFilterObject = null;
-
-    List<String> evaluateResultListFinal;
-    try {
-      evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
-    } catch (FilterIllegalMemberException e) {
-      throw new FilterUnsupportedException(e);
+    ColumnFilterInfo resolvedFilterObject = null;
+    if (visitableObj instanceof DimColumnResolvedFilterInfo) {
+      DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
+      List<String> evaluateResultListFinal;
+      try {
+        evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+      } catch (FilterIllegalMemberException e) {
+        throw new FilterUnsupportedException(e);
+      }
+      resolvedFilterObject =
+          getDirectDictionaryValKeyMemberForFilter(metadata.getColumnExpression(),
+              evaluateResultListFinal, metadata.isIncludeFilter(),
+              metadata.getColumnExpression().getDimension().getDataType());
+      if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
+          .getFilterList().contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
+        // Adding default surrogate key of null member inorder to not display the same while
+        // displaying the report as per hive compatibility.
+        resolvedFilterObject.getFilterList()
+            .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+        Collections.sort(resolvedFilterObject.getFilterList());
+      }
+      resolveDimension.setFilterValues(resolvedFilterObject);
     }
-    resolvedFilterObject = getDirectDictionaryValKeyMemberForFilter(metadata.getColumnExpression(),
-        evaluateResultListFinal, metadata.isIncludeFilter(),
-        metadata.getColumnExpression().getDimension().getDataType());
-    if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
-        .getFilterList().contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
-      // Adding default surrogate key of null member inorder to not display the same while
-      // displaying the report as per hive compatibility.
-      resolvedFilterObject.getFilterList()
-          .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
-      Collections.sort(resolvedFilterObject.getFilterList());
-    }
-    visitableObj.setFilterValues(resolvedFilterObject);
   }
 
-  protected DimColumnFilterInfo getDirectDictionaryValKeyMemberForFilter(
+  protected ColumnFilterInfo getDirectDictionaryValKeyMemberForFilter(
       ColumnExpression columnExpression, List<String> evaluateResultListFinal,
       boolean isIncludeFilter, DataType dataType) {
     List<Integer> surrogates = new ArrayList<Integer>(20);
@@ -79,9 +83,9 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
         dataType);
 
     Collections.sort(surrogates);
-    DimColumnFilterInfo columnFilterInfo = null;
+    ColumnFilterInfo columnFilterInfo = null;
     if (surrogates.size() > 0) {
-      columnFilterInfo = new DimColumnFilterInfo();
+      columnFilterInfo = new ColumnFilterInfo();
       columnFilterInfo.setIncludeFilter(isIncludeFilter);
       columnFilterInfo.setFilterList(surrogates);
     }

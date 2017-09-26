@@ -32,6 +32,10 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
+import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
+import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.ObjectSizeCalculator;
+import org.apache.carbondata.core.util.TaskMetricsMap;
 
 /**
  * This class implements methods to create dictionary cache which will hold
@@ -48,6 +52,11 @@ public class ForwardDictionaryCache<K extends
 
   private static final Map<DictionaryColumnUniqueIdentifier, Object> DICTIONARY_LOCK_OBJECT =
       new HashMap<>();
+
+  private static final long sizeOfEmptyDictChunks =
+      ObjectSizeCalculator.estimate(new ArrayList<byte[]>(CarbonUtil.getDictionaryChunkSize()), 16);
+
+  private static final long byteArraySize = ObjectSizeCalculator.estimate(new byte[0], 16);
 
   /**
    * @param carbonStorePath
@@ -92,28 +101,36 @@ public class ForwardDictionaryCache<K extends
     for (final DictionaryColumnUniqueIdentifier uniqueIdent : dictionaryColumnUniqueIdentifiers) {
       taskSubmitList.add(executorService.submit(new Callable<Dictionary>() {
         @Override public Dictionary call() throws IOException {
-          // in case of multiple task for same query same executor
-          // only one task should load the dictionary
-          // others will wait on monitor and get the loaded dictionary values
-          Object lockObject = DICTIONARY_LOCK_OBJECT.get(uniqueIdent);
-          // if lock object is null
-          if (null == lockObject) {
-            // Acquire the lock on map
-            synchronized (DICTIONARY_LOCK_OBJECT) {
-              // double checking the dictionary lock object
-              lockObject = DICTIONARY_LOCK_OBJECT.get(uniqueIdent);
-              // if still it is null add new lock object
-              if (null == lockObject) {
-                lockObject = new Object();
-                DICTIONARY_LOCK_OBJECT.put(uniqueIdent, lockObject);
+          try {
+            // Register thread callback for calculating metrics
+            TaskMetricsMap.getInstance().registerThreadCallback();
+            // in case of multiple task for same query same executor
+            // only one task should load the dictionary
+            // others will wait on monitor and get the loaded dictionary values
+            Object lockObject = DICTIONARY_LOCK_OBJECT.get(uniqueIdent);
+            // if lock object is null
+            if (null == lockObject) {
+              // Acquire the lock on map
+              synchronized (DICTIONARY_LOCK_OBJECT) {
+                // double checking the dictionary lock object
+                lockObject = DICTIONARY_LOCK_OBJECT.get(uniqueIdent);
+                // if still it is null add new lock object
+                if (null == lockObject) {
+                  lockObject = new Object();
+                  DICTIONARY_LOCK_OBJECT.put(uniqueIdent, lockObject);
+                }
               }
             }
+            Dictionary dictionary = null;
+            synchronized (lockObject) {
+              dictionary = getDictionary(uniqueIdent);
+            }
+            return dictionary;
+          }  finally {
+            // update read bytes metrics for this thread
+            TaskMetricsMap.getInstance().updateReadBytes(Thread.currentThread().getId());
           }
-          Dictionary dictionary = null;
-          synchronized (lockObject) {
-            dictionary = getDictionary(uniqueIdent);
-          }
-          return dictionary;
+
         }
       }));
     }
@@ -230,5 +247,39 @@ public class ForwardDictionaryCache<K extends
               CacheType.FORWARD_DICTIONARY));
       cacheable.clear();
     }
+  }
+
+  @Override protected long getEstimatedDictionarySize(DictionaryInfo dictionaryInfo,
+      CarbonDictionaryColumnMetaChunk carbonDictionaryColumnMetaChunk,
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier, boolean
+      readSortIndexSize) throws IOException {
+    // required size will be size total size of file - offset till file is
+    // already read
+    long requiredSize =
+        carbonDictionaryColumnMetaChunk.getEnd_offset() -
+            dictionaryInfo.getOffsetTillFileIsRead();
+
+    long numOfRecords = dictionaryInfo.getOffsetTillFileIsRead() == 0 ?
+        carbonDictionaryColumnMetaChunk.getMax_surrogate_key() :
+        carbonDictionaryColumnMetaChunk.getMax_surrogate_key()
+            - getNumRecordsInCarbonDictionaryColumnMetaChunk(
+            dictionaryColumnUniqueIdentifier,
+            dictionaryInfo.getOffsetTillFileIsRead());
+
+    if (numOfRecords > 0) {
+      long avgRecordsSize = requiredSize / numOfRecords;
+      long bytesPerRecord = (long)Math.ceil(avgRecordsSize / 8.0) * 8;
+
+      requiredSize = (bytesPerRecord + byteArraySize) * numOfRecords;
+    }
+
+    if (readSortIndexSize) {
+      // every time we are loading all the sort index files.Hence memory calculation for all
+      // the records
+      requiredSize = requiredSize + getSortIndexSize(
+          carbonDictionaryColumnMetaChunk.getMax_surrogate_key());
+    }
+
+    return requiredSize + sizeOfEmptyDictChunks;
   }
 }

@@ -25,8 +25,10 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 
 public interface FilterResolverIntf extends Serializable {
 
@@ -38,7 +40,7 @@ public interface FilterResolverIntf extends Serializable {
    * @throws IOException
    * @throws FilterUnsupportedException
    */
-  void resolve(AbsoluteTableIdentifier absoluteTableIdentifier)
+  void resolve(AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider)
       throws IOException, FilterUnsupportedException;
 
   /**
@@ -64,6 +66,14 @@ public interface FilterResolverIntf extends Serializable {
    * @return DimColumnResolvedFilterInfo object
    */
   DimColumnResolvedFilterInfo getDimColResolvedFilterInfo();
+
+  /**
+   * API will return the resolved filter instance, this instance will provide
+   * the resolved surrogates based on the applied filter
+   *
+   * @return MeasureColumnResolvedFilterInfo object
+   */
+  MeasureColumnResolvedFilterInfo getMsrColResolvedFilterInfo();
 
   /**
    * API will get the start key based on the filter applied based on the key generator

@@ -21,7 +21,7 @@
 This tutorial guides you through the installation and configuration of CarbonData in the following two modes :
 
 * [Installing and Configuring CarbonData on Standalone Spark Cluster](#installing-and-configuring-carbondata-on-standalone-spark-cluster)
-* [Installing and Configuring CarbonData on “Spark on YARN” Cluster](#installing-and-configuring-carbondata-on-spark-on-yarn-cluster)
+* [Installing and Configuring CarbonData on Spark on YARN Cluster](#installing-and-configuring-carbondata-on-spark-on-yarn-cluster)
 
 followed by :
 
@@ -77,7 +77,7 @@ followed by :
 
 To get started with CarbonData : [Quick Start](quick-start-guide.md), [DDL Operations on CarbonData](ddl-operation-on-carbondata.md)
 
-## Installing and Configuring CarbonData on "Spark on YARN" Cluster
+## Installing and Configuring CarbonData on Spark on YARN Cluster
 
    This section provides the procedure to install CarbonData on "Spark on YARN" cluster.
 
@@ -96,7 +96,7 @@ To get started with CarbonData : [Quick Start](quick-start-guide.md), [DDL Opera
 
 2. Copy the `./conf/carbon.properties.template` file from CarbonData repository to `$SPARK_HOME/conf/` folder and rename the file to `carbon.properties`.
 
-3. Create `tar,gz` file of carbonlib folder and move it inside the carbonlib folder.
+3. Create `tar.gz` file of carbonlib folder and move it inside the carbonlib folder.
 
 ```
 cd $SPARK_HOME
@@ -182,9 +182,10 @@ hdfs://<host_name>:port/user/hive/warehouse/carbon.store
 
 ```
      cd $SPARK_HOME
-     ./bin/beeline jdbc:hive2://<thriftserver_host>:port
+     ./sbin/start-thriftserver.sh
+     ./bin/beeline -u jdbc:hive2://<thriftserver_host>:port
 
      Example
-     ./bin/beeline jdbc:hive2://10.10.10.10:10000
+     ./bin/beeline -u jdbc:hive2://10.10.10.10:10000
 ```
 

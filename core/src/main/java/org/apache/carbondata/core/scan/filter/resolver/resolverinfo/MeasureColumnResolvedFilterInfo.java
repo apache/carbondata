@@ -17,11 +17,22 @@
 
 package org.apache.carbondata.core.scan.filter.resolver.resolverinfo;
 
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
+import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.visitor.ResolvedFilterInfoVisitorIntf;
 
-public class MeasureColumnResolvedFilterInfo implements Serializable {
+public class MeasureColumnResolvedFilterInfo extends ColumnResolvedFilterInfo
+    implements Serializable {
   /**
    *
    */
@@ -31,14 +42,51 @@ public class MeasureColumnResolvedFilterInfo implements Serializable {
 
   private int rowIndex = -1;
 
-  private Object defaultValue;
+  private boolean isMeasureExistsInCurrentSilce = true;
 
   private CarbonColumn carbonColumn;
+
+  private CarbonMeasure carbonMeasure;
+
+  /**
+   * reolved filter object of a particlar filter Expression.
+   */
+  private ColumnFilterInfo resolvedFilterValueObj;
+
+  private Map<CarbonMeasure, List<ColumnFilterInfo>> measureResolvedFilter;
 
   private org.apache.carbondata.core.metadata.datatype.DataType type;
 
   public int getColumnIndex() {
     return columnIndex;
+  }
+
+  public MeasureColumnResolvedFilterInfo() {
+    measureResolvedFilter = new HashMap<CarbonMeasure, List<ColumnFilterInfo>>(20);
+  }
+
+  public void addMeasureResolvedFilterInstance(CarbonMeasure measures,
+      ColumnFilterInfo filterResolvedObj) {
+    List<ColumnFilterInfo> currentVals = measureResolvedFilter.get(measures);
+    if (null == currentVals) {
+      currentVals = new ArrayList<ColumnFilterInfo>(20);
+      currentVals.add(filterResolvedObj);
+      measureResolvedFilter.put(measures, currentVals);
+    } else {
+      currentVals.add(filterResolvedObj);
+    }
+  }
+
+  public Map<CarbonMeasure, List<ColumnFilterInfo>> getMeasureResolvedFilterInstance() {
+    return measureResolvedFilter;
+  }
+
+  public ColumnFilterInfo getFilterValues() {
+    return resolvedFilterValueObj;
+  }
+
+  public void setFilterValues(final ColumnFilterInfo resolvedFilterValueObj) {
+    this.resolvedFilterValueObj = resolvedFilterValueObj;
   }
 
   public void setColumnIndex(int columnIndex) {
@@ -65,10 +113,6 @@ public class MeasureColumnResolvedFilterInfo implements Serializable {
     return true;
   }
 
-  public Object getDefaultValue() {
-    return defaultValue;
-  }
-
   public CarbonColumn getCarbonColumn() {
     return carbonColumn;
   }
@@ -76,4 +120,48 @@ public class MeasureColumnResolvedFilterInfo implements Serializable {
   public void setCarbonColumn(CarbonColumn carbonColumn) {
     this.carbonColumn = carbonColumn;
   }
+
+  public CarbonMeasure getMeasure() {
+    return carbonMeasure;
+  }
+
+  public boolean isMeasureExistsInCurrentSilce() {
+    return isMeasureExistsInCurrentSilce;
+  }
+
+  public void setMeasureExistsInCurrentSilce(boolean measureExistsInCurrentSilce) {
+    isMeasureExistsInCurrentSilce = measureExistsInCurrentSilce;
+  }
+
+  public void setMeasure(CarbonMeasure carbonMeasure) {
+    this.carbonMeasure = carbonMeasure;
+  }
+
+  public void populateFilterInfoBasedOnColumnType(ResolvedFilterInfoVisitorIntf visitor,
+      FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
+    if (null != visitor) {
+      visitor.populateFilterResolvedInfo(this, metadata);
+      this.addMeasureResolvedFilterInstance(metadata.getColumnExpression().getMeasure(),
+          this.getFilterValues());
+      this.setMeasure(metadata.getColumnExpression().getMeasure());
+      this.setColumnIndex(metadata.getColumnExpression().getMeasure().getOrdinal());
+    }
+  }
+
+  /**
+   * This method will clone the current object
+   *
+   * @return
+   */
+  public MeasureColumnResolvedFilterInfo getCopyObject() {
+    MeasureColumnResolvedFilterInfo msrColumnResolvedFilterInfo =
+        new MeasureColumnResolvedFilterInfo();
+    msrColumnResolvedFilterInfo.resolvedFilterValueObj = this.resolvedFilterValueObj;
+    msrColumnResolvedFilterInfo.rowIndex = this.rowIndex;
+    msrColumnResolvedFilterInfo.measureResolvedFilter = this.measureResolvedFilter;
+    msrColumnResolvedFilterInfo.setMeasureExistsInCurrentSilce(this.isMeasureExistsInCurrentSilce);
+    return msrColumnResolvedFilterInfo;
+  }
+
+
 }

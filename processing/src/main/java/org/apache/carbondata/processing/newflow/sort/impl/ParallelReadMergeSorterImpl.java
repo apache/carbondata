@@ -18,7 +18,6 @@ package org.apache.carbondata.processing.newflow.sort.impl;
 
 import java.io.File;
 import java.util.Iterator;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -68,16 +67,16 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
   public void initialize(SortParameters sortParameters) {
     this.sortParameters = sortParameters;
     intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);
-    String storeLocation =
+    String[] storeLocations =
         CarbonDataProcessorUtil.getLocalDataFolderLocation(
             sortParameters.getDatabaseName(), sortParameters.getTableName(),
             String.valueOf(sortParameters.getTaskNo()), sortParameters.getPartitionID(),
-            sortParameters.getSegmentId() + "", false);
+            sortParameters.getSegmentId() + "", false, false);
     // Set the data file location
-    String dataFolderLocation =
-        storeLocation + File.separator + CarbonCommonConstants.SORT_TEMP_FILE_LOCATION;
+    String[] dataFolderLocations = CarbonDataProcessorUtil.arrayAppend(storeLocations,
+        File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     finalMerger =
-        new SingleThreadFinalSortFilesMerger(dataFolderLocation, sortParameters.getTableName(),
+        new SingleThreadFinalSortFilesMerger(dataFolderLocations, sortParameters.getTableName(),
             sortParameters.getDimColCount(),
             sortParameters.getComplexDimColCount(), sortParameters.getMeasureColCount(),
             sortParameters.getNoDictionaryCount(), sortParameters.getMeasureDataType(),
@@ -100,7 +99,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
 
     try {
       for (int i = 0; i < iterators.length; i++) {
-        executorService.submit(
+        executorService.execute(
             new SortIteratorThread(iterators[i], sortDataRow, batchSize, rowCounter,
                 threadStatusObserver));
       }
@@ -183,7 +182,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
   /**
    * This thread iterates the iterator and adds the rows to @{@link SortDataRows}
    */
-  private static class SortIteratorThread implements Callable<Void> {
+  private static class SortIteratorThread implements Runnable {
 
     private Iterator<CarbonRowBatch> iterator;
 
@@ -206,7 +205,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
     }
 
     @Override
-    public Void call() throws CarbonDataLoadingException {
+    public void run() {
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
@@ -225,9 +224,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
       } catch (Exception e) {
         LOGGER.error(e);
         observer.notifyFailed(e);
-        throw new CarbonDataLoadingException(e);
       }
-      return null;
     }
 
   }

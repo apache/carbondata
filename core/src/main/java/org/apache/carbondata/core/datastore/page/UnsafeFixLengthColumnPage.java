@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.page;
 import java.io.IOException;
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.MemoryBlock;
@@ -27,6 +28,7 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil;
+import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 import static org.apache.carbondata.core.metadata.datatype.DataType.BYTE;
 
@@ -42,6 +44,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   // base offset of memoryBlock
   private long baseOffset;
 
+  private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+
   private static final int byteBits = BYTE.getSizeBits();
   private static final int shortBits = DataType.SHORT.getSizeBits();
   private static final int intBits = DataType.INT.getSizeBits();
@@ -49,8 +53,9 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   private static final int floatBits = DataType.FLOAT.getSizeBits();
   private static final int doubleBits = DataType.DOUBLE.getSizeBits();
 
-  UnsafeFixLengthColumnPage(DataType dataType, int pageSize) throws MemoryException {
-    super(dataType, pageSize);
+  UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize)
+      throws MemoryException {
+    super(columnSpec, dataType, pageSize);
     switch (dataType) {
       case BYTE:
       case SHORT:
@@ -59,13 +64,13 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
       case FLOAT:
       case DOUBLE:
         int size = pageSize << dataType.getSizeBits();
-        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(size);
+        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
         baseAddress = memoryBlock.getBaseObject();
         baseOffset = memoryBlock.getBaseOffset();
         break;
       case SHORT_INT:
         size = pageSize * 3;
-        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(size);
+        memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
         baseAddress = memoryBlock.getBaseObject();
         baseOffset = memoryBlock.getBaseOffset();
         break;
@@ -78,40 +83,40 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public void putByte(int rowId, byte value) {
     long offset = rowId << byteBits;
-    CarbonUnsafe.unsafe.putByte(baseAddress, baseOffset + offset, value);
+    CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset, value);
   }
 
   @Override
   public void putShort(int rowId, short value) {
     long offset = rowId << shortBits;
-    CarbonUnsafe.unsafe.putShort(baseAddress, baseOffset + offset, value);
+    CarbonUnsafe.getUnsafe().putShort(baseAddress, baseOffset + offset, value);
   }
 
   @Override
   public void putShortInt(int rowId, int value) {
     byte[] data = ByteUtil.to3Bytes(value);
-    long offset = rowId * 3;
-    CarbonUnsafe.unsafe.putByte(baseAddress, baseOffset + offset, data[0]);
-    CarbonUnsafe.unsafe.putByte(baseAddress, baseOffset + offset + 1, data[1]);
-    CarbonUnsafe.unsafe.putByte(baseAddress, baseOffset + offset + 2, data[2]);
+    long offset = rowId * 3L;
+    CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset, data[0]);
+    CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset + 1, data[1]);
+    CarbonUnsafe.getUnsafe().putByte(baseAddress, baseOffset + offset + 2, data[2]);
   }
 
   @Override
   public void putInt(int rowId, int value) {
     long offset = rowId << intBits;
-    CarbonUnsafe.unsafe.putInt(baseAddress, baseOffset + offset, value);
+    CarbonUnsafe.getUnsafe().putInt(baseAddress, baseOffset + offset, value);
   }
 
   @Override
   public void putLong(int rowId, long value) {
     long offset = rowId << longBits;
-    CarbonUnsafe.unsafe.putLong(baseAddress, baseOffset + offset, value);
+    CarbonUnsafe.getUnsafe().putLong(baseAddress, baseOffset + offset, value);
   }
 
   @Override
   public void putDouble(int rowId, double value) {
     long offset = rowId << doubleBits;
-    CarbonUnsafe.unsafe.putDouble(baseAddress, baseOffset + offset, value);
+    CarbonUnsafe.getUnsafe().putDouble(baseAddress, baseOffset + offset, value);
   }
 
   @Override
@@ -124,50 +129,54 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
+  @Override public void putDecimal(int rowId, BigDecimal decimal) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
   @Override
   public byte getByte(int rowId) {
     long offset = rowId << byteBits;
-    return CarbonUnsafe.unsafe.getByte(baseAddress, baseOffset + offset);
+    return CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset);
   }
 
   @Override
   public short getShort(int rowId) {
     long offset = rowId << shortBits;
-    return CarbonUnsafe.unsafe.getShort(baseAddress, baseOffset + offset);
+    return CarbonUnsafe.getUnsafe().getShort(baseAddress, baseOffset + offset);
   }
 
   @Override
   public int getShortInt(int rowId) {
-    long offset = rowId * 3;
+    long offset = rowId * 3L;
     byte[] data = new byte[3];
-    data[0] = CarbonUnsafe.unsafe.getByte(baseAddress, baseOffset + offset);
-    data[1] = CarbonUnsafe.unsafe.getByte(baseAddress, baseOffset + offset + 1);
-    data[2] = CarbonUnsafe.unsafe.getByte(baseAddress, baseOffset + offset + 2);
+    data[0] = CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset);
+    data[1] = CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset + 1);
+    data[2] = CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset + 2);
     return ByteUtil.valueOf3Bytes(data, 0);
   }
 
   @Override
   public int getInt(int rowId) {
     long offset = rowId << intBits;
-    return CarbonUnsafe.unsafe.getInt(baseAddress, baseOffset + offset);
+    return CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset);
   }
 
   @Override
   public long getLong(int rowId) {
     long offset = rowId << longBits;
-    return CarbonUnsafe.unsafe.getLong(baseAddress, baseOffset + offset);
+    return CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset);
   }
 
   @Override
   public float getFloat(int rowId) {
     long offset = rowId << floatBits;
-    return CarbonUnsafe.unsafe.getFloat(baseAddress, baseOffset + offset);
+    return CarbonUnsafe.getUnsafe().getFloat(baseAddress, baseOffset + offset);
   }
 
   @Override
   public double getDouble(int rowId) {
     long offset = rowId << doubleBits;
-    return CarbonUnsafe.unsafe.getDouble(baseAddress, baseOffset + offset);
+    return CarbonUnsafe.getUnsafe().getDouble(baseAddress, baseOffset + offset);
   }
 
   @Override
@@ -176,11 +185,20 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
+  public byte[] getBytes(int rowId) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override public byte[] getDecimalPage() {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
   public byte[] getBytePage() {
     byte[] data = new byte[getPageSize()];
     for (int i = 0; i < data.length; i++) {
       long offset = i << byteBits;
-      data[i] = CarbonUnsafe.unsafe.getByte(baseAddress, baseOffset + offset);
+      data[i] = CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset);
     }
     return data;
   }
@@ -190,7 +208,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     short[] data = new short[getPageSize()];
     for (int i = 0; i < data.length; i++) {
       long offset = i << shortBits;
-      data[i] = CarbonUnsafe.unsafe.getShort(baseAddress, baseOffset + offset);
+      data[i] = CarbonUnsafe.getUnsafe().getShort(baseAddress, baseOffset + offset);
     }
     return data;
   }
@@ -198,7 +216,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   @Override
   public byte[] getShortIntPage() {
     byte[] data = new byte[pageSize * 3];
-    CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset,
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset,
         data, CarbonUnsafe.BYTE_ARRAY_OFFSET, data.length);
     return data;
   }
@@ -208,7 +226,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     int[] data = new int[getPageSize()];
     for (int i = 0; i < data.length; i++) {
       long offset = i << intBits;
-      data[i] = CarbonUnsafe.unsafe.getInt(baseAddress, baseOffset + offset);
+      data[i] = CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset);
     }
     return data;
   }
@@ -218,7 +236,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     long[] data = new long[getPageSize()];
     for (int i = 0; i < data.length; i++) {
       long offset = i << longBits;
-      data[i] = CarbonUnsafe.unsafe.getLong(baseAddress, baseOffset + offset);
+      data[i] = CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset);
     }
     return data;
   }
@@ -228,7 +246,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     float[] data = new float[getPageSize()];
     for (int i = 0; i < data.length; i++) {
       long offset = i << floatBits;
-      data[i] = CarbonUnsafe.unsafe.getFloat(baseAddress, baseOffset + offset);
+      data[i] = CarbonUnsafe.getUnsafe().getFloat(baseAddress, baseOffset + offset);
     }
     return data;
   }
@@ -238,7 +256,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     double[] data = new double[getPageSize()];
     for (int i = 0; i < data.length; i++) {
       long offset = i << doubleBits;
-      data[i] = CarbonUnsafe.unsafe.getDouble(baseAddress, baseOffset + offset);
+      data[i] = CarbonUnsafe.getUnsafe().getDouble(baseAddress, baseOffset + offset);
     }
     return data;
   }
@@ -249,49 +267,49 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
-  public byte[] getFlattenedBytePage() {
+  public byte[] getLVFlattenedBytePage() {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
 
   @Override
   public void setBytePage(byte[] byteData) {
-    CarbonUnsafe.unsafe.copyMemory(byteData, CarbonUnsafe.BYTE_ARRAY_OFFSET,
+    CarbonUnsafe.getUnsafe().copyMemory(byteData, CarbonUnsafe.BYTE_ARRAY_OFFSET,
         baseAddress, baseOffset, byteData.length << byteBits);
   }
 
   @Override
   public void setShortPage(short[] shortData) {
-    CarbonUnsafe.unsafe.copyMemory(shortData, CarbonUnsafe.SHORT_ARRAY_OFFSET,
+    CarbonUnsafe.getUnsafe().copyMemory(shortData, CarbonUnsafe.SHORT_ARRAY_OFFSET,
         baseAddress, baseOffset, shortData.length << shortBits);
   }
 
   @Override
   public void setShortIntPage(byte[] shortIntData) {
-    CarbonUnsafe.unsafe.copyMemory(shortIntData, CarbonUnsafe.BYTE_ARRAY_OFFSET,
+    CarbonUnsafe.getUnsafe().copyMemory(shortIntData, CarbonUnsafe.BYTE_ARRAY_OFFSET,
         baseAddress, baseOffset, shortIntData.length);
   }
 
   @Override
   public void setIntPage(int[] intData) {
-    CarbonUnsafe.unsafe.copyMemory(intData, CarbonUnsafe.INT_ARRAY_OFFSET,
+    CarbonUnsafe.getUnsafe().copyMemory(intData, CarbonUnsafe.INT_ARRAY_OFFSET,
         baseAddress, baseOffset, intData.length << intBits);
   }
 
   @Override
   public void setLongPage(long[] longData) {
-    CarbonUnsafe.unsafe.copyMemory(longData, CarbonUnsafe.LONG_ARRAY_OFFSET,
+    CarbonUnsafe.getUnsafe().copyMemory(longData, CarbonUnsafe.LONG_ARRAY_OFFSET,
         baseAddress, baseOffset, longData.length << longBits);
   }
 
   @Override
   public void setFloatPage(float[] floatData) {
-    CarbonUnsafe.unsafe.copyMemory(floatData, CarbonUnsafe.FLOAT_ARRAY_OFFSET,
+    CarbonUnsafe.getUnsafe().copyMemory(floatData, CarbonUnsafe.FLOAT_ARRAY_OFFSET,
         baseAddress, baseOffset, floatData.length << floatBits);
   }
 
   @Override
   public void setDoublePage(double[] doubleData) {
-    CarbonUnsafe.unsafe.copyMemory(doubleData, CarbonUnsafe.DOUBLE_ARRAY_OFFSET,
+    CarbonUnsafe.getUnsafe().copyMemory(doubleData, CarbonUnsafe.DOUBLE_ARRAY_OFFSET,
         baseAddress, baseOffset, doubleData.length << doubleBits);
   }
 
@@ -302,7 +320,7 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
 
   public void freeMemory() {
     if (memoryBlock != null) {
-      UnsafeMemoryManager.INSTANCE.freeMemory(memoryBlock);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       memoryBlock = null;
       baseAddress = null;
       baseOffset = 0;
@@ -310,43 +328,43 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
-  public void encode(PrimitiveCodec codec) {
+  public void convertValue(ColumnPageValueConverter codec) {
     int pageSize = getPageSize();
     switch (dataType) {
       case BYTE:
         for (int i = 0; i < pageSize; i++) {
           long offset = i << byteBits;
-          codec.encode(i, CarbonUnsafe.unsafe.getByte(baseAddress, baseOffset + offset));
+          codec.encode(i, CarbonUnsafe.getUnsafe().getByte(baseAddress, baseOffset + offset));
         }
         break;
       case SHORT:
         for (int i = 0; i < pageSize; i++) {
           long offset = i << shortBits;
-          codec.encode(i, CarbonUnsafe.unsafe.getShort(baseAddress, baseOffset + offset));
+          codec.encode(i, CarbonUnsafe.getUnsafe().getShort(baseAddress, baseOffset + offset));
         }
         break;
       case INT:
         for (int i = 0; i < pageSize; i++) {
           long offset = i << intBits;
-          codec.encode(i, CarbonUnsafe.unsafe.getInt(baseAddress, baseOffset + offset));
+          codec.encode(i, CarbonUnsafe.getUnsafe().getInt(baseAddress, baseOffset + offset));
         }
         break;
       case LONG:
         for (int i = 0; i < pageSize; i++) {
           long offset = i << longBits;
-          codec.encode(i, CarbonUnsafe.unsafe.getLong(baseAddress, baseOffset + offset));
+          codec.encode(i, CarbonUnsafe.getUnsafe().getLong(baseAddress, baseOffset + offset));
         }
         break;
       case FLOAT:
         for (int i = 0; i < pageSize; i++) {
           long offset = i << floatBits;
-          codec.encode(i, CarbonUnsafe.unsafe.getFloat(baseAddress, baseOffset + offset));
+          codec.encode(i, CarbonUnsafe.getUnsafe().getFloat(baseAddress, baseOffset + offset));
         }
         break;
       case DOUBLE:
         for (int i = 0; i < pageSize; i++) {
           long offset = i << doubleBits;
-          codec.encode(i, CarbonUnsafe.unsafe.getDouble(baseAddress, baseOffset + offset));
+          codec.encode(i, CarbonUnsafe.getUnsafe().getDouble(baseAddress, baseOffset + offset));
         }
         break;
       default:
@@ -354,23 +372,23 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
     }
   }
 
-  @Override
-  public byte[] compress(Compressor compressor) throws MemoryException, IOException {
+  @Override public byte[] compress(Compressor compressor) throws MemoryException, IOException {
     if (UnsafeMemoryManager.isOffHeap()) {
       // use raw compression and copy to byte[]
-      int inputSize = pageSize << dataType.getSizeBits();
+      int inputSize = pageSize * dataType.getSizeInBytes();
       int compressedMaxSize = compressor.maxCompressedLength(inputSize);
-      MemoryBlock compressed = UnsafeMemoryManager.allocateMemoryWithRetry(compressedMaxSize);
+      MemoryBlock compressed =
+          UnsafeMemoryManager.allocateMemoryWithRetry(taskId, compressedMaxSize);
       long outSize = compressor.rawCompress(baseOffset, inputSize, compressed.getBaseOffset());
       assert outSize < Integer.MAX_VALUE;
       byte[] output = new byte[(int) outSize];
-      CarbonUnsafe.unsafe.copyMemory(compressed.getBaseObject(), compressed.getBaseOffset(), output,
-          CarbonUnsafe.BYTE_ARRAY_OFFSET, outSize);
-      UnsafeMemoryManager.INSTANCE.freeMemory(compressed);
+      CarbonUnsafe.getUnsafe()
+          .copyMemory(compressed.getBaseObject(), compressed.getBaseOffset(), output,
+              CarbonUnsafe.BYTE_ARRAY_OFFSET, outSize);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, compressed);
       return output;
     } else {
       return super.compress(compressor);
     }
   }
-
 }

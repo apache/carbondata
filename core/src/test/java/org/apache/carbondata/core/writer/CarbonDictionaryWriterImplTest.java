@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
@@ -72,6 +73,8 @@ public class CarbonDictionaryWriterImplTest {
 
   private ColumnIdentifier columnIdentifier;
 
+  private DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier;
+
   private Properties props;
 
   /**
@@ -97,6 +100,10 @@ public class CarbonDictionaryWriterImplTest {
     this.carbonStorePath = props.getProperty("storePath", "carbonStore");
     this.columnIdentifier = new ColumnIdentifier("Name", null, null);
     carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
+    this.dictionaryColumnUniqueIdentifier =
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
+            columnIdentifier.getDataType(),
+            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
     deleteStorePath();
     prepareDataSet();
   }
@@ -177,7 +184,7 @@ public class CarbonDictionaryWriterImplTest {
   private CarbonDictionaryWriterImpl prepareWriter() throws IOException {
     initDictionaryDirPaths();
     return new CarbonDictionaryWriterImpl(this.carbonStorePath, carbonTableIdentifier,
-        columnIdentifier);
+        dictionaryColumnUniqueIdentifier);
   }
 
   /**
@@ -432,7 +439,7 @@ public class CarbonDictionaryWriterImplTest {
   private List<CarbonDictionaryColumnMetaChunk> readDictionaryMetadataFile() throws IOException {
     CarbonDictionaryMetadataReaderImpl columnMetadataReaderImpl =
         new CarbonDictionaryMetadataReaderImpl(this.carbonStorePath, this.carbonTableIdentifier,
-            this.columnIdentifier);
+            this.dictionaryColumnUniqueIdentifier);
     List<CarbonDictionaryColumnMetaChunk> dictionaryMetaChunkList = null;
     // read metadata file
     try {
@@ -451,7 +458,7 @@ public class CarbonDictionaryWriterImplTest {
       throws IOException {
     CarbonDictionaryReaderImpl dictionaryReader =
         new CarbonDictionaryReaderImpl(this.carbonStorePath, this.carbonTableIdentifier,
-            this.columnIdentifier);
+            this.dictionaryColumnUniqueIdentifier);
     List<byte[]> dictionaryValues = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     try {
       if (0 == dictionaryEndOffset) {

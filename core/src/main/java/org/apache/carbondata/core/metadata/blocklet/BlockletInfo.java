@@ -17,16 +17,22 @@
 
 package org.apache.carbondata.core.metadata.blocklet;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 
+import org.apache.hadoop.io.Writable;
+
 /**
  * class to store the information about the blocklet
  */
-public class BlockletInfo implements Serializable {
+public class BlockletInfo implements Serializable, Writable {
 
   /**
    * serialization id
@@ -189,4 +195,49 @@ public class BlockletInfo implements Serializable {
     this.numberOfPages = numberOfPages;
   }
 
+  @Override public void write(DataOutput output) throws IOException {
+    output.writeLong(dimensionOffset);
+    output.writeLong(measureOffsets);
+    int dsize = dimensionChunkOffsets != null ? dimensionChunkOffsets.size() : 0;
+    output.writeShort(dsize);
+    for (int i = 0; i < dsize; i++) {
+      output.writeLong(dimensionChunkOffsets.get(i));
+    }
+    for (int i = 0; i < dsize; i++) {
+      output.writeInt(dimensionChunksLength.get(i));
+    }
+    int mSize = measureChunkOffsets != null ? measureChunkOffsets.size() : 0;
+    output.writeShort(mSize);
+    for (int i = 0; i < mSize; i++) {
+      output.writeLong(measureChunkOffsets.get(i));
+    }
+    for (int i = 0; i < mSize; i++) {
+      output.writeInt(measureChunksLength.get(i));
+    }
+  }
+
+  @Override public void readFields(DataInput input) throws IOException {
+    dimensionOffset = input.readLong();
+    measureOffsets = input.readLong();
+    short dimensionChunkOffsetsSize = input.readShort();
+    dimensionChunkOffsets = new ArrayList<>(dimensionChunkOffsetsSize);
+    for (int i = 0; i < dimensionChunkOffsetsSize; i++) {
+      dimensionChunkOffsets.add(input.readLong());
+    }
+    dimensionChunksLength = new ArrayList<>(dimensionChunkOffsetsSize);
+    for (int i = 0; i < dimensionChunkOffsetsSize; i++) {
+      dimensionChunksLength.add(input.readInt());
+    }
+
+    short measureChunkOffsetsSize = input.readShort();
+    measureChunkOffsets = new ArrayList<>(measureChunkOffsetsSize);
+    for (int i = 0; i < measureChunkOffsetsSize; i++) {
+      measureChunkOffsets.add(input.readLong());
+    }
+    measureChunksLength = new ArrayList<>(measureChunkOffsetsSize);
+    for (int i = 0; i < measureChunkOffsetsSize; i++) {
+      measureChunksLength.add(input.readInt());
+    }
+
+  }
 }

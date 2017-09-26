@@ -24,11 +24,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.devapi.BiDictionary;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
@@ -42,6 +43,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.processing.newflow.dictionary.DictionaryServerClientDictionary;
 import org.apache.carbondata.processing.newflow.dictionary.DirectDictionary;
 import org.apache.carbondata.processing.newflow.dictionary.PreCreatedDictionary;
@@ -50,6 +52,9 @@ import org.apache.carbondata.processing.newflow.dictionary.PreCreatedDictionary;
  * Primitive DataType stateless object used in data loading
  */
 public class PrimitiveDataType implements GenericDataType<Object> {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(PrimitiveDataType.class.getName());
 
   /**
    * surrogate index
@@ -72,11 +77,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   private String columnId;
 
   /**
-   * dimension ordinal of primitive type column
-   */
-  private int dimensionOrdinal;
-
-  /**
    * key size
    */
   private int keySize;
@@ -95,6 +95,11 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   private CarbonDimension carbonDimension;
 
+  private PrimitiveDataType(int outputArrayIndex, int dataCounter) {
+    this.outputArrayIndex = outputArrayIndex;
+    this.dataCounter = dataCounter;
+  }
+
   /**
    * constructor
    *
@@ -106,7 +111,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     this.name = name;
     this.parentname = parentname;
     this.columnId = columnId;
-    this.dimensionOrdinal = dimensionOrdinal;
   }
 
   /**
@@ -119,14 +123,15 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public PrimitiveDataType(String name, String parentname, String columnId,
       CarbonDimension carbonDimension, Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, DictionaryClient client, Boolean useOnePass,
-      String storePath, boolean tableInitialize, Map<Object, Integer> localCache) {
+      String storePath, Map<Object, Integer> localCache) {
     this.name = name;
     this.parentname = parentname;
     this.columnId = columnId;
     this.carbonDimension = carbonDimension;
     DictionaryColumnUniqueIdentifier identifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
-            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType());
+            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(),
+            CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
     try {
       if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory
@@ -139,13 +144,9 @@ public class PrimitiveDataType implements GenericDataType<Object> {
           }
           DictionaryMessage dictionaryMessage = new DictionaryMessage();
           dictionaryMessage.setColumnName(carbonDimension.getColName());
-          dictionaryMessage.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
           // for table initialization
-          dictionaryMessage.setType(DictionaryMessageType.TABLE_INTIALIZATION);
+          dictionaryMessage.setTableUniqueId(carbonTableIdentifier.getTableId());
           dictionaryMessage.setData("0");
-          if (tableInitialize) {
-            client.getDictionary(dictionaryMessage);
-          }
           // for generate dictionary
           dictionaryMessage.setType(DictionaryMessageType.DICT_GENERATION);
           dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,
@@ -241,7 +242,8 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
       KeyGenerator[] generator) throws IOException, KeyGenException {
     int data = byteArrayInput.getInt();
-    dataOutputStream.write(generator[index].generateKey(new int[] { data }));
+    byte[] v = generator[index].generateKey(new int[] { data });
+    dataOutputStream.write(v);
   }
 
   /*
@@ -320,5 +322,13 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public void fillCardinalityAfterDataLoad(List<Integer> dimCardWithComplex,
       int[] maxSurrogateKeyArray) {
     dimCardWithComplex.add(maxSurrogateKeyArray[index]);
+  }
+
+  @Override
+  public GenericDataType<Object> deepCopy() {
+    PrimitiveDataType dataType = new PrimitiveDataType(this.outputArrayIndex, 0);
+    dataType.setKeySize(this.keySize);
+    dataType.setSurrogateIndex(this.index);
+    return dataType;
   }
 }

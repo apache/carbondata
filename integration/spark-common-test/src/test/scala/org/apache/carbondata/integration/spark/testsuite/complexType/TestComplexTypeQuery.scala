@@ -20,7 +20,7 @@ package org.apache.carbondata.integration.spark.testsuite.complexType
 import java.io.File
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**

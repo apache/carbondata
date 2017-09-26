@@ -17,20 +17,33 @@
 
 package org.apache.carbondata.presto.impl;
 
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.google.gson.Gson;
+import org.apache.hadoop.fs.Path;
 
+import java.util.List;
+
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
+import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
+
+/**
+ * CarbonLocalInputSplit represents a block, it contains a set of blocklet.
+ */
 public class CarbonLocalInputSplit {
 
   private static final long serialVersionUID = 3520344046772190207L;
   private String segmentId;
   private String path;
-  private long start;
-  private long length;
-  private List<String> locations;
+  private long start; // the start offset of the block in a carbondata file.
+  private long length; // the length of the block.
+  private List<String> locations;// locations are the locations for different replicas.
   private short version;
+  private String[] deleteDeltaFiles;
+
+
+  private String detailInfo;
 
   /**
    * Number of BlockLets in a block
@@ -65,12 +78,29 @@ public class CarbonLocalInputSplit {
     return numberOfBlocklets;
   }
 
+  @JsonProperty public String[] getDeleteDeltaFiles() {
+    return deleteDeltaFiles;
+  }
+
+  @JsonProperty public String getDetailInfo() {
+    return detailInfo;
+  }
+
+  public void setDetailInfo(BlockletDetailInfo blockletDetailInfo) {
+    Gson gson = new Gson();
+    detailInfo = gson.toJson(blockletDetailInfo);
+
+  }
+
   @JsonCreator public CarbonLocalInputSplit(@JsonProperty("segmentId") String segmentId,
       @JsonProperty("path") String path, @JsonProperty("start") long start,
       @JsonProperty("length") long length, @JsonProperty("locations") List<String> locations,
       @JsonProperty("numberOfBlocklets") int numberOfBlocklets/*,
                                  @JsonProperty("tableBlockInfo") TableBlockInfo tableBlockInfo*/,
-      @JsonProperty("version") short version) {
+      @JsonProperty("version") short version,
+      @JsonProperty("deleteDeltaFiles") String[] deleteDeltaFiles,
+      @JsonProperty("detailInfo") String detailInfo
+      ) {
     this.path = path;
     this.start = start;
     this.length = length;
@@ -79,5 +109,23 @@ public class CarbonLocalInputSplit {
     this.numberOfBlocklets = numberOfBlocklets;
     //this.tableBlockInfo = tableBlockInfo;
     this.version = version;
+    this.deleteDeltaFiles = deleteDeltaFiles;
+    this.detailInfo = detailInfo;
+
   }
+
+  public static  CarbonInputSplit convertSplit(CarbonLocalInputSplit carbonLocalInputSplit) {
+    CarbonInputSplit inputSplit = new CarbonInputSplit(carbonLocalInputSplit.getSegmentId(),
+        new Path(carbonLocalInputSplit.getPath()), carbonLocalInputSplit.getStart(),
+        carbonLocalInputSplit.getLength(), carbonLocalInputSplit.getLocations()
+        .toArray(new String[carbonLocalInputSplit.getLocations().size()]),
+        carbonLocalInputSplit.getNumberOfBlocklets(), ColumnarFormatVersion.valueOf(carbonLocalInputSplit.getVersion()),
+        carbonLocalInputSplit.getDeleteDeltaFiles());
+    Gson gson = new Gson();
+    BlockletDetailInfo blockletDetailInfo = gson.fromJson(carbonLocalInputSplit.detailInfo, BlockletDetailInfo.class);
+    inputSplit.setDetailInfo(blockletDetailInfo);
+    return inputSplit;
+  }
+
+
 }

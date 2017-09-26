@@ -19,6 +19,7 @@ package org.apache.carbondata.hive.server;
 
 import java.io.File;
 import java.lang.reflect.Field;
+import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -51,6 +52,7 @@ public class HiveEmbeddedServer2 {
   private HiveServer2 hiveServer;
   private HiveConf config;
   private int port;
+  private static Random secureRandom = new SecureRandom();
 
   public void start() throws Exception {
     log.info("Starting Hive Local/Embedded Server...");
@@ -112,11 +114,18 @@ public class HiveEmbeddedServer2 {
     conf.addToRestrictList("columns.comments");
     conf.set("hive.scratch.dir.permission", "777");
     conf.setVar(ConfVars.SCRATCHDIRPERMISSION, "777");
-    scratchDirFile.mkdirs();
-    // also set the permissions manually since Hive doesn't do it...
-    scratchDirFile.setWritable(true, false);
+    if (!scratchDirFile.exists()) {
+      if (!scratchDirFile.mkdirs()) {
+        throw new IllegalArgumentException("could not create the directory:" + scratchDir);
+      }
+      // also set the permissions manually since Hive doesn't do it...
+      if (!scratchDirFile.setWritable(true, false)) {
+        throw new IllegalArgumentException("could not set write permissions for the directory:" +
+            scratchDir);
+      }
+    }
 
-    int random = new Random().nextInt();
+    int random = secureRandom.nextInt();
 
     conf.set("hive.metastore.warehouse.dir", scratchDir + "/warehouse" + random);
     conf.set("hive.metastore.metadb.dir", scratchDir + "/metastore_db" + random);
@@ -130,6 +139,7 @@ public class HiveEmbeddedServer2 {
     conf.set("hive.added.files.path", "");
     conf.set("hive.added.archives.path", "");
     conf.set("fs.default.name", "file:///");
+    conf.set(HiveConf.ConfVars.SUBMITLOCALTASKVIACHILD.varname, "false");
 
     // clear mapred.job.tracker - Hadoop defaults to 'local' if not defined. Hive however expects
     // this to be set to 'local' - if it's not, it does a remote execution (i.e. no child JVM)

@@ -21,8 +21,11 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 /**
  * A dictionary based on DoubleArrayTrie data structure that maps enumerations
@@ -32,10 +35,10 @@ import java.util.TreeSet;
  */
 
 public class DoubleArrayTrieDictionary {
-  public static final byte[] HEAD_MAGIC = new byte[]{
+  private static final byte[] HEAD_MAGIC = new byte[]{
       0x44, 0x41, 0x54, 0x54, 0x72, 0x69, 0x65, 0x44, 0x69, 0x63, 0x74
   }; // "DATTrieDict"
-  public static final int HEAD_LEN = HEAD_MAGIC.length;
+  private static final int HEAD_LEN = HEAD_MAGIC.length;
 
   private static final int INIT_CAPA_VALUE = 256;  // init len of double array
   private static final int BASE_ROOT_VALUE = 1;    // root base value of trie root
@@ -116,7 +119,7 @@ public class DoubleArrayTrieDictionary {
    */
   public int getValue(String key) {
     String k = key + '\0';
-    byte[] bKeys = k.getBytes();
+    byte[] bKeys = k.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     return getValue(bKeys);
   }
 
@@ -165,7 +168,7 @@ public class DoubleArrayTrieDictionary {
         return null;
       }
       if (check[cpos] == pos) {
-        children.add(new Integer(i));
+        children.add(i);
       }
     }
     return children;
@@ -224,9 +227,9 @@ public class DoubleArrayTrieDictionary {
   private int conflict(int start, int bKey) {
     int from = start;
     TreeSet<Integer> children = getChildren(from);
-    children.add(new Integer(bKey));
+    children.add(bKey);
     int newBasePos = findFreeRoom(children);
-    children.remove(new Integer(bKey));
+    children.remove(bKey);
 
     int oldBasePos = base[start];
     base[start] = newBasePos;
@@ -315,7 +318,7 @@ public class DoubleArrayTrieDictionary {
    */
   public boolean insert(String key) {
     String k = key + '\0';
-    byte[] bKeys = k.getBytes();
+    byte[] bKeys = k.getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
     if (!insert(bKeys)) {
       return false;
     }
@@ -348,7 +351,7 @@ public class DoubleArrayTrieDictionary {
    */
   public void read(DataInputStream in) throws IOException {
     byte[] header = new byte[HEAD_LEN];
-    in.read(header);
+    in.readFully(header);
     int comp = 0;
     for (int i = 0; i < HEAD_LEN; i++) {
       comp = HEAD_MAGIC[i] - header[i];

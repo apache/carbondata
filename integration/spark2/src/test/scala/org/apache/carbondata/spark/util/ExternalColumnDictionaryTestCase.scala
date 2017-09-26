@@ -18,14 +18,15 @@
   */
 package org.apache.carbondata.spark.util
 
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.constants.TableOptionConstant
 import org.apache.carbondata.processing.etl.DataLoadingException
 import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -35,8 +36,7 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
  * test case for external column dictionary generation
  * also support complicated type
  */
-class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
-  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   var extComplexRelation: CarbonRelation = _
   var verticalDelimiteRelation: CarbonRelation = _
   var loadSqlRelation: CarbonRelation = _
@@ -78,7 +78,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
      proddate struct<productionDate:string,activeDeactivedate:array<string>>,
      gamePointId double,contractNumber double)
      STORED BY 'org.apache.carbondata.format'
-     TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
+     TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId, channelsId')
         """)
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
@@ -89,7 +89,7 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
         """CREATE TABLE verticalDelimitedTable (deviceInformationId int,
      channelsId string,contractNumber double)
      STORED BY 'org.apache.carbondata.format'
-     TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId')
+     TBLPROPERTIES('DICTIONARY_INCLUDE' = 'deviceInformationId, channelsId')
         """)
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
@@ -175,6 +175,14 @@ class ExternalColumnDictionaryTestCase extends QueryTest with BeforeAndAfterAll 
       CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
     carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
     carbonLoadModel.setMaxColumns("100")
+    // Create table and metadata folders if not exist
+    val carbonTablePath = CarbonStorePath
+      .getCarbonTablePath(table.getStorePath, table.getCarbonTableIdentifier)
+    val metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath
+    val fileType = FileFactory.getFileType(metadataDirectoryPath)
+    if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
+      FileFactory.mkdirs(metadataDirectoryPath, fileType)
+    }
     carbonLoadModel
   }
 

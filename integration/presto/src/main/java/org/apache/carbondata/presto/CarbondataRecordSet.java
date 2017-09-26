@@ -17,57 +17,46 @@
 
 package org.apache.carbondata.presto;
 
-import com.facebook.presto.spi.*;
-import com.facebook.presto.spi.predicate.TupleDomain;
-import com.facebook.presto.spi.type.Type;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
-import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
-import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.scan.result.BatchResult;
-import org.apache.carbondata.core.scan.result.iterator.ChunkRowIterator;
-import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
-import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
-//import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodedReadSupportImpl;
+import org.apache.carbondata.core.scan.result.iterator.AbstractDetailQueryResultIterator;
+import org.apache.carbondata.hadoop.CarbonInputSplit;
+import org.apache.carbondata.presto.impl.CarbonLocalInputSplit;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import com.facebook.presto.spi.ConnectorSession;
+import com.facebook.presto.spi.ConnectorSplit;
+import com.facebook.presto.spi.RecordCursor;
+import com.facebook.presto.spi.RecordSet;
+import com.facebook.presto.spi.type.Type;
+import org.apache.hadoop.mapred.TaskAttemptContext;
 
 import static org.apache.carbondata.presto.Types.checkType;
 
 public class CarbondataRecordSet implements RecordSet {
 
-  private CarbonTable carbonTable;
-  private TupleDomain<ColumnHandle> originalConstraint;
-  private Expression carbonConstraint;
-  private List<CarbondataColumnConstraint> rebuildConstraints;
   private QueryModel queryModel;
   private CarbondataSplit split;
   private List<CarbondataColumnHandle> columns;
   private QueryExecutor queryExecutor;
 
-  private CarbonReadSupport<Object[]> readSupport;
+  private CarbonDictionaryDecodeReadSupport readSupport;
 
   public CarbondataRecordSet(CarbonTable carbonTable, ConnectorSession session,
-      ConnectorSplit split, List<CarbondataColumnHandle> columns, QueryModel queryModel) {
-    this.carbonTable = carbonTable;
+      ConnectorSplit split, List<CarbondataColumnHandle> columns, QueryModel queryModel,
+      TaskAttemptContext taskAttemptContext) {
     this.split = checkType(split, CarbondataSplit.class, "connectorSplit");
-    this.originalConstraint = this.split.getConstraints();
-    this.rebuildConstraints = this.split.getRebuildConstraints();
     this.queryModel = queryModel;
     this.columns = columns;
-    this.readSupport = new DictionaryDecodeReadSupport();
-  }
-
-  //todo support later
-  private Expression parseConstraint2Expression(TupleDomain<ColumnHandle> constraints) {
-    return null;
+    this.readSupport = new CarbonDictionaryDecodeReadSupport();
   }
 
   @Override public List<Type> getColumnTypes() {
@@ -75,34 +64,31 @@ public class CarbondataRecordSet implements RecordSet {
   }
 
   /**
-   * get data blocks via Carbondata QueryModel API
+   * get data blocks via Carbondata QueryModel API.
    */
   @Override public RecordCursor cursor() {
-    List<TableBlockInfo> tableBlockInfoList = new ArrayList<TableBlockInfo>();
-
-    tableBlockInfoList.add(new TableBlockInfo(split.getLocalInputSplit().getPath().toString(),
-        split.getLocalInputSplit().getStart(), split.getLocalInputSplit().getSegmentId(),
-        split.getLocalInputSplit().getLocations().toArray(new String[0]),
-        split.getLocalInputSplit().getLength(),
-        //blockletInfos,
-        ColumnarFormatVersion.valueOf(split.getLocalInputSplit().getVersion()), null));
+    CarbonLocalInputSplit carbonLocalInputSplit = split.getLocalInputSplit();
+    List<CarbonInputSplit> splitList = new ArrayList<>(1);
+    splitList.add(CarbonLocalInputSplit.convertSplit(carbonLocalInputSplit));
+    List<TableBlockInfo> tableBlockInfoList = CarbonInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
-
     queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
-
-    //queryModel.setQueryId(queryModel.getQueryId() + "_" + split.getLocalInputSplit().getSegmentId());
     try {
+
       readSupport
           .initialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
-      CarbonIterator<Object[]> carbonIterator =
-          new ChunkRowIterator((CarbonIterator<BatchResult>) queryExecutor.execute(queryModel));
-      RecordCursor rc = new CarbondataRecordCursor(readSupport, carbonIterator, columns, split);
+      CarbonIterator iterator = queryExecutor.execute(queryModel);
+      CarbonVectorizedRecordReader vectorReader =
+          new CarbonVectorizedRecordReader(queryExecutor, queryModel,
+              (AbstractDetailQueryResultIterator) iterator);
+      RecordCursor rc =
+          new CarbondataRecordCursor(readSupport, vectorReader, columns, split);
       return rc;
     } catch (QueryExecutionException e) {
-       throw new RuntimeException(e.getMessage(), e);
-   } catch (Exception ex) {
+      throw new RuntimeException(e.getMessage(), e);
+    } catch (Exception ex) {
       throw new RuntimeException(ex.getMessage(), ex);
     }
   }
-}
 
+}

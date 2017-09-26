@@ -35,7 +35,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory
-import org.apache.carbondata.spark.{CarbonAliasDecoderRelation, CarbonFilters}
+import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 
 /**
@@ -51,7 +51,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     plan collect {
       case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
         CarbonDecoderRelation(l.attributeMap,
-        l.relation.asInstanceOf[CarbonDatasourceHadoopRelation])
+          l.relation.asInstanceOf[CarbonDatasourceHadoopRelation])
     }
   }
 
@@ -94,7 +94,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
         val newCols = cols.map {
           case a@Alias(s: ScalaUDF, name)
             if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
-                name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
+               name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
             udfExists = true
             projectionToBeAdded :+= a
             AttributeReference(name, StringType, nullable = true)().withExprId(a.exprId)
@@ -311,7 +311,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             )
 
             if (hasCarbonRelation(child) && condAttrs.size() > 0 &&
-              !child.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
+                !child.isInstanceOf[CarbonDictionaryCatalystDecoder]) {
               CarbonDictionaryTempDecoder(condAttrs,
                 new util.HashSet[AttributeReferenceWrapper](),
                 child, false, Some(localAliasMap))
@@ -389,7 +389,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
             Filter(filter.condition, child)
           }
 
-         case j: Join
+        case j: Join
           if !(j.left.isInstanceOf[CarbonDictionaryTempDecoder] ||
                j.right.isInstanceOf[CarbonDictionaryTempDecoder]) =>
           val attrsOnJoin = new util.HashSet[Attribute]
@@ -720,7 +720,39 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
           cd
         }
     }
-    finalPlan
+
+    val updateDtrFn = finalPlan transform {
+      case p@Project(projectList: Seq[NamedExpression], cd) =>
+        if (cd.isInstanceOf[Filter] || cd.isInstanceOf[LogicalRelation]) {
+          p.transformAllExpressions {
+            case a@Alias(exp, _)
+              if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
+              Alias(CustomDeterministicExpression(exp), a.name)(a.exprId, a.qualifier,
+                a.explicitMetadata, a.isGenerated)
+            case exp: NamedExpression
+              if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
+              CustomDeterministicExpression(exp)
+          }
+        } else {
+          p
+        }
+      case f@Filter(condition: Expression, cd) =>
+        if (cd.isInstanceOf[Project] || cd.isInstanceOf[LogicalRelation]) {
+          f.transformAllExpressions {
+            case a@Alias(exp, _)
+              if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
+              Alias(CustomDeterministicExpression(exp), a.name)(a.exprId, a.qualifier,
+                a.explicitMetadata, a.isGenerated)
+            case exp: NamedExpression
+              if !exp.deterministic && !exp.isInstanceOf[CustomDeterministicExpression] =>
+              CustomDeterministicExpression(exp)
+          }
+        } else {
+          f
+        }
+    }
+
+    updateDtrFn
   }
 
   private def collectInformationOnAttributes(plan: LogicalPlan,
@@ -841,3 +873,4 @@ case class CarbonDecoderRelation(
 
   lazy val dictionaryMap = carbonRelation.carbonRelation.metaData.dictionaryMap
 }
+

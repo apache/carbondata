@@ -17,29 +17,24 @@
 
 package org.apache.carbondata.presto;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+import java.sql.Timestamp;
+import java.util.List;
+
+import org.apache.carbondata.common.CarbonIterator;
+import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+
 import com.facebook.presto.spi.RecordCursor;
 import com.facebook.presto.spi.type.DecimalType;
 import com.facebook.presto.spi.type.Decimals;
 import com.facebook.presto.spi.type.TimestampType;
 import com.facebook.presto.spi.type.Type;
-import com.facebook.presto.spi.block.Block;
-import com.facebook.presto.spi.block.BlockBuilder;
-import com.facebook.presto.spi.block.BlockBuilderStatus;
-
-import com.google.common.base.Strings;
 import io.airlift.log.Logger;
 import io.airlift.slice.Slice;
-import io.airlift.slice.Slices;
-import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
-
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-
+import scala.Int;
+import scala.Tuple3;
 
 import static com.facebook.presto.spi.type.BooleanType.BOOLEAN;
 import static com.facebook.presto.spi.type.Decimals.isShortDecimal;
@@ -49,25 +44,30 @@ import static com.facebook.presto.spi.type.VarcharType.VARCHAR;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 import static io.airlift.slice.Slices.utf8Slice;
+import static org.apache.carbondata.presto.CarbondataUtil.shortDecimalPartitionKey;
 
 public class CarbondataRecordCursor implements RecordCursor {
 
   private static final Logger log = Logger.get(CarbondataRecordCursor.class);
   private final List<CarbondataColumnHandle> columnHandles;
 
-  private List<String> fields;
+  private Object[] fields;
   private CarbondataSplit split;
-  private CarbonIterator<Object[]> rowCursor;
-  private CarbonReadSupport<Object[]> readSupport;
+  private CarbonDictionaryDecodeReadSupport readSupport;
+  private Tuple3<DataType, Dictionary, Int>[] dictionary;
+  CarbonVectorizedRecordReader vectorizedRecordReader;
 
   private long totalBytes;
   private long nanoStart;
   private long nanoEnd;
 
-  public CarbondataRecordCursor(CarbonReadSupport<Object[]> readSupport,
-      CarbonIterator<Object[]> carbonIterator, List<CarbondataColumnHandle> columnHandles,
+
+
+  public CarbondataRecordCursor(CarbonDictionaryDecodeReadSupport readSupport,
+       CarbonVectorizedRecordReader vectorizedRecordReader,
+      List<CarbondataColumnHandle> columnHandles,
       CarbondataSplit split) {
-    this.rowCursor = carbonIterator;
+    this.vectorizedRecordReader = vectorizedRecordReader;
     this.columnHandles = columnHandles;
     this.readSupport = readSupport;
     this.totalBytes = 0;
@@ -99,45 +99,39 @@ public class CarbondataRecordCursor implements RecordCursor {
     if (nanoStart == 0) {
       nanoStart = System.nanoTime();
     }
-
-    if (rowCursor.hasNext()) {
-      Object[] columns = readSupport.readRow(rowCursor.next());
-      fields = new ArrayList<String>();
-      if(columns != null && columns.length > 0)
-      {
-        for(Object value : columns){
-          if(value != null )
-          {
-            fields.add(value.toString());
-          } else {
-            fields.add(null);
-          }
-        }
-      }
-      totalBytes += columns.length;
-      return true;
-    }
     return false;
   }
 
   @Override public boolean getBoolean(int field) {
     checkFieldType(field, BOOLEAN);
-    return Boolean.parseBoolean(getFieldValue(field));
+    return (Boolean) getFieldValue(field);
   }
 
   @Override public long getLong(int field) {
-    String timeStr = getFieldValue(field);
+    Object obj = getFieldValue(field);
+    Long timeStr = 0L;
+    if (obj instanceof Integer) {
+      timeStr = ((Integer) obj).longValue();
+    } else if (obj instanceof Long) {
+      timeStr = (Long) obj;
+    } else {
+      timeStr = Math.round(Double.parseDouble(obj.toString()));
+    }
     Type actual = getType(field);
-    if(actual instanceof TimestampType){
-      return new Timestamp(Long.parseLong(timeStr)).getTime()/1000;
+
+    if (actual instanceof TimestampType) {
+      return new Timestamp(timeStr).getTime() / 1000;
+    } else if (isShortDecimal(actual)) {
+      return shortDecimalPartitionKey(obj.toString(), (DecimalType) actual,
+          columnHandles.get(field).getColumnName());
     }
     //suppose the
-    return Math.round(Double.parseDouble(getFieldValue(field)));
+    return timeStr;
   }
 
   @Override public double getDouble(int field) {
     checkFieldType(field, DOUBLE);
-    return Double.parseDouble(getFieldValue(field));
+    return (Double) getFieldValue(field);
   }
 
   @Override public Slice getSlice(int field) {
@@ -145,13 +139,14 @@ public class CarbondataRecordCursor implements RecordCursor {
     if (decimalType instanceof DecimalType) {
       DecimalType actual = (DecimalType) decimalType;
       CarbondataColumnHandle carbondataColumnHandle = columnHandles.get(field);
-      if(carbondataColumnHandle.getPrecision() > 0 ) {
-        checkFieldType(field, DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(), carbondataColumnHandle.getScale()));
+      if (carbondataColumnHandle.getPrecision() > 0) {
+        checkFieldType(field, DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
+            carbondataColumnHandle.getScale()));
       } else {
         checkFieldType(field, DecimalType.createDecimalType());
       }
-      String fieldValue = getFieldValue(field);
-      BigDecimal bigDecimalValue = new BigDecimal(fieldValue);
+      Object fieldValue = getFieldValue(field);
+      BigDecimal bigDecimalValue = new BigDecimal(fieldValue.toString());
       if (isShortDecimal(decimalType)) {
         return utf8Slice(Decimals.toString(bigDecimalValue.longValue(), actual.getScale()));
       } else {
@@ -174,7 +169,7 @@ public class CarbondataRecordCursor implements RecordCursor {
       }
     } else {
       checkFieldType(field, VARCHAR);
-      return utf8Slice(getFieldValue(field));
+      return utf8Slice(getFieldValue(field).toString());
     }
   }
 
@@ -184,12 +179,12 @@ public class CarbondataRecordCursor implements RecordCursor {
 
   @Override public boolean isNull(int field) {
     checkArgument(field < columnHandles.size(), "Invalid field index");
-    return Strings.isNullOrEmpty(getFieldValue(field));
+    return getFieldValue(field) == null;
   }
 
-  String getFieldValue(int field) {
+  Object getFieldValue(int field) {
     checkState(fields != null, "Cursor has not been advanced yet");
-    return fields.get(field);
+    return fields[field];
   }
 
   private void checkFieldType(int field, Type expected) {
@@ -202,5 +197,13 @@ public class CarbondataRecordCursor implements RecordCursor {
     nanoEnd = System.nanoTime();
 
     //todo  delete cache from readSupport
+  }
+
+  public CarbonVectorizedRecordReader getVectorizedRecordReader() {
+    return vectorizedRecordReader;
+  }
+
+  public CarbonDictionaryDecodeReadSupport getReadSupport() {
+    return readSupport;
   }
 }

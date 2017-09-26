@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.processing.newflow.steps;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.Iterator;
 
@@ -28,6 +27,7 @@ import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.newflow.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.DataField;
+import org.apache.carbondata.processing.newflow.exception.BadRecordFoundException;
 import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.newflow.row.CarbonRowBatch;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
@@ -55,15 +55,16 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
   }
 
   @Override public void initialize() throws IOException {
+    super.initialize();
     child.initialize();
   }
 
-  private String getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
-    String storeLocation = CarbonDataProcessorUtil
+  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
+    String[] storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
             tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
-            configuration.getSegmentId() + "", false);
-    new File(storeLocation).mkdirs();
+            configuration.getSegmentId() + "", false, false);
+    CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }
 
@@ -78,7 +79,7 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
               System.currentTimeMillis());
       int i = 0;
       for (Iterator<CarbonRowBatch> iterator : iterators) {
-        String storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
+        String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
         int k = 0;
         while (iterator.hasNext()) {
           CarbonRowBatch next = iterator.next();
@@ -97,6 +98,9 @@ public class DataWriterBatchProcessorStepImpl extends AbstractDataLoadProcessorS
       }
     } catch (Exception e) {
       LOGGER.error(e, "Failed for table: " + tableName + " in DataWriterBatchProcessorStepImpl");
+      if (e.getCause() instanceof BadRecordFoundException) {
+        throw new BadRecordFoundException(e.getCause().getMessage());
+      }
       throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage());
     }
     return null;

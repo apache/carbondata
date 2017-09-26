@@ -24,7 +24,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.concurrent.Callable;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -101,9 +101,7 @@ public class SortDataRows {
     deleteSortLocationIfExists();
 
     // create new sort temp directory
-    if (!new File(parameters.getTempFileLocation()).mkdirs()) {
-      LOGGER.info("Sort Temp Location Already Exists");
-    }
+    CarbonDataProcessorUtil.createLocations(parameters.getTempFileLocation());
     this.dataSorterAndWriterExecutorService =
         Executors.newFixedThreadPool(parameters.getNumberOfCores());
     semaphore = new Semaphore(parameters.getNumberOfCores());
@@ -128,7 +126,7 @@ public class SortDataRows {
       Object[][] recordHolderListLocal = recordHolderList;
       try {
         semaphore.acquire();
-        dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(recordHolderListLocal));
+        dataSorterAndWriterExecutorService.execute(new DataSorterAndWriter(recordHolderListLocal));
       } catch (InterruptedException e) {
         LOGGER.error(
             "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
@@ -164,7 +162,8 @@ public class SortDataRows {
         }
         try {
           semaphore.acquire();
-          dataSorterAndWriterExecutorService.submit(new DataSorterAndWriter(recordHolderListLocal));
+          dataSorterAndWriterExecutorService
+              .execute(new DataSorterAndWriter(recordHolderListLocal));
         } catch (Exception e) {
           LOGGER.error(
               "exception occurred while trying to acquire a semaphore lock: " + e.getMessage());
@@ -204,9 +203,11 @@ public class SortDataRows {
       }
       recordHolderList = toSort;
 
-      // create new file
+      // create new file and choose folder randomly
+      String[] tmpLocation = parameters.getTempFileLocation();
+      String locationChosen = tmpLocation[new Random().nextInt(tmpLocation.length)];
       File file = new File(
-          parameters.getTempFileLocation() + File.separator + parameters.getTableName() +
+          locationChosen + File.separator + parameters.getTableName() +
               System.nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
       writeDataTofile(recordHolderList, this.entryCount, file);
 
@@ -309,6 +310,8 @@ public class SortDataRows {
                 stream.writeInt(bigDecimalInBytes.length);
                 stream.write(bigDecimalInBytes);
                 break;
+              default:
+                throw new IllegalArgumentException("unsupported data type:" + type[mesCount]);
             }
           } else {
             stream.write((byte) 0);
@@ -388,14 +391,15 @@ public class SortDataRows {
    * This class is responsible for sorting and writing the object
    * array which holds the records equal to given array size
    */
-  private class DataSorterAndWriter implements Callable<Void> {
+  private class DataSorterAndWriter implements Runnable {
     private Object[][] recordHolderArray;
 
     public DataSorterAndWriter(Object[][] recordHolderArray) {
       this.recordHolderArray = recordHolderArray;
     }
 
-    @Override public Void call() throws Exception {
+    @Override
+    public void run() {
       try {
         long startTime = System.currentTimeMillis();
         if (parameters.getNumberOfNoDictSortColumns() > 0) {
@@ -406,9 +410,11 @@ public class SortDataRows {
               new NewRowComparatorForNormalDims(parameters.getNumberOfSortColumns()));
         }
 
-        // create a new file every time
+        // create a new file and choose folder randomly every time
+        String[] tmpFileLocation = parameters.getTempFileLocation();
+        String locationChosen = tmpFileLocation[new Random().nextInt(tmpFileLocation.length)];
         File sortTempFile = new File(
-            parameters.getTempFileLocation() + File.separator + parameters.getTableName() + System
+            locationChosen + File.separator + parameters.getTableName() + System
                 .nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
         writeDataTofile(recordHolderArray, recordHolderArray.length, sortTempFile);
         // add sort temp filename to and arrayList. When the list size reaches 20 then
@@ -417,11 +423,14 @@ public class SortDataRows {
         LOGGER.info("Time taken to sort and write sort temp file " + sortTempFile + " is: " + (
             System.currentTimeMillis() - startTime));
       } catch (Throwable e) {
-        threadStatusObserver.notifyFailed(e);
+        try {
+          threadStatusObserver.notifyFailed(e);
+        } catch (CarbonSortKeyAndGroupByException ex) {
+          LOGGER.error(ex);
+        }
       } finally {
         semaphore.release();
       }
-      return null;
     }
   }
 }

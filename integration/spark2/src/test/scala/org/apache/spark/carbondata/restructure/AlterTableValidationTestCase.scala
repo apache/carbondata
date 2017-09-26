@@ -19,15 +19,16 @@ package org.apache.spark.carbondata.restructure
 
 import java.io.File
 import java.math.{BigDecimal, RoundingMode}
+import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
+class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     CarbonProperties.getInstance()
@@ -35,6 +36,7 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
         new File("./target/test/badRecords").getCanonicalPath)
 
     sql("drop table if exists restructure")
+    sql("drop table if exists table1")
     sql("drop table if exists restructure_test")
     sql("drop table if exists restructure_new")
     sql("drop table if exists restructure_bad")
@@ -83,7 +85,7 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
       "('DICTIONARY_EXCLUDE'='nodict', 'DEFAULT.VALUE.NoDict'= 'abcd')")
     checkAnswer(sql("select distinct(nodict) from restructure"), Row("abcd"))
   }
-  test("test add timestamp direct dictionary column") {
+  test("test add timestamp no dictionary column") {
     sql(
       "alter table restructure add columns(tmpstmp timestamp) TBLPROPERTIES ('DEFAULT.VALUE" +
       ".tmpstmp'= '17-01-2007')")
@@ -91,6 +93,27 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
       Row(new java.sql.Timestamp(107, 0, 17, 0, 0, 0, 0)))
     checkExistence(sql("desc restructure"), true, "tmpstmptimestamp")
   }
+
+  test("test add timestamp direct dictionary column") {
+    sql(
+      "alter table restructure add columns(tmpstmp1 timestamp) TBLPROPERTIES ('DEFAULT.VALUE" +
+      ".tmpstmp1'= '17-01-3007','DICTIONARY_INCLUDE'='tmpstmp1')")
+    checkAnswer(sql("select distinct(tmpstmp1) from restructure"),
+      Row(null))
+    checkExistence(sql("desc restructure"), true, "tmpstmptimestamp")
+  }
+
+  test("test add timestamp column and load as dictionary") {
+    sql("create table table1(name string) stored by 'carbondata'")
+    sql("insert into table1 select 'abc'")
+    sql("alter table table1 add columns(tmpstmp timestamp) TBLPROPERTIES " +
+        "('DEFAULT.VALUE.tmpstmp'='17-01-3007','DICTIONARY_INCLUDE'= 'tmpstmp')")
+    sql("insert into table1 select 'name','17-01-2007'")
+    checkAnswer(sql("select * from table1"),
+      Seq(Row("abc",null),
+        Row("name",Timestamp.valueOf("2007-01-17 00:00:00.0"))))
+  }
+
   test("test add msr column") {
     sql(
       "alter table restructure add columns(msrField decimal(5,2))TBLPROPERTIES ('DEFAULT.VALUE" +
@@ -423,14 +446,32 @@ class AlterTableValidationTestCase extends QueryTest with BeforeAndAfterAll {
     sql("alter table Default.uniqdata rename to uniqdata1")
     checkAnswer(sql("select * from Default.uniqdata1"), Row(1,"hello"))
   }
-
+  test("describe formatted for default sort_columns pre and post alter") {
+    sql("CREATE TABLE defaultSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' " +
+        "tblproperties('DICTIONARY_INCLUDE'='empno','DICTIONARY_EXCLUDE'='role')")
+    sql("alter table defaultSortColumnsWithAlter drop columns (designation)")
+    sql("alter table defaultSortColumnsWithAlter add columns (designation12 String)")
+    checkExistence(sql("describe formatted defaultSortColumnsWithAlter"),true,"SORT_COLUMNS")
+    checkExistence(sql("describe formatted defaultSortColumnsWithAlter"),true,"empno,empname,role,doj")
+  }
+  test("describe formatted for specified sort_columns pre and post alter") {
+    sql("CREATE TABLE specifiedSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' " +
+        "tblproperties('sort_columns'='empno,empname,designation,role,doj','DICTIONARY_INCLUDE'='empno','DICTIONARY_EXCLUDE'='role')")
+    sql("alter table specifiedSortColumnsWithAlter drop columns (designation)")
+    sql("alter table specifiedSortColumnsWithAlter add columns (designation12 String)")
+    checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"SORT_COLUMNS")
+    checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"empno,empname,role,doj")
+  }
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
+    sql("drop table if exists table1")
     sql("DROP TABLE IF EXISTS restructure_new")
     sql("DROP TABLE IF EXISTS restructure_test")
     sql("DROP TABLE IF EXISTS restructure_bad")
     sql("DROP TABLE IF EXISTS restructure_badnew")
     sql("DROP TABLE IF EXISTS lock_rename")
     sql("drop table if exists uniqdata")
+    sql("drop table if exists defaultSortColumnsWithAlter")
+    sql("drop table if exists specifiedSortColumnsWithAlter")
   }
 }

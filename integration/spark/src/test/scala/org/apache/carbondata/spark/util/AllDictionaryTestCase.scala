@@ -16,12 +16,9 @@
  */
 package org.apache.carbondata.spark.util
 
-import java.io.File
-
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{CarbonEnv, CarbonRelation}
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.constants.TableOptionConstant
@@ -83,7 +80,8 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
     try {
       sql(
         "CREATE TABLE IF NOT EXISTS sample (id STRING, name STRING, city STRING, " +
-          "age INT) STORED BY 'org.apache.carbondata.format'"
+          "age INT) STORED BY 'org.apache.carbondata.format' " +
+        "tblproperties('dictionary_include'='city')"
       )
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)
@@ -96,7 +94,7 @@ class AllDictionaryTestCase extends QueryTest with BeforeAndAfterAll {
           "ActiveProvince: string, Activecity: string, ActiveDistrict: string, ActiveStreet: " +
           "string>>, proddate struct<productionDate: string,activeDeactivedate: array<string>>, " +
           "gamePointId INT,contractNumber INT) STORED BY 'org.apache.carbondata.format'" +
-          "TBLPROPERTIES('DICTIONARY_EXCLUDE'='ROMSize')"
+          "TBLPROPERTIES('DICTIONARY_EXCLUDE'='ROMSize', 'dictionary_include'='channelsId')"
       )
     } catch {
       case ex: Throwable => LOGGER.error(ex.getMessage + "\r\n" + ex.getStackTraceString)

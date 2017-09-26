@@ -17,13 +17,13 @@
 package org.apache.spark.carbondata.iud
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class DeleteCarbonTableSubqueryTestCase extends QueryTest with BeforeAndAfterAll {
+class DeleteCarbonTableSubqueryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("use default")
     sql("drop database  if exists iud_db_sub cascade")
@@ -43,6 +43,7 @@ class DeleteCarbonTableSubqueryTestCase extends QueryTest with BeforeAndAfterAll
       sql("""select c1 from iud_db_sub.dest"""),
       Seq(Row("c"), Row("d"), Row("e"))
     )
+    sql("drop table if exists iud_db_sub.dest")
   }
 
   test("delete data from  carbon table[where IN (sub query with where clause) ]") {
@@ -54,10 +55,12 @@ class DeleteCarbonTableSubqueryTestCase extends QueryTest with BeforeAndAfterAll
       sql("""select c1 from iud_db_sub.dest"""),
       Seq(Row("a"), Row("c"), Row("d"), Row("e"))
     )
+    sql("drop table if exists iud_db_sub.dest")
   }
 
   override def afterAll {
-    sql("use default")
+    sql("drop table if exists iud_db_sub.source2")
     sql("drop database  if exists iud_db_sub cascade")
+    sql("use default")
   }
 }

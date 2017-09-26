@@ -20,6 +20,8 @@ package org.apache.carbondata.processing.newflow.sort.unsafe.merger;
 import java.io.File;
 import java.io.FileFilter;
 import java.util.AbstractQueue;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.PriorityQueue;
 
@@ -57,14 +59,14 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   /**
    * tempFileLocation
    */
-  private String tempFileLocation;
+  private String[] tempFileLocation;
 
   private String tableName;
 
   private boolean isStopProcess;
 
   public UnsafeSingleThreadFinalSortFilesMerger(SortParameters parameters,
-      String tempFileLocation) {
+      String[] tempFileLocation) {
     this.parameters = parameters;
     this.tempFileLocation = tempFileLocation;
     this.tableName = parameters.getTableName();
@@ -89,8 +91,8 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   private void startSorting(UnsafeCarbonRowPage[] rowPages,
       List<UnsafeInMemoryIntermediateDataMerger> merges) throws CarbonDataWriterException {
     try {
-      File[] filesToMergeSort = getFilesToMergeSort();
-      this.fileCounter = rowPages.length + filesToMergeSort.length + merges.size();
+      List<File> filesToMergeSort = getFilesToMergeSort();
+      this.fileCounter = rowPages.length + filesToMergeSort.size() + merges.size();
       if (fileCounter == 0) {
         LOGGER.info("No files to merge sort");
         return;
@@ -145,20 +147,25 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
     }
   }
 
-  private File[] getFilesToMergeSort() {
-    // get all the merged files
-    File file = new File(tempFileLocation);
-
-    File[] fileList = file.listFiles(new FileFilter() {
+  private List<File> getFilesToMergeSort() {
+    FileFilter fileFilter = new FileFilter() {
       public boolean accept(File pathname) {
         return pathname.getName().startsWith(tableName);
       }
-    });
+    };
 
-    if (null == fileList || fileList.length < 0) {
-      return new File[0];
+    // get all the merged files
+    List<File> files = new ArrayList<File>(tempFileLocation.length);
+    for (String tempLoc : tempFileLocation)
+    {
+      File[] subFiles = new File(tempLoc).listFiles(fileFilter);
+      if (null != subFiles && subFiles.length > 0)
+      {
+        files.addAll(Arrays.asList(subFiles));
+      }
     }
-    return fileList;
+
+    return files;
   }
 
   /**

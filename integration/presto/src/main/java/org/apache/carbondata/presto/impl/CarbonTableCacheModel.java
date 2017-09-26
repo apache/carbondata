@@ -23,7 +23,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
- * Caching Carbon meta(e.g. TableIdentifier, TablePath, TableInfo, CarbonTable) in Class CarbonTableReader
+ * Caching metadata of CarbonData(e.g. TableIdentifier, TablePath, TableInfo, CarbonTable) in Class CarbonTableReader
  * to speed up query
  */
 public class CarbonTableCacheModel {
@@ -33,7 +33,6 @@ public class CarbonTableCacheModel {
 
   public TableInfo tableInfo;
   public CarbonTable carbonTable;
-  public String[] segments;
 
   public boolean isValid() {
     if (carbonTable != null && carbonTablePath != null && carbonTableIdentifier != null)

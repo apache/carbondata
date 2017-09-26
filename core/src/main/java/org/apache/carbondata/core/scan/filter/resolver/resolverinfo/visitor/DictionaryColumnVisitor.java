@@ -23,9 +23,10 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
-import org.apache.carbondata.core.scan.filter.DimColumnFilterInfo;
+import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
+import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 
 public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
@@ -41,31 +42,34 @@ public class DictionaryColumnVisitor implements ResolvedFilterInfoVisitorIntf {
    * @throws IOException
    * @throws FilterUnsupportedException
    */
-  public void populateFilterResolvedInfo(DimColumnResolvedFilterInfo visitableObj,
+  public void populateFilterResolvedInfo(ColumnResolvedFilterInfo visitableObj,
       FilterResolverMetadata metadata) throws FilterUnsupportedException, IOException {
-    DimColumnFilterInfo resolvedFilterObject = null;
-    List<String> evaluateResultListFinal;
-    try {
-      evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
-    } catch (FilterIllegalMemberException e) {
-      throw new FilterUnsupportedException(e);
-    }
-    resolvedFilterObject = FilterUtil
-        .getFilterValues(metadata.getTableIdentifier(), metadata.getColumnExpression(),
-            evaluateResultListFinal, metadata.isIncludeFilter());
-    if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
-      // Adding default surrogate key of null member inorder to not display the same while
-      // displaying the report as per hive compatibility.
-      // first check of surrogate key for null value is already added then
-      // no need to add again otherwise result will be wrong in case of exclude filter
-      // this is because two times it will flip the same bit
-      if (!resolvedFilterObject.getFilterList()
-          .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
-        resolvedFilterObject.getFilterList()
-            .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+    if (visitableObj instanceof DimColumnResolvedFilterInfo) {
+      DimColumnResolvedFilterInfo resolveDimension = (DimColumnResolvedFilterInfo) visitableObj;
+      ColumnFilterInfo resolvedFilterObject = null;
+      List<String> evaluateResultListFinal;
+      try {
+        evaluateResultListFinal = metadata.getExpression().evaluate(null).getListAsString();
+      } catch (FilterIllegalMemberException e) {
+        throw new FilterUnsupportedException(e);
       }
-      Collections.sort(resolvedFilterObject.getFilterList());
+      resolvedFilterObject = FilterUtil
+          .getFilterValues(metadata.getTableIdentifier(), metadata.getColumnExpression(),
+              evaluateResultListFinal, metadata.isIncludeFilter(), metadata.getTableProvider());
+      if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
+        // Adding default surrogate key of null member inorder to not display the same while
+        // displaying the report as per hive compatibility.
+        // first check of surrogate key for null value is already added then
+        // no need to add again otherwise result will be wrong in case of exclude filter
+        // this is because two times it will flip the same bit
+        if (!resolvedFilterObject.getFilterList()
+            .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
+          resolvedFilterObject.getFilterList()
+              .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+        }
+        Collections.sort(resolvedFilterObject.getFilterList());
+      }
+      resolveDimension.setFilterValues(resolvedFilterObject);
     }
-    visitableObj.setFilterValues(resolvedFilterObject);
   }
 }

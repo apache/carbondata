@@ -23,9 +23,9 @@ import java.util.BitSet;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
@@ -256,7 +256,7 @@ public class FilterScanner extends AbstractBlockletScanner {
     }
     dimensionReadTime1 = System.currentTimeMillis();
     /**
-     * in case projection if the projected measure are not loaded in the measureColumnDataChunk
+     * in case projection if the projected measure are not loaded in the ColumnPage
      * then loading them
      */
     int[] projectionListMeasureIndexes = blockExecutionInfo.getProjectionListMeasureIndexes();
@@ -270,8 +270,8 @@ public class FilterScanner extends AbstractBlockletScanner {
     dimensionReadTime += System.currentTimeMillis() - dimensionReadTime1;
     DimensionColumnDataChunk[][] dimensionColumnDataChunks =
         new DimensionColumnDataChunk[dimensionRawColumnChunks.length][indexesGroup.length];
-    MeasureColumnDataChunk[][] measureColumnDataChunks =
-        new MeasureColumnDataChunk[measureRawColumnChunks.length][indexesGroup.length];
+    ColumnPage[][] columnPages =
+        new ColumnPage[measureRawColumnChunks.length][indexesGroup.length];
     for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
       if (dimensionRawColumnChunks[i] != null) {
         for (int j = 0; j < indexesGroup.length; j++) {
@@ -282,13 +282,13 @@ public class FilterScanner extends AbstractBlockletScanner {
     for (int i = 0; i < measureRawColumnChunks.length; i++) {
       if (measureRawColumnChunks[i] != null) {
         for (int j = 0; j < indexesGroup.length; j++) {
-          measureColumnDataChunks[i][j] = measureRawColumnChunks[i].convertToMeasureColDataChunk(j);
+          columnPages[i][j] = measureRawColumnChunks[i].convertToColumnPage(j);
         }
       }
     }
     scannedResult.setDimensionChunks(dimensionColumnDataChunks);
     scannedResult.setIndexes(indexesGroup);
-    scannedResult.setMeasureChunks(measureColumnDataChunks);
+    scannedResult.setMeasureChunks(columnPages);
     scannedResult.setRawColumnChunks(dimensionRawColumnChunks);
     scannedResult.setNumberOfRows(rowCount);
     // adding statistics for carbon scan time

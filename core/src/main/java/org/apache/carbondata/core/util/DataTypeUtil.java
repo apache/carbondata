@@ -20,6 +20,7 @@ package org.apache.carbondata.core.util;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.RoundingMode;
+import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -32,14 +33,16 @@ import java.util.Map;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
-import org.apache.spark.unsafe.types.UTF8String;
+
 
 public final class DataTypeUtil {
 
@@ -52,9 +55,11 @@ public final class DataTypeUtil {
 
   private static final ThreadLocal<DateFormat> timeStampformatter = new ThreadLocal<DateFormat>() {
     @Override protected DateFormat initialValue() {
-      return new SimpleDateFormat(CarbonProperties.getInstance()
+      DateFormat dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
               CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+      dateFormat.setLenient(false);
+      return dateFormat;
     }
   };
 
@@ -82,6 +87,11 @@ public final class DataTypeUtil {
     dataTypeDisplayNames.put(DataType.SHORT.toString(), DataType.SHORT.getName());
     dataTypeDisplayNames.put(DataType.STRING.toString(), DataType.STRING.getName());
   }
+
+  /**
+   * DataType converter for different computing engines
+   */
+  private static DataTypeConverter converter;
 
   /**
    * This method will convert a given value to its specific type
@@ -113,6 +123,51 @@ public final class DataTypeUtil {
     }
   }
 
+  public static Object getMeasureObjectFromDataType(byte[] data, DataType dataType) {
+    if (data == null || data.length == 0) {
+      return null;
+    }
+    ByteBuffer bb = ByteBuffer.wrap(data);
+    switch (dataType) {
+      case SHORT:
+        return (short)bb.getLong();
+      case INT:
+        return (int)bb.getLong();
+      case LONG:
+        return bb.getLong();
+      case DECIMAL:
+        return byteToBigDecimal(data);
+      default:
+        return bb.getDouble();
+    }
+  }
+
+  public static Object getMeasureObjectBasedOnDataType(ColumnPage measurePage, int index,
+      DataType dataType, CarbonMeasure carbonMeasure) {
+    switch (dataType) {
+      case SHORT:
+        return (short)measurePage.getLong(index);
+      case INT:
+        return (int)measurePage.getLong(index);
+      case LONG:
+        return measurePage.getLong(index);
+      case DECIMAL:
+        BigDecimal bigDecimalMsrValue = measurePage.getDecimal(index);
+        if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
+          bigDecimalMsrValue =
+              bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+        }
+        if (null != bigDecimalMsrValue) {
+          return normalizeDecimalValue(bigDecimalMsrValue, carbonMeasure.getPrecision());
+        } else {
+          return bigDecimalMsrValue;
+        }
+      default:
+        return measurePage.getDouble(index);
+    }
+  }
+
+
   /**
    * @param dataType
    * @return
@@ -133,25 +188,6 @@ public final class DataTypeUtil {
       return null;
     }
     return bigDecimal;
-  }
-
-  /**
-   * This method will return the type of measure based on its data type
-   *
-   * @param dataType
-   * @return
-   */
-  public static char getAggType(DataType dataType) {
-    switch (dataType) {
-      case DECIMAL:
-        return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
-      case SHORT:
-      case INT:
-      case LONG:
-        return CarbonCommonConstants.BIG_INT_MEASURE;
-      default:
-        return CarbonCommonConstants.DOUBLE_MEASURE;
-    }
   }
 
   /**
@@ -254,6 +290,19 @@ public final class DataTypeUtil {
    * @return actual data after conversion
    */
   public static Object getDataBasedOnDataType(String data, DataType actualDataType) {
+    return getDataBasedOnDataType(data, actualDataType, getDataTypeConverter());
+  }
+
+  /**
+   * Below method will be used to convert the data passed to its actual data
+   * type
+   *
+   * @param data           data
+   * @param actualDataType actual data type
+   * @return actual data after conversion
+   */
+  public static Object getDataBasedOnDataType(String data, DataType actualDataType,
+      DataTypeConverter converter) {
     if (null == data || CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(data)) {
       return null;
     }
@@ -295,7 +344,6 @@ public final class DataTypeUtil {
             LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
             return null;
           }
-
         case TIMESTAMP:
           if (data.isEmpty()) {
             return null;
@@ -311,20 +359,18 @@ public final class DataTypeUtil {
           if (data.isEmpty()) {
             return null;
           }
-          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data);
-          return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
+          return converter.convertToDecimal(data);
         default:
-          return UTF8String.fromString(data);
+          return converter.convertFromStringToUTF8String(data);
       }
     } catch (NumberFormatException ex) {
       LOGGER.error("Problem while converting data type" + data);
       return null;
     }
-
   }
 
   public static byte[] getBytesBasedOnDataTypeForNoDictionaryColumn(String dimensionValue,
-      DataType actualDataType) {
+      DataType actualDataType, String dateFormat) {
     switch (actualDataType) {
       case STRING:
         return ByteUtil.toBytes(dimensionValue);
@@ -334,14 +380,22 @@ public final class DataTypeUtil {
         return ByteUtil.toBytes(Short.parseShort(dimensionValue));
       case INT:
         return ByteUtil.toBytes(Integer.parseInt(dimensionValue));
-      case FLOAT:
-        return ByteUtil.toBytes(Float.parseFloat(dimensionValue));
       case LONG:
         return ByteUtil.toBytes(Long.parseLong(dimensionValue));
-      case DOUBLE:
-        return ByteUtil.toBytes(Double.parseDouble(dimensionValue));
-      case DECIMAL:
-        return ByteUtil.toBytes(new BigDecimal(dimensionValue));
+      case TIMESTAMP:
+        Date dateToStr = null;
+        DateFormat dateFormatter = null;
+        try {
+          if (null != dateFormat) {
+            dateFormatter = new SimpleDateFormat(dateFormat);
+          } else {
+            dateFormatter = timeStampformatter.get();
+          }
+          dateToStr = dateFormatter.parse(dimensionValue);
+          return ByteUtil.toBytes(dateToStr.getTime());
+        } catch (ParseException e) {
+          throw new NumberFormatException(e.getMessage());
+        }
       default:
         return ByteUtil.toBytes(dimensionValue);
     }
@@ -365,21 +419,17 @@ public final class DataTypeUtil {
     try {
       switch (actualDataType) {
         case STRING:
-          return UTF8String.fromBytes(dataInBytes);
+          return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
         case BOOLEAN:
           return ByteUtil.toBoolean(dataInBytes);
         case SHORT:
           return ByteUtil.toShort(dataInBytes, 0, dataInBytes.length);
         case INT:
           return ByteUtil.toInt(dataInBytes, 0, dataInBytes.length);
-        case FLOAT:
-          return ByteUtil.toFloat(dataInBytes, 0);
         case LONG:
           return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length);
-        case DOUBLE:
-          return ByteUtil.toDouble(dataInBytes, 0);
-        case DECIMAL:
-          return ByteUtil.toBigDecimal(dataInBytes, 0, dataInBytes.length);
+        case TIMESTAMP:
+          return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length) * 1000L;
         default:
           return ByteUtil.toString(dataInBytes, 0, dataInBytes.length);
       }
@@ -466,38 +516,15 @@ public final class DataTypeUtil {
           if (dimension.getColumnSchema().getScale() > javaDecVal.scale()) {
             javaDecVal = javaDecVal.setScale(dimension.getColumnSchema().getScale());
           }
-          return org.apache.spark.sql.types.Decimal.apply(javaDecVal);
+          return getDataTypeConverter().convertToDecimal(javaDecVal);
         default:
-          return UTF8String.fromBytes(dataInBytes);
+          return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
       }
     } catch (NumberFormatException ex) {
       String data = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
       LOGGER.error("Problem while converting data type" + data);
       return null;
     }
-  }
-
-  public static Object getMeasureDataBasedOnDataType(Object data, DataType dataType) {
-
-    if (null == data) {
-      return null;
-    }
-    try {
-      switch (dataType) {
-        case DOUBLE:
-          return data;
-        case LONG:
-          return data;
-        case DECIMAL:
-          return org.apache.spark.sql.types.Decimal.apply((java.math.BigDecimal) data);
-        default:
-          return data;
-      }
-    } catch (NumberFormatException ex) {
-      LOGGER.error("Problem while converting data type" + data);
-      return null;
-    }
-
   }
 
   /**
@@ -671,12 +698,30 @@ public final class DataTypeUtil {
           return String.valueOf(Long.parseLong(data))
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
         case DATE:
-        case TIMESTAMP:
           DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(columnSchema.getDataType());
           int value = directDictionaryGenerator.generateDirectSurrogateKey(data);
           return String.valueOf(value)
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        case TIMESTAMP:
+          if (columnSchema.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+            DirectDictionaryGenerator directDictionaryGenerator1 =
+                DirectDictionaryKeyGeneratorFactory
+                    .getDirectDictionaryGenerator(columnSchema.getDataType());
+            int value1 = directDictionaryGenerator1.generateDirectSurrogateKey(data);
+            return String.valueOf(value1)
+                .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          } else {
+            try {
+              Date dateToStr = timeStampformatter.get().parse(data);
+              return ByteUtil.toBytes(dateToStr.getTime());
+            } catch (ParseException e) {
+              LOGGER.error(
+                  "Cannot convert value to Time/Long type value. Value is considered as null" + e
+                      .getMessage());
+              return null;
+            }
+          }
         case DECIMAL:
           String parsedValue = parseStringToBigDecimal(data, columnSchema);
           if (null == parsedValue) {
@@ -685,7 +730,7 @@ public final class DataTypeUtil {
           java.math.BigDecimal javaDecVal = new java.math.BigDecimal(parsedValue);
           return bigDecimalToByte(javaDecVal);
         default:
-          return UTF8String.fromString(data).getBytes();
+          return getDataTypeConverter().convertFromStringToByte(data);
       }
     } catch (NumberFormatException ex) {
       LOGGER.error("Problem while converting data type" + data);
@@ -736,4 +781,20 @@ public final class DataTypeUtil {
     }
     return null;
   }
+
+  /**
+   * set the data type converter as per computing engine
+   * @param converterLocal
+   */
+  public static void setDataTypeConverter(DataTypeConverter converterLocal) {
+    converter = converterLocal;
+  }
+
+  public static DataTypeConverter getDataTypeConverter() {
+    if (converter == null) {
+      converter = new DataTypeConverterImpl();
+    }
+    return converter;
+  }
+
 }

@@ -29,7 +29,7 @@ import org.apache.spark.sql.hive.HiveExternalCatalog._
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock}
+import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonStorePath
@@ -65,7 +65,7 @@ object AlterTableUtil {
     val acquiredLocks = ListBuffer[ICarbonLock]()
     try {
       locksToBeAcquired.foreach { lock =>
-        acquiredLocks += getLockObject(table, lock)
+        acquiredLocks += CarbonLockUtil.getLockObject(table.getCarbonTableIdentifier, lock)
       }
       acquiredLocks.toList
     } catch {
@@ -73,27 +73,6 @@ object AlterTableUtil {
         releaseLocks(acquiredLocks.toList)
         throw e
     }
-  }
-
-  /**
-   * Given a lock type this method will return a new lock object if not acquired by any other
-   * operation
-   *
-   * @param carbonTable
-   * @param lockType
-   * @return
-   */
-  private def getLockObject(carbonTable: CarbonTable,
-      lockType: String): ICarbonLock = {
-    val carbonLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
-        lockType)
-    if (carbonLock.lockWithRetries()) {
-      LOGGER.info(s"Successfully acquired the lock $lockType")
-    } else {
-      sys.error("Table is locked for updation. Please try after some time")
-    }
-    carbonLock
   }
 
   /**
@@ -154,10 +133,12 @@ object AlterTableUtil {
     val tableName = carbonTable.getFactTableName
     CarbonEnv.getInstance(sparkSession).carbonMetastore
       .updateTableSchema(carbonTable.getCarbonTableIdentifier,
+        carbonTable.getCarbonTableIdentifier,
         thriftTable,
         schemaEvolutionEntry,
-        carbonTable.getStorePath)(sparkSession)
+        carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     val tableIdentifier = TableIdentifier(tableName, Some(dbName))
+    sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
     val schema = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tableIdentifier)(sparkSession).schema.json
     val schemaParts = prepareSchemaJsonForAlterTable(sparkSession.sparkContext.getConf, schema)
@@ -206,14 +187,18 @@ object AlterTableUtil {
     (sparkSession: SparkSession): Unit = {
     val database = oldTableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
     val newCarbonTableIdentifier = new CarbonTableIdentifier(database, newTableName, tableId)
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath,
-      newCarbonTableIdentifier)
-    val tableMetadataFile = carbonTablePath.getSchemaFilePath
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, newCarbonTableIdentifier)
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val tableMetadataFile = carbonTablePath.getPath
     val fileType = FileFactory.getFileType(tableMetadataFile)
     if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
-      val tableInfo: org.apache.carbondata.format.TableInfo = CarbonEnv.getInstance(sparkSession)
-        .carbonMetastore
-        .readSchemaFile(tableMetadataFile)
+      val tableInfo = if (metastore.isReadFromHiveMetaStore) {
+        // In case of hive metastore we first update the carbonschema inside old table only.
+        metastore.getThriftTableInfo(CarbonStorePath.getCarbonTablePath(storePath,
+          new CarbonTableIdentifier(database, oldTableIdentifier.table, tableId)))(sparkSession)
+      } else {
+        metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
+      }
       val evolutionEntryList = tableInfo.fact_table.schema_evolution.schema_evolution_history
       val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
       if (updatedTime == timeStamp) {
@@ -221,14 +206,10 @@ object AlterTableUtil {
         FileFactory.getCarbonFile(carbonTablePath.getPath, fileType)
           .renameForce(carbonTablePath.getParent.toString + CarbonCommonConstants.FILE_SEPARATOR +
                        oldTableIdentifier.table)
-        val tableIdentifier = new CarbonTableIdentifier(database,
-          oldTableIdentifier.table,
-          tableId)
-        CarbonEnv.getInstance(sparkSession).carbonMetastore.revertTableSchema(tableIdentifier,
-          tableInfo,
-          storePath)(sparkSession)
-        CarbonEnv.getInstance(sparkSession).carbonMetastore
-          .removeTableFromMetadata(database, newTableName)
+        val tableIdentifier = new CarbonTableIdentifier(database, oldTableIdentifier.table, tableId)
+        metastore.revertTableSchema(tableIdentifier,
+          tableInfo, carbonTablePath.getPath)(sparkSession)
+        metastore.removeTableFromMetadata(database, newTableName)
       }
     }
   }
@@ -243,24 +224,23 @@ object AlterTableUtil {
    */
   def revertAddColumnChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val carbonTable = metastore
       .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation].tableMeta
       .carbonTable
 
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
       carbonTable.getCarbonTableIdentifier)
-    val tableMetadataFile = carbonTablePath.getSchemaFilePath
-    val thriftTable: TableInfo = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .readSchemaFile(tableMetadataFile)
+    val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
     val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
     val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
     if (updatedTime == timeStamp) {
       LOGGER.info(s"Reverting changes for $dbName.$tableName")
       val addedSchemas = evolutionEntryList.get(evolutionEntryList.size() - 1).added
       thriftTable.fact_table.table_columns.removeAll(addedSchemas)
-      CarbonEnv.getInstance(sparkSession).carbonMetastore
+      metastore
         .revertTableSchema(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getStorePath)(sparkSession)
+          thriftTable, carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     }
   }
 
@@ -274,14 +254,13 @@ object AlterTableUtil {
    */
   def revertDropColumnChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val carbonTable = metastore
       .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation].tableMeta
       .carbonTable
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
       carbonTable.getCarbonTableIdentifier)
-    val tableMetadataFile = carbonTablePath.getSchemaFilePath
-    val thriftTable: TableInfo = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .readSchemaFile(tableMetadataFile)
+    val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
     val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
     val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
     if (updatedTime == timeStamp) {
@@ -294,9 +273,9 @@ object AlterTableUtil {
           }
         }
       }
-      CarbonEnv.getInstance(sparkSession).carbonMetastore
+      metastore
         .revertTableSchema(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getStorePath)(sparkSession)
+          thriftTable, carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     }
   }
 
@@ -310,14 +289,13 @@ object AlterTableUtil {
    */
   def revertDataTypeChanges(dbName: String, tableName: String, timeStamp: Long)
     (sparkSession: SparkSession): Unit = {
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val carbonTable = metastore
       .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation].tableMeta
       .carbonTable
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
       carbonTable.getCarbonTableIdentifier)
-    val tableMetadataFile = carbonTablePath.getSchemaFilePath
-    val thriftTable: TableInfo = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .readSchemaFile(tableMetadataFile)
+    val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
     val evolutionEntryList = thriftTable.fact_table.schema_evolution.schema_evolution_history
     val updatedTime = evolutionEntryList.get(evolutionEntryList.size() - 1).time_stamp
     if (updatedTime == timeStamp) {
@@ -333,9 +311,9 @@ object AlterTableUtil {
           }
         }
       }
-      CarbonEnv.getInstance(sparkSession).carbonMetastore
+      metastore
         .revertTableSchema(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getStorePath)(sparkSession)
+          thriftTable, carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     }
   }
 

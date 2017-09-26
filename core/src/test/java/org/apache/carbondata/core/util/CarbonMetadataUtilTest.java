@@ -17,34 +17,42 @@
 
 package org.apache.carbondata.core.util;
 
-import mockit.Mock;
-import mockit.MockUp;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.datastore.page.statistics.MeasurePageStatsVO;
-import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
-import org.apache.carbondata.core.metadata.BlockletInfoColumnar;
+import org.apache.carbondata.core.datastore.page.EncodedTablePage;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
+import org.apache.carbondata.core.datastore.page.encoding.EncodedColumnPage;
+import org.apache.carbondata.core.datastore.page.key.TablePageKey;
+import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
-import org.apache.carbondata.format.*;
+import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
+import org.apache.carbondata.format.BlockIndex;
+import org.apache.carbondata.format.BlockletIndex;
+import org.apache.carbondata.format.BlockletInfo;
+import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.BlockletMinMaxIndex;
 import org.apache.carbondata.format.ColumnSchema;
+import org.apache.carbondata.format.DataChunk;
+import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataType;
+import org.apache.carbondata.format.Encoding;
+import org.apache.carbondata.format.FileFooter3;
+import org.apache.carbondata.format.IndexHeader;
+import org.apache.carbondata.format.SegmentInfo;
 
+import mockit.Mock;
+import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.BitSet;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import static junit.framework.TestCase.*;
-import static org.apache.carbondata.core.util.CarbonMetadataUtil.getIndexHeader;
-import static org.apache.carbondata.core.util.CarbonMetadataUtil.convertFileFooter;
+import static junit.framework.TestCase.assertEquals;
+import static org.apache.carbondata.core.util.CarbonMetadataUtil.convertFileFooterVersion3;
 import static org.apache.carbondata.core.util.CarbonMetadataUtil.getBlockIndexInfo;
+import static org.apache.carbondata.core.util.CarbonMetadataUtil.getBlockletIndex;
+import static org.apache.carbondata.core.util.CarbonMetadataUtil.getIndexHeader;
 
 public class CarbonMetadataUtilTest {
   static List<ByteBuffer> byteBufferList;
@@ -57,8 +65,6 @@ public class CarbonMetadataUtilTest {
   static int[] objDecimal;
 
   @BeforeClass public static void setUp() {
-    Long lngObj = new Long("11221");
-    byte byt = 1;
     objMaxArr = new Long[6];
     objMaxArr[0] = new Long("111111");
     objMaxArr[1] = new Long("121111");
@@ -113,13 +119,11 @@ public class CarbonMetadataUtilTest {
     blockletInfoList.add(blockletInfo);
     blockletInfoList.add(blockletInfo);
 
-    ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
-    valueEncoderMeta.setDecimal(5);
-    valueEncoderMeta.setMinValue(objMinArr);
-    valueEncoderMeta.setMaxValue(objMaxArr);
-    valueEncoderMeta.setUniqueValue(lngObj);
-    valueEncoderMeta.setType('a');
-    valueEncoderMeta.setDataTypeSelected(byt);
+    ValueEncoderMeta meta = CarbonTestUtil.createValueEncoderMeta();
+    meta.setDecimal(5);
+    meta.setMinValue(objMinArr);
+    meta.setMaxValue(objMaxArr);
+    meta.setType(ColumnPageEncoderMeta.DOUBLE_MEASURE);
 
     List<Encoding> encoders = new ArrayList<>();
     encoders.add(Encoding.INVERTED_INDEX);
@@ -170,17 +174,7 @@ public class CarbonMetadataUtilTest {
   }
 
   @Test public void testConvertFileFooter() throws Exception {
-    int[] intArr = { 1, 2, 3, 4, 5 };
-    boolean[] boolArr = { true, true, true, true, true };
-    long[] longArr = { 1, 2, 3, 4, 5 };
-    byte[][] maxByteArr = { { 1, 2 }, { 3, 4 }, { 5, 6 }, { 2, 4 }, { 1, 2 } };
     int[] cardinality = { 1, 2, 3, 4, 5 };
-    org.apache.carbondata.core.metadata.datatype.DataType[] dataType = {
-        org.apache.carbondata.core.metadata.datatype.DataType.INT,
-        org.apache.carbondata.core.metadata.datatype.DataType.INT,
-        org.apache.carbondata.core.metadata.datatype.DataType.INT,
-        org.apache.carbondata.core.metadata.datatype.DataType.INT,
-        org.apache.carbondata.core.metadata.datatype.DataType.INT };
 
     org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema colSchema =
         new org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema();
@@ -193,101 +187,54 @@ public class CarbonMetadataUtilTest {
 
     SegmentProperties segmentProperties = new SegmentProperties(columnSchemaList, cardinality);
 
-    final List<Integer> integerList = new ArrayList<>();
-    integerList.add(new Integer("1"));
-    integerList.add(new Integer("2"));
-
-    ValueEncoderMeta[] metas = new ValueEncoderMeta[6];
-    for (int i = 0; i < metas.length; i++) {
-      metas[i] = new ValueEncoderMeta();
-      metas[i].setMinValue(objMinArr[i]);
-      metas[i].setMaxValue(objMaxArr[i]);
-      metas[i].setUniqueValue(objMinArr[i]);
-      metas[i].setDecimal(objDecimal[i]);
-      metas[i].setType(CarbonCommonConstants.BIG_INT_MEASURE);
-      metas[i].setDataTypeSelected(byteArr[i]);
-    }
-
-    MeasurePageStatsVO stats = MeasurePageStatsVO.build(metas);
-
-    BlockletInfoColumnar blockletInfoColumnar = new BlockletInfoColumnar();
-
-    BitSet[] bitSetArr = new BitSet[6];
-    bitSetArr[0] = new BitSet();
-    bitSetArr[1] = new BitSet();
-    bitSetArr[2] = new BitSet();
-    bitSetArr[3] = new BitSet();
-    bitSetArr[4] = new BitSet();
-    bitSetArr[5] = new BitSet();
-    blockletInfoColumnar.setColumnMaxData(maxByteArr);
-    blockletInfoColumnar.setColumnMinData(maxByteArr);
-    blockletInfoColumnar.setKeyLengths(intArr);
-    blockletInfoColumnar.setColGrpBlocks(boolArr);
-    blockletInfoColumnar.setKeyOffSets(longArr);
-    blockletInfoColumnar.setDataIndexMapOffsets(longArr);
-    blockletInfoColumnar.setAggKeyBlock(boolArr);
-    blockletInfoColumnar.setDataIndexMapLength(intArr);
-    blockletInfoColumnar.setIsSortedKeyColumn(boolArr);
-    blockletInfoColumnar.setKeyOffSets(longArr);
-    blockletInfoColumnar.setMeasureLength(intArr);
-    blockletInfoColumnar.setMeasureOffset(longArr);
-    blockletInfoColumnar.setMeasureNullValueIndex(bitSetArr);
-    blockletInfoColumnar.setStats(stats);
-
-    BlockletInfoColumnar blockletInfoColumnar1 = new BlockletInfoColumnar();
-    blockletInfoColumnar1.setColumnMaxData(maxByteArr);
-    blockletInfoColumnar1.setColumnMinData(maxByteArr);
-    blockletInfoColumnar1.setKeyLengths(intArr);
-    blockletInfoColumnar1.setKeyOffSets(longArr);
-    blockletInfoColumnar1.setDataIndexMapOffsets(longArr);
-    blockletInfoColumnar1.setAggKeyBlock(boolArr);
-    blockletInfoColumnar1.setDataIndexMapLength(intArr);
-    blockletInfoColumnar1.setIsSortedKeyColumn(boolArr);
-    blockletInfoColumnar1.setColGrpBlocks(boolArr);
-    blockletInfoColumnar1.setKeyOffSets(longArr);
-    blockletInfoColumnar1.setMeasureLength(intArr);
-    blockletInfoColumnar1.setMeasureOffset(longArr);
-    blockletInfoColumnar1.setMeasureNullValueIndex(bitSetArr);
-    blockletInfoColumnar1.setStats(stats);
-    blockletInfoColumnar1.setColGrpBlocks(boolArr);
-
-    List<BlockletInfoColumnar> blockletInfoColumnarList = new ArrayList<>();
-    blockletInfoColumnarList.add(blockletInfoColumnar);
-    blockletInfoColumnarList.add(blockletInfoColumnar1);
-
-    new MockUp<CarbonUtil>() {
-      @SuppressWarnings("unused") @Mock public List<Integer> convertToIntegerList(int[] array) {
-        return integerList;
-      }
-    };
-
-    final Set<Integer> integerSet = new HashSet<>();
-    integerSet.add(new Integer("1"));
-    integerSet.add(new Integer("2"));
-    new MockUp<SegmentProperties>() {
+    final EncodedColumnPage measure = new EncodedColumnPage(new DataChunk2(), new byte[]{0,1},
+        PrimitivePageStatsCollector.newInstance(
+        org.apache.carbondata.core.metadata.datatype.DataType.BYTE, 0, 0));
+    new MockUp<EncodedTablePage>() {
       @SuppressWarnings("unused") @Mock
-      public Set<Integer> getDimensionOrdinalForBlock(int blockIndex) {
-        return integerSet;
+      public EncodedColumnPage getMeasure(int measureIndex) {
+        return measure;
       }
     };
 
-    SegmentInfo segmentInfo = new SegmentInfo();
-    segmentInfo.setNum_cols(4);
-    segmentInfo.setColumn_cardinalities(integerList);
+    new MockUp<TablePageKey>() {
+      @SuppressWarnings("unused") @Mock
+      public byte[] serializeStartKey() {
+        return new byte[]{1, 2};
+      }
 
-    FileFooter fileFooter = new FileFooter();
-    fileFooter.setNum_rows(4);
-    fileFooter.setSegment_info(segmentInfo);
+      @SuppressWarnings("unused") @Mock
+      public byte[] serializeEndKey() {
+        return new byte[]{1, 2};
+      }
+    };
+
+    TablePageKey key = new TablePageKey(3, null, segmentProperties, false);
+    EncodedTablePage encodedTablePage = EncodedTablePage.newInstance(3, new EncodedColumnPage[0], new EncodedColumnPage[0],
+        key);
+
+    List<EncodedTablePage> encodedTablePageList = new ArrayList<>();
+    encodedTablePageList.add(encodedTablePage);
+
+    BlockletInfo3 blockletInfoColumnar1 = new BlockletInfo3();
+
+    List<BlockletInfo3> blockletInfoColumnarList = new ArrayList<>();
+    blockletInfoColumnarList.add(blockletInfoColumnar1);
 
     byte[] byteMaxArr = "1".getBytes();
     byte[] byteMinArr = "2".getBytes();
 
+    BlockletIndex index = getBlockletIndex(encodedTablePageList, segmentProperties.getMeasures());
+    List<BlockletIndex> indexList = new ArrayList<>();
+    indexList.add(index);
+
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
     blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(byteMaxArr));
     blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(byteMinArr));
-    FileFooter result = convertFileFooter(blockletInfoColumnarList, 4, cardinality, columnSchemas,
-        segmentProperties);
-    assertEquals(result.getTable_columns(), columnSchemas);
+    FileFooter3 footer = convertFileFooterVersion3(blockletInfoColumnarList,
+        indexList,
+        cardinality, 2);
+    assertEquals(footer.getBlocklet_index_list(), indexList);
 
   }
 

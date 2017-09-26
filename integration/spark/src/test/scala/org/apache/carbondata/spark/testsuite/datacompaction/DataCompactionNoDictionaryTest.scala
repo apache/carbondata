@@ -19,7 +19,7 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
@@ -156,7 +156,7 @@ class DataCompactionNoDictionaryTest extends QueryTest with BeforeAndAfterAll {
     sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE nodictionaryCompaction " +
         "OPTIONS('DELIMITER' = ',')"
     )
-    sql("DELETE segment 0.1,3 FROM TABLE nodictionaryCompaction")
+    sql("delete from table nodictionaryCompaction where segment.id in (0.1,3)")
     checkAnswer(
       sql("select country from nodictionaryCompaction"),
       Seq()

@@ -40,6 +40,7 @@ import mockit.MockUp;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 /**
@@ -47,16 +48,16 @@ import org.junit.Test;
  */
 public class DictionaryClientTest {
 
-  private ColumnSchema empColumnSchema;
-  private CarbonDimension empDimension;
-  private ColumnSchema ageColumnSchema;
-  private CarbonDimension ageDimension;
-  private TableSchema tableSchema;
-  private TableInfo tableInfo;
-  private String storePath;
-  private DictionaryServer server;
+  private static ColumnSchema empColumnSchema;
+  private static CarbonDimension empDimension;
+  private static ColumnSchema ageColumnSchema;
+  private static CarbonDimension ageDimension;
+  private static TableSchema tableSchema;
+  private static TableInfo tableInfo;
+  private static String storePath;
+  private static DictionaryServer server;
 
-  @Before public void setUp() throws Exception {
+  @BeforeClass public static void setUp() throws Exception {
     // enable lru cache by setting cache size
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
@@ -70,8 +71,8 @@ public class DictionaryClientTest {
     empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0, 0);
 
     ageColumnSchema = new ColumnSchema();
-    ageColumnSchema.setColumnName("empNameCol");
-    ageColumnSchema.setColumnUniqueId("empNameCol");
+    ageColumnSchema.setColumnName("ageNameCol");
+    ageColumnSchema.setColumnUniqueId("ageNameCol");
     ageColumnSchema.setDimensionColumn(true);
     ageColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
     ageDimension = new CarbonDimension(ageColumnSchema, 0, 0, 0, 0, 0);
@@ -79,6 +80,7 @@ public class DictionaryClientTest {
     // Create a Table
     tableSchema = new TableSchema();
     tableSchema.setTableName("TestTable");
+    tableSchema.setTableId("1");
     tableSchema.setListOfColumns(Arrays.asList(empColumnSchema, ageColumnSchema));
     CarbonMetadata metadata = CarbonMetadata.getInstance();
 
@@ -88,14 +90,13 @@ public class DictionaryClientTest {
     tableInfo.setDatabaseName("test");
     storePath = System.getProperty("java.io.tmpdir") + "/tmp";
     tableInfo.setStorePath(storePath);
-    CarbonTable carbonTable = new CarbonTable();
-    carbonTable.loadCarbonTable(tableInfo);
+    CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
 
     // Add the created table to metadata
     metadata.addCarbonTable(carbonTable);
 
     // Start the server for testing the client
-    server = DictionaryServer.getInstance(5678);
+    server = DictionaryServer.getInstance(5678, carbonTable);
   }
 
   @Test public void testClient() throws Exception {
@@ -105,17 +106,15 @@ public class DictionaryClientTest {
     Thread.sleep(1000);
     // Create a dictionary key
     DictionaryMessage empKey = new DictionaryMessage();
-    empKey.setTableUniqueName(tableInfo.getTableUniqueName());
     empKey.setColumnName(empColumnSchema.getColumnName());
     empKey.setData("FirstKey");
 
     // Test dictionary initialization call
-    empKey.setType(DictionaryMessageType.TABLE_INTIALIZATION);
-    client.getDictionary(empKey);
     int count = 2;
     // Test dictionary generation
     for (; count <= 10000; count++) {
       empKey.setType(DictionaryMessageType.DICT_GENERATION);
+      empKey.setTableUniqueId("1");
       empKey.setData("FirstKey" + count);
       DictionaryMessage val = client.getDictionary(empKey);
       Assert.assertEquals(count, val.getDictionaryValue());
@@ -186,7 +185,7 @@ public class DictionaryClientTest {
     cleanUpDirectory(new File(storePath));
   }
 
-  private void cleanUpDirectory(File path) {
+  private static void cleanUpDirectory(File path) {
     File[] files = path.listFiles();
     if (null == files) {
       return;

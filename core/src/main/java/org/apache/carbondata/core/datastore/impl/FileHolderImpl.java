@@ -217,7 +217,13 @@ public class FileHolderImpl implements FileHolder {
   @Override public DataInputStream getDataInputStream(String filePath, long offset)
       throws IOException {
     FileInputStream stream = new FileInputStream(filePath);
-    stream.skip(offset);
+    long skipped = stream.skip(offset);
+    long toSkip = offset - skipped;
+    while (toSkip <= 0) {
+      skipped = stream.skip(toSkip);
+      toSkip = toSkip - skipped;
+    }
+
     return new DataInputStream(new BufferedInputStream(stream));
   }
 }

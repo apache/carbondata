@@ -24,6 +24,7 @@
  * [Performance Configuration](#performance-configuration)
  * [Miscellaneous Configuration](#miscellaneous-configuration)
  * [Spark Configuration](#spark-configuration)
+ * [Dynamic Configuration In CarbonData Using SET-RESET](#dynamic-configuration-in-carbondata-using-set-reset)
  
  
 ##  System Configuration
@@ -58,8 +59,11 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.merge.sort.prefetch | true | Enable prefetch of data during merge sort while reading data from sort temp files in data loading. |  |
 | carbon.update.persist.enable | true | Enabling this parameter considers persistent data. Enabling this will reduce the execution time of UPDATE operation. |  |
 | carbon.load.global.sort.partitions | 0 | The Number of partitions to use when shuffling data for sort. If user don't configurate or configurate it less than 1, it uses the number of map tasks as reduce tasks. In general, we recommend 2-3 tasks per CPU core in your cluster.
-
-
+| carbon.options.bad.records.logger.enable | false | Whether to create logs with details about bad records. | |
+| carbon.bad.records.action | fail | This property can have four types of actions for bad records FORCE, REDIRECT, IGNORE and FAIL. If set to FORCE then it auto-corrects the data by storing the bad records as NULL. If set to REDIRECT then bad records are written to the raw CSV instead of being loaded. If set to IGNORE then bad records are neither loaded nor written to the raw CSV. If set to FAIL then data loading fails if any bad records are found. | |
+| carbon.options.is.empty.data.bad.record | false | If false, then empty ("" or '' or ,,) data will not be considered as bad record and vice versa. | |
+| carbon.options.bad.record.path |  | Specifies the HDFS path where bad records are stored. By default the value is Null. This path must to be configured by the user if bad record logger is enabled or bad record action redirect. | |
+| carbon.enable.vector.reader | true | This parameter increases the performance of select queries as it fetch columnar batch of size 4*1024 rows instead of fetching data row by row. | |
 
 * **Compaction Configuration**
   
@@ -71,7 +75,7 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.horizontal.compaction.enable | true | This property is used to turn ON/OFF horizontal compaction. After every DELETE and UPDATE statement, horizontal compaction may occur in case the delta (DELETE/ UPDATE) files becomes more than specified threshold. |  |
 | carbon.horizontal.UPDATE.compaction.threshold | 1 | This property specifies the threshold limit on number of UPDATE delta files within a segment. In case the number of delta files goes beyond the threshold, the UPDATE delta files within the segment becomes eligible for horizontal compaction and compacted into single UPDATE delta file. | Values between 1 to 10000. |
 | carbon.horizontal.DELETE.compaction.threshold | 1 | This property specifies the threshold limit on number of DELETE delta files within a block of a segment. In case the number of delta files goes beyond the threshold, the DELETE delta files for the particular block of the segment becomes eligible for horizontal compaction and compacted into single DELETE delta file. | Values between 1 to 10000. |
-
+| carbon.update.segment.parallelism | 1 | This property specifies the parallelism for each segment during update. If there are segments that contain too many records to update and the spark job encounter data-spill related errors, it is better to increase this property value. It is recommended to set this value to a multiple of the number of executors for balance. | Values between 1 to 1000. |
   
 
 * **Query Configuration**
@@ -79,9 +83,7 @@ This section provides the details of all the configurations required for CarbonD
 | Parameter | Default Value | Description | Range |
 |--------------------------------------|---------------|---------------------------------------------------|---------------------------|
 | carbon.number.of.cores | 4 | Number of cores to be used while querying. |  |
-| carbon.inmemory.record.size | 120000 | Number of records to be in memory while querying. | Min=100000 and Max=240000 |
 | carbon.enable.quick.filter | false | Improves the performance of filter query. |  |
-| no.of.cores.to.load.blocks.in.driver | 10 | Number of core to load the blocks in driver. |  |
 
 
 ##   Miscellaneous Configuration
@@ -131,9 +133,8 @@ This section provides the details of all the configurations required for CarbonD
   
 | Parameter | Default Value | Description |
 |---------------------------------------|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| high.cardinality.identify.enable | true | If the parameter is true, the high cardinality columns of the dictionary code are automatically recognized and these columns will not be used as global dictionary encoding. If the parameter is false, all dictionary encoding columns are used as dictionary encoding. The high cardinality column must meet the following requirements: value of cardinality > configured value of high.cardinality. Equally, the value of cardinality is higher than the threshold.value of cardinality/ row number x 100 > configured value of high.cardinality.row.count.percentage. Equally, the ratio of the cardinality value to data row number is higher than the configured percentage. Note: If SINGLE_PASS is used during data load, then this property will be disabled.|
+| high.cardinality.identify.enable | true | If the parameter is true, the high cardinality columns of the dictionary code are automatically recognized and these columns will not be used as global dictionary encoding. If the parameter is false, all dictionary encoding columns are used as dictionary encoding. The high cardinality column must meet the following requirements: value of cardinality > configured value of high.cardinality. <b> Note: </b> If SINGLE_PASS is used during data load, then this property will be disabled.|
 | high.cardinality.threshold | 1000000  | It is a threshold to identify high cardinality of the columns.If the value of columns' cardinality > the configured value, then the columns are excluded from dictionary encoding. |
-| high.cardinality.row.count.percentage | 80 | Percentage to identify whether column cardinality is more than configured percent of total row count.Configuration value formula:Value of cardinality/ row number x 100 > configured value of high.cardinality.row.count.percentage. The value of the parameter must be larger than 0. |
 | carbon.cutOffTimestamp | 1970-01-01 05:30:00 | Sets the start date for calculating the timestamp. Java counts the number of milliseconds from start of "1970-01-01 00:00:00". This property is used to customize the start of position. For example "2000-01-01 00:00:00". The date must be in the form "carbon.timestamp.format". NOTE: The CarbonData supports data store up to 68 years from the cut-off time defined. For example, if the cut-off time is 1970-01-01 05:30:00, then the data can be stored up to 2038-01-01 05:30:00. |
 | carbon.timegranularity | SECOND | The property used to set the data granularity level DAY, HOUR, MINUTE, or SECOND. |
   
@@ -144,6 +145,87 @@ This section provides the details of all the configurations required for CarbonD
 |----------------------------------------|--------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | spark.driver.memory | 1g | Amount of memory to be used by the driver process. |
 | spark.executor.memory | 1g | Amount of memory to be used per executor process. |
-| spark.sql.bigdata.register.analyseRule | org.apache.spark.sql.hive.acl.CarbonAccessControlRules | CarbonAccessControlRules need to be set for enabling Access Control. |
-   
- 
+
+##  Dynamic Configuration In CarbonData Using SET-RESET
+
+**SET/RESET** commands are used to add, update, display, or reset the carbondata properties dynamically without restarting the driver.
+
+**Syntax**
+
+* **Add or Update :** This command adds or updates the value of parameter_name.
+
+```
+SET parameter_name=parameter_value
+```
+
+* Display Property Value: This command displays the value of the specified parameter_name.
+
+```
+SET parameter_name
+```
+
+* Display Session Parameters: This command displays all the supported session parameters.
+
+```
+SET
+```
+
+* Display Session Parameters along with usage details: This command displays all the supported session parameters along with their usage details.
+
+```
+SET -v
+```
+
+* Reset: This command clears all the session parameters.
+
+```
+RESET
+```
+
+ **Parameter Description:**
+
+| Parameter       | Description                                                                            |
+|-----------------|----------------------------------------------------------------------------------------|
+| parameter_name  | Name of the property whose value needs to be dynamically added, updated, or displayed. |
+| parameter_value | New value of the parameter_name to be set.                                             |
+
+<b><p align="center">Dynamically Configurable Properties of CarbonData</p></b>
+
+| Properties                               | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+|------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| carbon.options.bad.records.logger.enable | To enable or disable bad record logger.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| carbon.options.bad.records.action        | This property can have four types of actions for bad records FORCE, REDIRECT, IGNORE and FAIL. If set to FORCE then it auto-corrects the data by storing the bad records as NULL. If set to REDIRECT then bad records are written to the raw CSV instead of being loaded. If set to IGNORE then bad records are neither loaded nor written to the raw CSV. If set to FAIL then data loading fails if any bad records are found.                                                                                                                                                          |
+| carbon.options.is.empty.data.bad.record  | If false, then empty ("" or '' or ,,) data will not be considered as bad record and vice versa.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| carbon.options.sort.scope                | This property can have four possible values BATCH_SORT, LOCAL_SORT, GLOBAL_SORT and NO_SORT. If set to BATCH_SORT, the sorting scope is smaller and more index tree will be created,thus loading is faster but query maybe slower. If set to LOCAL_SORT, the sorting scope is bigger and one index tree per data node will be created, thus loading is slower but query is faster. If set to GLOBAL_SORT, the sorting scope is bigger and one index tree per task will be created, thus loading is slower but query is faster. If set to NO_SORT data will be loaded in unsorted manner. |
+| carbon.options.batch.sort.size.inmb      | Size of batch data to keep in memory, as a thumb rule it supposed to be less than 45% of sort.inmemory.size.inmb otherwise it may spill intermediate data to disk.                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| carbon.options.single.pass               | Single Pass Loading enables single job to finish data loading with dictionary generation on the fly. It enhances performance in the scenarios where the subsequent data loading after initial load involves fewer incremental updates on the dictionary. This option specifies whether to use single pass for loading data or not. By default this option is set to FALSE.                                                                                                                                                                                                               |
+| carbon.options.bad.record.path           | Specifies the HDFS path where bad records needs to be stored.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| carbon.options.global.sort.partitions    | The Number of partitions to use when shuffling data for sort. If user don't configurate or configurate it less than 1, it uses the number of map tasks as reduce tasks. In general, we recommend 2-3 tasks per CPU core in your cluster.                                                                                                                                                                                                                                                                                                                                                 |
+| carbon.custom.block.distribution         | Specifies whether to use the Spark or Carbon block distribution feature.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| enable.unsafe.sort                       | Specifies whether to use unsafe sort during data loading. Unsafe sort reduces the garbage collection during data load operation, resulting in better performance.                                                                                                                                                                                                                                                                                                                                                                                                                        |
+
+**Examples:**
+
+* Add or Update:
+
+```
+SET enable.unsafe.sort =true
+```
+
+* Display Property Value:
+
+```
+SET enable.unsafe.sort
+```
+
+* Reset:
+
+```
+RESET
+```
+
+**System Response:**
+
+* Success will be recorded in the driver log.
+
+* Failure will be displayed in the UI.

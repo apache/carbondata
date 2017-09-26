@@ -17,11 +17,10 @@
 
 package org.apache.carbondata.spark.testsuite.aggquery
 
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.spark.sql.test.util.QueryTest
 
 /**
  * Test Class for aggregate query on multiple datatypes
@@ -33,7 +32,6 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     sql("DROP TABLE IF EXISTS alldatatypestableAGG")
-    sql("DROP TABLE IF EXISTS alldatatypescubeAGG_hive")
     sql(
       "CREATE TABLE alldatatypestableAGG (empno int, empname String, designation String, doj " +
       "Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
@@ -42,14 +40,14 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE alldatatypestableAGG " +
       "OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
-    sql("DROP TABLE IF EXISTS alldatatypescubeAGG_hive")
+    sql("DROP TABLE IF EXISTS alldatatypesAGG_hive")
     sql(
-      "CREATE TABLE alldatatypescubeAGG_hive (empno int, empname String, designation String, doj " +
+      "CREATE TABLE alldatatypesAGG_hive (empno int, empname String, designation String, doj " +
       "Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname " +
       "String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance " +
       "int,utilization int,salary int)row format delimited fields terminated by ','")
     sql(
-      s"LOAD DATA LOCAL INPATH '$resourcesPath/datawithoutheader.csv' INTO TABLE alldatatypescubeAGG_hive")
+      s"LOAD DATA LOCAL INPATH '$resourcesPath/datawithoutheader.csv' INTO TABLE alldatatypesAGG_hive")
   }
 
   test(
@@ -61,7 +59,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
         "select empno,empname,utilization,count(salary),sum(empno) from alldatatypestableAGG where" +
         " empname in ('arvind','ayushi') group by empno,empname,utilization"),
       sql(
-        "select empno,empname,utilization,count(salary),sum(empno) from alldatatypescubeAGG_hive where" +
+        "select empno,empname,utilization,count(salary),sum(empno) from alldatatypesAGG_hive where" +
         " empname in ('arvind','ayushi') group by empno,empname,utilization"))
   }
 
@@ -74,7 +72,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
         "select empname,trim(designation),avg(salary),avg(empno) from alldatatypestableAGG where " +
         "empname in ('arvind','ayushi') group by empname,trim(designation)"),
       sql(
-        "select empname,trim(designation),avg(salary),avg(empno) from alldatatypescubeAGG_hive where " +
+        "select empname,trim(designation),avg(salary),avg(empno) from alldatatypesAGG_hive where " +
         "empname in ('arvind','ayushi') group by empname,trim(designation)"))
   }
 
@@ -90,7 +88,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
         "(designation) order by empname"),
       sql(
         "select empname,length(designation),max(empno),min(empno), avg(empno) from " +
-        "alldatatypescubeAGG_hive where empname in ('arvind','ayushi') group by empname,length" +
+        "alldatatypesAGG_hive where empname in ('arvind','ayushi') group by empname,length" +
         "(designation) order by empname"))
   }
 
@@ -98,12 +96,11 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
   {
     checkAnswer(
       sql("select count(empno), count(distinct(empno)) from alldatatypestableAGG"),
-      sql("select count(empno), count(distinct(empno)) from alldatatypescubeAGG_hive"))
+      sql("select count(empno), count(distinct(empno)) from alldatatypesAGG_hive"))
   }
 
   override def afterAll {
     sql("DROP TABLE IF EXISTS alldatatypestableAGG")
-    sql("DROP TABLE IF EXISTS alldatatypescubeAGG")
-    sql("DROP TABLE IF EXISTS alldatatypescubeAGG_hive")
+    sql("DROP TABLE IF EXISTS alldatatypesAGG_hive")
   }
 }

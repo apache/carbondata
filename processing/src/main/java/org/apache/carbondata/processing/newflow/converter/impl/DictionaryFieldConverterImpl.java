@@ -21,6 +21,8 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
@@ -35,6 +37,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.processing.newflow.DataField;
 import org.apache.carbondata.processing.newflow.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.newflow.dictionary.DictionaryServerClientDictionary;
@@ -43,6 +46,9 @@ import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingExcep
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConverterImpl {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(DictionaryFieldConverterImpl.class.getName());
 
   private BiDictionary<Integer, Object> dictionaryGenerator;
 
@@ -61,7 +67,7 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
   public DictionaryFieldConverterImpl(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, String nullFormat, int index,
-      DictionaryClient client, boolean useOnePass, String storePath, boolean tableInitialize,
+      DictionaryClient client, boolean useOnePass, String storePath,
       Map<Object, Integer> localCache, boolean isEmptyBadRecord) throws IOException {
     this.index = index;
     this.carbonDimension = (CarbonDimension) dataField.getColumn();
@@ -69,7 +75,8 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
     this.isEmptyBadRecord = isEmptyBadRecord;
     DictionaryColumnUniqueIdentifier identifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
-            dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType());
+            dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType(),
+            CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
 
     // if use one pass, use DictionaryServerClientDictionary
     if (useOnePass) {
@@ -78,13 +85,9 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
       }
       dictionaryMessage = new DictionaryMessage();
       dictionaryMessage.setColumnName(dataField.getColumn().getColName());
-      dictionaryMessage.setTableUniqueName(carbonTableIdentifier.getTableUniqueName());
       // for table initialization
-      dictionaryMessage.setType(DictionaryMessageType.TABLE_INTIALIZATION);
+      dictionaryMessage.setTableUniqueId(carbonTableIdentifier.getTableId());
       dictionaryMessage.setData("0");
-      if (tableInitialize) {
-        client.getDictionary(dictionaryMessage);
-      }
       // for generate dictionary
       dictionaryMessage.setType(DictionaryMessageType.DICT_GENERATION);
       dictionaryGenerator = new DictionaryServerClientDictionary(dictionary, client,

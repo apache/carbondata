@@ -17,11 +17,13 @@
 package org.apache.carbondata.core.datastore.block;
 
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -77,6 +79,8 @@ public class TableBlockInfo implements Distributable, Serializable {
    */
   private String[] deletedDeltaFilePath;
 
+  private BlockletDetailInfo detailInfo;
+
   public TableBlockInfo(String filePath, long blockOffset, String segmentId, String[] locations,
       long blockLength, ColumnarFormatVersion version, String[] deletedDeltaFilePath) {
     this.filePath = FileFactory.getUpdatedFilePath(filePath);
@@ -86,6 +90,10 @@ public class TableBlockInfo implements Distributable, Serializable {
     this.blockLength = blockLength;
     this.version = version;
     this.deletedDeltaFilePath = deletedDeltaFilePath;
+  }
+
+  public TableBlockInfo() {
+
   }
 
   /**
@@ -182,13 +190,15 @@ public class TableBlockInfo implements Distributable, Serializable {
     if (blockLength != other.blockLength) {
       return false;
     }
-    if (filePath == null && other.filePath != null) {
-      return false;
-    } else if (filePath != null && other.filePath == null) {
-      return false;
-    } else if (!filePath.equals(other.filePath)) {
+
+    if (null == filePath || null == other.filePath) {
+      return  false;
+    }
+
+    if (!filePath.equals(other.filePath)) {
       return false;
     }
+
     if (blockletInfos.getStartBlockletNumber() != other.blockletInfos.getStartBlockletNumber()) {
       return false;
     }
@@ -221,8 +231,10 @@ public class TableBlockInfo implements Distributable, Serializable {
     // offset of
     // the file
     if (CarbonTablePath.isCarbonDataFile(filePath)) {
-      int compare = ByteUtil.compare(DataFileUtil.getTaskNo(filePath).getBytes(),
-          DataFileUtil.getTaskNo(((TableBlockInfo) other).filePath).getBytes());
+      int compare = ByteUtil.compare(DataFileUtil.getTaskNo(filePath)
+              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
+          DataFileUtil.getTaskNo(((TableBlockInfo) other).filePath)
+              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       if (compare != 0) {
         return compare;
       }
@@ -318,5 +330,17 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public String[] getDeletedDeltaFilePath() {
     return deletedDeltaFilePath;
+  }
+
+  public void setFilePath(String filePath) {
+    this.filePath = filePath;
+  }
+
+  public BlockletDetailInfo getDetailInfo() {
+    return detailInfo;
+  }
+
+  public void setDetailInfo(BlockletDetailInfo detailInfo) {
+    this.detailInfo = detailInfo;
   }
 }

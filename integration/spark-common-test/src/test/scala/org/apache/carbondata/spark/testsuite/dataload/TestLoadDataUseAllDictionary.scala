@@ -17,10 +17,9 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import org.apache.spark.sql.common.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.processing.etl.DataLoadingException
+import org.apache.spark.sql.test.util.QueryTest
 
 class TestLoadDataUseAllDictionary extends QueryTest with BeforeAndAfterAll{
   override def beforeAll {
@@ -30,6 +29,7 @@ class TestLoadDataUseAllDictionary extends QueryTest with BeforeAndAfterAll{
            (ID Int, date Timestamp, country String,
            name String, phonetype String, serialname String, salary Int)
            STORED BY 'carbondata'
+           TBLPROPERTIES('dictionary_include'='country,name,phonetype,serialname')
            """)
   }
 

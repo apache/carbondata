@@ -18,17 +18,19 @@ package org.apache.carbondata.core.datastore.chunk.reader.measure.v3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.measure.AbstractMeasureChunkReaderV2V3Format;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.encoding.ColumnPageDecoder;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
+import org.apache.carbondata.format.Encoding;
 
 import org.apache.commons.lang.ArrayUtils;
 
@@ -65,36 +67,36 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
    * 5. Create the raw chunk object and fill the details
    *
    * @param fileReader          reader for reading the column from carbon data file
-   * @param blockletColumnIndex          blocklet index of the column in carbon data file
+   * @param columnIndex         column to be read
    * @return measure raw chunk
    */
   @Override public MeasureRawColumnChunk readRawMeasureChunk(FileHolder fileReader,
-      int blockletColumnIndex) throws IOException {
+      int columnIndex) throws IOException {
     int dataLength = 0;
     // to calculate the length of the data to be read
     // column other than last column we can subtract the offset of current column with
     // next column and get the total length.
     // but for last column we need to use lastDimensionOffset which is the end position
     // of the last dimension, we can subtract current dimension offset from lastDimesionOffset
-    if (measureColumnChunkOffsets.size() - 1 == blockletColumnIndex) {
-      dataLength = (int) (measureOffsets - measureColumnChunkOffsets.get(blockletColumnIndex));
+    if (measureColumnChunkOffsets.size() - 1 == columnIndex) {
+      dataLength = (int) (measureOffsets - measureColumnChunkOffsets.get(columnIndex));
     } else {
       dataLength =
-          (int) (measureColumnChunkOffsets.get(blockletColumnIndex + 1) - measureColumnChunkOffsets
-              .get(blockletColumnIndex));
+          (int) (measureColumnChunkOffsets.get(columnIndex + 1) - measureColumnChunkOffsets
+              .get(columnIndex));
     }
     ByteBuffer buffer = null;
     // read the data from carbon data file
     synchronized (fileReader) {
       buffer = fileReader
-          .readByteBuffer(filePath, measureColumnChunkOffsets.get(blockletColumnIndex), dataLength);
+          .readByteBuffer(filePath, measureColumnChunkOffsets.get(columnIndex), dataLength);
     }
     // get the data chunk which will have all the details about the data pages
     DataChunk3 dataChunk =
-        CarbonUtil.readDataChunk3(buffer, 0, measureColumnChunkLength.get(blockletColumnIndex));
+        CarbonUtil.readDataChunk3(buffer, 0, measureColumnChunkLength.get(columnIndex));
     // creating a raw chunks instance and filling all the details
     MeasureRawColumnChunk rawColumnChunk =
-        new MeasureRawColumnChunk(blockletColumnIndex, buffer, 0, dataLength, this);
+        new MeasureRawColumnChunk(columnIndex, buffer, 0, dataLength, this);
     int numberOfPages = dataChunk.getPage_length().size();
     byte[][] maxValueOfEachPage = new byte[numberOfPages][];
     byte[][] minValueOfEachPage = new byte[numberOfPages][];
@@ -112,8 +114,6 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     rawColumnChunk.setMaxValues(maxValueOfEachPage);
     rawColumnChunk.setMinValues(minValueOfEachPage);
     rawColumnChunk.setRowCount(eachPageLength);
-    rawColumnChunk.setLengths(ArrayUtils
-        .toPrimitive(dataChunk.page_length.toArray(new Integer[dataChunk.page_length.size()])));
     rawColumnChunk.setOffsets(ArrayUtils
         .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
     return rawColumnChunk;
@@ -181,8 +181,6 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
       measureRawColumnChunk.setMaxValues(maxValueOfEachPage);
       measureRawColumnChunk.setMinValues(minValueOfEachPage);
       measureRawColumnChunk.setRowCount(eachPageLength);
-      measureRawColumnChunk.setLengths(ArrayUtils
-          .toPrimitive(dataChunk.page_length.toArray(new Integer[dataChunk.page_length.size()])));
       measureRawColumnChunk.setOffsets(ArrayUtils
           .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
       measureDataChunk[index] = measureRawColumnChunk;
@@ -195,31 +193,38 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
   /**
    * Below method will be used to convert the compressed measure chunk raw data to actual data
    *
-   * @param measureRawColumnChunk measure raw chunk
+   * @param rawColumnPage measure raw chunk
    * @param pageNumber            number
    * @return DimensionColumnDataChunk
    */
   @Override
-  public MeasureColumnDataChunk convertToMeasureChunk(
-      MeasureRawColumnChunk measureRawColumnChunk, int pageNumber)
+  public ColumnPage convertToColumnPage(
+      MeasureRawColumnChunk rawColumnPage, int pageNumber)
       throws IOException, MemoryException {
-    MeasureColumnDataChunk datChunk = new MeasureColumnDataChunk();
     // data chunk of blocklet column
-    DataChunk3 dataChunk3 = measureRawColumnChunk.getDataChunkV3();
+    DataChunk3 dataChunk3 = rawColumnPage.getDataChunkV3();
     // data chunk of page
-    DataChunk2 measureColumnChunk = dataChunk3.getData_chunk_list().get(pageNumber);
+    DataChunk2 pageMetadata = dataChunk3.getData_chunk_list().get(pageNumber);
     // calculating the start point of data
     // as buffer can contain multiple column data, start point will be datachunkoffset +
     // data chunk length + page offset
-    int copyPoint = measureRawColumnChunk.getOffSet() + measureColumnChunkLength
-        .get(measureRawColumnChunk.getBlockletId()) + dataChunk3.getPage_offset().get(pageNumber);
-    ColumnPage decodedPage = decodeMeasure(measureRawColumnChunk, measureColumnChunk, copyPoint);
+    int offset = rawColumnPage.getOffSet() +
+        measureColumnChunkLength.get(rawColumnPage.getColumnIndex()) +
+        dataChunk3.getPage_offset().get(pageNumber);
+    ColumnPage decodedPage = decodeMeasure(pageMetadata, rawColumnPage.getRawData(), offset);
+    decodedPage.setNullBits(getNullBitSet(pageMetadata.presence));
+    return decodedPage;
+  }
 
-    // set the data chunk
-    datChunk.setColumnPage(decodedPage);
-    // set the null value indexes
-    datChunk.setNullValueIndexHolder(getPresenceMeta(measureColumnChunk.presence));
-    return datChunk;
+  /**
+   * Decode measure column page with page header and raw data starting from offset
+   */
+  private ColumnPage decodeMeasure(DataChunk2 pageMetadata, ByteBuffer pageData, int offset)
+      throws MemoryException, IOException {
+    List<Encoding> encodings = pageMetadata.getEncoders();
+    List<ByteBuffer> encoderMetas = pageMetadata.getEncoder_meta();
+    ColumnPageDecoder codec = encodingFactory.createDecoder(encodings, encoderMetas);
+    return codec.decode(pageData.array(), offset, pageMetadata.data_page_length);
   }
 
 }

@@ -21,7 +21,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit
 import org.apache.spark.rdd.{DataLoadPartitionCoalescer, RDD}
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.GenericRow
-import org.apache.spark.sql.common.util.QueryTest
+import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.{Partition, SerializableWritable, SparkContext, TaskContext}
 import org.scalatest.BeforeAndAfterAll
 

@@ -21,17 +21,17 @@ import java.math.RoundingMode;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.collector.ScannedResultCollector;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.executor.infos.DimensionInfo;
-import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.result.AbstractScannedResult;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnarBatch;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * It is not a collector it is just a scanned result holder.
@@ -40,11 +40,6 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AbstractScannedResultCollector.class.getName());
-
-  /**
-   * restructuring info
-   */
-  private KeyStructureInfo restructureInfos;
 
   /**
    * table block execution infos
@@ -83,34 +78,35 @@ public abstract class AbstractScannedResultCollector implements ScannedResultCol
         // if not then get the default value and use that value in aggregation
         Object defaultValue = measureInfo.getDefaultValues()[i];
         if (null != defaultValue && measureInfo.getMeasureDataTypes()[i] == DataType.DECIMAL) {
-          // convert java big decimal to spark decimal type
-          defaultValue = org.apache.spark.sql.types.Decimal.apply((BigDecimal) defaultValue);
+          // convert data type as per the computing engine
+          defaultValue = DataTypeUtil.getDataTypeConverter().convertToDecimal(defaultValue);
         }
         msrValues[i + offset] = defaultValue;
       }
     }
   }
 
-  protected Object getMeasureData(MeasureColumnDataChunk dataChunk, int index,
+  protected Object getMeasureData(ColumnPage dataChunk, int index,
       CarbonMeasure carbonMeasure) {
-    if (!dataChunk.getNullValueIndexHolder().getBitSet().get(index)) {
+    if (!dataChunk.getNullBits().get(index)) {
       switch (carbonMeasure.getDataType()) {
         case SHORT:
-          return (short)dataChunk.getColumnPage().getLong(index);
+          return (short)dataChunk.getLong(index);
         case INT:
-          return (int)dataChunk.getColumnPage().getLong(index);
+          return (int)dataChunk.getLong(index);
         case LONG:
-          return dataChunk.getColumnPage().getLong(index);
+          return dataChunk.getLong(index);
         case DECIMAL:
           BigDecimal bigDecimalMsrValue =
-              dataChunk.getColumnPage().getDecimal(index);
+              dataChunk.getDecimal(index);
           if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
             bigDecimalMsrValue =
                 bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
           }
-          return org.apache.spark.sql.types.Decimal.apply(bigDecimalMsrValue);
+          // convert data type as per the computing engine
+          return DataTypeUtil.getDataTypeConverter().convertToDecimal(bigDecimalMsrValue);
         default:
-          return dataChunk.getColumnPage().getDouble(index);
+          return dataChunk.getDouble(index);
       }
     }
     return null;

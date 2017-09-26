@@ -23,7 +23,6 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
@@ -59,6 +58,12 @@ public class StructDataType implements GenericDataType<StructObject> {
    * data counter
    */
   private int dataCounter;
+
+  private StructDataType(List<GenericDataType> children, int outputArrayIndex, int dataCounter) {
+    this.children = children;
+    this.outputArrayIndex = outputArrayIndex;
+    this.dataCounter = dataCounter;
+  }
 
   /**
    * constructor
@@ -296,5 +301,14 @@ public class StructDataType implements GenericDataType<StructObject> {
     for (int i = 0; i < children.size(); i++) {
       children.get(i).fillCardinalityAfterDataLoad(dimCardWithComplex, maxSurrogateKeyArray);
     }
+  }
+
+  @Override
+  public GenericDataType<StructObject> deepCopy() {
+    List<GenericDataType> childrenClone = new ArrayList<>();
+    for (GenericDataType child : children) {
+      childrenClone.add(child.deepCopy());
+    }
+    return new StructDataType(childrenClone, this.outputArrayIndex, this.dataCounter);
   }
 }

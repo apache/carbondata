@@ -25,16 +25,15 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.AbstractQueue;
 import java.util.PriorityQueue;
-import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.NonDictionaryUtil;
 import org.apache.carbondata.processing.sortandgroupby.exception.CarbonSortKeyAndGroupByException;
-import org.apache.carbondata.processing.util.NonDictionaryUtil;
 
-public class IntermediateFileMerger implements Callable<Void> {
+public class IntermediateFileMerger implements Runnable {
   /**
    * LOGGER
    */
@@ -101,7 +100,8 @@ public class IntermediateFileMerger implements Callable<Void> {
     noDictionarycolumnMapping = mergerParameters.getNoDictionaryDimnesionColumn();
   }
 
-  @Override public Void call() throws Exception {
+  @Override
+  public void run() {
     long intermediateMergeStartTime = System.currentTimeMillis();
     int fileConterConst = fileCounter;
     boolean isFailed = false;
@@ -148,8 +148,6 @@ public class IntermediateFileMerger implements Callable<Void> {
         }
       }
     }
-
-    return null;
   }
 
   /**
@@ -358,6 +356,8 @@ public class IntermediateFileMerger implements Callable<Void> {
               stream.writeInt(bigDecimalInBytes.length);
               stream.write(bigDecimalInBytes);
               break;
+            default:
+              throw new IllegalArgumentException("unsupported data type:" + aggType[counter]);
           }
         } else {
           stream.write((byte) 0);

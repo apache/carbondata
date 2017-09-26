@@ -61,24 +61,8 @@ public interface CarbonV3DataFormatConstants {
   short NUMBER_OF_COLUMN_TO_READ_IN_IO_MIN = 1;
 
   /**
-   * number of rows per blocklet column page
-   */
-  @CarbonProperty
-  String NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE = "number.of.rows.per.blocklet.column.page";
-
-  /**
    * number of rows per blocklet column page default value
    */
-  String NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT = "32000";
-
-  /**
-   * number of rows per blocklet column page max value
-   */
-  short NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_MAX = 32000;
-
-  /**
-   * number of rows per blocklet column page min value
-   */
-  short NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_MIN = 8000;
+  short NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT = 32000;
 
 }

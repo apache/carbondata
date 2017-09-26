@@ -74,7 +74,7 @@ public class AlluxioCarbonFile extends AbstractDFSCarbonFile {
         Path path = fileStatus.getPath();
         listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
       } else {
-        return null;
+        return new CarbonFile[0];
       }
     } catch (IOException e) {
       LOGGER.error("Exception occured: " + e.getMessage());

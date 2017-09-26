@@ -111,19 +111,16 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
   private ConnectorTableMetadata getTableMetadata(SchemaTableName schemaTableName) {
     if (!listSchemaNamesInternal().contains(schemaTableName.getSchemaName())) {
-      return null;
+      throw new SchemaNotFoundException(schemaTableName.getSchemaName());
     }
 
     CarbonTable carbonTable = carbonTableReader.getTable(schemaTableName);
-    if (carbonTable == null) {
-      return null;
-    }
 
     List<ColumnMetadata> columnsMetaList = new LinkedList<>();
     List<CarbonColumn> carbonColumns = carbonTable.getCreateOrderColumn(schemaTableName.getTableName());
     for (CarbonColumn col : carbonColumns) {
       //show columns command will return these data
-      Type columnType = CarbondataType2SpiMapper(col.getColumnSchema());
+      Type columnType = carbonDataType2SpiMapper(col.getColumnSchema());
       ColumnMetadata columnMeta = new ColumnMetadata(col.getColumnSchema().getColumnName(), columnType);
       columnsMetaList.add(columnMeta);
     }
@@ -148,20 +145,13 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
     //CarbonTable(official struct) is stored in CarbonMetadata(official struct)
     CarbonTable cb = carbonTableReader.getTable(handle.getSchemaTableName());
-    if (cb == null) {
-      throw new TableNotFoundException(handle.getSchemaTableName());
-    }
 
     ImmutableMap.Builder<String, ColumnHandle> columnHandles = ImmutableMap.builder();
     String tableName = handle.getSchemaTableName().getTableName();
     for (CarbonDimension column : cb.getDimensionByTableName(tableName)) {
       ColumnSchema cs = column.getColumnSchema();
 
-      int complex = column.getComplexTypeOrdinal();
-      column.getNumberOfChild();
-      column.getListOfChildDimensions();
-
-      Type spiType = CarbondataType2SpiMapper(cs);
+      Type spiType = carbonDataType2SpiMapper(cs);
       columnHandles.put(cs.getColumnName(),
           new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, column.getSchemaOrdinal(),
               column.getKeyOrdinal(), column.getColumnGroupOrdinal(), false, cs.getColumnGroupId(),
@@ -171,7 +161,7 @@ public class CarbondataMetadata implements ConnectorMetadata {
     for (CarbonMeasure measure : cb.getMeasureByTableName(tableName)) {
       ColumnSchema cs = measure.getColumnSchema();
 
-      Type spiType = CarbondataType2SpiMapper(cs);
+      Type spiType = carbonDataType2SpiMapper(cs);
       columnHandles.put(cs.getColumnName(),
           new CarbondataColumnHandle(connectorId, cs.getColumnName(), spiType, cs.getSchemaOrdinal(),
               measure.getOrdinal(), cs.getColumnGroupId(), true, cs.getColumnGroupId(),
@@ -229,7 +219,7 @@ public class CarbondataMetadata implements ConnectorMetadata {
     return getTableMetadata(carbondataTableHandle.getSchemaTableName());
   }
 
-  public static Type CarbondataType2SpiMapper(ColumnSchema columnSchema) {
+  public static Type carbonDataType2SpiMapper(ColumnSchema columnSchema) {
     DataType colType = columnSchema.getDataType();
     switch (colType) {
       case BOOLEAN:

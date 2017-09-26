@@ -788,9 +788,6 @@ public class SegmentUpdateStatusManager {
         CarbonUpdateUtil.getRequiredFieldFromTID(completeBlockName, TupleIdEnum.BLOCK_ID)));
     String segmentId =
         CarbonUpdateUtil.getRequiredFieldFromTID(completeBlockName, TupleIdEnum.SEGMENT_ID);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
     SegmentUpdateDetails[] listOfSegmentUpdateDetailsArray =
         readLoadMetadata();
     for (SegmentUpdateDetails block : listOfSegmentUpdateDetailsArray) {
@@ -987,10 +984,8 @@ public class SegmentUpdateStatusManager {
       }
 
       // get carbon index files of the block.
-      String taskNum = CarbonTablePath.DataFileUtil.getTaskNo(actualBlockName);
-      // String indexFileEndsWith = timestamp + CarbonTablePath.getCarbonIndexExtension();
-      if (eachFile.getName().endsWith(CarbonTablePath.getCarbonIndexExtension()) && eachFile
-          .getName().startsWith(taskNum)) {
+      String indexFileName = CarbonTablePath.getCarbonIndexFileName(actualBlockName);
+      if (eachFile.getName().equalsIgnoreCase(indexFileName)) {
         files.add(eachFile);
       }
 

@@ -17,9 +17,6 @@
 
 package org.apache.spark.sql.execution
 
-import java.text.SimpleDateFormat
-import java.util.Date
-
 import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
@@ -34,20 +31,19 @@ import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partition
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
-import org.apache.spark.sql.types.{AtomicType, DoubleType, IntegerType, StringType, TimestampType}
+import org.apache.spark.sql.types.{AtomicType, IntegerType, StringType}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampDirectDictionaryGenerator
 import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.{CarbonAliasDecoderRelation}
+import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
- * Carbon strategy for late decode (convert dictionary key to value as late as possible), which
- * can improve the aggregation performance and reduce memory usage
+ * Carbon specific optimization for late decode (convert dictionary key to value as late as
+ * possible), which can improve the aggregation performance and reduce memory usage
  */
 private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   val PUSHED_FILTERS = "PushedFilters"
@@ -62,8 +58,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           projects,
           filters,
           (a, f, needDecoder) => toCatalystRDD(l, a, relation.buildScan(
-            a.map(_.name).toArray, f), needDecoder)) ::
-            Nil
+            a.map(_.name).toArray, f), needDecoder)) :: Nil
       case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
         if ((profile.isInstanceOf[IncludeProfile] && profile.isEmpty) ||
             !CarbonDictionaryDecoder.
@@ -99,8 +94,15 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       relation.addAttribute(newAttr)
       newAttr
     }
-    new CarbonDecoderRDD(Seq(relation), IncludeProfile(attrs),
-      CarbonAliasDecoderRelation(), rdd, output, SparkSession.getActiveSession.get)
+
+    new CarbonDecoderRDD(
+      Seq(relation),
+      IncludeProfile(attrs),
+      CarbonAliasDecoderRelation(),
+      rdd,
+      output,
+      CarbonEnv.getInstance(SparkSession.getActiveSession.get).storePath,
+      table.carbonTable.getTableInfo.serialize())
   }
 
   private[this] def toCatalystRDD(
@@ -136,10 +138,15 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
   protected def pruneFilterProjectRaw(
       relation: LogicalRelation,
-      projects: Seq[NamedExpression],
+      rawProjects: Seq[NamedExpression],
       filterPredicates: Seq[Expression],
       scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter],
         ArrayBuffer[AttributeReference]) => RDD[InternalRow]) = {
+    val projects = rawProjects.map {p =>
+      p.transform {
+        case CustomDeterministicExpression(exp) => exp
+      }
+    }.asInstanceOf[Seq[NamedExpression]]
 
     val projectSet = AttributeSet(projects.flatMap(_.references))
     val filterSet = AttributeSet(filterPredicates.flatMap(_.references))
@@ -159,7 +166,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       val handledPredicates = filterPredicates.filterNot(unhandledPredicates.contains)
       val unhandledSet = AttributeSet(unhandledPredicates.flatMap(_.references))
       AttributeSet(handledPredicates.flatMap(_.references)) --
-          (projectSet ++ unhandledSet).map(relation.attributeMap)
+      (projectSet ++ unhandledSet).map(relation.attributeMap)
     }
 
     // Combines all Catalyst filter `Expression`s that are either not convertible to data source
@@ -210,12 +217,12 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       // when the columns of this projection are enough to evaluate all filter conditions,
       // just do a scan followed by a filter, with no extra project.
       val requestedColumns = projects
-          // Safe due to if above.
-          .asInstanceOf[Seq[Attribute]]
-          // Match original case of attributes.
-          .map(relation.attributeMap)
-          // Don't request columns that are only referenced by pushed filters.
-          .filterNot(handledSet.contains)
+        // Safe due to if above.
+        .asInstanceOf[Seq[Attribute]]
+        // Match original case of attributes.
+        .map(relation.attributeMap)
+        // Don't request columns that are only referenced by pushed filters.
+        .filterNot(handledSet.contains)
       val updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
 
       val updateProject = projects.map { expr =>
@@ -224,7 +231,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           val dict = map.get(attr.name)
           if (dict.isDefined && dict.get) {
             attr = AttributeReference(attr.name, IntegerType, attr.nullable, attr.metadata)(attr
-                .exprId, attr.qualifier)
+              .exprId, attr.qualifier)
           }
         }
         attr
@@ -248,11 +255,21 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             val reference = AttributeReference(name, StringType, true)().withExprId(a.exprId)
             newProjectList :+= reference
             reference
+          case a@Alias(s: ScalaUDF, name)
+            if name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_SEGMENTID) =>
+            val reference =
+              AttributeReference(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID,
+                StringType, true)().withExprId(a.exprId)
+            newProjectList :+= reference
+            a.transform {
+              case s: ScalaUDF =>
+                ScalaUDF(s.function, s.dataType, Seq(reference), s.inputTypes)
+            }
           case other => other
       }
       // Don't request columns that are only referenced by pushed filters.
       val requestedColumns =
-      (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq ++ newProjectList
+        (projectSet ++ filterSet -- handledSet).map(relation.attributeMap).toSeq ++ newProjectList
       val updateRequestedColumns = updateRequestedColumnsFunc(requestedColumns, table, needDecoder)
       val scan = getDataSourceScan(relation,
         updateRequestedColumns.asInstanceOf[Seq[Attribute]],
@@ -451,9 +468,9 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       case c@EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case Not(EqualTo(a: Attribute, Literal(v, t))) =>
-          Some(sources.Not(sources.EqualTo(a.name, v)))
+        Some(sources.Not(sources.EqualTo(a.name, v)))
       case Not(EqualTo(Literal(v, t), a: Attribute)) =>
-          Some(sources.Not(sources.EqualTo(a.name, v)))
+        Some(sources.Not(sources.EqualTo(a.name, v)))
       case c@Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) =>
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case c@Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
@@ -509,6 +526,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case StartsWith(a: Attribute, Literal(v, t)) =>
         Some(sources.StringStartsWith(a.name, v.toString))
+      case c@EndsWith(a: Attribute, Literal(v, t)) =>
+        Some(CarbonEndsWith(c))
+      case c@Contains(a: Attribute, Literal(v, t)) =>
+        Some(CarbonContainsWith(c))
       case others => None
     }
   }
@@ -524,7 +545,9 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
       }
     }
-    sqlContext.conf.wholeStageEnabled && vectorizedReader.toBoolean &&
-      cols.forall(_.dataType.isInstanceOf[AtomicType])
+    val supportCodegen =
+      sqlContext.conf.wholeStageEnabled && sqlContext.conf.wholeStageMaxNumFields >= cols.size
+    supportCodegen && vectorizedReader.toBoolean &&
+    cols.forall(_.dataType.isInstanceOf[AtomicType])
   }
 }

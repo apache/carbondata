@@ -26,6 +26,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
+import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizerBasic;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
@@ -34,7 +35,7 @@ import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.hadoop.CarbonInputFormat;
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
@@ -77,11 +78,20 @@ public class CarbonInputFormatUtil {
     return plan;
   }
 
-  public static <V> CarbonInputFormat<V> createCarbonInputFormat(AbsoluteTableIdentifier identifier,
+  public static <V> CarbonTableInputFormat<V> createCarbonInputFormat(
+      AbsoluteTableIdentifier identifier,
       Job job) throws IOException {
-    CarbonInputFormat<V> carbonInputFormat = new CarbonInputFormat<>();
+    CarbonTableInputFormat<V> carbonInputFormat = new CarbonTableInputFormat<>();
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
     return carbonInputFormat;
+  }
+
+  public static <V> CarbonTableInputFormat<V> createCarbonTableInputFormat(
+      AbsoluteTableIdentifier identifier, List<String> partitionId, Job job) throws IOException {
+    CarbonTableInputFormat<V> carbonTableInputFormat = new CarbonTableInputFormat<>();
+    carbonTableInputFormat.setPartitionIdList(job.getConfiguration(), partitionId);
+    FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
+    return carbonTableInputFormat;
   }
 
   private static void addQueryMeasure(CarbonQueryPlan plan, int order, CarbonMeasure measure) {
@@ -122,11 +132,12 @@ public class CarbonInputFormatUtil {
    * @return
    */
   public static FilterResolverIntf resolveFilter(Expression filterExpression,
-      AbsoluteTableIdentifier absoluteTableIdentifier) {
+      AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider) {
     try {
       FilterExpressionProcessor filterExpressionProcessor = new FilterExpressionProcessor();
       //get resolved filter
-      return filterExpressionProcessor.getFilterResolver(filterExpression, absoluteTableIdentifier);
+      return filterExpressionProcessor
+          .getFilterResolver(filterExpression, absoluteTableIdentifier, tableProvider);
     } catch (Exception e) {
       throw new RuntimeException("Error while resolving filter expression", e);
     }

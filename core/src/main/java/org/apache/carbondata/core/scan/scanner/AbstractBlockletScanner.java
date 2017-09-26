@@ -21,9 +21,9 @@ import java.io.IOException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
-import org.apache.carbondata.core.datastore.chunk.MeasureColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -32,16 +32,11 @@ import org.apache.carbondata.core.scan.result.impl.NonFilterQueryScannedResult;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
-import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
  * Blocklet scanner class to process the block
  */
 public abstract class AbstractBlockletScanner implements BlockletScanner {
-
-  private static final int NUMBER_OF_ROWS_PER_PAGE = Integer.parseInt(CarbonProperties.getInstance()
-      .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE,
-          CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT));
 
   /**
    * block execution info
@@ -93,14 +88,14 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     }
     scannedResult.setDimensionChunks(dimensionColumnDataChunks);
     MeasureRawColumnChunk[] measureRawColumnChunks = blocksChunkHolder.getMeasureRawDataChunk();
-    MeasureColumnDataChunk[][] measureColumnDataChunks =
-        new MeasureColumnDataChunk[measureRawColumnChunks.length][];
+    ColumnPage[][] columnPages =
+        new ColumnPage[measureRawColumnChunks.length][];
     for (int i = 0; i < measureRawColumnChunks.length; i++) {
       if (measureRawColumnChunks[i] != null) {
-        measureColumnDataChunks[i] = measureRawColumnChunks[i].convertToMeasureColDataChunks();
+        columnPages[i] = measureRawColumnChunks[i].convertToColumnPage();
       }
     }
-    scannedResult.setMeasureChunks(measureColumnDataChunks);
+    scannedResult.setMeasureChunks(columnPages);
     int[] numberOfRows = null;
     if (blockExecutionInfo.getAllSelectedDimensionBlocksIndexes().length > 0) {
       for (int i = 0; i < dimensionRawColumnChunks.length; i++) {
@@ -121,9 +116,12 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
     if (numberOfRows == null) {
       numberOfRows = new int[blocksChunkHolder.getDataBlock().numberOfPages()];
       for (int i = 0; i < numberOfRows.length; i++) {
-        numberOfRows[i] = NUMBER_OF_ROWS_PER_PAGE;
+        numberOfRows[i] =
+            CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
       }
-      int lastPageSize = blocksChunkHolder.getDataBlock().nodeSize() % NUMBER_OF_ROWS_PER_PAGE;
+      int lastPageSize = blocksChunkHolder.getDataBlock().nodeSize()
+          % CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+      ;
       if (lastPageSize > 0) {
         numberOfRows[numberOfRows.length - 1] = lastPageSize;
       }

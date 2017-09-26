@@ -61,7 +61,8 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
 
   protected lazy val startCommand: Parser[LogicalPlan] =
     createDatabase | dropDatabase | loadManagement | describeTable |
-    showLoads | alterTable | updateTable | deleteRecords | useDatabase | createTable
+      showPartitions | showLoads | alterTable | updateTable | deleteRecords | useDatabase |
+      createTable
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -416,23 +417,20 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
     }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
-    DELETE ~> SEGMENT ~> repsep(segmentId, ",") ~ (FROM ~> TABLE ~>
-                                                   (ident <~ ".").? ~ ident) <~
-    opt(";") ^^ {
-      case loadids ~ table => table match {
-        case databaseName ~ tableName =>
-          DeleteLoadsById(loadids, convertDbNameToLowerCase(databaseName), tableName.toLowerCase())
-      }
-    }
+  DELETE ~> FROM ~ TABLE ~> (ident <~ ".").? ~ ident ~
+  (WHERE ~> (SEGMENT ~ "." ~ ID) ~> IN ~> "(" ~> repsep(segmentId, ",")) <~ ")" ~ opt(";") ^^ {
+    case dbName ~ tableName ~ loadids =>
+      DeleteLoadsById(loadids, convertDbNameToLowerCase(dbName), tableName.toLowerCase())
+  }
 
   protected lazy val deleteLoadsByLoadDate: Parser[LogicalPlan] =
-    DELETE ~> SEGMENTS ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
-    (WHERE ~> (STARTTIME <~ BEFORE) ~ stringLit) <~
+    DELETE ~> FROM ~> TABLE ~> (ident <~ ".").? ~ ident ~
+    (WHERE ~> (SEGMENT ~ "." ~ STARTTIME ~> BEFORE) ~ stringLit) <~
     opt(";") ^^ {
-      case schema ~ table ~ condition =>
+      case database ~ table ~ condition =>
         condition match {
           case dateField ~ dateValue =>
-            DeleteLoadsByLoadDate(convertDbNameToLowerCase(schema),
+            DeleteLoadsByLoadDate(convertDbNameToLowerCase(database),
               table.toLowerCase(),
               dateField,
               dateValue)
@@ -486,6 +484,13 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             (sel, updateRelation(tab, tab.tableIdentifier, tab.alias))
           }
         UpdateTable(relation, columns, selectStmt, where)
+    }
+  protected lazy val showPartitions: Parser[LogicalPlan] =
+    (SHOW ~> PARTITIONS ~> table) <~ opt(";") ^^ {
+      case table =>
+        val tableName = getTableName(table.tableIdentifier)
+        val alias = table.alias.getOrElse("")
+        ShowPartitions(table.tableIdentifier)
     }
 
   private def splitQuery(query: String): (String, String) = {

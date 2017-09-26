@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.datastore.GenericDataType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
@@ -39,6 +38,8 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.processing.datamap.DataMapWriterListener;
+import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.model.CarbonLoadModel;
 import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
@@ -77,7 +78,7 @@ public class CarbonFactDataHandlerModel {
   /**
    * local store location
    */
-  private String storeLocation;
+  private String[] storeLocation;
   /**
    * flag to check whether use inverted index
    */
@@ -159,11 +160,13 @@ public class CarbonFactDataHandlerModel {
 
   private SortScopeOptions.SortScope sortScope;
 
+  private DataMapWriterListener dataMapWriterlistener;
+
   /**
    * Create the model using @{@link CarbonDataLoadConfiguration}
    */
   public static CarbonFactDataHandlerModel createCarbonFactDataHandlerModel(
-      CarbonDataLoadConfiguration configuration, String storeLocation, int bucketId,
+      CarbonDataLoadConfiguration configuration, String[] storeLocation, int bucketId,
       int taskExtension) {
     CarbonTableIdentifier identifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
@@ -254,6 +257,11 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.taskExtension = taskExtension;
     carbonFactDataHandlerModel.tableSpec = configuration.getTableSpec();
     carbonFactDataHandlerModel.sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
+
+    DataMapWriterListener listener = new DataMapWriterListener();
+    listener.registerAllWriter(configuration.getTableIdentifier(), configuration.getSegmentId());
+    carbonFactDataHandlerModel.dataMapWriterlistener = listener;
+
     return carbonFactDataHandlerModel;
   }
 
@@ -265,7 +273,7 @@ public class CarbonFactDataHandlerModel {
    */
   public static CarbonFactDataHandlerModel getCarbonFactDataHandlerModel(CarbonLoadModel loadModel,
       CarbonTable carbonTable, SegmentProperties segmentProperties, String tableName,
-      String tempStoreLocation) {
+      String[] tempStoreLocation) {
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = new CarbonFactDataHandlerModel();
     carbonFactDataHandlerModel.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     carbonFactDataHandlerModel.setDatabaseName(loadModel.getDatabaseName());
@@ -375,11 +383,11 @@ public class CarbonFactDataHandlerModel {
     this.measureCount = measureCount;
   }
 
-  public String getStoreLocation() {
+  public String[] getStoreLocation() {
     return storeLocation;
   }
 
-  public void setStoreLocation(String storeLocation) {
+  public void setStoreLocation(String[] storeLocation) {
     this.storeLocation = storeLocation;
   }
 
@@ -496,6 +504,8 @@ public class CarbonFactDataHandlerModel {
     return bucketId;
   }
 
+  public void setBucketId(Integer bucketId) { this.bucketId = bucketId; }
+
   public long getSchemaUpdatedTimeStamp() {
     return schemaUpdatedTimeStamp;
   }
@@ -556,6 +566,10 @@ public class CarbonFactDataHandlerModel {
 
   public SortScopeOptions.SortScope getSortScope() {
     return sortScope;
+  }
+
+  public DataMapWriterListener getDataMapWriterlistener() {
+    return dataMapWriterlistener;
   }
 }
 

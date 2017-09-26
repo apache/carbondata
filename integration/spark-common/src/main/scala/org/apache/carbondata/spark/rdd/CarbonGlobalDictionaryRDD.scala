@@ -24,7 +24,7 @@ import java.util.regex.Pattern
 
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
-import scala.util.control.Breaks.{break, breakable}
+import scala.util.control.Breaks.breakable
 
 import au.com.bytecode.opencsv.CSVReader
 import com.univocity.parsers.common.TextParsingException
@@ -35,15 +35,17 @@ import org.apache.spark.sql.Row
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.Dictionary
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.service.{CarbonCommonFactory, PathService}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
-import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.processing.newflow.exception.NoRetryException
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, GlobalDictionaryUtil}
@@ -83,7 +85,12 @@ case class PrimitiveParser(dimension: CarbonDimension,
 
   def parseString(input: String): Unit = {
     if (hasDictEncoding && input != null) {
-      set.add(input)
+      if (set.size < CarbonLoadOptionConstants.MAX_EXTERNAL_DICTIONARY_SIZE) {
+        set.add(input)
+      } else {
+        throw new NoRetryException(s"Cannot provide more than ${
+          CarbonLoadOptionConstants.MAX_EXTERNAL_DICTIONARY_SIZE } dictionary values")
+      }
     }
   }
 }
@@ -153,8 +160,6 @@ case class DictionaryLoadModel(table: CarbonTableIdentifier,
     isComplexes: Array[Boolean],
     primDimensions: Array[CarbonDimension],
     delimiters: Array[String],
-    highCardIdentifyEnable: Boolean,
-    highCardThreshold: Int,
     columnIdentifier: Array[ColumnIdentifier],
     isFirstLoad: Boolean,
     hdfsTempLocation: String,
@@ -329,24 +334,30 @@ class CarbonBlockDistinctValuesCombineRDD(
 class CarbonGlobalDictionaryGenerateRDD(
     prev: RDD[(Int, ColumnDistinctValues)],
     model: DictionaryLoadModel)
-  extends CarbonRDD[(Int, String, Boolean)](prev) {
+  extends CarbonRDD[(Int, String)](prev) {
 
   override def getPartitions: Array[Partition] = firstParent[(Int, ColumnDistinctValues)].partitions
 
   override def internalCompute(split: Partition,
-      context: TaskContext): Iterator[(Int, String, Boolean)] = {
+      context: TaskContext): Iterator[(Int, String)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
       model.hdfsLocation)
-    val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-    var isHighCardinalityColumn = false
-    val iter = new Iterator[(Int, String, Boolean)] {
+    var status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+    val iter = new Iterator[(Int, String)] {
       var dictionaryForDistinctValueLookUp: Dictionary = _
       var dictionaryForSortIndexWriting: Dictionary = _
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
+      val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
+          DictionaryColumnUniqueIdentifier(
+        model.table,
+        model.columnIdentifier(split.index),
+        model.columnIdentifier(split.index).getDataType,
+        CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
       val pathService: PathService = CarbonCommonFactory.getPathService
       val carbonTablePath: CarbonTablePath =
-        pathService.getCarbonTablePath(model.hdfsLocation, model.table)
+        pathService
+          .getCarbonTablePath(model.hdfsLocation, model.table, dictionaryColumnUniqueIdentifier)
       if (StringUtils.isNotBlank(model.hdfsTempLocation)) {
         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
           model.hdfsTempLocation)
@@ -375,91 +386,74 @@ class CarbonGlobalDictionaryGenerateRDD(
             val distinctValueList = rddIter.next()._2
             valuesBuffer ++= distinctValueList.values
             rowCount += distinctValueList.rowCount
-            // check high cardinality
-            if (model.isFirstLoad && model.highCardIdentifyEnable
-                && !model.isComplexes(split.index)
-                && model.primDimensions(split.index).isColumnar) {
-              isHighCardinalityColumn = GlobalDictionaryUtil.isHighCardinalityColumn(
-                valuesBuffer.size, model)
-              if (isHighCardinalityColumn) {
-                break
-              }
-            }
           }
         }
         val combineListTime = System.currentTimeMillis() - t1
-        if (isHighCardinalityColumn) {
-          LOGGER.info(s"column ${ model.table.getTableUniqueName }." +
-                      s"${
-                        model.primDimensions(split.index)
-                          .getColName
-                      } is high cardinality column")
+        isDictionaryLocked = dictLock.lockWithRetries()
+        if (isDictionaryLocked) {
+          logInfo(s"Successfully able to get the dictionary lock for ${
+            model.primDimensions(split.index).getColName
+          }")
         } else {
-          isDictionaryLocked = dictLock.lockWithRetries()
-          if (isDictionaryLocked) {
-            logInfo(s"Successfully able to get the dictionary lock for ${
+          sys.error(s"Dictionary file ${
               model.primDimensions(split.index).getColName
-            }")
-          } else {
-            sys
-              .error(s"Dictionary file ${
-                model.primDimensions(split.index).getColName
-              } is locked for updation. Please try after some time")
-          }
-          val t2 = System.currentTimeMillis
-          val fileType = FileFactory.getFileType(model.dictFilePaths(split.index))
-          model.dictFileExists(split.index) = FileFactory
-            .isFileExist(model.dictFilePaths(split.index), fileType)
-          dictionaryForDistinctValueLookUp = if (model.dictFileExists(split.index)) {
-            CarbonLoaderUtil.getDictionary(model.table,
-              model.columnIdentifier(split.index),
-              model.hdfsLocation,
-              model.primDimensions(split.index).getDataType
-            )
-          } else {
-            null
-          }
-          val dictCacheTime = System.currentTimeMillis - t2
-          val t3 = System.currentTimeMillis()
-          val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
-            dictionaryForDistinctValueLookUp,
-            model.table,
+          } is locked for updation. Please try after some time")
+        }
+        val t2 = System.currentTimeMillis
+        val fileType = FileFactory.getFileType(model.dictFilePaths(split.index))
+        val isDictFileExists = FileFactory.isFileExist(model.dictFilePaths(split.index), fileType)
+        dictionaryForDistinctValueLookUp = if (isDictFileExists) {
+          CarbonLoaderUtil.getDictionary(model.table,
             model.columnIdentifier(split.index),
             model.hdfsLocation,
-            model.primDimensions(split.index).getColumnSchema,
-            model.dictFileExists(split.index)
+            model.primDimensions(split.index).getDataType
           )
-          // execute dictionary writer task to get distinct values
-          val distinctValues = dictWriteTask.execute()
-          val dictWriteTime = System.currentTimeMillis() - t3
-          val t4 = System.currentTimeMillis()
-          // if new data came than rewrite sort index file
-          if (distinctValues.size() > 0) {
-            val sortIndexWriteTask = new SortIndexWriterTask(model.table,
-              model.columnIdentifier(split.index),
-              model.primDimensions(split.index).getDataType,
-              model.hdfsLocation,
-              dictionaryForDistinctValueLookUp,
-              distinctValues)
-            sortIndexWriteTask.execute()
-          }
-          val sortIndexWriteTime = System.currentTimeMillis() - t4
-          CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordDicShuffleAndWriteTime()
-          // After sortIndex writing, update dictionaryMeta
-          dictWriteTask.updateMetaData()
-          // clear the value buffer after writing dictionary data
-          valuesBuffer.clear
-          CarbonUtil.clearDictionaryCache(dictionaryForDistinctValueLookUp)
-          dictionaryForDistinctValueLookUpCleared = true
-          LOGGER.info(s"\n columnName: ${ model.primDimensions(split.index).getColName }" +
-                      s"\n columnId: ${ model.primDimensions(split.index).getColumnId }" +
-                      s"\n new distinct values count: ${ distinctValues.size() }" +
-                      s"\n combine lists: $combineListTime" +
-                      s"\n create dictionary cache: $dictCacheTime" +
-                      s"\n sort list, distinct and write: $dictWriteTime" +
-                      s"\n write sort info: $sortIndexWriteTime")
+        } else {
+          null
         }
+        val dictCacheTime = System.currentTimeMillis - t2
+        val t3 = System.currentTimeMillis()
+        val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
+          dictionaryForDistinctValueLookUp,
+          model.table,
+          dictionaryColumnUniqueIdentifier,
+          model.hdfsLocation,
+          model.primDimensions(split.index).getColumnSchema,
+          isDictFileExists
+        )
+        // execute dictionary writer task to get distinct values
+        val distinctValues = dictWriteTask.execute()
+        val dictWriteTime = System.currentTimeMillis() - t3
+        val t4 = System.currentTimeMillis()
+        // if new data came than rewrite sort index file
+        if (distinctValues.size() > 0) {
+          val sortIndexWriteTask = new SortIndexWriterTask(model.table,
+            dictionaryColumnUniqueIdentifier,
+            model.primDimensions(split.index).getDataType,
+            model.hdfsLocation,
+            dictionaryForDistinctValueLookUp,
+            distinctValues)
+          sortIndexWriteTask.execute()
+        }
+        val sortIndexWriteTime = System.currentTimeMillis() - t4
+        CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordDicShuffleAndWriteTime()
+        // After sortIndex writing, update dictionaryMeta
+        dictWriteTask.updateMetaData()
+        // clear the value buffer after writing dictionary data
+        valuesBuffer.clear
+        CarbonUtil.clearDictionaryCache(dictionaryForDistinctValueLookUp)
+        dictionaryForDistinctValueLookUpCleared = true
+        LOGGER.info(s"\n columnName: ${ model.primDimensions(split.index).getColName }" +
+                    s"\n columnId: ${ model.primDimensions(split.index).getColumnId }" +
+                    s"\n new distinct values count: ${ distinctValues.size() }" +
+                    s"\n combine lists: $combineListTime" +
+                    s"\n create dictionary cache: $dictCacheTime" +
+                    s"\n sort list, distinct and write: $dictWriteTime" +
+                    s"\n write sort info: $sortIndexWriteTime")
       } catch {
+        case dictionaryException: NoRetryException =>
+          LOGGER.error(dictionaryException)
+          status = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
         case ex: Exception =>
           LOGGER.error(ex)
           throw ex
@@ -492,8 +486,8 @@ class CarbonGlobalDictionaryGenerateRDD(
         }
       }
 
-      override def next(): (Int, String, Boolean) = {
-        (split.index, status, isHighCardinalityColumn)
+      override def next(): (Int, String) = {
+        (split.index, status)
       }
     }
 

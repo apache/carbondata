@@ -22,11 +22,14 @@ import java.io.Serializable;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * dictionary column identifier which includes table identifier and column identifier
  */
 public class DictionaryColumnUniqueIdentifier implements Serializable {
+
+  private static final long serialVersionUID = -1231234567L;
 
   /**
    * table fully qualified name
@@ -37,6 +40,8 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    * unique column id
    */
   private ColumnIdentifier columnIdentifier;
+
+  private transient CarbonTablePath carbonTablePath;
 
   private DataType dataType;
 
@@ -69,9 +74,12 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    * @param dataType
    */
   public DictionaryColumnUniqueIdentifier(CarbonTableIdentifier carbonTableIdentifier,
-      ColumnIdentifier columnIdentifier, DataType dataType) {
+      ColumnIdentifier columnIdentifier, DataType dataType, CarbonTablePath carbonTablePath) {
     this(carbonTableIdentifier, columnIdentifier);
     this.dataType = dataType;
+    if (null != carbonTablePath) {
+      this.carbonTablePath = carbonTablePath;
+    }
   }
 
   public DataType getDataType() {
@@ -83,6 +91,10 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    */
   public CarbonTableIdentifier getCarbonTableIdentifier() {
     return carbonTableIdentifier;
+  }
+
+  public CarbonTablePath getCarbonTablePath() {
+    return carbonTablePath;
   }
 
   /**

@@ -23,8 +23,8 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor.projectPath
+import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -37,7 +37,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_globalsort(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
   }
 
@@ -65,18 +65,28 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql("DROP TABLE IF EXISTS carbon_localsort_update")
     sql("DROP TABLE IF EXISTS carbon_localsort_difftypes")
     sql("DROP TABLE IF EXISTS carbon_globalsort")
+    sql("DROP TABLE IF EXISTS carbon_globalsort1")
+    sql("DROP TABLE IF EXISTS carbon_globalsort2")
     sql("DROP TABLE IF EXISTS carbon_globalsort_partitioned")
     sql("DROP TABLE IF EXISTS carbon_globalsort_difftypes")
   }
 
   // ----------------------------------- Compare Result -----------------------------------
   test("Make sure the result is right and sorted in global level") {
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      "OPTIONS('SORT_SCOPE'='GLOBAL_SORT', 'GLOBAL_SORT_PARTITIONS'='1')")
+    sql("DROP TABLE IF EXISTS carbon_globalsort1")
+    sql(
+      """
+        | CREATE TABLE carbon_globalsort1(id INT, name STRING, city STRING, age INT)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
+      """.stripMargin)
 
-    assert(getIndexFileCount("carbon_globalsort") === 1)
-    checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
-    checkAnswer(sql("SELECT * FROM carbon_globalsort"),
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort1 " +
+      "OPTIONS('GLOBAL_SORT_PARTITIONS'='1')")
+
+    assert(getIndexFileCount("carbon_globalsort1") === 1)
+    checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort1"), Seq(Row(12)))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort1"),
       sql("SELECT * FROM carbon_localsort_once ORDER BY name"))
   }
 
@@ -84,13 +94,13 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   test("Test GLOBAL_SORT with BAD_RECORDS_ACTION = 'FAIL'") {
     intercept[Exception] {
       sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-        "OPTIONS('SORT_SCOPE'='GLOBAL_SORT', 'BAD_RECORDS_ACTION'='FAIL')")
+        "OPTIONS('BAD_RECORDS_ACTION'='FAIL')")
     }
   }
 
   test("Test GLOBAL_SORT with BAD_RECORDS_ACTION = 'REDIRECT'") {
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      "OPTIONS('SORT_SCOPE'='GLOBAL_SORT', 'BAD_RECORDS_ACTION'='REDIRECT')")
+      "OPTIONS('BAD_RECORDS_ACTION'='REDIRECT')")
 
     assert(getIndexFileCount("carbon_globalsort") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
@@ -98,9 +108,9 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
   // ----------------------------------- Single Pass -----------------------------------
   // Waiting for merge [CARBONDATA-1145]
-  ignore("Test GLOBAL_SORT with SINGLE_PASS") {
+  test("Test GLOBAL_SORT with SINGLE_PASS") {
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      "OPTIONS('SORT_SCOPE'='GLOBAL_SORT', 'SINGLE_PASS'='TRUE')")
+      "OPTIONS('SINGLE_PASS'='TRUE')")
 
     assert(getIndexFileCount("carbon_globalsort") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
@@ -116,24 +126,23 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
         | CREATE TABLE carbon_globalsort_partitioned(name STRING, city STRING, age INT)
         | PARTITIONED BY (id INT)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='3')
+        | TBLPROPERTIES('PARTITION_TYPE'='HASH','NUM_PARTITIONS'='3', 'SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
 
     intercept[MalformedCarbonCommandException] {
-      sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_partitioned " +
-        "OPTIONS('SORT_SCOPE'='GLOBAL_SORT')")
+      sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort_partitioned")
     }
   }
 
   test("Number of partitions should be greater than 0") {
     intercept[MalformedCarbonCommandException] {
       sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-        "OPTIONS('SORT_SCOPE'='GLOBAL_SORT', 'GLOBAL_SORT_PARTITIONS'='0')")
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='0')")
     }
 
     intercept[MalformedCarbonCommandException] {
       sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-        "OPTIONS('SORT_SCOPE'='GLOBAL_SORT', 'GLOBAL_SORT_PARTITIONS'='a')")
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='a')")
     }
   }
 
@@ -143,15 +152,13 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_localsort_twice(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_twice")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_twice")
 
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      s"OPTIONS('SORT_SCOPE'='GLOBAL_SORT')")
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      s"OPTIONS('SORT_SCOPE'='GLOBAL_SORT')")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
     sql("ALTER TABLE carbon_globalsort COMPACT 'MAJOR'")
 
     assert(getIndexFileCount("carbon_globalsort") === 3)
@@ -160,38 +167,13 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
       sql("SELECT * FROM carbon_localsort_twice ORDER BY name"))
   }
 
-  test("Compaction GLOBAL_SORT + LOCAL_SORT + BATCH_SORT") {
-    sql("DROP TABLE IF EXISTS carbon_localsort_triple")
-    sql(
-      """
-        | CREATE TABLE carbon_localsort_triple(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_triple")
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_triple")
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_triple")
-
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      s"OPTIONS('SORT_SCOPE'='GLOBAL_SORT')")
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      s"OPTIONS('SORT_SCOPE'='LOCAL_SORT')")
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      s"OPTIONS('SORT_SCOPE'='BATCH_SORT', 'BATCH_SORT_SIZE_INMB'='1')")
-    sql("ALTER TABLE carbon_globalsort COMPACT 'MAJOR'")
-
-    assert(getIndexFileCount("carbon_globalsort") === 3)
-    checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(36)))
-    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
-      sql("SELECT * FROM carbon_localsort_triple ORDER BY name"))
-  }
-
   // ----------------------------------- Check Configurations -----------------------------------
   // Waiting for merge SET feature[CARBONDATA-1065]
   ignore("DDL > SET") {
     sql(s"SET ${CarbonCommonConstants.LOAD_SORT_SCOPE} = LOCAL_SORT")
     sql(s"SET ${CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS} = 5")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      "OPTIONS('SORT_SCOPE'='GLOBAL_SORT', 'GLOBAL_SORT_PARTITIONS'='2')")
+      "OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
 
     assert(getIndexFileCount("carbon_globalsort") === 2)
   }
@@ -200,7 +182,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, "LOCAL_SORT")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS, "5")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      "OPTIONS('SORT_SCOPE'='GLOBAL_SORT', 'GLOBAL_SORT_PARTITIONS'='2')")
+        "OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
 
     assert(getIndexFileCount("carbon_globalsort") === 2)
   }
@@ -230,13 +212,12 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_localsort_delete(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_delete")
     sql("DELETE FROM carbon_localsort_delete WHERE id = 1").show
 
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      "OPTIONS('SORT_SCOPE'='GLOBAL_SORT')")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
     sql("DELETE FROM carbon_globalsort WHERE id = 1").show
 
     assert(getIndexFileCount("carbon_globalsort") === 3)
@@ -250,13 +231,12 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(
       """
         | CREATE TABLE carbon_localsort_update(id INT, name STRING, city STRING, age INT)
-        | STORED BY 'org.apache.carbondata.format'
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_update")
     sql("UPDATE carbon_localsort_update SET (name) = ('bb') WHERE id = 2").show
 
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
-      "OPTIONS('SORT_SCOPE'='GLOBAL_SORT')")
+    sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
     sql("UPDATE carbon_globalsort SET (name) = ('bb') WHERE id = 2").show
 
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
@@ -318,12 +298,12 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
          | charField CHAR(5),
          | floatField FLOAT
          | )
-         | STORED BY 'org.apache.carbondata.format'
+         | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
     sql(
       s"""
          | LOAD DATA LOCAL INPATH '$path' INTO TABLE carbon_globalsort_difftypes
-         | OPTIONS('SORT_SCOPE'='GLOBAL_SORT',
+         | OPTIONS(
          | 'FILEHEADER'='shortField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField')
        """.stripMargin)
 

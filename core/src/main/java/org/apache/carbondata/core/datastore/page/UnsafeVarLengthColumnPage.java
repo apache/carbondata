@@ -19,38 +19,25 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
-import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.DataTypeUtil;
 
-// This extension uses unsafe memory to store page data, for variable length data type (string,
-// decimal)
+/**
+ * This extension uses unsafe memory to store page data, for variable length data type (string)
+ */
 public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
-  // memory allocated by Unsafe
-  private MemoryBlock memoryBlock;
-
-  // base address of memoryBlock
-  private Object baseAddress;
-
-  // base offset of memoryBlock
-  private long baseOffset;
-
-  // size of the allocated memory, in bytes
-  private int capacity;
-
-  // default size for each row, grows as needed
-  private static final int DEFAULT_ROW_SIZE = 8;
-
-  private static final double FACTOR = 1.25;
-
-  UnsafeVarLengthColumnPage(DataType dataType, int pageSize) throws MemoryException {
-    super(dataType, pageSize);
+  /**
+   * create a page
+   */
+  UnsafeVarLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize)
+      throws MemoryException {
+    super(columnSpec, dataType, pageSize);
     capacity = (int) (pageSize * DEFAULT_ROW_SIZE * FACTOR);
-    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry((long)(capacity));
+    memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
     baseAddress = memoryBlock.getBaseObject();
     baseOffset = memoryBlock.getBaseOffset();
   }
@@ -58,52 +45,55 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
   @Override
   public void freeMemory() {
     if (memoryBlock != null) {
-      UnsafeMemoryManager.INSTANCE.freeMemory(memoryBlock);
+      UnsafeMemoryManager.INSTANCE.freeMemory(taskId, memoryBlock);
       memoryBlock = null;
       baseAddress = null;
       baseOffset = 0;
     }
   }
 
-  private void ensureMemory(int requestSize) throws MemoryException {
-    if (totalLength + requestSize > capacity) {
-      int newSize = 2 * capacity;
-      MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(newSize);
-      CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset,
-          newBlock.getBaseObject(), newBlock.getBaseOffset(), capacity);
-      UnsafeMemoryManager.INSTANCE.freeMemory(memoryBlock);
-      memoryBlock = newBlock;
-      baseAddress = newBlock.getBaseObject();
-      baseOffset = newBlock.getBaseOffset();
-      capacity = newSize;
-    }
-  }
-
   @Override
   public void putBytesAtRow(int rowId, byte[] bytes) {
-    try {
-      ensureMemory(bytes.length);
-    } catch (MemoryException e) {
-      throw new RuntimeException(e);
-    }
-    CarbonUnsafe.unsafe.copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET,
-        baseAddress, baseOffset + rowOffset[rowId], bytes.length);
+    putBytes(rowId, bytes, 0, bytes.length);
   }
 
   @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
-    CarbonUnsafe.unsafe.copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET + offset,
+    try {
+      ensureMemory(length);
+    } catch (MemoryException e) {
+      throw new RuntimeException(e);
+    }
+    CarbonUnsafe.getUnsafe().copyMemory(bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET + offset,
         baseAddress, baseOffset + rowOffset[rowId], length);
   }
 
   @Override
+  public void setByteArrayPage(byte[][] byteArray) {
+    if (totalLength != 0) {
+      throw new IllegalStateException("page is not empty");
+    }
+    for (int i = 0; i < byteArray.length; i++) {
+      putBytes(i, byteArray[i]);
+    }
+  }
+
+  @Override public void putDecimal(int rowId, BigDecimal decimal) {
+
+  }
+
+  @Override
   public BigDecimal getDecimal(int rowId) {
+    throw new UnsupportedOperationException("invalid data type: " + dataType);
+  }
+
+  @Override
+  public byte[] getBytes(int rowId) {
     int length = rowOffset[rowId + 1] - rowOffset[rowId];
     byte[] bytes = new byte[length];
-    CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
         bytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
-
-    return DataTypeUtil.byteToBigDecimal(bytes);
+    return bytes;
   }
 
   @Override
@@ -112,7 +102,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
     for (int rowId = 0; rowId < pageSize; rowId++) {
       int length = rowOffset[rowId + 1] - rowOffset[rowId];
       byte[] rowData = new byte[length];
-      CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+      CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
           rowData, CarbonUnsafe.BYTE_ARRAY_OFFSET, length);
       bytes[rowId] = rowData;
     }
@@ -121,7 +111,7 @@ public class UnsafeVarLengthColumnPage extends VarLengthColumnPageBase {
 
   @Override
   void copyBytes(int rowId, byte[] dest, int destOffset, int length) {
-    CarbonUnsafe.unsafe.copyMemory(baseAddress, baseOffset + rowOffset[rowId],
+    CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset + rowOffset[rowId],
         dest, CarbonUnsafe.BYTE_ARRAY_OFFSET + destOffset, length);
   }
 
