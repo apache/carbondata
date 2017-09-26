@@ -87,7 +87,9 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
         if (first) {
           first = false;
           localConverter = converters.get(0).createCopyForNewThread();
-          converters.add(localConverter);
+          synchronized (converters) {
+            converters.add(localConverter);
+          }
         }
         return childIter.hasNext();
       }
@@ -185,7 +187,9 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
       super.close();
       if (converters != null) {
         for (RowConverter converter : converters) {
-          converter.finish();
+          if (null != converter) {
+            converter.finish();
+          }
         }
       }
     }
