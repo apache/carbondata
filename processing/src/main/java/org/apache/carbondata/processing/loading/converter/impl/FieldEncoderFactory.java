@@ -119,7 +119,7 @@ public class FieldEncoderFactory {
       } else if (dataField.getColumn().isComplex()) {
         return new ComplexFieldConverterImpl(
             createComplexType(dataField, cache, absoluteTableIdentifier,
-                client, useOnePass, localCache), index);
+                client, useOnePass, localCache), index, isEmptyBadRecord);
       } else {
         return new NonDictionaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
       }

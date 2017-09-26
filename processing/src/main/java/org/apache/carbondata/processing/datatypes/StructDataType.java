@@ -130,6 +130,10 @@ public class StructDataType implements GenericDataType<StructObject> {
     }
   }
 
+  public List<GenericDataType> getChildren() {
+    return children;
+  }
+
   /*
    * get surrogate index
    */

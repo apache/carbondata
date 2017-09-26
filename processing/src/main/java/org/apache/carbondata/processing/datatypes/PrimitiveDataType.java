@@ -168,6 +168,11 @@ public class PrimitiveDataType implements GenericDataType<Object> {
 
   }
 
+  @Override
+  public List<GenericDataType> getChildren() {
+    return new ArrayList<>();
+  }
+
   /*
    * get column name
    */
@@ -199,7 +204,6 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   public void getAllPrimitiveChildren(List<GenericDataType> primitiveChild) {
 
   }
-
   /*
    * get surrogate index
    */
@@ -214,6 +218,10 @@ public class PrimitiveDataType implements GenericDataType<Object> {
   @Override
   public void setSurrogateIndex(int surrIndex) {
     index = surrIndex;
+  }
+
+  public CarbonDimension getCarbonDimension() {
+    return carbonDimension;
   }
 
   @Override public void writeByteArray(Object input, DataOutputStream dataOutputStream)

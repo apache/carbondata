@@ -49,6 +49,12 @@ public interface GenericDataType<T> {
   void addChildren(GenericDataType children);
 
   /**
+   *
+   * @return returns all children field of parent complex type
+   */
+  public List<GenericDataType> getChildren();
+
+  /**
    * @param primitiveChild - Returns all primitive type columns in complex type
    */
   void getAllPrimitiveChildren(List<GenericDataType> primitiveChild);
