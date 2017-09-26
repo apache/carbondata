@@ -14,13 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.spark.sql.execution.command
+package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
+import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.command.management.{AlterTableCompactionCommand, CarbonShowLoadsCommand, LoadTableByInsertCommand, LoadTableCommand}
+import org.apache.spark.sql.execution.command.partition.ShowCarbonPartitionsCommand
+import org.apache.spark.sql.execution.command.schema.{AlterTableAddColumnCommand, AlterTableDataTypeChangeCommand, AlterTableDropColumnCommand, AlterTableRenameTableCommand}
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 
 import org.apache.carbondata.core.util.CarbonUtil
@@ -36,8 +40,14 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case LoadDataCommand(identifier, path, isLocal, isOverwrite, partition)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(identifier)(sparkSession) =>
-        ExecutedCommandExec(LoadTable(identifier.database, identifier.table.toLowerCase, path,
-          Seq(), Map(), isOverwrite)) :: Nil
+        ExecutedCommandExec(
+          LoadTableCommand(
+            identifier.database,
+            identifier.table.toLowerCase,
+            path,
+            Seq(),
+            Map(),
+            isOverwrite)) :: Nil
       case alter@AlterTableRenameCommand(oldTableIdentifier, newTableIdentifier, _) =>
         val dbOption = oldTableIdentifier.database.map(_.toLowerCase)
         val tableIdentifier = TableIdentifier(oldTableIdentifier.table.toLowerCase(), dbOption)
@@ -46,7 +56,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             sparkSession)
         if (isCarbonTable) {
           val renameModel = AlterTableRenameModel(tableIdentifier, newTableIdentifier)
-          ExecutedCommandExec(AlterTableRenameTable(renameModel)) :: Nil
+          ExecutedCommandExec(AlterTableRenameTableCommand(renameModel)) :: Nil
         } else {
           ExecutedCommandExec(alter) :: Nil
         }
@@ -57,16 +67,21 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           CarbonDropTableCommand(ifNotExists, identifier.database,
             identifier.table.toLowerCase)) :: Nil
       case ShowLoadsCommand(databaseName, table, limit) =>
-        ExecutedCommandExec(ShowLoads(databaseName, table.toLowerCase, limit, plan.output)) :: Nil
+        ExecutedCommandExec(
+          CarbonShowLoadsCommand(
+            databaseName,
+            table.toLowerCase,
+            limit,
+            plan.output)) :: Nil
       case InsertIntoCarbonTable(relation: CarbonDatasourceHadoopRelation,
       _, child: LogicalPlan, overwrite, _) =>
-        ExecutedCommandExec(LoadTableByInsert(relation, child, overwrite.enabled)) :: Nil
+        ExecutedCommandExec(LoadTableByInsertCommand(relation, child, overwrite.enabled)) :: Nil
       case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
         CarbonUtil.createDatabaseDirectory(dbName, CarbonEnv.getInstance(sparkSession).storePath)
         ExecutedCommandExec(createDb) :: Nil
       case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>
         ExecutedCommandExec(CarbonDropDatabaseCommand(drop)) :: Nil
-      case alterTable@AlterTableCompaction(altertablemodel) =>
+      case alterTable@AlterTableCompactionCommand(altertablemodel) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(TableIdentifier(altertablemodel.tableName,
             altertablemodel.dbName))(sparkSession)
@@ -82,7 +97,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           throw new MalformedCarbonCommandException(
             "Operation not allowed : " + altertablemodel.alterSql)
         }
-      case dataTypeChange@AlterTableDataTypeChange(alterTableChangeDataTypeModel) =>
+      case dataTypeChange@AlterTableDataTypeChangeCommand(alterTableChangeDataTypeModel) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(TableIdentifier(alterTableChangeDataTypeModel.tableName,
             alterTableChangeDataTypeModel.databaseName))(sparkSession)
@@ -91,7 +106,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         } else {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
-      case addColumn@AlterTableAddColumns(alterTableAddColumnsModel) =>
+      case addColumn@AlterTableAddColumnCommand(alterTableAddColumnsModel) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(TableIdentifier(alterTableAddColumnsModel.tableName,
             alterTableAddColumnsModel.databaseName))(sparkSession)
@@ -100,7 +115,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         } else {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
-      case dropColumn@AlterTableDropColumns(alterTableDropColumnModel) =>
+      case dropColumn@AlterTableDropColumnCommand(alterTableDropColumnModel) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(TableIdentifier(alterTableDropColumnModel.tableName,
             alterTableDropColumnModel.databaseName))(sparkSession)
@@ -115,7 +130,11 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         val resolvedTable =
           sparkSession.sessionState.executePlan(UnresolvedRelation(identifier, None)).analyzed
         val resultPlan = sparkSession.sessionState.executePlan(resolvedTable).executedPlan
-        ExecutedCommandExec(DescribeCommandFormatted(resultPlan, plan.output, identifier)) :: Nil
+        ExecutedCommandExec(
+          CarbonDescribeFormattedCommand(
+            resultPlan,
+            plan.output,
+            identifier)) :: Nil
       case ShowPartitionsCommand(t, cols) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(t)(sparkSession)
