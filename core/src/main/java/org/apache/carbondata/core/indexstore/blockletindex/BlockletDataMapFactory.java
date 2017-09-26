@@ -54,9 +54,13 @@ public class BlockletDataMapFactory implements DataMapFactory {
 
   private Cache<TableBlockIndexUniqueIdentifier, DataMap> cache;
 
+  private Map<String, String> options;
+
   @Override
-  public void init(AbsoluteTableIdentifier identifier, String dataMapName) {
+  public void init(AbsoluteTableIdentifier identifier, String dataMapName,
+      Map<String, String> options) {
     this.identifier = identifier;
+    this.options = options;
     cache = CacheProvider.getInstance()
         .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP, identifier.getStorePath());
   }
@@ -67,23 +71,24 @@ public class BlockletDataMapFactory implements DataMapFactory {
   }
 
   @Override
-  public List<DataMap> getDataMaps(String segmentId) throws IOException {
+  public List<DataMap> getDataMaps(String segmentId, List<String> segmentPaths) throws IOException {
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         segmentMap.get(segmentId);
     if (tableBlockIndexUniqueIdentifiers == null) {
       tableBlockIndexUniqueIdentifiers = new ArrayList<>();
-      CarbonFile[] listFiles = getCarbonIndexFiles(segmentId);
-      for (int i = 0; i < listFiles.length; i++) {
-        tableBlockIndexUniqueIdentifiers.add(
-            new TableBlockIndexUniqueIdentifier(identifier, segmentId, listFiles[i].getName()));
+      for(String path: segmentPaths) {
+        CarbonFile[] listFiles = getCarbonIndexFiles(path);
+        for (int i = 0; i < listFiles.length; i++) {
+          tableBlockIndexUniqueIdentifiers.add(
+              new TableBlockIndexUniqueIdentifier(identifier, segmentId, listFiles[i].getName()));
+        }
       }
     }
 
     return cache.getAll(tableBlockIndexUniqueIdentifiers);
   }
 
-  private CarbonFile[] getCarbonIndexFiles(String segmentId) {
-    String path = identifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId;
+  private CarbonFile[] getCarbonIndexFiles(String path) {
     CarbonFile carbonFile = FileFactory.getCarbonFile(path);
     return carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
@@ -157,5 +162,9 @@ public class BlockletDataMapFactory implements DataMapFactory {
   public DataMapMeta getMeta() {
     // TODO: pass SORT_COLUMNS into this class
     return null;
+  }
+
+  @Override public Map<String, String> getOptions() {
+    return options;
   }
 }

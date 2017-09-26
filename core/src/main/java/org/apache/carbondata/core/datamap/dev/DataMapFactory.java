@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datamap.dev;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
@@ -33,7 +34,7 @@ public interface DataMapFactory {
   /**
    * Initialization of Datamap factory with the identifier and datamap name
    */
-  void init(AbsoluteTableIdentifier identifier, String dataMapName);
+  void init(AbsoluteTableIdentifier identifier, String dataMapName, Map<String, String> options);
 
   /**
    * Return a new write for this datamap
@@ -43,7 +44,7 @@ public interface DataMapFactory {
   /**
    * Get the datamap for segmentid
    */
-  List<DataMap> getDataMaps(String segmentId) throws IOException;
+  List<DataMap> getDataMaps(String segmentId, List<String> segmentPaths) throws IOException;
 
   /**
    * Get datamap for distributable object.
@@ -76,4 +77,6 @@ public interface DataMapFactory {
    * Return metadata of this datamap
    */
   DataMapMeta getMeta();
+
+  Map<String, String> getOptions();
 }

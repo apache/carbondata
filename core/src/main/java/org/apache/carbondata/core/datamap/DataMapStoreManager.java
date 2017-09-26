@@ -57,7 +57,7 @@ public final class DataMapStoreManager {
    * @return
    */
   public TableDataMap getDataMap(AbsoluteTableIdentifier identifier,
-      String dataMapName, String factoryClass) {
+      String dataMapName, String factoryClass, Map<String, String> options) {
     String table = identifier.uniqueName();
     List<TableDataMap> tableDataMaps = allDataMaps.get(table);
     TableDataMap dataMap;
@@ -65,7 +65,7 @@ public final class DataMapStoreManager {
       synchronized (table.intern()) {
         tableDataMaps = allDataMaps.get(table);
         if (tableDataMaps == null) {
-          dataMap = createAndRegisterDataMap(identifier, factoryClass, dataMapName);
+          dataMap = createAndRegisterDataMap(identifier, factoryClass, dataMapName, options);
         } else {
           dataMap = getTableDataMap(dataMapName, tableDataMaps);
         }
@@ -85,7 +85,7 @@ public final class DataMapStoreManager {
    * The datamap is created using datamap name, datamap factory class and table identifier.
    */
   public TableDataMap createAndRegisterDataMap(AbsoluteTableIdentifier identifier,
-      String factoryClassName, String dataMapName) {
+      String factoryClassName, String dataMapName, Map<String, String> options) {
     String table = identifier.uniqueName();
     List<TableDataMap> tableDataMaps = allDataMaps.get(table);
     if (tableDataMaps == null) {
@@ -100,7 +100,7 @@ public final class DataMapStoreManager {
       Class<? extends DataMapFactory> factoryClass =
           (Class<? extends DataMapFactory>) Class.forName(factoryClassName);
       DataMapFactory dataMapFactory = factoryClass.newInstance();
-      dataMapFactory.init(identifier, dataMapName);
+      dataMapFactory.init(identifier, dataMapName, options);
       dataMap = new TableDataMap(identifier, dataMapName, dataMapFactory);
     } catch (Exception e) {
       LOGGER.error(e);

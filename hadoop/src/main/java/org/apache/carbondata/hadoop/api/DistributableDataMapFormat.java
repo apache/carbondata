@@ -53,12 +53,20 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, Blocklet> 
 
   private String className;
 
+  private final Boolean pathAsSegmentId;
+
   public DistributableDataMapFormat(AbsoluteTableIdentifier identifier,
       String dataMapName, List<String> validSegments, String className) {
+    this(identifier, dataMapName, validSegments, className, false);
+  }
+
+  public DistributableDataMapFormat(AbsoluteTableIdentifier identifier,
+      String dataMapName, List<String> validSegments, String className, Boolean pathAsSegmentId) {
     this.identifier = identifier;
     this.dataMapName = dataMapName;
     this.validSegments = validSegments;
     this.className = className;
+    this.pathAsSegmentId = pathAsSegmentId;
   }
 
   public static void setFilterExp(Configuration configuration, FilterResolverIntf filterExp)
