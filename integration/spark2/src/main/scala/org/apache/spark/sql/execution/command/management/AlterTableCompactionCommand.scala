@@ -34,13 +34,12 @@ case class AlterTableCompactionCommand(
     alterTableModel: AlterTableModel)
   extends RunnableCommand with DataProcessCommand {
 
-  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
-
   override def run(sparkSession: SparkSession): Seq[Row] = {
     processData(sparkSession)
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
     val tableName = alterTableModel.tableName.toLowerCase
     val databaseName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
     val relation =

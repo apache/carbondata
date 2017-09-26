@@ -36,8 +36,6 @@ private[sql] case class ProjectForDeleteCommand(
     identifier: Seq[String],
     timestamp: String) extends RunnableCommand with DataProcessCommand {
 
-  var horizontalCompactionFailed = false
-
   override def run(sparkSession: SparkSession): Seq[Row] = {
     processData(sparkSession)
   }

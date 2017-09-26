@@ -37,9 +37,8 @@ private[sql] case class AlterTableDropColumnCommand(
     alterTableDropColumnModel: AlterTableDropColumnModel)
   extends RunnableCommand {
 
-  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
   override def run(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = alterTableDropColumnModel.tableName
     val dbName = alterTableDropColumnModel.databaseName
       .getOrElse(sparkSession.catalog.currentDatabase)

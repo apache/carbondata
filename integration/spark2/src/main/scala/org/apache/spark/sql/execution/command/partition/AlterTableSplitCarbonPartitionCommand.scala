@@ -50,45 +50,23 @@ case class AlterTableSplitCarbonPartitionCommand(
     splitPartitionModel: AlterTableSplitPartitionModel)
   extends RunnableCommand with DataProcessCommand with SchemaProcessCommand {
 
-  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
-  val tableName: String = splitPartitionModel.tableName
-  val splitInfo: List[String] = splitPartitionModel.splitInfo
-  val partitionId: Int = splitPartitionModel.partitionId.toInt
-  var partitionInfo: PartitionInfo = _
-  var carbonMetaStore: CarbonMetaStore = _
-  var relation: CarbonRelation = _
-  var dbName: String = _
-  var storePath: String = _
-  var table: CarbonTable = _
-  var carbonTableIdentifier: CarbonTableIdentifier = _
   val oldPartitionIds: util.ArrayList[Int] = new util.ArrayList[Int]()
-  val timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance
-    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-  val dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance
-    .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
-  val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
-    LockUsage.COMPACTION_LOCK,
-    LockUsage.DELETE_SEGMENT_LOCK,
-    LockUsage.DROP_TABLE_LOCK,
-    LockUsage.CLEAN_FILES_LOCK,
-    LockUsage.ALTER_PARTITION_LOCK)
 
-  // TODO will add rollback function incase process data failure
+  // TODO will add rollback function in case of process data failure
   override def run(sparkSession: SparkSession): Seq[Row] = {
     processSchema(sparkSession)
     processData(sparkSession)
   }
 
   override def processSchema(sparkSession: SparkSession): Seq[Row] = {
-    dbName = splitPartitionModel.databaseName
-      .getOrElse(sparkSession.catalog.currentDatabase)
-    carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-    relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    val dbName = splitPartitionModel.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
+    val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val tableName = splitPartitionModel.tableName
+    val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation]
-    carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
-    storePath = relation.tableMeta.storePath
+    val carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
+    val storePath = relation.tableMeta.storePath
     if (relation == null) {
       sys.error(s"Table $dbName.$tableName does not exist")
     }
@@ -97,8 +75,8 @@ case class AlterTableSplitCarbonPartitionCommand(
       LOGGER.error(s"Alter table failed. table not found: $dbName.$tableName")
       sys.error(s"Alter table failed. table not found: $dbName.$tableName")
     }
-    table = relation.tableMeta.carbonTable
-    partitionInfo = table.getPartitionInfo(tableName)
+    val table = relation.tableMeta.carbonTable
+    val partitionInfo = table.getPartitionInfo(tableName)
     val partitionIds = partitionInfo.getPartitionIds.asScala.map(_.asInstanceOf[Int]).toList
     // keep a copy of partitionIdList before update partitionInfo.
     // will be used in partition data scan
@@ -110,8 +88,8 @@ case class AlterTableSplitCarbonPartitionCommand(
     if (partitionInfo.getPartitionType == PartitionType.HASH) {
       sys.error(s"Hash partition table cannot be added or split!")
     }
-    PartitionUtils.updatePartitionInfo(partitionInfo, partitionIds, partitionId,
-      splitInfo, timestampFormatter, dateFormatter)
+
+    updatePartitionInfo(partitionInfo, partitionIds)
 
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
     val schemaFilePath = carbonTablePath.getSchemaFilePath
@@ -135,13 +113,46 @@ case class AlterTableSplitCarbonPartitionCommand(
     Seq.empty
   }
 
+  private def updatePartitionInfo(partitionInfo: PartitionInfo,
+      partitionIds: List[Int]) = {
+    val dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+
+    val timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+
+    PartitionUtils.updatePartitionInfo(
+      partitionInfo,
+      partitionIds,
+      splitPartitionModel.partitionId.toInt,
+      splitPartitionModel.splitInfo,
+      timestampFormatter,
+      dateFormatter)
+  }
+
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    val dbName = splitPartitionModel.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
+    val tableName = splitPartitionModel.tableName
     var locks = List.empty[ICarbonLock]
     var success = false
     try {
+      val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
+        LockUsage.COMPACTION_LOCK,
+        LockUsage.DELETE_SEGMENT_LOCK,
+        LockUsage.DROP_TABLE_LOCK,
+        LockUsage.CLEAN_FILES_LOCK,
+        LockUsage.ALTER_PARTITION_LOCK)
       locks = AlterTableUtil.validateTableAndAcquireLock(dbName, tableName,
         locksToBeAcquired)(sparkSession)
       val carbonLoadModel = new CarbonLoadModel()
+      val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
+        .asInstanceOf[CarbonRelation]
+      val storePath = relation.tableMeta.storePath
+      val table = relation.tableMeta.carbonTable
+      val carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
       carbonLoadModel.setTableName(carbonTableIdentifier.getTableName)
@@ -149,8 +160,9 @@ case class AlterTableSplitCarbonPartitionCommand(
       carbonLoadModel.setStorePath(storePath)
       val loadStartTime = CarbonUpdateUtil.readCurrentTime
       carbonLoadModel.setFactTimeStamp(loadStartTime)
-      CarbonDataRDDFactory.alterTableSplitPartition(sparkSession.sqlContext,
-        partitionId.toString,
+      CarbonDataRDDFactory.alterTableSplitPartition(
+        sparkSession.sqlContext,
+        splitPartitionModel.partitionId.toInt.toString,
         carbonLoadModel,
         oldPartitionIds.asScala.toList
       )
@@ -162,6 +174,7 @@ case class AlterTableSplitCarbonPartitionCommand(
     } finally {
       AlterTableUtil.releaseLocks(locks)
       CacheProvider.getInstance().dropAllCache()
+      val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
       LOGGER.info("Locks released after alter table add/split partition action.")
       LOGGER.audit("Locks released after alter table add/split partition action.")
       if (success) {

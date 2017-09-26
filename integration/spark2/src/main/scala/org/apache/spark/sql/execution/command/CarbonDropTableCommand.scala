@@ -35,14 +35,13 @@ case class CarbonDropTableCommand(
     tableName: String)
   extends RunnableCommand with SchemaProcessCommand with DataProcessCommand {
 
-  private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
   override def run(sparkSession: SparkSession): Seq[Row] = {
     processSchema(sparkSession)
     processData(sparkSession)
   }
 
   override def processSchema(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = GetDB.getDatabaseName(databaseNameOp, sparkSession)
     val identifier = TableIdentifier(tableName, Option(dbName))
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")

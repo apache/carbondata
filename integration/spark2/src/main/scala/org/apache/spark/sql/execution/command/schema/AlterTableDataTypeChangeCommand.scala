@@ -35,9 +35,8 @@ private[sql] case class AlterTableDataTypeChangeCommand(
     alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel)
   extends RunnableCommand {
 
-  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
   override def run(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = alterTableDataTypeChangeModel.tableName
     val dbName = alterTableDataTypeChangeModel.databaseName
       .getOrElse(sparkSession.catalog.currentDatabase)

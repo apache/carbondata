@@ -60,8 +60,6 @@ case class LoadTableCommand(
     updateModel: Option[UpdateTableModel] = None)
   extends RunnableCommand with DataProcessCommand {
 
-  private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
   private def getFinalOptions(carbonProperty: CarbonProperties):
   scala.collection.mutable.Map[String, String] = {
     val optionsFinal = scala.collection.mutable.Map[String, String]()
@@ -150,6 +148,7 @@ case class LoadTableCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     if (dataFrame.isDefined && updateModel.isEmpty) {
       val rdd = dataFrame.get.rdd
       if (rdd.partitions == null || rdd.partitions.length == 0) {

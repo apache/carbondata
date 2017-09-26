@@ -34,6 +34,7 @@ private[sql] case class ShowCarbonPartitionsCommand(
   extends RunnableCommand with SchemaProcessCommand {
 
   override val output: Seq[Attribute] = CommonUtil.partitionInfoOutput
+
   override def run(sparkSession: SparkSession): Seq[Row] = {
     processSchema(sparkSession)
   }

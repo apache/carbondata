@@ -41,44 +41,28 @@ import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadM
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 
 case class AlterTableDropCarbonPartitionCommand(
-    alterTableDropPartitionModel: AlterTableDropPartitionModel)
+    model: AlterTableDropPartitionModel)
   extends RunnableCommand with DataProcessCommand with SchemaProcessCommand {
-  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
-  val tableName: String = alterTableDropPartitionModel.tableName
-  var dbName: String = _
-  val partitionId: String = alterTableDropPartitionModel.partitionId
-  val dropWithData: Boolean = alterTableDropPartitionModel.dropWithData
-  if (partitionId.equals("0")) {
-    sys.error(s"Cannot drop default partition! Please use delete statement!")
-  }
-  var partitionInfo: PartitionInfo = _
-  var carbonMetaStore: CarbonMetaStore = _
-  var relation: CarbonRelation = _
-  var storePath: String = _
-  var table: CarbonTable = _
-  var carbonTableIdentifier: CarbonTableIdentifier = _
   val oldPartitionIds: util.ArrayList[Int] = new util.ArrayList[Int]()
-  val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
-    LockUsage.COMPACTION_LOCK,
-    LockUsage.DELETE_SEGMENT_LOCK,
-    LockUsage.DROP_TABLE_LOCK,
-    LockUsage.CLEAN_FILES_LOCK,
-    LockUsage.ALTER_PARTITION_LOCK)
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
+    if (model.partitionId.equals("0")) {
+      sys.error(s"Cannot drop default partition! Please use delete statement!")
+    }
     processSchema(sparkSession)
     processData(sparkSession)
     Seq.empty
   }
 
   override def processSchema(sparkSession: SparkSession): Seq[Row] = {
-    dbName = alterTableDropPartitionModel.databaseName
-      .getOrElse(sparkSession.catalog.currentDatabase)
-    carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-    relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    val dbName = model.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
+    val tableName = model.tableName
+    val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation]
-    carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
-    storePath = relation.tableMeta.storePath
+    val carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
+    val storePath = relation.tableMeta.storePath
     carbonMetaStore.checkSchemasModifiedTimeAndReloadTables(storePath)
     if (relation == null) {
       sys.error(s"Table $dbName.$tableName does not exist")
@@ -87,8 +71,8 @@ case class AlterTableDropCarbonPartitionCommand(
       LOGGER.error(s"Alter table failed. table not found: $dbName.$tableName")
       sys.error(s"Alter table failed. table not found: $dbName.$tableName")
     }
-    table = relation.tableMeta.carbonTable
-    partitionInfo = table.getPartitionInfo(tableName)
+    val table = relation.tableMeta.carbonTable
+    val partitionInfo = table.getPartitionInfo(tableName)
     if (partitionInfo == null) {
       sys.error(s"Table $tableName is not a partition table.")
     }
@@ -96,7 +80,7 @@ case class AlterTableDropCarbonPartitionCommand(
     // keep a copy of partitionIdList before update partitionInfo.
     // will be used in partition data scan
     oldPartitionIds.addAll(partitionIds.asJava)
-    val partitionIndex = partitionIds.indexOf(Integer.valueOf(partitionId))
+    val partitionIndex = partitionIds.indexOf(Integer.valueOf(model.partitionId))
     partitionInfo.getPartitionType match {
       case PartitionType.HASH => sys.error(s"Hash partition cannot be dropped!")
       case PartitionType.RANGE =>
@@ -139,24 +123,39 @@ case class AlterTableDropCarbonPartitionCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    val dbName = model.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
+    val tableName = model.tableName
     var locks = List.empty[ICarbonLock]
     var success = false
     try {
+      val locksToBeAcquired = List(LockUsage.METADATA_LOCK,
+        LockUsage.COMPACTION_LOCK,
+        LockUsage.DELETE_SEGMENT_LOCK,
+        LockUsage.DROP_TABLE_LOCK,
+        LockUsage.CLEAN_FILES_LOCK,
+        LockUsage.ALTER_PARTITION_LOCK)
       locks = AlterTableUtil.validateTableAndAcquireLock(dbName, tableName,
         locksToBeAcquired)(sparkSession)
       val carbonLoadModel = new CarbonLoadModel()
+      val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
+        .asInstanceOf[CarbonRelation]
+      val carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
+      val table = relation.tableMeta.carbonTable
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       // Need to fill dimension relation
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
       carbonLoadModel.setTableName(carbonTableIdentifier.getTableName)
       carbonLoadModel.setDatabaseName(carbonTableIdentifier.getDatabaseName)
-      carbonLoadModel.setStorePath(storePath)
+      carbonLoadModel.setStorePath(relation.tableMeta.storePath)
       val loadStartTime = CarbonUpdateUtil.readCurrentTime
       carbonLoadModel.setFactTimeStamp(loadStartTime)
-      CarbonDataRDDFactory.alterTableDropPartition(sparkSession.sqlContext,
-        partitionId,
+      CarbonDataRDDFactory.alterTableDropPartition(
+        sparkSession.sqlContext,
+        model.partitionId,
         carbonLoadModel,
-        dropWithData,
+        model.dropWithData,
         oldPartitionIds.asScala.toList
       )
       success = true

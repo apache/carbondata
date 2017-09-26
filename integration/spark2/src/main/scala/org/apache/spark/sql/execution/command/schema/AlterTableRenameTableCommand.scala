@@ -38,9 +38,8 @@ private[sql] case class AlterTableRenameTableCommand(
     alterTableRenameModel: AlterTableRenameModel)
   extends RunnableCommand {
 
-  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
   override def run(sparkSession: SparkSession): Seq[Row] = {
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val oldTableIdentifier = alterTableRenameModel.oldTableIdentifier
     val newTableIdentifier = alterTableRenameModel.newTableIdentifier
     val oldDatabaseName = oldTableIdentifier.database
