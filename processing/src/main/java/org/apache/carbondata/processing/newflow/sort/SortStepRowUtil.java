@@ -21,8 +21,7 @@ import org.apache.carbondata.core.util.NonDictionaryUtil;
 import org.apache.carbondata.processing.sortandgroupby.sortdata.SortParameters;
 
 public class SortStepRowUtil {
-  public static Object[] convertRow(Object[] data, SortParameters parameters,
-      boolean needConvertDecimalToByte) {
+  public static Object[] convertRow(Object[] data, SortParameters parameters) {
     int measureCount = parameters.getMeasureColCount();
     int dimensionCount = parameters.getDimColCount();
     int complexDimensionCount = parameters.getComplexDimColCount();
