@@ -20,7 +20,7 @@ package org.apache.carbondata.spark.testsuite.dataload
 import java.io.File
 
 import org.apache.spark.util.FileUtils
-import org.apache.carbondata.processing.model.CarbonLoadModel
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.util.GlobalDictionaryUtil
 import org.apache.spark.sql.test.util.QueryTest
 

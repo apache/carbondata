@@ -43,16 +43,14 @@ import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
-import org.apache.carbondata.processing.csvload.BlockDetails
-import org.apache.carbondata.processing.csvload.CSVInputFormat
-import org.apache.carbondata.processing.csvload.CSVRecordReaderIterator
-import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.newflow.DataLoadExecutor
-import org.apache.carbondata.processing.newflow.exception.NoRetryException
+import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses}
+import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
+import org.apache.carbondata.processing.loading.exception.NoRetryException
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.processing.splits.TableSplit
+import org.apache.carbondata.processing.util.{CarbonLoaderUtil, CarbonQueryUtil}
 import org.apache.carbondata.spark.DataLoadResult
-import org.apache.carbondata.spark.load.{CarbonLoaderUtil, FailureCauses}
-import org.apache.carbondata.spark.splits.TableSplit
-import org.apache.carbondata.spark.util.{CarbonQueryUtil, CarbonScalaUtil, CommonUtil}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
 
 class SerializableConfiguration(@transient var value: Configuration) extends Serializable {
 
@@ -149,7 +147,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     val isCarbonUseMultiDir = CarbonProperties.getInstance().isUseMultiTempDir
 
     if (isCarbonUseLocalDir) {
-      val yarnStoreLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+      val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
 
       if (!isCarbonUseMultiDir && null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
         // use single dir

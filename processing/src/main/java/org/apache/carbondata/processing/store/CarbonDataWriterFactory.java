@@ -25,7 +25,7 @@ import org.apache.carbondata.processing.store.writer.v3.CarbonFactDataWriterImpl
 /**
  * Factory class to get the writer instance
  */
-public class CarbonDataWriterFactory {
+class CarbonDataWriterFactory {
 
   /**
    * static instance
@@ -56,7 +56,7 @@ public class CarbonDataWriterFactory {
    * @param carbonDataWriterVo writer vo object
    * @return writer instance
    */
-  public CarbonFactDataWriter<?> getFactDataWriter(final ColumnarFormatVersion version,
+  public CarbonFactDataWriter getFactDataWriter(final ColumnarFormatVersion version,
       final CarbonDataWriterVo carbonDataWriterVo) {
     switch (version) {
       case V1:

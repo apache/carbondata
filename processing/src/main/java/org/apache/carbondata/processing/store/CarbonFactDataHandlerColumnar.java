@@ -50,7 +50,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
-import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
+import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
 import org.apache.carbondata.processing.store.file.FileManager;
 import org.apache.carbondata.processing.store.file.IFileManagerComposite;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
@@ -88,10 +88,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * once this size of input is reached
    */
   private int pageSize;
-  /**
-   * keyBlockHolder
-   */
-  private CarbonKeyBlockHolder[] keyBlockHolder;
 
   // This variable is true if it is dictionary dimension and its cardinality is lower than
   // property of CarbonCommonConstants.HIGH_CARDINALITY_VALUE
@@ -455,7 +451,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       this.dataWriter.closeWriter();
     }
     this.dataWriter = null;
-    this.keyBlockHolder = null;
   }
 
   /**
@@ -488,15 +483,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       //than below splitter will return column as {0,1,2}{3}{4}{5}
       ColumnarSplitter columnarSplitter = model.getSegmentProperties().getFixedLengthKeySplitter();
       System.arraycopy(columnarSplitter.getBlockKeySize(), 0, keyBlockSize, 0, noOfColStore);
-      this.keyBlockHolder =
-          new CarbonKeyBlockHolder[columnarSplitter.getBlockKeySize().length];
-    } else {
-      this.keyBlockHolder = new CarbonKeyBlockHolder[0];
-    }
-
-    for (int i = 0; i < keyBlockHolder.length; i++) {
-      this.keyBlockHolder[i] = new CarbonKeyBlockHolder(pageSize);
-      this.keyBlockHolder[i].resetCounter();
     }
 
     // agg type
@@ -567,7 +553,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    *
    * @return data writer instance
    */
-  private CarbonFactDataWriter<?> getFactDataWriter() {
+  private CarbonFactDataWriter getFactDataWriter() {
     return CarbonDataWriterFactory.getInstance()
         .getFactDataWriter(version, getDataWriterVo());
   }
@@ -680,10 +666,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       return tablePage;
     }
 
-    /**
-     * @param encodedTablePage
-     * @param index
-     */
     public synchronized void put(TablePage tablePage, int index) {
       tablePages[index] = tablePage;
       // notify the consumer thread when index at which object is to be inserted
