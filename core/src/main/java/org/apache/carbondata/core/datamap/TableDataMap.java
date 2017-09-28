@@ -40,6 +40,7 @@ public final class TableDataMap implements EventListener {
 
   private DataMapFactory dataMapFactory;
 
+  static public final String SEGMENT_ID_AS_PATH = "SEGMENT_ID_AS_PATH";
   /**
    * It is called to initialize and load the required table datamap metadata.
    */
@@ -60,8 +61,16 @@ public final class TableDataMap implements EventListener {
   public List<Blocklet> prune(List<String> segmentIds, FilterResolverIntf filterExp)
       throws IOException {
     List<Blocklet> blocklets = new ArrayList<>();
+    String segIdAsPathStr = dataMapFactory.getOptions().get(SEGMENT_ID_AS_PATH);
+    boolean segIdAsPath = segIdAsPathStr != null && segIdAsPathStr.equalsIgnoreCase("true");
+
     for (String segmentId : segmentIds) {
-      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
+      String path =
+          (segIdAsPath) ? segmentId
+              : identifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId;
+      List<String> paths = new ArrayList<String>(1);
+      paths.add(path);
+      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId, paths);
       for (DataMap dataMap : dataMaps) {
         List<Blocklet> pruneBlocklets = dataMap.prune(filterExp);
         blocklets.addAll(addSegmentId(pruneBlocklets, segmentId));
