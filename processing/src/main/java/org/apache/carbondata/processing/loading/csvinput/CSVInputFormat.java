@@ -72,6 +72,9 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   public static final String NUMBER_OF_COLUMNS = "carbon.csvinputformat.number.of.columns";
   public static final int DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 2000;
   public static final int THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING = 20000;
+  // As Short data type is used for storing the length of a column during data processing hence
+  // the maximum characters that can be supported should be less than Short max value
+  public static final int MAX_CHARS_PER_COLUMN_DEFAULT = 32000;
 
   private static LogService LOGGER =
       LogServiceFactory.getLogService(CSVInputFormat.class.toString());
@@ -243,7 +246,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       parserSettings.setIgnoreLeadingWhitespaces(false);
       parserSettings.setIgnoreTrailingWhitespaces(false);
       parserSettings.setSkipEmptyLines(false);
-      parserSettings.setMaxCharsPerColumn(100000);
+      parserSettings.setMaxCharsPerColumn(MAX_CHARS_PER_COLUMN_DEFAULT);
       String maxColumns = job.get(MAX_COLUMNS);
       parserSettings.setMaxColumns(Integer.parseInt(maxColumns));
       parserSettings.getFormat().setQuote(job.get(QUOTE, QUOTE_DEFAULT).charAt(0));
