@@ -43,6 +43,7 @@ import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.TablePage;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
 
+
 /**
  * Below class will be used to write the data in V3 format
  * <Column1 Data ChunkV3><Column1<Page1><Page2><Page3><Page4>>
@@ -156,6 +157,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       listener.onPageAdded(blockletId, pageId++, tablePage);
     }
   }
+
+
 
   /**
    * Write the collect blocklet data (blockletDataHolder) to file

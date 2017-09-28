@@ -26,6 +26,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
+import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -103,7 +104,7 @@ public final class DataMapStoreManager {
       tableDataMaps = new ArrayList<>();
     }
     TableDataMap dataMap = getTableDataMap(dataMapName, tableDataMaps);
-    if (dataMap != null) {
+    if (dataMap != null && dataMap.getDataMapName().equalsIgnoreCase(dataMapName)) {
       throw new RuntimeException("Already datamap exists in that path with type " + dataMapName);
     }
 
@@ -113,12 +114,15 @@ public final class DataMapStoreManager {
       DataMapFactory dataMapFactory = factoryClass.newInstance();
       dataMapFactory.init(identifier, dataMapName);
       BlockletDetailsFetcher blockletDetailsFetcher;
+      SegmentPropertiesFetcher segmentPropertiesFetcher = null;
       if (dataMapFactory instanceof BlockletDetailsFetcher) {
         blockletDetailsFetcher = (BlockletDetailsFetcher) dataMapFactory;
       } else {
         blockletDetailsFetcher = getBlockletDetailsFetcher(identifier);
       }
-      dataMap = new TableDataMap(identifier, dataMapName, dataMapFactory, blockletDetailsFetcher);
+      segmentPropertiesFetcher = (SegmentPropertiesFetcher) blockletDetailsFetcher;
+      dataMap = new TableDataMap(identifier, dataMapName, dataMapFactory, blockletDetailsFetcher,
+          segmentPropertiesFetcher);
     } catch (Exception e) {
       LOGGER.error(e);
       throw new RuntimeException(e);
@@ -128,11 +132,11 @@ public final class DataMapStoreManager {
     return dataMap;
   }
 
-  private TableDataMap getTableDataMap(String dataMapName,
-      List<TableDataMap> tableDataMaps) {
+  private TableDataMap getTableDataMap(String dataMapName, List<TableDataMap> tableDataMaps) {
     TableDataMap dataMap = null;
-    for (TableDataMap tableDataMap: tableDataMaps) {
-      if (tableDataMap.getDataMapName().equals(dataMapName)) {
+    for (TableDataMap tableDataMap : tableDataMaps) {
+      if (tableDataMap.getDataMapName().equals(dataMapName) || (!tableDataMap.getDataMapName()
+          .equals(""))) {
         dataMap = tableDataMap;
         break;
       }
