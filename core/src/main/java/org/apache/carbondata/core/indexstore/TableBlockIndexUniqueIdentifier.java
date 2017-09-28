@@ -100,4 +100,8 @@ public class TableBlockIndexUniqueIdentifier {
     result = 31 * result + carbonIndexFileName.hashCode();
     return result;
   }
+
+  public String getCarbonIndexFileName() {
+    return carbonIndexFileName;
+  }
 }
