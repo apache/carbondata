@@ -14,39 +14,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.datamap.dev;
+
+package org.apache.carbondata.core.indexstore;
 
 import java.io.IOException;
-import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.indexstore.Blocklet;
-import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
- * Datamap is an entity which can store and retrieve index data.
+ * Fetches the detailed segmentProperties which has more information to execute the query
  */
-public interface DataMap {
+public interface SegmentPropertiesFetcher {
 
   /**
-   * It is called to load the data map to memory or to initialize it.
-   */
-  void init(String filePath) throws MemoryException, IOException;
-
-  /**
-   * Prune the datamap with filter expression. It returns the list of
-   * blocklets where these filters can exist.
-   *
-   * @param filterExp
+   * get the Segment properties based on the SegmentID.
+   * @param segmentId
    * @return
+   * @throws IOException
    */
-  List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties);
-
-
-  /**
-   * Clear complete index table and release memory.
-   */
-  void clear();
-
+  SegmentProperties getSegmentProperties(String segmentId) throws IOException;
 }
