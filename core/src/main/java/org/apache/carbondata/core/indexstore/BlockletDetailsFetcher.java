@@ -32,7 +32,7 @@ public interface BlockletDetailsFetcher {
    * @return
    * @throws IOException
    */
-  List<DetailedBlocklet> getDetailedBlocklets(List<Blocklet> blocklets, String segmentId)
+  List<ExtendedBlocklet> getExtendedBlocklets(List<Blocklet> blocklets, String segmentId)
       throws IOException;
 
   /**
@@ -43,5 +43,5 @@ public interface BlockletDetailsFetcher {
    * @return
    * @throws IOException
    */
-  DetailedBlocklet getDetailedBlocklet(Blocklet blocklet, String segmentId) throws IOException;
+  ExtendedBlocklet getExtendedBlocklet(Blocklet blocklet, String segmentId) throws IOException;
 }

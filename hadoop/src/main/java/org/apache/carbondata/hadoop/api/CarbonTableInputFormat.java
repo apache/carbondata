@@ -32,7 +32,7 @@ import java.util.Map;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.indexstore.DetailedBlocklet;
+import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
@@ -539,7 +539,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         .getDataMap(absoluteTableIdentifier, BlockletDataMap.NAME,
             BlockletDataMapFactory.class.getName());
     DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
-    List<DetailedBlocklet> prunedBlocklets;
+    List<ExtendedBlocklet> prunedBlocklets;
     if (dataMapJob != null) {
       DistributableDataMapFormat datamapDstr =
           new DistributableDataMapFormat(absoluteTableIdentifier, BlockletDataMap.NAME,
@@ -555,7 +555,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     if (partitionInfo != null) {
       partitionIdList = partitionInfo.getPartitionIds();
     }
-    for (DetailedBlocklet blocklet : prunedBlocklets) {
+    for (ExtendedBlocklet blocklet : prunedBlocklets) {
       int partitionId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(
           CarbonTablePath.DataFileUtil.getTaskNo(blocklet.getPath().toString()));
 
@@ -586,7 +586,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return resultFilterredBlocks;
   }
 
-  private CarbonInputSplit convertToCarbonInputSplit(DetailedBlocklet blocklet)
+  private CarbonInputSplit convertToCarbonInputSplit(ExtendedBlocklet blocklet)
       throws IOException {
     blocklet.updateLocations();
     org.apache.carbondata.hadoop.CarbonInputSplit split =
@@ -721,9 +721,9 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     Map<String, Long> segmentAndBlockCountMapping =
         new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    List<DetailedBlocklet> blocklets =
+    List<ExtendedBlocklet> blocklets =
         blockletMap.prune(validAndInvalidSegments.getValidSegments(), null);
-    for (DetailedBlocklet blocklet : blocklets) {
+    for (ExtendedBlocklet blocklet : blocklets) {
       String blockName = blocklet.getPath();
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);
       blockName = blockName + CarbonTablePath.getCarbonDataExtension();

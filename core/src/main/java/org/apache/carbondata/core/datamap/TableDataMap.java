@@ -26,7 +26,7 @@ import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.events.EventListener;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
-import org.apache.carbondata.core.indexstore.DetailedBlocklet;
+import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
@@ -62,9 +62,9 @@ public final class TableDataMap implements EventListener {
    * @param filterExp
    * @return
    */
-  public List<DetailedBlocklet> prune(List<String> segmentIds, FilterResolverIntf filterExp)
+  public List<ExtendedBlocklet> prune(List<String> segmentIds, FilterResolverIntf filterExp)
       throws IOException {
-    List<DetailedBlocklet> blocklets = new ArrayList<>();
+    List<ExtendedBlocklet> blocklets = new ArrayList<>();
     for (String segmentId : segmentIds) {
       List<Blocklet> pruneBlocklets = new ArrayList<>();
       List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
@@ -72,14 +72,14 @@ public final class TableDataMap implements EventListener {
         pruneBlocklets.addAll(dataMap.prune(filterExp));
       }
       blocklets.addAll(addSegmentId(blockletDetailsFetcher
-          .getDetailedBlocklets(pruneBlocklets, segmentId), segmentId));
+          .getExtendedBlocklets(pruneBlocklets, segmentId), segmentId));
     }
     return blocklets;
   }
 
-  private List<DetailedBlocklet> addSegmentId(List<DetailedBlocklet> pruneBlocklets,
+  private List<ExtendedBlocklet> addSegmentId(List<ExtendedBlocklet> pruneBlocklets,
       String segmentId) {
-    for (DetailedBlocklet blocklet : pruneBlocklets) {
+    for (ExtendedBlocklet blocklet : pruneBlocklets) {
       blocklet.setSegmentId(segmentId);
     }
     return pruneBlocklets;
@@ -115,13 +115,13 @@ public final class TableDataMap implements EventListener {
    * @param filterExp
    * @return
    */
-  public List<DetailedBlocklet> prune(DataMapDistributable distributable,
+  public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
       FilterResolverIntf filterExp) throws IOException {
-    List<DetailedBlocklet> detailedBlocklets = new ArrayList<>();
+    List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>();
     List<Blocklet> blocklets = dataMapFactory.getDataMap(distributable).prune(filterExp);
     for (Blocklet blocklet: blocklets) {
-      DetailedBlocklet detailedBlocklet =
-          blockletDetailsFetcher.getDetailedBlocklet(blocklet, distributable.getSegmentId());
+      ExtendedBlocklet detailedBlocklet =
+          blockletDetailsFetcher.getExtendedBlocklet(blocklet, distributable.getSegmentId());
       detailedBlocklet.setSegmentId(distributable.getSegmentId());
       detailedBlocklets.add(detailedBlocklet);
     }

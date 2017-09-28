@@ -28,7 +28,7 @@ import org.apache.hadoop.fs.RemoteIterator;
 /**
  * Detailed blocklet information
  */
-public class DetailedBlocklet extends Blocklet {
+public class ExtendedBlocklet extends Blocklet {
 
   private String segmentId;
 
@@ -38,7 +38,7 @@ public class DetailedBlocklet extends Blocklet {
 
   private String[] location;
 
-  public DetailedBlocklet(String path, String blockletId) {
+  public ExtendedBlocklet(String path, String blockletId) {
     super(path, blockletId);
   }
 
@@ -50,6 +50,11 @@ public class DetailedBlocklet extends Blocklet {
     this.detailInfo = detailInfo;
   }
 
+  /**
+   * It gets the hdfs block locations and length for this blocklet. It is used internally to get the
+   * locations for allocating tasks.
+   * @throws IOException
+   */
   public void updateLocations() throws IOException {
     Path path = new Path(getPath());
     FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
