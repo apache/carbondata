@@ -32,6 +32,7 @@ enum DataType {
 	DECIMAL = 5,
 	TIMESTAMP = 6,
 	DATE = 7,
+	BOOLEAN = 8,
 	ARRAY = 20,
 	STRUCT = 21,
 }
@@ -52,7 +53,8 @@ enum Encoding{
 	ADAPTIVE_DELTA_INTEGRAL = 8; // Identifies that a column is encoded using AdaptiveDeltaIntegralCodec
 	RLE_INTEGRAL = 9;     // Identifies that a column is encoded using RLECodec
 	DIRECT_STRING = 10;   // Stores string value and string length separately in page data
-  ADAPTIVE_FLOATING = 11; // Identifies that a column is encoded using AdaptiveFloatingCodec
+	ADAPTIVE_FLOATING = 11; // Identifies that a column is encoded using AdaptiveFloatingCodec
+	BOOL_BYTE = 12;   // Identifies that a column is encoded using BooleanPageCodec
 }
 
 enum PartitionType{
