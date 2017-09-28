@@ -202,8 +202,14 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
   }
 
   @Override
+<<<<<<< dc0eac5a2da224280affe4a875798d394dcd8442
   public void clear(Segment segment) {
     List<TableBlockIndexUniqueIdentifier> blockIndexes = segmentMap.remove(segment.getSegmentNo());
+=======
+  public void clear(String segmentId) {
+    segmentPropertiesMap.remove(segmentId);
+    List<TableBlockIndexUniqueIdentifier> blockIndexes = segmentMap.remove(segmentId);
+>>>>>>> [CARBONDATA-1480]Min Max Index Example for DataMap
     if (blockIndexes != null) {
       for (TableBlockIndexUniqueIdentifier blockIndex : blockIndexes) {
         DataMap dataMap = cache.getIfPresent(blockIndex);

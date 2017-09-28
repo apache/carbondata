@@ -661,7 +661,11 @@ public class BlockletDataMap extends AbstractCoarseGrainDataMap implements Cache
 
   @Override
   public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
+<<<<<<< dc0eac5a2da224280affe4a875798d394dcd8442
       List<PartitionSpec> partitions) {
+=======
+      List<String> partitions) {
+>>>>>>> [CARBONDATA-1480]Min Max Index Example for DataMap
     if (unsafeMemoryDMStore.getRowCount() == 0) {
       return new ArrayList<>();
     }
