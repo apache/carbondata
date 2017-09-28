@@ -435,6 +435,7 @@
         <module>format</module>
         <module>integration/spark2</module>
         <module>examples/spark2</module>
+        <module>datamap/examples</module>
         <module>integration/hive</module>
         <module>integration/presto</module>
         <module>examples/flink</module>
@@ -474,6 +475,7 @@
         <module>integration/presto</module>
         <module>streaming</module>
         <module>examples/spark2</module>
+        <module>datamap/examples</module>
       </modules>
       <build>
         <plugins>
