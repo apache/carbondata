@@ -93,6 +93,7 @@ public final class DataMapStoreManager {
   public TableDataMap createAndRegisterDataMap(AbsoluteTableIdentifier identifier,
       String factoryClassName, String dataMapName) {
     String table = identifier.uniqueName();
+    // Just update the segmentRefreshMap with the table if not added.
     getTableSegmentRefresher(identifier);
     List<TableDataMap> tableDataMaps = allDataMaps.get(table);
     if (tableDataMaps == null) {
@@ -131,8 +132,8 @@ public final class DataMapStoreManager {
   }
 
   /**
-   * Clear the datamap/datamaps of a mentioned datamap name and table from memory
-   * @param identifier
+   * Clear the datamap/datamaps of a table from memory
+   * @param identifier Table identifier
    */
   public void clearDataMap(AbsoluteTableIdentifier identifier) {
     List<TableDataMap> tableDataMaps = allDataMaps.get(identifier.uniqueName());
@@ -158,6 +159,9 @@ public final class DataMapStoreManager {
     return instance;
   }
 
+  /**
+   * Get the TableSegmentRefresher for the table. If not existed then add one and return.
+   */
   public TableSegmentRefresher getTableSegmentRefresher(AbsoluteTableIdentifier identifier) {
     String uniqueName = identifier.uniqueName();
     if (segmentRefreshMap.get(uniqueName) == null) {
@@ -171,8 +175,12 @@ public final class DataMapStoreManager {
    */
   public static class TableSegmentRefresher {
 
+    // This map stores the latest segment refresh time.So in case of update/delete we check the
+    // time against this map.
     private Map<String, Long> segmentRefreshTime = new HashMap<>();
 
+    // This map keeps the manual refresh entries from users. It is mainly used for partition
+    // altering.
     private Map<String, Boolean> manualSegmentRefresh = new HashMap<>();
 
     public TableSegmentRefresher(AbsoluteTableIdentifier identifier) {
@@ -195,7 +203,12 @@ public final class DataMapStoreManager {
         return true;
       }
       Long updateTimestamp = updateVO.getLatestUpdateTimestamp();
-      return updateTimestamp != null && (updateTimestamp > segmentRefreshTime.get(segmentId));
+      boolean isRefresh =
+          updateTimestamp != null && (updateTimestamp > segmentRefreshTime.get(segmentId));
+      if (isRefresh) {
+        segmentRefreshTime.remove(segmentId);
+      }
+      return isRefresh;
     }
 
     public void refreshSegments(List<String> segmentIds) {
