@@ -315,7 +315,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
   }
 
   @Override
-  public List<Blocklet> prune(FilterResolverIntf filterExp) {
+  public List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties) {
 
     // getting the start and end index key based on filter for hitting the
     // selected block reference nodes based on filter resolver tree.
