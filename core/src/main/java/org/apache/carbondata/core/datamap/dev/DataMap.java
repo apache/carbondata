@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datamap.dev;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -34,23 +35,14 @@ public interface DataMap {
   void init(DataMapModel dataMapModel) throws MemoryException, IOException;
 
   /**
-   * Prune the datamap with filter expression. It returns the list of
-   * blocklets where these filters can exist.
-   *
-   * @param filterExp
-   * @return
-   */
-  List<Blocklet> prune(FilterResolverIntf filterExp);
-
-  // TODO Move this method to Abstract class
-  /**
    * Prune the datamap with filter expression and partition information. It returns the list of
    * blocklets where these filters can exist.
    *
    * @param filterExp
    * @return
    */
-  List<Blocklet> prune(FilterResolverIntf filterExp, List<String> partitions);
+  List<Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties,
+      List<String> partitions);
 
   // TODO Move this method to Abstract class
   /**

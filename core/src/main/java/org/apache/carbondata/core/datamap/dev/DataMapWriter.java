@@ -27,7 +27,7 @@ public interface DataMapWriter {
    *  Start of new block notification.
    *  @param blockId file name of the carbondata file
    */
-  void onBlockStart(String blockId);
+  void onBlockStart(String blockId, String blockPath);
 
   /**
    * End of block notification
@@ -45,7 +45,6 @@ public interface DataMapWriter {
    * @param blockletId sequence number of blocklet in the block
    */
   void onBlockletEnd(int blockletId);
-
   /**
    * Add the column pages row to the datamap, order of pages is same as `indexColumns` in
    * DataMapMeta returned in DataMapFactory.
