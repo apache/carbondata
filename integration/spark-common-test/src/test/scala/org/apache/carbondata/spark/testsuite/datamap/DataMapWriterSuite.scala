@@ -191,7 +191,7 @@ object DataMapWriterSuite {
       callbackSeq :+= s"blocklet start $blockletId"
     }
 
-    override def onBlockStart(blockId: String): Unit = {
+    override def onBlockStart(blockId: String, blockPath: String): Unit = {
       callbackSeq :+= s"block start $blockId"
     }
 
