@@ -225,7 +225,7 @@ public class CarbonTableReader {
    * is called, it clears this.tableList and populate the list by reading the files.
    */
   private void updateSchemaTables() {
-// update logic determine later
+    // update logic determine later
     if (carbonFileList == null) {
       updateSchemaList();
     }
