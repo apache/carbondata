@@ -23,10 +23,12 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
+import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.events.Event;
@@ -47,15 +49,19 @@ public final class TableDataMap extends OperationEventListener {
 
   private BlockletDetailsFetcher blockletDetailsFetcher;
 
+  private SegmentPropertiesFetcher segmentPropertiesFetcher;
+
   /**
    * It is called to initialize and load the required table datamap metadata.
    */
   public TableDataMap(AbsoluteTableIdentifier identifier, String dataMapName,
-      DataMapFactory dataMapFactory, BlockletDetailsFetcher blockletDetailsFetcher) {
+      DataMapFactory dataMapFactory, BlockletDetailsFetcher blockletDetailsFetcher,
+      SegmentPropertiesFetcher segmentPropertiesFetcher) {
     this.identifier = identifier;
     this.dataMapName = dataMapName;
     this.dataMapFactory = dataMapFactory;
     this.blockletDetailsFetcher = blockletDetailsFetcher;
+    this.segmentPropertiesFetcher = segmentPropertiesFetcher;
   }
 
   /**
@@ -68,11 +74,13 @@ public final class TableDataMap extends OperationEventListener {
   public List<ExtendedBlocklet> prune(List<Segment> segments, FilterResolverIntf filterExp,
       List<PartitionSpec> partitions) throws IOException {
     List<ExtendedBlocklet> blocklets = new ArrayList<>();
+    SegmentProperties segmentProperties;
     for (Segment segment : segments) {
       List<Blocklet> pruneBlocklets = new ArrayList<>();
       List<DataMap> dataMaps = dataMapFactory.getDataMaps(segment);
+      segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segment.getSegmentNo());
       for (DataMap dataMap : dataMaps) {
-        pruneBlocklets.addAll(dataMap.prune(filterExp, partitions));
+        pruneBlocklets.addAll(dataMap.prune(filterExp, segmentProperties, partitions));
       }
       blocklets.addAll(addSegmentId(blockletDetailsFetcher
           .getExtendedBlocklets(pruneBlocklets, segment), segment.getSegmentNo()));
@@ -124,7 +132,11 @@ public final class TableDataMap extends OperationEventListener {
     List<Blocklet> blocklets = new ArrayList<>();
     List<DataMap> dataMaps = dataMapFactory.getDataMaps(distributable);
     for (DataMap dataMap : dataMaps) {
-      blocklets.addAll(dataMap.prune(filterExp, partitions));
+      blocklets.addAll(
+          dataMap.prune(
+              filterExp,
+              segmentPropertiesFetcher.getSegmentProperties(distributable.getSegmentId()),
+              partitions));
     }
     for (Blocklet blocklet: blocklets) {
       ExtendedBlocklet detailedBlocklet =
