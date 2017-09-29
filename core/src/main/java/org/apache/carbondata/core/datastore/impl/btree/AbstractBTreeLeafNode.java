@@ -109,7 +109,7 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
    *
    * @return block number
    */
-  @Override public long nodeNumber() {
+  @Override public long getNodeNumber() {
     return nodeNumber;
   }
 

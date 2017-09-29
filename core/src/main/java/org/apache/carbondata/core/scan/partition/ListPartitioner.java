@@ -63,7 +63,7 @@ public class ListPartitioner implements Partitioner {
    * add extra default partition
    * @return
    */
-  @Override public int numPartitions() {
+  @Override public int getNumPartitions() {
     return numPartitions + 1;
   }
 

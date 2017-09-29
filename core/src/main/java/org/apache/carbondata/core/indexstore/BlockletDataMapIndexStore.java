@@ -92,7 +92,7 @@ public class BlockletDataMapIndexStore
       for (BlockletDataMap dataMap : blockletDataMaps) {
         dataMap.clear();
       }
-      e.printStackTrace();
+      LOGGER.error("Problem in loading segment blocks." + e.getMessage());
       throw new IOException("Problem in loading segment blocks.", e);
     }
     return blockletDataMaps;

@@ -143,7 +143,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
         this.dataHandler.finish();
       }
       mergeStatus = true;
-    } catch (Exception e) {
+    } catch (SliceMergerException e) {
       LOGGER.error(e, e.getMessage());
       LOGGER.error("Exception in compaction merger " + e.getMessage());
       mergeStatus = false;

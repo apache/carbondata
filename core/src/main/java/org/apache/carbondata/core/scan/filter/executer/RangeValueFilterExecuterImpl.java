@@ -312,7 +312,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
     if (!isDimensionPresentInCurrentBlock) {
       int numberOfRows = blockChunkHolder.getDataBlock().nodeSize();
       return FilterUtil
-          .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().numberOfPages(),
+          .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().getNumberOfPages(),
               numberOfRows, true);
     }
 

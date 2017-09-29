@@ -25,6 +25,8 @@ import java.nio.charset.Charset;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 /**
@@ -35,6 +37,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
  */
 
 public class DoubleArrayTrieDictionary {
+
+  private static final LogService LOGGER =
+          LogServiceFactory.getLogService(DoubleArrayTrieDictionary.class.getName());
+
   private static final byte[] HEAD_MAGIC = new byte[]{
       0x44, 0x41, 0x54, 0x54, 0x72, 0x69, 0x65, 0x44, 0x69, 0x63, 0x74
   }; // "DATTrieDict"
@@ -289,7 +295,7 @@ public class DoubleArrayTrieDictionary {
         int rConflict = conflict(from, c);
         int locate = base[rConflict] + c;
         if (check[locate] != EPTY_BACK_VALUE) {
-          System.err.println("conflict");
+          LOGGER.error("conflict");
         }
         check[locate] = rConflict;
         if (i == klen - 1) {

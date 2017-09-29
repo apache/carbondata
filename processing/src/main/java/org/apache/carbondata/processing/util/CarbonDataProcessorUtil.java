@@ -534,7 +534,7 @@ public final class CarbonDataProcessorUtil {
                 .toString());
       }
       LOGGER.warn("batch sort size is set to " + batchSortSizeInMb);
-    } catch (Exception e) {
+    } catch (NumberFormatException e) {
       batchSortSizeInMb = 0;
       LOGGER.warn("Exception occured while resolving batch sort size. " +
           "batch sort size is set to " + batchSortSizeInMb);
@@ -561,7 +561,7 @@ public final class CarbonDataProcessorUtil {
           configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
             .toString());
       }
-    } catch (Exception e) {
+    } catch (NumberFormatException e) {
       numPartitions = 0;
     }
     return numPartitions;

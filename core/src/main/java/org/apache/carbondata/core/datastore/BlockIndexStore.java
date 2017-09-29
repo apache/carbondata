@@ -24,7 +24,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -253,7 +254,7 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
     for (int i = 0; i < loadedBlockArray.length; i++) {
       try {
         loadedBlockArray[i] = blocksList.get(blockCounter++).get();
-      } catch (Throwable e) {
+      } catch (InterruptedException | ExecutionException e) {
         exceptionOccurred = true;
         exceptionRef = e;
       }

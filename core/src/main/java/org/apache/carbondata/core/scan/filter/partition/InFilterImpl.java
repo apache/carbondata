@@ -43,7 +43,7 @@ public class InFilterImpl implements PartitionFilterIntf {
   }
 
   @Override public BitSet applyFilter(Partitioner partitioner) {
-    BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), false);
+    BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.getNumPartitions(), false);
     ListExpression list = (ListExpression) in.getRight();
     for (Expression expr : list.getChildren()) {
       LiteralExpression literal = (LiteralExpression) expr;

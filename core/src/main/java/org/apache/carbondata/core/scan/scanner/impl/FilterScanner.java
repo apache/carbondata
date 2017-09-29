@@ -96,7 +96,7 @@ public class FilterScanner extends AbstractBlockletScanner {
     QueryStatistic totalPagesScanned = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.TOTAL_PAGE_SCANNED);
     totalPagesScanned.addCountStatistic(QueryStatisticsConstants.TOTAL_PAGE_SCANNED,
-        totalPagesScanned.getCount() + blocksChunkHolder.getDataBlock().numberOfPages());
+        totalPagesScanned.getCount() + blocksChunkHolder.getDataBlock().getNumberOfPages());
     // apply min max
     if (isMinMaxEnabled) {
       BitSet bitSet = this.filterExecuter
@@ -166,7 +166,7 @@ public class FilterScanner extends AbstractBlockletScanner {
     AbstractScannedResult scannedResult = new FilterQueryScannedResult(blockExecutionInfo);
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
-            .getDataBlock().nodeNumber());
+            .getDataBlock().getNodeNumber());
     // valid scanned blocklet
     QueryStatistic validScannedBlockletStatistic = queryStatisticsModel.getStatisticsTypeAndObjMap()
         .get(QueryStatisticsConstants.VALID_SCAN_BLOCKLET_NUM);

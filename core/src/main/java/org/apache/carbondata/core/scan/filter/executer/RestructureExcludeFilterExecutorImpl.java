@@ -48,7 +48,7 @@ public class RestructureExcludeFilterExecutorImpl extends RestructureEvaluatorIm
   @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {
     int numberOfRows = blockChunkHolder.getDataBlock().nodeSize();
     return FilterUtil
-        .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().numberOfPages(),
+        .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().getNumberOfPages(),
             numberOfRows, !isDefaultValuePresentInFilterValues);
   }
 

@@ -80,14 +80,9 @@ public class DictionaryClientHandler extends ChannelInboundHandlerAdapter {
    */
   public DictionaryMessage getDictionary(DictionaryMessage key) {
     DictionaryMessage dictionaryMessage;
-    try {
-      ByteBuf buffer = ctx.alloc().buffer();
-      key.writeData(buffer);
-      ctx.writeAndFlush(buffer).addListener(channelFutureListener);
-    } catch (Exception e) {
-      LOGGER.error(e, "Error while send request to server ");
-      ctx.close();
-    }
+    ByteBuf buffer = ctx.alloc().buffer();
+    key.writeData(buffer);
+    ctx.writeAndFlush(buffer).addListener(channelFutureListener);
     try {
       dictionaryMessage = responseMsgQueue.poll(100, TimeUnit.SECONDS);
       if (dictionaryMessage == null) {

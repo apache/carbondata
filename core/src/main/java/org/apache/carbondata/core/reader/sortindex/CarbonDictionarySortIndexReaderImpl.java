@@ -187,8 +187,12 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
       // read the last segment entry for dictionary metadata
       return columnMetadataReaderImpl.readLastEntryOfDictionaryMetaChunk();
     } finally {
-      // Close metadata reader
-      columnMetadataReaderImpl.close();
+      try {
+        // Close metadata reader
+        columnMetadataReaderImpl.close();
+      } catch (IOException e) {
+        LOGGER.debug(e.getMessage());
+      }
     }
   }
 

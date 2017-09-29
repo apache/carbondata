@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
@@ -35,6 +37,9 @@ import org.apache.carbondata.core.util.CarbonUtil;
  * This class is responsible for loading the dictionary data for given columns
  */
 public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
+
+  private static final LogService LOGGER =
+          LogServiceFactory.getLogService(DictionaryCacheLoaderImpl.class.getName());
 
   /**
    * carbon table identifier
@@ -134,7 +139,11 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
     try {
       return dictionaryReader.read(startOffset, endOffset);
     } finally {
-      dictionaryReader.close();
+      try {
+        dictionaryReader.close();
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage());
+      }
     }
   }
 
@@ -153,7 +162,11 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
       dictionaryInfo.setSortOrderIndex(sortIndexReader.readSortIndex());
       dictionaryInfo.setSortReverseOrderIndex(sortIndexReader.readInvertedSortIndex());
     } finally {
-      sortIndexReader.close();
+      try {
+        sortIndexReader.close();
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage());
+      }
     }
   }
 

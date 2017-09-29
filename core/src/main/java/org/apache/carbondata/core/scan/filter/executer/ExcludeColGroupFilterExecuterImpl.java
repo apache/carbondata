@@ -73,7 +73,7 @@ public class ExcludeColGroupFilterExecuterImpl extends ExcludeFilterExecuterImpl
         }
       }
 
-    } catch (Exception e) {
+    } catch (KeyGenException e) {
       LOGGER.error(e);
     }
 

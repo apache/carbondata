@@ -30,7 +30,7 @@ public final class DecimalConverterFactory {
 
   public static final DecimalConverterFactory INSTANCE = new DecimalConverterFactory();
 
-  private int[] minBytesForPrecision = minBytesForPrecision();
+  private int[] minBytesForPrecision = getMinBytesForPrecision();
 
   private DecimalConverterFactory() {
 
@@ -44,7 +44,7 @@ public final class DecimalConverterFactory {
     return numBytes;
   }
 
-  private int[] minBytesForPrecision() {
+  private int[] getMinBytesForPrecision() {
     int[] data = new int[39];
     for (int i = 0; i < data.length; i++) {
       data[i] = computeMinBytesForPrecision(i);
@@ -217,7 +217,7 @@ public final class DecimalConverterFactory {
 
   public static class LVBytesDecimalConverter implements DecimalConverter {
 
-    public static LVBytesDecimalConverter INSTANCE = new LVBytesDecimalConverter();
+    public static final LVBytesDecimalConverter INSTANCE = new LVBytesDecimalConverter();
 
     @Override public Object convert(BigDecimal decimal) {
       return DataTypeUtil.bigDecimalToByte(decimal);

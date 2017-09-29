@@ -51,7 +51,7 @@ public class PartitionFilterUtil {
     SerializableComparator comparator =
         Comparator.getComparator(partitionColumnDataType);
 
-    BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), false);
+    BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.getNumPartitions(), false);
     // add default partition
     partitionMap.set(0);
     int partitions = listInfo.size();
@@ -147,7 +147,7 @@ public class PartitionFilterUtil {
     SerializableComparator comparator =
         Comparator.getComparator(partitionColumnDataType);
 
-    BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), false);
+    BitSet partitionMap = PartitionUtil.generateBitSetBySize(partitioner.getNumPartitions(), false);
 
     int numPartitions = values.size();
     int result = 0;
@@ -172,7 +172,7 @@ public class PartitionFilterUtil {
         partitionMap.set(0);
       } else {
         // LessThan(<), LessThanEqualTo(<=)
-        partitionMap.set(0, partitioner.numPartitions());
+        partitionMap.set(0, partitioner.getNumPartitions());
       }
     } else {
       // filter value is not in default partition
@@ -180,7 +180,7 @@ public class PartitionFilterUtil {
         // if result is 0, the filter value is a bound value of range partition.
         if (isGreaterThan) {
           // GreaterThan(>), GreaterThanEqualTo(>=)
-          partitionMap.set(partitionIndex + 2, partitioner.numPartitions());
+          partitionMap.set(partitionIndex + 2, partitioner.getNumPartitions());
           partitionMap.set(0);
         } else {
           if (isEqualTo) {
@@ -195,7 +195,7 @@ public class PartitionFilterUtil {
         // the filter value is not a bound value of range partition
         if (isGreaterThan) {
           // GreaterThan(>), GreaterThanEqualTo(>=)
-          partitionMap.set(partitionIndex + 1, partitioner.numPartitions());
+          partitionMap.set(partitionIndex + 1, partitioner.getNumPartitions());
           partitionMap.set(0);
         } else {
           // LessThan(<), LessThanEqualTo(<=)

@@ -20,6 +20,8 @@ package org.apache.carbondata.core.cache.dictionary;
 import java.io.IOException;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.CarbonLRUCache;
@@ -41,6 +43,9 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueIdentifier,
     V extends Dictionary>
     implements Cache<DictionaryColumnUniqueIdentifier, Dictionary> {
+
+  private static final LogService LOGGER =
+          LogServiceFactory.getLogService(AbstractDictionaryCache.class.getName());
 
   /**
    * thread pool size to be used for dictionary data reading
@@ -130,7 +135,11 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
               columnMetadataReaderImpl.readEntryOfDictionaryMetaChunk(offsetRead);
     } finally {
       // close the metadata reader
-      columnMetadataReaderImpl.close();
+      try {
+        columnMetadataReaderImpl.close();
+      } catch (IOException e) {
+        LOGGER.error(e.getMessage());
+      }
     }
     return carbonDictionaryColumnMetaChunk.getMax_surrogate_key();
   }

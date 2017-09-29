@@ -852,7 +852,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       if (fileSystem instanceof LocalFileSystem) {
         return false;
       }
-    } catch (Exception e) {
+    } catch (IOException e) {
       return true;
     }
     return true;

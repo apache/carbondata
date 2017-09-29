@@ -49,7 +49,7 @@ public interface DataRefNode {
    *
    * @return block number
    */
-  long nodeNumber();
+  long getNodeNumber();
 
   /**
    * This method will be used to get the max value of all the columns this can
@@ -127,5 +127,5 @@ public interface DataRefNode {
    * number of pages in blocklet
    * @return
    */
-  int numberOfPages();
+  int getNumberOfPages();
 }

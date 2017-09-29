@@ -28,6 +28,6 @@ import org.apache.carbondata.core.scan.partition.Partitioner;
 public class PruneAllPartitionFilterImpl implements PartitionFilterIntf {
 
   @Override public BitSet applyFilter(Partitioner partitioner) {
-    return PartitionUtil.generateBitSetBySize(partitioner.numPartitions(), false);
+    return PartitionUtil.generateBitSetBySize(partitioner.getNumPartitions(), false);
   }
 }
