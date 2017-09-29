@@ -21,7 +21,7 @@ import java.io.{BufferedWriter, FileWriter, IOException}
 import java.util.UUID
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.language.implicitConversions
 
 import org.apache.commons.lang.StringUtils
@@ -30,6 +30,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.parquet.schema.InvalidSchemaException
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.parser.CatalystSqlParser
 import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
 import org.apache.spark.sql.execution.command.{TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.datasources.{FileFormat, OutputWriterFactory}
@@ -38,7 +39,7 @@ import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.streaming.CarbonStreamingOutputWriterFactory
-import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -192,13 +193,13 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
   }
 
-/**
- * Returns the path of the table
- * @param sparkSession
- * @param dbName
- * @param tableName
- * @return
- */
+  /**
+   * Returns the path of the table
+   * @param sparkSession
+   * @param dbName
+   * @param tableName
+   * @return
+   */
   private def getPathForTable(sparkSession: SparkSession, dbName: String,
       tableName : String, parameters: Map[String, String]): (String, Map[String, String]) = {
 
@@ -230,13 +231,14 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
    * by setting the output committer class in the conf of spark.sql.sources.outputCommitterClass.
    */
   override def prepareWrite(
-      sparkSession: SparkSession,
-      job: Job,
-      options: Map[String, String],
-      dataSchema: StructType): OutputWriterFactory = {
+    sparkSession: SparkSession,
+    job: Job,
+    options: Map[String, String],
+    dataSchema: StructType): OutputWriterFactory = {
 
     // Check if table with given path exists
-    validateTable(options.get("path").get)
+    // validateTable(options.get("path").get)
+    validateTable(options("path"))
 
     /* Check id streaming data schema matches with carbon table schema
      * Data from socket source does not have schema attached to it,
@@ -268,7 +270,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
    * Read schema from existing carbon table
    * @param sparkSession
    * @param tablePath carbon table path
-   * @return true if schema validation is successful else false
+   * @return TableSchema read from provided table path
    */
   private def getTableSchema(
     sparkSession: SparkSession,
@@ -283,9 +285,8 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     val dbName : String = names(names.length - 2)
     val storePath = formattedTablePath.substring(0,
       formattedTablePath.lastIndexOf
-      (((dbName.concat(CarbonCommonConstants.FILE_SEPARATOR).toString)
-        .concat(tableName)).toString) - 1)
-
+      (dbName.concat(CarbonCommonConstants.FILE_SEPARATOR)
+        .concat(tableName)) - 1)
     val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val thriftTableInfo: org.apache.carbondata.format.TableInfo =
       metastore.getThriftTableInfo(new CarbonTablePath(storePath, dbName, tableName))(sparkSession)
@@ -304,21 +305,17 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       carbonTableSchema: org.apache.carbondata.format.TableSchema,
       dataSchema: StructType): Boolean = {
 
-    import scala.collection.mutable.ListBuffer
-    val columnnSchemaValues = carbonTableSchema.getTable_columns.asScala.sortBy(_.schemaOrdinal)
+    val columnnSchemaValues = carbonTableSchema.getTable_columns
+      .asScala.sortBy(_.schemaOrdinal)
 
     var columnDataTypes = new ListBuffer[String]()
-    for(columnDataType <- columnnSchemaValues) {
-      columnDataTypes.append(columnDataType.data_type.toString)
-    }
+    columnnSchemaValues.foreach(columnDataType =>
+      columnDataTypes.append(columnDataType.data_type.toString))
     val tableColumnDataTypeList = columnDataTypes.toList
 
     var streamSchemaDataTypes = new ListBuffer[String]()
-    for(i <- 0 until dataSchema.size) {
-      streamSchemaDataTypes
-        .append(
-          mapStreamingDataTypeToString(dataSchema.fields(i).dataType.toString))
-    }
+    dataSchema.fields.foreach(item => streamSchemaDataTypes
+      .append(mapStreamingDataTypeToString(item.dataType.toString)))
     val streamedDataTypeList = streamSchemaDataTypes.toList
 
     val isValid = tableColumnDataTypeList == streamedDataTypeList
@@ -326,7 +323,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
   }
 
   /**
-   * Parses streamed datatype according to carbon datatype
+   * Maps streamed datatype to carbon datatype
    * @param dataType
    * @return String
    */
@@ -391,17 +388,18 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
    * and if following conditions are true:
    *    1. No schema provided by the user in readStream()
    *    2. spark.sql.streaming.schemaInference is set to true
-   * carbondata can infer a table schema from a valid table path
+   * carbondata can infer table schema from a valid table path
    * The schema inference is not mandatory, but good have.
-   * When possible, this method should return the schema of the given `files`.  When the format
-   * does not support inference, or no valid files are given should return None.  In these cases
-   * Spark will require that user specify the schema manually.
+   * When possible, this method should return the schema of the given `files`.
+   * If the format does not support schema inference, or no valid files
+   * are given it should return None. In these cases Spark will require that
+   * user specify the schema manually.
    */
   override def inferSchema(
-                   sparkSession: SparkSession,
-                   options: Map[String, String],
-                   files: Seq[FileStatus]): Option[StructType] = {
-    Some(new StructType().add("value", StringType))
+    sparkSession: SparkSession,
+    options: Map[String, String],
+    files: Seq[FileStatus]): Option[StructType] = {
+
     val path = options.get("path")
     val tablePath: String = path match {
       case Some(value) => value
@@ -412,28 +410,15 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val carbonTableSchema: org.apache.carbondata.format.TableSchema =
       getTableSchema(sparkSession: SparkSession, tablePath: String)
-    val columnnSchemaValues = carbonTableSchema.getTable_columns.asScala.sortBy(_.schemaOrdinal)
+    val columnnSchemaValues = carbonTableSchema.getTable_columns
+      .asScala.sortBy(_.schemaOrdinal)
 
-    import scala.collection.mutable.ListBuffer
-    import scala.collection.JavaConverters._
-    val tableColumnNames = new ListBuffer[String]()
-    for (columnName <- columnnSchemaValues) {
-      tableColumnNames.append(columnName.column_name)
-    }
-    val tableColumnNamesList = tableColumnNames.toList
+    var structFields = new ArrayBuffer[StructField]()
+    columnnSchemaValues.foreach(columnSchema =>
+      structFields.append(StructField(columnSchema.column_name,
+        CatalystSqlParser.parseDataType(columnSchema.data_type.toString), true)))
 
-    var columnDataTypes = new ListBuffer[String]()
-    for(columnDataType <- columnnSchemaValues) {
-      columnDataTypes.append(columnDataType.data_type.toString)
-    }
-    val tableColumnDataTypeList = columnDataTypes.toList
-
-    val inferredSchema: Option[StructType] = new Some(new StructType())
-    for (i <- tableColumnNamesList.indices) {
-      inferredSchema.get.add(tableColumnNamesList(i), tableColumnDataTypeList(i))
-    }
-
-    inferredSchema
+    Some(new StructType(structFields.toArray))
   }
 }
 
