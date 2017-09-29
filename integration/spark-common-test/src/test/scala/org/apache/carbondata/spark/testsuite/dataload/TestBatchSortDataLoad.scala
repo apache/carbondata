@@ -61,15 +61,11 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_load6")
   }
 
-
-
   override def beforeAll {
     dropTable
     buildTestData
   }
-
-
-
+  
   test("test batch sort load by passing option to load command") {
 
     sql(
