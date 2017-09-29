@@ -537,6 +537,30 @@ object CommonUtil {
     }
   }
 
+  /**
+   * This method will update the load failure entry in the table status file
+   *
+   * @param model
+   */
+  def updateTableStatusForFailure(
+      model: CarbonLoadModel): Unit = {
+    // in case if failure the load status should be "Marked for delete" so that it will be taken
+    // care during clean up
+    val loadStatus = CarbonCommonConstants.MARKED_FOR_DELETE
+    // always the last entry in the load metadata details will be the current load entry
+    val loadMetaEntry = model.getLoadMetadataDetails.get(model.getLoadMetadataDetails.size - 1)
+    CarbonLoaderUtil
+      .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp, true)
+    val updationStatus = CarbonLoaderUtil.recordLoadMetadata(loadMetaEntry, model, false, false)
+    if (!updationStatus) {
+      sys
+        .error(s"Failed to update failure entry in table status for ${
+          model
+            .getDatabaseName
+        }.${ model.getTableName }")
+    }
+  }
+
   def readLoadMetadataDetails(model: CarbonLoadModel): Unit = {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
     val details = SegmentStatusManager.readLoadMetadata(metadataPath)

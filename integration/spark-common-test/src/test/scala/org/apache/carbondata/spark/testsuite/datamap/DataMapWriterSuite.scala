@@ -41,9 +41,9 @@ class C2DataMapFactory() extends DataMapFactory {
 
   override def fireEvent(event: ChangeEvent[_]): Unit = ???
 
-  override def clear(segmentId: String): Unit = ???
+  override def clear(segmentId: String): Unit = {}
 
-  override def clear(): Unit = ???
+  override def clear(): Unit = {}
 
   override def getDataMap(distributable: DataMapDistributable): DataMap = ???
 

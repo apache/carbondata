@@ -215,13 +215,16 @@ public class RestructureUtil {
    */
   private static Object getNoDictionaryDefaultValue(DataType datatype, byte[] defaultValue) {
     Object noDictionaryDefaultValue = null;
+    String value = null;
     if (!isDefaultValueNull(defaultValue)) {
       switch (datatype) {
         case INT:
-          noDictionaryDefaultValue = ByteUtil.toInt(defaultValue, 0, defaultValue.length);
+          value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          noDictionaryDefaultValue = Integer.parseInt(value);
           break;
         case LONG:
-          noDictionaryDefaultValue = ByteUtil.toLong(defaultValue, 0, defaultValue.length);
+          value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          noDictionaryDefaultValue = Long.parseLong(value);
           break;
         case TIMESTAMP:
           long timestampValue = ByteUtil.toLong(defaultValue, 0, defaultValue.length);

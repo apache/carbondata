@@ -210,6 +210,19 @@ public class TableSchema implements Serializable, Writable {
     for (ColumnSchema column : listOfColumns) {
       column.write(out);
     }
+
+    if (null != partitionInfo) {
+      out.writeBoolean(true);
+      partitionInfo.write(out);
+    } else {
+      out.writeBoolean(false);
+    }
+    if (null != bucketingInfo) {
+      out.writeBoolean(true);
+      bucketingInfo.write(out);
+    } else {
+      out.writeBoolean(false);
+    }
   }
 
   @Override
@@ -222,6 +235,18 @@ public class TableSchema implements Serializable, Writable {
       ColumnSchema schema = new ColumnSchema();
       schema.readFields(in);
       this.listOfColumns.add(schema);
+    }
+
+    boolean partitionExists = in.readBoolean();
+    if (partitionExists) {
+      this.partitionInfo = new PartitionInfo();
+      this.partitionInfo.readFields(in);
+    }
+
+    boolean bucketingExists = in.readBoolean();
+    if (bucketingExists) {
+      this.bucketingInfo = new BucketingInfo();
+      this.bucketingInfo.readFields(in);
     }
   }
 

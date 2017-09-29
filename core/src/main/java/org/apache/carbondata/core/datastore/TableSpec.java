@@ -130,7 +130,9 @@ public class TableSpec {
     }
 
     public ColumnSpec(String fieldName, DataType schemaDataType, ColumnType columnType) {
-      this(fieldName, schemaDataType, columnType, 0, 0);
+      // for backward compatibility as the precision and scale is not stored, the values should be
+      // initialized with -1 for both precision and scale
+      this(fieldName, schemaDataType, columnType, -1, -1);
     }
 
     public ColumnSpec(String fieldName, DataType schemaDataType, ColumnType columnType,

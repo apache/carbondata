@@ -100,6 +100,16 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    */
   protected boolean isNaturalSorted;
 
+  /**
+   * date direct dictionary generator
+   */
+  private DirectDictionaryGenerator dateDictionaryGenerator;
+
+  /**
+   * timestamp direct dictionary generator
+   */
+  private DirectDictionaryGenerator timestampDictionaryGenerator;
+
   public RowLevelFilterExecuterImpl(List<DimColumnResolvedFilterInfo> dimColEvaluatorInfoList,
       List<MeasureColumnResolvedFilterInfo> msrColEvalutorInfoList, Expression exp,
       AbsoluteTableIdentifier tableIdentifier, SegmentProperties segmentProperties,
@@ -132,6 +142,10 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     this.exp = exp;
     this.tableIdentifier = tableIdentifier;
     this.complexDimensionInfoMap = complexDimensionInfoMap;
+    this.dateDictionaryGenerator =
+        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataType.DATE);
+    this.timestampDictionaryGenerator =
+        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataType.TIMESTAMP);
     initDimensionBlockIndexes();
     initMeasureBlockIndexes();
   }
@@ -408,13 +422,14 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
    */
   private Object getFilterActualValueFromDirectDictionaryValue(
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo, int dictionaryValue) {
-    Object memberString = null;
-    DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
-        .getDirectDictionaryGenerator(dimColumnEvaluatorInfo.getDimension().getDataType());
-    if (null != directDictionaryGenerator) {
-      memberString = directDictionaryGenerator.getValueFromSurrogate(dictionaryValue);
+    switch (dimColumnEvaluatorInfo.getDimension().getDataType()) {
+      case DATE:
+        return dateDictionaryGenerator.getValueFromSurrogate(dictionaryValue);
+      case TIMESTAMP:
+        return timestampDictionaryGenerator.getValueFromSurrogate(dictionaryValue);
+      default:
+        throw new RuntimeException("Invalid data type for dierct dictionary");
     }
-    return memberString;
   }
 
   /**

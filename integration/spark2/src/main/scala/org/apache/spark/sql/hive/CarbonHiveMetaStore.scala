@@ -83,7 +83,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
     // discard cached table info in cachedDataSourceTables
     sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
-    DataMapStoreManager.getInstance().clearDataMap(identifier, "blocklet")
+    DataMapStoreManager.getInstance().clearDataMap(identifier)
   }
 
   override def checkSchemasModifiedTimeAndReloadTables(storePath: String) {
