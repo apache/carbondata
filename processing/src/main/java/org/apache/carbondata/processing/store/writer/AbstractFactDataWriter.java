@@ -64,7 +64,7 @@ import org.apache.carbondata.processing.store.file.FileData;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.io.IOUtils;
 
-public abstract class AbstractFactDataWriter<T> implements CarbonFactDataWriter<T> {
+public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AbstractFactDataWriter.class.getName());

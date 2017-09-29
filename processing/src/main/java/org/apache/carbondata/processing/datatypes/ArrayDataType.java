@@ -26,7 +26,7 @@ import java.util.List;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
-import org.apache.carbondata.processing.newflow.complexobjects.ArrayObject;
+import org.apache.carbondata.processing.loading.complexobjects.ArrayObject;
 
 
 /**

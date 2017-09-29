@@ -37,7 +37,7 @@ class CarbonOption(options: Map[String, String]) {
 
   def partitionClass: String = {
     options.getOrElse("partitionClass",
-      "org.apache.carbondata.spark.partition.api.impl.SampleDataPartitionerImpl")
+      "org.apache.carbondata.processing.partition.impl.SampleDataPartitionerImpl")
   }
 
   def tempCSV: Boolean = options.getOrElse("tempCSV", "true").toBoolean

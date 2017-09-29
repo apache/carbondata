@@ -28,10 +28,10 @@ import org.apache.spark.util.PartitionUtils
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.processing.spliter.RowResultProcessor
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
+import org.apache.carbondata.processing.partition.spliter.RowResultProcessor
+import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.AlterPartitionResult
-import org.apache.carbondata.spark.load.CarbonLoaderUtil
+import org.apache.carbondata.spark.util.Util
 
 class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
     result: AlterPartitionResult[K, V],
@@ -78,7 +78,7 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
 
             if (carbonUseLocalDir.equalsIgnoreCase("true")) {
 
-                val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+                val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
                 if (null != storeLocations && storeLocations.nonEmpty) {
                     storeLocation = storeLocations(Random.nextInt(storeLocations.length))
                 }

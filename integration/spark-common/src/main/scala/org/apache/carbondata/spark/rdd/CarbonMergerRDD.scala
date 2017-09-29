@@ -45,13 +45,12 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUt
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSplitTaskInfo}
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger._
-import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
+import org.apache.carbondata.processing.splits.TableSplit
+import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.MergeResult
-import org.apache.carbondata.spark.load.CarbonLoaderUtil
-import org.apache.carbondata.spark.splits.TableSplit
-import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
+import org.apache.carbondata.spark.util.{SparkDataTypeConverterImpl, Util}
 
 class CarbonMergerRDD[K, V](
     sc: SparkContext,
@@ -91,7 +90,7 @@ class CarbonMergerRDD[K, V](
 
       if (carbonUseLocalDir.equalsIgnoreCase("true")) {
 
-        val storeLocations = CarbonLoaderUtil.getConfiguredLocalDirs(SparkEnv.get.conf)
+        val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
         if (null != storeLocations && storeLocations.nonEmpty) {
           storeLocation = storeLocations(Random.nextInt(storeLocations.length))
         }

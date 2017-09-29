@@ -44,9 +44,9 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
-import org.apache.carbondata.processing.newflow.dictionary.DictionaryServerClientDictionary;
-import org.apache.carbondata.processing.newflow.dictionary.DirectDictionary;
-import org.apache.carbondata.processing.newflow.dictionary.PreCreatedDictionary;
+import org.apache.carbondata.processing.loading.dictionary.DictionaryServerClientDictionary;
+import org.apache.carbondata.processing.loading.dictionary.DirectDictionary;
+import org.apache.carbondata.processing.loading.dictionary.PreCreatedDictionary;
 
 /**
  * Primitive DataType stateless object used in data loading

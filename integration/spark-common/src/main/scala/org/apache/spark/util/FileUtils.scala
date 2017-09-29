@@ -21,7 +21,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.processing.etl.DataLoadingException
+import org.apache.carbondata.processing.exception.DataLoadingException
 
 object FileUtils {
   /**
