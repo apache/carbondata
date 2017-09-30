@@ -922,7 +922,8 @@ public final class CarbonUtil {
           ColumnarFormatVersion.valueOf(detailInfo.getVersionNumber());
       AbstractDataFileFooterConverter dataFileFooterConverter =
           DataFileFooterConverterFactory.getInstance().getDataFileFooterConverter(version);
-      fileFooter.setColumnInTable(dataFileFooterConverter.getSchema(tableBlockInfo));
+      List<ColumnSchema> schema = dataFileFooterConverter.getSchema(tableBlockInfo);
+      fileFooter.setColumnInTable(schema);
       SegmentInfo segmentInfo = new SegmentInfo();
       segmentInfo.setColumnCardinality(detailInfo.getDimLens());
       segmentInfo.setNumberOfColumns(detailInfo.getRowCount());
@@ -1446,17 +1447,17 @@ public final class CarbonUtil {
     ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
     valueEncoderMeta.setType(measureType);
     switch (measureType) {
-      case CarbonCommonConstants.DOUBLE_MEASURE:
+      case DataType.DOUBLE_MEASURE_CHAR:
         valueEncoderMeta.setMaxValue(buffer.getDouble());
         valueEncoderMeta.setMinValue(buffer.getDouble());
         valueEncoderMeta.setUniqueValue(buffer.getDouble());
         break;
-      case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
+      case DataType.BIG_DECIMAL_MEASURE_CHAR:
         valueEncoderMeta.setMaxValue(BigDecimal.valueOf(Long.MAX_VALUE));
         valueEncoderMeta.setMinValue(BigDecimal.valueOf(Long.MIN_VALUE));
         valueEncoderMeta.setUniqueValue(BigDecimal.valueOf(Long.MIN_VALUE));
         break;
-      case CarbonCommonConstants.BIG_INT_MEASURE:
+      case DataType.BIG_INT_MEASURE_CHAR:
         valueEncoderMeta.setMaxValue(buffer.getLong());
         valueEncoderMeta.setMinValue(buffer.getLong());
         valueEncoderMeta.setUniqueValue(buffer.getLong());
@@ -1469,40 +1470,6 @@ public final class CarbonUtil {
     return valueEncoderMeta;
   }
 
-  public static byte[] serializeEncodeMetaUsingByteBuffer(ValueEncoderMeta valueEncoderMeta)
-      throws IOException {
-    ByteBuffer buffer = null;
-    switch (valueEncoderMeta.getType()) {
-      case LONG:
-        buffer = ByteBuffer.allocate(
-            (CarbonCommonConstants.LONG_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
-                + 3);
-        buffer.putChar(valueEncoderMeta.getTypeInChar());
-        buffer.putLong((Long) valueEncoderMeta.getMaxValue());
-        buffer.putLong((Long) valueEncoderMeta.getMinValue());
-        buffer.putLong(0L); // unique value, not used
-        break;
-      case DOUBLE:
-        buffer = ByteBuffer.allocate(
-            (CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE * 3) + CarbonCommonConstants.INT_SIZE_IN_BYTE
-                + 3);
-        buffer.putChar(valueEncoderMeta.getTypeInChar());
-        buffer.putDouble((Double) valueEncoderMeta.getMaxValue());
-        buffer.putDouble((Double) valueEncoderMeta.getMinValue());
-        buffer.putDouble(0d); // unique value, not used
-        break;
-      case DECIMAL:
-        buffer = ByteBuffer.allocate(CarbonCommonConstants.INT_SIZE_IN_BYTE + 3);
-        buffer.putChar(valueEncoderMeta.getTypeInChar());
-        break;
-      default:
-        throw new IOException("Unsupported datatype: " + valueEncoderMeta.getType());
-    }
-    buffer.putInt(0); // decimal point, not used
-    buffer.put(valueEncoderMeta.getDataTypeSelected());
-    buffer.flip();
-    return buffer.array();
-  }
 
   /**
    * Below method will be used to convert indexes in range
@@ -1983,49 +1950,6 @@ public final class CarbonUtil {
     }
   }
 
-  public static byte[] getMaxValueAsBytes(ValueEncoderMeta meta) {
-    ByteBuffer b;
-    switch (meta.getType()) {
-      case LONG:
-        b = ByteBuffer.allocate(8);
-        b.putLong((long) meta.getMaxValue());
-        b.flip();
-        return b.array();
-      case DOUBLE:
-        b = ByteBuffer.allocate(8);
-        b.putDouble((double) meta.getMaxValue());
-        b.flip();
-        return b.array();
-      case DECIMAL:
-      case BYTE_ARRAY:
-        return new byte[8];
-      default:
-        throw new IllegalArgumentException("Invalid data type: " + meta.getType());
-    }
-  }
-
-  public static byte[] getMinValueAsBytes(ValueEncoderMeta meta) {
-    ByteBuffer b;
-    switch (meta.getType()) {
-      case LONG:
-        b = ByteBuffer.allocate(8);
-        b.putLong((long) meta.getMinValue());
-        b.flip();
-        return b.array();
-      case DOUBLE:
-        b = ByteBuffer.allocate(8);
-        b.putDouble((double) meta.getMinValue());
-        b.flip();
-        return b.array();
-      case DECIMAL:
-      case BYTE_ARRAY:
-        return new byte[8];
-      default:
-        throw new IllegalArgumentException("Invalid data type: " + meta.getType());
-    }
-  }
-
-
   /**
    * convert value to byte array
    */
@@ -2069,7 +1993,6 @@ public final class CarbonUtil {
         throw new IllegalArgumentException("Invalid data type: " + dataType);
     }
   }
-
 
 }
 

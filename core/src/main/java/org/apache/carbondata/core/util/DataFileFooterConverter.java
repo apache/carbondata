@@ -123,6 +123,25 @@ public class DataFileFooterConverter extends AbstractDataFileFooterConverter {
   }
 
   @Override public List<ColumnSchema> getSchema(TableBlockInfo tableBlockInfo) throws IOException {
-    return null;
+    FileHolder fileReader = null;
+    List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
+    try {
+      long completeBlockLength = tableBlockInfo.getBlockLength();
+      long footerPointer = completeBlockLength - 8;
+      fileReader = FileFactory.getFileHolder(FileFactory.getFileType(tableBlockInfo.getFilePath()));
+      long actualFooterOffset = fileReader.readLong(tableBlockInfo.getFilePath(), footerPointer);
+      CarbonFooterReader reader =
+          new CarbonFooterReader(tableBlockInfo.getFilePath(), actualFooterOffset);
+      FileFooter footer = reader.readFooter();
+      List<org.apache.carbondata.format.ColumnSchema> table_columns = footer.getTable_columns();
+      for (int i = 0; i < table_columns.size(); i++) {
+        columnSchemaList.add(thriftColumnSchmeaToWrapperColumnSchema(table_columns.get(i)));
+      }
+    } finally {
+      if (null != fileReader) {
+        fileReader.finish();
+      }
+    }
+    return columnSchemaList;
   }
 }

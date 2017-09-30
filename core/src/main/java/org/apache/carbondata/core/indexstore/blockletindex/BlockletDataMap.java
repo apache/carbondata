@@ -22,6 +22,7 @@ import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,12 +51,14 @@ import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Datamap implementation for blocklet.
@@ -133,9 +136,11 @@ public class BlockletDataMap implements DataMap, Cacheable {
       row.setByteArray(blockletInfo.getBlockletIndex().getBtreeIndex().getStartKey(), ordinal++);
 
       BlockletMinMaxIndex minMaxIndex = blockletInfo.getBlockletIndex().getMinMaxIndex();
-      row.setRow(addMinMax(minMaxLen, schema[ordinal], minMaxIndex.getMinValues()), ordinal);
+      row.setRow(addMinMax(minMaxLen, schema[ordinal],
+          updateMinValues(minMaxIndex.getMinValues(), minMaxLen)), ordinal);
       ordinal++;
-      row.setRow(addMinMax(minMaxLen, schema[ordinal], minMaxIndex.getMaxValues()), ordinal);
+      row.setRow(addMinMax(minMaxLen, schema[ordinal],
+          updateMaxValues(minMaxIndex.getMaxValues(), minMaxLen)), ordinal);
       ordinal++;
 
       row.setInt(blockletInfo.getNumberOfRows(), ordinal++);
@@ -167,6 +172,92 @@ public class BlockletDataMap implements DataMap, Cacheable {
         throw new RuntimeException(e);
       }
     }
+  }
+
+  /**
+   * Fill the measures min values with minimum , this is needed for backward version compatability
+   * as older versions don't store min values for measures
+   */
+  private byte[][] updateMinValues(byte[][] minValues, int[] minMaxLen) {
+    byte[][] updatedValues = minValues;
+    if (minValues.length < minMaxLen.length) {
+      updatedValues = new byte[minMaxLen.length][];
+      System.arraycopy(minValues, 0, updatedValues, 0, minValues.length);
+      List<CarbonMeasure> measures = segmentProperties.getMeasures();
+      ByteBuffer buffer = ByteBuffer.allocate(8);
+      for (int i = 0; i < measures.size(); i++) {
+        buffer.rewind();
+        switch (measures.get(i).getDataType()) {
+          case BYTE:
+            buffer.putLong(Byte.MIN_VALUE);
+            updatedValues[minValues.length + i] = buffer.array().clone();
+            break;
+          case SHORT:
+            buffer.putLong(Short.MIN_VALUE);
+            updatedValues[minValues.length + i] = buffer.array().clone();
+            break;
+          case INT:
+            buffer.putLong(Integer.MIN_VALUE);
+            updatedValues[minValues.length + i] = buffer.array().clone();
+            break;
+          case LONG:
+            buffer.putLong(Long.MIN_VALUE);
+            updatedValues[minValues.length + i] = buffer.array().clone();
+            break;
+          case DECIMAL:
+            updatedValues[minValues.length + i] =
+                DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Long.MIN_VALUE));
+            break;
+          default:
+            buffer.putDouble(Double.MIN_VALUE);
+            updatedValues[minValues.length + i] = buffer.array().clone();
+        }
+      }
+    }
+    return updatedValues;
+  }
+
+  /**
+   * Fill the measures max values with maximum , this is needed for backward version compatability
+   * as older versions don't store max values for measures
+   */
+  private byte[][] updateMaxValues(byte[][] maxValues, int[] minMaxLen) {
+    byte[][] updatedValues = maxValues;
+    if (maxValues.length < minMaxLen.length) {
+      updatedValues = new byte[minMaxLen.length][];
+      System.arraycopy(maxValues, 0, updatedValues, 0, maxValues.length);
+      List<CarbonMeasure> measures = segmentProperties.getMeasures();
+      ByteBuffer buffer = ByteBuffer.allocate(8);
+      for (int i = 0; i < measures.size(); i++) {
+        buffer.rewind();
+        switch (measures.get(i).getDataType()) {
+          case BYTE:
+            buffer.putLong(Byte.MAX_VALUE);
+            updatedValues[maxValues.length + i] = buffer.array().clone();
+            break;
+          case SHORT:
+            buffer.putLong(Short.MAX_VALUE);
+            updatedValues[maxValues.length + i] = buffer.array().clone();
+            break;
+          case INT:
+            buffer.putLong(Integer.MAX_VALUE);
+            updatedValues[maxValues.length + i] = buffer.array().clone();
+            break;
+          case LONG:
+            buffer.putLong(Long.MAX_VALUE);
+            updatedValues[maxValues.length + i] = buffer.array().clone();
+            break;
+          case DECIMAL:
+            updatedValues[maxValues.length + i] =
+                DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Long.MAX_VALUE));
+            break;
+          default:
+            buffer.putDouble(Double.MAX_VALUE);
+            updatedValues[maxValues.length + i] = buffer.array().clone();
+        }
+      }
+    }
+    return updatedValues;
   }
 
   private DataMapRow addMinMax(int[] minMaxLen, DataMapSchema dataMapSchema, byte[][] minValues) {

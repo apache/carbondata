@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.core.datastore.block;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
 import java.util.HashMap;
@@ -28,6 +29,9 @@ import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil;
+
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 
 /**
  * class will be used to pass the block detail detail will be passed form driver
@@ -162,6 +166,15 @@ public class TableBlockInfo implements Distributable, Serializable {
    * @return the blockLength
    */
   public long getBlockLength() {
+    if (blockLength == 0) {
+      Path path = new Path(filePath);
+      try {
+        FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+        blockLength = fs.listStatus(path)[0].getLen();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
     return blockLength;
   }
 

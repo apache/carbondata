@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.reader.CarbonDataReaderFactory;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 
 /**
@@ -46,6 +47,12 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
   public BlockletDataRefNodeWrapper(List<TableBlockInfo> blockInfos, int index,
       int[] dimensionLens) {
     this.blockInfos = blockInfos;
+    // Update row count and page count to blocklet info
+    for (TableBlockInfo blockInfo: blockInfos) {
+      BlockletDetailInfo detailInfo = blockInfo.getDetailInfo();
+      detailInfo.getBlockletInfo().setNumberOfRows(detailInfo.getRowCount());
+      detailInfo.getBlockletInfo().setNumberOfPages(detailInfo.getPagesCount());
+    }
     this.index = index;
     this.dimensionLens = dimensionLens;
   }
