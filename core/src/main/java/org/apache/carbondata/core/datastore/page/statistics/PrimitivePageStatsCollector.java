@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /** statics for primitive column page */
 public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, SimpleStatsResult {
@@ -92,9 +93,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   public static PrimitivePageStatsCollector newInstance(ValueEncoderMeta meta) {
     PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(meta.getType(), -1, -1);
+        new PrimitivePageStatsCollector(CarbonUtil.getDataType(meta.getType()), -1, -1);
     // set min max from meta
-    switch (meta.getType()) {
+    switch (CarbonUtil.getDataType(meta.getType())) {
       case BYTE:
         instance.minByte = (byte) meta.getMinValue();
         instance.maxByte = (byte) meta.getMaxValue();
@@ -107,6 +108,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         instance.minInt = (int) meta.getMinValue();
         instance.maxInt = (int) meta.getMaxValue();
         break;
+      case LEGACY_LONG:
       case LONG:
         instance.minLong = (long) meta.getMinValue();
         instance.maxLong = (long) meta.getMaxValue();
@@ -145,6 +147,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         minInt = Integer.MAX_VALUE;
         maxInt = Integer.MIN_VALUE;
         break;
+      case LEGACY_LONG:
       case LONG:
         minLong = Long.MAX_VALUE;
         maxLong = Long.MIN_VALUE;

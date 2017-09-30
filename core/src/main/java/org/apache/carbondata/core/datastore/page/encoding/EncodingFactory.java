@@ -35,6 +35,7 @@ import org.apache.carbondata.core.datastore.page.encoding.rle.RLEEncoderMeta;
 import org.apache.carbondata.core.datastore.page.statistics.PrimitivePageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.Encoding;
 
@@ -107,7 +108,7 @@ public abstract class EncodingFactory {
     TableSpec.ColumnSpec spec = new TableSpec.ColumnSpec("legacy", stats.getDataType(),
         ColumnType.MEASURE);
     String compressor = "snappy";
-    switch (metadata.getType()) {
+    switch (CarbonUtil.getDataType(metadata.getType())) {
       case BYTE:
       case SHORT:
       case INT:
@@ -126,7 +127,7 @@ public abstract class EncodingFactory {
           return codec.createDecoder(meta);
         } else if (codec instanceof DirectCompressCodec) {
           ColumnPageEncoderMeta meta = new ColumnPageEncoderMeta(spec,
-              metadata.getType(), stats, compressor);
+              CarbonUtil.getDataType(metadata.getType()), stats, compressor);
           return codec.createDecoder(meta);
         } else {
           throw new RuntimeException("internal error");
@@ -142,7 +143,7 @@ public abstract class EncodingFactory {
           return codec.createDecoder(meta);
         } else if (codec instanceof DirectCompressCodec) {
           ColumnPageEncoderMeta meta = new ColumnPageEncoderMeta(spec,
-              metadata.getType(), stats, compressor);
+              CarbonUtil.getDataType(metadata.getType()), stats, compressor);
           return codec.createDecoder(meta);
         } else {
           throw new RuntimeException("internal error");
@@ -152,6 +153,13 @@ public abstract class EncodingFactory {
         // no dictionary dimension
         return new DirectCompressCodec(stats.getDataType()).createDecoder(
             new ColumnPageEncoderMeta(spec, stats.getDataType(), stats, compressor));
+        // In case of older versions like in V1 format it has special datatype to handle
+      case LEGACY_LONG:
+        AdaptiveIntegralCodec adaptiveCodec =
+            new AdaptiveIntegralCodec(DataType.LONG, DataType.LONG, stats);
+        ColumnPageEncoderMeta meta = new ColumnPageEncoderMeta(spec,
+            adaptiveCodec.getTargetDataType(), stats, compressor);
+        return adaptiveCodec.createDecoder(meta);
       default:
         throw new RuntimeException("unsupported data type: " + stats.getDataType());
     }

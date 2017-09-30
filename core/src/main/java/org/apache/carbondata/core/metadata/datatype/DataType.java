@@ -34,11 +34,13 @@ public enum DataType {
   STRUCT(10, "STRUCT", -1),
   MAP(11, "MAP", -1),
   BYTE(12, "BYTE", 1),
-
   // internal use only, for variable length data type
   BYTE_ARRAY(13, "BYTE_ARRAY", -1),
+
   // internal use only, for value compression from integer/long to 3 bytes value
-  SHORT_INT(14, "SHORT_INT", 3);
+  SHORT_INT(14, "SHORT_INT", 3),
+  // Only for internal use for backward compatability
+  LEGACY_LONG(15, "LEGACYBIGINT", 8);
 
   private int precedenceOrder;
   private String name;
