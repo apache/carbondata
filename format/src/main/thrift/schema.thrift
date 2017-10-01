@@ -55,6 +55,7 @@ enum Encoding{
 	DIRECT_STRING = 10;   // Stores string value and string length separately in page data
 	ADAPTIVE_FLOATING = 11; // Identifies that a column is encoded using AdaptiveFloatingCodec
 	BOOL_BYTE = 12;   // Identifies that a column is encoded using BooleanPageCodec
+	ADAPTIVE_DELTA_FLOATING = 13; // Identifies that a column is encoded using AdaptiveDeltaFloatingCodec
 }
 
 enum PartitionType{
