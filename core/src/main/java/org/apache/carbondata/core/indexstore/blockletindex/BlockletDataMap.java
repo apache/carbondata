@@ -205,7 +205,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
             break;
           case DECIMAL:
             updatedValues[minValues.length + i] =
-                DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Double.MIN_VALUE));
+                DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Long.MIN_VALUE));
             break;
           default:
             buffer.putDouble(Double.MIN_VALUE);
@@ -248,7 +248,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
             break;
           case DECIMAL:
             updatedValues[maxValues.length + i] =
-                DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Double.MAX_VALUE));
+                DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Long.MAX_VALUE));
             break;
           default:
             buffer.putDouble(Double.MAX_VALUE);

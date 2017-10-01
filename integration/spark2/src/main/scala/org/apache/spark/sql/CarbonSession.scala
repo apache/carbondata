@@ -43,7 +43,7 @@ class CarbonSession(@transient val sc: SparkContext,
   }
 
   @transient
-  override private[sql] lazy val sessionState: SessionState = new CarbonSessionState(this)
+  override lazy val sessionState: SessionState = new CarbonSessionState(this)
 
   /**
    * State shared across sessions, including the `SparkContext`, cached data, listener,
