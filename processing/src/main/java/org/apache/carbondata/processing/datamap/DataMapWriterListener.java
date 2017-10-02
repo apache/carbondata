@@ -32,6 +32,7 @@ import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.processing.store.TablePage;
 
 /**
@@ -82,18 +83,18 @@ public class DataMapWriterListener {
     LOG.info("DataMapWriter " + writer + " added");
   }
 
-  public void onBlockStart(String blockId) {
+  public void onBlockStart(String blockId, String directoryPath) {
     for (List<DataMapWriter> writers : registry.values()) {
       for (DataMapWriter writer : writers) {
-        writer.onBlockStart(blockId);
+        writer.onBlockStart(blockId, directoryPath);
       }
     }
   }
 
-  public void onBlockEnd(String blockId) {
+  public void onBlockEnd(String blockId, List<BlockIndexInfo> blockIndexInfoList) {
     for (List<DataMapWriter> writers : registry.values()) {
       for (DataMapWriter writer : writers) {
-        writer.onBlockEnd(blockId);
+        writer.onBlockEnd(blockId, blockIndexInfoList);
       }
     }
   }

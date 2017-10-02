@@ -20,11 +20,9 @@ package org.apache.carbondata.spark.testsuite.datamap
 import java.util
 
 import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory, DataMapWriter}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
 import org.apache.carbondata.core.datastore.page.ColumnPage
@@ -32,6 +30,7 @@ import org.apache.carbondata.core.events.ChangeEvent
 import org.apache.carbondata.core.indexstore.schema.FilterType
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.index.BlockIndexInfo
 import org.apache.carbondata.core.util.CarbonProperties
 
 class C2DataMapFactory() extends DataMapFactory {
@@ -173,7 +172,7 @@ object DataMapWriterSuite {
       callbackSeq :+= s"blocklet end: $blockletId"
     }
 
-    override def onBlockEnd(blockId: String): Unit = {
+    override def onBlockEnd(blockId: String, blockIndexInfoList: util.List[BlockIndexInfo]): Unit = {
       callbackSeq :+= s"block end $blockId"
     }
 
@@ -181,7 +180,7 @@ object DataMapWriterSuite {
       callbackSeq :+= s"blocklet start $blockletId"
     }
 
-    override def onBlockStart(blockId: String): Unit = {
+    override def onBlockStart(blockId: String, directoryPath: String): Unit = {
       callbackSeq :+= s"block start $blockId"
     }
 
