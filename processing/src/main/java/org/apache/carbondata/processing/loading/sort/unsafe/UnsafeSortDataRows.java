@@ -38,6 +38,7 @@ import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 import org.apache.carbondata.processing.loading.sort.unsafe.comparator.UnsafeRowComparator;
@@ -137,8 +138,9 @@ public class UnsafeSortDataRows {
 
     // create new sort temp directory
     CarbonDataProcessorUtil.createLocations(parameters.getTempFileLocation());
-    this.dataSorterAndWriterExecutorService =
-        Executors.newFixedThreadPool(parameters.getNumberOfCores());
+    this.dataSorterAndWriterExecutorService = Executors
+        .newFixedThreadPool(parameters.getNumberOfCores(),
+            new CarbonThreadFactory("UnsafeSortDataRowPool:" + parameters.getTableName()));
     semaphore = new Semaphore(parameters.getNumberOfCores());
   }
 
@@ -372,7 +374,8 @@ public class UnsafeSortDataRows {
                   + System.nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
           writeData(page, sortTempFile);
           LOGGER.info("Time taken to sort row page with size" + page.getBuffer().getActualSize()
-              + " and write is: " + (System.currentTimeMillis() - startTime));
+              + " and write is: " + (System.currentTimeMillis() - startTime) + ": location:"
+              + sortTempFile);
           page.freeMemory();
           // add sort temp filename to and arrayList. When the list size reaches 20 then
           // intermediate merging of sort temp files will be triggered
@@ -395,7 +398,7 @@ public class UnsafeSortDataRows {
           page.getBuffer().loadToUnsafe();
           unsafeInMemoryIntermediateFileMerger.addDataChunkToMerge(page);
           LOGGER.info(
-              "Time taken to sort row page with size" + page.getBuffer().getActualSize() + "is: "
+              "Time taken to sort row page with size: " + page.getBuffer().getActualSize() + "is: "
                   + (System.currentTimeMillis() - startTime));
         }
       } catch (Throwable e) {

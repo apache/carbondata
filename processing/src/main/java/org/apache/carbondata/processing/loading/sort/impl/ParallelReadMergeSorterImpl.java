@@ -30,6 +30,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
@@ -58,6 +59,8 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
   private SingleThreadFinalSortFilesMerger finalMerger;
 
   private AtomicLong rowCounter;
+
+  private ExecutorService executorService;
 
   public ParallelReadMergeSorterImpl(AtomicLong rowCounter) {
     this.rowCounter = rowCounter;
@@ -94,7 +97,8 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
     } catch (CarbonSortKeyAndGroupByException e) {
       throw new CarbonDataLoadingException(e);
     }
-    ExecutorService executorService = Executors.newFixedThreadPool(iterators.length);
+    this.executorService = Executors.newFixedThreadPool(iterators.length,
+        new CarbonThreadFactory("SafeParallelSorterPool:" + sortParameters.getTableName()));
     this.threadStatusObserver = new ThreadStatusObserver(executorService);
 
     try {
@@ -146,6 +150,9 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
   @Override public void close() {
     if (intermediateFileMerger != null) {
       intermediateFileMerger.close();
+    }
+    if (null != executorService && !executorService.isShutdown()) {
+      executorService.shutdownNow();
     }
   }
 

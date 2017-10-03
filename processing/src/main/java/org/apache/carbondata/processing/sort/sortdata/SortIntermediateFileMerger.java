@@ -20,13 +20,16 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 
 /**
@@ -50,11 +53,15 @@ public class SortIntermediateFileMerger {
 
   private final Object lockObject = new Object();
 
+  private List<Future<Void>> mergerTask;
+
   public SortIntermediateFileMerger(SortParameters parameters) {
     this.parameters = parameters;
     // processed file list
     this.procFiles = new ArrayList<File>(CarbonCommonConstants.CONSTANT_SIZE_TEN);
-    this.executorService = Executors.newFixedThreadPool(parameters.getNumberOfCores());
+    this.executorService = Executors.newFixedThreadPool(parameters.getNumberOfCores(),
+        new CarbonThreadFactory("SafeIntermediateMergerPool:" + parameters.getTableName()));
+    mergerTask = new ArrayList<>();
   }
 
   public void addFileToMerge(File sortTempFile) {
@@ -91,7 +98,7 @@ public class SortIntermediateFileMerger {
         chosenTempDir + File.separator + parameters.getTableName() + System
             .nanoTime() + CarbonCommonConstants.MERGERD_EXTENSION);
     IntermediateFileMerger merger = new IntermediateFileMerger(parameters, intermediateFiles, file);
-    executorService.execute(merger);
+    mergerTask.add(executorService.submit(merger));
   }
 
   public void finish() throws CarbonSortKeyAndGroupByException {
@@ -103,10 +110,22 @@ public class SortIntermediateFileMerger {
     }
     procFiles.clear();
     procFiles = null;
+    checkForFailure();
+  }
+
+  private void checkForFailure() throws CarbonSortKeyAndGroupByException {
+    for (int i = 0; i < mergerTask.size(); i++) {
+      try {
+        mergerTask.get(i).get();
+      } catch (InterruptedException | ExecutionException e) {
+        LOGGER.error(e, e.getMessage());
+        throw new CarbonSortKeyAndGroupByException(e);
+      }
+    }
   }
 
   public void close() {
-    if (executorService.isShutdown()) {
+    if (!executorService.isShutdown()) {
       executorService.shutdownNow();
     }
   }

@@ -34,6 +34,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.NonDictionaryUtil;
@@ -153,7 +154,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    */
   public SortTempFileChunkHolder(File tempFile, int dimensionCount, int complexDimensionCount,
       int measureCount, int fileBufferSize, int noDictionaryCount, DataType[] aggType,
-      boolean[] isNoDictionaryDimensionColumn, boolean[] isNoDictionarySortColumn) {
+      boolean[] isNoDictionaryDimensionColumn, boolean[] isNoDictionarySortColumn,
+      String tableName) {
     // set temp file
     this.tempFile = tempFile;
 
@@ -165,7 +167,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     this.noDictionaryCount = noDictionaryCount;
     // set mdkey length
     this.fileBufferSize = fileBufferSize;
-    this.executorService = Executors.newFixedThreadPool(1);
+    this.executorService = Executors
+        .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool:" + tableName));
     this.aggType = aggType;
 
     this.isNoDictionaryDimensionColumn = isNoDictionaryDimensionColumn;
@@ -407,7 +410,9 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    */
   public void closeStream() {
     CarbonUtil.closeStreams(stream);
-    executorService.shutdown();
+    if (null != executorService) {
+      executorService.shutdownNow();
+    }
     this.backupBuffer = null;
     this.currentBuffer = null;
   }
