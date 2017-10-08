@@ -161,8 +161,8 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
     sparkType match {
       case StringType => CarbonType.STRING.getName
       case IntegerType => CarbonType.INT.getName
-      case ShortType => CarbonType.SHORT.getName
-      case LongType => CarbonType.LONG.getName
+      case ShortType => "smallint"
+      case LongType => "bigint"
       case FloatType => CarbonType.DOUBLE.getName
       case DoubleType => CarbonType.DOUBLE.getName
       case TimestampType => CarbonType.TIMESTAMP.getName
