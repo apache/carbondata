@@ -33,12 +33,13 @@ public class OrFilterExecuterImpl implements FilterExecuter {
     this.rightExecuter = rightExecuter;
   }
 
-  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
+  @Override
+  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
       throws FilterUnsupportedException, IOException {
-    BitSetGroup leftFilters = leftExecuter.applyFilter(blockChunkHolder);
-    BitSetGroup rightFilters = rightExecuter.applyFilter(blockChunkHolder);
+    BitSetGroup leftFilters = leftExecuter.applyFilter(blockChunkHolder, false);
+    BitSetGroup rightFilters = rightExecuter.applyFilter(blockChunkHolder, false);
     leftFilters.or(rightFilters);
-
+    blockChunkHolder.setBitSetGroup(leftFilters);
     return leftFilters;
   }
 

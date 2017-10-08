@@ -33,17 +33,19 @@ public class AndFilterExecuterImpl implements FilterExecuter {
     this.rightExecuter = rightExecuter;
   }
 
-  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
+  @Override
+  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
       throws FilterUnsupportedException, IOException {
-    BitSetGroup leftFilters = leftExecuter.applyFilter(blockChunkHolder);
+    BitSetGroup leftFilters = leftExecuter.applyFilter(blockChunkHolder, useBitsetPipeLine);
     if (leftFilters.isEmpty()) {
       return leftFilters;
     }
-    BitSetGroup rightFilter = rightExecuter.applyFilter(blockChunkHolder);
+    BitSetGroup rightFilter = rightExecuter.applyFilter(blockChunkHolder, useBitsetPipeLine);
     if (rightFilter.isEmpty()) {
       return rightFilter;
     }
     leftFilters.and(rightFilter);
+    blockChunkHolder.setBitSetGroup(leftFilters);
     return leftFilters;
   }
 

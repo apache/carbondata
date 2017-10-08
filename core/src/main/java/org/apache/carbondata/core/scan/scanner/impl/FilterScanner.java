@@ -64,6 +64,8 @@ public class FilterScanner extends AbstractBlockletScanner {
 
   private QueryStatisticsModel queryStatisticsModel;
 
+  private boolean useBitSetPipeLine;
+
   public FilterScanner(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
     super(blockExecutionInfo);
@@ -77,6 +79,13 @@ public class FilterScanner extends AbstractBlockletScanner {
     // get the filter tree
     this.filterExecuter = blockExecutionInfo.getFilterExecuterTree();
     this.queryStatisticsModel = queryStatisticsModel;
+
+    String useBitSetPipeLine = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.BITSET_PIPE_LINE,
+            CarbonCommonConstants.BITSET_PIPE_LINE_DEFAULT);
+    if (null != useBitSetPipeLine) {
+      this.useBitSetPipeLine = Boolean.parseBoolean(useBitSetPipeLine);
+    }
   }
 
   /**
@@ -145,7 +154,7 @@ public class FilterScanner extends AbstractBlockletScanner {
     totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
         totalBlockletStatistic.getCount() + 1);
     // apply filter on actual data
-    BitSetGroup bitSetGroup = this.filterExecuter.applyFilter(blocksChunkHolder);
+    BitSetGroup bitSetGroup = this.filterExecuter.applyFilter(blocksChunkHolder, useBitSetPipeLine);
     // if indexes is empty then return with empty result
     if (bitSetGroup.isEmpty()) {
       CarbonUtil.freeMemory(blocksChunkHolder.getDimensionRawDataChunk(),

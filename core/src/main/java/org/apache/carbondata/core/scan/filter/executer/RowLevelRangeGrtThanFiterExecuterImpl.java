@@ -166,7 +166,8 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
     return false;
   }
 
-  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
+  @Override
+  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
       throws FilterUnsupportedException, IOException {
     // select all rows if dimension does not exists in the current block
     if (!isDimensionPresentInCurrentBlock[0] && !isMeasurePresentInCurrentBlock[0]) {
