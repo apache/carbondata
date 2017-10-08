@@ -22,7 +22,7 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
@@ -44,13 +44,11 @@ public class RangeExpression extends BinaryConditionalExpression {
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ExpressionResult resultLeft = left.evaluate(value);
     ExpressionResult resultRight = right.evaluate(value);
-    switch (resultLeft.getDataType()) {
-      case BOOLEAN:
-        resultLeft.set(DataType.BOOLEAN, (resultLeft.getBoolean() && resultRight.getBoolean()));
-        break;
-      default:
-        throw new FilterUnsupportedException(
-            "Incompatible datatype for applying RANGE Expression Filter");
+    if (resultLeft.getDataType() == DataTypes.BOOLEAN) {
+      resultLeft.set(DataTypes.BOOLEAN, (resultLeft.getBoolean() && resultRight.getBoolean()));
+    } else {
+      throw new FilterUnsupportedException(
+          "Incompatible datatype for applying RANGE Expression Filter");
     }
     return resultLeft;
   }

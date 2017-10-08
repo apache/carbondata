@@ -162,7 +162,7 @@ case class CarbonRelation(
     extends LeafNode with MultiInstanceRelation {
 
   def recursiveMethod(dimName: String, childDim: CarbonDimension): String = {
-    childDim.getDataType.toString.toLowerCase match {
+    childDim.getDataType.getName.toLowerCase match {
       case "array" => s"${
         childDim.getColName.substring(dimName.length + 1)
       }:array<${ getArrayChildren(childDim.getColName) }>"
@@ -175,7 +175,7 @@ case class CarbonRelation(
 
   def getArrayChildren(dimName: String): String = {
     metaData.carbonTable.getChildren(dimName).asScala.map(childDim => {
-      childDim.getDataType.toString.toLowerCase match {
+      childDim.getDataType.getName.toLowerCase match {
         case "array" => s"array<${ getArrayChildren(childDim.getColName) }>"
         case "struct" => s"struct<${ getStructChildren(childDim.getColName) }>"
         case dType => addDecimalScaleAndPrecision(childDim, dType)
@@ -185,7 +185,7 @@ case class CarbonRelation(
 
   def getStructChildren(dimName: String): String = {
     metaData.carbonTable.getChildren(dimName).asScala.map(childDim => {
-      childDim.getDataType.toString.toLowerCase match {
+      childDim.getDataType.getName.toLowerCase match {
         case "array" => s"${
           childDim.getColName.substring(dimName.length + 1)
         }:array<${ getArrayChildren(childDim.getColName) }>"
@@ -213,8 +213,7 @@ case class CarbonRelation(
       .map(dim => {
       val dimval = metaData.carbonTable
           .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName)
-      val output: DataType = dimval.getDataType
-          .toString.toLowerCase match {
+      val output: DataType = dimval.getDataType.getName.toLowerCase match {
         case "array" =>
           CarbonMetastoreTypes.toDataType(s"array<${ getArrayChildren(dim.getColName) }>")
         case "struct" =>
@@ -238,7 +237,7 @@ case class CarbonRelation(
           getMeasureByTableName(tableMeta.carbonTable.getFactTableName).
           asScala.asJava).asScala.toSeq.filter(!_.getColumnSchema.isInvisible)
         .map(x => AttributeReference(x.getColName, CarbonMetastoreTypes.toDataType(
-          metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString
+          metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.getName
               .toLowerCase match {
             case "float" => "double"
             case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
@@ -252,7 +251,7 @@ case class CarbonRelation(
         .asScala
     columns.filter(!_.isInvisible).map { column =>
       if (column.isDimension()) {
-        val output: DataType = column.getDataType.toString.toLowerCase match {
+        val output: DataType = column.getDataType.getName.toLowerCase match {
           case "array" =>
             CarbonMetastoreTypes.toDataType(s"array<${getArrayChildren(column.getColName)}>")
           case "struct" =>
@@ -266,8 +265,7 @@ case class CarbonRelation(
         )(qualifiers = tableName +: alias.toSeq)
       } else {
         AttributeReference(column.getColName, CarbonMetastoreTypes.toDataType(
-          column.getDataType.toString
-            .toLowerCase match {
+          column.getDataType.getName.toLowerCase match {
             case "float" => "double"
             case "decimal" => "decimal(" + column.getColumnSchema.getPrecision + "," + column
               .getColumnSchema.getScale + ")"
@@ -292,7 +290,7 @@ case class CarbonRelation(
 
   def addDecimalScaleAndPrecision(dimval: CarbonColumn, dataType: String): String = {
     var dType = dataType
-    if (dimval.getDataType == org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL) {
+    if (dimval.getDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DECIMAL) {
       dType +=
           "(" + dimval.getColumnSchema.getPrecision + "," + dimval.getColumnSchema.getScale + ")"
     }

@@ -24,7 +24,7 @@ import org.apache.spark.sql.optimizer.AttributeReferenceWrapper
 import org.apache.spark.sql.sources
 import org.apache.spark.sql.types._
 
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
@@ -120,9 +120,9 @@ object CarbonFilters {
     def getCarbonLiteralExpression(name: String, value: Any): CarbonExpression = {
       val dataTypeOfAttribute = CarbonScalaUtil.convertSparkToCarbonDataType(dataTypeOf(name))
       val dataType = if (Option(value).isDefined
-                         && dataTypeOfAttribute == DataType.STRING
+                         && dataTypeOfAttribute == CarbonDataTypes.STRING
                          && value.isInstanceOf[Double]) {
-        DataType.DOUBLE
+        CarbonDataTypes.DOUBLE
       } else {
         dataTypeOfAttribute
       }
@@ -410,11 +410,11 @@ object CarbonFilters {
     } else {
       carbonColumn = carbonTable.getMeasureByName(carbonTable.getFactTableName, column)
       carbonColumn.getDataType match {
-        case DataType.INT => DataType.INT
-        case DataType.SHORT => DataType.SHORT
-        case DataType.LONG => DataType.LONG
-        case DataType.DECIMAL => DataType.DECIMAL
-        case _ => DataType.DOUBLE
+        case CarbonDataTypes.INT => CarbonDataTypes.INT
+        case CarbonDataTypes.SHORT => CarbonDataTypes.SHORT
+        case CarbonDataTypes.LONG => CarbonDataTypes.LONG
+        case CarbonDataTypes.DECIMAL => CarbonDataTypes.DECIMAL
+        case _ => CarbonDataTypes.DOUBLE
       }
     }
     CarbonScalaUtil.convertCarbonToSparkDataType(dataType)

@@ -27,7 +27,7 @@ import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonContainsWith
 import org.apache.spark.sql.CarbonEndsWith
 
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
@@ -134,9 +134,9 @@ object CarbonFilters {
     def getCarbonLiteralExpression(name: String, value: Any): CarbonExpression = {
       val dataTypeOfAttribute = CarbonScalaUtil.convertSparkToCarbonDataType(dataTypeOf(name))
       val dataType = if (Option(value).isDefined
-                         && dataTypeOfAttribute == DataType.STRING
+                         && dataTypeOfAttribute == CarbonDataTypes.STRING
                          && value.isInstanceOf[Double]) {
-        DataType.DOUBLE
+        CarbonDataTypes.DOUBLE
       } else {
         dataTypeOfAttribute
       }
@@ -394,24 +394,6 @@ object CarbonFilters {
       case DecimalType() => true
       case _ => false
     }
-  }
-
-  private def getActualCarbonDataType(column: String, carbonTable: CarbonTable) = {
-    var carbonColumn: CarbonColumn =
-      carbonTable.getDimensionByName(carbonTable.getFactTableName, column)
-    val dataType = if (carbonColumn != null) {
-      carbonColumn.getDataType
-    } else {
-      carbonColumn = carbonTable.getMeasureByName(carbonTable.getFactTableName, column)
-      carbonColumn.getDataType match {
-        case DataType.INT => DataType.INT
-        case DataType.SHORT => DataType.SHORT
-        case DataType.LONG => DataType.LONG
-        case DataType.DECIMAL => DataType.DECIMAL
-        case _ => DataType.DOUBLE
-      }
-    }
-    CarbonScalaUtil.convertCarbonToSparkDataType(dataType)
   }
 
   // Convert scala list to java list, Cannot use scalaList.asJava as while deserializing it is

@@ -25,7 +25,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonType}
+import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonType}
 
 class CarbonDataFrameWriter(val dataFrame: DataFrame) {
 
@@ -161,8 +161,8 @@ class CarbonDataFrameWriter(val dataFrame: DataFrame) {
     sparkType match {
       case StringType => CarbonType.STRING.getName
       case IntegerType => CarbonType.INT.getName
-      case ShortType => CarbonType.SHORT.getName
-      case LongType => CarbonType.LONG.getName
+      case ShortType => "smallint"
+      case LongType => "bigint"
       case FloatType => CarbonType.DOUBLE.getName
       case DoubleType => CarbonType.DOUBLE.getName
       case TimestampType => CarbonType.TIMESTAMP.getName

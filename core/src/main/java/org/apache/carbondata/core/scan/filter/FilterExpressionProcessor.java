@@ -30,7 +30,7 @@ import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.scan.expression.BinaryExpression;
@@ -404,9 +404,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
         currentCondExpression = (BinaryConditionalExpression) expression;
         if (currentCondExpression.isSingleColumn()
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.ARRAY
+            != DataTypes.ARRAY
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.STRUCT) {
+            != DataTypes.STRUCT) {
 
           if (currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure()) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
@@ -465,9 +465,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
         currentCondExpression = (BinaryConditionalExpression) expression;
         if (currentCondExpression.isSingleColumn()
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.ARRAY
+            != DataTypes.ARRAY
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.STRUCT) {
+            != DataTypes.STRUCT) {
 
           if (currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure()) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
@@ -524,9 +524,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
           condExpression = (ConditionalExpression) expression;
           if (condExpression.isSingleColumn()
               && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-              != DataType.ARRAY
+              != DataTypes.ARRAY
               && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-              != DataType.STRUCT) {
+              != DataTypes.STRUCT) {
             condExpression = (ConditionalExpression) expression;
             if ((condExpression.getColumnList().get(0).getCarbonColumn()
                 .hasEncoding(Encoding.DICTIONARY) && !condExpression.getColumnList().get(0)

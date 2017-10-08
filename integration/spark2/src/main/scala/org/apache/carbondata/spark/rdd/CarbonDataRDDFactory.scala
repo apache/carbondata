@@ -46,7 +46,7 @@ import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, ColumnarFormatVersion}
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -1233,7 +1233,7 @@ object CarbonDataRDDFactory {
     }
 
     val partitioner = PartitionFactory.getPartitioner(partitionInfo)
-    if (partitionColumnDataType == DataType.STRING) {
+    if (partitionColumnDataType == DataTypes.STRING) {
       if (partitionInfo.getPartitionType == PartitionType.RANGE) {
         inputRDD.map { row => (ByteUtil.toBytes(row._1), row._2) }
           .partitionBy(partitioner)

@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 
 /**
@@ -318,40 +319,33 @@ public class SafeFixLengthColumnPage extends ColumnPage {
    */
   @Override
   public void convertValue(ColumnPageValueConverter codec) {
-    switch (dataType) {
-      case BYTE:
-        for (int i = 0; i < pageSize; i++) {
-          codec.encode(i, byteData[i]);
-        }
-        break;
-      case SHORT:
-        for (int i = 0; i < pageSize; i++) {
-          codec.encode(i, shortData[i]);
-        }
-        break;
-      case INT:
-        for (int i = 0; i < pageSize; i++) {
-          codec.encode(i, intData[i]);
-        }
-        break;
-      case LONG:
-        for (int i = 0; i < pageSize; i++) {
-          codec.encode(i, longData[i]);
-        }
-        break;
-      case FLOAT:
-        for (int i = 0; i < pageSize; i++) {
-          codec.encode(i, floatData[i]);
-        }
-        break;
-      case DOUBLE:
-        for (int i = 0; i < pageSize; i++) {
-          codec.encode(i, doubleData[i]);
-        }
-        break;
-      default:
-        throw new UnsupportedOperationException("not support value conversion on " +
-            dataType + " page");
+    if (dataType == DataTypes.BYTE) {
+      for (int i = 0; i < pageSize; i++) {
+        codec.encode(i, byteData[i]);
+      }
+    } else if (dataType == DataTypes.SHORT) {
+      for (int i = 0; i < pageSize; i++) {
+        codec.encode(i, shortData[i]);
+      }
+    } else if (dataType == DataTypes.INT) {
+      for (int i = 0; i < pageSize; i++) {
+        codec.encode(i, intData[i]);
+      }
+    } else if (dataType == DataTypes.LONG) {
+      for (int i = 0; i < pageSize; i++) {
+        codec.encode(i, longData[i]);
+      }
+    } else if (dataType == DataTypes.FLOAT) {
+      for (int i = 0; i < pageSize; i++) {
+        codec.encode(i, floatData[i]);
+      }
+    } else if (dataType == DataTypes.DOUBLE) {
+      for (int i = 0; i < pageSize; i++) {
+        codec.encode(i, doubleData[i]);
+      }
+    } else {
+      throw new UnsupportedOperationException("not support value conversion on " +
+          dataType + " page");
     }
   }
 

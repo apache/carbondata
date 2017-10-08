@@ -49,6 +49,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -478,7 +479,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<Integer> parentBlockIndexList = new ArrayList<Integer>();
     for (QueryDimension queryDimension : queryDimensions) {
       if (CarbonUtil.hasDataType(queryDimension.getDimension().getDataType(),
-          new DataType[] { DataType.ARRAY, DataType.STRUCT, DataType.MAP })) {
+          new DataType[] { DataTypes.ARRAY, DataTypes.STRUCT, DataTypes.MAP })) {
         parentBlockIndexList.add(queryDimension.getDimension().getOrdinal());
       }
     }

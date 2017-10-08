@@ -22,7 +22,7 @@ import java.util.SortedMap;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -122,8 +122,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
         metadata.setExpression(leftExp);
         metadata.setIncludeFilter(isIncludeFilter);
         metadata.setTableProvider(tableProvider);
-        if (columnExpression.getDataType().equals(DataType.TIMESTAMP) ||
-            columnExpression.getDataType().equals(DataType.DATE)) {
+        if (columnExpression.getDataType().equals(DataTypes.TIMESTAMP) ||
+            columnExpression.getDataType().equals(DataTypes.DATE)) {
           isExpressionResolve = true;
         } else {
           // if imei=imei comes in filter condition then we need to
@@ -169,9 +169,9 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
       } else if ((null != columnList.get(0).getDimension()) && (
           columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) && !(
               columnList.get(0).getDimension().getDataType()
-                  == org.apache.carbondata.core.metadata.datatype.DataType.STRUCT
+                  == org.apache.carbondata.core.metadata.datatype.DataTypes.STRUCT
                   || columnList.get(0).getDimension().getDataType()
-                  == org.apache.carbondata.core.metadata.datatype.DataType.ARRAY))) {
+                  == org.apache.carbondata.core.metadata.datatype.DataTypes.ARRAY))) {
         dimColResolvedFilterInfo.setFilterValues(FilterUtil
             .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
                 isIncludeFilter, tableProvider));

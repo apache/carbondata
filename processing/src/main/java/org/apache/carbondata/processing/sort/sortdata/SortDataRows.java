@@ -34,6 +34,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -293,27 +294,22 @@ public class SortDataRows {
           Object value = row[mesCount + dimColCount];
           if (null != value) {
             stream.write((byte) 1);
-            switch (type[mesCount]) {
-              case SHORT:
-                stream.writeShort((Short) value);
-                break;
-              case INT:
-                stream.writeInt((Integer) value);
-                break;
-              case LONG:
-                stream.writeLong((Long) value);
-                break;
-              case DOUBLE:
-                stream.writeDouble((Double) value);
-                break;
-              case DECIMAL:
-                BigDecimal val = (BigDecimal) value;
-                byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
-                stream.writeInt(bigDecimalInBytes.length);
-                stream.write(bigDecimalInBytes);
-                break;
-              default:
-                throw new IllegalArgumentException("unsupported data type:" + type[mesCount]);
+            DataType dataType = type[mesCount];
+            if (dataType == DataTypes.SHORT) {
+              stream.writeShort((Short) value);
+            } else if (dataType == DataTypes.INT) {
+              stream.writeInt((Integer) value);
+            } else if (dataType == DataTypes.LONG) {
+              stream.writeLong((Long) value);
+            } else if (dataType == DataTypes.DOUBLE) {
+              stream.writeDouble((Double) value);
+            } else if (dataType == DataTypes.DECIMAL) {
+              BigDecimal val = (BigDecimal) value;
+              byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
+              stream.writeInt(bigDecimalInBytes.length);
+              stream.write(bigDecimalInBytes);
+            } else {
+              throw new IllegalArgumentException("unsupported data type:" + type[mesCount]);
             }
           } else {
             stream.write((byte) 0);

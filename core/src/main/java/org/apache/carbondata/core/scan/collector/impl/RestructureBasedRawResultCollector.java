@@ -26,7 +26,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.mdkey.MultiDimKeyVarLengthGenerator;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
@@ -239,7 +239,7 @@ public class RestructureBasedRawResultCollector extends RawBasedResultCollector 
           Object defaultValue = dimensionInfo.getDefaultValues()[i];
           if (null != defaultValue) {
             newColumnDefaultValue = ((UTF8String) defaultValue).getBytes();
-          } else if (actualQueryDimensions[i].getDimension().getDataType() == DataType.STRING) {
+          } else if (actualQueryDimensions[i].getDimension().getDataType() == DataTypes.STRING) {
             newColumnDefaultValue =
                 UTF8String.fromString(CarbonCommonConstants.MEMBER_DEFAULT_VAL).getBytes();
           } else {

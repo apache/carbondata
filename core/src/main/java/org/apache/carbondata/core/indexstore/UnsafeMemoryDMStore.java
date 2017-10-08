@@ -22,6 +22,8 @@ import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
 import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
 import static org.apache.carbondata.core.memory.CarbonUnsafe.BYTE_ARRAY_OFFSET;
@@ -102,52 +104,45 @@ public class UnsafeMemoryDMStore {
   private void addToUnsafe(DataMapSchema schema, DataMapRow row, int index) {
     switch (schema.getSchemaType()) {
       case FIXED:
-        switch (schema.getDataType()) {
-          case BYTE:
-            getUnsafe()
-                .putByte(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                    row.getByte(index));
-            runningLength += row.getSizeInBytes(index);
-            break;
-          case SHORT:
-            getUnsafe()
-                .putShort(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                    row.getShort(index));
-            runningLength += row.getSizeInBytes(index);
-            break;
-          case INT:
-            getUnsafe()
-                .putInt(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                    row.getInt(index));
-            runningLength += row.getSizeInBytes(index);
-            break;
-          case LONG:
-            getUnsafe()
-                .putLong(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                    row.getLong(index));
-            runningLength += row.getSizeInBytes(index);
-            break;
-          case FLOAT:
-            getUnsafe()
-                .putFloat(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                    row.getFloat(index));
-            runningLength += row.getSizeInBytes(index);
-            break;
-          case DOUBLE:
-            getUnsafe()
-                .putDouble(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
-                    row.getDouble(index));
-            runningLength += row.getSizeInBytes(index);
-            break;
-          case BYTE_ARRAY:
-            byte[] data = row.getByteArray(index);
-            getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
-                memoryBlock.getBaseOffset() + runningLength, data.length);
-            runningLength += row.getSizeInBytes(index);
-            break;
-          default:
-            throw new UnsupportedOperationException(
-                "unsupported data type for unsafe storage: " + schema.getDataType());
+        DataType dataType = schema.getDataType();
+        if (dataType == DataTypes.BYTE) {
+          getUnsafe()
+              .putByte(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getByte(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.SHORT) {
+          getUnsafe()
+              .putShort(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getShort(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.INT) {
+          getUnsafe()
+              .putInt(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getInt(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.LONG) {
+          getUnsafe()
+              .putLong(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getLong(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.FLOAT) {
+          getUnsafe()
+              .putFloat(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getFloat(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.DOUBLE) {
+          getUnsafe()
+              .putDouble(memoryBlock.getBaseObject(), memoryBlock.getBaseOffset() + runningLength,
+                  row.getDouble(index));
+          runningLength += row.getSizeInBytes(index);
+        } else if (dataType == DataTypes.BYTE_ARRAY) {
+          byte[] data = row.getByteArray(index);
+          getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
+              memoryBlock.getBaseOffset() + runningLength, data.length);
+          runningLength += row.getSizeInBytes(index);
+        } else {
+          throw new UnsupportedOperationException(
+              "unsupported data type for unsafe storage: " + schema.getDataType());
         }
         break;
       case VARIABLE:

@@ -40,7 +40,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.fileoperations.{AtomicFileOperations, AtomicFileOperationsImpl, FileWriteOperation}
 import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, CarbonMeasure, ColumnSchema}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
@@ -153,7 +153,7 @@ object CarbonDataStoreCreator {
     val id: ColumnSchema = new ColumnSchema()
     id.setColumnName("ID")
     id.setColumnar(true)
-    id.setDataType(DataType.INT)
+    id.setDataType(DataTypes.INT)
     id.setEncodingList(encodings)
     id.setColumnUniqueId(UUID.randomUUID().toString)
     id.setColumnReferenceId(id.getColumnUniqueId)
@@ -169,7 +169,7 @@ object CarbonDataStoreCreator {
     val date: ColumnSchema = new ColumnSchema()
     date.setColumnName("date")
     date.setColumnar(true)
-    date.setDataType(DataType.DATE)
+    date.setDataType(DataTypes.DATE)
     date.setEncodingList(dictEncoding)
     date.setColumnUniqueId(UUID.randomUUID().toString)
     date.setDimensionColumn(true)
@@ -180,7 +180,7 @@ object CarbonDataStoreCreator {
     val country: ColumnSchema = new ColumnSchema()
     country.setColumnName("country")
     country.setColumnar(true)
-    country.setDataType(DataType.STRING)
+    country.setDataType(DataTypes.STRING)
     country.setEncodingList(encodings)
     country.setColumnUniqueId(UUID.randomUUID().toString)
     country.setColumnReferenceId(country.getColumnUniqueId)
@@ -192,7 +192,7 @@ object CarbonDataStoreCreator {
     val name: ColumnSchema = new ColumnSchema()
     name.setColumnName("name")
     name.setColumnar(true)
-    name.setDataType(DataType.STRING)
+    name.setDataType(DataTypes.STRING)
     name.setEncodingList(encodings)
     name.setColumnUniqueId(UUID.randomUUID().toString)
     name.setDimensionColumn(true)
@@ -203,7 +203,7 @@ object CarbonDataStoreCreator {
     val phonetype: ColumnSchema = new ColumnSchema()
     phonetype.setColumnName("phonetype")
     phonetype.setColumnar(true)
-    phonetype.setDataType(DataType.STRING)
+    phonetype.setDataType(DataTypes.STRING)
     phonetype.setEncodingList(encodings)
     phonetype.setColumnUniqueId(UUID.randomUUID().toString)
     phonetype.setDimensionColumn(true)
@@ -214,7 +214,7 @@ object CarbonDataStoreCreator {
     val serialname: ColumnSchema = new ColumnSchema()
     serialname.setColumnName("serialname")
     serialname.setColumnar(true)
-    serialname.setDataType(DataType.STRING)
+    serialname.setDataType(DataTypes.STRING)
     serialname.setEncodingList(encodings)
     serialname.setColumnUniqueId(UUID.randomUUID().toString)
     serialname.setDimensionColumn(true)
@@ -225,7 +225,7 @@ object CarbonDataStoreCreator {
     val salary: ColumnSchema = new ColumnSchema()
     salary.setColumnName("salary")
     salary.setColumnar(true)
-    salary.setDataType(DataType.DOUBLE)
+    salary.setDataType(DataTypes.DOUBLE)
     salary.setEncodingList(encodings)
     salary.setColumnUniqueId(UUID.randomUUID().toString)
     salary.setDimensionColumn(false)
@@ -236,7 +236,7 @@ object CarbonDataStoreCreator {
     val bonus: ColumnSchema = new ColumnSchema()
     bonus.setColumnName("bonus")
     bonus.setColumnar(true)
-    bonus.setDataType(DataType.DECIMAL)
+    bonus.setDataType(DataTypes.DECIMAL)
     bonus.setPrecision(10)
     bonus.setScale(4)
     bonus.setEncodingList(encodings)
@@ -249,7 +249,7 @@ object CarbonDataStoreCreator {
     val dob: ColumnSchema = new ColumnSchema()
     dob.setColumnName("dob")
     dob.setColumnar(true)
-    dob.setDataType(DataType.TIMESTAMP)
+    dob.setDataType(DataTypes.TIMESTAMP)
     dob.setEncodingList(dictEncoding)
     dob.setColumnUniqueId(UUID.randomUUID().toString)
     dob.setDimensionColumn(true)
@@ -260,7 +260,7 @@ object CarbonDataStoreCreator {
     val shortField: ColumnSchema = new ColumnSchema()
     shortField.setColumnName("shortField")
     shortField.setColumnar(true)
-    shortField.setDataType(DataType.SHORT)
+    shortField.setDataType(DataTypes.SHORT)
     shortField.setEncodingList(encodings)
     shortField.setColumnUniqueId(UUID.randomUUID().toString)
     shortField.setDimensionColumn(false)

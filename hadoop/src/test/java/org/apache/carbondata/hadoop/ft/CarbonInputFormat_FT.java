@@ -20,6 +20,7 @@ package org.apache.carbondata.hadoop.ft;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -62,8 +63,8 @@ public class CarbonInputFormat_FT extends TestCase {
     Job job = Job.getInstance(jobConf);
     FileInputFormat.addInputPath(job, new Path("/opt/carbonstore/db/table1"));
     job.getConfiguration().set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, "1,2");
-    Expression expression = new EqualToExpression(new ColumnExpression("c1", DataType.STRING),
-        new LiteralExpression("a", DataType.STRING));
+    Expression expression = new EqualToExpression(new ColumnExpression("c1", DataTypes.STRING),
+        new LiteralExpression("a", DataTypes.STRING));
     CarbonInputFormat.setFilterPredicates(job.getConfiguration(), expression);
     List splits = carbonInputFormat.getSplits(job);
 

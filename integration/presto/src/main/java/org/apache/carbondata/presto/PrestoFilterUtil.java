@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
@@ -69,17 +70,17 @@ public class PrestoFilterUtil {
 
   private static DataType Spi2CarbondataTypeMapper(CarbondataColumnHandle carbondataColumnHandle) {
     Type colType = carbondataColumnHandle.getColumnType();
-    if (colType == BooleanType.BOOLEAN) return DataType.BOOLEAN;
-    else if (colType == SmallintType.SMALLINT) return DataType.SHORT;
-    else if (colType == IntegerType.INTEGER) return DataType.INT;
-    else if (colType == BigintType.BIGINT) return DataType.LONG;
-    else if (colType == DoubleType.DOUBLE) return DataType.DOUBLE;
-    else if (colType == VarcharType.VARCHAR) return DataType.STRING;
-    else if (colType == DateType.DATE) return DataType.DATE;
-    else if (colType == TimestampType.TIMESTAMP) return DataType.TIMESTAMP;
+    if (colType == BooleanType.BOOLEAN) return DataTypes.BOOLEAN;
+    else if (colType == SmallintType.SMALLINT) return DataTypes.SHORT;
+    else if (colType == IntegerType.INTEGER) return DataTypes.INT;
+    else if (colType == BigintType.BIGINT) return DataTypes.LONG;
+    else if (colType == DoubleType.DOUBLE) return DataTypes.DOUBLE;
+    else if (colType == VarcharType.VARCHAR) return DataTypes.STRING;
+    else if (colType == DateType.DATE) return DataTypes.DATE;
+    else if (colType == TimestampType.TIMESTAMP) return DataTypes.TIMESTAMP;
     else if (colType.equals(DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
-        carbondataColumnHandle.getScale()))) return DataType.DECIMAL;
-    else return DataType.STRING;
+        carbondataColumnHandle.getScale()))) return DataTypes.DECIMAL;
+    else return DataTypes.STRING;
   }
 
   /**
@@ -171,10 +172,10 @@ public class PrestoFilterUtil {
       }
       if (singleValues.size() == 1) {
         Expression ex;
-        if (coltype.equals(DataType.STRING)) {
+        if (coltype.equals(DataTypes.STRING)) {
           ex = new EqualToExpression(colExpression,
               new LiteralExpression(singleValues.get(0), coltype));
-        } else if (coltype.equals(DataType.TIMESTAMP) || coltype.equals(DataType.DATE)) {
+        } else if (coltype.equals(DataTypes.TIMESTAMP) || coltype.equals(DataTypes.DATE)) {
           Long value = (Long) singleValues.get(0);
           ex = new EqualToExpression(colExpression, new LiteralExpression(value, coltype));
         } else ex = new EqualToExpression(colExpression,

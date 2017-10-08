@@ -21,6 +21,7 @@ import java.util.BitSet;
 
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import org.apache.spark.sql.types.Decimal;
 
@@ -306,17 +307,16 @@ public class MeasureDataVectorProcessor {
   public static class MeasureVectorFillerFactory {
 
     public static MeasureVectorFiller getMeasureVectorFiller(DataType dataType) {
-      switch (dataType) {
-        case SHORT:
-          return new ShortMeasureVectorFiller();
-        case INT:
-          return new IntegralMeasureVectorFiller();
-        case LONG:
-          return new LongMeasureVectorFiller();
-        case DECIMAL:
-          return new DecimalMeasureVectorFiller();
-        default:
-          return new DefaultMeasureVectorFiller();
+      if (dataType == DataTypes.SHORT) {
+        return new ShortMeasureVectorFiller();
+      } else if (dataType == DataTypes.INT) {
+        return new IntegralMeasureVectorFiller();
+      } else if (dataType == DataTypes.LONG) {
+        return new LongMeasureVectorFiller();
+      } else if (dataType == DataTypes.DECIMAL) {
+        return new DecimalMeasureVectorFiller();
+      } else {
+        return new DefaultMeasureVectorFiller();
       }
     }
   }

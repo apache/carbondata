@@ -21,10 +21,9 @@ import io.airlift.slice.{Slice, Slices}
 import io.airlift.slice.Slices._
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
-import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryChunksWrapper,
-DictionaryColumnUniqueIdentifier}
+import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryChunksWrapper, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
@@ -111,7 +110,7 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
       data.map { value =>
         DataTypeUtil
           .getDataBasedOnDataType(dictionaries(columnNo)
-            .getDictionaryValueForKey(value.asInstanceOf[Int]), DataType.STRING)
+            .getDictionaryValueForKey(value.asInstanceOf[Int]), DataTypes.STRING)
       }
     } else {
       data
