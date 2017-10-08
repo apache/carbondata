@@ -54,6 +54,13 @@ public abstract class AbstractDimensionDataChunk implements DimensionColumnDataC
   }
 
   /**
+   * @param invertedIndex
+   * @return inverted index reverse
+   */
+  @Override public int getInvertedReverseIndex(int invertedIndex) {
+    return dataChunkStore.getInvertedReverseIndex(invertedIndex);
+  }
+  /**
    * @return length of each column
    */
   @Override public int getColumnValueSize() {

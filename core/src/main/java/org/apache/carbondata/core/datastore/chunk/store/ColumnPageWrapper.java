@@ -66,6 +66,10 @@ public class ColumnPageWrapper implements DimensionColumnDataChunk {
     throw new UnsupportedOperationException("internal error");
   }
 
+  @Override public int getInvertedReverseIndex(int invertedIndex) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
   @Override
   public boolean isNoDicitionaryColumn() {
     return true;

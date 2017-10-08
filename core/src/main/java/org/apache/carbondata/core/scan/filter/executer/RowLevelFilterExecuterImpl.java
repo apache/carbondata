@@ -186,7 +186,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     }
   }
 
-  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
+  @Override
+  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
       throws FilterUnsupportedException, IOException {
     readBlocks(blockChunkHolder);
     // CHECKSTYLE:ON
@@ -222,20 +223,41 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     for (int i = 0; i < pageNumbers; i++) {
       BitSet set = new BitSet(numberOfRows[i]);
       RowIntf row = new RowImpl();
-      for (int index = 0; index < numberOfRows[i]; index++) {
-        createRow(blockChunkHolder, row ,i, index);
-        Boolean rslt = false;
-        try {
-          rslt = exp.evaluate(row).getBoolean();
+      BitSet prvBitset = null;
+      // if bitset pipe line is enabled then use rowid from previous bitset
+      // otherwise use older flow
+      if (!useBitsetPipeLine || null == blockChunkHolder.getBitSetGroup() || null == bitSetGroup
+          .getBitSet(i) || blockChunkHolder.getBitSetGroup().getBitSet(i).isEmpty()) {
+        for (int index = 0; index < numberOfRows[i]; index++) {
+          createRow(blockChunkHolder, row, i, index);
+          Boolean rslt = false;
+          try {
+            rslt = exp.evaluate(row).getBoolean();
+          }
+          // Any invalid member while evaluation shall be ignored, system will log the
+          // error only once since all rows the evaluation happens so inorder to avoid
+          // too much log inforation only once the log will be printed.
+          catch (FilterIllegalMemberException e) {
+            FilterUtil.logError(e, false);
+          }
+          if (null != rslt && rslt) {
+            set.set(index);
+          }
         }
-        // Any invalid member while evaluation shall be ignored, system will log the
-        // error only once since all rows the evaluation happens so inorder to avoid
-        // too much log inforation only once the log will be printed.
-        catch (FilterIllegalMemberException e) {
-          FilterUtil.logError(e, false);
-        }
-        if (null != rslt && rslt) {
-          set.set(index);
+      } else {
+        prvBitset = blockChunkHolder.getBitSetGroup().getBitSet(i);
+        for (int index = prvBitset.nextSetBit(0);
+             index >= 0; index = prvBitset.nextSetBit(index + 1)) {
+          createRow(blockChunkHolder, row, i, index);
+          Boolean rslt = false;
+          try {
+            rslt = exp.evaluate(row).getBoolean();
+          } catch (FilterIllegalMemberException e) {
+            FilterUtil.logError(e, false);
+          }
+          if (null != rslt && rslt) {
+            set.set(index);
+          }
         }
       }
       bitSetGroup.setBitSet(set, i);

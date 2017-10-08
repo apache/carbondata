@@ -142,6 +142,18 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
   }
 
   /**
+   * Below method will be used to get the reverse inverted index
+   *
+   * @param rowId row id
+   * @return inverted index based on row id passed
+   */
+  @Override public int getInvertedReverseIndex(int rowId) {
+    return CarbonUnsafe.getUnsafe().getInt(dataPageMemoryBlock.getBaseObject(),
+        dataPageMemoryBlock.getBaseOffset() + this.invertedIndexReverseOffset + ((long)rowId
+            * CarbonCommonConstants.INT_SIZE_IN_BYTE));
+  }
+
+  /**
    * Below method will be used to get the surrogate key of the based on the row
    * id passed
    *
