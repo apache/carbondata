@@ -18,7 +18,13 @@
 package org.apache.carbondata.core.metadata.schema.table;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -123,8 +129,6 @@ public class CarbonTable implements Serializable {
    * the number of no dictionary columns in SORT_COLUMNS
    */
   private int numberOfNoDictSortColumns;
-
-  private int lastDimensionColumnOrdinal;
 
   private CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -258,7 +262,6 @@ public class CarbonTable implements Serializable {
                  columnSchema.getSchemaOrdinal()));
       }
     }
-    lastDimensionColumnOrdinal = dimensionOrdinal;
     fillVisibleDimensions(tableSchema.getTableName());
     fillVisibleMeasures(tableSchema.getTableName());
     addImplicitDimension(dimensionOrdinal, implicitDimensions);

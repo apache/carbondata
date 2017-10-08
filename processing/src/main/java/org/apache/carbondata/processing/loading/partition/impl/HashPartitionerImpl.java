@@ -19,6 +19,8 @@ package org.apache.carbondata.processing.loading.partition.impl;
 
 import java.util.List;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.processing.loading.partition.Partitioner;
 
@@ -36,19 +38,14 @@ public class HashPartitionerImpl implements Partitioner<Object[]> {
     this.numberOfBuckets = numberOfBuckets;
     hashes = new Hash[indexes.size()];
     for (int i = 0; i < indexes.size(); i++) {
-      switch (columnSchemas.get(i).getDataType()) {
-        case SHORT:
-        case INT:
-        case LONG:
-          hashes[i] = new IntegralHash(indexes.get(i));
-          break;
-        case DOUBLE:
-        case FLOAT:
-        case DECIMAL:
-          hashes[i] = new DecimalHash(indexes.get(i));
-          break;
-        default:
-          hashes[i] = new StringHash(indexes.get(i));
+      DataType dataType = columnSchemas.get(i).getDataType();
+      if (dataType == DataTypes.SHORT || dataType == DataTypes.INT || dataType == DataTypes.LONG) {
+        hashes[i] = new IntegralHash(indexes.get(i));
+      } else if (dataType == DataTypes.DOUBLE || dataType == DataTypes.FLOAT ||
+          dataType == DataTypes.DECIMAL) {
+        hashes[i] = new DecimalHash(indexes.get(i));
+      } else {
+        hashes[i] = new StringHash(indexes.get(i));
       }
     }
   }

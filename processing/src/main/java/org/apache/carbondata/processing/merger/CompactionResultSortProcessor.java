@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -256,14 +257,13 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @return
    */
   private Object getConvertedMeasureValue(Object value, DataType type) {
-    switch (type) {
-      case DECIMAL:
-        if (value != null) {
-          value = ((Decimal) value).toJavaBigDecimal();
-        }
-        return value;
-      default:
-        return value;
+    if (type == DataTypes.DECIMAL) {
+      if (value != null) {
+        value = ((Decimal) value).toJavaBigDecimal();
+      }
+      return value;
+    } else {
+      return value;
     }
   }
 

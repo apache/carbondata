@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -193,7 +194,7 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
       int surrogateKey = sortedSurrogates.get(mid);
       byte[] dictionaryValue = getDictionaryBytesFromSurrogate(surrogateKey);
       int cmp = -1;
-      if (this.getDataType() != DataType.STRING) {
+      if (this.getDataType() != DataTypes.STRING) {
         cmp = compareFilterKeyWithDictionaryKey(
             new String(dictionaryValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
             filterKey, this.getDataType());
@@ -240,7 +241,7 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
         //fortify fix
         if (null == dictionaryValue) {
           cmp = -1;
-        } else if (this.getDataType() != DataType.STRING) {
+        } else if (this.getDataType() != DataTypes.STRING) {
           cmp = compareFilterKeyWithDictionaryKey(
               new String(dictionaryValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
               filterKey, this.getDataType());
@@ -270,35 +271,32 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
   private int compareFilterKeyWithDictionaryKey(String dictionaryVal, String memberVal,
       DataType dataType) {
     try {
-      switch (dataType) {
-        case SHORT:
-          return Short.compare((Short.parseShort(dictionaryVal)), (Short.parseShort(memberVal)));
-        case INT:
-          return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
-        case DOUBLE:
-          return DataTypeUtil
-              .compareDoubleWithNan((Double.parseDouble(dictionaryVal)),
-                  (Double.parseDouble(memberVal)));
-        case LONG:
-          return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
-        case BOOLEAN:
-          return Boolean
-              .compare((Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
-        case DATE:
-        case TIMESTAMP:
-          String format = CarbonUtil.getFormatFromProperty(dataType);
-          SimpleDateFormat parser = new SimpleDateFormat(format);
-          Date dateToStr;
-          Date dictionaryDate;
-          dateToStr = parser.parse(memberVal);
-          dictionaryDate = parser.parse(dictionaryVal);
-          return dictionaryDate.compareTo(dateToStr);
-        case DECIMAL:
-          java.math.BigDecimal javaDecValForDictVal = new java.math.BigDecimal(dictionaryVal);
-          java.math.BigDecimal javaDecValForMemberVal = new java.math.BigDecimal(memberVal);
-          return javaDecValForDictVal.compareTo(javaDecValForMemberVal);
-        default:
-          return -1;
+      if (dataType == DataTypes.SHORT) {
+        return Short.compare((Short.parseShort(dictionaryVal)), (Short.parseShort(memberVal)));
+      } else if (dataType == DataTypes.INT) {
+        return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
+      } else if (dataType == DataTypes.DOUBLE) {
+        return DataTypeUtil.compareDoubleWithNan(
+            (Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
+      } else if (dataType == DataTypes.LONG) {
+        return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
+      } else if (dataType == DataTypes.BOOLEAN) {
+        return Boolean.compare(
+            (Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
+      } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+        String format = CarbonUtil.getFormatFromProperty(dataType);
+        SimpleDateFormat parser = new SimpleDateFormat(format);
+        Date dateToStr;
+        Date dictionaryDate;
+        dateToStr = parser.parse(memberVal);
+        dictionaryDate = parser.parse(dictionaryVal);
+        return dictionaryDate.compareTo(dateToStr);
+      } else if (dataType == DataTypes.DECIMAL) {
+        java.math.BigDecimal javaDecValForDictVal = new java.math.BigDecimal(dictionaryVal);
+        java.math.BigDecimal javaDecValForMemberVal = new java.math.BigDecimal(memberVal);
+        return javaDecValForDictVal.compareTo(javaDecValForMemberVal);
+      } else {
+        return -1;
       }
     } catch (Exception e) {
       //In all data types excluding String data type the null member will be the highest

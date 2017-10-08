@@ -33,6 +33,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -325,28 +326,23 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
 
       for (int mesCount = 0; mesCount < measureCount; mesCount++) {
         if (UnsafeCarbonRowPage.isSet(words, mesCount)) {
-          switch (measureDataType[mesCount]) {
-            case SHORT:
-              row[dimensionCount + mesCount] = stream.readShort();
-              break;
-            case INT:
-              row[dimensionCount + mesCount] = stream.readInt();
-              break;
-            case LONG:
-              row[dimensionCount + mesCount] = stream.readLong();
-              break;
-            case DOUBLE:
-              row[dimensionCount + mesCount] = stream.readDouble();
-              break;
-            case DECIMAL:
-              short aShort = stream.readShort();
-              byte[] bigDecimalInBytes = new byte[aShort];
-              stream.readFully(bigDecimalInBytes);
-              row[dimensionCount + mesCount] = DataTypeUtil.byteToBigDecimal(bigDecimalInBytes);
-              break;
-            default:
-              throw new IllegalArgumentException("unsupported data type:" +
-                  measureDataType[mesCount]);
+          DataType dataType = measureDataType[mesCount];
+          if (dataType == DataTypes.SHORT) {
+            row[dimensionCount + mesCount] = stream.readShort();
+          } else if (dataType == DataTypes.INT) {
+            row[dimensionCount + mesCount] = stream.readInt();
+          } else if (dataType == DataTypes.LONG) {
+            row[dimensionCount + mesCount] = stream.readLong();
+          } else if (dataType == DataTypes.DOUBLE) {
+            row[dimensionCount + mesCount] = stream.readDouble();
+          } else if (dataType == DataTypes.DECIMAL) {
+            short aShort = stream.readShort();
+            byte[] bigDecimalInBytes = new byte[aShort];
+            stream.readFully(bigDecimalInBytes);
+            row[dimensionCount + mesCount] = DataTypeUtil.byteToBigDecimal(bigDecimalInBytes);
+          } else {
+            throw new IllegalArgumentException(
+                "unsupported data type:" + measureDataType[mesCount]);
           }
         }
       }

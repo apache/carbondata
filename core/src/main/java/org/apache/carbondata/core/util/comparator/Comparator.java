@@ -20,26 +20,25 @@ package org.apache.carbondata.core.util.comparator;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 
 public final class Comparator {
 
   public static SerializableComparator getComparator(DataType dataType) {
-    switch (dataType) {
-      case INT:
-        return new IntSerializableComparator();
-      case SHORT:
-        return new ShortSerializableComparator();
-      case DOUBLE:
-        return new DoubleSerializableComparator();
-      case LONG:
-      case DATE:
-      case TIMESTAMP:
-        return new LongSerializableComparator();
-      case DECIMAL:
-        return new BigDecimalSerializableComparator();
-      default:
-        return new ByteArraySerializableComparator();
+    if (dataType == DataTypes.INT) {
+      return new IntSerializableComparator();
+    } else if (dataType == DataTypes.SHORT) {
+      return new ShortSerializableComparator();
+    } else if (dataType == DataTypes.DOUBLE) {
+      return new DoubleSerializableComparator();
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.DATE
+        || dataType == DataTypes.TIMESTAMP) {
+      return new LongSerializableComparator();
+    } else if (dataType == DataTypes.DECIMAL) {
+      return new BigDecimalSerializableComparator();
+    } else {
+      return new ByteArraySerializableComparator();
     }
   }
 
@@ -50,19 +49,18 @@ public final class Comparator {
    * @return
    */
   public static SerializableComparator getComparatorByDataTypeForMeasure(DataType dataType) {
-    switch (dataType) {
-      case INT:
-        return new IntSerializableComparator();
-      case SHORT:
-        return new ShortSerializableComparator();
-      case LONG:
-        return new LongSerializableComparator();
-      case DOUBLE:
-        return new DoubleSerializableComparator();
-      case DECIMAL:
-        return new BigDecimalSerializableComparator();
-      default:
-        throw new IllegalArgumentException("Unsupported data type");
+    if (dataType == DataTypes.INT) {
+      return new IntSerializableComparator();
+    } else if (dataType == DataTypes.SHORT) {
+      return new ShortSerializableComparator();
+    } else if (dataType == DataTypes.LONG) {
+      return new LongSerializableComparator();
+    } else if (dataType == DataTypes.DOUBLE) {
+      return new DoubleSerializableComparator();
+    } else if (dataType == DataTypes.DECIMAL) {
+      return new BigDecimalSerializableComparator();
+    } else {
+      throw new IllegalArgumentException("Unsupported data type");
     }
   }
 }

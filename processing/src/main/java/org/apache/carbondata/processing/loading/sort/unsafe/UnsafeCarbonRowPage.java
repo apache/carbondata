@@ -28,6 +28,7 @@ import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
@@ -125,41 +126,35 @@ public class UnsafeCarbonRowPage {
     for (int mesCount = 0; mesCount < measureSize; mesCount++) {
       Object value = row[mesCount + dimensionSize];
       if (null != value) {
-        switch (measureDataType[mesCount]) {
-          case SHORT:
-            Short sval = (Short) value;
-            CarbonUnsafe.getUnsafe().putShort(baseObject, address + size, sval);
-            size += 2;
-            break;
-          case INT:
-            Integer ival = (Integer) value;
-            CarbonUnsafe.getUnsafe().putInt(baseObject, address + size, ival);
-            size += 4;
-            break;
-          case LONG:
-            Long val = (Long) value;
-            CarbonUnsafe.getUnsafe().putLong(baseObject, address + size, val);
-            size += 8;
-            break;
-          case DOUBLE:
-            Double doubleVal = (Double) value;
-            CarbonUnsafe.getUnsafe().putDouble(baseObject, address + size, doubleVal);
-            size += 8;
-            break;
-          case DECIMAL:
-            BigDecimal decimalVal = (BigDecimal) value;
-            byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(decimalVal);
-            CarbonUnsafe.getUnsafe().putShort(baseObject, address + size,
-                (short) bigDecimalInBytes.length);
-            size += 2;
-            CarbonUnsafe.getUnsafe()
-                .copyMemory(bigDecimalInBytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
-                    address + size, bigDecimalInBytes.length);
-            size += bigDecimalInBytes.length;
-            break;
-          default:
-            throw  new IllegalArgumentException("unsupported data type:" +
-                measureDataType[mesCount]);
+        DataType dataType = measureDataType[mesCount];
+        if (dataType == DataTypes.SHORT) {
+          Short sval = (Short) value;
+          CarbonUnsafe.getUnsafe().putShort(baseObject, address + size, sval);
+          size += 2;
+        } else if (dataType == DataTypes.INT) {
+          Integer ival = (Integer) value;
+          CarbonUnsafe.getUnsafe().putInt(baseObject, address + size, ival);
+          size += 4;
+        } else if (dataType == DataTypes.LONG) {
+          Long val = (Long) value;
+          CarbonUnsafe.getUnsafe().putLong(baseObject, address + size, val);
+          size += 8;
+        } else if (dataType == DataTypes.DOUBLE) {
+          Double doubleVal = (Double) value;
+          CarbonUnsafe.getUnsafe().putDouble(baseObject, address + size, doubleVal);
+          size += 8;
+        } else if (dataType == DataTypes.DECIMAL) {
+          BigDecimal decimalVal = (BigDecimal) value;
+          byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(decimalVal);
+          CarbonUnsafe.getUnsafe()
+              .putShort(baseObject, address + size, (short) bigDecimalInBytes.length);
+          size += 2;
+          CarbonUnsafe.getUnsafe()
+              .copyMemory(bigDecimalInBytes, CarbonUnsafe.BYTE_ARRAY_OFFSET, baseObject,
+                  address + size, bigDecimalInBytes.length);
+          size += bigDecimalInBytes.length;
+        } else {
+          throw new IllegalArgumentException("unsupported data type:" + measureDataType[mesCount]);
         }
         set(nullSetWords, mesCount);
       } else {
@@ -213,39 +208,33 @@ public class UnsafeCarbonRowPage {
 
     for (int mesCount = 0; mesCount < measureSize; mesCount++) {
       if (isSet(nullSetWords, mesCount)) {
-        switch (measureDataType[mesCount]) {
-          case SHORT:
-            Short sval = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
-            size += 2;
-            rowToFill[dimensionSize + mesCount] = sval;
-            break;
-          case INT:
-            Integer ival = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
-            size += 4;
-            rowToFill[dimensionSize + mesCount] = ival;
-            break;
-          case LONG:
-            Long val = CarbonUnsafe.getUnsafe().getLong(baseObject, address + size);
-            size += 8;
-            rowToFill[dimensionSize + mesCount] = val;
-            break;
-          case DOUBLE:
-            Double doubleVal = CarbonUnsafe.getUnsafe().getDouble(baseObject, address + size);
-            size += 8;
-            rowToFill[dimensionSize + mesCount] = doubleVal;
-            break;
-          case DECIMAL:
-            short aShort = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
-            byte[] bigDecimalInBytes = new byte[aShort];
-            size += 2;
-            CarbonUnsafe.getUnsafe().copyMemory(baseObject, address + size, bigDecimalInBytes,
-                CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
-            size += bigDecimalInBytes.length;
-            rowToFill[dimensionSize + mesCount] = DataTypeUtil.byteToBigDecimal(bigDecimalInBytes);
-            break;
-          default:
-            throw new IllegalArgumentException("unsupported data type:" +
-                measureDataType[mesCount]);
+        DataType dataType = measureDataType[mesCount];
+        if (dataType == DataTypes.SHORT) {
+          Short sval = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
+          size += 2;
+          rowToFill[dimensionSize + mesCount] = sval;
+        } else if (dataType == DataTypes.INT) {
+          Integer ival = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
+          size += 4;
+          rowToFill[dimensionSize + mesCount] = ival;
+        } else if (dataType == DataTypes.LONG) {
+          Long val = CarbonUnsafe.getUnsafe().getLong(baseObject, address + size);
+          size += 8;
+          rowToFill[dimensionSize + mesCount] = val;
+        } else if (dataType == DataTypes.DOUBLE) {
+          Double doubleVal = CarbonUnsafe.getUnsafe().getDouble(baseObject, address + size);
+          size += 8;
+          rowToFill[dimensionSize + mesCount] = doubleVal;
+        } else if (dataType == DataTypes.DECIMAL) {
+          short aShort = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
+          byte[] bigDecimalInBytes = new byte[aShort];
+          size += 2;
+          CarbonUnsafe.getUnsafe().copyMemory(baseObject, address + size, bigDecimalInBytes,
+              CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
+          size += bigDecimalInBytes.length;
+          rowToFill[dimensionSize + mesCount] = DataTypeUtil.byteToBigDecimal(bigDecimalInBytes);
+        } else {
+          throw new IllegalArgumentException("unsupported data type:" + measureDataType[mesCount]);
         }
       } else {
         rowToFill[dimensionSize + mesCount] = null;
@@ -301,40 +290,34 @@ public class UnsafeCarbonRowPage {
 
     for (int mesCount = 0; mesCount < measureSize; mesCount++) {
       if (isSet(nullSetWords, mesCount)) {
-        switch (measureDataType[mesCount]) {
-          case SHORT:
-            short sval = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
-            size += 2;
-            stream.writeShort(sval);
-            break;
-          case INT:
-            int ival = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
-            size += 4;
-            stream.writeInt(ival);
-            break;
-          case LONG:
-            long val = CarbonUnsafe.getUnsafe().getLong(baseObject, address + size);
-            size += 8;
-            stream.writeLong(val);
-            break;
-          case DOUBLE:
-            double doubleVal = CarbonUnsafe.getUnsafe().getDouble(baseObject, address + size);
-            size += 8;
-            stream.writeDouble(doubleVal);
-            break;
-          case DECIMAL:
-            short aShort = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
-            byte[] bigDecimalInBytes = new byte[aShort];
-            size += 2;
-            CarbonUnsafe.getUnsafe().copyMemory(baseObject, address + size, bigDecimalInBytes,
-                CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
-            size += bigDecimalInBytes.length;
-            stream.writeShort(aShort);
-            stream.write(bigDecimalInBytes);
-            break;
-          default:
-            throw new IllegalArgumentException("unsupported data type:" +
-                measureDataType[mesCount]);
+        DataType dataType = measureDataType[mesCount];
+        if (dataType == DataTypes.SHORT) {
+          short sval = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
+          size += 2;
+          stream.writeShort(sval);
+        } else if (dataType == DataTypes.INT) {
+          int ival = CarbonUnsafe.getUnsafe().getInt(baseObject, address + size);
+          size += 4;
+          stream.writeInt(ival);
+        } else if (dataType == DataTypes.LONG) {
+          long val = CarbonUnsafe.getUnsafe().getLong(baseObject, address + size);
+          size += 8;
+          stream.writeLong(val);
+        } else if (dataType == DataTypes.DOUBLE) {
+          double doubleVal = CarbonUnsafe.getUnsafe().getDouble(baseObject, address + size);
+          size += 8;
+          stream.writeDouble(doubleVal);
+        } else if (dataType == DataTypes.DECIMAL) {
+          short aShort = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
+          byte[] bigDecimalInBytes = new byte[aShort];
+          size += 2;
+          CarbonUnsafe.getUnsafe().copyMemory(baseObject, address + size, bigDecimalInBytes,
+              CarbonUnsafe.BYTE_ARRAY_OFFSET, bigDecimalInBytes.length);
+          size += bigDecimalInBytes.length;
+          stream.writeShort(aShort);
+          stream.write(bigDecimalInBytes);
+        } else {
+          throw new IllegalArgumentException("unsupported data type:" + measureDataType[mesCount]);
         }
       }
     }

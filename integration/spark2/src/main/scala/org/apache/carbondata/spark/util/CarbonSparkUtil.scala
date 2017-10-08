@@ -40,7 +40,7 @@ object CarbonSparkUtil {
       carbonTable.getDimensionByTableName(carbonTable.getFactTableName).asScala.map { f =>
         (f.getColName.toLowerCase,
             f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
-                !CarbonUtil.hasComplexDataType(f.getDataType))
+                !f.getDataType.isComplexType)
       }
     CarbonMetaData(dimensionsAttr, measureAttr, carbonTable, DictionaryMap(dictionary.toMap))
   }

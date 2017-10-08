@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark.rdd
 
-import java.io.{ByteArrayInputStream, DataInputStream}
-
 import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
@@ -26,7 +24,7 @@ import org.apache.spark.{Dependency, OneToOneDependency, Partition, SparkContext
 import org.apache.spark.rdd.RDD
 
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, CarbonTaskInfo, SessionParams, TaskMetricsMap, ThreadLocalSessionInfo, ThreadLocalTaskInfo}
+import org.apache.carbondata.core.util._
 
 /**
  * This RDD maintains session level ThreadLocal

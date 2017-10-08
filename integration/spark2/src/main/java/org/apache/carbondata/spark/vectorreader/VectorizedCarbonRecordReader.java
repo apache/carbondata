@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.executor.QueryExecutor;
 import org.apache.carbondata.core.scan.executor.QueryExecutorFactory;
@@ -198,28 +199,24 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
             null);
       } else {
         fields[dim.getQueryOrder()] = new StructField(dim.getColumnName(),
-            CarbonScalaUtil.convertCarbonToSparkDataType(DataType.INT), true, null);
+            CarbonScalaUtil.convertCarbonToSparkDataType(DataTypes.INT), true, null);
       }
     }
 
     for (int i = 0; i < queryMeasures.size(); i++) {
       QueryMeasure msr = queryMeasures.get(i);
-      switch (msr.getMeasure().getDataType()) {
-        case SHORT:
-        case INT:
-        case LONG:
-          fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-              CarbonScalaUtil.convertCarbonToSparkDataType(msr.getMeasure().getDataType()), true,
-              null);
-          break;
-        case DECIMAL:
-          fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-              new DecimalType(msr.getMeasure().getPrecision(),
-                  msr.getMeasure().getScale()), true, null);
-          break;
-        default:
-          fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-              CarbonScalaUtil.convertCarbonToSparkDataType(DataType.DOUBLE), true, null);
+      DataType dataType = msr.getMeasure().getDataType();
+      if (dataType == DataTypes.SHORT || dataType == DataTypes.INT || dataType == DataTypes.LONG) {
+        fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
+            CarbonScalaUtil.convertCarbonToSparkDataType(msr.getMeasure().getDataType()), true,
+            null);
+      } else if (dataType == DataTypes.DECIMAL) {
+        fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
+            new DecimalType(msr.getMeasure().getPrecision(), msr.getMeasure().getScale()), true,
+            null);
+      } else {
+        fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
+            CarbonScalaUtil.convertCarbonToSparkDataType(DataTypes.DOUBLE), true, null);
       }
     }
 

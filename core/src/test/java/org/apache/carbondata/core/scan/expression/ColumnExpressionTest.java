@@ -18,6 +18,7 @@
 package org.apache.carbondata.core.scan.expression;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 
 import mockit.Mock;
@@ -33,7 +34,7 @@ public class ColumnExpressionTest {
 
   @Before public void setUp() {
     String columnName = "IMEI";
-    DataType dataType = DataType.STRING;
+    DataType dataType = DataTypes.STRING;
     columnExpression = new ColumnExpression(columnName, dataType);
   }
 
@@ -45,7 +46,7 @@ public class ColumnExpressionTest {
         return 1;
       }
     };
-    ExpressionResult expectedValue = new ExpressionResult(DataType.INT, 1);
+    ExpressionResult expectedValue = new ExpressionResult(DataTypes.INT, 1);
     assertEquals(expectedValue, columnExpression.evaluate(rowImpl));
   }
 

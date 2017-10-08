@@ -22,6 +22,7 @@ import java.math.BigDecimal;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 /** statics for primitive column page */
 public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, SimpleStatsResult {
@@ -43,10 +44,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   // this is for encode flow
   public static PrimitivePageStatsCollector newInstance(DataType dataType,
       int scale, int precision) {
-    switch (dataType) {
-      default:
-        return new PrimitivePageStatsCollector(dataType, scale, precision);
-    }
+    return new PrimitivePageStatsCollector(dataType, scale, precision);
   }
 
   // this is for decode flow, create stats from encoder meta in carbondata file
@@ -54,38 +52,32 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     PrimitivePageStatsCollector instance = new PrimitivePageStatsCollector(meta.getSchemaDataType(),
         meta.getScale(), meta.getPrecision());
     // set min max from meta
-    switch (meta.getSchemaDataType()) {
-      case BYTE:
-        instance.minByte = (byte) meta.getMinValue();
-        instance.maxByte = (byte) meta.getMaxValue();
-        break;
-      case SHORT:
-        instance.minShort = (short) meta.getMinValue();
-        instance.maxShort = (short) meta.getMaxValue();
-        break;
-      case INT:
-        instance.minInt = (int) meta.getMinValue();
-        instance.maxInt = (int) meta.getMaxValue();
-        break;
-      case LONG:
-        instance.minLong = (long) meta.getMinValue();
-        instance.maxLong = (long) meta.getMaxValue();
-        break;
-      case DOUBLE:
-        instance.minDouble = (double) meta.getMinValue();
-        instance.maxDouble = (double) meta.getMaxValue();
-        instance.decimal = meta.getDecimal();
-        break;
-      case DECIMAL:
-        instance.minDecimal = (BigDecimal) meta.getMinValue();
-        instance.maxDecimal = (BigDecimal) meta.getMaxValue();
-        instance.decimal = meta.getDecimal();
-        instance.scale = meta.getScale();
-        instance.precision = meta.getPrecision();
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            "unsupported data type for stats collection: " + meta.getSchemaDataType());
+    DataType dataType = meta.getSchemaDataType();
+    if (dataType == DataTypes.BYTE) {
+      instance.minByte = (byte) meta.getMinValue();
+      instance.maxByte = (byte) meta.getMaxValue();
+    } else if (dataType == DataTypes.SHORT) {
+      instance.minShort = (short) meta.getMinValue();
+      instance.maxShort = (short) meta.getMaxValue();
+    } else if (dataType == DataTypes.INT) {
+      instance.minInt = (int) meta.getMinValue();
+      instance.maxInt = (int) meta.getMaxValue();
+    } else if (dataType == DataTypes.LONG) {
+      instance.minLong = (long) meta.getMinValue();
+      instance.maxLong = (long) meta.getMaxValue();
+    } else if (dataType == DataTypes.DOUBLE) {
+      instance.minDouble = (double) meta.getMinValue();
+      instance.maxDouble = (double) meta.getMaxValue();
+      instance.decimal = meta.getDecimal();
+    } else if (dataType == DataTypes.DECIMAL) {
+      instance.minDecimal = (BigDecimal) meta.getMinValue();
+      instance.maxDecimal = (BigDecimal) meta.getMaxValue();
+      instance.decimal = meta.getDecimal();
+      instance.scale = meta.getScale();
+      instance.precision = meta.getPrecision();
+    } else {
+      throw new UnsupportedOperationException(
+          "unsupported data type for stats collection: " + meta.getSchemaDataType());
     }
     return instance;
   }
@@ -94,112 +86,90 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     PrimitivePageStatsCollector instance =
         new PrimitivePageStatsCollector(DataType.getDataType(meta.getType()), -1, -1);
     // set min max from meta
-    switch (DataType.getDataType(meta.getType())) {
-      case BYTE:
-        instance.minByte = (byte) meta.getMinValue();
-        instance.maxByte = (byte) meta.getMaxValue();
-        break;
-      case SHORT:
-        instance.minShort = (short) meta.getMinValue();
-        instance.maxShort = (short) meta.getMaxValue();
-        break;
-      case INT:
-        instance.minInt = (int) meta.getMinValue();
-        instance.maxInt = (int) meta.getMaxValue();
-        break;
-      case LEGACY_LONG:
-      case LONG:
-        instance.minLong = (long) meta.getMinValue();
-        instance.maxLong = (long) meta.getMaxValue();
-        break;
-      case DOUBLE:
-        instance.minDouble = (double) meta.getMinValue();
-        instance.maxDouble = (double) meta.getMaxValue();
-        instance.decimal = meta.getDecimal();
-        break;
-      case DECIMAL:
-        instance.minDecimal = (BigDecimal) meta.getMinValue();
-        instance.maxDecimal = (BigDecimal) meta.getMaxValue();
-        instance.decimal = meta.getDecimal();
-        instance.scale = -1;
-        instance.precision = -1;
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            "unsupported data type for Stats collection: " + meta.getType());
+    DataType dataType = DataType.getDataType(meta.getType());
+    if (dataType == DataTypes.BYTE) {
+      instance.minByte = (byte) meta.getMinValue();
+      instance.maxByte = (byte) meta.getMaxValue();
+    } else if (dataType == DataTypes.SHORT) {
+      instance.minShort = (short) meta.getMinValue();
+      instance.maxShort = (short) meta.getMaxValue();
+    } else if (dataType == DataTypes.INT) {
+      instance.minInt = (int) meta.getMinValue();
+      instance.maxInt = (int) meta.getMaxValue();
+    } else if (dataType == DataTypes.LEGACY_LONG || dataType == DataTypes.LONG) {
+      instance.minLong = (long) meta.getMinValue();
+      instance.maxLong = (long) meta.getMaxValue();
+    } else if (dataType == DataTypes.DOUBLE) {
+      instance.minDouble = (double) meta.getMinValue();
+      instance.maxDouble = (double) meta.getMaxValue();
+      instance.decimal = meta.getDecimal();
+    } else if (dataType == DataTypes.DECIMAL) {
+      instance.minDecimal = (BigDecimal) meta.getMinValue();
+      instance.maxDecimal = (BigDecimal) meta.getMaxValue();
+      instance.decimal = meta.getDecimal();
+      instance.scale = -1;
+      instance.precision = -1;
+    } else {
+      throw new UnsupportedOperationException(
+          "unsupported data type for Stats collection: " + meta.getType());
     }
     return instance;
   }
 
   private PrimitivePageStatsCollector(DataType dataType, int scale, int precision) {
     this.dataType = dataType;
-    switch (dataType) {
-      case BYTE:
-        minByte = Byte.MAX_VALUE;
-        maxByte = Byte.MIN_VALUE;
-        break;
-      case SHORT:
-        minShort = Short.MAX_VALUE;
-        maxShort = Short.MIN_VALUE;
-        break;
-      case INT:
-        minInt = Integer.MAX_VALUE;
-        maxInt = Integer.MIN_VALUE;
-        break;
-      case LEGACY_LONG:
-      case LONG:
-        minLong = Long.MAX_VALUE;
-        maxLong = Long.MIN_VALUE;
-        break;
-      case DOUBLE:
-        minDouble = Double.POSITIVE_INFINITY;
-        maxDouble = Double.NEGATIVE_INFINITY;
-        decimal = 0;
-        break;
-      case DECIMAL:
-        this.zeroDecimal = BigDecimal.ZERO;
-        decimal = scale;
-        this.scale = scale;
-        this.precision = precision;
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            "unsupported data type for Stats collection: " + dataType);
+    if (dataType == DataTypes.BYTE) {
+      minByte = Byte.MAX_VALUE;
+      maxByte = Byte.MIN_VALUE;
+    } else if (dataType == DataTypes.SHORT) {
+      minShort = Short.MAX_VALUE;
+      maxShort = Short.MIN_VALUE;
+    } else if (dataType == DataTypes.INT) {
+      minInt = Integer.MAX_VALUE;
+      maxInt = Integer.MIN_VALUE;
+    } else if (dataType == DataTypes.LEGACY_LONG || dataType == DataTypes.LONG) {
+      minLong = Long.MAX_VALUE;
+      maxLong = Long.MIN_VALUE;
+    } else if (dataType == DataTypes.DOUBLE) {
+      minDouble = Double.POSITIVE_INFINITY;
+      maxDouble = Double.NEGATIVE_INFINITY;
+      decimal = 0;
+    } else if (dataType == DataTypes.DECIMAL) {
+      this.zeroDecimal = BigDecimal.ZERO;
+      decimal = scale;
+      this.scale = scale;
+      this.precision = precision;
+    } else {
+      throw new UnsupportedOperationException(
+          "unsupported data type for Stats collection: " + dataType);
     }
   }
 
   @Override
   public void updateNull(int rowId) {
     long value = 0;
-    switch (dataType) {
-      case BYTE:
-        update((byte) value);
-        break;
-      case SHORT:
-        update((short) value);
-        break;
-      case INT:
-        update((int) value);
-        break;
-      case LONG:
-        update(value);
-        break;
-      case DOUBLE:
-        update(0d);
-        break;
-      case DECIMAL:
-        if (isFirst) {
-          maxDecimal = zeroDecimal;
-          minDecimal = zeroDecimal;
-          isFirst = false;
-        } else {
-          maxDecimal = (maxDecimal.compareTo(zeroDecimal) > 0) ? maxDecimal : zeroDecimal;
-          minDecimal = (minDecimal.compareTo(zeroDecimal) < 0) ? minDecimal : zeroDecimal;
-        }
-        break;
-      default:
-        throw new UnsupportedOperationException(
-            "unsupported data type for Stats collection: " + dataType);
+    if (dataType == DataTypes.BYTE) {
+      update((byte) value);
+    } else if (dataType == DataTypes.SHORT) {
+      update((short) value);
+    } else if (dataType == DataTypes.INT) {
+      update((int) value);
+    } else if (dataType == DataTypes.LONG) {
+      update(value);
+    } else if (dataType == DataTypes.DOUBLE) {
+      update(0d);
+    } else if (dataType == DataTypes.DECIMAL) {
+      if (isFirst) {
+        maxDecimal = zeroDecimal;
+        minDecimal = zeroDecimal;
+        isFirst = false;
+      } else {
+        maxDecimal = (maxDecimal.compareTo(zeroDecimal) > 0) ? maxDecimal : zeroDecimal;
+        minDecimal = (minDecimal.compareTo(zeroDecimal) < 0) ? minDecimal : zeroDecimal;
+      }
+    } else {
+      throw new UnsupportedOperationException(
+          "unsupported data type for Stats collection: " + dataType);
     }
   }
 
@@ -300,55 +270,52 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   @Override
   public String toString() {
-    switch (dataType) {
-      case BYTE:
-        return String.format("min: %s, max: %s, decimal: %s ", minByte, maxByte, decimal);
-      case SHORT:
-        return String.format("min: %s, max: %s, decimal: %s ", minShort, maxShort, decimal);
-      case INT:
-        return String.format("min: %s, max: %s, decimal: %s ", minInt, maxInt, decimal);
-      case LONG:
-        return String.format("min: %s, max: %s, decimal: %s ", minLong, maxLong, decimal);
-      case DOUBLE:
-        return String.format("min: %s, max: %s, decimal: %s ", minDouble, maxDouble, decimal);
+    if (dataType == DataTypes.BYTE) {
+      return String.format("min: %s, max: %s, decimal: %s ", minByte, maxByte, decimal);
+    } else if (dataType == DataTypes.SHORT) {
+      return String.format("min: %s, max: %s, decimal: %s ", minShort, maxShort, decimal);
+    } else if (dataType == DataTypes.INT) {
+      return String.format("min: %s, max: %s, decimal: %s ", minInt, maxInt, decimal);
+    } else if (dataType == DataTypes.LONG) {
+      return String.format("min: %s, max: %s, decimal: %s ", minLong, maxLong, decimal);
+    } else if (dataType == DataTypes.DOUBLE) {
+      return String.format("min: %s, max: %s, decimal: %s ", minDouble, maxDouble, decimal);
     }
     return super.toString();
   }
 
   @Override
   public Object getMin() {
-    switch (dataType) {
-      case BYTE:
-        return minByte;
-      case SHORT:
-        return minShort;
-      case INT:
-        return minInt;
-      case LONG:
-        return minLong;
-      case DOUBLE:
-        return minDouble;
-      case DECIMAL:
-        return minDecimal;
+    if (dataType == DataTypes.BYTE) {
+      return minByte;
+    } else if (dataType == DataTypes.SHORT) {
+      return minShort;
+    } else if (dataType == DataTypes.INT) {
+      return minInt;
+    } else if (dataType == DataTypes.LONG) {
+      return minLong;
+    } else if (dataType == DataTypes.DOUBLE) {
+      return minDouble;
+    } else if (dataType == DataTypes.DECIMAL) {
+      return minDecimal;
     }
     return null;
   }
 
   @Override
   public Object getMax() {
-    switch (dataType) {
-      case BYTE:
-        return maxByte;
-      case SHORT:
-        return maxShort;
-      case INT:
-        return maxInt;
-      case LONG:
-        return maxLong;
-      case DOUBLE:
-        return maxDouble;
-      case DECIMAL:
-        return maxDecimal;
+    if (dataType == DataTypes.BYTE) {
+      return maxByte;
+    } else if (dataType == DataTypes.SHORT) {
+      return maxShort;
+    } else if (dataType == DataTypes.INT) {
+      return maxInt;
+    } else if (dataType == DataTypes.LONG) {
+      return maxLong;
+    } else if (dataType == DataTypes.DOUBLE) {
+      return maxDouble;
+    } else if (dataType == DataTypes.DECIMAL) {
+      return maxDecimal;
     }
     return null;
   }
@@ -363,11 +330,13 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     return dataType;
   }
 
-  @Override public int getScale() {
+  @Override
+  public int getScale() {
     return scale;
   }
 
-  @Override public int getPrecision() {
+  @Override
+  public int getPrecision() {
     return precision;
   }
 

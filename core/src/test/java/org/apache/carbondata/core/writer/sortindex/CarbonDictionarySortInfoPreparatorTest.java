@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryChunksWrapper;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import mockit.Mock;
 import mockit.MockUp;
@@ -67,7 +68,7 @@ public class CarbonDictionarySortInfoPreparatorTest {
     };
 
     CarbonDictionarySortInfo carbonDictionarySortInfo = carbonDictionarySortInfoPreparator
-        .getDictionarySortInfo(newDistinctValues, dictionary, DataType.ARRAY);
+        .getDictionarySortInfo(newDistinctValues, dictionary, DataTypes.ARRAY);
     int expectedGetSortIndexValue = 1;
     int expectedGetSortInvertedIndexLength = 3;
     int actualGetSortIndexValue = carbonDictionarySortInfo.getSortIndex().get(0);
@@ -86,7 +87,7 @@ public class CarbonDictionarySortInfoPreparatorTest {
     newDistinctValues.add("xyz");
     Dictionary dictionary = null;
     CarbonDictionarySortInfo carbonDictionarySortInfo = carbonDictionarySortInfoPreparator
-        .getDictionarySortInfo(newDistinctValues, dictionary, DataType.ARRAY);
+        .getDictionarySortInfo(newDistinctValues, dictionary, DataTypes.ARRAY);
     int expectedGetSortIndexValue = 1;
     int expectedGetSortInvertedIndexLength = 2;
     int actualGetSortIndexValue = carbonDictionarySortInfo.getSortIndex().get(0);

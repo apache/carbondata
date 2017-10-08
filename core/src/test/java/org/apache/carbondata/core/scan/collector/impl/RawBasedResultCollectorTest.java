@@ -49,7 +49,7 @@ public class RawBasedResultCollectorTest {
 //    aggregatorInfo.setMeasureExists(new boolean[] { true, false, false, false });
 //    aggregatorInfo.setDefaultValues(new Object[] { 1, 2, 3, 4 });
 //    aggregatorInfo.setMeasureDataTypes(
-//        new DataType[] { DataType.INT, DataType.TIMESTAMP, DataType.INT, DataType.INT });
+//        new DataType[] { DataTypes.INT, DataTypes.TIMESTAMP, DataTypes.INT, DataTypes.INT });
 //    QueryMeasure queryMeasure1 = new QueryMeasure("QMCol1");
 //    queryMeasure1.setQueryOrder(1);
 //    QueryMeasure queryMeasure2 = new QueryMeasure("QMCol2");

@@ -25,6 +25,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.Bits;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import mockit.Mock;
@@ -53,27 +54,27 @@ public class PrimitiveQueryTypeTest {
     int keySize = 1;
     boolean isDirectDictionary = true;
     primitiveQueryType =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataType.STRING, keySize, dictionary,
+        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.STRING, keySize, dictionary,
             isDirectDictionary);
     primitiveQueryTypeForInt =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataType.INT, keySize, dictionary,
+        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.INT, keySize, dictionary,
             isDirectDictionary);
     primitiveQueryTypeForDouble =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataType.DOUBLE, keySize, dictionary,
+        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.DOUBLE, keySize, dictionary,
             isDirectDictionary);
     primitiveQueryTypeForLong =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataType.LONG, keySize, dictionary,
+        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.LONG, keySize, dictionary,
             isDirectDictionary);
     primitiveQueryTypeForBoolean =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataType.BOOLEAN, keySize, dictionary,
+        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.BOOLEAN, keySize, dictionary,
             isDirectDictionary);
     primitiveQueryTypeForTimeStamp =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataType.TIMESTAMP, keySize,
+        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.TIMESTAMP, keySize,
             dictionary, isDirectDictionary);
-    ColumnDictionaryInfo columnDictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    ColumnDictionaryInfo columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
     ForwardDictionary forwardDictionary = new ForwardDictionary(columnDictionaryInfo);
     primitiveQueryTypeForTimeStampForIsDictionaryFalse =
-        new PrimitiveQueryType(name, parentName, blockIndex, DataType.TIMESTAMP, keySize,
+        new PrimitiveQueryType(name, parentName, blockIndex, DataTypes.TIMESTAMP, keySize,
             forwardDictionary, false);
 
   }
@@ -141,11 +142,11 @@ public class PrimitiveQueryTypeTest {
     Object actualData = null;
     if (isDirectDictionary) {
       DirectDictionaryGenerator directDictionaryGenerator =
-          DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataType.TIMESTAMP);
+          DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.TIMESTAMP);
       actualData = directDictionaryGenerator.getValueFromSurrogate(surrgateValue);
     } else {
       String dictionaryValueForKey = dictionary.getDictionaryValueForKey(surrgateValue);
-      actualData = DataTypeUtil.getDataBasedOnDataType(dictionaryValueForKey, DataType.TIMESTAMP);
+      actualData = DataTypeUtil.getDataBasedOnDataType(dictionaryValueForKey, DataTypes.TIMESTAMP);
     }
     return actualData;
   }

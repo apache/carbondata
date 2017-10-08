@@ -20,6 +20,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -60,8 +61,8 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
         // add a dummy column vector result collector object
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
         columnVectorInfo.dimension = queryDimensions[i];
-        if (queryDimensions[i].getDimension().getDataType().equals(DataType.TIMESTAMP)
-            || queryDimensions[i].getDimension().getDataType().equals(DataType.DATE)) {
+        if (queryDimensions[i].getDimension().getDataType().equals(DataTypes.TIMESTAMP)
+            || queryDimensions[i].getDimension().getDataType().equals(DataTypes.DATE)) {
           columnVectorInfo.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(queryDimensions[i].getDimension().getDataType());
         }
@@ -177,7 +178,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
   private void fillDirectDictionaryData(CarbonColumnVector vector,
       ColumnVectorInfo columnVectorInfo, Object defaultValue) {
     if (null != defaultValue) {
-      if (columnVectorInfo.directDictionaryGenerator.getReturnType().equals(DataType.INT)) {
+      if (columnVectorInfo.directDictionaryGenerator.getReturnType().equals(DataTypes.INT)) {
         vector.putInts(columnVectorInfo.vectorOffset, columnVectorInfo.size, (int) defaultValue);
       } else {
         vector.putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size, (long) defaultValue);
@@ -197,18 +198,14 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
   private void fillNoDictionaryData(CarbonColumnVector vector, ColumnVectorInfo columnVectorInfo,
       Object defaultValue) {
     if (null != defaultValue) {
-      switch (columnVectorInfo.dimension.getDimension().getDataType()) {
-        case INT:
-          vector.putInts(columnVectorInfo.vectorOffset, columnVectorInfo.size, (int) defaultValue);
-          break;
-        case LONG:
-        case TIMESTAMP:
-          vector
-              .putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size, (long) defaultValue);
-          break;
-        default:
-          vector.putBytes(columnVectorInfo.vectorOffset, columnVectorInfo.size,
-              ((UTF8String) defaultValue).getBytes());
+      DataType dataType = columnVectorInfo.dimension.getDimension().getDataType();
+      if (dataType == DataTypes.INT) {
+        vector.putInts(columnVectorInfo.vectorOffset, columnVectorInfo.size, (int) defaultValue);
+      } else if (dataType == DataTypes.LONG || dataType == DataTypes.TIMESTAMP) {
+        vector.putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size, (long) defaultValue);
+      } else {
+        vector.putBytes(columnVectorInfo.vectorOffset, columnVectorInfo.size,
+            ((UTF8String) defaultValue).getBytes());
       }
     } else {
       vector.putNulls(columnVectorInfo.vectorOffset, columnVectorInfo.size);
@@ -229,26 +226,22 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
         if (null == defaultValue) {
           vector.putNulls(columnVectorInfo.vectorOffset, columnVectorInfo.size);
         } else {
-          switch (measureInfo.getMeasureDataTypes()[i]) {
-            case SHORT:
-              vector.putShorts(columnVectorInfo.vectorOffset, columnVectorInfo.size,
-                  (short) defaultValue);
-              break;
-            case INT:
-              vector.putInts(columnVectorInfo.vectorOffset, columnVectorInfo.size,
-                  (int) defaultValue);
-              break;
-            case LONG:
-              vector.putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size,
-                  (long) defaultValue);
-              break;
-            case DECIMAL:
-              vector.putDecimals(columnVectorInfo.vectorOffset, columnVectorInfo.size,
-                  (Decimal) defaultValue, measure.getPrecision());
-              break;
-            default:
-              vector.putDoubles(columnVectorInfo.vectorOffset, columnVectorInfo.size,
-                  (double) defaultValue);
+          DataType dataType = measureInfo.getMeasureDataTypes()[i];
+          if (dataType == DataTypes.SHORT) {
+            vector.putShorts(columnVectorInfo.vectorOffset, columnVectorInfo.size,
+                (short) defaultValue);
+          } else if (dataType == DataTypes.INT) {
+            vector
+                .putInts(columnVectorInfo.vectorOffset, columnVectorInfo.size, (int) defaultValue);
+          } else if (dataType == DataTypes.LONG) {
+            vector.putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size,
+                (long) defaultValue);
+          } else if (dataType == DataTypes.DECIMAL) {
+            vector.putDecimals(columnVectorInfo.vectorOffset, columnVectorInfo.size,
+                (Decimal) defaultValue, measure.getPrecision());
+          } else {
+            vector.putDoubles(columnVectorInfo.vectorOffset, columnVectorInfo.size,
+                (double) defaultValue);
           }
         }
       }

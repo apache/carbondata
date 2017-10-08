@@ -25,7 +25,7 @@ import java.util.Map;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.scan.executor.infos.BlockExecutionInfo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
@@ -128,10 +128,10 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
           row[order[i]] = DataTypeUtil.getDataBasedOnDataType(
               scannedResult.getBlockletId() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
                   .getCurrentPageCounter() + CarbonCommonConstants.FILE_SEPARATOR + scannedResult
-                  .getCurrentRowId(), DataType.STRING);
+                  .getCurrentRowId(), DataTypes.STRING);
         } else {
           row[order[i]] =
-              DataTypeUtil.getDataBasedOnDataType(scannedResult.getBlockletId(), DataType.STRING);
+              DataTypeUtil.getDataBasedOnDataType(scannedResult.getBlockletId(), DataTypes.STRING);
         }
       } else {
         row[order[i]] = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(

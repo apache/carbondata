@@ -28,7 +28,7 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -167,7 +167,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     for (ExpressionResult result : listOfExpressionResults) {
       try {
         if (result.getString() == null) {
-          if (result.getDataType() == DataType.STRING) {
+          if (result.getDataType() == DataTypes.STRING) {
             filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
           } else {
             filterValuesList.add(CarbonCommonConstants.EMPTY_BYTE_ARRAY);

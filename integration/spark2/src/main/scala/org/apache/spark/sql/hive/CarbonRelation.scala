@@ -16,6 +16,7 @@
  */
 package org.apache.spark.sql.hive
 
+import java.util
 import java.util.LinkedHashSet
 
 import scala.Array.canBuildFrom
@@ -28,7 +29,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Stati
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL
+import org.apache.carbondata.core.metadata.datatype.DataTypes.DECIMAL
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.path.CarbonStorePath
@@ -45,7 +46,7 @@ case class CarbonRelation(
   extends LeafNode with MultiInstanceRelation {
 
   def recursiveMethod(dimName: String, childDim: CarbonDimension): String = {
-    childDim.getDataType.toString.toLowerCase match {
+    childDim.getDataType.getName.toLowerCase match {
       case "array" => s"${
         childDim.getColName.substring(dimName.length + 1)
       }:array<${ getArrayChildren(childDim.getColName) }>"
@@ -58,7 +59,7 @@ case class CarbonRelation(
 
   def getArrayChildren(dimName: String): String = {
     metaData.carbonTable.getChildren(dimName).asScala.map(childDim => {
-      childDim.getDataType.toString.toLowerCase match {
+      childDim.getDataType.getName.toLowerCase match {
         case "array" => s"array<${ getArrayChildren(childDim.getColName) }>"
         case "struct" => s"struct<${ getStructChildren(childDim.getColName) }>"
         case dType => addDecimalScaleAndPrecision(childDim, dType)
@@ -68,7 +69,7 @@ case class CarbonRelation(
 
   def getStructChildren(dimName: String): String = {
     metaData.carbonTable.getChildren(dimName).asScala.map(childDim => {
-      childDim.getDataType.toString.toLowerCase match {
+      childDim.getDataType.getName.toLowerCase match {
         case "array" => s"${
           childDim.getColName.substring(dimName.length + 1)
         }:array<${ getArrayChildren(childDim.getColName) }>"
@@ -95,8 +96,7 @@ case class CarbonRelation(
     sett.asScala.toSeq.map(dim => {
       val dimval = metaData.carbonTable
         .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName)
-      val output: DataType = dimval.getDataType
-        .toString.toLowerCase match {
+      val output: DataType = dimval.getDataType.getName.toLowerCase match {
         case "array" =>
           CarbonMetastoreTypes.toDataType(s"array<${ getArrayChildren(dim.getColName) }>")
         case "struct" =>
@@ -118,14 +118,17 @@ case class CarbonRelation(
     new LinkedHashSet(
       tableMeta.carbonTable.
         getMeasureByTableName(tableMeta.carbonTable.getFactTableName).
-        asScala.asJava).asScala.toSeq
-      .map(x => AttributeReference(x.getColName, CarbonMetastoreTypes.toDataType(
-        metaData.carbonTable.getMeasureByName(factTable, x.getColName).getDataType.toString
-          .toLowerCase match {
-          case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
-          case others => others
-        }),
-        nullable = true)())
+        asScala.asJava).asScala.toSeq.map { x =>
+      val metastoreType = metaData.carbonTable.getMeasureByName(factTable, x.getColName)
+        .getDataType.getName.toLowerCase match {
+        case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
+        case others => others
+      }
+      AttributeReference(
+        x.getColName,
+        CarbonMetastoreTypes.toDataType(metastoreType),
+        nullable = true)()
+    }
   }
 
   override val output = {
@@ -134,7 +137,7 @@ case class CarbonRelation(
     // convert each column to Attribute
     columns.filter(!_.isInvisible).map { column =>
       if (column.isDimension()) {
-        val output: DataType = column.getDataType.toString.toLowerCase match {
+        val output: DataType = column.getDataType.getName.toLowerCase match {
           case "array" =>
             CarbonMetastoreTypes.toDataType(s"array<${getArrayChildren(column.getColName)}>")
           case "struct" =>
@@ -147,8 +150,7 @@ case class CarbonRelation(
           qualifier = Option(tableName + "." + column.getColName))
       } else {
         val output = CarbonMetastoreTypes.toDataType {
-          column.getDataType.toString
-            .toLowerCase match {
+          column.getDataType.getName.toLowerCase match {
             case "decimal" => "decimal(" + column.getColumnSchema.getPrecision + "," + column
               .getColumnSchema.getScale + ")"
             case others => others

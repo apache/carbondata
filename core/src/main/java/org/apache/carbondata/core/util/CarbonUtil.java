@@ -62,6 +62,7 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -853,23 +854,6 @@ public final class CarbonUtil {
     return false;
   }
 
-  /**
-   * below method is to check whether it is complex data type
-   *
-   * @param dataType data type to be searched
-   * @return if data type is present
-   */
-  public static boolean hasComplexDataType(DataType dataType) {
-    switch (dataType) {
-      case ARRAY:
-      case STRUCT:
-      case MAP:
-        return true;
-      default:
-        return false;
-    }
-  }
-
   public static boolean[] getDictionaryEncodingArray(QueryDimension[] queryDimensions) {
     boolean[] dictionaryEncodingArray = new boolean[queryDimensions.length];
     for (int i = 0; i < queryDimensions.length; i++) {
@@ -900,7 +884,7 @@ public final class CarbonUtil {
     boolean[] dictionaryEncodingArray = new boolean[queryDimensions.length];
     for (int i = 0; i < queryDimensions.length; i++) {
       dictionaryEncodingArray[i] =
-          CarbonUtil.hasComplexDataType(queryDimensions[i].getDimension().getDataType());
+          queryDimensions[i].getDimension().getDataType().isComplexType();
     }
     return dictionaryEncodingArray;
   }
@@ -1619,16 +1603,15 @@ public final class CarbonUtil {
    * @return format
    */
   public static String getFormatFromProperty(DataType dataType) {
-    switch (dataType) {
-      case DATE:
-        return CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
-      case TIMESTAMP:
-        return CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-      default:
-        return null;
+    if (dataType.equals(DataTypes.DATE)) {
+      return CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+    } else if (dataType.equals(DataTypes.TIMESTAMP)) {
+      return CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+    } else {
+      return null;
     }
   }
 
@@ -1955,42 +1938,40 @@ public final class CarbonUtil {
    */
   public static byte[] getValueAsBytes(DataType dataType, Object value) {
     ByteBuffer b;
-    switch (dataType) {
-      case BYTE:
-        b = ByteBuffer.allocate(8);
-        b.putLong((byte) value);
-        b.flip();
-        return b.array();
-      case SHORT:
-        b = ByteBuffer.allocate(8);
-        b.putLong((short) value);
-        b.flip();
-        return b.array();
-      case INT:
-        b = ByteBuffer.allocate(8);
-        b.putLong((int) value);
-        b.flip();
-        return b.array();
-      case LONG:
-        b = ByteBuffer.allocate(8);
-        b.putLong((long) value);
-        b.flip();
-        return b.array();
-      case DOUBLE:
-        b = ByteBuffer.allocate(8);
-        b.putDouble((double) value);
-        b.flip();
-        return b.array();
-      case DECIMAL:
-        return DataTypeUtil.bigDecimalToByte((BigDecimal)value);
-      case BYTE_ARRAY:
-        return (byte[]) value;
-      case STRING:
-      case TIMESTAMP:
-      case DATE:
-        return (byte[]) value;
-      default:
-        throw new IllegalArgumentException("Invalid data type: " + dataType);
+    if (dataType == DataTypes.BYTE) {
+      b = ByteBuffer.allocate(8);
+      b.putLong((byte) value);
+      b.flip();
+      return b.array();
+    } else if (dataType == DataTypes.SHORT) {
+      b = ByteBuffer.allocate(8);
+      b.putLong((short) value);
+      b.flip();
+      return b.array();
+    } else if (dataType == DataTypes.INT) {
+      b = ByteBuffer.allocate(8);
+      b.putLong((int) value);
+      b.flip();
+      return b.array();
+    } else if (dataType == DataTypes.LONG) {
+      b = ByteBuffer.allocate(8);
+      b.putLong((long) value);
+      b.flip();
+      return b.array();
+    } else if (dataType == DataTypes.DOUBLE) {
+      b = ByteBuffer.allocate(8);
+      b.putDouble((double) value);
+      b.flip();
+      return b.array();
+    } else if (dataType == DataTypes.DECIMAL) {
+      return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
+    } else if (dataType == DataTypes.BYTE_ARRAY) {
+      return (byte[]) value;
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.TIMESTAMP ||
+        dataType == DataTypes.DATE) {
+      return (byte[]) value;
+    } else {
+      throw new IllegalArgumentException("Invalid data type: " + dataType);
     }
   }
 

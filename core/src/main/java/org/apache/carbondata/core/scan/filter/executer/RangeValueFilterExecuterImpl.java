@@ -27,7 +27,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.expression.Expression;
@@ -564,7 +564,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
           defaultValue = ByteUtil.toBytes(key);
         }
       } else {
-        if (dimColEvaluatorInfo.getDimension().getDataType() == DataType.STRING) {
+        if (dimColEvaluatorInfo.getDimension().getDataType() == DataTypes.STRING) {
           defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
         } else {
           defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;

@@ -17,46 +17,22 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public enum DataType {
+import java.io.Serializable;
 
-  STRING(0, "STRING", -1),
-  DATE(1, "DATE", -1),
-  TIMESTAMP(2, "TIMESTAMP", -1),
-  BOOLEAN(1, "BOOLEAN", 1),
-  SHORT(2, "SMALLINT", 2),
-  INT(3, "INT", 4),
-  FLOAT(4, "FLOAT", 4),
-  LONG(5, "BIGINT", 8),
-  DOUBLE(6, "DOUBLE", 8),
-  NULL(7, "NULL", 1),
-  DECIMAL(8, "DECIMAL", -1),
-  ARRAY(9, "ARRAY", -1),
-  STRUCT(10, "STRUCT", -1),
-  MAP(11, "MAP", -1),
-  BYTE(12, "BYTE", 1),
-  // internal use only, for variable length data type
-  BYTE_ARRAY(13, "BYTE_ARRAY", -1),
-  // internal use only, for value compression from integer/long to 3 bytes value
-  SHORT_INT(14, "SHORT_INT", 3),
-  // Only for internal use for backward compatability. It is only used for V1 version
-  LEGACY_LONG(15, "LEGACYBIGINT", 8);
+public class DataType implements Serializable {
 
-  public static final char DOUBLE_MEASURE_CHAR = 'n';
-  public static final char STRING_CHAR = 's';
-  public static final char TIMESTAMP_CHAR = 't';
-  public static final char DATE_CHAR = 'x';
-  public static final char BYTE_ARRAY_CHAR = 'y';
-  public static final char BYTE_VALUE_MEASURE_CHAR = 'c';
-  public static final char BIG_DECIMAL_MEASURE_CHAR = 'b';
-  public static final char BIG_INT_MEASURE_CHAR = 'd';
+  private static final long serialVersionUID = 19371726L;
 
+  // id is used for comparison and serialization/deserialization
+  private int id;
   private int precedenceOrder;
   private String name;
 
   // size of the value of this data type, negative value means variable length
   private int sizeInBytes;
 
-  DataType(int precedenceOrder, String name, int sizeInBytes) {
+  DataType(int id, int precedenceOrder, String name, int sizeInBytes) {
+    this.id = id;
     this.precedenceOrder = precedenceOrder;
     this.name = name;
     this.sizeInBytes = sizeInBytes;
@@ -70,96 +46,70 @@ public enum DataType {
     return name;
   }
 
-  public boolean isComplexType() {
-    return precedenceOrder >= 9 && precedenceOrder <= 11;
-  }
-
   public int getSizeInBytes() {
     return sizeInBytes;
   }
 
   public int getSizeBits() {
-    if (this == SHORT_INT) {
-      throw new UnsupportedOperationException("Should not call this from datatype " + SHORT_INT);
-    }
     return (int) (Math.log(getSizeInBytes()) / Math.log(2));
   }
 
-  public static DataType valueOf(int ordinal) {
-    if (ordinal == STRING.ordinal()) {
-      return STRING;
-    } else if (ordinal == DATE.ordinal()) {
-      return DATE;
-    } else if (ordinal == TIMESTAMP.ordinal()) {
-      return TIMESTAMP;
-    } else if (ordinal == BOOLEAN.ordinal()) {
-      return BOOLEAN;
-    } else if (ordinal == SHORT.ordinal()) {
-      return SHORT;
-    } else if (ordinal == INT.ordinal()) {
-      return INT;
-    } else if (ordinal == FLOAT.ordinal()) {
-      return FLOAT;
-    } else if (ordinal == LONG.ordinal()) {
-      return LONG;
-    } else if (ordinal == DOUBLE.ordinal()) {
-      return DOUBLE;
-    } else if (ordinal == NULL.ordinal()) {
-      return NULL;
-    } else if (ordinal == DECIMAL.ordinal()) {
-      return DECIMAL;
-    } else if (ordinal == ARRAY.ordinal()) {
-      return ARRAY;
-    } else if (ordinal == STRUCT.ordinal()) {
-      return STRUCT;
-    } else if (ordinal == MAP.ordinal()) {
-      return MAP;
-    } else if (ordinal == BYTE.ordinal()) {
-      return BYTE;
-    } else if (ordinal == BYTE_ARRAY.ordinal()) {
-      return BYTE_ARRAY;
-    } else if (ordinal == SHORT_INT.ordinal()) {
-      return SHORT_INT;
-    } else {
-      throw new RuntimeException("create DataType with invalid ordinal: " + ordinal);
-    }
+  public int getId() {
+    return id;
   }
 
-  public static char convertType(DataType type) {
-    switch (type) {
-      case BYTE:
-      case SHORT:
-      case SHORT_INT:
-      case INT:
-      case LONG:
-        return BIG_INT_MEASURE_CHAR;
-      case DOUBLE:
-        return DOUBLE_MEASURE_CHAR;
-      case DECIMAL:
-        return BIG_DECIMAL_MEASURE_CHAR;
-      case STRING:
-        return STRING_CHAR;
-      case TIMESTAMP:
-        return TIMESTAMP_CHAR;
-      case DATE:
-        return DATE_CHAR;
-      case BYTE_ARRAY:
-        return BYTE_ARRAY_CHAR;
-      default:
-        throw new RuntimeException("Unexpected type: " + type);
+  public boolean isComplexType() {
+    return false;
+  }
+
+  @Override
+  public String toString() {
+    return getName();
+  }
+
+  public static final char DOUBLE_MEASURE_CHAR = 'n';
+  public static final char STRING_CHAR = 's';
+  public static final char TIMESTAMP_CHAR = 't';
+  public static final char DATE_CHAR = 'x';
+  public static final char BYTE_ARRAY_CHAR = 'y';
+  public static final char BYTE_VALUE_MEASURE_CHAR = 'c';
+  public static final char BIG_DECIMAL_MEASURE_CHAR = 'b';
+  public static final char BIG_INT_MEASURE_CHAR = 'd';
+
+  public static char convertType(DataType dataType) {
+    if (dataType == DataTypes.BYTE ||
+        dataType == DataTypes.SHORT ||
+        dataType == DataTypes.SHORT_INT ||
+        dataType == DataTypes.INT ||
+        dataType == DataTypes.LONG) {
+      return BIG_INT_MEASURE_CHAR;
+    } else if (dataType == DataTypes.DOUBLE) {
+      return DOUBLE_MEASURE_CHAR;
+    } else if (dataType == DataTypes.DECIMAL) {
+      return BIG_DECIMAL_MEASURE_CHAR;
+    } else if (dataType == DataTypes.STRING) {
+      return STRING_CHAR;
+    } else if (dataType == DataTypes.TIMESTAMP) {
+      return TIMESTAMP_CHAR;
+    } else if (dataType == DataTypes.DATE) {
+      return DATE_CHAR;
+    } else if (dataType == DataTypes.BYTE_ARRAY) {
+      return BYTE_ARRAY_CHAR;
+    } else {
+      throw new RuntimeException("Unexpected type: " + dataType);
     }
   }
 
   public static DataType getDataType(char type) {
     switch (type) {
       case BIG_INT_MEASURE_CHAR:
-        return DataType.LONG;
+        return DataTypes.LONG;
       case DOUBLE_MEASURE_CHAR:
-        return DataType.DOUBLE;
+        return DataTypes.DOUBLE;
       case BIG_DECIMAL_MEASURE_CHAR:
-        return DataType.DECIMAL;
+        return DataTypes.DECIMAL;
       case 'l':
-        return DataType.LEGACY_LONG;
+        return DataTypes.LEGACY_LONG;
       default:
         throw new RuntimeException("Unexpected type: " + type);
     }

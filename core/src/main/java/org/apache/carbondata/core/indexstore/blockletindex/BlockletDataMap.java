@@ -51,6 +51,7 @@ import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
@@ -187,30 +188,25 @@ public class BlockletDataMap implements DataMap, Cacheable {
       ByteBuffer buffer = ByteBuffer.allocate(8);
       for (int i = 0; i < measures.size(); i++) {
         buffer.rewind();
-        switch (measures.get(i).getDataType()) {
-          case BYTE:
-            buffer.putLong(Byte.MIN_VALUE);
-            updatedValues[minValues.length + i] = buffer.array().clone();
-            break;
-          case SHORT:
-            buffer.putLong(Short.MIN_VALUE);
-            updatedValues[minValues.length + i] = buffer.array().clone();
-            break;
-          case INT:
-            buffer.putLong(Integer.MIN_VALUE);
-            updatedValues[minValues.length + i] = buffer.array().clone();
-            break;
-          case LONG:
-            buffer.putLong(Long.MIN_VALUE);
-            updatedValues[minValues.length + i] = buffer.array().clone();
-            break;
-          case DECIMAL:
-            updatedValues[minValues.length + i] =
-                DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Long.MIN_VALUE));
-            break;
-          default:
-            buffer.putDouble(Double.MIN_VALUE);
-            updatedValues[minValues.length + i] = buffer.array().clone();
+        DataType dataType = measures.get(i).getDataType();
+        if (dataType == DataTypes.BYTE) {
+          buffer.putLong(Byte.MIN_VALUE);
+          updatedValues[minValues.length + i] = buffer.array().clone();
+        } else if (dataType == DataTypes.SHORT) {
+          buffer.putLong(Short.MIN_VALUE);
+          updatedValues[minValues.length + i] = buffer.array().clone();
+        } else if (dataType == DataTypes.INT) {
+          buffer.putLong(Integer.MIN_VALUE);
+          updatedValues[minValues.length + i] = buffer.array().clone();
+        } else if (dataType == DataTypes.LONG) {
+          buffer.putLong(Long.MIN_VALUE);
+          updatedValues[minValues.length + i] = buffer.array().clone();
+        } else if (dataType == DataTypes.DECIMAL) {
+          updatedValues[minValues.length + i] =
+              DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Long.MIN_VALUE));
+        } else {
+          buffer.putDouble(Double.MIN_VALUE);
+          updatedValues[minValues.length + i] = buffer.array().clone();
         }
       }
     }
@@ -230,30 +226,25 @@ public class BlockletDataMap implements DataMap, Cacheable {
       ByteBuffer buffer = ByteBuffer.allocate(8);
       for (int i = 0; i < measures.size(); i++) {
         buffer.rewind();
-        switch (measures.get(i).getDataType()) {
-          case BYTE:
-            buffer.putLong(Byte.MAX_VALUE);
-            updatedValues[maxValues.length + i] = buffer.array().clone();
-            break;
-          case SHORT:
-            buffer.putLong(Short.MAX_VALUE);
-            updatedValues[maxValues.length + i] = buffer.array().clone();
-            break;
-          case INT:
-            buffer.putLong(Integer.MAX_VALUE);
-            updatedValues[maxValues.length + i] = buffer.array().clone();
-            break;
-          case LONG:
-            buffer.putLong(Long.MAX_VALUE);
-            updatedValues[maxValues.length + i] = buffer.array().clone();
-            break;
-          case DECIMAL:
-            updatedValues[maxValues.length + i] =
-                DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Long.MAX_VALUE));
-            break;
-          default:
-            buffer.putDouble(Double.MAX_VALUE);
-            updatedValues[maxValues.length + i] = buffer.array().clone();
+        DataType dataType = measures.get(i).getDataType();
+        if (dataType == DataTypes.BYTE) {
+          buffer.putLong(Byte.MAX_VALUE);
+          updatedValues[maxValues.length + i] = buffer.array().clone();
+        } else if (dataType == DataTypes.SHORT) {
+          buffer.putLong(Short.MAX_VALUE);
+          updatedValues[maxValues.length + i] = buffer.array().clone();
+        } else if (dataType == DataTypes.INT) {
+          buffer.putLong(Integer.MAX_VALUE);
+          updatedValues[maxValues.length + i] = buffer.array().clone();
+        } else if (dataType == DataTypes.LONG) {
+          buffer.putLong(Long.MAX_VALUE);
+          updatedValues[maxValues.length + i] = buffer.array().clone();
+        } else if (dataType == DataTypes.DECIMAL) {
+          updatedValues[maxValues.length + i] =
+              DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Long.MAX_VALUE));
+        } else {
+          buffer.putDouble(Double.MAX_VALUE);
+          updatedValues[maxValues.length + i] = buffer.array().clone();
         }
       }
     }
@@ -276,39 +267,39 @@ public class BlockletDataMap implements DataMap, Cacheable {
     List<DataMapSchema> indexSchemas = new ArrayList<>();
 
     // Index key
-    indexSchemas.add(new DataMapSchema.VariableDataMapSchema(DataType.BYTE_ARRAY));
+    indexSchemas.add(new DataMapSchema.VariableDataMapSchema(DataTypes.BYTE_ARRAY));
     int[] minMaxLen = segmentProperties.getColumnsValueSize();
     // do it 2 times, one for min and one for max.
     for (int k = 0; k < 2; k++) {
       DataMapSchema[] mapSchemas = new DataMapSchema[minMaxLen.length];
       for (int i = 0; i < minMaxLen.length; i++) {
         if (minMaxLen[i] <= 0) {
-          mapSchemas[i] = new DataMapSchema.VariableDataMapSchema(DataType.BYTE_ARRAY);
+          mapSchemas[i] = new DataMapSchema.VariableDataMapSchema(DataTypes.BYTE_ARRAY);
         } else {
-          mapSchemas[i] = new DataMapSchema.FixedDataMapSchema(DataType.BYTE_ARRAY, minMaxLen[i]);
+          mapSchemas[i] = new DataMapSchema.FixedDataMapSchema(DataTypes.BYTE_ARRAY, minMaxLen[i]);
         }
       }
-      DataMapSchema mapSchema = new DataMapSchema.StructDataMapSchema(DataType.STRUCT, mapSchemas);
+      DataMapSchema mapSchema = new DataMapSchema.StructDataMapSchema(DataTypes.STRUCT, mapSchemas);
       indexSchemas.add(mapSchema);
     }
 
     // for number of rows.
-    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataType.INT));
+    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataTypes.INT));
 
     // for table block path
-    indexSchemas.add(new DataMapSchema.VariableDataMapSchema(DataType.BYTE_ARRAY));
+    indexSchemas.add(new DataMapSchema.VariableDataMapSchema(DataTypes.BYTE_ARRAY));
 
     // for number of pages.
-    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataType.SHORT));
+    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataTypes.SHORT));
 
     // for version number.
-    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataType.SHORT));
+    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataTypes.SHORT));
 
     // for schema updated time.
-    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataType.LONG));
+    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataTypes.LONG));
 
     //for blocklet info
-    indexSchemas.add(new DataMapSchema.VariableDataMapSchema(DataType.BYTE_ARRAY));
+    indexSchemas.add(new DataMapSchema.VariableDataMapSchema(DataTypes.BYTE_ARRAY));
 
     unsafeMemoryDMStore =
         new UnsafeMemoryDMStore(indexSchemas.toArray(new DataMapSchema[indexSchemas.size()]));

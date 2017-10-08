@@ -21,7 +21,7 @@ import java.sql.Date;
 import java.sql.Timestamp;
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -52,27 +52,21 @@ public class SparkRowReadSupportImpl extends DictionaryDecodeReadSupport<Row> {
         if (data[i] == null) {
           continue;
         }
-        switch (dataTypes[i]) {
-          case STRING:
-            data[i] = UTF8String.fromString(data[i].toString());
-            break;
-          case TIMESTAMP:
-            data[i] = new Timestamp((long) data[i]);
-            break;
-          case DATE:
-            data[i] = new Date((long) data[i]);
-            break;
-          case LONG:
-            data[i] = data[i];
-            break;
-          default:
+        if (dataTypes[i] == DataTypes.STRING) {
+          data[i] = UTF8String.fromString(data[i].toString());
+        } else if (dataTypes[i] == DataTypes.TIMESTAMP) {
+          data[i] = new Timestamp((long) data[i]);
+        } else if (dataTypes[i] == DataTypes.DATE) {
+          data[i] = new Date((long) data[i]);
+        } else if (dataTypes[i] == DataTypes.LONG) {
+          data[i] = data[i];
         }
       }
       else if (carbonColumns[i].hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         //convert the long to timestamp in case of direct dictionary column
-        if (DataType.TIMESTAMP == carbonColumns[i].getDataType()) {
+        if (DataTypes.TIMESTAMP == carbonColumns[i].getDataType()) {
           data[i] = new Timestamp((long) data[i] / 1000L);
-        } else if (DataType.DATE == carbonColumns[i].getDataType()) {
+        } else if (DataTypes.DATE == carbonColumns[i].getDataType()) {
           data[i] = new Date((long) data[i]);
         }
       }

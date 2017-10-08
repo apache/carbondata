@@ -26,7 +26,7 @@ import java.util.Map;
 
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.reader.CarbonDictionaryReaderImpl;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
@@ -51,13 +51,13 @@ public class DictionaryCacheLoaderImplTest {
     Map<String, String> columnProperties = new HashMap<>();
     columnProperties.put("prop1", "value1");
     columnProperties.put("prop2", "value2");
-    columnIdentifier = new ColumnIdentifier("1", columnProperties, DataType.STRING);
+    columnIdentifier = new ColumnIdentifier("1", columnProperties, DataTypes.STRING);
     dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
             columnIdentifier.getDataType(), CarbonStorePath.getCarbonTablePath("/tmp", carbonTableIdentifier));
     dictionaryCacheLoader = new DictionaryCacheLoaderImpl(carbonTableIdentifier, "/tmp/",
         dictionaryColumnUniqueIdentifier);
-    dictionaryInfo = new ColumnDictionaryInfo(DataType.STRING);
+    dictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
     new MockUp<CarbonDictionaryReaderImpl>() {
       @Mock @SuppressWarnings("unused") Iterator<byte[]> read(long startOffset, long endOffset)
           throws IOException {

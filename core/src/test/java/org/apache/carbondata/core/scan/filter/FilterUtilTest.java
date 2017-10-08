@@ -26,6 +26,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -67,7 +68,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     columnSchema.setColumnar(true);
     columnSchema.setColumnName("IMEI");
     columnSchema.setColumnUniqueId(UUID.randomUUID().toString());
-    columnSchema.setDataType(DataType.STRING);
+    columnSchema.setDataType(DataTypes.STRING);
     columnSchema.setDimensionColumn(true);
   }
 
@@ -80,7 +81,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
 
   @Test
   public void testCheckIfLeftExpressionRequireEvaluationWithExpressionNotInstanceOfColumnExpression() {
-    ColumnExpression expression = new ColumnExpression("test", DataType.STRING);
+    ColumnExpression expression = new ColumnExpression("test", DataTypes.STRING);
     boolean result = FilterUtil.checkIfLeftExpressionRequireEvaluation(expression);
     assertFalse(result);
   }
@@ -103,7 +104,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     String dictionaryVal = "1";
     String memberVal = "1";
     int actualResult =
-        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataType.SHORT);
+        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.SHORT);
     int expectedResult = 0;
     assertEquals(expectedResult, actualResult);
   }
@@ -112,7 +113,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     String dictionaryVal = "1000";
     String memberVal = "1001";
     int actualResult =
-        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataType.INT);
+        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.INT);
     int expectedResult = -1;
     assertEquals(expectedResult, actualResult);
   }
@@ -121,7 +122,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     String dictionaryVal = "1.90";
     String memberVal = "1.89";
     int actualResult =
-        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataType.DOUBLE);
+        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.DOUBLE);
     int expectedResult = 1;
     assertEquals(expectedResult, actualResult);
   }
@@ -130,7 +131,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     String dictionaryVal = "111111111111111";
     String memberVal = "1111111111111111";
     int actualResult =
-        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataType.LONG);
+        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.LONG);
     int expectedResult = -1;
     assertEquals(expectedResult, actualResult);
   }
@@ -139,7 +140,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     String dictionaryVal = "true";
     String memberVal = "false";
     int actualResult =
-        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataType.BOOLEAN);
+        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.BOOLEAN);
     int expectedResult = 1;
     assertEquals(expectedResult, actualResult);
   }
@@ -148,7 +149,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     String dictionaryVal = "1111111";
     String memberVal = "1111";
     int actualResult =
-        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataType.DECIMAL);
+        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.DECIMAL);
     int expectedResult = 1;
     assertEquals(expectedResult, actualResult);
   }
@@ -157,7 +158,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     String dictionaryVal = "11.78";
     String memberVal = "1111.90";
     int actualResult =
-        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataType.FLOAT);
+        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.FLOAT);
     int expectedResult = -1;
     assertEquals(expectedResult, actualResult);
   }
@@ -166,7 +167,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     String dictionaryVal = "2008-01-01 00:00:01";
     String memberVal = "2008-01-01 00:00:01";
     int actualValue =
-        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataType.TIMESTAMP);
+        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.TIMESTAMP);
     int expectedValue = 0;
     assertEquals(expectedValue, actualValue);
   }
@@ -175,7 +176,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     String dictionaryVal = "test";
     String memberVal = "1";
     int actualValue =
-        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataType.INT);
+        FilterUtil.compareFilterKeyBasedOnDataType(dictionaryVal, memberVal, DataTypes.INT);
     int expectedValue = -1;
     assertEquals(expectedValue, actualValue);
   }
@@ -194,7 +195,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
 
   @Test public void testCheckIfExpressionContainsColumn() {
     String columnName = "IMEI";
-    Expression expression = new ColumnExpression(columnName, DataType.STRING);
+    Expression expression = new ColumnExpression(columnName, DataTypes.STRING);
     boolean result = FilterUtil.checkIfExpressionContainsColumn(expression);
     assertTrue(result);
   }
@@ -202,7 +203,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
   @Test
   public void testCheckIfExpressionContainsColumnWithExpressionNotInstanceOfColumnExpression() {
     String columnName = "IMEI";
-    Expression expression = new LiteralExpression(columnName, DataType.STRING);
+    Expression expression = new LiteralExpression(columnName, DataTypes.STRING);
     boolean result = FilterUtil.checkIfExpressionContainsColumn(expression);
     assertFalse(result);
   }
@@ -210,7 +211,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
   @Test public void testIsExpressionNeedsToResolved() {
     boolean isIncludeFilter = true;
     Object obj = "test";
-    LiteralExpression literalExpression = new LiteralExpression(obj, DataType.STRING);
+    LiteralExpression literalExpression = new LiteralExpression(obj, DataTypes.STRING);
     boolean result = FilterUtil.isExpressionNeedsToResolved(literalExpression, isIncludeFilter);
     assertFalse(result);
   }
@@ -218,7 +219,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
   @Test public void testIsExpressionNeedsToResolvedWithDataTypeNullAndIsIncludeFilterFalse() {
     boolean isIncludeFilter = false;
     Object obj = "test";
-    LiteralExpression literalExpression = new LiteralExpression(obj, DataType.NULL);
+    LiteralExpression literalExpression = new LiteralExpression(obj, DataTypes.NULL);
     boolean result = FilterUtil.isExpressionNeedsToResolved(literalExpression, isIncludeFilter);
     assertTrue(result);
   }
@@ -236,7 +237,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     columnSchema.setColumnar(true);
     columnSchema.setColumnName("IMEI");
     columnSchema.setColumnUniqueId(UUID.randomUUID().toString());
-    columnSchema.setDataType(DataType.STRING);
+    columnSchema.setDataType(DataTypes.STRING);
     columnSchema.setDimensionColumn(true);
     CarbonDimension carbonDimension =
         new CarbonDimension(columnSchema, ordinal, keyOrdinal, columnGroupOrdinal,
@@ -248,8 +249,8 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
   }
 
   @Test public void testGetFilterListForAllMembersRS() throws Exception {
-    Expression expression = new ColumnExpression("IMEI", DataType.STRING);
-    ColumnExpression columnExpression = new ColumnExpression("IMEI", DataType.STRING);
+    Expression expression = new ColumnExpression("IMEI", DataTypes.STRING);
+    ColumnExpression columnExpression = new ColumnExpression("IMEI", DataTypes.STRING);
     String defaultValues = "test";
     int defaultSurrogate = 1;
     boolean isIncludeFilter = true;
@@ -258,7 +259,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     final CarbonColumn carbonColumn = new CarbonColumn(dimColumn, ordinal, -1);
     new MockUp<ColumnExpression>() {
@@ -279,8 +280,8 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
 
   @Test public void testGetFilterListForAllMembersRSWithDefaultValuesEqualsToNull()
       throws Exception {
-    Expression expression = new ColumnExpression("IMEI", DataType.STRING);
-    ColumnExpression columnExpression = new ColumnExpression("IMEI", DataType.STRING);
+    Expression expression = new ColumnExpression("IMEI", DataTypes.STRING);
+    ColumnExpression columnExpression = new ColumnExpression("IMEI", DataTypes.STRING);
     String defaultValues = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
     int defaultSurrogate = 1;
     boolean isIncludeFilter = true;
@@ -289,7 +290,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     final CarbonColumn carbonColumn = new CarbonColumn(dimColumn, ordinal, -1);
     new MockUp<ColumnExpression>() {
@@ -309,8 +310,8 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
   }
 
   @Test public void testgetFilterListForRS() throws Exception {
-    Expression expression = new ColumnExpression("IMEI", DataType.STRING);
-    ColumnExpression columnExpression = new ColumnExpression("IMEI", DataType.STRING);
+    Expression expression = new ColumnExpression("IMEI", DataTypes.STRING);
+    ColumnExpression columnExpression = new ColumnExpression("IMEI", DataTypes.STRING);
     String defaultValues = CarbonCommonConstants.MEMBER_DEFAULT_VAL;
     int defaultSurrogate = 1;
     int ordinal = 1;
@@ -331,7 +332,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
   }
 
   @Test public void testCheckIfDataTypeNotTimeStamp() {
-    Expression expression = new ColumnExpression("test", DataType.STRING);
+    Expression expression = new ColumnExpression("test", DataTypes.STRING);
     boolean result = FilterUtil.checkIfDataTypeNotTimeStamp(expression);
     assertFalse(result);
   }
@@ -352,14 +353,14 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
   }
 
   @Test public void testCheckIfRightExpressionRequireEvaluation() {
-    Expression expression = new ColumnExpression("test", DataType.STRING);
+    Expression expression = new ColumnExpression("test", DataTypes.STRING);
     boolean result = FilterUtil.checkIfRightExpressionRequireEvaluation(expression);
     assertTrue(result);
   }
 
   @Test
   public void testCheckIfRightExpressionRequireEvaluationWithExpressionIsInstanceOfLiteralExpression() {
-    Expression expression = new LiteralExpression("test", DataType.STRING);
+    Expression expression = new LiteralExpression("test", DataTypes.STRING);
     boolean result = FilterUtil.checkIfRightExpressionRequireEvaluation(expression);
     assertFalse(result);
   }
@@ -368,13 +369,13 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
     boolean isIncludeFilter = true;
     AbsoluteTableIdentifier absoluteTableIdentifier =
         new AbsoluteTableIdentifier(this.carbonStorePath, carbonTableIdentifier);
-    ColumnExpression expression = new ColumnExpression("test", DataType.STRING);
+    ColumnExpression expression = new ColumnExpression("test", DataTypes.STRING);
     List<String> evaluateResultListFinal = new ArrayList<>();
     evaluateResultListFinal.add("test1");
     evaluateResultListFinal.add("test2");
     assertTrue(FilterUtil
         .getNoDictionaryValKeyMemberForFilter(evaluateResultListFinal, isIncludeFilter,
-            DataType.STRING) instanceof ColumnFilterInfo);
+            DataTypes.STRING) instanceof ColumnFilterInfo);
   }
 
   @Test public void testPrepareDefaultStartIndexKey() throws KeyGenException {

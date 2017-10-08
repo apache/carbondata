@@ -33,6 +33,7 @@ import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -103,9 +104,9 @@ public class AbstractDictionaryCacheTest {
 
   protected DictionaryColumnUniqueIdentifier createDictionaryColumnUniqueIdentifier(
       String columnId) {
-	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataType.STRING);
+	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataTypes.STRING);
     return new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
-        DataType.STRING,
+        DataTypes.STRING,
         CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
   }
 

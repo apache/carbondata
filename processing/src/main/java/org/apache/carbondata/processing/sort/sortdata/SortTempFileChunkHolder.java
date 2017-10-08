@@ -32,6 +32,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
@@ -343,27 +344,22 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
       // read measure values
       for (int i = 0; i < this.measureCount; i++) {
         if (stream.readByte() == 1) {
-          switch (aggType[i]) {
-            case SHORT:
-              measures[index++] = stream.readShort();
-              break;
-            case INT:
-              measures[index++] = stream.readInt();
-              break;
-            case LONG:
-              measures[index++] = stream.readLong();
-              break;
-            case DOUBLE:
-              measures[index++] = stream.readDouble();
-              break;
-            case DECIMAL:
-              int len = stream.readInt();
-              byte[] buff = new byte[len];
-              stream.readFully(buff);
-              measures[index++] = DataTypeUtil.byteToBigDecimal(buff);
-              break;
-            default:
-              throw new IllegalArgumentException("unsupported data type:" + aggType[i]);
+          DataType dataType = aggType[i];
+          if (dataType == DataTypes.SHORT) {
+            measures[index++] = stream.readShort();
+          } else if (dataType == DataTypes.INT) {
+            measures[index++] = stream.readInt();
+          } else if (dataType == DataTypes.LONG) {
+            measures[index++] = stream.readLong();
+          } else if (dataType == DataTypes.DOUBLE) {
+            measures[index++] = stream.readDouble();
+          } else if (dataType == DataTypes.DECIMAL) {
+            int len = stream.readInt();
+            byte[] buff = new byte[len];
+            stream.readFully(buff);
+            measures[index++] = DataTypeUtil.byteToBigDecimal(buff);
+          } else {
+            throw new IllegalArgumentException("unsupported data type:" + aggType[i]);
           }
         } else {
           measures[index++] = null;

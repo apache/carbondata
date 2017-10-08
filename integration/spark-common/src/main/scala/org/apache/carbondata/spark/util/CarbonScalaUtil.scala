@@ -25,26 +25,26 @@ import org.apache.spark.sql.execution.command.DataTypeInfo
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType}
+import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(
       dataType: org.apache.spark.sql.types.DataType): CarbonDataType = {
     dataType match {
-      case StringType => CarbonDataType.STRING
-      case ShortType => CarbonDataType.SHORT
-      case IntegerType => CarbonDataType.INT
-      case LongType => CarbonDataType.LONG
-      case DoubleType => CarbonDataType.DOUBLE
-      case FloatType => CarbonDataType.FLOAT
-      case DateType => CarbonDataType.DATE
-      case BooleanType => CarbonDataType.BOOLEAN
-      case TimestampType => CarbonDataType.TIMESTAMP
-      case ArrayType(_, _) => CarbonDataType.ARRAY
-      case StructType(_) => CarbonDataType.STRUCT
-      case NullType => CarbonDataType.NULL
-      case _ => CarbonDataType.DECIMAL
+      case StringType => CarbonDataTypes.STRING
+      case ShortType => CarbonDataTypes.SHORT
+      case IntegerType => CarbonDataTypes.INT
+      case LongType => CarbonDataTypes.LONG
+      case DoubleType => CarbonDataTypes.DOUBLE
+      case FloatType => CarbonDataTypes.FLOAT
+      case DateType => CarbonDataTypes.DATE
+      case BooleanType => CarbonDataTypes.BOOLEAN
+      case TimestampType => CarbonDataTypes.TIMESTAMP
+      case ArrayType(_, _) => CarbonDataTypes.ARRAY
+      case StructType(_) => CarbonDataTypes.STRUCT
+      case NullType => CarbonDataTypes.NULL
+      case _ => CarbonDataTypes.DECIMAL
     }
   }
 
@@ -67,15 +67,15 @@ object CarbonScalaUtil {
 
   def convertCarbonToSparkDataType(dataType: CarbonDataType): types.DataType = {
     dataType match {
-      case CarbonDataType.STRING => StringType
-      case CarbonDataType.SHORT => ShortType
-      case CarbonDataType.INT => IntegerType
-      case CarbonDataType.LONG => LongType
-      case CarbonDataType.DOUBLE => DoubleType
-      case CarbonDataType.BOOLEAN => BooleanType
-      case CarbonDataType.DECIMAL => DecimalType.SYSTEM_DEFAULT
-      case CarbonDataType.TIMESTAMP => TimestampType
-      case CarbonDataType.DATE => DateType
+      case CarbonDataTypes.STRING => StringType
+      case CarbonDataTypes.SHORT => ShortType
+      case CarbonDataTypes.INT => IntegerType
+      case CarbonDataTypes.LONG => LongType
+      case CarbonDataTypes.DOUBLE => DoubleType
+      case CarbonDataTypes.BOOLEAN => BooleanType
+      case CarbonDataTypes.DECIMAL => DecimalType.SYSTEM_DEFAULT
+      case CarbonDataTypes.TIMESTAMP => TimestampType
+      case CarbonDataTypes.DATE => DateType
     }
   }
 

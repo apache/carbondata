@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.util
 
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.format.{DataType => ThriftDataType}
 
 object DataTypeConverterUtil {
@@ -26,51 +26,51 @@ object DataTypeConverterUtil {
 
   def convertToCarbonType(dataType: String): DataType = {
     dataType.toLowerCase match {
-      case "string" => DataType.STRING
-      case "int" => DataType.INT
-      case "integer" => DataType.INT
-      case "tinyint" => DataType.SHORT
-      case "smallint" => DataType.SHORT
-      case "long" => DataType.LONG
-      case "bigint" => DataType.LONG
-      case "numeric" => DataType.DOUBLE
-      case "double" => DataType.DOUBLE
-      case "float" => DataType.DOUBLE
-      case "decimal" => DataType.DECIMAL
-      case FIXED_DECIMAL(_, _) => DataType.DECIMAL
-      case "timestamp" => DataType.TIMESTAMP
-      case "date" => DataType.DATE
-      case "array" => DataType.ARRAY
-      case "struct" => DataType.STRUCT
+      case "string" => DataTypes.STRING
+      case "int" => DataTypes.INT
+      case "integer" => DataTypes.INT
+      case "tinyint" => DataTypes.SHORT
+      case "smallint" => DataTypes.SHORT
+      case "long" => DataTypes.LONG
+      case "bigint" => DataTypes.LONG
+      case "numeric" => DataTypes.DOUBLE
+      case "double" => DataTypes.DOUBLE
+      case "float" => DataTypes.DOUBLE
+      case "decimal" => DataTypes.DECIMAL
+      case FIXED_DECIMAL(_, _) => DataTypes.DECIMAL
+      case "timestamp" => DataTypes.TIMESTAMP
+      case "date" => DataTypes.DATE
+      case "array" => DataTypes.ARRAY
+      case "struct" => DataTypes.STRUCT
       case _ => convertToCarbonTypeForSpark2(dataType)
     }
   }
 
   def convertToCarbonTypeForSpark2(dataType: String): DataType = {
     dataType.toLowerCase match {
-      case "stringtype" => DataType.STRING
-      case "inttype" => DataType.INT
-      case "integertype" => DataType.INT
-      case "tinyinttype" => DataType.SHORT
-      case "shorttype" => DataType.SHORT
-      case "longtype" => DataType.LONG
-      case "biginttype" => DataType.LONG
-      case "numerictype" => DataType.DOUBLE
-      case "doubletype" => DataType.DOUBLE
-      case "floattype" => DataType.DOUBLE
-      case "decimaltype" => DataType.DECIMAL
-      case FIXED_DECIMALTYPE(_, _) => DataType.DECIMAL
-      case "timestamptype" => DataType.TIMESTAMP
-      case "datetype" => DataType.DATE
+      case "stringtype" => DataTypes.STRING
+      case "inttype" => DataTypes.INT
+      case "integertype" => DataTypes.INT
+      case "tinyinttype" => DataTypes.SHORT
+      case "shorttype" => DataTypes.SHORT
+      case "longtype" => DataTypes.LONG
+      case "biginttype" => DataTypes.LONG
+      case "numerictype" => DataTypes.DOUBLE
+      case "doubletype" => DataTypes.DOUBLE
+      case "floattype" => DataTypes.DOUBLE
+      case "decimaltype" => DataTypes.DECIMAL
+      case FIXED_DECIMALTYPE(_, _) => DataTypes.DECIMAL
+      case "timestamptype" => DataTypes.TIMESTAMP
+      case "datetype" => DataTypes.DATE
       case others =>
         if (others != null && others.startsWith("arraytype")) {
-          DataType.ARRAY
+          DataTypes.ARRAY
         } else if (others != null && others.startsWith("structtype")) {
-          DataType.STRUCT
+          DataTypes.STRUCT
         } else if (others != null && others.startsWith("char")) {
-          DataType.STRING
+          DataTypes.STRING
         } else if (others != null && others.startsWith("varchar")) {
-          DataType.STRING
+          DataTypes.STRING
         } else {
           sys.error(s"Unsupported data type: $dataType")
         }
@@ -79,17 +79,17 @@ object DataTypeConverterUtil {
 
   def convertToString(dataType: DataType): String = {
     dataType match {
-      case DataType.STRING => "string"
-      case DataType.SHORT => "smallint"
-      case DataType.INT => "int"
-      case DataType.LONG => "bigint"
-      case DataType.DOUBLE => "double"
-      case DataType.FLOAT => "double"
-      case DataType.DECIMAL => "decimal"
-      case DataType.TIMESTAMP => "timestamp"
-      case DataType.DATE => "date"
-      case DataType.ARRAY => "array"
-      case DataType.STRUCT => "struct"
+      case DataTypes.STRING => "string"
+      case DataTypes.SHORT => "smallint"
+      case DataTypes.INT => "int"
+      case DataTypes.LONG => "bigint"
+      case DataTypes.DOUBLE => "double"
+      case DataTypes.FLOAT => "double"
+      case DataTypes.DECIMAL => "decimal"
+      case DataTypes.TIMESTAMP => "timestamp"
+      case DataTypes.DATE => "date"
+      case DataTypes.ARRAY => "array"
+      case DataTypes.STRUCT => "struct"
     }
   }
 

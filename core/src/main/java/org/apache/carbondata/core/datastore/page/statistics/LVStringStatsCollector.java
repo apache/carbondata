@@ -20,6 +20,7 @@ package org.apache.carbondata.core.datastore.page.statistics;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 
 public class LVStringStatsCollector implements ColumnPageStatsCollector {
@@ -115,7 +116,7 @@ public class LVStringStatsCollector implements ColumnPageStatsCollector {
       }
 
       @Override public DataType getDataType() {
-        return DataType.STRING;
+        return DataTypes.STRING;
       }
 
       @Override public int getScale() {

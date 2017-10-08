@@ -176,8 +176,8 @@ public class StructDataType implements GenericDataType<StructObject> {
   }
 
   /*
-       * parse bytearray and bit pack
-       */
+   * parse bytearray and bit pack
+   */
   @Override
   public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
       KeyGenerator[] generator) throws IOException, KeyGenException {
