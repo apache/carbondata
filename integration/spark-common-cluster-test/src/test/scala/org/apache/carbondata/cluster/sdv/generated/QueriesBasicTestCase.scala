@@ -4229,18 +4229,18 @@ class QueriesBasicTestCase extends QueryTest with BeforeAndAfterAll {
 
   //PushUP_FILTER_uniqdata_TC074
   test("PushUP_FILTER_uniqdata_TC074", Include) {
-
-    checkAnswer(s"""select covar_pop(1,2) from uniqdata where upper(CUST_NAME)=15 or upper(CUST_NAME) is NULL or upper(CUST_NAME) is NOT NULL""",
-      s"""select covar_pop(1,2) from uniqdata_hive where upper(CUST_NAME)=15 or upper(CUST_NAME) is NULL or upper(CUST_NAME) is NOT NULL""", "QueriesBasicTestCase_PushUP_FILTER_uniqdata_TC074")
-
+    val df1 = sql("select covar_pop(1,2) from uniqdata where upper(CUST_NAME)=15 or upper(CUST_NAME) is NULL or upper(CUST_NAME) is NOT NULL").collect()
+    val df2 = sql("select covar_pop(1,2) from uniqdata_hive where upper(CUST_NAME)=15 or upper(CUST_NAME) is NULL or upper(CUST_NAME) is NOT NULL").collect()
+    assert(Math.abs(df1(0).getDouble(0) - df2(0).getDouble(0)) < 0.00005, "PushUP_FILTER_uniqdata_TC074")
   }
 
 
   //PushUP_FILTER_uniqdata_TC075
   test("PushUP_FILTER_uniqdata_TC075", Include) {
 
-    checkAnswer(s"""select covar_samp(1,2) from uniqdata where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL """,
-      s"""select covar_samp(1,2) from uniqdata_hive where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL """, "QueriesBasicTestCase_PushUP_FILTER_uniqdata_TC075")
+    val df1 = sql("select covar_samp(1,2) from uniqdata where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL ").collect()
+    val df2 = sql("select covar_samp(1,2) from uniqdata_hive where CUST_ID IS NULL or DOB IS NOT NULL or BIGINT_COLUMN1 =1233720368578 or DECIMAL_COLUMN1 = 12345678901.1234000058 or Double_COLUMN1 = 1.12345674897976E10 or INTEGER_COLUMN1 IS NULL").collect()
+    assert(Math.abs(df1(0).getDouble(0) - df2(0).getDouble(0)) < 0.00005, "PushUP_FILTER_uniqdata_TC075")
 
   }
 
