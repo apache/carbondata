@@ -18,10 +18,15 @@ package org.apache.carbondata.spark.testsuite.datetype
 
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.test.util.QueryTest
+import org.scalatest.BeforeAndAfterAll
 
 
-class DateTypeTest extends QueryTest {
+class DateTypeTest extends QueryTest with BeforeAndAfterAll{
 
+  override def afterAll: Unit = {
+    sql("DROP TABLE IF EXISTS Carbon_automation_testdate")
+    sql("DROP TABLE IF EXISTS Carbon_automation_testtimestamp")
+  }
 
   test("must throw exception for date data type in dictionary_exclude") {
     try {

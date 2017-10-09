@@ -840,6 +840,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test_range_date")
     sql("DROP TABLE IF EXISTS test_range_timestamp")
     sql("DROP TABLE IF EXISTS test_range_decimal")
+    sql("drop table if exists test_invalid_partition_id")
   }
 
 

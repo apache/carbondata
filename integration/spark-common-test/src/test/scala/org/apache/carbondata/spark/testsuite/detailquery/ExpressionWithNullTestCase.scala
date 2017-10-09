@@ -37,6 +37,13 @@ class ExpressionWithNullTestCase extends QueryTest with BeforeAndAfterAll {
     sql(s"load data local inpath '$resourcesPath/filter/datawithoutnull.csv' into table expression_hive")
   }
 
+  override def afterAll = {
+    sql("drop table if exists expression_test")
+    sql("drop table if exists expression_test_hive")
+    sql("drop table if exists expression")
+    sql("drop table if exists expression_hive")
+  }
+
   test("test to check in expression with null values") {
     checkAnswer(sql("select * from expression_test where id in (1,2,'', NULL, ' ')"), sql("select * from expression_test_hive where id in (1,2,' ', NULL, ' ')"))
     checkAnswer(sql("select * from expression_test where id in (1,2,'')"), sql("select * from expression_test_hive where id in (1,2,'')"))
