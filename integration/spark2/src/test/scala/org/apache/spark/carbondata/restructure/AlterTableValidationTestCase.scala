@@ -462,6 +462,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"SORT_COLUMNS")
     checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"empno,empname,role,doj")
   }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
     sql("drop table if exists table1")
@@ -471,6 +472,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("DROP TABLE IF EXISTS restructure_badnew")
     sql("DROP TABLE IF EXISTS lock_rename")
     sql("drop table if exists uniqdata")
+    sql("drop table if exists uniqdata1")
     sql("drop table if exists defaultSortColumnsWithAlter")
     sql("drop table if exists specifiedSortColumnsWithAlter")
   }

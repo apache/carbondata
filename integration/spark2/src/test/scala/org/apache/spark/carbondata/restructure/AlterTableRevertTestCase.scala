@@ -58,6 +58,7 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     }
     val result = sql("select * from reverttest").count()
     assert(result.equals(1L))
+    sql("drop table if exists reverttest_fail")
   }
 
   test("test to revert drop columns on failure") {
@@ -109,6 +110,7 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   override def afterAll() {
     hiveClient.runSqlHive("set hive.security.authorization.enabled=false")
     sql("drop table if exists reverttest")
+    sql("drop table if exists reverttest_fail")
   }
 
 }
