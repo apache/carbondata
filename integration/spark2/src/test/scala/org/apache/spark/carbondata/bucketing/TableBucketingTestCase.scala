@@ -221,6 +221,8 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS t8")
     sql("DROP TABLE IF EXISTS t9")
     sql("DROP TABLE IF EXISTS t10")
+    sql("DROP TABLE IF EXISTS bucketed_parquet_table")
+    sql("DROP TABLE IF EXISTS parquet_table")
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", threshold.toString)
   }
 }

@@ -647,9 +647,6 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
-
-
-
   override def afterAll {
     sql("drop table if exists filtertestTable")
     sql("drop table if exists NO_DICTIONARY_HIVE_1")
@@ -668,6 +665,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists NO_DICTIONARY_CARBON_7")
     sql("drop table if exists NO_DICTIONARY_CARBON_8")
     sql("drop table if exists NO_DICTIONARY_HIVE_8")
+    sql("drop table if exists directdictionarytable_hive")
     //sql("drop cube NO_DICTIONARY_CARBON_1")
   }
 }
