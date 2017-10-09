@@ -98,7 +98,8 @@ class CarbonCustomBlockDistributionTest extends QueryTest with BeforeAndAfterAll
 
   override def afterAll {
     // delete the temp data file
-    CarbonProperties.getInstance().addProperty("carbon.custom.distribution","false")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION, CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT)
     try {
       val fileType = FileFactory.getFileType(outputPath)
       val file = FileFactory.getCarbonFile(outputPath, fileType)

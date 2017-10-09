@@ -131,5 +131,7 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
 
   override def afterAll {
     sql("DROP TABLE IF EXISTS t3")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }

@@ -109,8 +109,6 @@ class AverageQueryTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table carbonTable")
     sql("drop table hiveTable")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
 
 }

@@ -84,6 +84,6 @@ class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
     sql("drop table emptyRowCarbonTable")
     sql("drop table emptyRowHiveTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }

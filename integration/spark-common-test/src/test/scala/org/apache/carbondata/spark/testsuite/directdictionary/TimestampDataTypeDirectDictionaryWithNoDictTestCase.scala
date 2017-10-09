@@ -32,9 +32,17 @@ import org.apache.spark.sql.test.util.QueryTest
   */
 class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with BeforeAndAfterAll {
   var hiveContext: HiveContext = _
+  var cutOffTimeStampString = CarbonProperties.getInstance.
+    getProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, "2000-12-13 02:10.00")
+  var granularity = CarbonProperties.getInstance.
+    getProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY, TimeStampGranularityConstants.TIME_GRAN_SEC)
 
   override def beforeAll {
     try {
+      cutOffTimeStampString = CarbonProperties.getInstance.
+        getProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, "2000-12-13 02:10.00")
+      granularity = CarbonProperties.getInstance.
+        getProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY, TimeStampGranularityConstants.TIME_GRAN_SEC)
       CarbonProperties.getInstance()
         .addProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, "2000-12-13 02:10.00.0")
       CarbonProperties.getInstance()
@@ -95,5 +103,11 @@ class TimestampDataTypeDirectDictionaryWithNoDictTestCase extends QueryTest with
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
+    CarbonProperties.getInstance()
+      .addProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, cutOffTimeStampString)
+    CarbonProperties.getInstance()
+      .addProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY,
+        granularity
+      )
   }
 }

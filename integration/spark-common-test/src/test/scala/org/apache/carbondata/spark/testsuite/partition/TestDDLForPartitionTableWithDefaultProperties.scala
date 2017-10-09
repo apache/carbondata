@@ -196,6 +196,8 @@ class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with Befo
 
   override def afterAll = {
     dropTable
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   }
 
   def dropTable = {

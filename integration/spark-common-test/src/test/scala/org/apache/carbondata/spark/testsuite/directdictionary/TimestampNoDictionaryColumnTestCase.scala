@@ -89,5 +89,7 @@ class TimestampNoDictionaryColumnTestCase extends QueryTest with BeforeAndAfterA
 
   override def afterAll {
     sql("drop table timestamp_nodictionary")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }

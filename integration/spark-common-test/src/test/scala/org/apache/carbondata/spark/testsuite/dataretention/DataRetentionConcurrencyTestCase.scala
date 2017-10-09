@@ -49,6 +49,8 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
   override def afterAll {
     executorService.shutdownNow()
     sql("drop table if exists concurrent")
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK, CarbonCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK_DEFAULT.toString)
   }
 
   test("DataRetention_Concurrency_load_id") {

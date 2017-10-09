@@ -354,12 +354,12 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
     sql("use default")
     sql("drop database if exists iud4 cascade")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled , "true")
     sql("""drop table if exists t_carbn01""")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled , CarbonCommonConstants.defaultIsHorizontalCompactionEnabled)
   }
 
 }

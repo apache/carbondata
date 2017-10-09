@@ -182,6 +182,6 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists a12_no_null")
     sql("drop table if exists Test_Boundary1")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }

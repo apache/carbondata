@@ -117,7 +117,9 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table if exists  compactionlocktesttable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION, CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION)
     carbonLock.unlock()
   }
 

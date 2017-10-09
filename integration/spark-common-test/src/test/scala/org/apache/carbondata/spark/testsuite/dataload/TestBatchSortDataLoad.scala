@@ -159,7 +159,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance().
       addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
         CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB, "0")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB, CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT)
   }
 
   test("test batch sort load by with out passing option but through carbon properties with default size") {

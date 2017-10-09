@@ -272,6 +272,9 @@ class TestQueryForPartitionTable  extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll = {
     dropTable
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+
   }
 
   def dropTable = {

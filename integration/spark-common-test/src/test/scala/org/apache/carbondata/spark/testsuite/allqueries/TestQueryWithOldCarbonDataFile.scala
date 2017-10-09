@@ -58,7 +58,7 @@ class TestQueryWithOldCarbonDataFile extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll {
-     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, "V1")
+     CarbonProperties.getInstance.addProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION, CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION)
     sql("drop table if exists OldFormatTable")
     sql("drop table if exists OldFormatTableHIVE")
   }
