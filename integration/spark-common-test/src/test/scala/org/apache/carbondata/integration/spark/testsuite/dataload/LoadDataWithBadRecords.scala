@@ -25,7 +25,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-class LoadDataWithBadRecords extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
+class LoadDataWithBadRecordsTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   override def beforeEach(): Unit = {
     sql("drop table if exists sales")
     sql("drop table if exists int_table")
