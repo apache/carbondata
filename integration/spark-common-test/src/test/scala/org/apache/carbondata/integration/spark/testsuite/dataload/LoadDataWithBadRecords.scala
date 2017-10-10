@@ -61,7 +61,7 @@ class LoadDataWithBadRecordsTest extends QueryTest with BeforeAndAfterEach with 
 
   val path = s"$rootPath/integration/spark-common-test/src/test/resources/badrecords/datasample.csv"
 
-  test("bad record: FORCE") {
+  test("The bad_records_action: FORCE") {
     sql("LOAD DATA local inpath '" + path + "' INTO TABLE sales OPTIONS" +
       "('bad_records_logger_enable'='true','bad_records_action'='FORCE', 'DELIMITER'=" +
       " ',', 'QUOTECHAR'= '\"')");
@@ -70,7 +70,7 @@ class LoadDataWithBadRecordsTest extends QueryTest with BeforeAndAfterEach with 
       Seq(Row(6)))
   }
 
-  test("bad record: REDIRECT") {
+  test("The bad_records_action: REDIRECT") {
     sql("LOAD DATA local inpath '" + path + "' INTO TABLE sales OPTIONS" +
       "('bad_records_logger_enable'='true','bad_records_action'='REDIRECT', 'DELIMITER'=" +
       " ',', 'QUOTECHAR'= '\"')");
@@ -78,7 +78,7 @@ class LoadDataWithBadRecordsTest extends QueryTest with BeforeAndAfterEach with 
       Seq(Row(2)))
   }
 
-  test("bad record: IGNORE") {
+  test("The bad_records_action: IGNORE") {
     sql("LOAD DATA local inpath '" + path + "' INTO TABLE sales OPTIONS" +
       "('bad_records_logger_enable'='true','bad_records_action'='IGNORE', 'DELIMITER'=" +
       " ',', 'QUOTECHAR'= '\"')");
@@ -86,7 +86,7 @@ class LoadDataWithBadRecordsTest extends QueryTest with BeforeAndAfterEach with 
       Seq(Row(2)))
   }
 
-  test("bad record: FAIL") {
+  test("The bad_records_action: FAIL") {
     val exception_insert: Exception = intercept[Exception] {
       sql("LOAD DATA local inpath '" + path + "' INTO TABLE sales OPTIONS" +
         "('bad_records_logger_enable'='true','bad_records_action'='FAIL', 'DELIMITER'=" +
