@@ -25,8 +25,8 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
-import static org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert.falseValue;
-import static org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert.trueValue;
+import static org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert.FALSE_VALUE;
+import static org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert.TRUE_VALUE;
 
 /** statics for primitive column page */
 public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, SimpleStatsResult {
@@ -122,6 +122,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   private PrimitivePageStatsCollector(DataType dataType, int scale, int precision) {
     this.dataType = dataType;
+<<<<<<< HEAD
     if (dataType == DataTypes.BOOLEAN) {
       minByte = trueValue;
       maxByte = falseValue;
@@ -149,6 +150,44 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     } else {
       throw new UnsupportedOperationException(
           "unsupported data type for Stats collection: " + dataType);
+=======
+    switch (dataType) {
+      case BOOLEAN:
+        minByte = TRUE_VALUE;
+        maxByte = FALSE_VALUE;
+        break;
+      case BYTE:
+        minByte = Byte.MAX_VALUE;
+        maxByte = Byte.MIN_VALUE;
+        break;
+      case SHORT:
+        minShort = Short.MAX_VALUE;
+        maxShort = Short.MIN_VALUE;
+        break;
+      case INT:
+        minInt = Integer.MAX_VALUE;
+        maxInt = Integer.MIN_VALUE;
+        break;
+      case LEGACY_LONG:
+      case LONG:
+        minLong = Long.MAX_VALUE;
+        maxLong = Long.MIN_VALUE;
+        break;
+      case DOUBLE:
+        minDouble = Double.POSITIVE_INFINITY;
+        maxDouble = Double.NEGATIVE_INFINITY;
+        decimal = 0;
+        break;
+      case DECIMAL:
+        this.zeroDecimal = BigDecimal.ZERO;
+        decimal = scale;
+        this.scale = scale;
+        this.precision = precision;
+        break;
+      default:
+        throw new UnsupportedOperationException(
+            "unsupported data type for Stats collection: " + dataType);
+>>>>>>> 5a0229dcd... optimize code by review result
     }
   }
 

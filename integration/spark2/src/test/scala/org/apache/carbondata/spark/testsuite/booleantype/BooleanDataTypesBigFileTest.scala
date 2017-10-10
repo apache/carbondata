@@ -18,6 +18,8 @@ package org.apache.carbondata.spark.testsuite.booleantype
 
 import java.io.{File, PrintWriter}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -555,6 +557,130 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
     checkAnswer(
       sql("select count(*) from carbon_table where booleanField = false"),
       Row(trueNum / 10))
+  }
+
+  test("Filtering table: unsafe, support boolean and other data type, big file, load twice") {
+    initConf()
+    sql(
+      s"""
+         | CREATE TABLE boolean_table(
+         | intField INT,
+         | booleanField BOOLEAN,
+         | stringField STRING,
+         | doubleField DOUBLE,
+         | booleanField2 BOOLEAN
+         | )
+         | STORED BY 'carbondata'
+       """.stripMargin)
+    val repeat: Int = 2
+    for (i <- 0 until repeat) {
+      sql(
+        s"""
+           | LOAD DATA LOCAL INPATH '${pathOfManyDataType}'
+           | INTO TABLE boolean_table
+           | options('FILEHEADER'='intField,booleanField,stringField,doubleField,booleanField2')
+           """.stripMargin
+      )
+    }
+
+    checkAnswer(
+      sql("select booleanField from boolean_table where intField >=1 and intField <11"),
+      Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true),
+        Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true), Row(true))
+    )
+
+    checkAnswer(
+      sql(s"select booleanField from boolean_table where intField >='${trueNum - 5}' and intField <=${trueNum + 1}"),
+      Seq(Row(true), Row(true), Row(true), Row(true), Row(true), Row(false), Row(false),
+        Row(true), Row(true), Row(true), Row(true), Row(true), Row(false), Row(false))
+    )
+
+    checkAnswer(
+      sql(s"select count(*) from boolean_table where intField >='${trueNum - 5}' and doubleField <=${trueNum + 1} and booleanField=false"),
+      Seq(Row(4))
+    )
+
+    checkAnswer(
+      sql(s"select * from boolean_table where intField >4 and doubleField < 6.0"),
+      Seq(Row(5, true, "num5", 5.0, false), Row(5, true, "num5", 5.0, false))
+    )
+
+    checkAnswer(
+      sql("select count(*) from boolean_table"),
+      Row(repeat * (trueNum + trueNum / 10)))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField is not null"),
+      Row(repeat * (trueNum + trueNum / 10)))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField is null"),
+      Row(0))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField = true"),
+      Row(repeat * (trueNum)))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField >= true"),
+      Row(repeat * (trueNum)))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField > true"),
+      Row(0))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField < true"),
+      Row(repeat * (trueNum / 10)))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField = false"),
+      Row(repeat * (trueNum / 10)))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField <= false"),
+      Row(repeat * (trueNum / 10)))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField > false"),
+      Row(repeat * (trueNum)))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField < false"),
+      Row(0))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField in (false)"),
+      Row(repeat * (trueNum / 10)))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField not in (false)"),
+      Row(repeat * (trueNum)))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField in (true,false)"),
+      Row(repeat * (trueNum + trueNum / 10)))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField not in (true,false)"),
+      Row(0))
+
+    checkAnswer(
+      sql("select count(*) from boolean_table where booleanField like 'f%'"),
+      Row(repeat * (trueNum / 10)))
+    defaultConf()
+  }
+
+  def initConf(): Unit = {
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
+        "true")
+  }
+
+  def defaultConf(): Unit = {
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
+        CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS_DEFAULT)
   }
 }
 

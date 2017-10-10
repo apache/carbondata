@@ -18,6 +18,8 @@ package org.apache.carbondata.spark.testsuite.booleantype
 
 import java.io.File
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -651,5 +653,95 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
         "from boolean_table2 where boolean_table.intField=boolean_table2.intField)"),
       Seq(Row(true, 10, true), Row(true, 10, true), Row(true, 10, true), Row(false, 10, false), Row(false, 10, false), Row(false, 10, false))
     )
+  }
+
+  test("Loading table: unsafe, support boolean and other data type") {
+    initConf
+    sql("drop table if exists boolean_table")
+    sql(
+      s"""
+         | CREATE TABLE boolean_table(
+         | shortField SHORT,
+         | booleanField BOOLEAN,
+         | intField INT,
+         | bigintField LONG,
+         | doubleField DOUBLE,
+         | stringField STRING,
+         | timestampField TIMESTAMP,
+         | decimalField DECIMAL(18,2),
+         | dateField DATE,
+         | charField CHAR(5),
+         | floatField FLOAT,
+         | complexData ARRAY<STRING>,
+         | booleanField2 BOOLEAN
+         | )
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('sort_columns'='','DICTIONARY_INCLUDE'='dateField, charField')
+       """.stripMargin)
+
+    val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBoolean.csv"
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '${storeLocation}'
+         | INTO TABLE boolean_table
+         | options('FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
+           """.stripMargin)
+
+    checkAnswer(
+      sql("select booleanField,intField from boolean_table"),
+      Seq(Row(true, 10), Row(false, 17), Row(false, 11),
+        Row(true, 10), Row(true, 10), Row(true, 14),
+        Row(false, 10), Row(false, 10), Row(false, 16), Row(false, 10))
+    )
+    sql("drop table if exists boolean_table")
+    defaultConf
+  }
+
+  test("Loading table: unsafe, bad_records_action is IGNORE, support boolean and other data type") {
+    initConf
+    sql("drop table if exists badRecords")
+    sql(
+      s"""
+         | CREATE TABLE badRecords(
+         | shortField SHORT,
+         | booleanField BOOLEAN,
+         | intField INT,
+         | bigintField LONG,
+         | doubleField DOUBLE,
+         | stringField STRING,
+         | decimalField DECIMAL(18,2),
+         | charField CHAR(5),
+         | floatField FLOAT,
+         | complexData ARRAY<STRING>,
+         | booleanField2 BOOLEAN
+         | )
+         | STORED BY 'carbondata'
+       """.stripMargin)
+    val storeLocation = s"$rootPath/integration/spark2/src/test/resources/bool/supportBooleanBadRecords.csv"
+    sql(
+      s"""
+         | LOAD DATA LOCAL INPATH '${storeLocation}'
+         | INTO TABLE badRecords
+         | options('bad_records_logger_enable'='true','bad_records_action'='IGNORE','FILEHEADER'='shortField,booleanField,intField,bigintField,doubleField,stringField,timestampField,decimalField,dateField,charField,floatField,complexData,booleanField2')
+           """.stripMargin)
+
+    checkAnswer(
+      sql("select booleanField,intField,booleanField2 from badRecords"),
+      Seq(Row(true, 10, true), Row(false, 10, false))
+    )
+    sql("drop table if exists badRecords")
+    defaultConf()
+  }
+
+  def initConf(): Unit ={
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
+        "true")
+  }
+
+  def defaultConf(): Unit ={
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
+        CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS_DEFAULT)
   }
 }

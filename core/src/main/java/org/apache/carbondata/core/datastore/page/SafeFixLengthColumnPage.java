@@ -20,7 +20,6 @@ package org.apache.carbondata.core.datastore.page;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.datastore.TableSpec;
-import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
@@ -98,11 +97,6 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   }
 
   @Override
-  public void putBoolean(int rowId, boolean value) {
-    this.byteData[rowId] = BooleanConvert.boolean2Byte(value);
-  }
-
-  @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
     throw new UnsupportedOperationException("invalid data type: " + dataType);
   }
@@ -139,11 +133,6 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   @Override
   public int getShortInt(int rowId) {
     return ByteUtil.valueOf3Bytes(shortIntData, rowId * 3);
-  }
-
-  @Override
-  public boolean getBoolean(int rowId) {
-    return BooleanConvert.byte2Boolean(byteData[rowId]);
   }
 
   /**
@@ -209,11 +198,6 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   @Override
   public byte[] getShortIntPage() {
     return shortIntData;
-  }
-
-  @Override
-  public byte[] getBooleanPage() {
-    return byteData;
   }
 
   /**
@@ -283,11 +267,6 @@ public class SafeFixLengthColumnPage extends ColumnPage {
   @Override
   public void setShortIntPage(byte[] shortIntData) {
     this.shortIntData = shortIntData;
-  }
-
-  @Override
-  public void setBooleanPage(byte[] booleanData) {
-    this.byteData = booleanData;
   }
 
   /**

@@ -22,8 +22,8 @@ package org.apache.carbondata.core.datastore.page.encoding.bool;
  */
 public class BooleanConvert {
 
-  public static final byte trueValue = 1;
-  public static final byte falseValue = 0;
+  public static final byte TRUE_VALUE = 1;
+  public static final byte FALSE_VALUE = 0;
   /**
    * convert boolean to byte
    *
@@ -31,7 +31,7 @@ public class BooleanConvert {
    * @return byte type data by convert
    */
   public static byte boolean2Byte(boolean data) {
-    return data ? (byte) 1 : (byte) 0;
+    return data ? TRUE_VALUE : FALSE_VALUE;
   }
 
   /**
@@ -41,7 +41,7 @@ public class BooleanConvert {
    * @return boolean type data
    */
   public static boolean byte2Boolean(int data) {
-    return data == 1 ? true : false;
+    return data == TRUE_VALUE;
   }
 
   /**

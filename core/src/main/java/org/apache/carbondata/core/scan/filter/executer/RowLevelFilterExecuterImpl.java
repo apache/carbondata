@@ -205,7 +205,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       } else {
         // specific for restructure case where default values need to be filled
         pageNumbers = blockChunkHolder.getDataBlock().numberOfPages();
-        numberOfRows = new int[] { blockChunkHolder.getDataBlock().nodeSize()};
+        numberOfRows = new int[] { blockChunkHolder.getDataBlock().nodeSize() };
       }
     }
     if (msrColEvalutorInfoList.size() > 0) {
@@ -217,7 +217,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       } else {
         // specific for restructure case where default values need to be filled
         pageNumbers = blockChunkHolder.getDataBlock().numberOfPages();
-        numberOfRows = new int[] { blockChunkHolder.getDataBlock().nodeSize()};
+        numberOfRows = new int[] { blockChunkHolder.getDataBlock().nodeSize() };
       }
     }
     BitSetGroup bitSetGroup = new BitSetGroup(pageNumbers);
