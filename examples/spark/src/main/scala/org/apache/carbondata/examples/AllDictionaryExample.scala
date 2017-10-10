@@ -63,7 +63,8 @@ object AllDictionaryExample {
     // clean local dictionary files
     AllDictionaryUtil.cleanDictionary(allDictFile)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   }
 
 }

@@ -18,6 +18,10 @@
 
 package org.apache.carbondata.cluster.sdv.generated
 
+import java.io.File
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.common.util._
 import org.scalatest.BeforeAndAfterAll
 
@@ -30,6 +34,10 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql(s"""drop table if exists uniqdata11""").collect
     sql(s"""drop table if exists uniqdataquery1""").collect
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+        new File("./target/test/badRecords")
+          .getCanonicalPath)
   }
 
 
@@ -617,5 +625,7 @@ class GlobalSortTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll: Unit = {
     sql(s"""drop table if exists uniqdata11""").collect
     sql(s"""drop table if exists uniqdataquery1""").collect
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
   }
 }
