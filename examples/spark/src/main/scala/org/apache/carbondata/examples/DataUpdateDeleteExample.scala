@@ -180,6 +180,8 @@ object DataUpdateDeleteExample {
     // Drop table
     cc.sql("DROP TABLE IF EXISTS t3")
     cc.sql("DROP TABLE IF EXISTS t5")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   }
 
 }

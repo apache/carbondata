@@ -29,6 +29,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonProperties;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -169,6 +170,12 @@ public class IncrementalColumnDictionaryGeneratorTest {
     metadata.removeTable(carbonTable.getTableUniqueName());
     cleanUpDirectory(new File(storePath));
 
+  }
+
+  @After
+  public void tearDown() {
+    CarbonProperties.getInstance()
+            .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
   }
 
   private void cleanUpDirectory(File path) {

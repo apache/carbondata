@@ -45,8 +45,6 @@ class AllQueriesSpark1TestCase extends QueryTest with BeforeAndAfterAll {
   
   override def afterAll {
     clean
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
 
 

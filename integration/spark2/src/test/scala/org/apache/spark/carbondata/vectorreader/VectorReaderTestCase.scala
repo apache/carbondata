@@ -70,5 +70,7 @@ class VectorReaderTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     sql("DROP TABLE IF EXISTS vectorreader")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }

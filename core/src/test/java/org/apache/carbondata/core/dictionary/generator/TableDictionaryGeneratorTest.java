@@ -221,6 +221,8 @@ public class TableDictionaryGeneratorTest {
   @After public void tearDown() {
     CarbonMetadata.getInstance().removeTable(tableInfo.getTableUniqueName());
     cleanUpDirectory(new File(storePath));
+    CarbonProperties.getInstance()
+            .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
   }
 
   private void cleanUpDirectory(File path) {

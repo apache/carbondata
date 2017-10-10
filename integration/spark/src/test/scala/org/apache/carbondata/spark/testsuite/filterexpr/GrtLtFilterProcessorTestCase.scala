@@ -20,7 +20,6 @@ package org.apache.carbondata.spark.testsuite.filterexpr
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -59,6 +58,7 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table if exists a12_allnull")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }

@@ -80,5 +80,6 @@ class BadRecordLoggerSharedDictionaryTest extends QueryTest with BeforeAndAfterA
     sql("drop table IF EXISTS testdrive")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timestamp_format)
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
   }
 }

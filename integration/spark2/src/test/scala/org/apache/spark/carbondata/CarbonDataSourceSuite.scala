@@ -17,13 +17,13 @@
 
 package org.apache.spark.carbondata
 
-import scala.collection.mutable
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonV3DataFormatConstants}
 
+import scala.collection.mutable
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.util.CarbonProperties
 
 class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
@@ -66,6 +66,9 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS csv_table")
     sql("DROP TABLE IF EXISTS car")
     sql("drop table if exists sparkunion")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 
   test("project") {
@@ -86,6 +89,10 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("Data mismatch because of min/max calculation while loading the data") {
+    val prop = CarbonProperties.getInstance()
+    val p1 = prop.getProperty("carbon.blockletgroup.size.in.mb", CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE)
+    val p3 = prop.getProperty("carbon.enable.vector.reader", CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
+
     CarbonProperties.getInstance()
       .addProperty("carbon.blockletgroup.size.in.mb", "16")
       .addProperty("carbon.enable.vector.reader", "true")
@@ -139,7 +146,8 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
         Row("city7", 1496)))
     sql(s"drop table if exists testBigData")
     CarbonProperties.getInstance()
-      .addProperty("carbon.blockletgroup.size.in.mb", "64")
+      .addProperty("carbon.blockletgroup.size.in.mb", p1)
+      .addProperty("carbon.enable.vector.reader", p3)
   }
 
   test("exists function verification test")({

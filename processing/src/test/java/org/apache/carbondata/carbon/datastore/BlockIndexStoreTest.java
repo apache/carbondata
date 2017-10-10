@@ -67,6 +67,10 @@ public class BlockIndexStoreTest extends TestCase {
   }
 
   @AfterClass public void tearDown() {
+    CarbonProperties.getInstance().
+            addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL);
+    CarbonProperties.getInstance().
+            addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
   }
 
   @Test public void testEmpty() {

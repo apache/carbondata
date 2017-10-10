@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapred.JobConf;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -45,6 +46,12 @@ public class InputFilesTest extends TestCase {
     StoreCreator.createCarbonStore();
     // waiting 3s to finish table create and data loading
     Thread.sleep(3000L);
+  }
+
+  @After
+  public void shutDown() throws Exception {
+    CarbonProperties.getInstance().
+            addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL);
   }
 
   @Test

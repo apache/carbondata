@@ -135,7 +135,9 @@ class CompactionSystemLockFeatureTest extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD, CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
+      .addProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION, CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION)
     sql("drop table if exists  table1")
     sql("drop table if exists  table2")
   }
