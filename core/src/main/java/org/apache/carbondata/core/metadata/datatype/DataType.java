@@ -34,11 +34,21 @@ public enum DataType {
   STRUCT(10, "STRUCT", -1),
   MAP(11, "MAP", -1),
   BYTE(12, "BYTE", 1),
-
   // internal use only, for variable length data type
   BYTE_ARRAY(13, "BYTE_ARRAY", -1),
   // internal use only, for value compression from integer/long to 3 bytes value
-  SHORT_INT(14, "SHORT_INT", 3);
+  SHORT_INT(14, "SHORT_INT", 3),
+  // Only for internal use for backward compatability. It is only used for V1 version
+  LEGACY_LONG(15, "LEGACYBIGINT", 8);
+
+  public static final char DOUBLE_MEASURE_CHAR = 'n';
+  public static final char STRING_CHAR = 's';
+  public static final char TIMESTAMP_CHAR = 't';
+  public static final char DATE_CHAR = 'x';
+  public static final char BYTE_ARRAY_CHAR = 'y';
+  public static final char BYTE_VALUE_MEASURE_CHAR = 'c';
+  public static final char BIG_DECIMAL_MEASURE_CHAR = 'b';
+  public static final char BIG_INT_MEASURE_CHAR = 'd';
 
   private int precedenceOrder;
   private String name;
@@ -112,6 +122,46 @@ public enum DataType {
       return SHORT_INT;
     } else {
       throw new RuntimeException("create DataType with invalid ordinal: " + ordinal);
+    }
+  }
+
+  public static char convertType(DataType type) {
+    switch (type) {
+      case BYTE:
+      case SHORT:
+      case SHORT_INT:
+      case INT:
+      case LONG:
+        return BIG_INT_MEASURE_CHAR;
+      case DOUBLE:
+        return DOUBLE_MEASURE_CHAR;
+      case DECIMAL:
+        return BIG_DECIMAL_MEASURE_CHAR;
+      case STRING:
+        return STRING_CHAR;
+      case TIMESTAMP:
+        return TIMESTAMP_CHAR;
+      case DATE:
+        return DATE_CHAR;
+      case BYTE_ARRAY:
+        return BYTE_ARRAY_CHAR;
+      default:
+        throw new RuntimeException("Unexpected type: " + type);
+    }
+  }
+
+  public static DataType getDataType(char type) {
+    switch (type) {
+      case BIG_INT_MEASURE_CHAR:
+        return DataType.LONG;
+      case DOUBLE_MEASURE_CHAR:
+        return DataType.DOUBLE;
+      case BIG_DECIMAL_MEASURE_CHAR:
+        return DataType.DECIMAL;
+      case 'l':
+        return DataType.LEGACY_LONG;
+      default:
+        throw new RuntimeException("Unexpected type: " + type);
     }
   }
 }

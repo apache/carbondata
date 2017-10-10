@@ -92,9 +92,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   public static PrimitivePageStatsCollector newInstance(ValueEncoderMeta meta) {
     PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(meta.getType(), -1, -1);
+        new PrimitivePageStatsCollector(DataType.getDataType(meta.getType()), -1, -1);
     // set min max from meta
-    switch (meta.getType()) {
+    switch (DataType.getDataType(meta.getType())) {
       case BYTE:
         instance.minByte = (byte) meta.getMinValue();
         instance.maxByte = (byte) meta.getMaxValue();
@@ -107,6 +107,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         instance.minInt = (int) meta.getMinValue();
         instance.maxInt = (int) meta.getMaxValue();
         break;
+      case LEGACY_LONG:
       case LONG:
         instance.minLong = (long) meta.getMinValue();
         instance.maxLong = (long) meta.getMaxValue();
@@ -145,6 +146,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         minInt = Integer.MAX_VALUE;
         maxInt = Integer.MIN_VALUE;
         break;
+      case LEGACY_LONG:
       case LONG:
         minLong = Long.MAX_VALUE;
         maxLong = Long.MIN_VALUE;

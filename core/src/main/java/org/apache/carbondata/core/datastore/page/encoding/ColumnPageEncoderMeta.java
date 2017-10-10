@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
@@ -50,11 +49,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   private int scale;
   private int precision;
 
-  public static final char DOUBLE_MEASURE = 'n';
-  public static final char STRING = 's';
-  public static final char TIMESTAMP = 't';
-  public static final char DATE = 'x';
-  public static final char BYTE_ARRAY = 'y';
+
 
   public ColumnPageEncoderMeta() {
   }
@@ -73,7 +68,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     this.columnSpec = columnSpec;
     this.storeDataType = storeDataType;
     this.compressorName = compressorName;
-    setType(convertType(storeDataType));
+    setType(DataType.convertType(storeDataType));
     if (stats != null) {
       setDecimal(stats.getDecimalCount());
       setMaxValue(stats.getMax());
@@ -83,30 +78,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     }
   }
 
-  private char convertType(DataType type) {
-    switch (type) {
-      case BYTE:
-      case SHORT:
-      case SHORT_INT:
-      case INT:
-      case LONG:
-        return CarbonCommonConstants.BIG_INT_MEASURE;
-      case DOUBLE:
-        return CarbonCommonConstants.DOUBLE_MEASURE;
-      case DECIMAL:
-        return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
-      case STRING:
-        return STRING;
-      case TIMESTAMP:
-        return TIMESTAMP;
-      case DATE:
-        return DATE;
-      case BYTE_ARRAY:
-        return BYTE_ARRAY;
-      default:
-        throw new RuntimeException("Unexpected type: " + type);
-    }
-  }
+
 
   public DataType getStoreDataType() {
     return storeDataType;
