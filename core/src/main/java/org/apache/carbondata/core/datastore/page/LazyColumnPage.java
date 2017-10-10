@@ -19,9 +19,12 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
 
+<<<<<<< HEAD
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+=======
+>>>>>>> 4bc454ef8... update format
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 
 /**
@@ -53,6 +56,7 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public long getLong(int rowId) {
+<<<<<<< HEAD
     DataType dataType = columnPage.getDataType();
     if (dataType == DataTypes.BOOLEAN) {
       return converter.decodeLong(BooleanConvert.boolean2Byte(columnPage.getBoolean(rowId)));
@@ -68,11 +72,28 @@ public class LazyColumnPage extends ColumnPage {
       return columnPage.getLong(rowId);
     } else {
       throw new RuntimeException("internal error: " + this.toString());
+=======
+    switch (columnPage.getDataType()) {
+      case BOOLEAN:
+      case BYTE:
+        return converter.decodeLong(columnPage.getByte(rowId));
+      case SHORT:
+        return converter.decodeLong(columnPage.getShort(rowId));
+      case SHORT_INT:
+        return converter.decodeLong(columnPage.getShortInt(rowId));
+      case INT:
+        return converter.decodeLong(columnPage.getInt(rowId));
+      case LONG:
+        return columnPage.getLong(rowId);
+      default:
+        throw new RuntimeException("internal error: " + this.toString());
+>>>>>>> 4bc454ef8... update format
     }
   }
 
   @Override
   public double getDouble(int rowId) {
+<<<<<<< HEAD
     DataType dataType = columnPage.getDataType();
     if (dataType == DataTypes.BOOLEAN) {
       return converter.decodeDouble(BooleanConvert.boolean2Byte(columnPage.getBoolean(rowId)));
@@ -92,6 +113,26 @@ public class LazyColumnPage extends ColumnPage {
       return columnPage.getDouble(rowId);
     } else {
       throw new RuntimeException("internal error: " + this.toString());
+=======
+    switch (columnPage.getDataType()) {
+      case BOOLEAN:
+      case BYTE:
+        return converter.decodeDouble(columnPage.getByte(rowId));
+      case SHORT:
+        return converter.decodeDouble(columnPage.getShort(rowId));
+      case SHORT_INT:
+        return converter.decodeDouble(columnPage.getShortInt(rowId));
+      case INT:
+        return converter.decodeDouble(columnPage.getInt(rowId));
+      case LONG:
+        return converter.decodeDouble(columnPage.getLong(rowId));
+      case FLOAT:
+        return converter.decodeDouble(columnPage.getFloat(rowId));
+      case DOUBLE:
+        return columnPage.getDouble(rowId);
+      default:
+        throw new RuntimeException("internal error: " + this.toString());
+>>>>>>> 4bc454ef8... update format
     }
   }
 
