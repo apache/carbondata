@@ -24,6 +24,7 @@ import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -33,7 +34,9 @@ import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
@@ -61,15 +64,15 @@ public class FieldEncoderFactory {
    *
    * @param dataField             column schema
    * @param cache                 dicionary cache.
-   * @param carbonTableIdentifier table identifier
+   * @param absoluteTableIdentifier table identifier
    * @param index                 index of column in the row.
    * @param isEmptyBadRecord
    * @return
    */
   public FieldConverter createFieldEncoder(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
-      CarbonTableIdentifier carbonTableIdentifier, int index, String nullFormat,
-      DictionaryClient client, Boolean useOnePass, String storePath,
+      AbsoluteTableIdentifier absoluteTableIdentifier, int index, String nullFormat,
+      DictionaryClient client, Boolean useOnePass,
       Map<Object, Integer> localCache, boolean isEmptyBadRecord)
       throws IOException {
     // Converters are only needed for dimensions and measures it return null.
@@ -85,11 +88,11 @@ public class FieldEncoderFactory {
         // in case of child table it will use parent table dictionary
         if (null == dataField.getColumn().getColumnSchema().getParentColumnTableRelations()
             || dataField.getColumn().getColumnSchema().getParentColumnTableRelations().isEmpty()) {
-          identifier = new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
+          identifier = new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
               dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType(),
-              CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
-          return new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier,
-              nullFormat, index, client, useOnePass, storePath, localCache, isEmptyBadRecord,
+              CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier));
+          return new DictionaryFieldConverterImpl(dataField, cache, absoluteTableIdentifier,
+              nullFormat, index, client, useOnePass, localCache, isEmptyBadRecord,
               identifier);
         } else {
           ParentColumnTableRelation parentColumnTableRelation =
@@ -103,17 +106,21 @@ public class FieldEncoderFactory {
           ColumnIdentifier parentColumnIdentifier =
               new ColumnIdentifier(parentColumnTableRelation.getColumnId(), null,
                   dataField.getColumn().getDataType());
-          identifier =
-              new DictionaryColumnUniqueIdentifier(parentTableIdentifier, parentColumnIdentifier,
-                  dataField.getColumn().getDataType(),
-                  CarbonStorePath.getCarbonTablePath(storePath, parentTableIdentifier));
-          return new DictionaryFieldConverterImpl(dataField, cache, parentTableIdentifier,
-              nullFormat, index, null, false, storePath, null, isEmptyBadRecord, identifier);
+          CarbonTablePath carbonTablePath =
+              CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
+          AbsoluteTableIdentifier parentAbsoluteTableIdentifier = new AbsoluteTableIdentifier(
+              CarbonUtil.getNewTablePath(carbonTablePath, parentTableIdentifier),
+              parentTableIdentifier);
+          identifier = new DictionaryColumnUniqueIdentifier(parentAbsoluteTableIdentifier,
+              parentColumnIdentifier, dataField.getColumn().getDataType(),
+              CarbonStorePath.getCarbonTablePath(parentAbsoluteTableIdentifier));
+          return new DictionaryFieldConverterImpl(dataField, cache, parentAbsoluteTableIdentifier,
+              nullFormat, index, null, false, null, isEmptyBadRecord, identifier);
         }
       } else if (dataField.getColumn().isComplex()) {
         return new ComplexFieldConverterImpl(
-            createComplexType(dataField, cache, carbonTableIdentifier,
-                client, useOnePass, storePath, localCache), index);
+            createComplexType(dataField, cache, absoluteTableIdentifier,
+                client, useOnePass, localCache), index);
       } else {
         return new NonDictionaryFieldConverterImpl(dataField, nullFormat, index, isEmptyBadRecord);
       }
@@ -127,10 +134,10 @@ public class FieldEncoderFactory {
    */
   private static GenericDataType createComplexType(DataField dataField,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
-      CarbonTableIdentifier carbonTableIdentifier, DictionaryClient client, Boolean useOnePass,
-      String storePath, Map<Object, Integer> localCache) {
+      AbsoluteTableIdentifier absoluteTableIdentifier, DictionaryClient client, Boolean useOnePass,
+      Map<Object, Integer> localCache) {
     return createComplexType(dataField.getColumn(), dataField.getColumn().getColName(), cache,
-        carbonTableIdentifier, client, useOnePass, storePath, localCache);
+        absoluteTableIdentifier, client, useOnePass, localCache);
   }
 
   /**
@@ -140,8 +147,8 @@ public class FieldEncoderFactory {
    */
   private static GenericDataType createComplexType(CarbonColumn carbonColumn, String parentName,
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
-      CarbonTableIdentifier carbonTableIdentifier, DictionaryClient client, Boolean useOnePass,
-      String storePath, Map<Object, Integer> localCache) {
+      AbsoluteTableIdentifier absoluteTableIdentifier, DictionaryClient client, Boolean useOnePass,
+      Map<Object, Integer> localCache) {
     DataType dataType = carbonColumn.getDataType();
     if (DataTypes.isArrayType(dataType)) {
       List<CarbonDimension> listOfChildDimensions =
@@ -151,8 +158,8 @@ public class FieldEncoderFactory {
           new ArrayDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId());
       for (CarbonDimension dimension : listOfChildDimensions) {
         arrayDataType.addChildren(
-            createComplexType(dimension, carbonColumn.getColName(), cache, carbonTableIdentifier,
-                client, useOnePass, storePath, localCache));
+            createComplexType(dimension, carbonColumn.getColName(), cache, absoluteTableIdentifier,
+                client, useOnePass, localCache));
       }
       return arrayDataType;
     } else if (DataTypes.isStructType(dataType)) {
@@ -163,16 +170,16 @@ public class FieldEncoderFactory {
           new StructDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId());
       for (CarbonDimension dimension : dimensions) {
         structDataType.addChildren(
-            createComplexType(dimension, carbonColumn.getColName(), cache, carbonTableIdentifier,
-                client, useOnePass, storePath, localCache));
+            createComplexType(dimension, carbonColumn.getColName(), cache, absoluteTableIdentifier,
+                client, useOnePass, localCache));
       }
       return structDataType;
     } else if (DataTypes.isMapType(dataType)) {
       throw new UnsupportedOperationException("Complex type Map is not supported yet");
     } else {
       return new PrimitiveDataType(carbonColumn.getColName(), parentName,
-          carbonColumn.getColumnId(), (CarbonDimension) carbonColumn, cache, carbonTableIdentifier,
-          client, useOnePass, storePath, localCache);
+          carbonColumn.getColumnId(), (CarbonDimension) carbonColumn, cache,
+          absoluteTableIdentifier, client, useOnePass, localCache);
     }
   }
 }

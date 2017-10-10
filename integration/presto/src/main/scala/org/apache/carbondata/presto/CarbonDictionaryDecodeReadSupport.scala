@@ -59,11 +59,11 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
         val cacheProvider: CacheProvider = CacheProvider.getInstance
         val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
           cacheProvider
-            .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath)
+            .createCache(CacheType.FORWARD_DICTIONARY)
         dataTypes(index) = carbonColumn.getDataType
         dictionaries(index) = forwardDictionaryCache
-          .get(new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier
-            .getCarbonTableIdentifier, carbonColumn.getColumnIdentifier))
+          .get(new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
+            carbonColumn.getColumnIdentifier))
         dictionarySliceArray(index) = createSliceArrayBlock(dictionaries(index))
 
       }

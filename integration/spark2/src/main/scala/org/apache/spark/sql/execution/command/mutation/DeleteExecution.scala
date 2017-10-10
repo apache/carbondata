@@ -76,14 +76,10 @@ object DeleteExecution {
       .lookupRelation(DeleteExecution.getTableIdentifier(identifier))(sparkSession).
       asInstanceOf[CarbonRelation]
 
-    val storeLocation = relation.tableMeta.storePath
-    val absoluteTableIdentifier: AbsoluteTableIdentifier = new
-        AbsoluteTableIdentifier(storeLocation,
-          relation.tableMeta.carbonTableIdentifier)
-    val tablePath = CarbonStorePath.getCarbonTablePath(
-      storeLocation,
-      absoluteTableIdentifier.getCarbonTableIdentifier)
-    val factPath = tablePath.getFactDir
+    val absoluteTableIdentifier = relation.tableMeta.carbonTable.getAbsoluteTableIdentifier
+    val carbonTablePath = CarbonStorePath
+      .getCarbonTablePath(absoluteTableIdentifier)
+    val factPath = carbonTablePath.getFactDir
 
     val carbonTable = relation.tableMeta.carbonTable
     var deleteStatus = true

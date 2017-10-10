@@ -105,6 +105,7 @@ class QueryTest extends PlanTest {
     getProperty(CarbonCommonConstants.STORE_LOCATION)
   val resourcesPath = TestQueryExecutor.resourcesPath
   val integrationPath = TestQueryExecutor.integrationPath
+  val dblocation = TestQueryExecutor.location
 }
 
 object QueryTest {

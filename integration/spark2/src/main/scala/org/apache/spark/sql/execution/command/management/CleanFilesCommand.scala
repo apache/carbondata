@@ -36,10 +36,14 @@ case class CleanFilesCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     if (forceTableClean) {
+      val dbName = GetDB.getDatabaseName(databaseNameOp, sparkSession)
+      val databaseLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
+        CarbonEnv.getInstance(sparkSession).storePath)
+      // TODO: TAABLEPATH
       CarbonStore.cleanFiles(
-        GetDB.getDatabaseName(databaseNameOp, sparkSession),
+        dbName,
         tableName,
-        CarbonEnv.getInstance(sparkSession).storePath,
+        databaseLocation,
         null,
         forceTableClean)
     } else {

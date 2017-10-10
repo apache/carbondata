@@ -29,6 +29,9 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 
+import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.util.path.CarbonStorePath
+
 class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   var filePath: String = s"$resourcesPath/globalsort"
 
@@ -236,11 +239,13 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
         | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_update")
+
     sql("UPDATE carbon_localsort_update SET (name) = ('bb') WHERE id = 2").show
-
+    sql("select * from carbon_localsort_update").show()
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql("select * from carbon_globalsort").show()
     sql("UPDATE carbon_globalsort SET (name) = ('bb') WHERE id = 2").show
-
+    sql("select * from carbon_globalsort").show()
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
     checkAnswer(sql("SELECT name FROM carbon_globalsort WHERE id = 2"), Seq(Row("bb")))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
@@ -326,7 +331,9 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   }
 
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {
-    val store  = storeLocation + "/default/" + tableName + "/Fact/Part0/Segment_" + segmentNo
-    new SegmentIndexFileStore().getIndexFilesFromSegment(store).size()
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default"+"_"+tableName)
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
+    val segmentDir = carbonTablePath.getCarbonDataDirectoryPath("0", segmentNo)
+    new SegmentIndexFileStore().getIndexFilesFromSegment(segmentDir).size()
   }
 }

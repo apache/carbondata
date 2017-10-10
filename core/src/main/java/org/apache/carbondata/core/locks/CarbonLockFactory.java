@@ -20,7 +20,7 @@ package org.apache.carbondata.core.locks;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.CarbonProperties;
 
 /**
@@ -46,21 +46,21 @@ public class CarbonLockFactory {
   /**
    * This method will determine the lock type.
    *
-   * @param tableIdentifier
+   * @param absoluteTableIdentifier
    * @param lockFile
    * @return
    */
-  public static ICarbonLock getCarbonLockObj(CarbonTableIdentifier tableIdentifier,
+  public static ICarbonLock getCarbonLockObj(AbsoluteTableIdentifier absoluteTableIdentifier,
       String lockFile) {
     switch (lockTypeConfigured) {
       case CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL:
-        return new LocalFileLock(tableIdentifier, lockFile);
+        return new LocalFileLock(absoluteTableIdentifier, lockFile);
 
       case CarbonCommonConstants.CARBON_LOCK_TYPE_ZOOKEEPER:
-        return new ZooKeeperLocking(tableIdentifier, lockFile);
+        return new ZooKeeperLocking(absoluteTableIdentifier, lockFile);
 
       case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
-        return new HdfsFileLock(tableIdentifier, lockFile);
+        return new HdfsFileLock(absoluteTableIdentifier, lockFile);
 
       default:
         throw new UnsupportedOperationException("Not supported the lock type");

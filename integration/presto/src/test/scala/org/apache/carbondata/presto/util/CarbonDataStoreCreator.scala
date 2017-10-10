@@ -71,16 +71,16 @@ object CarbonDataStoreCreator {
       val dbName: String = "testdb"
       val tableName: String = "testtable"
       val absoluteTableIdentifier = new AbsoluteTableIdentifier(
-        storePath,
+        storePath + "/"+ dbName + "/" + tableName,
         new CarbonTableIdentifier(dbName,
           tableName,
           UUID.randomUUID().toString))
       val factFilePath: String = new File(dataFilePath).getCanonicalPath
-      val storeDir: File = new File(absoluteTableIdentifier.getStorePath)
+      val storeDir: File = new File(absoluteTableIdentifier.getTablePath)
       CarbonUtil.deleteFoldersAndFiles(storeDir)
       CarbonProperties.getInstance.addProperty(
         CarbonCommonConstants.STORE_LOCATION_HDFS,
-        absoluteTableIdentifier.getStorePath)
+        absoluteTableIdentifier.getTablePath)
       val table: CarbonTable = createTable(absoluteTableIdentifier)
       writeDictionary(factFilePath, table, absoluteTableIdentifier)
       val schema: CarbonDataLoadSchema = new CarbonDataLoadSchema(table)
@@ -95,7 +95,7 @@ object CarbonDataStoreCreator {
         absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
       loadModel.setFactFilePath(factFilePath)
       loadModel.setLoadMetadataDetails(new ArrayList[LoadMetadataDetails]())
-      loadModel.setStorePath(absoluteTableIdentifier.getStorePath)
+      loadModel.setTablePath(absoluteTableIdentifier.getTablePath)
       CarbonProperties.getInstance
         .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
 
@@ -131,7 +131,7 @@ object CarbonDataStoreCreator {
       loadModel.setPartitionId("0")
       loadModel.setFactTimeStamp(System.currentTimeMillis())
       loadModel.setMaxColumns("15")
-      executeGraph(loadModel, absoluteTableIdentifier.getStorePath)
+      executeGraph(loadModel, storePath)
     } catch {
       case e: Exception => e.printStackTrace()
 
@@ -140,7 +140,7 @@ object CarbonDataStoreCreator {
 
   private def createTable(absoluteTableIdentifier: AbsoluteTableIdentifier): CarbonTable = {
     val tableInfo: TableInfo = new TableInfo()
-    tableInfo.setStorePath(absoluteTableIdentifier.getStorePath)
+    tableInfo.setTablePath(absoluteTableIdentifier.getTablePath)
     tableInfo.setDatabaseName(
       absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName)
     val tableSchema: TableSchema = new TableSchema()
@@ -293,7 +293,7 @@ object CarbonDataStoreCreator {
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
     val carbonTablePath: CarbonTablePath = CarbonStorePath.getCarbonTablePath(
-      absoluteTableIdentifier.getStorePath,
+      absoluteTableIdentifier.getTablePath,
       absoluteTableIdentifier.getCarbonTableIdentifier)
     val schemaFilePath: String = carbonTablePath.getSchemaFilePath
     val schemaMetadataPath: String =
@@ -351,22 +351,19 @@ object CarbonDataStoreCreator {
       line = reader.readLine()
     }
     val dictCache: Cache[DictionaryColumnUniqueIdentifier, ReverseDictionary] = CacheProvider
-      .getInstance.createCache(CacheType.REVERSE_DICTIONARY,
-      absoluteTableIdentifier.getStorePath)
+      .getInstance.createCache(CacheType.REVERSE_DICTIONARY)
     for (i <- set.indices) {
       val columnIdentifier: ColumnIdentifier =
         new ColumnIdentifier(dims.get(i).getColumnId, null, null)
       val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(
-          table.getCarbonTableIdentifier,
+          table.getAbsoluteTableIdentifier,
           columnIdentifier,
           columnIdentifier.getDataType,
-          CarbonStorePath.getCarbonTablePath(table.getStorePath,
+          CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier.getTablePath,
             table.getCarbonTableIdentifier)
         )
       val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(
-        absoluteTableIdentifier.getStorePath,
-        absoluteTableIdentifier.getCarbonTableIdentifier,
         dictionaryColumnUniqueIdentifier)
       for (value <- set(i)) {
         writer.write(value)
@@ -376,10 +373,10 @@ object CarbonDataStoreCreator {
       val dict: Dictionary = dictCache
         .get(
           new DictionaryColumnUniqueIdentifier(
-            absoluteTableIdentifier.getCarbonTableIdentifier,
+            absoluteTableIdentifier,
             columnIdentifier,
             dims.get(i).getDataType,
-            CarbonStorePath.getCarbonTablePath(table.getStorePath,
+            CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier.getTablePath,
               table.getCarbonTableIdentifier)
           ))
         .asInstanceOf[Dictionary]
@@ -391,10 +388,7 @@ object CarbonDataStoreCreator {
           dict,
           dims.get(i).getDataType)
       val carbonDictionaryWriter: CarbonDictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(
-          absoluteTableIdentifier.getCarbonTableIdentifier,
-          dictionaryColumnUniqueIdentifier,
-          absoluteTableIdentifier.getStorePath)
+        new CarbonDictionarySortIndexWriterImpl(dictionaryColumnUniqueIdentifier)
       try {
         carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex)
         carbonDictionaryWriter.writeInvertedSortIndex(

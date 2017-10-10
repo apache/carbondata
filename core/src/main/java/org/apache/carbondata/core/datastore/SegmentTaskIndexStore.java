@@ -56,10 +56,6 @@ public class SegmentTaskIndexStore
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(SegmentTaskIndexStore.class.getName());
   /**
-   * carbon store path
-   */
-  protected String carbonStorePath;
-  /**
    * CarbonLRU cache
    */
   protected CarbonLRUCache lruCache;
@@ -78,11 +74,9 @@ public class SegmentTaskIndexStore
   /**
    * constructor to initialize the SegmentTaskIndexStore
    *
-   * @param carbonStorePath
    * @param lruCache
    */
-  public SegmentTaskIndexStore(String carbonStorePath, CarbonLRUCache lruCache) {
-    this.carbonStorePath = carbonStorePath;
+  public SegmentTaskIndexStore(CarbonLRUCache lruCache) {
     this.lruCache = lruCache;
     segmentLockMap = new ConcurrentHashMap<String, Object>();
   }

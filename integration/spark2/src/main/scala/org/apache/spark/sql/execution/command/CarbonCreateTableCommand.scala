@@ -39,9 +39,11 @@ case class CarbonCreateTableCommand(
   override def processSchema(sparkSession: SparkSession): Seq[Row] = {
     val storePath = CarbonEnv.getInstance(sparkSession).storePath
     CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(storePath)
+      checkSchemasModifiedTimeAndReloadTables()
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     cm.databaseName = GetDB.getDatabaseName(cm.databaseNameOp, sparkSession)
+    val dbLocation = GetDB.getDatabaseLocation(cm.databaseName, sparkSession, storePath)
+    val tablePath = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + cm.tableName
     val tbName = cm.tableName
     val dbName = cm.databaseName
     LOGGER.audit(s"Creating Table with Database name [$dbName] and Table name [$tbName]")
@@ -70,11 +72,10 @@ case class CarbonCreateTableCommand(
         sys.error(s"Table [$tbName] already exists under database [$dbName]")
       }
     } else {
-      val tableIdentifier = AbsoluteTableIdentifier.from(storePath, dbName, tbName)
+      val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tbName)
       // Add Database to catalog and persist
       val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      val tablePath = tableIdentifier.getTablePath
-      val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tablePath)
+      val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tableIdentifier)
       if (createDSTable) {
         try {
           val fields = new Array[Field](cm.dimCols.size + cm.msrCols.size)
@@ -89,10 +90,9 @@ case class CarbonCreateTableCommand(
             s""""$tablePath"$carbonSchemaString) """)
         } catch {
           case e: Exception =>
-            val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
             // call the drop table to delete the created table.
             CarbonEnv.getInstance(sparkSession).carbonMetastore
-              .dropTable(tablePath, identifier)(sparkSession)
+              .dropTable(tableIdentifier)(sparkSession)
 
             LOGGER.audit(s"Table creation with Database name [$dbName] " +
                          s"and Table name [$tbName] failed")

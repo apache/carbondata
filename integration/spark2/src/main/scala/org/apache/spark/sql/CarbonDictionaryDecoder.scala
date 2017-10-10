@@ -70,7 +70,6 @@ case class CarbonDictionaryDecoder(
 
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
-      val storePath = CarbonEnv.getInstance(sparkSession).storePath
       val absoluteTableIdentifiers = relations.map { relation =>
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
         (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
@@ -81,7 +80,7 @@ case class CarbonDictionaryDecoder(
         child.execute().mapPartitions { iter =>
           val cacheProvider: CacheProvider = CacheProvider.getInstance
           val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-            cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+            cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
           val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
             forwardDictionaryCache)
           val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
@@ -124,7 +123,6 @@ case class CarbonDictionaryDecoder(
 
   override def doConsume(ctx: CodegenContext, input: Seq[ExprCode], row: ExprCode): String = {
 
-    val storePath = CarbonEnv.getInstance(sparkSession).storePath
     val absoluteTableIdentifiers = relations.map { relation =>
       val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
       (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
@@ -133,9 +131,9 @@ case class CarbonDictionaryDecoder(
     if (CarbonDictionaryDecoder.isRequiredToDecode(getDictionaryColumnIds)) {
       val cacheProvider: CacheProvider = CacheProvider.getInstance
       val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
       val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryWrapper(absoluteTableIdentifiers,
-        forwardDictionaryCache, storePath)
+        forwardDictionaryCache)
 
       val exprs = child.output.map { exp =>
         ExpressionCanonicalizer.execute(BindReferences.bindReference(exp, child.output))
@@ -252,7 +250,7 @@ case class CarbonDictionaryDecoder(
       if (f._2 != null) {
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
-            atiMap(f._1).getCarbonTableIdentifier,
+            atiMap(f._1),
             f._2, f._3.getDataType,
             CarbonStorePath.getCarbonTablePath(atiMap(f._1))))
         } catch {
@@ -266,33 +264,31 @@ case class CarbonDictionaryDecoder(
   }
 
   private def getDictionaryWrapper(atiMap: Map[String, AbsoluteTableIdentifier],
-      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary], storePath: String) = {
+      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
     val allDictIdentifiers = new ArrayBuffer[DictionaryColumnUniqueIdentifier]()
     val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryColumnIds.map {
       case (tableName, columnIdentifier, carbonDimension) =>
         if (columnIdentifier != null) {
           try {
-            val (newCarbonTableIdentifier, newColumnIdentifier) =
+            val (newAbsoluteTableIdentifier, newColumnIdentifier) =
               if (null != carbonDimension.getColumnSchema.getParentColumnTableRelations &&
                   !carbonDimension
                     .getColumnSchema.getParentColumnTableRelations.isEmpty) {
-                (QueryUtil.getTableIdentifierForColumn(carbonDimension),
+                (QueryUtil.getTableIdentifierForColumn(carbonDimension, atiMap(tableName)),
                   new ColumnIdentifier(carbonDimension.getColumnSchema
                     .getParentColumnTableRelations.get(0).getColumnId,
                     carbonDimension.getColumnProperties,
                     carbonDimension.getDataType))
               } else {
-                (atiMap(tableName).getCarbonTableIdentifier, columnIdentifier)
+                (atiMap(tableName), columnIdentifier)
               }
             val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
-              newCarbonTableIdentifier,
+              newAbsoluteTableIdentifier,
               newColumnIdentifier, carbonDimension.getDataType,
               CarbonStorePath
-                .getCarbonTablePath(atiMap(tableName).getStorePath, newCarbonTableIdentifier))
+                .getCarbonTablePath(newAbsoluteTableIdentifier))
             allDictIdentifiers += dictionaryColumnUniqueIdentifier
-            new ForwardDictionaryWrapper(
-              storePath,
-              dictionaryColumnUniqueIdentifier)
+            new ForwardDictionaryWrapper(dictionaryColumnUniqueIdentifier)
           } catch {
             case _: Throwable => null
           }
@@ -300,7 +296,7 @@ case class CarbonDictionaryDecoder(
           null
         }
     }
-    val dictionaryLoader = new DictionaryLoader(storePath, allDictIdentifiers.toList)
+    val dictionaryLoader = new DictionaryLoader(allDictIdentifiers.toList)
     dicts.foreach { dict =>
       if (dict != null) {
         dict.setDictionaryLoader(dictionaryLoader)
@@ -467,7 +463,6 @@ class CarbonDecoderRDD(
     aliasMap: CarbonAliasDecoderRelation,
     prev: RDD[InternalRow],
     output: Seq[Attribute],
-    storePath: String,
     serializedTableInfo: Array[Byte])
   extends CarbonRDDWithTableInfo[InternalRow](prev, serializedTableInfo) {
 
@@ -516,7 +511,7 @@ class CarbonDecoderRDD(
 
     val cacheProvider: CacheProvider = CacheProvider.getInstance
     val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
     val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
       forwardDictionaryCache)
     val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
@@ -559,7 +554,7 @@ class CarbonDecoderRDD(
       if (f._2 != null) {
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
-            atiMap(f._1).getCarbonTableIdentifier,
+            atiMap(f._1),
             f._2, f._3.getDataType,
             CarbonStorePath.getCarbonTablePath(atiMap(f._1))))
         } catch {
@@ -578,10 +573,9 @@ class CarbonDecoderRDD(
 /**
  * It is a wrapper around Dictionary, it is a work around to keep the dictionary serializable in
  * case of codegen
- * @param storePath
+ * @param dictIdentifier Dictionary column unique identifier
  */
 class ForwardDictionaryWrapper(
-    val storePath: String,
     dictIdentifier: DictionaryColumnUniqueIdentifier) extends Serializable {
 
   var dictionary: Dictionary = null
@@ -610,8 +604,8 @@ class ForwardDictionaryWrapper(
 /**
  * It is Dictionary Loader class to load all dictionaries at a time instead of one by one.
  */
-class DictionaryLoader(storePath: String,
-    allDictIdentifiers: List[DictionaryColumnUniqueIdentifier]) extends Serializable {
+class DictionaryLoader(allDictIdentifiers: List[DictionaryColumnUniqueIdentifier])
+  extends Serializable {
 
   var isDictionaryLoaded = false
 
@@ -621,7 +615,7 @@ class DictionaryLoader(storePath: String,
     if (!isDictionaryLoaded) {
       val cacheProvider: CacheProvider = CacheProvider.getInstance
       val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
       allDicts = forwardDictionaryCache.getAll(allDictIdentifiers.asJava)
       isDictionaryLoaded = true
       val dictionaryTaskCleaner = TaskContext.get

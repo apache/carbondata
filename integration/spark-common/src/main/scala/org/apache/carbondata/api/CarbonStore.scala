@@ -105,21 +105,26 @@ object CarbonStore {
       forceTableClean: Boolean): Unit = {
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     var carbonCleanFilesLock: ICarbonLock = null
-    val identifier = new CarbonTableIdentifier(dbName, tableName, "")
+    var absoluteTableIdentifier: AbsoluteTableIdentifier = null
+    if (forceTableClean) {
+      absoluteTableIdentifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
+    } else {
+      absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
+    }
     try {
       val errorMsg = "Clean files request is failed for " +
                      s"$dbName.$tableName" +
                      ". Not able to acquire the clean files lock due to another clean files " +
                      "operation is running in the background."
       carbonCleanFilesLock =
-        CarbonLockUtil.getLockObject(identifier, LockUsage.CLEAN_FILES_LOCK, errorMsg)
+        CarbonLockUtil.getLockObject(absoluteTableIdentifier, LockUsage.CLEAN_FILES_LOCK, errorMsg)
       if (forceTableClean) {
         val absIdent = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
         FileFactory.deleteAllCarbonFilesOfDir(
           FileFactory.getCarbonFile(absIdent.getTablePath,
             FileFactory.getFileType(absIdent.getTablePath)))
       } else {
-        DataManagementFunc.deleteLoadsAndUpdateMetadata(dbName, tableName, storePath,
+        DataManagementFunc.deleteLoadsAndUpdateMetadata(
           isForceDeletion = true, carbonTable)
         CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
       }

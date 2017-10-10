@@ -91,7 +91,7 @@ public class LocalCarbonFileTest {
 
 
         };
-        assertTrue(localCarbonFile.listFiles(carbonFileFilter) == null);
+        assertArrayEquals(localCarbonFile.listFiles(carbonFileFilter), new CarbonFile[0]);
     }
 
     @Test
@@ -337,7 +337,7 @@ public class LocalCarbonFileTest {
         };
         localCarbonFile = new LocalCarbonFile(dir);
 
-        assertTrue(localCarbonFile.listFiles(carbonFileFilter) == null);
+        assertArrayEquals(localCarbonFile.listFiles(carbonFileFilter) , new CarbonFile[0]);
     }
 
     @Test

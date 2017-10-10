@@ -51,6 +51,7 @@ object TestQueryExecutor {
   LOGGER.info(s"project path: $projectPath")
   val integrationPath = s"$projectPath/integration"
   val metastoredb = s"$integrationPath/spark-common/target"
+  val location = s"$integrationPath/spark-common/target/dbpath"
   val masterUrl = {
     val property = System.getProperty("spark.master.url")
     if (property == null) {

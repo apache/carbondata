@@ -196,7 +196,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       thread1.start()
       // use thread pool to catch the exception of sink thread
       val pool = Executors.newSingleThreadExecutor()
-      val thread2 = createSocketStreamingThread(spark, tablePath)
+      val thread2 = createSocketStreamingThread(spark, tablePath, identifier)
       val future = pool.submit(thread2)
       Thread.sleep(1000)
       thread1.interrupt()
@@ -242,7 +242,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     val csvDataDir = new File("target/csvdata").getCanonicalPath
     // streaming ingest 10 rows
     generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
-    val thread = createFileStreamingThread(spark, tablePath, csvDataDir, intervalSecond = 1)
+    val thread = createFileStreamingThread(spark, tablePath, csvDataDir, intervalSecond = 1,
+      identifier )
     thread.start()
     Thread.sleep(2000)
     generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir)
@@ -636,6 +637,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
   def createSocketStreamingThread(
       spark: SparkSession,
       tablePath: CarbonTablePath,
+      tableIdentifier: TableIdentifier,
       badRecordAction: String = "force",
       intervalSecond: Int = 2,
       handoffSize: Long = CarbonStreamOutputFormat.HANDOFF_SIZE_DEFAULT): Thread = {
@@ -656,6 +658,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .option("checkpointLocation", tablePath.getStreamingCheckpointDir)
             .option("tablePath", tablePath.getPath)
             .option("bad_records_action", badRecordAction)
+            .option("dbName", tableIdentifier.database.get)
+            .option("tableName", tableIdentifier.table)
             .option(CarbonStreamOutputFormat.HANDOFF_SIZE, handoffSize)
             .start()
           qry.awaitTermination()
@@ -698,7 +702,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         badRecords = generateBadRecords)
       val thread2 = createSocketStreamingThread(
         spark = spark,
-        tablePath = tablePath,
+        tablePath = tablePath, identifier,
         badRecordAction = badRecordAction,
         intervalSecond = intervalOfIngest,
         handoffSize = handoffSize)
@@ -740,7 +744,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       spark: SparkSession,
       tablePath: CarbonTablePath,
       csvDataDir: String,
-      intervalSecond: Int): Thread = {
+      intervalSecond: Int,
+      tableIdentifier: TableIdentifier): Thread = {
     new Thread() {
       override def run(): Unit = {
         val inputSchema = new StructType()
@@ -765,6 +770,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .trigger(ProcessingTime(s"${ intervalSecond } seconds"))
             .option("checkpointLocation", tablePath.getStreamingCheckpointDir)
             .option("tablePath", tablePath.getPath)
+            .option("dbName", tableIdentifier.database.get)
+            .option("tableName", tableIdentifier.table)
             .start()
 
           qry.awaitTermination()

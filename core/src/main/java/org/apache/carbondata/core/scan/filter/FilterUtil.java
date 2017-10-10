@@ -1227,26 +1227,26 @@ public final class FilterUtil {
   }
 
   /**
-   * @param tableIdentifier
    * @param carbonDimension
    * @param tableProvider
    * @return
    */
-  public static Dictionary getForwardDictionaryCache(AbsoluteTableIdentifier tableIdentifier,
+  public static Dictionary getForwardDictionaryCache(
+      AbsoluteTableIdentifier absoluteTableIdentifier,
       CarbonDimension carbonDimension, TableProvider tableProvider) throws IOException {
     CarbonTablePath carbonTablePath = null;
     if (null != tableProvider) {
       CarbonTable carbonTable =
-          tableProvider.getCarbonTable(tableIdentifier.getCarbonTableIdentifier());
+          tableProvider.getCarbonTable(absoluteTableIdentifier.getCarbonTableIdentifier());
       carbonTablePath =
           CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
     }
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(tableIdentifier.getCarbonTableIdentifier(),
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
             carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(), carbonTablePath);
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, tableIdentifier.getStorePath());
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
     // get the forward dictionary object
     return forwardDictionaryCache.get(dictionaryColumnUniqueIdentifier);
   }

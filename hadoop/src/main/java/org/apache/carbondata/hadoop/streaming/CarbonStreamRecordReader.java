@@ -279,7 +279,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
         fileSplit.getStart() == 0);
 
     cacheProvider = CacheProvider.getInstance();
-    cache = cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, carbonTable.getStorePath());
+    cache = cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
     queryTypes = CarbonStreamInputFormat.getComplexDimensions(carbonTable, storageColumns, cache);
 
     outputSchema = new StructType(CarbonTypeUtil.convertCarbonSchemaToSparkSchema(projection));

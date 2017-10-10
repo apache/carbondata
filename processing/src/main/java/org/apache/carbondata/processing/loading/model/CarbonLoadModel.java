@@ -43,7 +43,7 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean aggLoadRequest;
 
-  private String storePath;
+  private String tablePath;
 
   private boolean isRetentionRequest;
 
@@ -354,7 +354,7 @@ public class CarbonLoadModel implements Serializable {
     copy.dateFormat = dateFormat;
     copy.defaultTimestampFormat = defaultTimestampFormat;
     copy.maxColumns = maxColumns;
-    copy.storePath = storePath;
+    copy.tablePath = tablePath;
     copy.useOnePass = useOnePass;
     copy.dictionaryServerHost = dictionaryServerHost;
     copy.dictionaryServerPort = dictionaryServerPort;
@@ -402,7 +402,7 @@ public class CarbonLoadModel implements Serializable {
     copy.dateFormat = dateFormat;
     copy.defaultTimestampFormat = defaultTimestampFormat;
     copy.maxColumns = maxColumns;
-    copy.storePath = storePath;
+    copy.tablePath = tablePath;
     copy.useOnePass = useOnePass;
     copy.dictionaryServerHost = dictionaryServerHost;
     copy.dictionaryServerPort = dictionaryServerPort;
@@ -452,7 +452,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.dateFormat = dateFormat;
     copyObj.defaultTimestampFormat = defaultTimestampFormat;
     copyObj.maxColumns = maxColumns;
-    copyObj.storePath = storePath;
+    copyObj.tablePath = tablePath;
     copyObj.useOnePass = useOnePass;
     copyObj.dictionaryServerHost = dictionaryServerHost;
     copyObj.dictionaryServerPort = dictionaryServerPort;
@@ -480,17 +480,17 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @param storePath The storePath to set.
+   * @param tablePath The tablePath to set.
    */
-  public void setStorePath(String storePath) {
-    this.storePath = storePath;
+  public void setTablePath(String tablePath) {
+    this.tablePath = tablePath;
   }
 
   /**
    * @return Returns the factStoreLocation.
    */
-  public String getStorePath() {
-    return storePath;
+  public String getTablePath() {
+    return tablePath;
   }
 
   /**

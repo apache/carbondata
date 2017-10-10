@@ -19,6 +19,7 @@ package org.apache.carbondata.core.cache.dictionary;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -44,17 +45,21 @@ public class DictionaryColumnUniqueIdentifierTest {
         new CarbonTableIdentifier("testDatabase", "testTable", "1");
     CarbonTableIdentifier carbonTableIdentifier2 =
         new CarbonTableIdentifier("testDatabase", "testTable", "2");
+    AbsoluteTableIdentifier absoluteTableIdentifier1 = new AbsoluteTableIdentifier("storepath",
+        carbonTableIdentifier1);
+    AbsoluteTableIdentifier absoluteTableIdentifier2 = new AbsoluteTableIdentifier("storepath",
+        carbonTableIdentifier2);
     Map<String, String> properties = new HashMap<>();
     ColumnIdentifier columnIdentifier = new ColumnIdentifier("2", properties, DataTypes.STRING);
     ColumnIdentifier columnIdentifier2 = new ColumnIdentifier("1", properties, DataTypes.INT);
     dictionaryColumnUniqueIdentifier1 =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier1, columnIdentifier,
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier1, columnIdentifier,
             DataTypes.STRING, null);
     dictionaryColumnUniqueIdentifier2 =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2, columnIdentifier2,
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier2, columnIdentifier2,
             DataTypes.STRING, null);
     dictionaryColumnUniqueIdentifier3 =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2, columnIdentifier,
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier2, columnIdentifier,
             DataTypes.STRING, null);
   }
 
@@ -93,6 +98,6 @@ public class DictionaryColumnUniqueIdentifierTest {
         return 2;
       }
     };
-    assertEquals(dictionaryColumnUniqueIdentifier1.hashCode(), 33);
+    assertEquals(dictionaryColumnUniqueIdentifier1.hashCode(), 937100380);
   }
 }

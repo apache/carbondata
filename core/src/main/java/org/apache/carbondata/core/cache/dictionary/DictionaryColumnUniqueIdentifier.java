@@ -19,7 +19,7 @@ package org.apache.carbondata.core.cache.dictionary;
 
 import java.io.Serializable;
 
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -34,7 +34,7 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
   /**
    * table fully qualified name
    */
-  private CarbonTableIdentifier carbonTableIdentifier;
+  private AbsoluteTableIdentifier absoluteTableIdentifier;
 
   /**
    * unique column id
@@ -49,18 +49,18 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    * Will be used in case of reverse dictionary cache which will be used
    * in case of data loading.
    *
-   * @param carbonTableIdentifier
+   * @param absoluteTableIdentifier
    * @param columnIdentifier
    */
-  public DictionaryColumnUniqueIdentifier(CarbonTableIdentifier carbonTableIdentifier,
+  public DictionaryColumnUniqueIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier,
       ColumnIdentifier columnIdentifier) {
-    if (carbonTableIdentifier == null) {
+    if (absoluteTableIdentifier == null) {
       throw new IllegalArgumentException("carbonTableIdentifier is null");
     }
     if (columnIdentifier == null) {
       throw new IllegalArgumentException("columnIdentifier is null");
     }
-    this.carbonTableIdentifier = carbonTableIdentifier;
+    this.absoluteTableIdentifier = absoluteTableIdentifier;
     this.columnIdentifier = columnIdentifier;
     this.dataType = columnIdentifier.getDataType();
   }
@@ -69,13 +69,13 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    * Will be used in case of forward dictionary cache in case
    * of query execution.
    *
-   * @param carbonTableIdentifier
+   * @param absoluteTableIdentifier
    * @param columnIdentifier
    * @param dataType
    */
-  public DictionaryColumnUniqueIdentifier(CarbonTableIdentifier carbonTableIdentifier,
+  public DictionaryColumnUniqueIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier,
       ColumnIdentifier columnIdentifier, DataType dataType, CarbonTablePath carbonTablePath) {
-    this(carbonTableIdentifier, columnIdentifier);
+    this(absoluteTableIdentifier, columnIdentifier);
     this.dataType = dataType;
     if (null != carbonTablePath) {
       this.carbonTablePath = carbonTablePath;
@@ -89,8 +89,8 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
   /**
    * @return table identifier
    */
-  public CarbonTableIdentifier getCarbonTableIdentifier() {
-    return carbonTableIdentifier;
+  public AbsoluteTableIdentifier getAbsoluteCarbonTableIdentifier() {
+    return absoluteTableIdentifier;
   }
 
   public CarbonTablePath getCarbonTablePath() {
@@ -114,7 +114,7 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
     if (this == other) return true;
     if (other == null || getClass() != other.getClass()) return false;
     DictionaryColumnUniqueIdentifier that = (DictionaryColumnUniqueIdentifier) other;
-    if (!carbonTableIdentifier.equals(that.carbonTableIdentifier)) return false;
+    if (!absoluteTableIdentifier.equals(that.absoluteTableIdentifier)) return false;
     return columnIdentifier.equals(that.columnIdentifier);
 
   }
@@ -125,7 +125,7 @@ public class DictionaryColumnUniqueIdentifier implements Serializable {
    * @return
    */
   @Override public int hashCode() {
-    int result = carbonTableIdentifier.hashCode();
+    int result = absoluteTableIdentifier.hashCode();
     result = 31 * result + columnIdentifier.hashCode();
     return result;
   }

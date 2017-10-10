@@ -30,7 +30,6 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -58,12 +57,11 @@ public class ManageDictionaryAndBTree {
    *
    * @param columnSchema
    * @param carbonTableIdentifier
-   * @param storePath
    */
   public static void deleteDictionaryFileAndCache(final ColumnSchema columnSchema,
-      CarbonTableIdentifier carbonTableIdentifier, String storePath) {
+      AbsoluteTableIdentifier carbonTableIdentifier) {
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier);
+        CarbonStorePath.getCarbonTablePath(carbonTableIdentifier);
     String metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath();
     CarbonFile metadataDir = FileFactory
         .getCarbonFile(metadataDirectoryPath, FileFactory.getFileType(metadataDirectoryPath));
@@ -92,27 +90,7 @@ public class ManageDictionaryAndBTree {
       }
     }
     // remove dictionary cache
-    removeDictionaryColumnFromCache(carbonTableIdentifier, storePath,
-        columnSchema.getColumnUniqueId());
-  }
-
-  /**
-   * This method will remove dictionary cache from driver for both reverse and forward dictionary
-   *
-   * @param carbonTableIdentifier
-   * @param storePath
-   * @param columnId
-   */
-  public static void removeDictionaryColumnFromCache(CarbonTableIdentifier carbonTableIdentifier,
-      String storePath, String columnId) {
-    Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
-        CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY, storePath);
-    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
-            new ColumnIdentifier(columnId, null, null));
-    dictCache.invalidate(dictionaryColumnUniqueIdentifier);
-    dictCache = CacheProvider.getInstance().createCache(CacheType.FORWARD_DICTIONARY, storePath);
-    dictCache.invalidate(dictionaryColumnUniqueIdentifier);
+    removeDictionaryColumnFromCache(carbonTableIdentifier, columnSchema.getColumnUniqueId());
   }
 
   /**
@@ -136,9 +114,27 @@ public class ManageDictionaryAndBTree {
     List<CarbonDimension> dimensions =
         carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
     for (CarbonDimension dimension : dimensions) {
-      removeDictionaryColumnFromCache(carbonTable.getCarbonTableIdentifier(),
-          carbonTable.getStorePath(), dimension.getColumnId());
+      removeDictionaryColumnFromCache(carbonTable.getAbsoluteTableIdentifier(),
+          dimension.getColumnId());
     }
+  }
+
+  /**
+   * This method will remove dictionary cache from driver for both reverse and forward dictionary
+   *
+   * @param carbonTableIdentifier
+   * @param columnId
+   */
+  public static void removeDictionaryColumnFromCache(AbsoluteTableIdentifier carbonTableIdentifier,
+      String columnId) {
+    Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
+        CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY);
+    DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
+        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
+            new ColumnIdentifier(columnId, null, null));
+    dictCache.invalidate(dictionaryColumnUniqueIdentifier);
+    dictCache = CacheProvider.getInstance().createCache(CacheType.FORWARD_DICTIONARY);
+    dictCache.invalidate(dictionaryColumnUniqueIdentifier);
   }
 
   /**
@@ -149,8 +145,8 @@ public class ManageDictionaryAndBTree {
    */
   public static void invalidateBTreeCache(AbsoluteTableIdentifier absoluteTableIdentifier,
       String[] segments) {
-    Cache<Object, Object> driverBTreeCache = CacheProvider.getInstance()
-        .createCache(CacheType.DRIVER_BTREE, absoluteTableIdentifier.getStorePath());
+    Cache<Object, Object> driverBTreeCache =
+        CacheProvider.getInstance().createCache(CacheType.DRIVER_BTREE);
     for (String segmentNo : segments) {
       TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier =
           new TableSegmentUniqueIdentifier(absoluteTableIdentifier, segmentNo);
