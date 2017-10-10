@@ -363,6 +363,12 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
       val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
       val tablePath = tableIdentifier.getTablePath
       val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tablePath)
+      var partitionStr = ""
+      if (cm.partitionInfo.isDefined &&
+        cm.partitionInfo.get.getPartitionType == PartitionType.HIVE) {
+        val partCols = cm.partitionInfo.get.getColumnSchemaList.asScala
+        partitionStr = s"PARTITIONED BY (${partCols.map(x => x.getColumnName).mkString(",")})"
+      }
       if (createDSTable) {
         try {
           val fields = new Array[Field](cm.dimCols.size + cm.msrCols.size)
@@ -374,7 +380,8 @@ case class CreateTable(cm: TableModel, createDSTable: Boolean = true) extends Ru
                |(${ fields.map(f => f.rawSchema).mkString(",") })
                |USING org.apache.spark.sql.CarbonSource""".stripMargin +
                 s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath """.stripMargin +
-                s""""$tablePath"$carbonSchemaString) """)
+                s""""$tablePath", path "$tablePath/"$carbonSchemaString) """ +
+                s"""${partitionStr}""")
         } catch {
           case e: Exception =>
             val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))

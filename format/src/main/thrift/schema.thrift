@@ -60,6 +60,7 @@ enum PartitionType{
   RANGE_INTERVAL = 1;
   LIST = 2;
   HASH = 3;
+  HIVE = 4;
 }
 
 /**
