@@ -138,6 +138,9 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
         case SHORT_INT:
           encodedPage.putShortInt(rowId, value);
           break;
+        case INT:
+          encodedPage.putInt(rowId, value);
+          break;
         default:
           throw new RuntimeException("internal error: " + debugInfo());
       }

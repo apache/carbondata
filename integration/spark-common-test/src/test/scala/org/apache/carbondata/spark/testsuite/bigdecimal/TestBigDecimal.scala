@@ -17,7 +17,11 @@
 
 package org.apache.carbondata.spark.testsuite.bigdecimal
 
+import java.math.BigDecimal
+
+import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
@@ -32,6 +36,7 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hiveTable")
     sql("drop table if exists hiveBigDecimal")
     sql("drop table if exists carbonBigDecimal_2")
+    sql("DROP TABLE IF EXISTS decimal_int_test")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_SIZE, "1")
@@ -183,11 +188,22 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
       sql("select avg(salary)/10 from hiveBigDecimal"))
   }
 
+  test("test decimal compression where both precision and data falls in integer range") {
+    sql("create table decimal_int_test(d1 decimal(9,3)) stored by 'carbondata'")
+    sql(s"load data inpath '$resourcesPath/decimal_int_range.csv' into table decimal_int_test")
+    sql("select * from decimal_int_test").show(false)
+    checkAnswer(sql("select * from decimal_int_test"),
+      Seq(Row(new BigDecimal("111111.000")),
+        Row(new BigDecimal("222222.120")),
+        Row(new BigDecimal("333333.123"))))
+  }
+
   override def afterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
     sql("drop table if exists hiveBigDecimal")
     sql("drop table if exists carbonBigDecimal_2")
+    sql("DROP TABLE IF EXISTS decimal_int_test")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_SIZE,
