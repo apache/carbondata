@@ -29,7 +29,7 @@ import org.apache.spark.{Partition, SparkContext, TaskContext, TaskKilledExcepti
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.indexstore.Blocklet
+import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
 import org.apache.carbondata.hadoop.api.{DataMapJob, DistributableDataMapFormat}
 
@@ -39,7 +39,7 @@ import org.apache.carbondata.hadoop.api.{DataMapJob, DistributableDataMapFormat}
 class SparkDataMapJob extends DataMapJob {
 
   override def execute(dataMapFormat: DistributableDataMapFormat,
-      resolverIntf: FilterResolverIntf): util.List[Blocklet] = {
+      resolverIntf: FilterResolverIntf): util.List[ExtendedBlocklet] = {
     new DataMapPruneRDD(SparkContext.getOrCreate(), dataMapFormat, resolverIntf).collect().toList
       .asJava
   }
@@ -60,7 +60,7 @@ class DataMapRDDPartition(rddId: Int, idx: Int, val inputSplit: InputSplit) exte
 class DataMapPruneRDD(sc: SparkContext,
     dataMapFormat: DistributableDataMapFormat,
     resolverIntf: FilterResolverIntf)
-  extends CarbonRDD[(Blocklet)](sc, Nil) {
+  extends CarbonRDD[(ExtendedBlocklet)](sc, Nil) {
 
   private val jobTrackerId: String = {
     val formatter = new SimpleDateFormat("yyyyMMddHHmm")
@@ -68,7 +68,7 @@ class DataMapPruneRDD(sc: SparkContext,
   }
 
   override def internalCompute(split: Partition,
-      context: TaskContext): Iterator[Blocklet] = {
+      context: TaskContext): Iterator[ExtendedBlocklet] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
@@ -77,7 +77,7 @@ class DataMapPruneRDD(sc: SparkContext,
     DistributableDataMapFormat.setFilterExp(attemptContext.getConfiguration, resolverIntf)
     val reader = dataMapFormat.createRecordReader(inputSplit, attemptContext)
     reader.initialize(inputSplit, attemptContext)
-    val iter = new Iterator[Blocklet] {
+    val iter = new Iterator[ExtendedBlocklet] {
 
       private var havePair = false
       private var finished = false
@@ -93,7 +93,7 @@ class DataMapPruneRDD(sc: SparkContext,
         !finished
       }
 
-      override def next(): Blocklet = {
+      override def next(): ExtendedBlocklet = {
         if (!hasNext) {
           throw new java.util.NoSuchElementException("End of stream")
         }

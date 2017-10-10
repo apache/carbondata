@@ -61,15 +61,11 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon_load6")
   }
 
-
-
   override def beforeAll {
     dropTable
     buildTestData
   }
-
-
-
+  
   test("test batch sort load by passing option to load command") {
 
     sql(
@@ -77,11 +73,12 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
         | CREATE TABLE carbon_load1(c1 string, c2 string, c3 string, c4 string, c5 string,
         | c6 string, c7 int, c8 int, c9 int, c10 int)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('dictionary_include'='c1,c2,c3,c4,c5,c6')
+        | TBLPROPERTIES('dictionary_include'='c1,c2,c3,c4,c5,c6',
+        | 'sort_scope'='batch_sort')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load1 " +
-        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
+        s"OPTIONS('batch_sort_size_inmb'='1')")
 
     checkAnswer(sql("select count(*) from carbon_load1"), Seq(Row(100000)))
 
@@ -107,48 +104,16 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
   test("test batch sort load by passing option and compaction") {
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load1 " +
-        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
+        s"OPTIONS('batch_sort_size_inmb'='1')")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load1 " +
-        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
+        s"OPTIONS('batch_sort_size_inmb'='1')")
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load1 " +
-        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
+        s"OPTIONS('batch_sort_size_inmb'='1')")
     sql("alter table carbon_load1 compact 'major'")
     Thread.sleep(4000)
     checkAnswer(sql("select count(*) from carbon_load1"), Seq(Row(400000)))
 
     assert(getIndexfileCount("carbon_load1", "0.1") == 1, "Something wrong in compaction after batch sort")
-
-  }
-
-  test("test batch sort load by passing option in one load and with out option in other load and then do compaction") {
-
-    sql(
-      """
-        | CREATE TABLE carbon_load5(c1 string, c2 string, c3 string, c4 string, c5 string,
-        | c6 string, c7 int, c8 int, c9 int, c10 int)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load5 " +
-        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load5 ")
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load5 " +
-        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1')")
-    sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load5 ")
-
-    checkAnswer(sql("select count(*) from carbon_load5"), Seq(Row(400000)))
-
-    checkAnswer(sql("select * from carbon_load1 where c1='a1' order by c1"),
-      sql("select * from carbon_load5 where c1='a1' order by c1"))
-
-    sql("alter table carbon_load5 compact 'major'")
-    Thread.sleep(4000)
-
-    assert(getIndexfileCount("carbon_load5", "0.1") == 1,
-      "Something wrong in compaction after batch sort")
-
-    checkAnswer(sql("select * from carbon_load1 where c1='a1' order by c1"),
-      sql("select * from carbon_load5 where c1='a1' order by c1"))
 
   }
 
@@ -159,11 +124,12 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
         | CREATE TABLE carbon_load3(c1 string, c2 string, c3 string, c4 string, c5 string,
         | c6 string, c7 int, c8 int, c9 int, c10 int)
         | STORED BY 'org.apache.carbondata.format'
-        | TBLPROPERTIES('dictionary_include'='c1,c2,c3,c4,c5,c6')
+        | TBLPROPERTIES('dictionary_include'='c1,c2,c3,c4,c5,c6',
+        | 'sort_scope'='batch_sort')
       """.stripMargin)
 
     sql(s"LOAD DATA LOCAL INPATH '$filePath' into table carbon_load3 " +
-        s"OPTIONS('sort_scope'='batch_sort', 'batch_sort_size_inmb'='1', 'single_pass'='true')")
+        s"OPTIONS('batch_sort_size_inmb'='1', 'single_pass'='true')")
 
     checkAnswer(sql("select count(*) from carbon_load3"), Seq(Row(100000)))
 

@@ -40,7 +40,7 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
-import org.apache.carbondata.processing.newflow.sort.SortScopeOptions
+import org.apache.carbondata.processing.loading.sort.SortScopeOptions
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.{CommonUtil, DataTypeConverterUtil}
 
@@ -618,7 +618,14 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     // by default consider all String cols as dims and if any dictionary include isn't present then
     // add it to noDictionaryDims list. consider all dictionary excludes/include cols as dims
     fields.foreach { field =>
-      if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
+      if (dictExcludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
+        noDictionaryDims :+= field.column
+        dimFields += field
+      } else if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
+        dimFields += field
+      } else if (DataTypeUtil.getDataType(field.dataType.get.toUpperCase) == DataType.TIMESTAMP &&
+                 !dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
+        noDictionaryDims :+= field.column
         dimFields += field
       } else if (isDetectAsDimentionDatatype(field.dataType.get)) {
         dimFields += field
@@ -627,8 +634,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           noDictionaryDims :+= field.column
         }
       } else if (sortKeyDimsTmp.exists(x => x.equalsIgnoreCase(field.column)) &&
-                 (dictExcludeCols.exists(x => x.equalsIgnoreCase(field.column)) ||
-                  isDefaultMeasure(field.dataType)) &&
+                 isDefaultMeasure(field.dataType) &&
                  (!field.dataType.get.equalsIgnoreCase("STRING"))) {
         throw new MalformedCarbonCommandException(s"Illegal argument in sort_column.Check if you " +
                                                   s"have included UNSUPPORTED DataType column{${
@@ -711,7 +717,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * detects whether datatype is part of dictionary_exclude
    */
   def isDataTypeSupportedForDictionary_Exclude(columnDataType: String): Boolean = {
-    val dataTypes = Array("string")
+    val dataTypes = Array("string", "timestamp", "int", "long", "bigint")
     dataTypes.exists(x => x.equalsIgnoreCase(columnDataType))
   }
 
@@ -846,8 +852,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       "COMPLEX_DELIMITER_LEVEL_1", "COMPLEX_DELIMITER_LEVEL_2", "COLUMNDICT",
       "SERIALIZATION_NULL_FORMAT", "BAD_RECORDS_LOGGER_ENABLE", "BAD_RECORDS_ACTION",
       "ALL_DICTIONARY_PATH", "MAXCOLUMNS", "COMMENTCHAR", "DATEFORMAT", "BAD_RECORD_PATH",
-      "SINGLE_PASS", "IS_EMPTY_DATA_BAD_RECORD", "SORT_SCOPE", "BATCH_SORT_SIZE_INMB",
-      "GLOBAL_SORT_PARTITIONS", "HEADER"
+      "BATCH_SORT_SIZE_INMB", "GLOBAL_SORT_PARTITIONS", "SINGLE_PASS",
+      "IS_EMPTY_DATA_BAD_RECORD", "HEADER"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder
@@ -899,14 +905,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       if (!("true".equalsIgnoreCase(optionValue) || "false".equalsIgnoreCase(optionValue))) {
         throw new MalformedCarbonCommandException(
           "option IS_EMPTY_DATA_BAD_RECORD can have option either true or false")
-      }
-    }
-
-    if (options.exists(_._1.equalsIgnoreCase("SORT_SCOPE"))) {
-      val optionValue: String = options.get("sort_scope").get.head._2
-      if (!SortScopeOptions.isValidSortOption(optionValue)) {
-        throw new MalformedCarbonCommandException(
-          "option SORT_SCOPE can have option either BATCH_SORT or LOCAL_SORT or GLOBAL_SORT")
       }
     }
 

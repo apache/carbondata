@@ -92,19 +92,12 @@ class TestCreateTableSyntax extends QueryTest with BeforeAndAfterAll {
       }
     }
   }
-    test("test carbon table create with int datatype as dictionary exclude") {
-    try {
-      sql("drop table if exists carbontable")
-      sql("create table carbontable(id int, name string, dept string, mobile array<string>, "+
+  test("test carbon table create with int datatype as dictionary exclude") {
+    sql("drop table if exists carbontable")
+    sql("create table carbontable(id int, name string, dept string, mobile array<string>, " +
         "country string, salary double) STORED BY 'org.apache.carbondata.format' " +
         "TBLPROPERTIES('DICTIONARY_EXCLUDE'='id')")
-      assert(false)
-    } catch {
-      case e : MalformedCarbonCommandException => {
-        assert(e.getMessage.equals("DICTIONARY_EXCLUDE is unsupported for int " +
-          "data type column: id"))
-      }
-    }
+    assert(true)
   }
 
   test("test carbon table create with decimal datatype as dictionary exclude") {

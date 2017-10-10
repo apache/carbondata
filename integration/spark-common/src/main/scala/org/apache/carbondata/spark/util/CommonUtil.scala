@@ -50,12 +50,11 @@ import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentSta
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.comparator.Comparator
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.processing.csvload.CSVInputFormat
-import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
+import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.load.CarbonLoaderUtil
 
 object CommonUtil {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -335,11 +334,16 @@ object CommonUtil {
         timestampFormatter, dateFormatter)
     }
     val iterator = rangeInfo.tail.toIterator
-    while(iterator.hasNext) {
+    while (iterator.hasNext) {
       val next = columnDataType match {
         case DataType.STRING => ByteUtil.toBytes(iterator.next())
         case _ => PartitionUtil.getDataBasedOnDataType(iterator.next(), columnDataType,
           timestampFormatter, dateFormatter)
+      }
+      if (next == null) {
+        sys.error(
+          "Data in range info must be the same type with the partition field's type "
+            + columnDataType)
       }
       if (comparator.compare(head, next) < 0) {
         head = next
@@ -533,7 +537,31 @@ object CommonUtil {
     }
   }
 
-  def readLoadMetadataDetails(model: CarbonLoadModel, storePath: String): Unit = {
+  /**
+   * This method will update the load failure entry in the table status file
+   *
+   * @param model
+   */
+  def updateTableStatusForFailure(
+      model: CarbonLoadModel): Unit = {
+    // in case if failure the load status should be "Marked for delete" so that it will be taken
+    // care during clean up
+    val loadStatus = CarbonCommonConstants.MARKED_FOR_DELETE
+    // always the last entry in the load metadata details will be the current load entry
+    val loadMetaEntry = model.getLoadMetadataDetails.get(model.getLoadMetadataDetails.size - 1)
+    CarbonLoaderUtil
+      .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp, true)
+    val updationStatus = CarbonLoaderUtil.recordLoadMetadata(loadMetaEntry, model, false, false)
+    if (!updationStatus) {
+      sys
+        .error(s"Failed to update failure entry in table status for ${
+          model
+            .getDatabaseName
+        }.${ model.getTableName }")
+    }
+  }
+
+  def readLoadMetadataDetails(model: CarbonLoadModel): Unit = {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
     val details = SegmentStatusManager.readLoadMetadata(metadataPath)
     model.setLoadMetadataDetails(details.toList.asJava)

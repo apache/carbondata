@@ -64,6 +64,8 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
   override def afterAll(): Unit = {
     sql("drop table carbon_testtable")
     sql("DROP TABLE IF EXISTS csv_table")
+    sql("DROP TABLE IF EXISTS car")
+    sql("drop table if exists sparkunion")
   }
 
   test("project") {

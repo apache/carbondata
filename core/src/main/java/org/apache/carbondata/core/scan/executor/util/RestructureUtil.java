@@ -35,6 +35,7 @@ import org.apache.carbondata.core.scan.executor.infos.DimensionInfo;
 import org.apache.carbondata.core.scan.executor.infos.MeasureInfo;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.scan.model.QueryMeasure;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -157,7 +158,8 @@ public class RestructureUtil {
       }
     } else {
       // no dictionary
-      defaultValueToBeConsidered = getNoDictionaryDefaultValue(defaultValue);
+      defaultValueToBeConsidered =
+          getNoDictionaryDefaultValue(queryDimension.getDataType(), defaultValue);
     }
     return defaultValueToBeConsidered;
   }
@@ -211,10 +213,26 @@ public class RestructureUtil {
    * @param defaultValue
    * @return
    */
-  private static Object getNoDictionaryDefaultValue(byte[] defaultValue) {
+  private static Object getNoDictionaryDefaultValue(DataType datatype, byte[] defaultValue) {
     Object noDictionaryDefaultValue = null;
+    String value = null;
     if (!isDefaultValueNull(defaultValue)) {
-      noDictionaryDefaultValue = UTF8String.fromBytes(defaultValue);
+      switch (datatype) {
+        case INT:
+          value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          noDictionaryDefaultValue = Integer.parseInt(value);
+          break;
+        case LONG:
+          value = new String(defaultValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+          noDictionaryDefaultValue = Long.parseLong(value);
+          break;
+        case TIMESTAMP:
+          long timestampValue = ByteUtil.toLong(defaultValue, 0, defaultValue.length);
+          noDictionaryDefaultValue = timestampValue * 1000L;
+          break;
+        default:
+          noDictionaryDefaultValue = UTF8String.fromBytes(defaultValue);
+      }
     }
     return noDictionaryDefaultValue;
   }

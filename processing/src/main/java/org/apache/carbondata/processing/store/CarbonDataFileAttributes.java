@@ -17,20 +17,11 @@
 
 package org.apache.carbondata.processing.store;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
-
 /**
  * This class contains attributes of file which are required to
  * construct file name like taskId, factTimeStamp
  */
 public class CarbonDataFileAttributes {
-
-  /**
-   * LOGGER
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(CarbonDataFileAttributes.class.getName());
   /**
    * task Id which is unique for each spark task
    */

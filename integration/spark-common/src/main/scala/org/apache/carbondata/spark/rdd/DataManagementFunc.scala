@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.execution.command.{CompactionCallableModel, CompactionModel, SplitPartitionCallableModel}
+import org.apache.spark.sql.execution.command.{CompactionCallableModel, CompactionModel, DropPartitionCallableModel, SplitPartitionCallableModel}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -34,13 +34,13 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
+import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
-import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
+import org.apache.carbondata.processing.util.{CarbonLoaderUtil, DeleteLoadFolders, LoadMetadataUtil}
 import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.compaction.CompactionCallable
-import org.apache.carbondata.spark.load._
-import org.apache.carbondata.spark.partition.SplitPartitionCallable
-import org.apache.carbondata.spark.util.{CommonUtil, LoadMetadataUtil}
+import org.apache.carbondata.spark.partition.{DropPartitionCallable, SplitPartitionCallable}
+import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Common functions for data life cycle management
@@ -149,7 +149,6 @@ object DataManagementFunc {
   }
 
   def executeCompaction(carbonLoadModel: CarbonLoadModel,
-      storePath: String,
       compactionModel: CompactionModel,
       executor: ExecutorService,
       sqlContext: SQLContext,
@@ -161,7 +160,6 @@ object DataManagementFunc {
 
     var segList = carbonLoadModel.getLoadMetadataDetails
     var loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
-      storePath,
       carbonLoadModel,
       compactionModel.compactionSize,
       segList,
@@ -180,7 +178,6 @@ object DataManagementFunc {
       scanSegmentsAndSubmitJob(futureList,
         loadsToMerge,
         executor,
-        storePath,
         sqlContext,
         compactionModel,
         carbonLoadModel,
@@ -200,7 +197,7 @@ object DataManagementFunc {
       }
 
       // scan again and determine if anything is there to merge again.
-      CommonUtil.readLoadMetadataDetails(carbonLoadModel, storePath)
+      CommonUtil.readLoadMetadataDetails(carbonLoadModel)
       segList = carbonLoadModel.getLoadMetadataDetails
       // in case of major compaction we will scan only once and come out as it will keep
       // on doing major for the new loads also.
@@ -215,7 +212,6 @@ object DataManagementFunc {
         loadsToMerge.clear()
       } else if (segList.size > 0) {
         loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
-          storePath,
           carbonLoadModel,
           compactionModel.compactionSize,
           segList,
@@ -234,10 +230,8 @@ object DataManagementFunc {
    * @param futureList
    */
   private def scanSegmentsAndSubmitJob(futureList: util.List[Future[Void]],
-      loadsToMerge: util
-      .List[LoadMetadataDetails],
+      loadsToMerge: util.List[LoadMetadataDetails],
       executor: ExecutorService,
-      storePath: String,
       sqlContext: SQLContext,
       compactionModel: CompactionModel,
       carbonLoadModel: CarbonLoadModel,
@@ -248,8 +242,7 @@ object DataManagementFunc {
     }
     )
 
-    val compactionCallableModel = CompactionCallableModel(storePath,
-      carbonLoadModel,
+    val compactionCallableModel = CompactionCallableModel(carbonLoadModel,
       storeLocation,
       compactionModel.carbonTable,
       loadsToMerge,
@@ -264,14 +257,13 @@ object DataManagementFunc {
   def executePartitionSplit( sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       executor: ExecutorService,
-      storePath: String,
       segment: String,
       partitionId: String,
       oldPartitionIdList: List[Int]): Unit = {
     val futureList: util.List[Future[Void]] = new util.ArrayList[Future[Void]](
       CarbonCommonConstants.DEFAULT_COLLECTION_SIZE
     )
-    scanSegmentsForSplitPartition(futureList, executor, storePath, segment, partitionId,
+    scanSegmentsForSplitPartition(futureList, executor, segment, partitionId,
       sqlContext, carbonLoadModel, oldPartitionIdList)
     try {
         futureList.asScala.foreach(future => {
@@ -287,15 +279,13 @@ object DataManagementFunc {
 
   private def scanSegmentsForSplitPartition(futureList: util.List[Future[Void]],
       executor: ExecutorService,
-      storePath: String,
       segmentId: String,
       partitionId: String,
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       oldPartitionIdList: List[Int]): Unit = {
 
-    val splitModel = SplitPartitionCallableModel(storePath,
-      carbonLoadModel,
+    val splitModel = SplitPartitionCallableModel(carbonLoadModel,
       segmentId,
       partitionId,
       oldPartitionIdList,
@@ -305,9 +295,27 @@ object DataManagementFunc {
     futureList.add(future)
   }
 
-  def prepareCarbonLoadModel(storePath: String,
-      table: CarbonTable,
-      newCarbonLoadModel: CarbonLoadModel): Unit = {
+  def executeDroppingPartition(sqlContext: SQLContext,
+      carbonLoadModel: CarbonLoadModel,
+      executor: ExecutorService,
+      segmentId: String,
+      partitionId: String,
+      dropWithData: Boolean,
+      oldPartitionIds: List[Int]): Unit = {
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    val model = new DropPartitionCallableModel(carbonLoadModel,
+      segmentId, partitionId, oldPartitionIds, dropWithData, carbonTable, sqlContext)
+    val future: Future[Void] = executor.submit(new DropPartitionCallable(model))
+    try {
+        future.get
+    } catch {
+      case e: Exception =>
+        LOGGER.error(e, s"Exception in partition drop thread ${ e.getMessage }")
+        throw e
+    }
+  }
+
+  def prepareCarbonLoadModel(table: CarbonTable, newCarbonLoadModel: CarbonLoadModel): Unit = {
     newCarbonLoadModel.setTableName(table.getFactTableName)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     // Need to fill dimension relation
@@ -315,7 +323,7 @@ object DataManagementFunc {
     newCarbonLoadModel.setTableName(table.getCarbonTableIdentifier.getTableName)
     newCarbonLoadModel.setDatabaseName(table.getCarbonTableIdentifier.getDatabaseName)
     newCarbonLoadModel.setStorePath(table.getStorePath)
-    CommonUtil.readLoadMetadataDetails(newCarbonLoadModel, storePath)
+    CommonUtil.readLoadMetadataDetails(newCarbonLoadModel)
     val loadStartTime = CarbonUpdateUtil.readCurrentTime();
     newCarbonLoadModel.setFactTimeStamp(loadStartTime)
   }

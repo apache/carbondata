@@ -62,6 +62,10 @@ public class TableSpec {
         if (dimension.isComplex()) {
           DimensionSpec spec = new DimensionSpec(ColumnType.COMPLEX, dimension);
           dimensionSpec[dimIndex++] = spec;
+        } else if (dimension.getDataType() == DataType.TIMESTAMP && !dimension
+            .isDirectDictionaryEncoding()) {
+          DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
+          dimensionSpec[dimIndex++] = spec;
         } else if (dimension.isDirectDictionaryEncoding()) {
           DimensionSpec spec = new DimensionSpec(ColumnType.DIRECT_DICTIONARY, dimension);
           dimensionSpec[dimIndex++] = spec;
@@ -126,7 +130,9 @@ public class TableSpec {
     }
 
     public ColumnSpec(String fieldName, DataType schemaDataType, ColumnType columnType) {
-      this(fieldName, schemaDataType, columnType, 0, 0);
+      // for backward compatibility as the precision and scale is not stored, the values should be
+      // initialized with -1 for both precision and scale
+      this(fieldName, schemaDataType, columnType, -1, -1);
     }
 
     public ColumnSpec(String fieldName, DataType schemaDataType, ColumnType columnType,
