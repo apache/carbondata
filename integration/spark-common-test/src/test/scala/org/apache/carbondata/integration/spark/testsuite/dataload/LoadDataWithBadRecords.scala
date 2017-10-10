@@ -41,7 +41,6 @@ class LoadDataWithBadRecordsTest extends QueryTest with BeforeAndAfterEach with 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
-    CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
         new File("./target/test/badRecords")
           .getCanonicalPath)
@@ -54,7 +53,6 @@ class LoadDataWithBadRecordsTest extends QueryTest with BeforeAndAfterEach with 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
-    CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
   }
 
