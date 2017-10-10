@@ -20,6 +20,7 @@ import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.util.BitSetGroup;
 
 /**
  * Block chunk holder which will hold the dimension and
@@ -46,6 +47,8 @@ public class BlocksChunkHolder {
    * data block
    */
   private DataRefNode dataBlock;
+
+  private BitSetGroup bitSetGroup;
 
   public BlocksChunkHolder(int numberOfDimensionBlock, int numberOfMeasureBlock) {
     dimensionRawDataChunk = new DimensionRawColumnChunk[numberOfDimensionBlock];
@@ -126,5 +129,13 @@ public class BlocksChunkHolder {
     for (int i = 0; i < dimensionRawDataChunk.length; i++) {
       this.dimensionRawDataChunk[i] = null;
     }
+  }
+
+  public BitSetGroup getBitSetGroup() {
+    return bitSetGroup;
+  }
+
+  public void setBitSetGroup(BitSetGroup bitSetGroup) {
+    this.bitSetGroup = bitSetGroup;
   }
 }

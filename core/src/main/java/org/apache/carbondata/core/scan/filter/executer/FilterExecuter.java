@@ -31,7 +31,7 @@ public interface FilterExecuter {
    * @return
    * @throws FilterUnsupportedException
    */
-  BitSetGroup applyFilter(BlocksChunkHolder blocksChunkHolder)
+  BitSetGroup applyFilter(BlocksChunkHolder blocksChunkHolder, boolean useBitsetPipeLine)
       throws FilterUnsupportedException, IOException;
 
   /**

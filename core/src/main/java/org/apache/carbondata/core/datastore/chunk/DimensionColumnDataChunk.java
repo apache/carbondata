@@ -78,6 +78,13 @@ public interface DimensionColumnDataChunk {
   int getInvertedIndex(int index);
 
   /**
+   *
+   * @param invertedIndex
+   * @return index reverse index
+   */
+  int getInvertedReverseIndex(int invertedIndex);
+
+  /**
    * @return whether column is dictionary column or not
    */
   boolean isNoDicitionaryColumn();

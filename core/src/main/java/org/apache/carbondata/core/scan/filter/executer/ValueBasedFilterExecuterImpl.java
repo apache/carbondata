@@ -25,7 +25,8 @@ import org.apache.carbondata.core.util.BitSetGroup;
 
 public class ValueBasedFilterExecuterImpl implements FilterExecuter {
 
-  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
+  @Override
+  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
       throws FilterUnsupportedException, IOException {
 
     return new BitSetGroup(0);

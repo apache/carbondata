@@ -1382,6 +1382,15 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_USE_BLOCKLET_DISTRIBUTION_DEFAULT = "true";
 
+  /**
+   * this will be used to pass bitset value in filter to another filter for
+   * faster execution of filter query
+   */
+  @CarbonProperty
+  public static final String BITSET_PIPE_LINE = "carbon.use.bitset.pipe.line";
+
+  public static final String BITSET_PIPE_LINE_DEFAULT = "true";
+
   private CarbonCommonConstants() {
   }
 }

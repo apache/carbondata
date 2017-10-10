@@ -140,7 +140,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
    * @throws FilterUnsupportedException
    * @throws IOException
    */
-  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder)
+  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
       throws FilterUnsupportedException, IOException {
     return applyNoAndDirectFilter(blockChunkHolder);
   }

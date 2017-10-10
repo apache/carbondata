@@ -2070,6 +2070,51 @@ public final class CarbonUtil {
     }
   }
 
+  /**
+   * Below method will be used to check whether bitset applied on previous filter
+   * can be used to apply on next column filter
+   * @param usePrvBitSetGroup
+   * @param prvBitsetGroup
+   * @param pageNumber
+   * @param numberOfFilterValues
+   * @return
+   */
+  public static boolean usePreviousFilterBitsetGroup(boolean usePrvBitSetGroup,
+      BitSetGroup prvBitsetGroup, int pageNumber, int numberOfFilterValues) {
+    if (!usePrvBitSetGroup || null == prvBitsetGroup || null == prvBitsetGroup.getBitSet(pageNumber)
+        || prvBitsetGroup.getBitSet(pageNumber).isEmpty()) {
+      return false;
+    }
+    int numberOfRowSelected = prvBitsetGroup.getBitSet(pageNumber).cardinality();
+    return numberOfFilterValues > numberOfRowSelected;
+  }
+
+  /**
+   * Below method will be used to check filter value is present in the data chunk or not
+   * @param filterValues
+   * @param dimensionColumnDataChunk
+   * @param low
+   * @param high
+   * @param chunkRowIndex
+   * @return
+   */
+  public static int isFilterPresent(byte[][] filterValues,
+      DimensionColumnDataChunk dimensionColumnDataChunk, int low, int high, int chunkRowIndex) {
+    int compareResult = 0;
+    int mid = 0;
+    while (low <= high) {
+      mid = (low + high) >>> 1;
+      compareResult = dimensionColumnDataChunk.compareTo(chunkRowIndex, filterValues[mid]);
+      if (compareResult < 0) {
+        high = mid - 1;
+      } else if (compareResult > 0) {
+        low = mid + 1;
+      } else {
+        return compareResult;
+      }
+    }
+    return -1;
+  }
 
 }
 
