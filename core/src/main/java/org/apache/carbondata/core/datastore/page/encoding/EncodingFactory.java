@@ -108,7 +108,7 @@ public abstract class EncodingFactory {
     TableSpec.ColumnSpec spec = new TableSpec.ColumnSpec("legacy", stats.getDataType(),
         ColumnType.MEASURE);
     String compressor = "snappy";
-    switch (CarbonUtil.getDataType(metadata.getType())) {
+    switch (DataType.getDataType(metadata.getType())) {
       case BYTE:
       case SHORT:
       case INT:
@@ -127,7 +127,7 @@ public abstract class EncodingFactory {
           return codec.createDecoder(meta);
         } else if (codec instanceof DirectCompressCodec) {
           ColumnPageEncoderMeta meta = new ColumnPageEncoderMeta(spec,
-              CarbonUtil.getDataType(metadata.getType()), stats, compressor);
+              DataType.getDataType(metadata.getType()), stats, compressor);
           return codec.createDecoder(meta);
         } else {
           throw new RuntimeException("internal error");
@@ -143,7 +143,7 @@ public abstract class EncodingFactory {
           return codec.createDecoder(meta);
         } else if (codec instanceof DirectCompressCodec) {
           ColumnPageEncoderMeta meta = new ColumnPageEncoderMeta(spec,
-              CarbonUtil.getDataType(metadata.getType()), stats, compressor);
+              DataType.getDataType(metadata.getType()), stats, compressor);
           return codec.createDecoder(meta);
         } else {
           throw new RuntimeException("internal error");

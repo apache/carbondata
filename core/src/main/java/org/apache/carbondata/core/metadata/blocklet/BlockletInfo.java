@@ -218,7 +218,14 @@ public class BlockletInfo implements Serializable, Writable {
     for (int i = 0; i < mSize; i++) {
       output.writeInt(measureChunksLength.get(i));
     }
-    // Serialize datachunks as well for older versions like V1 and V2
+    writeChunkInfoForOlderVersions(output);
+
+  }
+
+  /**
+   * Serialize datachunks as well for older versions like V1 and V2
+   */
+  private void writeChunkInfoForOlderVersions(DataOutput output) throws IOException {
     int dimChunksSize = dimensionColumnChunk != null ? dimensionColumnChunk.size() : 0;
     output.writeShort(dimChunksSize);
     for (int i = 0; i < dimChunksSize; i++) {
@@ -278,7 +285,13 @@ public class BlockletInfo implements Serializable, Writable {
     for (int i = 0; i < measureChunkOffsetsSize; i++) {
       measureChunksLength.add(input.readInt());
     }
-    // Deserialize datachunks as well for older versions like V1 and V2
+    readChunkInfoForOlderVersions(input);
+  }
+
+  /**
+   * Deserialize datachunks as well for older versions like V1 and V2
+   */
+  private void readChunkInfoForOlderVersions(DataInput input) throws IOException {
     short dimChunksSize = input.readShort();
     dimensionColumnChunk = new ArrayList<>(dimChunksSize);
     for (int i = 0; i < dimChunksSize; i++) {

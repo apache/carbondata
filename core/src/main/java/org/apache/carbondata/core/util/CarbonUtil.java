@@ -1447,17 +1447,17 @@ public final class CarbonUtil {
     ValueEncoderMeta valueEncoderMeta = new ValueEncoderMeta();
     valueEncoderMeta.setType(measureType);
     switch (measureType) {
-      case CarbonCommonConstants.DOUBLE_MEASURE:
+      case DataType.DOUBLE_MEASURE_CHAR:
         valueEncoderMeta.setMaxValue(buffer.getDouble());
         valueEncoderMeta.setMinValue(buffer.getDouble());
         valueEncoderMeta.setUniqueValue(buffer.getDouble());
         break;
-      case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
+      case DataType.BIG_DECIMAL_MEASURE_CHAR:
         valueEncoderMeta.setMaxValue(BigDecimal.valueOf(Long.MAX_VALUE));
         valueEncoderMeta.setMinValue(BigDecimal.valueOf(Long.MIN_VALUE));
         valueEncoderMeta.setUniqueValue(BigDecimal.valueOf(Long.MIN_VALUE));
         break;
-      case CarbonCommonConstants.BIG_INT_MEASURE:
+      case DataType.BIG_INT_MEASURE_CHAR:
         valueEncoderMeta.setMaxValue(buffer.getLong());
         valueEncoderMeta.setMinValue(buffer.getLong());
         valueEncoderMeta.setUniqueValue(buffer.getLong());
@@ -1991,21 +1991,6 @@ public final class CarbonUtil {
         return (byte[]) value;
       default:
         throw new IllegalArgumentException("Invalid data type: " + dataType);
-    }
-  }
-
-  public static DataType getDataType(char type) {
-    switch (type) {
-      case CarbonCommonConstants.BIG_INT_MEASURE:
-        return DataType.LONG;
-      case CarbonCommonConstants.DOUBLE_MEASURE:
-        return DataType.DOUBLE;
-      case CarbonCommonConstants.BIG_DECIMAL_MEASURE:
-        return DataType.DECIMAL;
-      case 'l':
-        return DataType.LEGACY_LONG;
-      default:
-        throw new RuntimeException("Unexpected type: " + type);
     }
   }
 
