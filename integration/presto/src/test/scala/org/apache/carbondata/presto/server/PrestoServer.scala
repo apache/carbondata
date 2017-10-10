@@ -50,7 +50,7 @@ object PrestoServer {
   /**
    * start the presto server
    *
-   * @param carbonStorePath
+   * @param carbonStorePath carbonStorePath
    */
   def startServer(carbonStorePath: String) = {
 

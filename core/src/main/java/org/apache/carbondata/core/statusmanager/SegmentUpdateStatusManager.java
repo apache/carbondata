@@ -351,10 +351,10 @@ public class SegmentUpdateStatusManager {
   /**
    * Returns all delta file paths of specified block
    *
-   * @param blockDir
-   * @param blockNameFromTuple
-   * @param listOfSegmentUpdateDetailsArray
+   * @param blockDir block directory
+   * @param blockNameFromTuple block 
    * @param extension
+   * @param segment
    * @return
    */
   private List<String> getDeltaFiles(CarbonFile blockDir, final String blockNameFromTuple,
