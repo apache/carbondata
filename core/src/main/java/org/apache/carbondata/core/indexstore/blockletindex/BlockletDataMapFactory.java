@@ -61,7 +61,7 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
   public void init(AbsoluteTableIdentifier identifier, String dataMapName) {
     this.identifier = identifier;
     cache = CacheProvider.getInstance()
-        .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP, identifier.getStorePath());
+        .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
   }
 
   @Override

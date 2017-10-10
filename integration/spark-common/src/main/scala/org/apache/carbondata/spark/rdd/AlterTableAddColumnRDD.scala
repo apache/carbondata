@@ -23,7 +23,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.SegmentStatus
@@ -51,8 +51,7 @@ class AddColumnPartition(rddId: Int, idx: Int, schema: ColumnSchema) extends Par
  */
 class AlterTableAddColumnRDD[K, V](sc: SparkContext,
     @transient newColumns: Seq[ColumnSchema],
-    carbonTableIdentifier: CarbonTableIdentifier,
-    carbonStorePath: String)
+    absoluteTableIdentifier: AbsoluteTableIdentifier)
   extends CarbonRDD[(Int, SegmentStatus)](sc, Nil) {
 
   val lockType: String = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOCK_TYPE,
@@ -75,7 +74,7 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
         if (columnSchema.hasEncoding(Encoding.DICTIONARY) &&
             !columnSchema.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           val carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(carbonStorePath, carbonTableIdentifier)
+            .getCarbonTablePath(absoluteTableIdentifier)
           var rawData: String = null
           if (null != columnSchema.getDefaultValue) {
             rawData = new String(columnSchema.getDefaultValue,
@@ -91,8 +90,7 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
           GlobalDictionaryUtil
             .loadDefaultDictionaryValueForNewColumn(carbonTablePath,
               columnSchema,
-              carbonTableIdentifier,
-              carbonStorePath,
+              absoluteTableIdentifier,
               rawData)
         }
       } catch {

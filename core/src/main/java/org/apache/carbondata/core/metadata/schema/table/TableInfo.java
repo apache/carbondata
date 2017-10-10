@@ -76,7 +76,7 @@ public class TableInfo implements Serializable, Writable {
   /**
    * store location
    */
-  private String storePath;
+  private String tablePath;
 
   // this idenifier is a lazy field which will be created when it is used first time
   private AbsoluteTableIdentifier identifier;
@@ -176,12 +176,12 @@ public class TableInfo implements Serializable, Writable {
     this.metaDataFilepath = metaDataFilepath;
   }
 
-  public String getStorePath() {
-    return storePath;
+  public String getTablePath() {
+    return tablePath;
   }
 
-  public void setStorePath(String storePath) {
-    this.storePath = storePath;
+  public void setTablePath(String tablePath) {
+    this.tablePath = tablePath;
   }
 
   public List<DataMapSchema> getDataMapSchemaList() {
@@ -259,7 +259,7 @@ public class TableInfo implements Serializable, Writable {
     factTable.write(out);
     out.writeLong(lastUpdatedTime);
     out.writeUTF(metaDataFilepath);
-    out.writeUTF(storePath);
+    out.writeUTF(tablePath);
     boolean isChildSchemaExists =
         null != dataMapSchemaList && dataMapSchemaList.size() > 0;
     out.writeBoolean(isChildSchemaExists);
@@ -287,7 +287,7 @@ public class TableInfo implements Serializable, Writable {
     this.factTable.readFields(in);
     this.lastUpdatedTime = in.readLong();
     this.metaDataFilepath = in.readUTF();
-    this.storePath = in.readUTF();
+    this.tablePath = in.readUTF();
     boolean isChildSchemaExists = in.readBoolean();
     this.dataMapSchemaList = new ArrayList<>();
     if (isChildSchemaExists) {
@@ -319,7 +319,7 @@ public class TableInfo implements Serializable, Writable {
     if (identifier == null) {
       CarbonTableIdentifier carbontableIdentifier =
           new CarbonTableIdentifier(databaseName, factTable.getTableName(), factTable.getTableId());
-      identifier = new AbsoluteTableIdentifier(storePath, carbontableIdentifier);
+      identifier = new AbsoluteTableIdentifier(tablePath, carbontableIdentifier);
     }
     return identifier;
   }

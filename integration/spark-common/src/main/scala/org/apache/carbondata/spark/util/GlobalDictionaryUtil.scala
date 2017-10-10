@@ -42,7 +42,7 @@ import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumn
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
@@ -174,12 +174,9 @@ object GlobalDictionaryUtil {
       model.table,
       model.columnIdentifier(columnIndex),
       model.columnIdentifier(columnIndex).getDataType,
-      CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
-    val writer: CarbonDictionaryWriter = dictService.getDictionaryWriter(
-      model.table,
-      dictionaryColumnUniqueIdentifier,
-      model.hdfsLocation
-    )
+      CarbonStorePath.getCarbonTablePath(model.table))
+    val writer: CarbonDictionaryWriter = dictService
+      .getDictionaryWriter(dictionaryColumnUniqueIdentifier)
     try {
       while (iter.hasNext) {
         writer.write(iter.next)
@@ -196,8 +193,7 @@ object GlobalDictionaryUtil {
     val dictMap = new HashMap[String, Dictionary]
     model.primDimensions.zipWithIndex.filter(f => model.dictFileExists(f._2)).foreach { m =>
       val dict = CarbonLoaderUtil.getDictionary(model.table,
-        m._1.getColumnIdentifier, model.hdfsLocation,
-        m._1.getDataType
+        m._1.getColumnIdentifier, m._1.getDataType
       )
       dictMap.put(m._1.getColumnId, dict)
     }
@@ -218,12 +214,11 @@ object GlobalDictionaryUtil {
             model.table,
             model.columnIdentifier(i),
             model.columnIdentifier(i).getDataType,
-            CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
+            CarbonStorePath.getCarbonTablePath(model.table))
       val set = new HashSet[String]
       if (model.dictFileExists(i)) {
-        val reader: CarbonDictionaryReader = dictService.getDictionaryReader(model.table,
-          dictionaryColumnUniqueIdentifier, model.hdfsLocation
-        )
+        val reader: CarbonDictionaryReader = dictService.getDictionaryReader(
+          dictionaryColumnUniqueIdentifier)
         val values = reader.read
         if (values != null) {
           for (j <- 0 until values.size) {
@@ -330,7 +325,8 @@ object GlobalDictionaryUtil {
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     }
-    DictionaryLoadModel(table,
+    val absoluteTableIdentifier = new AbsoluteTableIdentifier(hdfsLocation, table)
+    DictionaryLoadModel(absoluteTableIdentifier,
       dimensions,
       hdfsLocation,
       dictfolderPath,
@@ -391,7 +387,7 @@ object GlobalDictionaryUtil {
       model: DictionaryLoadModel,
       status: Array[(Int, SegmentStatus)]) = {
     var result = false
-    val tableName = model.table.getTableName
+    val tableName = model.table.getCarbonTableIdentifier.getTableName
     status.foreach { x =>
       val columnName = model.primDimensions(x._1).getColName
       if (SegmentStatus.LOAD_FAILURE == x._2) {
@@ -819,21 +815,19 @@ object GlobalDictionaryUtil {
    *
    * @param carbonTablePath
    * @param columnSchema
-   * @param tableIdentifier
-   * @param storePath
+   * @param absoluteTableIdentifier
    * @param defaultValue
    */
   def loadDefaultDictionaryValueForNewColumn(carbonTablePath: CarbonTablePath,
       columnSchema: ColumnSchema,
-      tableIdentifier: CarbonTableIdentifier,
-      storePath: String,
+      absoluteTableIdentifier: AbsoluteTableIdentifier,
       defaultValue: String): Unit = {
 
     var carbonDictionarySortIndexWriter: CarbonDictionarySortIndexWriter = null
     var dictionary: Dictionary = null
 
     val dictLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
+      .getCarbonLockObj(absoluteTableIdentifier,
         columnSchema.getColumnUniqueId + LockUsage.LOCK)
     var isDictionaryLocked = false
     try {
@@ -852,7 +846,7 @@ object GlobalDictionaryUtil {
         columnSchema.getDataType)
       val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
           DictionaryColumnUniqueIdentifier(
-            tableIdentifier,
+            absoluteTableIdentifier,
             columnIdentifier,
             columnIdentifier.getDataType,
             carbonTablePath)
@@ -863,9 +857,7 @@ object GlobalDictionaryUtil {
       }
       val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
         dictionary,
-        tableIdentifier,
         dictionaryColumnUniqueIdentifier,
-        storePath,
         columnSchema,
         false
       )
@@ -875,10 +867,9 @@ object GlobalDictionaryUtil {
       }")
 
       if (distinctValues.size() > 0) {
-        val sortIndexWriteTask = new SortIndexWriterTask(tableIdentifier,
+        val sortIndexWriteTask = new SortIndexWriterTask(
           dictionaryColumnUniqueIdentifier,
           columnSchema.getDataType,
-          storePath,
           dictionary,
           distinctValues)
         sortIndexWriteTask.execute()

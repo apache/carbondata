@@ -64,7 +64,7 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
     // Create table and metadata folders if not exist
     val carbonTablePath = CarbonStorePath
-      .getCarbonTablePath(table.getStorePath, table.getCarbonTableIdentifier)
+      .getCarbonTablePath(table.getTablePath, table.getCarbonTableIdentifier)
     val metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath
     val fileType = FileFactory.getFileType(metadataDirectoryPath)
     if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {

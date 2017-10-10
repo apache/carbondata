@@ -23,7 +23,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
@@ -41,19 +40,9 @@ import org.apache.thrift.TBase;
 public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySortIndexReader {
 
   /**
-   * carbonTable Identifier holding the info of databaseName and tableName
-   */
-  protected CarbonTableIdentifier carbonTableIdentifier;
-
-  /**
    * column name
    */
   protected DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier;
-
-  /**
-   * store location
-   */
-  protected String carbonStorePath;
 
   /**
    * the path of the dictionary Sort Index file
@@ -77,17 +66,11 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   private ThriftReader dictionarySortIndexThriftReader;
 
   /**
-   * @param carbonTableIdentifier            Carbon Table identifier holding the database name
-   *                                         and table name
    * @param dictionaryColumnUniqueIdentifier column name
-   * @param carbonStorePath                  carbon store path
    */
-  public CarbonDictionarySortIndexReaderImpl(final CarbonTableIdentifier carbonTableIdentifier,
-      final DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier,
-      final String carbonStorePath) {
-    this.carbonTableIdentifier = carbonTableIdentifier;
+  public CarbonDictionarySortIndexReaderImpl(
+      final DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
-    this.carbonStorePath = carbonStorePath;
   }
 
   /**
@@ -154,7 +137,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   protected void initPath() {
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(carbonStorePath, carbonTableIdentifier,
+        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getAbsoluteCarbonTableIdentifier(),
             dictionaryColumnUniqueIdentifier);
     try {
       CarbonDictionaryColumnMetaChunk chunkMetaObjectForLastSegmentEntry =
@@ -196,8 +179,7 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
    * @return
    */
   protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
-    return new CarbonDictionaryMetadataReaderImpl(carbonStorePath, carbonTableIdentifier,
-        dictionaryColumnUniqueIdentifier);
+    return new CarbonDictionaryMetadataReaderImpl(dictionaryColumnUniqueIdentifier);
   }
 
   /**

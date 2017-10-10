@@ -353,7 +353,7 @@ public class QueryUtil {
             absoluteTableIdentifier.getCarbonTableIdentifier(), tableProvider);
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
-        .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath());
+        .createCache(CacheType.FORWARD_DICTIONARY);
     List<Dictionary> columnDictionaryList =
         forwardDictionaryCache.getAll(dictionaryColumnUniqueIdentifiers);
     Map<String, Dictionary> columnDictionaryMap = new HashMap<>(columnDictionaryList.size());
@@ -384,30 +384,30 @@ public class QueryUtil {
       CarbonDimension dimension = CarbonMetadata.getInstance()
           .getCarbonDimensionBasedOnColIdentifier(carbonTable, columnId);
       if (dimension != null) {
-        CarbonTableIdentifier newCarbonTableIdentifier;
+        AbsoluteTableIdentifier newCarbonTableIdentifier;
         ColumnIdentifier columnIdentifier;
         if (null != dimension.getColumnSchema().getParentColumnTableRelations() && !dimension
             .getColumnSchema().getParentColumnTableRelations().isEmpty()) {
-          newCarbonTableIdentifier = getTableIdentifierForColumn(dimension);
+          newCarbonTableIdentifier = getTableIdentifierForColumn(dimension,
+              carbonTable.getAbsoluteTableIdentifier());
           columnIdentifier = new ColumnIdentifier(
               dimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
               dimension.getColumnProperties(), dimension.getDataType());
         } else {
-          newCarbonTableIdentifier = carbonTableIdentifier;
+          newCarbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
           columnIdentifier = dimension.getColumnIdentifier();
         }
-        CarbonTablePath newCarbonTablePath = CarbonStorePath
-            .getCarbonTablePath(carbonTable.getStorePath(), newCarbonTableIdentifier);
-
         dictionaryColumnUniqueIdentifiers.add(
             new DictionaryColumnUniqueIdentifier(newCarbonTableIdentifier, columnIdentifier,
-                dimension.getDataType(), newCarbonTablePath));
+                dimension.getDataType(),
+                CarbonStorePath.getCarbonTablePath(newCarbonTableIdentifier)));
       }
     }
     return dictionaryColumnUniqueIdentifiers;
   }
 
-  public static CarbonTableIdentifier getTableIdentifierForColumn(CarbonDimension carbonDimension) {
+  public static AbsoluteTableIdentifier getTableIdentifierForColumn(CarbonDimension carbonDimension,
+      AbsoluteTableIdentifier absoluteTableIdentifier) {
     String parentTableName =
         carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
             .getRelationIdentifier().getTableName();
@@ -416,7 +416,11 @@ public class QueryUtil {
             .getRelationIdentifier().getDatabaseName();
     String parentTableId = carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
         .getRelationIdentifier().getTableId();
-    return new CarbonTableIdentifier(parentDatabaseName, parentTableName, parentTableId);
+    CarbonTableIdentifier carbonTableIdentifier =
+        new CarbonTableIdentifier(parentDatabaseName, parentTableName, parentTableId);
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
+    String newTablePath = CarbonUtil.getNewTablePath(carbonTablePath, carbonTableIdentifier);
+    return new AbsoluteTableIdentifier(newTablePath, carbonTableIdentifier);
   }
 
   /**

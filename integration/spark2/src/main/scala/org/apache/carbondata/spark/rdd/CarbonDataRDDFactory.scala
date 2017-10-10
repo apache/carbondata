@@ -50,7 +50,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
+import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{LoadTablePostExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.exception.DataLoadingException
@@ -82,10 +82,15 @@ object CarbonDataRDDFactory {
       compactionType: CompactionType,
       carbonTable: CarbonTable,
       compactionModel: CompactionModel): Unit = {
+    // taking system level lock at the mdt file location
+    var configuredMdtPath = CarbonProperties.getInstance()
+      .getProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
+        CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT).trim
+    configuredMdtPath = CarbonUtil.checkAndAppendFileSystemURIScheme(configuredMdtPath)
     val lock = CarbonLockFactory
-        .getCarbonLockObj(CarbonCommonConstants.SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER,
-          LockUsage.SYSTEMLEVEL_COMPACTION_LOCK
-        )
+      .getCarbonLockObj(configuredMdtPath + CarbonCommonConstants.FILE_SEPARATOR +
+                        CarbonCommonConstants.SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER,
+        LockUsage.SYSTEMLEVEL_COMPACTION_LOCK)
     if (lock.lockWithRetries()) {
       LOGGER.info(s"Acquired the compaction lock for table ${ carbonLoadModel.getDatabaseName }" +
           s".${ carbonLoadModel.getTableName }")
@@ -249,7 +254,7 @@ object CarbonDataRDDFactory {
     loadModel.setCarbonDataLoadSchema(dataLoadSchema)
     loadModel.setTableName(table.getCarbonTableIdentifier.getTableName)
     loadModel.setDatabaseName(table.getCarbonTableIdentifier.getDatabaseName)
-    loadModel.setStorePath(table.getStorePath)
+    loadModel.setTablePath(table.getTablePath)
     CommonUtil.readLoadMetadataDetails(loadModel)
     val loadStartTime = CarbonUpdateUtil.readCurrentTime()
     loadModel.setFactTimeStamp(loadStartTime)
@@ -273,8 +278,7 @@ object CarbonDataRDDFactory {
     LOGGER.audit(s"Data load request has been received for table" +
                  s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     // Check if any load need to be deleted before loading new data
-    DataManagementFunc.deleteLoadsAndUpdateMetadata(carbonLoadModel.getDatabaseName,
-      carbonLoadModel.getTableName, storePath, isForceDeletion = false, carbonTable)
+    DataManagementFunc.deleteLoadsAndUpdateMetadata(isForceDeletion = false, carbonTable)
     var status: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
     var res: Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = null
 
@@ -531,7 +535,7 @@ object CarbonDataRDDFactory {
         carbonTable.getMetaDataFilepath)
       val segmentIds = loadMetadataDetails.map(_.getLoadName)
       val segmentIdIndex = segmentIds.zipWithIndex.toMap
-      val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonLoadModel.getStorePath,
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonLoadModel.getTablePath,
         carbonTable.getCarbonTableIdentifier)
       val segmentId2maxTaskNo = segmentIds.map { segId =>
         (segId, CarbonUpdateUtil.getLatestTaskIdForSegment(segId, carbonTablePath))
@@ -698,7 +702,7 @@ object CarbonDataRDDFactory {
         )
       } else {
         val lock = CarbonLockFactory.getCarbonLockObj(
-          carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+          carbonTable.getAbsoluteTableIdentifier,
           LockUsage.COMPACTION_LOCK)
 
         if (lock.lockWithRetries()) {

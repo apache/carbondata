@@ -82,7 +82,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.InvalidPathException;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
@@ -96,7 +95,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 import org.apache.hadoop.mapreduce.security.TokenCache;
 import org.apache.hadoop.mapreduce.task.JobContextImpl;
-import org.apache.hadoop.util.StringUtils;
 
 /**
  * Carbon Input format class representing one carbon table
@@ -116,7 +114,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String TABLE_INFO = "mapreduce.input.carboninputformat.tableinfo";
   private static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
   private static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
-
+  private static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databaseName";
+  private static final String TABLE_NAME = "mapreduce.input.carboninputformat.tableName";
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
 
@@ -313,11 +312,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
       throws IOException {
     String dirs = configuration.get(INPUT_DIR, "");
-    String[] inputPaths = StringUtils.split(dirs);
-    if (inputPaths.length == 0) {
-      throw new InvalidPathException("No input paths specified in job");
-    }
-    return AbsoluteTableIdentifier.fromTablePath(inputPaths[0]);
+    return AbsoluteTableIdentifier
+        .from(dirs, getDatabaseName(configuration), getTableName(configuration));
   }
 
   /**
@@ -331,7 +327,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    */
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
-    CacheClient cacheClient = new CacheClient(identifier.getStorePath());
+    CacheClient cacheClient = new CacheClient();
     try {
       List<String> invalidSegments = new ArrayList<>();
       List<UpdateVO> invalidTimestampsList = new ArrayList<>();
@@ -727,7 +723,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    */
   public BlockMappingVO getBlockRowCount(JobContext job,
       AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException, KeyGenException {
-    CacheClient cacheClient = new CacheClient(absoluteTableIdentifier.getStorePath());
+    CacheClient cacheClient = new CacheClient();
     try {
       SegmentUpdateStatusManager updateStatusManager =
           new SegmentUpdateStatusManager(absoluteTableIdentifier);
@@ -976,6 +972,26 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   private String[] getValidPartitions(JobContext job) {
     //TODO: has to Identify partitions by partition pruning
     return new String[] { "0" };
+  }
+
+  public static void setDatabaseName(Configuration configuration, String databaseName) {
+    if (null != databaseName) {
+      configuration.set(DATABASE_NAME, databaseName);
+    }
+  }
+
+  public static String getDatabaseName(Configuration configuration) {
+    return configuration.get(DATABASE_NAME);
+  }
+
+  public static void setTableName(Configuration configuration, String tableName) {
+    if (null != tableName) {
+      configuration.set(TABLE_NAME, tableName);
+    }
+  }
+
+  public static String getTableName(Configuration configuration) {
+    return configuration.get(TABLE_NAME);
   }
 
 }

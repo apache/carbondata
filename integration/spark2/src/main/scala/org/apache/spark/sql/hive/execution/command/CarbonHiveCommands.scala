@@ -17,8 +17,9 @@
 
 package org.apache.spark.sql.hive.execution.command
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.command._
 
@@ -38,15 +39,23 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
     if (sparkSession.sessionState.catalog.listDatabases().exists(_.equalsIgnoreCase(dbName))) {
       tablesInDB = sparkSession.sessionState.catalog.listTables(dbName)
     }
+    var databaseLocation = ""
+    try {
+      databaseLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
+        CarbonEnv.getInstance(sparkSession).storePath)
+    } catch {
+      case e: NoSuchDatabaseException =>
+        // ignore the exception as exception will be handled by hive command.run
+      databaseLocation = CarbonEnv.getInstance(sparkSession).storePath
+    }
     // DropHiveDB command will fail if cascade is false and one or more table exists in database
-    val rows = command.run(sparkSession)
     if (command.cascade && tablesInDB != null) {
       tablesInDB.foreach { tableName =>
         CarbonDropTableCommand(true, tableName.database, tableName.table).run(sparkSession)
       }
     }
-    CarbonUtil.dropDatabaseDirectory(dbName.toLowerCase,
-      CarbonEnv.getInstance(sparkSession).storePath)
+    CarbonUtil.dropDatabaseDirectory(dbName.toLowerCase, databaseLocation)
+    val rows = command.run(sparkSession)
     rows
   }
 }

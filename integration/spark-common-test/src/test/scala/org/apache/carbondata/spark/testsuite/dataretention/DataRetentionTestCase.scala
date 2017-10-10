@@ -24,8 +24,9 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsa
 import org.apache.commons.lang3.time.DateUtils
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
-import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -36,28 +37,16 @@ import org.apache.spark.sql.test.util.QueryTest
  */
 class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
 
-  val absoluteTableIdentifierForLock: AbsoluteTableIdentifier = new
-      AbsoluteTableIdentifier(storeLocation,
-        new CarbonTableIdentifier(CarbonCommonConstants.DATABASE_DEFAULT_NAME, "retentionlock", "200"))
-  val absoluteTableIdentifierForRetention: AbsoluteTableIdentifier = new
-      AbsoluteTableIdentifier(storeLocation,
-        new CarbonTableIdentifier(
-          CarbonCommonConstants.DATABASE_DEFAULT_NAME, "DataRetentionTable".toLowerCase(), "300"))
-  val carbonTablePath = CarbonStorePath
-    .getCarbonTablePath(absoluteTableIdentifierForRetention.getStorePath,
-      absoluteTableIdentifierForRetention.getCarbonTableIdentifier).getMetadataDirectoryPath
-
+  var absoluteTableIdentifierForLock: AbsoluteTableIdentifier = null
+  var absoluteTableIdentifierForRetention: AbsoluteTableIdentifier = null
+  var carbonTablePath : String = null
   var carbonDateFormat = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
   var defaultDateFormat = new SimpleDateFormat(CarbonCommonConstants
     .CARBON_TIMESTAMP_DEFAULT_FORMAT)
-  val carbonTableStatusLock: ICarbonLock = CarbonLockFactory
-    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK)
-  val carbonDeleteSegmentLock: ICarbonLock = CarbonLockFactory
-    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK)
-  val carbonCleanFilesLock: ICarbonLock = CarbonLockFactory
-    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.CLEAN_FILES_LOCK)
-  val carbonMetadataLock: ICarbonLock = CarbonLockFactory
-    .getCarbonLockObj(absoluteTableIdentifierForLock.getCarbonTableIdentifier, LockUsage.METADATA_LOCK)
+  var carbonTableStatusLock: ICarbonLock = null
+  var carbonDeleteSegmentLock: ICarbonLock = null
+  var carbonCleanFilesLock: ICarbonLock = null
+  var carbonMetadataLock: ICarbonLock = null
 
   override def beforeAll {
     sql("drop table if exists DataRetentionTable")
@@ -78,7 +67,20 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
 
     )
-
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME+"_"+ "retentionlock")
+    absoluteTableIdentifierForLock = carbonTable.getAbsoluteTableIdentifier
+    val carbonTable2 = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME+"_"+ "dataRetentionTable")
+    absoluteTableIdentifierForRetention = carbonTable2.getAbsoluteTableIdentifier
+    carbonTablePath = CarbonStorePath
+      .getCarbonTablePath(absoluteTableIdentifierForRetention).getMetadataDirectoryPath
+    carbonTableStatusLock = CarbonLockFactory
+      .getCarbonLockObj(absoluteTableIdentifierForLock, LockUsage.TABLE_STATUS_LOCK)
+    carbonDeleteSegmentLock= CarbonLockFactory
+      .getCarbonLockObj(absoluteTableIdentifierForLock, LockUsage.DELETE_SEGMENT_LOCK)
+    carbonCleanFilesLock = CarbonLockFactory
+      .getCarbonLockObj(absoluteTableIdentifierForLock, LockUsage.CLEAN_FILES_LOCK)
+    carbonMetadataLock = CarbonLockFactory
+      .getCarbonLockObj(absoluteTableIdentifierForLock, LockUsage.METADATA_LOCK)
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/dataretention1.csv' INTO TABLE retentionlock " +
       "OPTIONS('DELIMITER' =  ',')")

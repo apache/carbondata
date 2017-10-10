@@ -222,10 +222,21 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
     // check "tablePath" option
     val tablePathOption = parameters.get("tablePath")
+    val dbName: String = parameters.getOrElse("dbName",
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
+    val tableOption: Option[String] = parameters.get("tableName")
+    if (tableOption.isEmpty) {
+      throw new CarbonStreamException("Table creation failed. Table name is not specified")
+    }
+    val tableName = tableOption.get.toLowerCase()
+    if (tableName.contains(" ")) {
+      throw new CarbonStreamException("Table creation failed. Table name cannot contain blank " +
+                                      "space")
+    }
     if (tablePathOption.isDefined) {
       val sparkSession = sqlContext.sparkSession
       val identifier: AbsoluteTableIdentifier =
-        AbsoluteTableIdentifier.fromTablePath(tablePathOption.get)
+        AbsoluteTableIdentifier.from(tablePathOption.get, dbName, tableName)
       val carbonTable =
         CarbonEnv.getInstance(sparkSession).carbonMetastore.
           createCarbonRelation(parameters, identifier, sparkSession).tableMeta.carbonTable
@@ -303,18 +314,20 @@ object CarbonSource {
     val tableName: String = properties.getOrElse("tableName", "").toLowerCase
     val model = createTableInfoFromParams(properties, dataSchema, dbName, tableName)
     val tableInfo: TableInfo = TableNewProcessor(model)
-    val tablePath = CarbonEnv.getInstance(sparkSession).storePath + "/" + dbName + "/" + tableName
+    val dbLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
+      CarbonEnv.getInstance(sparkSession).storePath)
+    val tablePath = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
     val schemaEvolutionEntry = new SchemaEvolutionEntry
     schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
     tableInfo.getFactTable.getSchemaEvalution.
       getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
     val map = if (metaStore.isReadFromHiveMetaStore) {
-      val tableIdentifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
+      val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(tableIdentifier)
       val schemaMetadataPath =
         CarbonTablePath.getFolderContainingFile(carbonTablePath.getSchemaFilePath)
       tableInfo.setMetaDataFilepath(schemaMetadataPath)
-      tableInfo.setStorePath(tableIdentifier.getStorePath)
+      tableInfo.setTablePath(tableIdentifier.getTablePath)
       CarbonUtil.convertToMultiStringMap(tableInfo)
     } else {
       metaStore.saveToDisk(tableInfo, tablePath)
@@ -322,6 +335,7 @@ object CarbonSource {
     }
     properties.foreach(e => map.put(e._1, e._2))
     map.put("tablePath", tablePath)
+    map.put("dbname", dbName)
     map.asScala.toMap
   }
 }

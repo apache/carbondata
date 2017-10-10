@@ -1345,6 +1345,15 @@ public final class CarbonCommonConstants {
   public static final String CARBON_USE_BLOCKLET_DISTRIBUTION = "carbon.blocklet.distribution";
 
   public static final String CARBON_USE_BLOCKLET_DISTRIBUTION_DEFAULT = "true";
+  /**
+   * The property to configure the mdt file folder path, earlier it was pointing to the
+   * fixed carbon store path. This is needed in case of the federation setup when user removes
+   * the fixedtorepath namesevice
+   */
+  @CarbonProperty
+  public static final String CARBON_UPDATE_SYNC_FOLDER = "carbon.update.sync.folder";
+
+  public static final String CARBON_UPDATE_SYNC_FOLDER_DEFAULT = "/tmp/carbondata";
 
   /**
    * this will be used to pass bitset value in filter to another filter for

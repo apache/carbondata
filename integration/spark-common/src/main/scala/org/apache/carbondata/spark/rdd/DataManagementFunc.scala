@@ -76,8 +76,7 @@ object DataManagementFunc {
         executor,
         sqlContext,
         compactionModel,
-        carbonLoadModel,
-        storeLocation
+        carbonLoadModel
       )
 
       try {
@@ -128,8 +127,7 @@ object DataManagementFunc {
       executor: ExecutorService,
       sqlContext: SQLContext,
       compactionModel: CompactionModel,
-      carbonLoadModel: CarbonLoadModel,
-      storeLocation: String
+      carbonLoadModel: CarbonLoadModel
   ): Unit = {
     loadsToMerge.asScala.foreach { seg =>
       LOGGER.info("loads identified for merge is " + seg.getLoadName)
@@ -137,7 +135,6 @@ object DataManagementFunc {
 
     val compactionCallableModel = CompactionCallableModel(
       carbonLoadModel,
-      storeLocation,
       compactionModel.carbonTable,
       loadsToMerge,
       sqlContext,
@@ -175,25 +172,21 @@ object DataManagementFunc {
   }
 
   def deleteLoadsAndUpdateMetadata(
-      dbName: String,
-      tableName: String,
-      storePath: String,
       isForceDeletion: Boolean,
       carbonTable: CarbonTable): Unit = {
     if (isLoadDeletionRequired(carbonTable.getMetaDataFilepath)) {
       val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath)
+      val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       val carbonTableStatusLock =
         CarbonLockFactory.getCarbonLockObj(
-          new CarbonTableIdentifier(dbName, tableName, ""),
+          absoluteTableIdentifier,
           LockUsage.TABLE_STATUS_LOCK
         )
 
       // Delete marked loads
       val isUpdationRequired =
         DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
-          dbName,
-          tableName,
-          storePath,
+          absoluteTableIdentifier,
           isForceDeletion,
           details
         )
@@ -212,8 +205,10 @@ object DataManagementFunc {
             val latestStatus = CarbonLoaderUtil
                 .updateLoadMetadataFromOldToNew(details, latestMetadata)
 
-            CarbonLoaderUtil.writeLoadMetadata(storePath, dbName, tableName, latestStatus)
+            CarbonLoaderUtil.writeLoadMetadata(absoluteTableIdentifier, latestStatus)
           } else {
+            val dbName = absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName
+            val tableName = absoluteTableIdentifier.getCarbonTableIdentifier.getTableName
             val errorMsg = "Clean files request is failed for " +
                 s"$dbName.$tableName" +
                 ". Not able to acquire the table status lock due to other operation " +

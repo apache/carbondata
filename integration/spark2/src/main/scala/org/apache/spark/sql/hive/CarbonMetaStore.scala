@@ -90,18 +90,17 @@ trait CarbonMetaStore {
    *
    * @param carbonTableIdentifier
    * @param thriftTableInfo
-   * @param tablePath
+   * @param absoluteTableIdentifier
    * @param sparkSession
    */
   def revertTableSchemaInAlterFailure(carbonTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      tablePath: String)
+      absoluteTableIdentifier: AbsoluteTableIdentifier)
     (sparkSession: SparkSession): String
 
 
-  def revertTableSchemaForPreAggCreationFailure(carbonTableIdentifier: CarbonTableIdentifier,
-      thriftTableInfo: org.apache.carbondata.format.TableInfo,
-      tablePath: String)(sparkSession: SparkSession): String
+  def revertTableSchemaForPreAggCreationFailure(absoluteTableIdentifier: AbsoluteTableIdentifier,
+      thriftTableInfo: org.apache.carbondata.format.TableInfo)(sparkSession: SparkSession): String
   /**
    * Prepare Thrift Schema from wrapper TableInfo and write to disk
    */
@@ -113,7 +112,7 @@ trait CarbonMetaStore {
    * @return
    */
   def generateTableSchemaString(tableInfo: schema.table.TableInfo,
-      tablePath: String): String
+      absoluteTableIdentifier: AbsoluteTableIdentifier): String
 
   /**
    * This method will remove the table meta from catalog metadata array
@@ -128,12 +127,12 @@ trait CarbonMetaStore {
 
   def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean
 
-  def dropTable(tablePath: String, tableIdentifier: TableIdentifier)
+  def dropTable(tableIdentifier: AbsoluteTableIdentifier)
     (sparkSession: SparkSession)
 
-  def updateAndTouchSchemasUpdatedTime(basePath: String)
+  def updateAndTouchSchemasUpdatedTime()
 
-  def checkSchemasModifiedTimeAndReloadTables(storePath: String)
+  def checkSchemasModifiedTimeAndReloadTables()
 
   def isReadFromHiveMetaStore : Boolean
 

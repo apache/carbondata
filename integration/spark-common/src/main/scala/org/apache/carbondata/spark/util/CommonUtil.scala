@@ -27,6 +27,7 @@ import scala.collection.mutable.Map
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.{Row, RowFactory, SQLContext}
@@ -40,7 +41,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
@@ -54,6 +55,7 @@ import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.processing.merger.TableMeta
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.CarbonMergeFilesRDD
@@ -848,14 +850,32 @@ object CommonUtil {
    */
   def mergeIndexFiles(sparkContext: SparkContext,
       segmentIds: Seq[String],
-      storePath: String,
+      tablePath: String,
       carbonTable: CarbonTable): Unit = {
     if (CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
       CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
-      new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(storePath,
+      new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(tablePath,
         carbonTable.getDatabaseName, carbonTable.getFactTableName).getTablePath,
         segmentIds).collect()
     }
   }
+
+  /**
+   * can be removed with the spark 1.6 removal
+   * @param tableMeta
+   * @return
+   */
+  @deprecated
+  def getTablePath(tableMeta: TableMeta): String = {
+    if (tableMeta.tablePath == null) {
+      tableMeta.storePath + CarbonCommonConstants.FILE_SEPARATOR +
+      tableMeta.carbonTableIdentifier.getDatabaseName +
+      CarbonCommonConstants.FILE_SEPARATOR + tableMeta.carbonTableIdentifier.getTableName
+    }
+    else {
+      tableMeta.tablePath
+    }
+  }
+
 }

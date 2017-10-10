@@ -38,7 +38,7 @@ import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumn
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.service.{CarbonCommonFactory, PathService}
 import org.apache.carbondata.core.statusmanager.SegmentStatus
@@ -151,7 +151,7 @@ case class DataFormat(delimiters: Array[String],
 /**
  * a case class to package some attributes
  */
-case class DictionaryLoadModel(table: CarbonTableIdentifier,
+case class DictionaryLoadModel(table: AbsoluteTableIdentifier,
     dimensions: Array[CarbonDimension],
     hdfsLocation: String,
     dictfolderPath: String,
@@ -280,8 +280,6 @@ class CarbonBlockDistinctValuesCombineRDD(
   override def internalCompute(split: Partition,
       context: TaskContext): Iterator[(Int, ColumnDistinctValues)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
-      model.hdfsLocation)
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordLoadCsvfilesToDfTime()
     val distinctValuesList = new ArrayBuffer[(Int, mutable.HashSet[String])]
     var rowCount = 0L
@@ -341,8 +339,6 @@ class CarbonGlobalDictionaryGenerateRDD(
   override def internalCompute(split: Partition,
       context: TaskContext): Iterator[(Int, SegmentStatus)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
-      model.hdfsLocation)
     var status = SegmentStatus.SUCCESS
     val iter = new Iterator[(Int, SegmentStatus)] {
       var dictionaryForDistinctValueLookUp: Dictionary = _
@@ -353,11 +349,11 @@ class CarbonGlobalDictionaryGenerateRDD(
         model.table,
         model.columnIdentifier(split.index),
         model.columnIdentifier(split.index).getDataType,
-        CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
+        CarbonStorePath.getCarbonTablePath(model.table))
       val pathService: PathService = CarbonCommonFactory.getPathService
       val carbonTablePath: CarbonTablePath =
         pathService
-          .getCarbonTablePath(model.hdfsLocation, model.table, dictionaryColumnUniqueIdentifier)
+          .getCarbonTablePath(model.table, dictionaryColumnUniqueIdentifier)
       if (StringUtils.isNotBlank(model.hdfsTempLocation)) {
         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
           model.hdfsTempLocation)
@@ -371,7 +367,7 @@ class CarbonGlobalDictionaryGenerateRDD(
           model.zooKeeperUrl)
       }
       val dictLock = CarbonLockFactory
-        .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
+        .getCarbonLockObj(model.table,
           model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK)
       var isDictionaryLocked = false
       // generate distinct value list
@@ -405,7 +401,6 @@ class CarbonGlobalDictionaryGenerateRDD(
         dictionaryForDistinctValueLookUp = if (isDictFileExists) {
           CarbonLoaderUtil.getDictionary(model.table,
             model.columnIdentifier(split.index),
-            model.hdfsLocation,
             model.primDimensions(split.index).getDataType
           )
         } else {
@@ -415,9 +410,7 @@ class CarbonGlobalDictionaryGenerateRDD(
         val t3 = System.currentTimeMillis()
         val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
           dictionaryForDistinctValueLookUp,
-          model.table,
           dictionaryColumnUniqueIdentifier,
-          model.hdfsLocation,
           model.primDimensions(split.index).getColumnSchema,
           isDictFileExists
         )
@@ -427,10 +420,8 @@ class CarbonGlobalDictionaryGenerateRDD(
         val t4 = System.currentTimeMillis()
         // if new data came than rewrite sort index file
         if (distinctValues.size() > 0) {
-          val sortIndexWriteTask = new SortIndexWriterTask(model.table,
-            dictionaryColumnUniqueIdentifier,
+          val sortIndexWriteTask = new SortIndexWriterTask(dictionaryColumnUniqueIdentifier,
             model.primDimensions(split.index).getDataType,
-            model.hdfsLocation,
             dictionaryForDistinctValueLookUp,
             distinctValues)
           sortIndexWriteTask.execute()

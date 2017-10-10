@@ -28,7 +28,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
@@ -85,7 +85,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
         .asInstanceOf[CarbonRelation].tableMeta
       carbonTable = tableMeta.carbonTable
       // invalid data map for the old table, see CARBON-1690
-      val oldTableIdentifier = AbsoluteTableIdentifier.fromTablePath(tableMeta.tablePath)
+      val oldTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       DataMapStoreManager.getInstance().clearDataMaps(oldTableIdentifier)
       // get the latest carbon table and check for column existence
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(oldTableIdentifier)
@@ -106,22 +106,9 @@ private[sql] case class CarbonAlterTableRenameCommand(
       schemaEvolutionEntry.setTime_stamp(timeStamp)
       renameBadRecords(oldTableName, newTableName, oldDatabaseName)
       val fileType = FileFactory.getFileType(tableMetadataFile)
-      if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
-        val rename = FileFactory.getCarbonFile(carbonTablePath.getPath, fileType)
-          .renameForce(carbonTablePath.getParent.toString + CarbonCommonConstants.FILE_SEPARATOR +
-                       newTableName)
-        if (!rename) {
-          renameBadRecords(newTableName, oldTableName, oldDatabaseName)
-          sys.error(s"Folder rename failed for table $oldDatabaseName.$oldTableName")
-        }
-      }
       val newTableIdentifier = new CarbonTableIdentifier(oldDatabaseName,
         newTableName, carbonTable.getCarbonTableIdentifier.getTableId)
-      val newTablePath = metastore.updateTableSchemaForAlter(newTableIdentifier,
-        carbonTable.getCarbonTableIdentifier,
-        tableInfo,
-        schemaEvolutionEntry,
-        tableMeta.tablePath)(sparkSession)
+      var newTablePath = CarbonUtil.getNewTablePath(carbonTablePath, newTableIdentifier)
 
       metastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
       sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
@@ -132,6 +119,23 @@ private[sql] case class CarbonAlterTableRenameCommand(
           s"ALTER TABLE $oldDatabaseName.$newTableName SET SERDEPROPERTIES" +
           s"('tableName'='$newTableName', " +
           s"'dbName'='$oldDatabaseName', 'tablePath'='$newTablePath')")
+      // changed the rename order to deal with situation when carbon table and hive table
+      // will point to the same tablePath
+      if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
+        val rename = FileFactory.getCarbonFile(carbonTablePath.getPath, fileType)
+          .renameForce(carbonTablePath.getParent.toString + CarbonCommonConstants.FILE_SEPARATOR +
+                       newTableName)
+        if (!rename) {
+          renameBadRecords(newTableName, oldTableName, oldDatabaseName)
+          sys.error(s"Folder rename failed for table $oldDatabaseName.$oldTableName")
+        }
+      }
+      newTablePath = metastore.updateTableSchemaForAlter(newTableIdentifier,
+        carbonTable.getCarbonTableIdentifier,
+        tableInfo,
+        schemaEvolutionEntry,
+        tableMeta.tablePath)(sparkSession)
+
       val alterTableRenamePostEvent: AlterTableRenamePostEvent = AlterTableRenamePostEvent(
         carbonTable,
         alterTableRenameModel,
@@ -150,7 +154,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
           AlterTableUtil
             .revertRenameTableChanges(oldTableIdentifier,
               newTableName,
-              carbonTable.getStorePath,
+              carbonTable.getTablePath,
               carbonTable.getCarbonTableIdentifier.getTableId,
               timeStamp)(
               sparkSession)
@@ -167,7 +171,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
             locksToBeAcquired,
             oldDatabaseName,
             newTableName,
-            carbonTable.getStorePath)
+            carbonTable.getTablePath)
       }
     }
     Seq.empty

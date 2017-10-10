@@ -47,7 +47,8 @@ case class CarbonDatasourceHadoopRelation(
     isSubquery: ArrayBuffer[Boolean] = new ArrayBuffer[Boolean]())
   extends BaseRelation with InsertableRelation {
 
-  lazy val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.fromTablePath(paths.head)
+  lazy val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(paths.head,
+    parameters("dbname"), parameters("tablename"))
   lazy val databaseName: String = carbonTable.getDatabaseName
   lazy val tableName: String = carbonTable.getFactTableName
   CarbonSession.updateSessionInfoToCurrentThread(sparkSession)

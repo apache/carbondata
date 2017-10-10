@@ -156,7 +156,7 @@ public class CarbonMetadataTest {
     info.setLastUpdatedTime(timeStamp);
     info.setTableUniqueName("carbonTestDatabase_carbonTestTable");
     info.setFactTable(getTableSchema());
-    info.setStorePath("/test/store");
+    info.setTablePath("/test/store/carbonTestDatabase/carbonTestTable");
     return info;
   }
 

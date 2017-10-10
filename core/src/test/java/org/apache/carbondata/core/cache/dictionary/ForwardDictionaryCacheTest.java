@@ -28,6 +28,7 @@ import java.util.UUID;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -53,7 +54,11 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
     this.databaseName = props.getProperty("database", "testSchema");
     this.tableName = props.getProperty("tableName", "carbon");
     this.carbonStorePath = props.getProperty("storePath", "carbonStore");
-    carbonTableIdentifier = new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
+    carbonTableIdentifier =
+        new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
+    absoluteTableIdentifier =
+        new AbsoluteTableIdentifier(carbonStorePath + "/" + databaseName + "/" + tableName,
+            carbonTableIdentifier);
     columnIdentifiers = new String[] { "name", "place" };
     deleteStorePath();
     prepareDataSet();
@@ -62,6 +67,7 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
 
   @After public void tearDown() throws Exception {
     carbonTableIdentifier = null;
+    absoluteTableIdentifier = null;
     forwardDictionaryCache = null;
     deleteStorePath();
   }
@@ -72,7 +78,7 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
         .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
     CacheProvider cacheProvider = CacheProvider.getInstance();
     forwardDictionaryCache =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, this.carbonStorePath);
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
   }
 
   @Test public void get() throws Exception {
@@ -211,9 +217,9 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
   private void writeSortIndexFile(List<String> data, String columnId) throws IOException {
 	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, null);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
             columnIdentifier.getDataType(),
-            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
+            CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier));
     Map<String, Integer> dataToSurrogateKeyMap = new HashMap<>(data.size());
     int surrogateKey = 0;
     List<Integer> invertedIndexList = new ArrayList<>(data.size());
@@ -233,8 +239,7 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
       invertedIndexList.add(invertedIndexArray[i]);
     }
     CarbonDictionarySortIndexWriter dictionarySortIndexWriter =
-        new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
-            carbonStorePath);
+        new CarbonDictionarySortIndexWriterImpl(dictionaryColumnUniqueIdentifier);
     try {
       dictionarySortIndexWriter.writeSortIndex(sortedIndexList);
       dictionarySortIndexWriter.writeInvertedSortIndex(invertedIndexList);
