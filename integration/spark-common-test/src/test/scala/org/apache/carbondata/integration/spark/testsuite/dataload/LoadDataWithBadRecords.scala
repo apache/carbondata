@@ -62,35 +62,47 @@ class LoadDataWithBadRecordsTest extends QueryTest with BeforeAndAfterEach with 
   val path = s"$rootPath/integration/spark-common-test/src/test/resources/badrecords/datasample.csv"
 
   test("The bad_records_action: FORCE") {
-    sql("LOAD DATA local inpath '" + path + "' INTO TABLE sales OPTIONS" +
-      "('bad_records_logger_enable'='true','bad_records_action'='FORCE', 'DELIMITER'=" +
-      " ',', 'QUOTECHAR'= '\"')");
+    sql(
+      s"""
+         | LOAD DATA local inpath '$path'
+         | INTO TABLE sales
+         | OPTIONS ('bad_records_logger_enable'='true','bad_records_action'='FORCE', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')
+       """.stripMargin)
 
     checkAnswer(sql("select count(*) from sales"),
       Seq(Row(6)))
   }
 
   test("The bad_records_action: REDIRECT") {
-    sql("LOAD DATA local inpath '" + path + "' INTO TABLE sales OPTIONS" +
-      "('bad_records_logger_enable'='true','bad_records_action'='REDIRECT', 'DELIMITER'=" +
-      " ',', 'QUOTECHAR'= '\"')");
+    sql(
+      s"""
+         | LOAD DATA local inpath '$path'
+         | INTO TABLE sales
+         | OPTIONS ('bad_records_logger_enable'='true','bad_records_action'='REDIRECT', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')
+       """.stripMargin)
     checkAnswer(sql("select count(*) from sales"),
       Seq(Row(2)))
   }
 
   test("The bad_records_action: IGNORE") {
-    sql("LOAD DATA local inpath '" + path + "' INTO TABLE sales OPTIONS" +
-      "('bad_records_logger_enable'='true','bad_records_action'='IGNORE', 'DELIMITER'=" +
-      " ',', 'QUOTECHAR'= '\"')");
+    sql(
+      s"""
+         | LOAD DATA local inpath '$path'
+         | INTO TABLE sales
+         | OPTIONS('bad_records_logger_enable'='true','bad_records_action'='IGNORE', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')
+       """.stripMargin)
     checkAnswer(sql("select count(*) from sales"),
       Seq(Row(2)))
   }
 
   test("The bad_records_action: FAIL") {
     val exception_insert: Exception = intercept[Exception] {
-      sql("LOAD DATA local inpath '" + path + "' INTO TABLE sales OPTIONS" +
-        "('bad_records_logger_enable'='true','bad_records_action'='FAIL', 'DELIMITER'=" +
-        " ',', 'QUOTECHAR'= '\"')");
+      sql(
+        s"""
+           | LOAD DATA local inpath '$path'
+           | INTO TABLE sales
+           | OPTIONS ('bad_records_logger_enable'='true','bad_records_action'='FAIL', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')
+         """.stripMargin)
     }
     assert(exception_insert.getMessage.contains("Data load failed due to bad record"))
   }
@@ -142,11 +154,13 @@ class LoadDataWithBadRecordsTest extends QueryTest with BeforeAndAfterEach with 
   }
 
   test("default sort_columns: should be success") {
-    var csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
-    sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS"
-      +
-      "('bad_records_logger_enable'='true','bad_records_action'='redirect', 'DELIMITER'=" +
-      " ',', 'QUOTECHAR'= '\"')");
+    val csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
+    sql(
+      s"""
+         | LOAD DATA local inpath '$csvFilePath'
+         | INTO TABLE sales
+         | OPTIONS ('bad_records_logger_enable'='true','bad_records_action'='redirect', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')
+       """.stripMargin)
 
     checkAnswer(
       sql("select count(*) from sales"),
@@ -158,16 +172,26 @@ class LoadDataWithBadRecordsTest extends QueryTest with BeforeAndAfterEach with 
   test("sort_columns is null, should be success") {
     sql("drop table if exists sales")
     sql(
-      """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
-          actual_price Double, Quantity int, sold_price Decimal(19,2))
-          STORED BY 'carbondata'
-          TBLPROPERTIES('sort_columns'='')""")
+      s"""
+         | CREATE TABLE IF NOT EXISTS sales(
+         | ID BigInt,
+         | date Timestamp,
+         | country String,
+         | actual_price Double,
+         | Quantity int,
+         | sold_price Decimal(19,2)
+         | )
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('sort_columns'='')
+      """.stripMargin)
 
-    var csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
-    sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE sales OPTIONS"
-      +
-      "('bad_records_logger_enable'='true','bad_records_action'='redirect', 'DELIMITER'=" +
-      " ',', 'QUOTECHAR'= '\"')");
+    val csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
+    sql(
+      s"""
+         | LOAD DATA local inpath '$csvFilePath'
+         | INTO TABLE sales
+         | OPTIONS ('bad_records_logger_enable'='true','bad_records_action'='redirect', 'DELIMITER'= ',', 'QUOTECHAR'= '\"')
+       """.stripMargin)
 
     checkAnswer(
       sql("select count(*) from sales"),
@@ -175,4 +199,5 @@ class LoadDataWithBadRecordsTest extends QueryTest with BeforeAndAfterEach with 
       )
     )
   }
+
 }
