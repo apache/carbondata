@@ -16,7 +16,6 @@
  */
 package org.apache.carbondata.core.datamap;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -126,9 +125,9 @@ public final class DataMapStoreManager {
     }
     //tableDataMaps.add(dataMap);
     //allDataMaps.put(table, tableDataMaps);
-    if (allDataMaps.get(table) != null)
+    if (allDataMaps.get(table) != null) {
       allDataMaps.get(table).add(dataMap);
-    else {
+    } else {
       ArrayList<TableDataMap> list = new ArrayList<>();
       list.add(dataMap);
       allDataMaps.put(table, list);
