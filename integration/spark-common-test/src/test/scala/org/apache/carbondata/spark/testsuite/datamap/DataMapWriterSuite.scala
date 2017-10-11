@@ -37,7 +37,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 class C2DataMapFactory() extends DataMapFactory {
 
   override def init(identifier: AbsoluteTableIdentifier,
-      dataMapName: String): Unit = {}
+      dataMapName: String, options: util.Map[String, String]): Unit = {}
 
   override def fireEvent(event: ChangeEvent[_]): Unit = ???
 
@@ -47,7 +47,8 @@ class C2DataMapFactory() extends DataMapFactory {
 
   override def getDataMap(distributable: DataMapDistributable): DataMap = ???
 
-  override def getDataMaps(segmentId: String): util.List[DataMap] = ???
+  override def getDataMaps(segmentId: String,
+    segmentPaths: util.List[String]): util.List[DataMap] = ???
 
   override def createWriter(segmentId: String): DataMapWriter = DataMapWriterSuite.dataMapWriterC2Mock
 
@@ -61,6 +62,8 @@ class C2DataMapFactory() extends DataMapFactory {
   override def toDistributable(segmentId: String): util.List[DataMapDistributable] = {
     ???
   }
+
+  override def getOptions: util.Map[String, String] = ???
 }
 
 class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
@@ -86,7 +89,7 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
     DataMapStoreManager.getInstance().createAndRegisterDataMap(
       AbsoluteTableIdentifier.from(storeLocation, "default", "carbon1"),
       classOf[C2DataMapFactory].getName,
-      "test")
+      "test", new util.HashMap[String, String]())
 
     val df = buildTestData(33000)
 
@@ -113,7 +116,7 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
     DataMapStoreManager.getInstance().createAndRegisterDataMap(
       AbsoluteTableIdentifier.from(storeLocation, "default", "carbon2"),
       classOf[C2DataMapFactory].getName,
-      "test")
+      "test", new util.HashMap[String, String]())
 
     CarbonProperties.getInstance()
       .addProperty("carbon.blockletgroup.size.in.mb", "1")

@@ -1,14 +1,26 @@
-package org.apache.carbondata.hadoop.api;
-
-/**
- * Created by root1 on 26/9/17.
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
+package org.apache.carbondata.hadoop.api;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.indexstore.Blocklet;
@@ -33,7 +45,7 @@ import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.readsupport.impl.DictionaryDecodeReadSupport;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
-import org.apache.commons.lang.ArrayUtils;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -62,7 +74,8 @@ public abstract class AbstractCarbonInputFormat<T> extends FileInputFormat<Void,
       "mapreduce.input.carboninputformat.filter.predicate";
   protected static final String COLUMN_PROJECTION = "mapreduce.input.carboninputformat.projection";
   protected static final String TABLE_INFO = "mapreduce.input.carboninputformat.tableinfo";
-  protected static final String CARBON_READ_SUPPORT = "mapreduce.input.carboninputformat.readsupport";
+  protected static final String CARBON_READ_SUPPORT =
+      "mapreduce.input.carboninputformat.readsupport";
   protected static final String CARBON_CONVERTER = "mapreduce.input.carboninputformat.converter";
   protected static final String DATA_MAP_DSTR = "mapreduce.input.carboninputformat.datamapdstr";
   protected static final Log LOG = LogFactory.getLog(CarbonTableInputFormat.class);

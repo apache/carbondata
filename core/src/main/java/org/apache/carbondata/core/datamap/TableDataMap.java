@@ -40,7 +40,7 @@ public final class TableDataMap implements EventListener {
 
   private DataMapFactory dataMapFactory;
 
-  static public final String SEGMENT_ID_AS_PATH = "SEGMENT_ID_AS_PATH";
+  public static final String SEGMENT_ID_AS_PATH = "SEGMENT_ID_AS_PATH";
   /**
    * It is called to initialize and load the required table datamap metadata.
    */

@@ -76,7 +76,7 @@ public class BlockletDataMapFactory implements DataMapFactory {
         segmentMap.get(segmentId);
     if (tableBlockIndexUniqueIdentifiers == null) {
       tableBlockIndexUniqueIdentifiers = new ArrayList<>();
-      for(String path: segmentPaths) {
+      for (String path: segmentPaths) {
         CarbonFile[] listFiles = getCarbonIndexFiles(path);
         for (int i = 0; i < listFiles.length; i++) {
           tableBlockIndexUniqueIdentifiers.add(

@@ -40,7 +40,7 @@ import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, TaskMetricsMap}
 import org.apache.carbondata.hadoop._
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
+import org.apache.carbondata.hadoop.api.{AbstractCarbonInputFormat, CarbonTableInputFormat}
 import org.apache.carbondata.spark.InitInputMetrics
 import org.apache.carbondata.spark.load.CarbonLoaderUtil
 import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
@@ -215,13 +215,15 @@ class CarbonScanRDD(
           val carbonRecordReader = createVectorizedCarbonRecordReader(model, inputMetricsStats)
           if (carbonRecordReader == null) {
             new CarbonRecordReader(model,
-              format.getReadSupportClass(attemptContext.getConfiguration), inputMetricsStats)
+              AbstractCarbonInputFormat.getReadSupportClass(attemptContext.getConfiguration),
+              inputMetricsStats
+            )
           } else {
             carbonRecordReader
           }
         } else {
           new CarbonRecordReader(model,
-            format.getReadSupportClass(attemptContext.getConfiguration),
+            AbstractCarbonInputFormat.getReadSupportClass(attemptContext.getConfiguration),
             inputMetricsStats)
         }
       }
@@ -275,14 +277,14 @@ class CarbonScanRDD(
   }
 
   private def prepareInputFormatForDriver(conf: Configuration): CarbonTableInputFormat[Object] = {
-    CarbonTableInputFormat.setTableInfo(conf, tableInfo)
+    AbstractCarbonInputFormat.setTableInfo(conf, tableInfo)
     createInputFormat(conf)
   }
 
   private def prepareInputFormatForExecutor(conf: Configuration): CarbonTableInputFormat[Object] = {
-    CarbonTableInputFormat.setCarbonReadSupport(conf, readSupport)
-    CarbonTableInputFormat.setTableInfo(conf, getTableInfo)
-    CarbonTableInputFormat.setDataTypeConverter(conf, new SparkDataTypeConverterImpl)
+    AbstractCarbonInputFormat.setCarbonReadSupport(conf, readSupport)
+    AbstractCarbonInputFormat.setTableInfo(conf, getTableInfo)
+    AbstractCarbonInputFormat.setDataTypeConverter(conf, new SparkDataTypeConverterImpl)
     createInputFormat(conf)
   }
 
@@ -290,12 +292,12 @@ class CarbonScanRDD(
     val format = new CarbonTableInputFormat[Object]
     CarbonTableInputFormat.setTablePath(conf,
       identifier.appendWithLocalPrefix(identifier.getTablePath))
-    CarbonTableInputFormat.setFilterPredicates(conf, filterExpression)
-    CarbonTableInputFormat.setColumnProjection(conf, columnProjection)
+    AbstractCarbonInputFormat.setFilterPredicates(conf, filterExpression)
+    AbstractCarbonInputFormat.setColumnProjection(conf, columnProjection)
     if (CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
         CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT).toBoolean) {
-      CarbonTableInputFormat.setDataMapJob(conf, new SparkDataMapJob)
+      AbstractCarbonInputFormat.setDataMapJob(conf, new SparkDataMapJob)
     }
     format
   }

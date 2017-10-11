@@ -164,6 +164,126 @@ public class RestructureUtil {
     return defaultValueToBeConsidered;
   }
 
+  class Position {
+    private int ipos;
+    Position (int i){
+      ipos = i;
+    }
+    public int get(){
+      return ipos;
+    }
+    public Position increment(){
+      ipos++;
+      return this;
+    }
+
+    public void set(int index) {
+      ipos = index;
+    }
+  };
+
+  Object ParseComplexType(String str) {
+    List<String> tokens = tokenize(str);
+   Position i = new Position(0);
+    return matchType(tokens, i);
+  }
+
+  private Object matchType(List<String> tokens, Position currentPos) {
+    String token = tokens.get(currentPos.get());
+    if (token.equals("array")) {
+      nextShouldBe(tokens, currentPos, "(");
+      currentPos.increment();
+      if (nextIsKeyWord(tokens, currentPos)) {
+        currentPos.increment();
+        matchType(tokens, currentPos);
+      }
+      List<Object> values = consumeList(tokens, currentPos);
+      values.toArray();
+    }
+    else if (token.equals("struct")) {
+      nextShouldBe(tokens, currentPos, "(");
+      if (nextIsKeyWord(tokens, currentPos)) {
+        matchType(tokens, currentPos.increment());
+      }
+      List<Object> values = consumeList(tokens, currentPos);
+      values.toArray();
+    }
+    throw new IllegalArgumentException("Expecting token 'array|struct' at position " + i.get());
+  }
+
+  private List<Object> consumeList(List<String> tokens, Position currentPos) {
+    List<Object> values = new ArrayList<Object>();
+    for(; currentPos.get() < tokens.size(); ) {
+      String token = tokens.get(currentPos.get());
+      if(token.equals(")")){
+        currentPos.increment();
+        return values;
+      } else if (token.equals(",")) {
+        currentPos.increment();
+      } else if (isKeyWord(token)) {
+        values.add(matchType(tokens, currentPos));
+      } else {
+        values.add(token);
+        currentPos.increment();
+      }
+    }
+    throw new IllegalArgumentException("Expecting token ')' at position " + currentPos.get());
+  }
+
+  private boolean nextIsKeyWord(List<String> tokens, Position i)  {
+    if(tokens.size() > i.get() + 1){
+      String token = tokens.get(i.get()+1);
+      if(isKeyWord(token)){
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private boolean isKeyWord(String token) {
+    return token.equals("array") || token.equals("struct");
+  }
+
+  private void nextShouldBe(List<String> tokens, Position i, String stringToMatch) throws
+      IllegalArgumentException {
+    if(tokens.size() > i.get() + 1){
+      if(tokens.get(i.get()+1).equals(stringToMatch)){
+        return;
+      }
+    }
+    throw new IllegalArgumentException("Expecting token '" + stringToMatch + "' at position " + i +1)
+  }
+
+  List<String> tokenize(String str) {
+    List<String> tokens = new ArrayList<String>();
+    int tokenStart = 0;
+    int i = 0;
+    for (; i < str.length(); i++ ){
+      char c = str.charAt(i);
+      if(isDelimiter(c)){
+        if(tokenStart > i - 1 ) {
+          tokens.add(str.substring(tokenStart, i - 1));
+        }
+        tokenStart = i;
+        tokens.add(String.valueOf(c));
+      }
+    }
+    if(tokenStart > i - 1 ) {
+      tokens.add(str.substring(tokenStart, i - 1));
+    }
+    return tokens;
+  }
+
+  private boolean isDelimiter(char c) {
+    switch (c) {
+      case ' ': return true;
+      case ')': return true;
+      case '(': return true;
+      case ',': return true;
+      default: return  false;
+    }
+  }
+
   /**
    * Method for computing default value for dictionary column
    *

@@ -203,7 +203,8 @@ public class CarbonTableInputFormat<T> extends AbstractCarbonInputFormat<T> {
   /**
    * Get the cached CarbonTable or create it by TableInfo in `configuration`
    */
-  @Override protected CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
+  @Override protected CarbonTable getOrCreateCarbonTable(Configuration configuration)
+      throws IOException {
     if (carbonTable == null) {
       // carbon table should be created either from deserialized table info (schema saved in
       // hive metastore) or by reading schema in HDFS (schema saved in HDFS)
@@ -212,8 +213,8 @@ public class CarbonTableInputFormat<T> extends AbstractCarbonInputFormat<T> {
       if (tableInfo != null) {
         carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
       } else {
-        carbonTable = SchemaReader.readCarbonTableFromStore(
-            getAbsoluteTableIdentifier(configuration));
+        carbonTable =
+            SchemaReader.readCarbonTableFromStore(getAbsoluteTableIdentifier(configuration));
       }
       this.carbonTable = carbonTable;
       return carbonTable;

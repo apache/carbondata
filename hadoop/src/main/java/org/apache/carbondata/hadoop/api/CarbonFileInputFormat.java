@@ -42,6 +42,7 @@ import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -65,7 +66,8 @@ public class CarbonFileInputFormat<T> extends AbstractCarbonInputFormat<T> {
   /**
    * Get the cached CarbonTable or create it by TableInfo in `configuration`
    */
-  @Override protected CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
+  @Override protected CarbonTable getOrCreateCarbonTable(Configuration configuration)
+      throws IOException {
     if (carbonTable == null) {
       // carbon table should be created either from deserialized table info (schema saved in
       // hive metastore) or by reading schema in HDFS (schema saved in HDFS)
@@ -74,7 +76,7 @@ public class CarbonFileInputFormat<T> extends AbstractCarbonInputFormat<T> {
       if (tableInfo != null) {
         carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
       } else {
-        throw new IOException("configuration "+ TABLE_INFO + " not set.");
+        throw new IOException("configuration " + TABLE_INFO + " not set.");
       }
       this.carbonTable = carbonTable;
       return carbonTable;
@@ -141,8 +143,8 @@ public class CarbonFileInputFormat<T> extends AbstractCarbonInputFormat<T> {
     String[] inputDirs = getInputDir(job.getConfiguration());
     Map<String, String> options = new HashMap<String, String>(1);
     options.put(TableDataMap.SEGMENT_ID_AS_PATH, "true");
-    List<String> segIds = new ArrayList<String> (inputDirs.length);
-    for (String inputDir: inputDirs){
+    List<String> segIds = new ArrayList<String>(inputDirs.length);
+    for (String inputDir: inputDirs) {
       segIds.add(inputDir);
     }
     // get tokens for all the required FileSystem for table path
@@ -165,7 +167,7 @@ public class CarbonFileInputFormat<T> extends AbstractCarbonInputFormat<T> {
 
     List<InputSplit> resultFilterredBlocks = new ArrayList<>();
     for (Blocklet blocklet : prunedBlocklets) {
-          resultFilterredBlocks.add(convertToCarbonInputSplit(blocklet));
+      resultFilterredBlocks.add(convertToCarbonInputSplit(blocklet));
     }
     statistic
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_DRIVER, System.currentTimeMillis());
