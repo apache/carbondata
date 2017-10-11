@@ -30,11 +30,7 @@ import java.util.zip.GZIPInputStream;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
-import org.apache.carbondata.core.datastore.filesystem.AlluxioCarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.HDFSCarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.ViewFSCarbonFile;
+import org.apache.carbondata.core.datastore.filesystem.*;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
