@@ -117,9 +117,9 @@ object CompactionSupportGlobalSortBigFileTest {
       }
       write.close()
     } catch {
-      case _: Exception => return false
+      case _: Exception => false
     }
-    return true
+    true
   }
 
   def deleteFile(fileName: String): Boolean = {
@@ -129,8 +129,8 @@ object CompactionSupportGlobalSortBigFileTest {
         file.delete()
       }
     } catch {
-      case _: Exception => return false
+      case _: Exception => false
     }
-    return true
+    true
   }
 }

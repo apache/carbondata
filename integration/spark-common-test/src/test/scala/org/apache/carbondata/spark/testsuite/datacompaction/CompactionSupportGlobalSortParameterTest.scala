@@ -54,7 +54,7 @@ class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndA
     sql("DROP TABLE IF EXISTS carbon_localsort")
   }
 
-  test("ENABLE_AUTO_LOAD_MERGE: false") {
+  test("MINOR, ENABLE_AUTO_LOAD_MERGE: false") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
     for (i <- 0 until 2) {
       sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
@@ -90,7 +90,7 @@ class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndA
       CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
   }
 
-  test("ENABLE_AUTO_LOAD_MERGE: true") {
+  test("MINOR, ENABLE_AUTO_LOAD_MERGE: true") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
     for (i <- 0 until 2) {
       sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
@@ -110,6 +110,10 @@ class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndA
     val segments = sql("SHOW SEGMENTS FOR TABLE compaction_globalsort")
     val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(SegmentSequenceIds.contains("0.1"))
+
+    // loaded 6 times and produced 6 segments,
+    // auto merge will compact and produce 1 segment because 6 is bigger than 4 (default value of minor),
+    // so total segment number is 7
     assert(SegmentSequenceIds.length == 7)
 
     checkAnswer(sql("SELECT * FROM compaction_globalsort"),
@@ -119,7 +123,7 @@ class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndA
       CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
   }
 
-  test("PRESERVE_LATEST_SEGMENTS_NUMBER: 0") {
+  test("MINOR, PRESERVE_LATEST_SEGMENTS_NUMBER: 0") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER,
       "0")
     for (i <- 0 until 2) {
@@ -160,7 +164,7 @@ class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndA
       CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER)
   }
 
-  test("PRESERVE_LATEST_SEGMENTS_NUMBER: 4") {
+  test("MINOR, PRESERVE_LATEST_SEGMENTS_NUMBER: 4") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER,
       "4")
     for (i <- 0 until 2) {
@@ -199,7 +203,7 @@ class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndA
       CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER)
   }
 
-  test("DAYS_ALLOWED_TO_COMPACT: 0") {
+  test("MINOR, DAYS_ALLOWED_TO_COMPACT: 0") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
       "0")
     for (i <- 0 until 2) {
@@ -240,7 +244,7 @@ class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndA
       CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT)
   }
 
-  test("DAYS_ALLOWED_TO_COMPACT: 4") {
+  test("MINOR, DAYS_ALLOWED_TO_COMPACT: 4") {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
       "4")
     for (i <- 0 until 2) {
@@ -281,6 +285,237 @@ class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndA
       CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT)
   }
 
+  test("MAJOR, ENABLE_AUTO_LOAD_MERGE: false") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+    for (i <- 0 until 2) {
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE carbon_localsort")
+
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
+    }
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
+
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
+
+    sql("delete from table compaction_globalsort where SEGMENT.ID in (1,2,3)")
+    sql("delete from table carbon_localsort where SEGMENT.ID in (1,2,3)")
+    sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
+
+    val segments = sql("SHOW SEGMENTS FOR TABLE compaction_globalsort")
+    val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    assert(SegmentSequenceIds.contains("0.1"))
+    assert(SegmentSequenceIds.length == 7)
+
+    checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(12)))
+
+    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
+      sql("SELECT * FROM carbon_localsort"))
+
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Success")
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Marked for Delete")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+      CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+  }
+
+  test("MAJOR, ENABLE_AUTO_LOAD_MERGE: true") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    for (i <- 0 until 2) {
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE carbon_localsort")
+
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort OPTIONS('GLOBAL_SORT_PARTITIONS'='2')")
+    }
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
+
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
+
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
+    sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
+    val segments = sql("SHOW SEGMENTS FOR TABLE compaction_globalsort")
+    val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    assert(SegmentSequenceIds.contains("0.1"))
+
+    // loaded 6 times and produced 6 segments,
+    // auto merge will compact and produce 1 segment because 6 is bigger than 4 (default value of minor),
+    // major compact and prodece 1 segment
+    // so total segment number is 8
+    assert(SegmentSequenceIds.length == 8)
+
+    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
+      sql("SELECT * FROM carbon_localsort"))
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+      CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+  }
+
+  test("MAJOR, PRESERVE_LATEST_SEGMENTS_NUMBER: 0") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER,
+      "0")
+    for (i <- 0 until 2) {
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE carbon_localsort")
+
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort")
+
+    }
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
+
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
+
+    sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
+
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
+
+    val segments = sql("SHOW SEGMENTS FOR TABLE compaction_globalsort")
+    val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    assert(SegmentSequenceIds.contains("0.1"))
+    assert(!SegmentSequenceIds.contains("4.1"))
+    assert(SegmentSequenceIds.length == 7)
+
+    val status = segments.collect().map { each => (each.toSeq) (1) }
+    assert(status.filter(_.equals("Compacted")).length == 6)
+
+    assert(getIndexFileCount("compaction_globalsort", "0.1") === 1)
+
+    checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(24)))
+
+    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
+      sql("SELECT * FROM carbon_localsort"))
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER,
+      CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER)
+  }
+
+  test("MAJOR, PRESERVE_LATEST_SEGMENTS_NUMBER: 4") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER,
+      "4")
+    for (i <- 0 until 2) {
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE carbon_localsort")
+
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort")
+
+    }
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
+
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
+
+    sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
+
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
+
+    val segments = sql("SHOW SEGMENTS FOR TABLE compaction_globalsort")
+    val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    assert(SegmentSequenceIds.contains("0.1"))
+    assert(!SegmentSequenceIds.contains("4.1"))
+    assert(SegmentSequenceIds.length == 7)
+
+    val status = segments.collect().map { each => (each.toSeq) (1) }
+    assert(status.filter(_.equals("Compacted")).length == 2)
+
+    checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(24)))
+
+    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
+      sql("SELECT * FROM carbon_localsort"))
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER,
+      CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER)
+  }
+
+  test("MAJOR, DAYS_ALLOWED_TO_COMPACT: 0") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
+      "0")
+    for (i <- 0 until 2) {
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE carbon_localsort")
+
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort")
+
+    }
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
+
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
+
+    sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
+
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
+
+    val segments = sql("SHOW SEGMENTS FOR TABLE compaction_globalsort")
+    val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    assert(SegmentSequenceIds.contains("0.1"))
+    assert(!SegmentSequenceIds.contains("4.1"))
+    assert(SegmentSequenceIds.length == 7)
+
+    val status = segments.collect().map { each => (each.toSeq) (1) }
+    assert(status.filter(_.equals("Compacted")).length == 6)
+
+    assert(getIndexFileCount("compaction_globalsort", "0.1") === 1)
+
+    checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(24)))
+
+    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
+      sql("SELECT * FROM carbon_localsort"))
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
+      CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT)
+  }
+
+  test("MAJOR, DAYS_ALLOWED_TO_COMPACT: 4") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
+      "4")
+    for (i <- 0 until 2) {
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE carbon_localsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE carbon_localsort")
+
+      sql(s"LOAD DATA LOCAL INPATH '$file1' INTO TABLE compaction_globalsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file2' INTO TABLE compaction_globalsort")
+      sql(s"LOAD DATA LOCAL INPATH '$file3' INTO TABLE compaction_globalsort")
+
+    }
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "global_sort")
+
+    checkExistence(sql("DESCRIBE FORMATTED compaction_globalsort"), true, "city,name")
+
+    sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
+
+    checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
+
+    val segments = sql("SHOW SEGMENTS FOR TABLE compaction_globalsort")
+    val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    assert(SegmentSequenceIds.contains("0.1"))
+    assert(!SegmentSequenceIds.contains("4.1"))
+    assert(SegmentSequenceIds.length == 7)
+
+    val status = segments.collect().map { each => (each.toSeq) (1) }
+    assert(status.filter(_.equals("Compacted")).length == 6)
+
+    assert(getIndexFileCount("compaction_globalsort", "0.1") === 1)
+
+    checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(24)))
+
+    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
+      sql("SELECT * FROM carbon_localsort"))
+
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
+      CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT)
+  }
   private def resetConf() {
     val prop = CarbonProperties.getInstance()
     prop.addProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
