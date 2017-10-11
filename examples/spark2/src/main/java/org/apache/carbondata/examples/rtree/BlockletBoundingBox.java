@@ -11,7 +11,7 @@ public class BlockletBoundingBox {
         this.blockletId = blockletId;
         this.lowx = low[0];
         this.lowy = low[1];
-        this.highx = high[1];
+        this.highx = high[0];
         this.highy = high[1];
     }
 

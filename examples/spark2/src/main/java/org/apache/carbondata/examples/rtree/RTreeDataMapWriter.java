@@ -49,6 +49,9 @@ public class RTreeDataMapWriter implements DataMapWriter {
             brWriter = new BufferedWriter(new OutputStreamWriter(dataOutStream,
                     CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
             brWriter.write(gsonObjectToWrite.toJson(boundingBoxes));
+            brWriter.flush();
+            brWriter.close();
+            dataOutStream.close();
         } catch (IOException e) {
             LOGGER.info("Error in writing index file");
         }
@@ -93,15 +96,15 @@ public class RTreeDataMapWriter implements DataMapWriter {
             pageLevelMin[1] = y;
             pageLevelMax[0] = x;
             pageLevelMax[1] = y;
-        } else {
-            for (int rowIndex = 0; rowIndex < pages[0].getPageSize(); rowIndex++) {
-                double x = pages[0].getDouble(rowIndex);
-                double y = pages[0].getDouble(rowIndex);
-                pageLevelMin[0] = Math.min(pageLevelMin[0], x);
-                pageLevelMin[1] = Math.min(pageLevelMin[1], y);
-                pageLevelMax[0] = Math.max(pageLevelMax[0], x);
-                pageLevelMax[1] = Math.max(pageLevelMax[1], y);
-            }
+        }
+
+        for (int rowIndex = 0; rowIndex < pages[0].getPageSize(); rowIndex++) {
+            double x = pages[0].getDouble(rowIndex);
+            double y = pages[1].getDouble(rowIndex);
+            pageLevelMin[0] = Math.min(pageLevelMin[0], x);
+            pageLevelMin[1] = Math.min(pageLevelMin[1], y);
+            pageLevelMax[0] = Math.max(pageLevelMax[0], x);
+            pageLevelMax[1] = Math.max(pageLevelMax[1], y);
         }
     }
 }

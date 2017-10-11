@@ -26,19 +26,22 @@ class RTreeDataMapTest extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Test Min Max DataMap") {
-    // register datamap writer
     DataMapStoreManager.getInstance().createAndRegisterDataMap(
       AbsoluteTableIdentifier.from(storeLocation, "default", "carbonminmax"),
       classOf[RTreeDataMapFactory].getName,
       RTreeDataMap.NAME)
 
+
+    // register datamap writer
     val df = buildTestData(33000)
 
+    // XX: Cannot use Overwrite since it will eliminate the DataMap Meta in DataMapStoreManager.
+    // Need to delete the table manually every time.
     // save dataframe to carbon file
     df.write
       .format("carbondata")
+      .option("dbName", "default")
       .option("tableName", "carbonminmax")
-      .mode(SaveMode.Overwrite)
       .save()
 
     // Query the table.

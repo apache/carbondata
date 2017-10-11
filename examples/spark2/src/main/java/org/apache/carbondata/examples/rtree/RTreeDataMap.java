@@ -31,8 +31,6 @@ public class RTreeDataMap implements DataMap, Cacheable {
 
     public static final String NAME = "unclustered.rtree.blocklet";
 
-    private SegmentProperties segmentProperties;
-
     private String filePath;
 
     private STRtree rtree;
