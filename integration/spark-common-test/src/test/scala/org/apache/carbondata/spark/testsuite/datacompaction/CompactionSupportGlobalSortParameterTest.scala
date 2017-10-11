@@ -33,6 +33,7 @@ class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndA
 
   override def beforeEach {
     resetConf
+    
     sql("DROP TABLE IF EXISTS compaction_globalsort")
     sql(
       """
