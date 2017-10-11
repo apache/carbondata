@@ -18,9 +18,10 @@
 
 package org.apache.carbondata.cluster.sdv.generated
 
+import java.io.File
+
 import org.apache.spark.sql.common.util._
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -229,6 +230,10 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
     prop.addProperty("enable.unsafe.sort", "true")
     prop.addProperty("offheap.sort.chunk.size.inmb", "128")
     prop.addProperty("sort.inmemory.size.inmb", "2048")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+        new File("./target/test/badRecords")
+          .getCanonicalPath)
   }
 
   override def afterAll: Unit = {
@@ -236,6 +241,8 @@ class OffheapSort2TestCase extends QueryTest with BeforeAndAfterAll {
     prop.addProperty("enable.unsafe.sort", p1)
     prop.addProperty("offheap.sort.chunk.size.inmb", p2)
     prop.addProperty("sort.inmemory.size.inmb", p3)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
   }
 
 }
