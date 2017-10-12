@@ -43,7 +43,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
 import org.apache.carbondata.core.reader.CarbonDictionaryReader
@@ -260,11 +260,11 @@ object GlobalDictionaryUtil {
         None
       case Some(dim) =>
         dim.getDataType match {
-          case DataType.ARRAY =>
+          case DataTypes.ARRAY =>
             val arrDim = ArrayParser(dim, format)
             generateParserForChildrenDimension(dim, format, mapColumnValuesWithId, arrDim)
             Some(arrDim)
-          case DataType.STRUCT =>
+          case DataTypes.STRUCT =>
             val stuDim = StructParser(dim, format)
             generateParserForChildrenDimension(dim, format, mapColumnValuesWithId, stuDim)
             Some(stuDim)
@@ -478,7 +478,7 @@ object GlobalDictionaryUtil {
       // for Array, user set ArrayFiled: path, while ArrayField has a child Array.val
       val currentColName = {
         preDictDimension.getDataType match {
-          case DataType.ARRAY =>
+          case DataTypes.ARRAY =>
             if (children(0).isComplex) {
               "val." + colName.substring(middleDimName.length + 1)
             } else {

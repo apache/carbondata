@@ -34,6 +34,7 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoder;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -70,14 +71,9 @@ public class RLECodec implements ColumnPageCodec {
 
   // This codec supports integral type only
   private void validateDataType(DataType dataType) {
-    switch (dataType) {
-      case BYTE:
-      case SHORT:
-      case INT:
-      case LONG:
-        break;
-      default:
-        throw new UnsupportedOperationException(dataType + " is not supported for RLE");
+    if (! (dataType == DataTypes.BYTE || dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
+        dataType == DataTypes.LONG)) {
+      throw new UnsupportedOperationException(dataType + " is not supported for RLE");
     }
   }
 
@@ -117,34 +113,29 @@ public class RLECodec implements ColumnPageCodec {
     protected byte[] encodeData(ColumnPage input) throws MemoryException, IOException {
       validateDataType(input.getDataType());
       this.dataType = input.getDataType();
-      switch (dataType) {
-        case BYTE:
-          byte[] bytePage = input.getBytePage();
-          for (int i = 0; i < bytePage.length; i++) {
-            putValue(bytePage[i]);
-          }
-          break;
-        case SHORT:
-          short[] shortPage = input.getShortPage();
-          for (int i = 0; i < shortPage.length; i++) {
-            putValue(shortPage[i]);
-          }
-          break;
-        case INT:
-          int[] intPage = input.getIntPage();
-          for (int i = 0; i < intPage.length; i++) {
-            putValue(intPage[i]);
-          }
-          break;
-        case LONG:
-          long[] longPage = input.getLongPage();
-          for (int i = 0; i < longPage.length; i++) {
-            putValue(longPage[i]);
-          }
-          break;
-        default:
-          throw new UnsupportedOperationException(input.getDataType() +
-              " does not support RLE encoding");
+      if (dataType == DataTypes.BYTE) {
+        byte[] bytePage = input.getBytePage();
+        for (int i = 0; i < bytePage.length; i++) {
+          putValue(bytePage[i]);
+        }
+      } else if (dataType == DataTypes.SHORT) {
+        short[] shortPage = input.getShortPage();
+        for (int i = 0; i < shortPage.length; i++) {
+          putValue(shortPage[i]);
+        }
+      } else if (dataType == DataTypes.INT) {
+        int[] intPage = input.getIntPage();
+        for (int i = 0; i < intPage.length; i++) {
+          putValue(intPage[i]);
+        }
+      } else if (dataType == DataTypes.LONG) {
+        long[] longPage = input.getLongPage();
+        for (int i = 0; i < longPage.length; i++) {
+          putValue(longPage[i]);
+        }
+      } else {
+        throw new UnsupportedOperationException(input.getDataType() +
+            " does not support RLE encoding");
       }
       return collectResult();
     }
@@ -200,21 +191,16 @@ public class RLECodec implements ColumnPageCodec {
     }
 
     private void writeRunValue(Object value) throws IOException {
-      switch (dataType) {
-        case BYTE:
-          stream.writeByte((byte) value);
-          break;
-        case SHORT:
-          stream.writeShort((short) value);
-          break;
-        case INT:
-          stream.writeInt((int) value);
-          break;
-        case LONG:
-          stream.writeLong((long) value);
-          break;
-        default:
-          throw new RuntimeException("internal error");
+      if (dataType == DataTypes.BYTE) {
+        stream.writeByte((byte) value);
+      } else if (dataType == DataTypes.SHORT) {
+        stream.writeShort((short) value);
+      } else if (dataType == DataTypes.INT) {
+        stream.writeInt((int) value);
+      } else if (dataType == DataTypes.LONG) {
+        stream.writeLong((long) value);
+      } else {
+        throw new RuntimeException("internal error");
       }
     }
 
@@ -307,21 +293,16 @@ public class RLECodec implements ColumnPageCodec {
       DataType dataType = columnSpec.getSchemaDataType();
       DataInputStream in = new DataInputStream(new ByteArrayInputStream(input, offset, length));
       ColumnPage resultPage = ColumnPage.newPage(columnSpec, dataType, pageSize);
-      switch (dataType) {
-        case BYTE:
-          decodeBytePage(in, resultPage);
-          break;
-        case SHORT:
-          decodeShortPage(in, resultPage);
-          break;
-        case INT:
-          decodeIntPage(in, resultPage);
-          break;
-        case LONG:
-          decodeLongPage(in, resultPage);
-          break;
-        default:
-          throw new RuntimeException("unsupported datatype:" + dataType);
+      if (dataType == DataTypes.BYTE) {
+        decodeBytePage(in, resultPage);
+      } else if (dataType == DataTypes.SHORT) {
+        decodeShortPage(in, resultPage);
+      } else if (dataType == DataTypes.INT) {
+        decodeIntPage(in, resultPage);
+      } else if (dataType == DataTypes.LONG) {
+        decodeLongPage(in, resultPage);
+      } else {
+        throw new RuntimeException("unsupported datatype:" + dataType);
       }
       return resultPage;
     }

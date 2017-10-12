@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.WritableUtil;
@@ -349,18 +350,6 @@ public class ColumnSchema implements Serializable, Writable {
   }
 
   /**
-   * @return if DataType is ARRAY or STRUCT, this method return true, else
-   * false.
-   */
-  public Boolean isComplex() {
-    if (DataType.ARRAY.equals(this.getDataType()) || DataType.STRUCT.equals(this.getDataType())) {
-      return true;
-    } else {
-      return false;
-    }
-  }
-
-  /**
    * @param columnProperties
    */
   public void setColumnProperties(Map<String, String> columnProperties) {
@@ -421,7 +410,7 @@ public class ColumnSchema implements Serializable, Writable {
 
   @Override
   public void write(DataOutput out) throws IOException {
-    out.writeShort(dataType.ordinal());
+    out.writeShort(dataType.getId());
     out.writeUTF(columnName);
     out.writeUTF(columnUniqueId);
     out.writeUTF(columnReferenceId);
@@ -454,16 +443,16 @@ public class ColumnSchema implements Serializable, Writable {
 
   @Override
   public void readFields(DataInput in) throws IOException {
-    int ordinal = in.readShort();
-    this.dataType = DataType.valueOf(ordinal);
+    int id = in.readShort();
+    this.dataType = DataTypes.valueOf(id);
     this.columnName = in.readUTF();
     this.columnUniqueId = in.readUTF();
     this.columnReferenceId = in.readUTF();
     int encodingListSize = in.readShort();
     this.encodingList = new ArrayList<>(encodingListSize);
     for (int i = 0; i < encodingListSize; i++) {
-      ordinal = in.readShort();
-      encodingList.add(Encoding.valueOf(ordinal));
+      id = in.readShort();
+      encodingList.add(Encoding.valueOf(id));
     }
     this.isDimensionColumn = in.readBoolean();
     this.scale = in.readInt();

@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
@@ -147,17 +148,16 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   }
 
   private DataType getMeasureDataType(MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo) {
-    switch (msrColumnEvaluatorInfo.getType()) {
-      case SHORT:
-        return DataType.SHORT;
-      case INT:
-        return DataType.INT;
-      case LONG:
-        return DataType.LONG;
-      case DECIMAL:
-        return DataType.DECIMAL;
-      default:
-        return DataType.DOUBLE;
+    if (msrColumnEvaluatorInfo.getType() == DataTypes.SHORT) {
+      return DataTypes.SHORT;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.INT) {
+      return DataTypes.INT;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.LONG) {
+      return DataTypes.LONG;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.DECIMAL) {
+      return DataTypes.DECIMAL;
+    } else {
+      return DataTypes.DOUBLE;
     }
   }
 

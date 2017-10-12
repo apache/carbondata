@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -120,7 +121,7 @@ public class CarbonMetadataTest {
     dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -134,7 +135,7 @@ public class CarbonMetadataTest {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     return dimColumn;
   }
 

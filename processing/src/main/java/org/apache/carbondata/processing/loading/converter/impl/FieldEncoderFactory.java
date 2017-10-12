@@ -25,6 +25,8 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -108,35 +110,37 @@ public class FieldEncoderFactory {
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, DictionaryClient client, Boolean useOnePass,
       String storePath, Map<Object, Integer> localCache) {
-    switch (carbonColumn.getDataType()) {
-      case ARRAY:
-        List<CarbonDimension> listOfChildDimensions =
-            ((CarbonDimension) carbonColumn).getListOfChildDimensions();
-        // Create array parser with complex delimiter
-        ArrayDataType arrayDataType =
-            new ArrayDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId());
-        for (CarbonDimension dimension : listOfChildDimensions) {
-          arrayDataType.addChildren(createComplexType(dimension, carbonColumn.getColName(), cache,
-              carbonTableIdentifier, client, useOnePass, storePath, localCache));
-        }
-        return arrayDataType;
-      case STRUCT:
-        List<CarbonDimension> dimensions =
-            ((CarbonDimension) carbonColumn).getListOfChildDimensions();
-        // Create struct parser with complex delimiter
-        StructDataType structDataType =
-            new StructDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId());
-        for (CarbonDimension dimension : dimensions) {
-          structDataType.addChildren(createComplexType(dimension, carbonColumn.getColName(), cache,
-              carbonTableIdentifier, client, useOnePass, storePath, localCache));
-        }
-        return structDataType;
-      case MAP:
-        throw new UnsupportedOperationException("Complex type Map is not supported yet");
-      default:
-        return new PrimitiveDataType(carbonColumn.getColName(), parentName,
-            carbonColumn.getColumnId(), (CarbonDimension) carbonColumn, cache,
-            carbonTableIdentifier, client, useOnePass, storePath, localCache);
+    DataType dataType = carbonColumn.getDataType();
+    if (dataType == DataTypes.ARRAY) {
+      List<CarbonDimension> listOfChildDimensions =
+          ((CarbonDimension) carbonColumn).getListOfChildDimensions();
+      // Create array parser with complex delimiter
+      ArrayDataType arrayDataType =
+          new ArrayDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId());
+      for (CarbonDimension dimension : listOfChildDimensions) {
+        arrayDataType.addChildren(
+            createComplexType(dimension, carbonColumn.getColName(), cache, carbonTableIdentifier,
+                client, useOnePass, storePath, localCache));
+      }
+      return arrayDataType;
+    } else if (dataType == DataTypes.STRUCT) {
+      List<CarbonDimension> dimensions =
+          ((CarbonDimension) carbonColumn).getListOfChildDimensions();
+      // Create struct parser with complex delimiter
+      StructDataType structDataType =
+          new StructDataType(carbonColumn.getColName(), parentName, carbonColumn.getColumnId());
+      for (CarbonDimension dimension : dimensions) {
+        structDataType.addChildren(
+            createComplexType(dimension, carbonColumn.getColName(), cache, carbonTableIdentifier,
+                client, useOnePass, storePath, localCache));
+      }
+      return structDataType;
+    } else if (dataType == DataTypes.MAP) {
+      throw new UnsupportedOperationException("Complex type Map is not supported yet");
+    } else {
+      return new PrimitiveDataType(carbonColumn.getColName(), parentName,
+          carbonColumn.getColumnId(), (CarbonDimension) carbonColumn, cache, carbonTableIdentifier,
+          client, useOnePass, storePath, localCache);
     }
   }
 }

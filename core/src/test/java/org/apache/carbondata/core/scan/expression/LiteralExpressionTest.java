@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.core.scan.expression;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 
 import org.junit.Before;
@@ -31,13 +31,13 @@ public class LiteralExpressionTest {
 
   @Before public void setUp() {
     String value = "testing";
-    literalExpression = new LiteralExpression(value, DataType.STRING);
+    literalExpression = new LiteralExpression(value, DataTypes.STRING);
   }
 
   @Test public void testEvaluate() {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new String[] { "testing" });
-    ExpressionResult expectedResult = new ExpressionResult(DataType.STRING, "testing");
+    ExpressionResult expectedResult = new ExpressionResult(DataTypes.STRING, "testing");
     assertEquals(expectedResult, literalExpression.evaluate(rowImpl));
   }
 
@@ -45,7 +45,7 @@ public class LiteralExpressionTest {
     RowImpl rowImpl = new RowImpl();
     rowImpl.setValues(new String[] { "testing" });
     literalExpression.evaluate(rowImpl);
-    ExpressionResult expectedResult = new ExpressionResult(DataType.STRING, "testing");
+    ExpressionResult expectedResult = new ExpressionResult(DataTypes.STRING, "testing");
     assertEquals(expectedResult, literalExpression.evaluate(rowImpl));
   }
 

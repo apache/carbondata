@@ -43,6 +43,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -778,10 +779,18 @@ public class QueryUtil {
       CarbonDimension dimension, Map<Integer, GenericQueryType> complexTypeMap,
       int[] eachComplexColumnValueSize, Map<String, Dictionary> columnIdToDictionaryMap) {
     int parentBlockIndex = dimensionToBlockIndexMap.get(dimension.getOrdinal());
-    GenericQueryType parentQueryType = dimension.getDataType().equals(DataType.ARRAY) ?
-        new ArrayQueryType(dimension.getColName(), dimension.getColName(), parentBlockIndex) :
-        new StructQueryType(dimension.getColName(), dimension.getColName(),
-            dimensionToBlockIndexMap.get(dimension.getOrdinal()));
+    GenericQueryType parentQueryType;
+    if (dimension.getDataType() == DataTypes.ARRAY) {
+      parentQueryType =
+          new ArrayQueryType(dimension.getColName(), dimension.getColName(), parentBlockIndex);
+    } else if (dimension.getDataType() == DataTypes.STRUCT) {
+      parentQueryType =
+          new StructQueryType(dimension.getColName(), dimension.getColName(),
+              dimensionToBlockIndexMap.get(dimension.getOrdinal()));
+    } else {
+      throw new UnsupportedOperationException(dimension.getDataType().getName() +
+          " is not supported");
+    }
     complexTypeMap.put(dimension.getOrdinal(), parentQueryType);
     fillChildrenDetails(eachComplexColumnValueSize, columnIdToDictionaryMap, parentBlockIndex,
             dimension, parentQueryType);
@@ -791,29 +800,27 @@ public class QueryUtil {
       Map<String, Dictionary> columnIdToDictionaryMap, int parentBlockIndex,
       CarbonDimension dimension, GenericQueryType parentQueryType) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
-      switch (dimension.getListOfChildDimensions().get(i).getDataType()) {
-        case ARRAY:
-          parentQueryType.addChildren(
-              new ArrayQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
-                  dimension.getColName(), ++parentBlockIndex));
-          break;
-        case STRUCT:
-          parentQueryType.addChildren(
-              new StructQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
-                  dimension.getColName(), ++parentBlockIndex));
-          break;
-        default:
-          boolean isDirectDictionary = CarbonUtil
-              .hasEncoding(dimension.getListOfChildDimensions().get(i).getEncoder(),
-                  Encoding.DIRECT_DICTIONARY);
-          parentQueryType.addChildren(
-              new PrimitiveQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
-                  dimension.getColName(), ++parentBlockIndex,
-                  dimension.getListOfChildDimensions().get(i).getDataType(),
-                  eachComplexColumnValueSize[dimension.getListOfChildDimensions().get(i)
-                      .getComplexTypeOrdinal()], columnIdToDictionaryMap
-                  .get(dimension.getListOfChildDimensions().get(i).getColumnId()),
-                  isDirectDictionary));
+      DataType dataType = dimension.getListOfChildDimensions().get(i).getDataType();
+      if (dataType == DataTypes.ARRAY) {
+        parentQueryType.addChildren(
+            new ArrayQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
+                dimension.getColName(), ++parentBlockIndex));
+      } else if (dataType == DataTypes.STRUCT) {
+        parentQueryType.addChildren(
+            new StructQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
+                dimension.getColName(), ++parentBlockIndex));
+      } else {
+        boolean isDirectDictionary = CarbonUtil
+            .hasEncoding(dimension.getListOfChildDimensions().get(i).getEncoder(),
+                Encoding.DIRECT_DICTIONARY);
+        parentQueryType.addChildren(
+            new PrimitiveQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
+                dimension.getColName(), ++parentBlockIndex,
+                dimension.getListOfChildDimensions().get(i).getDataType(),
+                eachComplexColumnValueSize[dimension.getListOfChildDimensions().get(i)
+                    .getComplexTypeOrdinal()], columnIdToDictionaryMap
+                .get(dimension.getListOfChildDimensions().get(i).getColumnId()),
+                isDirectDictionary));
       }
       if (dimension.getListOfChildDimensions().get(i).getNumberOfChild() > 0) {
         parentBlockIndex = fillChildrenDetails(eachComplexColumnValueSize, columnIdToDictionaryMap,

@@ -18,6 +18,8 @@ package org.apache.carbondata.processing.loading.parser;
 
 import java.util.List;
 
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.processing.loading.parser.impl.ArrayParserImpl;
@@ -51,30 +53,29 @@ public final class CarbonParserFactory {
    */
   private static GenericParser createParser(CarbonColumn carbonColumn, String[] complexDelimiters,
       String nullFormat, int depth) {
-    switch (carbonColumn.getDataType()) {
-      case ARRAY:
-        List<CarbonDimension> listOfChildDimensions =
-            ((CarbonDimension) carbonColumn).getListOfChildDimensions();
-        // Create array parser with complex delimiter
-        ArrayParserImpl arrayParser = new ArrayParserImpl(complexDelimiters[depth], nullFormat);
-        for (CarbonDimension dimension : listOfChildDimensions) {
-          arrayParser
-              .addChildren(createParser(dimension, complexDelimiters, nullFormat, depth + 1));
-        }
-        return arrayParser;
-      case STRUCT:
-        List<CarbonDimension> dimensions =
-            ((CarbonDimension) carbonColumn).getListOfChildDimensions();
-        // Create struct parser with complex delimiter
-        StructParserImpl parser = new StructParserImpl(complexDelimiters[depth], nullFormat);
-        for (CarbonDimension dimension : dimensions) {
-          parser.addChildren(createParser(dimension, complexDelimiters, nullFormat, depth + 1));
-        }
-        return parser;
-      case MAP:
-        throw new UnsupportedOperationException("Complex type Map is not supported yet");
-      default:
-        return new PrimitiveParserImpl();
+    DataType dataType = carbonColumn.getDataType();
+    if (dataType == DataTypes.ARRAY) {
+      List<CarbonDimension> listOfChildDimensions =
+          ((CarbonDimension) carbonColumn).getListOfChildDimensions();
+      // Create array parser with complex delimiter
+      ArrayParserImpl arrayParser = new ArrayParserImpl(complexDelimiters[depth], nullFormat);
+      for (CarbonDimension dimension : listOfChildDimensions) {
+        arrayParser.addChildren(createParser(dimension, complexDelimiters, nullFormat, depth + 1));
+      }
+      return arrayParser;
+    } else if (dataType == DataTypes.STRUCT) {
+      List<CarbonDimension> dimensions =
+          ((CarbonDimension) carbonColumn).getListOfChildDimensions();
+      // Create struct parser with complex delimiter
+      StructParserImpl parser = new StructParserImpl(complexDelimiters[depth], nullFormat);
+      for (CarbonDimension dimension : dimensions) {
+        parser.addChildren(createParser(dimension, complexDelimiters, nullFormat, depth + 1));
+      }
+      return parser;
+    } else if (dataType == DataTypes.MAP) {
+      throw new UnsupportedOperationException("Complex type Map is not supported yet");
+    } else {
+      return new PrimitiveParserImpl();
     }
   }
 }

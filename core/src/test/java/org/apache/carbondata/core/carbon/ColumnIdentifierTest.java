@@ -18,6 +18,7 @@ package org.apache.carbondata.core.carbon;
 
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,7 +36,7 @@ public class ColumnIdentifierTest {
   @BeforeClass public static void setup() {
     columnProperties = new HashMap<String, String>();
     columnProperties.put("key", "value");
-    columnIdentifier = new ColumnIdentifier("columnId", columnProperties, DataType.INT);
+    columnIdentifier = new ColumnIdentifier("columnId", columnProperties, DataTypes.INT);
   }
 
   @Test public void hashCodeTest() {
@@ -51,7 +52,7 @@ public class ColumnIdentifierTest {
 
   @Test public void equalsTestwithSimilarObject() {
     ColumnIdentifier columnIdentifierTest =
-        new ColumnIdentifier("columnId", columnProperties, DataType.INT);
+        new ColumnIdentifier("columnId", columnProperties, DataTypes.INT);
     Boolean res = columnIdentifier.equals(columnIdentifierTest);
     assert (res);
   }
@@ -68,14 +69,14 @@ public class ColumnIdentifierTest {
 
   @Test public void equalsTestwithNullColumnId() {
     ColumnIdentifier columnIdentifierTest =
-        new ColumnIdentifier(null, columnProperties, DataType.INT);
+        new ColumnIdentifier(null, columnProperties, DataTypes.INT);
     Boolean res = columnIdentifierTest.equals(columnIdentifier);
     assert (!res);
   }
 
   @Test public void equalsTestwithDiffColumnId() {
     ColumnIdentifier columnIdentifierTest =
-        new ColumnIdentifier("diffColumnId", columnProperties, DataType.INT);
+        new ColumnIdentifier("diffColumnId", columnProperties, DataTypes.INT);
     Boolean res = columnIdentifierTest.equals(columnIdentifier);
     assert (!res);
   }
@@ -87,7 +88,7 @@ public class ColumnIdentifierTest {
 
   @Test public void getColumnPropertyTest() {
     ColumnIdentifier columnIdentifierTest =
-        new ColumnIdentifier("diffColumnId", null, DataType.INT);
+        new ColumnIdentifier("diffColumnId", null, DataTypes.INT);
     String res = columnIdentifierTest.getColumnProperty("key");
     assertEquals(res, null);
   }

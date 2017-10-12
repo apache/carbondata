@@ -41,7 +41,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.row.LoadStatusType
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -328,14 +328,14 @@ object CommonUtil {
     }
     val comparator = Comparator.getComparator(columnDataType)
     var head = columnDataType match {
-      case DataType.STRING => ByteUtil.toBytes(rangeInfo.head)
+      case DataTypes.STRING => ByteUtil.toBytes(rangeInfo.head)
       case _ => PartitionUtil.getDataBasedOnDataType(rangeInfo.head, columnDataType,
         timestampFormatter, dateFormatter)
     }
     val iterator = rangeInfo.tail.toIterator
     while (iterator.hasNext) {
       val next = columnDataType match {
-        case DataType.STRING => ByteUtil.toBytes(iterator.next())
+        case DataTypes.STRING => ByteUtil.toBytes(iterator.next())
         case _ => PartitionUtil.getDataBasedOnDataType(iterator.next(), columnDataType,
           timestampFormatter, dateFormatter)
       }

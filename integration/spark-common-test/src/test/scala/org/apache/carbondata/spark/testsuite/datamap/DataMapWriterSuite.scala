@@ -31,7 +31,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage
 import org.apache.carbondata.core.events.ChangeEvent
 import org.apache.carbondata.core.indexstore.schema.FilterType
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.util.CarbonProperties
 
 class C2DataMapFactory() extends DataMapFactory {
@@ -163,7 +163,7 @@ object DataMapWriterSuite {
         pageId: Int,
         pages: Array[ColumnPage]): Unit = {
       assert(pages.length == 1)
-      assert(pages(0).getDataType == DataType.STRING)
+      assert(pages(0).getDataType == DataTypes.STRING)
       val bytes: Array[Byte] = pages(0).getByteArrayPage()(0)
       assert(bytes.sameElements(Seq(0, 1, 'b'.toByte)))
       callbackSeq :+= s"add page data: blocklet $blockletId, page $pageId"

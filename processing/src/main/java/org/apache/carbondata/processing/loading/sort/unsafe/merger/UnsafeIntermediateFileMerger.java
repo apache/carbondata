@@ -32,6 +32,7 @@ import java.util.concurrent.Callable;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.SortTempChunkHolder;
@@ -315,31 +316,26 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     for (int mesCount = 0; mesCount < measureSize; mesCount++) {
       Object value = row[mesCount + dimensionSize];
       if (null != value) {
-        switch (type[mesCount]) {
-          case SHORT:
-            rowData.putShort(size, (Short) value);
-            size += 2;
-            break;
-          case INT:
-            rowData.putInt(size, (Integer) value);
-            size += 4;
-            break;
-          case LONG:
-            rowData.putLong(size, (Long) value);
-            size += 8;
-            break;
-          case DOUBLE:
-            rowData.putDouble(size, (Double) value);
-            size += 8;
-            break;
-          case DECIMAL:
-            byte[] bigDecimalInBytes = (byte[]) value;
-            rowData.putShort(size, (short)bigDecimalInBytes.length);
-            size += 2;
-            for (int i = 0; i < bigDecimalInBytes.length; i++) {
-              rowData.put(size++, bigDecimalInBytes[i]);
-            }
-            break;
+        DataType dataType = type[mesCount];
+        if (dataType == DataTypes.SHORT) {
+          rowData.putShort(size, (Short) value);
+          size += 2;
+        } else if (dataType == DataTypes.INT) {
+          rowData.putInt(size, (Integer) value);
+          size += 4;
+        } else if (dataType == DataTypes.LONG) {
+          rowData.putLong(size, (Long) value);
+          size += 8;
+        } else if (dataType == DataTypes.DOUBLE) {
+          rowData.putDouble(size, (Double) value);
+          size += 8;
+        } else if (dataType == DataTypes.DECIMAL) {
+          byte[] bigDecimalInBytes = (byte[]) value;
+          rowData.putShort(size, (short) bigDecimalInBytes.length);
+          size += 2;
+          for (int i = 0; i < bigDecimalInBytes.length; i++) {
+            rowData.put(size++, bigDecimalInBytes[i]);
+          }
         }
         UnsafeCarbonRowPage.set(nullSetWords, mesCount);
       } else {

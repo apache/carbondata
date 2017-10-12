@@ -22,6 +22,7 @@ import java.text.DateFormat;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 
 import org.apache.commons.lang.StringUtils;
@@ -47,29 +48,28 @@ public class PartitionUtil {
     if (data == null) {
       return null;
     }
-    if (actualDataType != DataType.STRING && StringUtils.isEmpty(data)) {
+    if (actualDataType != DataTypes.STRING && StringUtils.isEmpty(data)) {
       return null;
     }
     try {
-      switch (actualDataType) {
-        case STRING:
-          return data;
-        case INT:
-          return Integer.parseInt(data);
-        case SHORT:
-          return Short.parseShort(data);
-        case DOUBLE:
-          return Double.parseDouble(data);
-        case LONG:
-          return Long.parseLong(data);
-        case DATE:
-          return dateFormatter.parse(data).getTime();
-        case TIMESTAMP:
-          return timestampFormatter.parse(data).getTime();
-        case DECIMAL:
-          return new BigDecimal(data);
-        default:
-          return data;
+      if (actualDataType == DataTypes.STRING) {
+        return data;
+      } else if (actualDataType == DataTypes.INT) {
+        return Integer.parseInt(data);
+      } else if (actualDataType == DataTypes.SHORT) {
+        return Short.parseShort(data);
+      } else if (actualDataType == DataTypes.DOUBLE) {
+        return Double.parseDouble(data);
+      } else if (actualDataType == DataTypes.LONG) {
+        return Long.parseLong(data);
+      } else if (actualDataType == DataTypes.DATE) {
+        return dateFormatter.parse(data).getTime();
+      } else if (actualDataType == DataTypes.TIMESTAMP) {
+        return timestampFormatter.parse(data).getTime();
+      } else if (actualDataType == DataTypes.DECIMAL) {
+        return new BigDecimal(data);
+      } else {
+        return data;
       }
     } catch (Exception ex) {
       return null;
@@ -86,28 +86,26 @@ public class PartitionUtil {
     if (data == null) {
       return null;
     }
-    if (actualDataType != DataType.STRING && StringUtils.isEmpty(data)) {
+    if (actualDataType != DataTypes.STRING && StringUtils.isEmpty(data)) {
       return null;
     }
     try {
-      switch (actualDataType) {
-        case STRING:
-          return data;
-        case INT:
-          return Integer.parseInt(data);
-        case SHORT:
-          return Short.parseShort(data);
-        case DOUBLE:
-          return Double.parseDouble(data);
-        case LONG:
-          return Long.parseLong(data);
-        case DATE:
-        case TIMESTAMP:
-          return Long.parseLong(data) / 1000;
-        case DECIMAL:
-          return new BigDecimal(data);
-        default:
-          return data;
+      if (actualDataType == DataTypes.STRING) {
+        return data;
+      } else if (actualDataType == DataTypes.INT) {
+        return Integer.parseInt(data);
+      } else if (actualDataType == DataTypes.SHORT) {
+        return Short.parseShort(data);
+      } else if (actualDataType == DataTypes.DOUBLE) {
+        return Double.parseDouble(data);
+      } else if (actualDataType == DataTypes.LONG) {
+        return Long.parseLong(data);
+      } else if (actualDataType == DataTypes.DATE || actualDataType == DataTypes.TIMESTAMP) {
+        return Long.parseLong(data) / 1000;
+      } else if (actualDataType == DataTypes.DECIMAL) {
+        return new BigDecimal(data);
+      } else {
+        return data;
       }
     } catch (Exception ex) {
       return null;

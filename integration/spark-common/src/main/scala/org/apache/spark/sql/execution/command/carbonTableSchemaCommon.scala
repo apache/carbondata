@@ -30,7 +30,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
@@ -309,10 +309,10 @@ class AlterTableColumnSchemaGenerator(
     if (alterTableModel.highCardinalityDims.contains(colName)) {
       encoders.remove(Encoding.DICTIONARY)
     }
-    if (dataType == DataType.DATE) {
+    if (dataType == DataTypes.DATE) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
-    if (dataType == DataType.TIMESTAMP && !alterTableModel.highCardinalityDims.contains(colName)) {
+    if (dataType == DataTypes.TIMESTAMP && !alterTableModel.highCardinalityDims.contains(colName)) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     val colPropMap = new java.util.HashMap[String, String]()
@@ -378,10 +378,10 @@ class TableNewProcessor(cm: TableModel) {
     if (highCardinalityDims.contains(colName)) {
       encoders.remove(Encoding.DICTIONARY)
     }
-    if (dataType == DataType.DATE) {
+    if (dataType == DataTypes.DATE) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
-    if (dataType == DataType.TIMESTAMP && !highCardinalityDims.contains(colName)) {
+    if (dataType == DataTypes.TIMESTAMP && !highCardinalityDims.contains(colName)) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     columnSchema.setEncodingList(encoders)
@@ -508,7 +508,7 @@ class TableNewProcessor(cm: TableModel) {
     // Adding dummy measure if no measure is provided
     if (measureCount == 0) {
       val encoders = new java.util.ArrayList[Encoding]()
-      val columnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE,
+      val columnSchema: ColumnSchema = getColumnSchema(DataTypes.DOUBLE,
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
         index,
         true,
@@ -537,7 +537,7 @@ class TableNewProcessor(cm: TableModel) {
         val col = allColumns.find(_.getColumnName.equalsIgnoreCase(b))
         col match {
           case Some(colSchema: ColumnSchema) =>
-            if (colSchema.isDimensionColumn && !colSchema.isComplex) {
+            if (colSchema.isDimensionColumn && !colSchema.getDataType.isComplexType) {
               colSchema
             } else {
               LOGGER.error(s"Bucket field must be dimension column and " +

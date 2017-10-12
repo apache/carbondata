@@ -26,6 +26,7 @@ import java.io.IOException;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.CarbonInputFormat;
@@ -105,8 +106,8 @@ public class CarbonInputMapperTest extends TestCase {
       carbonProjection.addColumn("country");
       carbonProjection.addColumn("salary");
       Expression expression =
-          new EqualToExpression(new ColumnExpression("country", DataType.STRING),
-              new LiteralExpression("france", DataType.STRING));
+          new EqualToExpression(new ColumnExpression("country", DataTypes.STRING),
+              new LiteralExpression("france", DataTypes.STRING));
       runJob(outPath, carbonProjection, expression);
       Assert.assertEquals("Count lines are not matching", 101, countTheLines(outPath));
       Assert.assertEquals("Column count are not matching", 3, countTheColumns(outPath));

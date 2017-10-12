@@ -128,7 +128,7 @@ public class CarbonColumn implements Serializable {
    * false.
    */
   public Boolean isComplex() {
-    return columnSchema.isComplex();
+    return columnSchema.getDataType().isComplexType();
   }
 
   /**

@@ -19,6 +19,7 @@ package org.apache.carbondata.processing.loading.converter.impl;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.DataField;
@@ -52,7 +53,7 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
 
   @Override public void convert(CarbonRow row, BadRecordLogHolder logHolder) {
     String dimensionValue = row.getString(index);
-    if (null == dimensionValue && column.getDataType() != DataType.STRING) {
+    if (null == dimensionValue && column.getDataType() != DataTypes.STRING) {
       logHolder.setReason(
           CarbonDataProcessorUtil.prepareFailureReason(column.getColName(), column.getDataType()));
       updateWithNullValue(row);
@@ -81,7 +82,7 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
   }
 
   private void updateWithNullValue(CarbonRow row) {
-    if (dataType == DataType.STRING) {
+    if (dataType == DataTypes.STRING) {
       row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, index);
     } else {
       row.update(CarbonCommonConstants.EMPTY_BYTE_ARRAY, index);

@@ -20,6 +20,7 @@ import mockit.Mock;
 import mockit.MockUp;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -35,7 +36,7 @@ public class ForwardDictionaryTest {
   private static ForwardDictionary forwardDictionary;
 
   @BeforeClass public static void setUp() {
-    ColumnDictionaryInfo columnDictionaryInfo = new ColumnDictionaryInfo(DataType.INT);
+    ColumnDictionaryInfo columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.INT);
     forwardDictionary = new ForwardDictionary(columnDictionaryInfo);
   }
 

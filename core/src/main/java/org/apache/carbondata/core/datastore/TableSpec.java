@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -62,7 +63,7 @@ public class TableSpec {
         if (dimension.isComplex()) {
           DimensionSpec spec = new DimensionSpec(ColumnType.COMPLEX, dimension);
           dimensionSpec[dimIndex++] = spec;
-        } else if (dimension.getDataType() == DataType.TIMESTAMP && !dimension
+        } else if (dimension.getDataType() == DataTypes.TIMESTAMP && !dimension
             .isDirectDictionaryEncoding()) {
           DimensionSpec spec = new DimensionSpec(ColumnType.PLAIN_VALUE, dimension);
           dimensionSpec[dimIndex++] = spec;
@@ -167,7 +168,7 @@ public class TableSpec {
     @Override
     public void write(DataOutput out) throws IOException {
       out.writeUTF(fieldName);
-      out.writeByte(schemaDataType.ordinal());
+      out.writeByte(schemaDataType.getId());
       out.writeByte(columnType.ordinal());
       out.writeInt(scale);
       out.writeInt(precision);
@@ -176,7 +177,7 @@ public class TableSpec {
     @Override
     public void readFields(DataInput in) throws IOException {
       this.fieldName = in.readUTF();
-      this.schemaDataType = DataType.valueOf(in.readByte());
+      this.schemaDataType = DataTypes.valueOf(in.readByte());
       this.columnType = ColumnType.valueOf(in.readByte());
       this.scale = in.readInt();
       this.precision = in.readInt();

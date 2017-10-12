@@ -36,7 +36,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.block.{Distributable, SegmentProperties, TaskBlockInfo}
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, CarbonMeasure}
@@ -204,7 +204,7 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
       } else {  // normal dictionary
         val dict = CarbonLoaderUtil.getDictionary(carbonTableIdentifier,
           dimension.getColumnIdentifier, storePath, partitionDataType)
-        if (partitionDataType == DataType.STRING) {
+        if (partitionDataType == DataTypes.STRING) {
           if (partitionType == PartitionType.RANGE) {
             partitionValue = ByteUtil.
               toBytes(dict.getDictionaryValueForKey(keyArray(partColIdx).toInt))

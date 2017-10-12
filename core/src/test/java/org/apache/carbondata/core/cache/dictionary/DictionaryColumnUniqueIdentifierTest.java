@@ -16,20 +16,22 @@
  */
 package org.apache.carbondata.core.cache.dictionary;
 
-import mockit.Mock;
-import mockit.MockUp;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
+import mockit.Mock;
+import mockit.MockUp;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import static junit.framework.TestCase.*;
+import static junit.framework.TestCase.assertEquals;
+import static junit.framework.TestCase.assertNotNull;
+import static junit.framework.TestCase.assertTrue;
 
 public class DictionaryColumnUniqueIdentifierTest {
 
@@ -43,21 +45,21 @@ public class DictionaryColumnUniqueIdentifierTest {
     CarbonTableIdentifier carbonTableIdentifier2 =
         new CarbonTableIdentifier("testDatabase", "testTable", "2");
     Map<String, String> properties = new HashMap<>();
-    ColumnIdentifier columnIdentifier = new ColumnIdentifier("2", properties, DataType.STRING);
-    ColumnIdentifier columnIdentifier2 = new ColumnIdentifier("1", properties, DataType.INT);
+    ColumnIdentifier columnIdentifier = new ColumnIdentifier("2", properties, DataTypes.STRING);
+    ColumnIdentifier columnIdentifier2 = new ColumnIdentifier("1", properties, DataTypes.INT);
     dictionaryColumnUniqueIdentifier1 =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier1, columnIdentifier,
-            DataType.MAP, null);
+            DataTypes.MAP, null);
     dictionaryColumnUniqueIdentifier2 =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2, columnIdentifier2,
-            DataType.MAP, null);
+            DataTypes.MAP, null);
     dictionaryColumnUniqueIdentifier3 =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2, columnIdentifier,
-            DataType.MAP, null);
+            DataTypes.MAP, null);
   }
 
   @Test public void testToGetDataType() {
-    assertEquals(dictionaryColumnUniqueIdentifier1.getDataType(), DataType.MAP);
+    assertEquals(dictionaryColumnUniqueIdentifier1.getDataType(), DataTypes.MAP);
   }
 
   @Test public void testForEqualsWithDifferentObjectsWithDifferentColumnIdentifier() {

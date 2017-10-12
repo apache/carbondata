@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -55,7 +56,7 @@ public class SegmentPropertiesTestUtil {
     dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -70,7 +71,7 @@ public class SegmentPropertiesTestUtil {
     dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI1");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -84,7 +85,7 @@ public class SegmentPropertiesTestUtil {
     dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI2");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -100,7 +101,7 @@ public class SegmentPropertiesTestUtil {
     dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI3");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -116,7 +117,7 @@ public class SegmentPropertiesTestUtil {
     dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI4");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -130,7 +131,7 @@ public class SegmentPropertiesTestUtil {
     dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI9");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -146,7 +147,7 @@ public class SegmentPropertiesTestUtil {
     dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI10");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -162,7 +163,7 @@ public class SegmentPropertiesTestUtil {
     dimColumn.setColumnar(false);
     dimColumn.setColumnName("IMEI11");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -178,7 +179,7 @@ public class SegmentPropertiesTestUtil {
     dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI5");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.ARRAY);
+    dimColumn.setDataType(DataTypes.ARRAY);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -193,7 +194,7 @@ public class SegmentPropertiesTestUtil {
     dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI6");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -207,7 +208,7 @@ public class SegmentPropertiesTestUtil {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DELTA);
@@ -219,7 +220,7 @@ public class SegmentPropertiesTestUtil {
     ColumnSchema dimColumn = new ColumnSchema();
     dimColumn.setColumnName("IMEI_COUNT1");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataType.STRING);
+    dimColumn.setDataType(DataTypes.STRING);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     encodeList.add(Encoding.DELTA);
