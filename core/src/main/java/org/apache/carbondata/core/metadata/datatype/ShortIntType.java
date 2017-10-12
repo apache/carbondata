@@ -31,6 +31,7 @@ public class ShortIntType extends DataType {
     throw new UnsupportedOperationException("Should not call this from SHORT_INT type");
   }
 
+  // this function is needed to ensure singleton pattern while supporting java serialization
   private Object readResolve() {
     return DataTypes.SHORT_INT;
   }

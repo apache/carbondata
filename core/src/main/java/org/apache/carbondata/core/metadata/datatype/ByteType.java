@@ -25,6 +25,7 @@ public class ByteType extends DataType {
     super(id, precedenceOrder, name, sizeInBytes);
   }
 
+  // this function is needed to ensure singleton pattern while supporting java serialization
   private Object readResolve() {
     return DataTypes.BYTE;
   }

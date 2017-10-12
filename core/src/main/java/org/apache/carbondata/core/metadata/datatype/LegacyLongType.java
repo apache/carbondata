@@ -21,7 +21,13 @@ class LegacyLongType extends DataType {
 
   static final DataType LEGACY_LONG =
       new LegacyLongType(DataTypes.LEGACY_LONG_TYPE_ID, 15, "LEGACYBIGINT", 8);
+
   private LegacyLongType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);
+  }
+
+  // this function is needed to ensure singleton pattern while supporting java serialization
+  private Object readResolve() {
+    return DataTypes.LEGACY_LONG;
   }
 }
