@@ -73,7 +73,7 @@
   </dependencies>
 
   <build>
-    <sourceDirectory>src/main/scala</sourceDirectory>
+    <sourceDirectory>src/main/scala, src/main/java</sourceDirectory>
     <resources>
       <resource>
         <directory>.</directory>
