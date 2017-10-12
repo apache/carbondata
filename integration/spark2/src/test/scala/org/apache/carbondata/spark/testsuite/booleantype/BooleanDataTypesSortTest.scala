@@ -91,7 +91,7 @@ class BooleanDataTypesSortTest extends QueryTest with BeforeAndAfterEach with Be
     )
   }
 
-  test("Sort_columns: sort two boolean column and other data type column") {
+  test("Sort_columns: sort two boolean columns and other data type column") {
     sql(
       s"""
          | CREATE TABLE boolean_table(
