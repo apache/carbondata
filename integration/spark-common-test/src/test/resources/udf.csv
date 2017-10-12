@@ -1,0 +1,11 @@
+intField,doubleField,stringField,timestampField,decimalField,dateField,charField,arrayData,structData
+10,48.4,spark,2015/4/23 12:01:01,1.23,2015/4/23,aaa,'foo'#'bar'#'world',1AA100#2BB100
+17,43.4,spark,2015/7/27 12:01:02,3.45,2015/7/27,bbb,'foo'#'bar'#'world',1AA1100#2BB1100
+11,44.4,flink,2015/5/23 12:01:03,23.23,2015/5/23,ccc,'foo'#'bar'#'world',1AA1200#2BB1200
+10,43.4,spark,2015/7/24 12:01:04,254.12,2015/7/24,ddd,'foo'#'bar'#'world',1AA1300#2BB1300
+10,47.4,spark,2015/7/23 12:01:05,876.14,2015/7/23,eeee,'foo'#'bar'#'world',1AA1400#2BB1400
+14,43.4,hive,2015/7/26 12:01:06,3454.32,2015/7/26,ff,'foo'#'bar'#'world',1AA1500#2BB1500
+10,43.4,impala,2015/7/23 12:01:07,456.98,2015/7/23,ggg,'foo'#'bar'#'world',1AA1600#2BB1600
+10,43.4,spark,2015/5/23 12:01:08,32.53,2015/5/23,hhh,'foo'#'bar'#'world',1AA1700#2BB1700
+16,42.4,impala,2015/7/23 12:01:09,67.23,2015/7/23,iii,'foo'#'bar'#'world',1AA1800#2BB1800
+10,43.4,spark,2015/7/23 12:01:10,832.23,2015/7/23,jjj,'foo'#'bar'#'world',1AA1900#2BB1900
