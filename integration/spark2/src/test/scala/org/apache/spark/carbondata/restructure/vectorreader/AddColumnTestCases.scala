@@ -620,6 +620,20 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("no inverted index after alter command") {
+    sql("drop table if exists NO_INVERTED_CARBON")
+    sql(
+      """
+           CREATE TABLE IF NOT EXISTS NO_INVERTED_CARBON
+           (id Int, name String, city String)
+           STORED BY 'org.apache.carbondata.format'
+           TBLPROPERTIES('NO_INVERTED_INDEX'='city')
+      """)
+
+    sql("alter table NO_INVERTED_CARBON add columns(col1 string,col2 string) tblproperties('NO_INVERTED_INDEX'='col2')")
+    checkExistenceCount(sql("desc formatted NO_INVERTED_CARBON"),2,"NOINVERTEDINDEX")
+  }
+
   test("test if adding column in pre-aggregate table throws exception") {
     sql("drop table if exists preaggMain")
     sql("drop table if exists preagg1")
@@ -647,6 +661,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_dict")
     sql("DROP TABLE IF EXISTS alter_sort_columns")
     sql("DROP TABLE IF EXISTS alter_no_dict")
+    sql("drop table if exists NO_INVERTED_CARBON")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
       CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
