@@ -442,7 +442,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
    * @param timeStamp
    */
   private def updateSchemasUpdatedTime(timeStamp: Long) {
-    tableModifiedTimeStore.put("default", timeStamp)
+    tableModifiedTimeStore.put(CarbonCommonConstants.DATABASE_DEFAULT_NAME, timeStamp)
   }
 
   def updateAndTouchSchemasUpdatedTime(basePath: String) {
@@ -461,10 +461,12 @@ class CarbonFileMetastore extends CarbonMetaStore {
       LOGGER.audit(s"Creating timestamp file for $basePath")
       FileFactory.createNewFile(timestampFile, timestampFileType)
     }
-    val systemTime = System.currentTimeMillis()
     FileFactory.getCarbonFile(timestampFile, timestampFileType)
-      .setLastModifiedTime(systemTime)
-    systemTime
+      .setLastModifiedTime(System.currentTimeMillis())
+    // since there is no guarantee that exact same set modified time returns when called
+    // lastmodified time, so better get the time from file.
+    FileFactory.getCarbonFile(timestampFile, timestampFileType)
+      .getLastModifiedTime
   }
 
   def checkSchemasModifiedTimeAndReloadTables(storePath: String) {
