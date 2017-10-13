@@ -233,10 +233,17 @@ object CarbonSource {
    * @return
    */
   def updateCatalogTableWithCarbonSchema(tableDesc: CatalogTable,
-      sparkSession: SparkSession): CatalogTable = {
+                                         sparkSession: SparkSession): CatalogTable = {
     val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val storageFormat = tableDesc.storage
     val properties = storageFormat.properties
+    tableDesc.storage.properties.get("tableName") match {
+      case None => sys.error("Table creation failed. Table name is not specified")
+      case Some(tableName) => if (tableName.contains(" ")) {
+        sys.error("Table creation failed. Table name cannot contain blank space")
+      }
+    }
+
     if (!properties.contains("carbonSchemaPartsNo")) {
       val map = updateAndCreateTable(tableDesc.schema, sparkSession, metaStore, properties)
       // updating params
