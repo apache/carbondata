@@ -269,13 +269,19 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
 
   private void notifyDataMapBlockStart() {
     if (listener != null) {
-      listener.onBlockStart(carbonDataFileName);
+      listener.onBlockStart(carbonDataFileName, constructFactFileFullPath());
     }
+  }
+
+  private String constructFactFileFullPath() {
+    String factFilePath =
+        this.dataWriterVo.getCarbonDataDirectoryPath() + File.separator + this.carbonDataFileName;
+    return factFilePath;
   }
 
   private void notifyDataMapBlockEnd() {
     if (listener != null) {
-      listener.onBlockEnd(carbonDataFileName);
+      listener.onBlockEnd(carbonDataFileName, blockIndexInfoList);
     }
     blockletId = 0;
   }

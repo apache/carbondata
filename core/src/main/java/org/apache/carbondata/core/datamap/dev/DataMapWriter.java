@@ -16,7 +16,11 @@
  */
 package org.apache.carbondata.core.datamap.dev;
 
+import java.util.List;
+
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
+
 
 /**
  * Data Map writer
@@ -27,12 +31,12 @@ public interface DataMapWriter {
    *  Start of new block notification.
    *  @param blockId file name of the carbondata file
    */
-  void onBlockStart(String blockId);
+  void onBlockStart(String blockId, String directoryPath);
 
   /**
    * End of block notification
    */
-  void onBlockEnd(String blockId);
+  void onBlockEnd(String blockId, List<BlockIndexInfo> blockIndexInfoList);
 
   /**
    * Start of new blocklet notification.

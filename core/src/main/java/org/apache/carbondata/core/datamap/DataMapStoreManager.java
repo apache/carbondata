@@ -103,7 +103,7 @@ public final class DataMapStoreManager {
       tableDataMaps = new ArrayList<>();
     }
     TableDataMap dataMap = getTableDataMap(dataMapName, tableDataMaps);
-    if (dataMap != null) {
+    if (dataMap != null && dataMap.getDataMapName().equalsIgnoreCase(dataMapName)) {
       throw new RuntimeException("Already datamap exists in that path with type " + dataMapName);
     }
 
@@ -128,11 +128,11 @@ public final class DataMapStoreManager {
     return dataMap;
   }
 
-  private TableDataMap getTableDataMap(String dataMapName,
-      List<TableDataMap> tableDataMaps) {
+  private TableDataMap getTableDataMap(String dataMapName, List<TableDataMap> tableDataMaps) {
     TableDataMap dataMap = null;
-    for (TableDataMap tableDataMap: tableDataMaps) {
-      if (tableDataMap.getDataMapName().equals(dataMapName)) {
+    for (TableDataMap tableDataMap : tableDataMaps) {
+      if (tableDataMap.getDataMapName().equals(dataMapName) || (!tableDataMap.getDataMapName()
+          .equals(""))) {
         dataMap = tableDataMap;
         break;
       }
