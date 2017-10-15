@@ -222,16 +222,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     dimensions ++ complexDimensions
   }
 
-
-
-  def getScaleAndPrecision(dataType: String): (Int, Int) = {
-    val m: Matcher = Pattern.compile("^decimal\\(([^)]+)\\)").matcher(dataType)
-    m.find()
-    val matchedString: String = m.group(1)
-    val scaleAndPrecision = matchedString.split(",")
-    (Integer.parseInt(scaleAndPrecision(0).trim), Integer.parseInt(scaleAndPrecision(1).trim))
-  }
-
   /**
    * This will prepate the Model from the Tree details.
    *
@@ -1023,31 +1013,39 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     dataType match {
       case "string" =>
         Field(field.column, Some("String"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+          field.aggregateFunction, field.columnTableRelation
       )
       case "smallint" =>
         Field(field.column, Some("SmallInt"), field.name, Some(null),
           field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema)
+          field.precision, field.scale, field.rawSchema,
+          field.aggregateFunction, field.columnTableRelation)
       case "integer" | "int" =>
         Field(field.column, Some("Integer"), field.name, Some(null),
           field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema)
+          field.precision, field.scale, field.rawSchema,
+          field.aggregateFunction, field.columnTableRelation)
       case "long" => Field(field.column, Some("Long"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.aggregateFunction, field.columnTableRelation
       )
       case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.aggregateFunction, field.columnTableRelation
       )
       case "float" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.aggregateFunction, field.columnTableRelation
       )
       case "timestamp" =>
         Field(field.column, Some("Timestamp"), field.name, Some(null),
           field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema)
+          field.precision, field.scale, field.rawSchema,
+          field.aggregateFunction, field.columnTableRelation)
       case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.aggregateFunction, field.columnTableRelation
       )
       case "array" =>
         Field(field.column, Some("Array"), field.name,
@@ -1060,16 +1058,18 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           field.parent, field.storeType, field.schemaOrdinal,
           field.precision, field.scale, field.rawSchema)
       case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.aggregateFunction, field.columnTableRelation
       )
       case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.aggregateFunction, field.columnTableRelation
       )
       // checking if the nested data type contains the child type as decimal(10,0),
       // if it is present then extracting the precision and scale. resetting the data type
       // with Decimal.
       case _ if dataType.startsWith("decimal") =>
-        val (precision, scale) = getScaleAndPrecision(dataType)
+        val (precision, scale) = CommonUtil.getScaleAndPrecision(dataType)
         Field(field.column,
           Some("Decimal"),
           field.name,
@@ -1077,7 +1077,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           field.parent,
           field.storeType, field.schemaOrdinal, precision,
           scale,
-          field.rawSchema
+          field.rawSchema,
+          field.aggregateFunction,
+          field.columnTableRelation
         )
       case _ =>
         field
