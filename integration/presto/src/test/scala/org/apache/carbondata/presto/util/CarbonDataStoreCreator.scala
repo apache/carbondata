@@ -403,7 +403,7 @@ object CarbonDataStoreCreator {
   /**
    * Execute graph which will further load data
    *
-   * @param loadModel CarbonLoadModel
+   * @param loadModel Carbon load model
    * @param storeLocation store location directory
    * @throws Exception
    */
