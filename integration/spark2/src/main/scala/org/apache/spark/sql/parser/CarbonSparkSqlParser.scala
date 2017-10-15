@@ -18,16 +18,17 @@ package org.apache.spark.sql.parser
 
 import scala.collection.mutable
 
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, Dataset, SparkSession}
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext, TablePropertyListContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
-import org.apache.spark.sql.execution.command.{BucketFields, CarbonCreateTableCommand, Field, PartitionerField, TableModel}
+import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.command.preaaggregate.{CreatePreAggregateTableCommand, PreAggregateUtil}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 
-import org.apache.carbondata.core.util.{CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
@@ -38,7 +39,7 @@ import org.apache.carbondata.spark.util.CommonUtil
  */
 class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends AbstractSqlParser {
 
-  val astBuilder = new CarbonSqlAstBuilder(conf)
+  val astBuilder = new CarbonSqlAstBuilder(conf, sparkSession: SparkSession)
 
   private val substitutor = new VariableSubstitution(conf)
 
@@ -59,7 +60,7 @@ class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends Ab
           case e =>
             sys
               .error("\n" + "BaseSqlParser>>>> " + ex.getMessage + "\n" + "CarbonSqlParser>>>> " +
-                     e.getMessage)
+                     e)
         }
     }
   }
@@ -69,7 +70,8 @@ class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends Ab
   }
 }
 
-class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
+class CarbonSqlAstBuilder(conf: SQLConf, sparkSession: SparkSession)
+  extends SparkSqlAstBuilder(conf) {
 
   val parser = new CarbonSpark2SqlParser
 
@@ -84,6 +86,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         }
       case _ => ""
     }
+
     if (fileStorage.equalsIgnoreCase("'carbondata'") ||
         fileStorage.equalsIgnoreCase("'org.apache.carbondata.format'")) {
       val (name, temp, ifNotExists, external) = visitCreateTableHeader(ctx.createTableHeader)
@@ -119,7 +122,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
 
       val tableProperties = mutable.Map[String, String]()
       properties.foreach{property => tableProperties.put(property._1, property._2)}
-
+      val isAggTable = tableProperties.get("parent").isDefined
       // validate partition clause
       if (partitionerFields.nonEmpty) {
         if (!CommonUtil.validatePartitionColumns(tableProperties, partitionerFields)) {
@@ -129,10 +132,20 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         val badPartCols = partitionerFields.map(_.partitionColumn).toSet.intersect(colNames.toSet)
         if (badPartCols.nonEmpty) {
           operationNotAllowed(s"Partition columns should not be specified in the schema: " +
-                              badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"), ctx)
+          badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"), ctx)
         }
       }
-      val fields = parser.getFields(cols ++ partitionByStructFields)
+      var fields = parser.getFields(cols ++ partitionByStructFields)
+
+      val dataFrame = if (isAggTable) {
+        val selectQuery = Option(ctx.query).map(plan).get
+        val df = Dataset.ofRows(sparkSession, selectQuery)
+        fields = PreAggregateUtil
+          .validateActualSelectPlanAndGetAttrubites(df.logicalPlan, source(ctx.query()))
+        Some(df)
+      } else {
+        None
+      }
       val options = new CarbonOption(properties)
       // validate tblProperties
       val bucketFields = parser.getBucketFields(tableProperties, fields, options)
@@ -146,7 +159,13 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         tableProperties,
         bucketFields)
 
-      CarbonCreateTableCommand(tableModel)
+      if(!isAggTable) {
+        CarbonCreateTableCommand(tableModel)
+      } else {
+        CreatePreAggregateTableCommand(tableModel,
+          dataFrame.get,
+          queryString = source(ctx.query).toString)
+      }
     } else {
       super.visitCreateTable(ctx)
     }
