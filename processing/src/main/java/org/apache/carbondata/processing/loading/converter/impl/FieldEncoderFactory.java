@@ -27,9 +27,12 @@ import org.apache.carbondata.core.dictionary.client.DictionaryClient;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
@@ -76,8 +79,32 @@ public class FieldEncoderFactory {
             isEmptyBadRecord);
       } else if (dataField.getColumn().hasEncoding(Encoding.DICTIONARY) &&
           !dataField.getColumn().isComplex()) {
-        return new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier, nullFormat,
-            index, client, useOnePass, storePath, localCache, isEmptyBadRecord);
+        DictionaryColumnUniqueIdentifier identifier = null;
+        // if parent column table relation is not null then it's a child table
+        // in case of child table it will use parent table dictionary
+        if (null == dataField.getParentColumnTableRelation()) {
+          identifier = new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
+              dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType(),
+              CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
+          return new DictionaryFieldConverterImpl(dataField, cache, carbonTableIdentifier,
+              nullFormat, index, client, useOnePass, storePath, localCache, isEmptyBadRecord,
+              identifier);
+        } else {
+          RelationIdentifier relationIdentifier =
+              dataField.getParentColumnTableRelation().getRelationIdentifier();
+          CarbonTableIdentifier parentTableIdentifier =
+              new CarbonTableIdentifier(relationIdentifier.getDatabaseName(),
+                  relationIdentifier.getTableName(), relationIdentifier.getTableId());
+          ColumnIdentifier parentColumnIdentifier =
+              new ColumnIdentifier(dataField.getParentColumnTableRelation().getColumnId(), null,
+                  dataField.getColumn().getDataType());
+          identifier =
+              new DictionaryColumnUniqueIdentifier(parentTableIdentifier, parentColumnIdentifier,
+                  dataField.getColumn().getDataType(),
+                  CarbonStorePath.getCarbonTablePath(storePath, parentTableIdentifier));
+          return new DictionaryFieldConverterImpl(dataField, cache, parentTableIdentifier,
+              nullFormat, index, null, false, storePath, null, isEmptyBadRecord, identifier);
+        }
       } else if (dataField.getColumn().isComplex()) {
         return new ComplexFieldConverterImpl(
             createComplexType(dataField, cache, carbonTableIdentifier,

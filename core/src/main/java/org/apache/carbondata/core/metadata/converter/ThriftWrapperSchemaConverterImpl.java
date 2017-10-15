@@ -30,9 +30,15 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
+import org.apache.carbondata.core.metadata.schema.table.ChildSchema;
+import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.RelationProperties;
+import org.apache.carbondata.core.metadata.schema.table.RelationType;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnRelation;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
 
 /**
  * Thrift schema to carbon schema converter and vice versa
@@ -159,7 +165,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
    */
   @Override public org.apache.carbondata.format.ColumnSchema fromWrapperToExternalColumnSchema(
       ColumnSchema wrapperColumnSchema) {
-
     List<org.apache.carbondata.format.Encoding> encoders =
         new ArrayList<org.apache.carbondata.format.Encoding>();
     for (Encoding encoder : wrapperColumnSchema.getEncodingList()) {
@@ -179,13 +184,12 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     thriftColumnSchema.setInvisible(wrapperColumnSchema.isInvisible());
     thriftColumnSchema.setColumnReferenceId(wrapperColumnSchema.getColumnReferenceId());
     thriftColumnSchema.setSchemaOrdinal(wrapperColumnSchema.getSchemaOrdinal());
-
     if (wrapperColumnSchema.isSortColumn()) {
       Map<String, String> properties = new HashMap<String, String>();
       properties.put(CarbonCommonConstants.SORT_COLUMNS, "true");
       thriftColumnSchema.setColumnProperties(properties);
     }
-
+    thriftColumnSchema.setAggregate_function(wrapperColumnSchema.getAggFunction());
     return thriftColumnSchema;
   }
 
@@ -252,6 +256,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       externalTableSchema.setPartitionInfo(
           fromWrapperToExternalPartitionInfo(wrapperTableSchema.getPartitionInfo()));
     }
+    if (null != wrapperTableSchema.getColumnRelations()) {
+      externalTableSchema.setColumnRelationList(
+          fromWrapperToExternalColumnRelationList(wrapperTableSchema.getColumnRelations()));
+    }
     return externalTableSchema;
   }
 
@@ -271,13 +279,117 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
    */
   @Override public org.apache.carbondata.format.TableInfo fromWrapperToExternalTableInfo(
       TableInfo wrapperTableInfo, String dbName, String tableName) {
-
     org.apache.carbondata.format.TableSchema thriftFactTable =
         fromWrapperToExternalTableSchema(wrapperTableInfo.getFactTable());
-    return new org.apache.carbondata.format.TableInfo(thriftFactTable, new ArrayList<org.apache
-        .carbondata.format.TableSchema>());
+    org.apache.carbondata.format.TableInfo tableInfo =
+        new org.apache.carbondata.format.TableInfo(thriftFactTable,
+            new ArrayList<org.apache.carbondata.format.TableSchema>());
+    List<ChildSchema> wrapperChildSchemaList = wrapperTableInfo.getChildSchemaList();
+    if (null != wrapperChildSchemaList) {
+      List<org.apache.carbondata.format.ChildSchema> thriftChildSchemas =
+          fromWrapperToExternalChildSchemaList(wrapperChildSchemaList);
+      tableInfo.setChildSchemas(thriftChildSchemas);
+    }
+    if (null != wrapperTableInfo.getParentRelationIdentifiers() && !wrapperTableInfo
+        .getParentRelationIdentifiers().isEmpty()) {
+      List<RelationIdentifier> parentRelationIdentifier =
+          wrapperTableInfo.getParentRelationIdentifiers();
+      List<org.apache.carbondata.format.RelationIdentifier> thriftRelationIdentifier =
+          fromWrapperToExternalRI(parentRelationIdentifier);
+      tableInfo.setParentRelationInfo(thriftRelationIdentifier);
+    }
+    return tableInfo;
   }
 
+  private List<org.apache.carbondata.format.RelationIdentifier> fromWrapperToExternalRI(
+      List<RelationIdentifier> relationIdentifiersList) {
+    List<org.apache.carbondata.format.RelationIdentifier> thriftRelationIdentifierList =
+        new ArrayList<>();
+    for (RelationIdentifier relationIdentifier : relationIdentifiersList) {
+      org.apache.carbondata.format.RelationIdentifier thriftRelationIdentifier =
+          new org.apache.carbondata.format.RelationIdentifier();
+      thriftRelationIdentifier.setDatabaseName(relationIdentifier.getDatabaseName());
+      thriftRelationIdentifier.setTableName(relationIdentifier.getTableName());
+      thriftRelationIdentifier.setTableId(relationIdentifier.getTableId());
+      thriftRelationIdentifierList.add(thriftRelationIdentifier);
+    }
+    return thriftRelationIdentifierList;
+  }
+
+  private List<org.apache.carbondata.format.ChildSchema> fromWrapperToExternalChildSchemaList(
+      List<ChildSchema> wrapperChildSchemaList) {
+    List<org.apache.carbondata.format.ChildSchema> thriftChildSchemas = new ArrayList<>();
+    for (ChildSchema wrapperChildSchema : wrapperChildSchemaList) {
+      org.apache.carbondata.format.ChildSchema thriftChildSchema =
+          new org.apache.carbondata.format.ChildSchema();
+      org.apache.carbondata.format.RelationIdentifier relationIdentifier =
+          new org.apache.carbondata.format.RelationIdentifier();
+      relationIdentifier
+          .setDatabaseName(wrapperChildSchema.getRelationIdentifier().getDatabaseName());
+      relationIdentifier.setTableName(wrapperChildSchema.getRelationIdentifier().getTableName());
+      relationIdentifier.setTableId(wrapperChildSchema.getRelationIdentifier().getTableId());
+      thriftChildSchema.setRelationInfo(relationIdentifier);
+      thriftChildSchema.setChildTableSchema(
+          fromWrapperToExternalTableSchema(wrapperChildSchema.getTableSchema()));
+      thriftChildSchema.setRelationProperties(
+          fromWrapperToExternalRelationProperties(wrapperChildSchema.getRelationProperties()));
+      thriftChildSchemas.add(thriftChildSchema);
+    }
+    return thriftChildSchemas;
+  }
+
+  private List<org.apache.carbondata.format.ColumnRelation> fromWrapperToExternalColumnRelationList(
+      List<ColumnRelation> wrapperColumnRelations) {
+    List<org.apache.carbondata.format.ColumnRelation> thriftColumnRelationList = new ArrayList<>();
+    for (ColumnRelation columnRelations : wrapperColumnRelations) {
+      org.apache.carbondata.format.ColumnRelation thriftColumnRelation =
+          new org.apache.carbondata.format.ColumnRelation();
+      List<org.apache.carbondata.format.ParentColumnTableRelation> thriftColumnTableRelations =
+          new ArrayList<>();
+      for (ParentColumnTableRelation wrapperColumnRealtion : columnRelations
+          .getColumnTableRelationList()) {
+        org.apache.carbondata.format.ParentColumnTableRelation thriftColumnTableRelation =
+            new org.apache.carbondata.format.ParentColumnTableRelation();
+        thriftColumnTableRelation.setColumnId(wrapperColumnRealtion.getColumnId());
+        thriftColumnTableRelation.setColumnName(wrapperColumnRealtion.getColumnName());
+        org.apache.carbondata.format.RelationIdentifier thriftRelationIdentifier =
+            new org.apache.carbondata.format.RelationIdentifier();
+        thriftRelationIdentifier
+            .setDatabaseName(wrapperColumnRealtion.getRelationIdentifier().getDatabaseName());
+        thriftRelationIdentifier
+            .setTableName(wrapperColumnRealtion.getRelationIdentifier().getTableName());
+        thriftRelationIdentifier
+            .setTableId(wrapperColumnRealtion.getRelationIdentifier().getTableId());
+        thriftColumnTableRelation.setRelationInfo(thriftRelationIdentifier);
+        thriftColumnTableRelations.add(thriftColumnTableRelation);
+      }
+      thriftColumnRelation.setColumnId(columnRelations.getColumnId());
+      thriftColumnRelation.setColumnTableRelation(thriftColumnTableRelations);
+      thriftColumnRelationList.add(thriftColumnRelation);
+    }
+    return thriftColumnRelationList;
+  }
+
+
+  private org.apache.carbondata.format.RelationProperties fromWrapperToExternalRelationProperties(
+      RelationProperties wrapperRelationProperties) {
+    org.apache.carbondata.format.RelationProperties thriftRelationProperties =
+        new org.apache.carbondata.format.RelationProperties();
+    thriftRelationProperties.setProperties(wrapperRelationProperties.getProperties());
+    thriftRelationProperties.setRelationTypes(
+        fromWrapperToExternalRelationType(wrapperRelationProperties.getRelationType()));
+    return thriftRelationProperties;
+  }
+
+  private org.apache.carbondata.format.RelationType fromWrapperToExternalRelationType(
+      RelationType relationTypeThrift) {
+    switch (relationTypeThrift) {
+      case AGGREGATION:
+        return org.apache.carbondata.format.RelationType.AGGREGATION;
+      default:
+        return org.apache.carbondata.format.RelationType.AGGREGATION;
+    }
+  }
   /* (non-Javadoc)
    * convert from external to wrapper schema evolution entry
    */
@@ -422,8 +534,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         wrapperColumnSchema.setSortColumn(true);
       }
     }
+    wrapperColumnSchema.setAggFunction(externalColumnSchema.getAggregate_function());
     return wrapperColumnSchema;
   }
+
 
   private PartitionType fromExternalToWrapperPartitionType(
       org.apache.carbondata.format.PartitionType externalPartitionType) {
@@ -487,6 +601,11 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       wrapperTableSchema.setPartitionInfo(
           fromExternalToWrapperPartitionInfo(externalTableSchema.getPartitionInfo()));
     }
+    if (null != externalTableSchema.getColumnRelationList()) {
+      wrapperTableSchema.setColumnRelations(
+          fromExtrenalToWrapperColumnRelations(externalTableSchema.getColumnRelationList()));
+    }
+
     return wrapperTableSchema;
   }
 
@@ -517,7 +636,87 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperTableInfo.setStorePath(storePath);
     wrapperTableInfo.setFactTable(
         fromExternalToWrapperTableSchema(externalTableInfo.getFact_table(), tableName));
+    if (null != externalTableInfo.getChildSchemas()) {
+      wrapperTableInfo.setChildSchemaList(
+          fromExternalToWrapperChildSchemaList(externalTableInfo.getChildSchemas()));
+    }
+    List<org.apache.carbondata.format.RelationIdentifier> parentRelationInfos =
+        externalTableInfo.getParentRelationInfo();
+    if (null != parentRelationInfos) {
+      List<RelationIdentifier> wrapperRelationIdentifiers = new ArrayList<>();
+      for (org.apache.carbondata.format.RelationIdentifier parentRelationInfo :
+          parentRelationInfos) {
+        RelationIdentifier wrapperRelationIdentifier =
+            new RelationIdentifier(parentRelationInfo.getDatabaseName(),
+                parentRelationInfo.getTableName(), parentRelationInfo.getTableId());
+        wrapperRelationIdentifiers.add(wrapperRelationIdentifier);
+      }
+      wrapperTableInfo.setParentRelationIdentifiers(wrapperRelationIdentifiers);
+    }
     return wrapperTableInfo;
+  }
+
+  @Override public ChildSchema fromExternalToWrapperChildSchema(
+      org.apache.carbondata.format.ChildSchema thriftchildSchema) {
+    RelationProperties relationProperties =
+        fromExternalToWrapperRelationProperties(thriftchildSchema.getRelationProperties());
+    RelationIdentifier relationIdentifier =
+        new RelationIdentifier(thriftchildSchema.getRelationInfo().getDatabaseName(),
+            thriftchildSchema.getRelationInfo().getTableName(),
+            thriftchildSchema.getRelationInfo().getTableId());
+    ChildSchema childSchema = new ChildSchema(relationIdentifier,
+        fromExternalToWrapperTableSchema(thriftchildSchema.getChildTableSchema(),
+            relationIdentifier.getTableName()), relationProperties);
+    return childSchema;
+  }
+
+  private List<ColumnRelation> fromExtrenalToWrapperColumnRelations(
+      List<org.apache.carbondata.format.ColumnRelation> thriftColumnRelations) {
+    List<ColumnRelation> wrapperColumnRelations = new ArrayList<>();
+    for (org.apache.carbondata.format.ColumnRelation thriftColumnRelation : thriftColumnRelations) {
+      List<org.apache.carbondata.format.ParentColumnTableRelation> thriftColumnTableRelations =
+          thriftColumnRelation.getColumnTableRelation();
+      List<ParentColumnTableRelation> columnTableRelations = new ArrayList<>();
+      for (org.apache.carbondata.format.ParentColumnTableRelation carbonTableRelation :
+          thriftColumnTableRelations) {
+        RelationIdentifier relationIdentifier =
+            new RelationIdentifier(carbonTableRelation.getRelationInfo().getDatabaseName(),
+                carbonTableRelation.getRelationInfo().getTableName(),
+                carbonTableRelation.getRelationInfo().getTableId());
+        ParentColumnTableRelation columnTableRelation =
+            new ParentColumnTableRelation(relationIdentifier, carbonTableRelation.getColumnId(),
+                carbonTableRelation.getColumnName());
+        columnTableRelations.add(columnTableRelation);
+      }
+      wrapperColumnRelations
+          .add(new ColumnRelation(thriftColumnRelation.getColumnId(), columnTableRelations));
+    }
+    return wrapperColumnRelations;
+  }
+
+  public List<ChildSchema> fromExternalToWrapperChildSchemaList(
+      List<org.apache.carbondata.format.ChildSchema> childSchemaList) {
+    List<ChildSchema> childSchemas = new ArrayList<>();
+    for (org.apache.carbondata.format.ChildSchema childSchemaThrift : childSchemaList) {
+      childSchemas.add(fromExternalToWrapperChildSchema(childSchemaThrift));
+    }
+    return childSchemas;
+  }
+
+  private RelationProperties fromExternalToWrapperRelationProperties(
+      org.apache.carbondata.format.RelationProperties relationPropertie) {
+    RelationType relationType = fromExternalToWrapperRelationType(relationPropertie.relationTypes);
+    return new RelationProperties(relationType, relationPropertie.getProperties());
+  }
+
+  private RelationType fromExternalToWrapperRelationType(
+      org.apache.carbondata.format.RelationType relationTypeThrift) {
+    switch (relationTypeThrift) {
+      case AGGREGATION:
+        return RelationType.AGGREGATION;
+      default:
+        return RelationType.AGGREGATION;
+    }
   }
 
 }

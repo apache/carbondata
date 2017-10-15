@@ -58,6 +58,16 @@ class QueryTest extends PlanTest {
     }
   }
 
+  def checkExistenceOne(df: DataFrame, exists: Boolean, keywords: String) {
+    val outputs = df.collect().map(_.mkString).mkString
+      if (exists) {
+        assert(outputs.contains(keywords), s"Failed for $df ($keywords doesn't exist in result)")
+      } else {
+        assert(!outputs.contains(keywords), s"Failed for $df ($keywords existed in the result)")
+      }
+  }
+
+
   def sqlTest(sqlString: String, expectedAnswer: Seq[Row])(implicit sqlContext: SQLContext) {
     test(sqlString) {
       checkAnswer(sqlContext.sql(sqlString), expectedAnswer)

@@ -24,6 +24,8 @@ import java.io.DataOutput;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -31,6 +33,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
 
 /**
  * Store the information about the table.
@@ -79,7 +82,13 @@ public class TableInfo implements Serializable, Writable {
   // this idenifier is a lazy field which will be created when it is used first time
   private AbsoluteTableIdentifier identifier;
 
+  private List<ChildSchema> childSchemaList;
+
+  private List<RelationIdentifier> parentRelationIdentifiers;
+
   public TableInfo() {
+    childSchemaList = new ArrayList<>();
+    this.parentRelationIdentifiers = new ArrayList<>();
   }
 
   /**
@@ -160,6 +169,22 @@ public class TableInfo implements Serializable, Writable {
     this.storePath = storePath;
   }
 
+  public List<ChildSchema> getChildSchemaList() {
+    return childSchemaList;
+  }
+
+  public void setChildSchemaList(List<ChildSchema> childSchemaList) {
+    this.childSchemaList = childSchemaList;
+  }
+
+  public List<RelationIdentifier> getParentRelationIdentifiers() {
+    return parentRelationIdentifiers;
+  }
+
+  public void setParentRelationIdentifiers(List<RelationIdentifier> parentRelationIdentifiers) {
+    this.parentRelationIdentifiers = parentRelationIdentifiers;
+  }
+
   /**
    * to generate the hash code
    */
@@ -228,10 +253,27 @@ public class TableInfo implements Serializable, Writable {
     out.writeLong(lastUpdatedTime);
     out.writeUTF(metaDataFilepath);
     out.writeUTF(storePath);
+    boolean isChildSchemaExists =
+        null != childSchemaList && childSchemaList.size() > 0 ? true : false;
+    out.writeBoolean(isChildSchemaExists);
+    if (isChildSchemaExists) {
+      out.writeShort(childSchemaList.size());
+      for (int i = 0; i < childSchemaList.size(); i++) {
+        childSchemaList.get(i).write(out);
+      }
+    }
+    boolean isParentRelationExists =
+        null != parentRelationIdentifiers && parentRelationIdentifiers.size() > 0 ? true : false;
+    out.writeBoolean(isParentRelationExists);
+    if (isParentRelationExists) {
+      out.writeShort(parentRelationIdentifiers.size());
+      for (int i = 0; i < parentRelationIdentifiers.size(); i++) {
+        parentRelationIdentifiers.get(i).write(out);
+      }
+    }
   }
 
-  @Override
-  public void readFields(DataInput in) throws IOException {
+  @Override public void readFields(DataInput in) throws IOException {
     this.databaseName = in.readUTF();
     this.tableUniqueName = in.readUTF();
     this.factTable = new TableSchema();
@@ -239,6 +281,26 @@ public class TableInfo implements Serializable, Writable {
     this.lastUpdatedTime = in.readLong();
     this.metaDataFilepath = in.readUTF();
     this.storePath = in.readUTF();
+    boolean isChildSchemaExists = in.readBoolean();
+    this.childSchemaList = new ArrayList<>();
+    if (isChildSchemaExists) {
+      short numberOfChildTable = in.readShort();
+      for (int i = 0; i < numberOfChildTable; i++) {
+        ChildSchema childSchema = new ChildSchema(null, null, null);
+        childSchema.readFields(in);
+        childSchemaList.add(childSchema);
+      }
+    }
+    boolean isParentRelationExists = in.readBoolean();
+    this.parentRelationIdentifiers = new ArrayList<>();
+    if (isParentRelationExists) {
+      int parentRelationIdentifiersSize = in.readShort();
+      for (int i = 0; i < parentRelationIdentifiersSize; i++) {
+        RelationIdentifier relationIdentifier = new RelationIdentifier(null, null, null);
+        relationIdentifier.readFields(in);
+        parentRelationIdentifiers.add(relationIdentifier);
+      }
+    }
   }
 
   public AbsoluteTableIdentifier getOrCreateAbsoluteTableIdentifier() {
@@ -261,5 +323,9 @@ public class TableInfo implements Serializable, Writable {
     DataInputStream in = new DataInputStream(new ByteArrayInputStream(bytes));
     tableInfo.readFields(in);
     return tableInfo;
+  }
+
+  public List<ParentColumnTableRelation> getParentColumnTableRelation(String columnId) {
+    return factTable.getParentColumnTableRelation(columnId);
   }
 }

@@ -21,6 +21,7 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +29,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnRelation;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
 
 /**
  * Persisting the table information
@@ -74,6 +77,13 @@ public class TableSchema implements Serializable, Writable {
    * Information about partition type, partition column, numbers
    */
   private PartitionInfo partitionInfo;
+
+  /**
+   * to maintain the relation between child to parent column
+   * relation this will be used during dataloading and query
+   * to select parent table columns
+   */
+  private List<ColumnRelation> columnRelations;
 
   public TableSchema() {
     this.listOfColumns = new ArrayList<ColumnSchema>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -126,6 +136,14 @@ public class TableSchema implements Serializable, Writable {
    */
   public String getTableName() {
     return tableName;
+  }
+
+  public List<ColumnRelation> getColumnRelations() {
+    return columnRelations;
+  }
+
+  public void setColumnRelations(List<ColumnRelation> columnRelations) {
+    this.columnRelations = columnRelations;
   }
 
   /**
@@ -223,6 +241,16 @@ public class TableSchema implements Serializable, Writable {
     } else {
       out.writeBoolean(false);
     }
+    // code to read column relation in case of aggregate table
+    // to maintain the relation between child table column
+    // parent table column
+    boolean isColumnRelationsExists = null != this.columnRelations;
+    if (isColumnRelationsExists) {
+      out.writeShort(this.columnRelations.size());
+      for (int i = 0; i < this.columnRelations.size(); i++) {
+        this.columnRelations.get(i).write(out);
+      }
+    }
   }
 
   @Override
@@ -248,6 +276,52 @@ public class TableSchema implements Serializable, Writable {
       this.bucketingInfo = new BucketingInfo();
       this.bucketingInfo.readFields(in);
     }
+    // code to read column relation in case of aggregate table
+    // to maintain the relation between child table column
+    // parent table column
+    boolean isColumnRelationExists = in.readBoolean();
+    if (isColumnRelationExists) {
+      short numberOfColumnRelation = in.readShort();
+      this.columnRelations = new ArrayList<>();
+      for (int i = 0; i < numberOfColumnRelation; i++) {
+        ColumnRelation columnRelation = new ColumnRelation(null, null);
+        columnRelation.readFields(in);
+        columnRelations.add(columnRelation);
+      }
+    }
   }
 
+  /**
+   * Below methdo will be used to build child schema object which will be stored in
+   * parent table
+   * @param databaseName
+   *        name of the database
+   * @param queryString
+   *        aggergate table select query string which will be used
+   *        during data loading
+   *
+   * @return child schema object
+   */
+  public ChildSchema buildChildSchema(String databaseName, String queryString) {
+    RelationIdentifier relationIdentifier =
+        new RelationIdentifier(databaseName, tableName, tableId);
+    Map<String, String> properties = new HashMap<>();
+    properties.put("CHILD_SELECT QUERY", queryString);
+    RelationProperties relationProperties =
+        new RelationProperties(RelationType.AGGREGATION, properties);
+    return new ChildSchema(relationIdentifier, this, relationProperties);
+  }
+
+  public List<ParentColumnTableRelation> getParentColumnTableRelation(String columnId) {
+    if (null != columnRelations) {
+      for (ColumnRelation columnRelation : columnRelations) {
+        if (columnRelation.getColumnId().equals(columnId)) {
+          if (columnRelation.getColumnTableRelationList().size() == 1) {
+            return columnRelation.getColumnTableRelationList();
+          }
+        }
+      }
+    }
+    return null;
+  }
 }
