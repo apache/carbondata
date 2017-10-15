@@ -570,11 +570,11 @@ public final class CarbonDataMergerUtil {
   /**
    * Identify the segments to be merged based on the Size in case of Major compaction.
    *
-   * @param compactionSize
-   * @param listOfSegmentsAfterPreserve
-   * @param carbonLoadModel
-   * @param storeLocation
-   * @return
+   * @param compactionSize compaction size in MB format
+   * @param listOfSegmentsAfterPreserve  the segments list after preserving the configured number of latest loads
+   * @param carbonLoadModel carbon load model
+   * @param storeLocation the store location of the segment
+   * @return the list of segments that need to be merged based on the Size in case of Major compaction
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSize(
       long compactionSize, List<LoadMetadataDetails> listOfSegmentsAfterPreserve,
@@ -634,14 +634,14 @@ public final class CarbonDataMergerUtil {
 
   /**
    * For calculating the size of the specified segment
-   * @param storeLocation
-   * @param tableIdentifier
-   * @param segId
-   * @return
+   * @param storePath the store path of the segment
+   * @param tableIdentifier identifier of table that the segment belong to
+   * @param segId segment id
+   * @return the data size of the segment
    */
-  private static long getSizeOfSegment(String storeLocation,
+  private static long getSizeOfSegment(String storePath,
       CarbonTableIdentifier tableIdentifier, String segId) {
-    String loadPath = getStoreLocation(storeLocation, tableIdentifier, segId);
+    String loadPath = getStoreLocation(storePath, tableIdentifier, segId);
     CarbonFile segmentFolder =
         FileFactory.getCarbonFile(loadPath, FileFactory.getFileType(loadPath));
     return getSizeOfFactFileInLoad(segmentFolder);
@@ -650,10 +650,10 @@ public final class CarbonDataMergerUtil {
   /**
    * This method will get the store location for the given path, segemnt id and partition id
    *
-   * @param storePath
-   * @param carbonTableIdentifier
-   * @param segmentId
-   * @return
+   * @param storePath the store path of the segment
+   * @param carbonTableIdentifier identifier of catbon table that the segment belong to
+   * @param segmentId segment id
+   * @return the store location of the segment
    */
   private static String getStoreLocation(String storePath,
       CarbonTableIdentifier carbonTableIdentifier, String segmentId) {
@@ -666,8 +666,8 @@ public final class CarbonDataMergerUtil {
   /**
    * Identify the segments to be merged based on the segment count
    *
-   * @param listOfSegmentsAfterPreserve
-   * @return
+   * @param listOfSegmentsAfterPreserve the list of segments after preserve and before filtering by minor compaction level
+   * @return the list of segments to be merged after filtering by minor compaction level
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSegCount(
       List<LoadMetadataDetails> listOfSegmentsAfterPreserve) {
@@ -730,8 +730,8 @@ public final class CarbonDataMergerUtil {
 
   /**
    * To check if the segment is merged or not.
-   * @param segName
-   * @return
+   * @param segName segment name
+   * @return the status whether the segment has been Merged
    */
   private static boolean isMergedSegment(String segName) {
     if (segName.contains(".")) {

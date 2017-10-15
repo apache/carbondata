@@ -56,8 +56,8 @@ public class CarbonTablePath extends Path {
 
   /**
    *
-   * @param carbonTableIdentifier
-   * @param tablePathString
+   * @param carbonTableIdentifier identifier of carbon table that the segment belong to
+   * @param tablePathString the store path of the segment
    */
   public CarbonTablePath(CarbonTableIdentifier carbonTableIdentifier, String tablePathString) {
     super(tablePathString);
@@ -65,6 +65,12 @@ public class CarbonTablePath extends Path {
     this.tablePath = tablePathString;
   }
 
+  /**
+   *
+   * @param storePath the store path of the segment
+   * @param dbName database name
+   * @param tableName table name
+   */
   public CarbonTablePath(String storePath, String dbName, String tableName) {
     super(storePath + File.separator + dbName + File.separator + tableName);
     this.carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "");
