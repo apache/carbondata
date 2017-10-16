@@ -30,8 +30,10 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.{Row, RowFactory}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
 import org.apache.spark.sql.types.{MetadataBuilder, StringType}
+import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -831,4 +833,41 @@ object CommonUtil {
         LOGGER.error(s)
     }
   }
+
+  def parseStringDateToSparkFormat(v: Any): Long = {
+    try {
+      val days = DateTimeUtils.stringToDate(UTF8String.fromString(v.toString))
+      days match {
+        case None =>
+          throw new Exception("Date Parsing fail")
+
+        case _ =>
+          DateTimeUtils.daysToMillis(days.get) * 1000L
+
+      }
+    }
+    catch {
+      case e: Exception =>
+        throw new Exception("Date Parsing fail")
+    }
+  }
+
+  def parseStringTimestampToSparkFormat(v: Any): Long = {
+    try {
+      val days = DateTimeUtils.stringToTimestamp(UTF8String.fromString(v.toString))
+      days match {
+        case None =>
+          throw new Exception("Date Parsing fail")
+
+        case _ =>
+          days.get
+      }
+    }
+    catch {
+      case e: Exception =>
+        throw new Exception("Date Parsing fail")
+
+    }
+  }
+
 }
