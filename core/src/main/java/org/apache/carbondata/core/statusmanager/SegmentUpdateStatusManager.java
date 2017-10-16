@@ -333,10 +333,11 @@ public class SegmentUpdateStatusManager {
   }
 
   /**
+   * check the block whether is valid
    *
-   * @param segName
-   * @param blockName
-   * @return
+   * @param segName segment name
+   * @param blockName  block name
+   * @return the status of block whether is valid
    */
   public boolean isBlockValid(String segName, String blockName) {
 

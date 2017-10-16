@@ -571,10 +571,12 @@ public final class CarbonDataMergerUtil {
    * Identify the segments to be merged based on the Size in case of Major compaction.
    *
    * @param compactionSize compaction size in MB format
-   * @param listOfSegmentsAfterPreserve  the segments list after preserving the configured number of latest loads
+   * @param listOfSegmentsAfterPreserve  the segments list after
+   *        preserving the configured number of latest loads
    * @param carbonLoadModel carbon load model
    * @param storeLocation the store location of the segment
-   * @return the list of segments that need to be merged based on the Size in case of Major compaction
+   * @return the list of segments that need to be merged
+   *         based on the Size in case of Major compaction
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSize(
       long compactionSize, List<LoadMetadataDetails> listOfSegmentsAfterPreserve,
@@ -666,7 +668,8 @@ public final class CarbonDataMergerUtil {
   /**
    * Identify the segments to be merged based on the segment count
    *
-   * @param listOfSegmentsAfterPreserve the list of segments after preserve and before filtering by minor compaction level
+   * @param listOfSegmentsAfterPreserve the list of segments after
+   *        preserve and before filtering by minor compaction level
    * @return the list of segments to be merged after filtering by minor compaction level
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSegCount(
