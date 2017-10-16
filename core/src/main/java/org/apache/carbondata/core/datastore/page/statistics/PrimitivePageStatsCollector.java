@@ -57,7 +57,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         meta.getScale(), meta.getPrecision());
     // set min max from meta
     DataType dataType = meta.getSchemaDataType();
-    if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       instance.minByte = (byte) meta.getMinValue();
       instance.maxByte = (byte) meta.getMaxValue();
     } else if (dataType == DataTypes.SHORT) {
@@ -91,7 +91,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         new PrimitivePageStatsCollector(DataType.getDataType(meta.getType()), -1, -1);
     // set min max from meta
     DataType dataType = DataType.getDataType(meta.getType());
-    if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       instance.minByte = (byte) meta.getMinValue();
       instance.maxByte = (byte) meta.getMaxValue();
     } else if (dataType == DataTypes.SHORT) {
@@ -155,7 +155,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   @Override
   public void updateNull(int rowId) {
     long value = 0;
-    if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       update((byte) value);
     } else if (dataType == DataTypes.SHORT) {
       update((short) value);
@@ -296,7 +296,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   @Override
   public Object getMin() {
-    if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       return minByte;
     } else if (dataType == DataTypes.SHORT) {
       return minShort;
@@ -314,7 +314,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   @Override
   public Object getMax() {
-    if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       return maxByte;
     } else if (dataType == DataTypes.SHORT) {
       return maxShort;

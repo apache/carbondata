@@ -188,12 +188,12 @@ public abstract class ColumnPage {
       if (dataType == DataTypes.BOOLEAN) {
         instance = new UnsafeFixLengthColumnPage(columnSpec, BYTE, pageSize);
       } else if (dataType == DataTypes.BYTE ||
-              dataType == DataTypes.SHORT ||
-              dataType == DataTypes.SHORT_INT ||
-              dataType == DataTypes.INT ||
-              dataType == DataTypes.LONG ||
-              dataType == DataTypes.FLOAT ||
-              dataType == DataTypes.DOUBLE) {
+          dataType == DataTypes.SHORT ||
+          dataType == DataTypes.SHORT_INT ||
+          dataType == DataTypes.INT ||
+          dataType == DataTypes.LONG ||
+          dataType == DataTypes.FLOAT ||
+          dataType == DataTypes.DOUBLE) {
         instance = new UnsafeFixLengthColumnPage(columnSpec, dataType, pageSize);
       } else if (dataType == DataTypes.DECIMAL) {
         instance = new UnsafeDecimalColumnPage(columnSpec, dataType, pageSize);

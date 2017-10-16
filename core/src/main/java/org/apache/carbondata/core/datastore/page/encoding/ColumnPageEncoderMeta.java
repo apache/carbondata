@@ -106,7 +106,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
 
   private void writeMinMax(DataOutput out) throws IOException {
     DataType dataType = columnSpec.getSchemaDataType();
-    if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       out.writeByte((byte) getMaxValue());
       out.writeByte((byte) getMinValue());
       out.writeLong(0L); // unique value is obsoleted, maintain for compatibility
@@ -149,7 +149,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
 
   private void readMinMax(DataInput in) throws IOException {
     DataType dataType = columnSpec.getSchemaDataType();
-    if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       this.setMaxValue(in.readByte());
       this.setMinValue(in.readByte());
       in.readLong();  // for non exist value which is obsoleted, it is backward compatibility;

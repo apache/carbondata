@@ -1331,7 +1331,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataTypes.BOOLEAN;
+        return DataTypes.STRING;
       }
 
       @Mock public String getColumnName() {
