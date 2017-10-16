@@ -224,7 +224,7 @@ public class InExpressionUnitTest {
     assertTrue(result.getBoolean());
   }
 
-  @Test(expected = FilterUnsupportedException.class) public void testForInExpressionWithDefaultCase()
+  @Test public void testForInExpressionWithDefaultCase()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression left = new ColumnExpression("contact", DataTypes.BOOLEAN);
     left.setColIndex(0);

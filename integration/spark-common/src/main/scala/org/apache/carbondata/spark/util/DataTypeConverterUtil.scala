@@ -26,6 +26,7 @@ object DataTypeConverterUtil {
 
   def convertToCarbonType(dataType: String): DataType = {
     dataType.toLowerCase match {
+      case "boolean" => DataTypes.BOOLEAN
       case "string" => DataTypes.STRING
       case "int" => DataTypes.INT
       case "integer" => DataTypes.INT
@@ -48,6 +49,7 @@ object DataTypeConverterUtil {
 
   def convertToCarbonTypeForSpark2(dataType: String): DataType = {
     dataType.toLowerCase match {
+      case "booleantype" => DataTypes.BOOLEAN
       case "stringtype" => DataTypes.STRING
       case "inttype" => DataTypes.INT
       case "integertype" => DataTypes.INT
@@ -79,6 +81,7 @@ object DataTypeConverterUtil {
 
   def convertToString(dataType: DataType): String = {
     dataType match {
+      case DataTypes.BOOLEAN => "boolean"
       case DataTypes.STRING => "string"
       case DataTypes.SHORT => "smallint"
       case DataTypes.INT => "int"
@@ -106,6 +109,7 @@ object DataTypeConverterUtil {
     dataType match {
       case "string" => ThriftDataType.STRING
       case "int" => ThriftDataType.INT
+      case "boolean" => ThriftDataType.BOOLEAN
       case "short" => ThriftDataType.SHORT
       case "long" | "bigint" => ThriftDataType.LONG
       case "double" => ThriftDataType.DOUBLE

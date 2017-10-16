@@ -148,7 +148,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   }
 
   private DataType getMeasureDataType(MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo) {
-    if (msrColumnEvaluatorInfo.getType() == DataTypes.SHORT) {
+    if (msrColumnEvaluatorInfo.getType() == DataTypes.BOOLEAN) {
+      return DataTypes.BOOLEAN;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.SHORT) {
       return DataTypes.SHORT;
     } else if (msrColumnEvaluatorInfo.getType() == DataTypes.INT) {
       return DataTypes.INT;

@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
+import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -184,7 +185,8 @@ public abstract class ColumnPage {
       int pageSize) throws MemoryException {
     ColumnPage instance;
     if (unsafe) {
-      if (dataType == DataTypes.BYTE ||
+      if (dataType == DataTypes.BOOLEAN ||
+          dataType == DataTypes.BYTE ||
           dataType == DataTypes.SHORT ||
           dataType == DataTypes.SHORT_INT ||
           dataType == DataTypes.INT ||
@@ -200,7 +202,7 @@ public abstract class ColumnPage {
         throw new RuntimeException("Unsupported data dataType: " + dataType);
       }
     } else {
-      if (dataType == DataTypes.BYTE) {
+      if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
         instance = newBytePage(columnSpec, new byte[pageSize]);
       } else if (dataType == DataTypes.SHORT) {
         instance = newShortPage(columnSpec, new short[pageSize]);
@@ -305,6 +307,11 @@ public abstract class ColumnPage {
   public abstract void setShortIntPage(byte[] shortIntData);
 
   /**
+   * Set boolean values to page
+   */
+  public abstract void setBooleanPage(byte[] booleanData);
+
+  /**
    * Set int values to page
    */
   public abstract void setIntPage(int[] intData);
@@ -344,7 +351,10 @@ public abstract class ColumnPage {
       nullBitSet.set(rowId);
       return;
     }
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+      if (columnSpec.getSchemaDataType() == DataTypes.BOOLEAN) {
+        value = BooleanConvert.boolean2Byte((Boolean) value);
+      }
       putByte(rowId, (byte) value);
       statsCollector.update((byte) value);
     } else if (dataType == DataTypes.SHORT) {
@@ -411,6 +421,11 @@ public abstract class ColumnPage {
   public abstract void putShortInt(int rowId, int value);
 
   /**
+   * Set boolean value at rowId
+   */
+  public abstract void putBoolean(int rowId, boolean value);
+
+  /**
    * Set byte array from offset to length at rowId
    */
   public abstract void putBytes(int rowId, byte[] bytes, int offset, int length);
@@ -420,7 +435,9 @@ public abstract class ColumnPage {
    * Set null at rowId
    */
   private void putNull(int rowId) {
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN) {
+      putBoolean(rowId, false);
+    } else if (dataType == DataTypes.BYTE) {
       putByte(rowId, (byte) 0);
     } else if (dataType == DataTypes.SHORT) {
       putShort(rowId, (short) 0);
@@ -451,6 +468,11 @@ public abstract class ColumnPage {
    * Get short int value at rowId
    */
   public abstract int getShortInt(int rowId);
+
+  /**
+   * Get boolean value at rowId
+   */
+  public abstract boolean getBoolean(int rowId);
 
   /**
    * Get int value at rowId
@@ -498,6 +520,11 @@ public abstract class ColumnPage {
   public abstract byte[] getShortIntPage();
 
   /**
+   * Get boolean value page
+   */
+  public abstract byte[] getBooleanPage();
+
+  /**
    * Get int value page
    */
   public abstract int[] getIntPage();
@@ -541,7 +568,9 @@ public abstract class ColumnPage {
    * Compress page data using specified compressor
    */
   public byte[] compress(Compressor compressor) throws MemoryException, IOException {
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN) {
+      return compressor.compressByte(getBooleanPage());
+    } else if (dataType == DataTypes.BYTE) {
       return compressor.compressByte(getBytePage());
     } else if (dataType == DataTypes.SHORT) {
       return compressor.compressShort(getShortPage());
@@ -574,7 +603,7 @@ public abstract class ColumnPage {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     DataType storeDataType = meta.getStoreDataType();
-    if (storeDataType == DataTypes.BYTE) {
+    if (storeDataType == DataTypes.BOOLEAN || storeDataType == DataTypes.BYTE) {
       byte[] byteData = compressor.unCompressByte(compressedData, offset, length);
       return newBytePage(columnSpec, byteData);
     } else if (storeDataType == DataTypes.SHORT) {

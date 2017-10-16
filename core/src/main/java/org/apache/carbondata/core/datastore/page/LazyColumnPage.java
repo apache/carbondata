@@ -19,6 +19,7 @@ package org.apache.carbondata.core.datastore.page;
 
 import java.math.BigDecimal;
 
+import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
@@ -53,7 +54,9 @@ public class LazyColumnPage extends ColumnPage {
   @Override
   public long getLong(int rowId) {
     DataType dataType = columnPage.getDataType();
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN) {
+      return converter.decodeLong(BooleanConvert.boolean2Byte(columnPage.getBoolean(rowId)));
+    } else if (dataType == DataTypes.BYTE) {
       return converter.decodeLong(columnPage.getByte(rowId));
     } else if (dataType == DataTypes.SHORT) {
       return converter.decodeLong(columnPage.getShort(rowId));
@@ -71,7 +74,9 @@ public class LazyColumnPage extends ColumnPage {
   @Override
   public double getDouble(int rowId) {
     DataType dataType = columnPage.getDataType();
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN) {
+      return converter.decodeDouble(BooleanConvert.boolean2Byte(columnPage.getBoolean(rowId)));
+    } else if (dataType == DataTypes.BYTE) {
       return converter.decodeDouble(columnPage.getByte(rowId));
     } else if (dataType == DataTypes.SHORT) {
       return converter.decodeDouble(columnPage.getShort(rowId));
@@ -136,6 +141,11 @@ public class LazyColumnPage extends ColumnPage {
   }
 
   @Override
+  public byte[] getBooleanPage()  {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
   public int[] getIntPage() {
     throw new UnsupportedOperationException("internal error");
   }
@@ -192,6 +202,11 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public void setShortIntPage(byte[] shortIntData) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public void setBooleanPage(byte[] booleanData)  {
     throw new UnsupportedOperationException("internal error");
   }
 
@@ -261,6 +276,11 @@ public class LazyColumnPage extends ColumnPage {
   }
 
   @Override
+  public void putBoolean(int rowId, boolean value)  {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
   public void putBytes(int rowId, byte[] bytes, int offset, int length) {
     throw new UnsupportedOperationException("internal error");
   }
@@ -277,6 +297,11 @@ public class LazyColumnPage extends ColumnPage {
 
   @Override
   public int getShortInt(int rowId) {
+    throw new UnsupportedOperationException("internal error");
+  }
+
+  @Override
+  public boolean getBoolean(int rowId)  {
     throw new UnsupportedOperationException("internal error");
   }
 

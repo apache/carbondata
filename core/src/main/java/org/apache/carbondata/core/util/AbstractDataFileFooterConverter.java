@@ -352,6 +352,8 @@ public abstract class AbstractDataFileFooterConverter {
   protected DataType thriftDataTyopeToWrapperDataType(
       org.apache.carbondata.format.DataType dataTypeThrift) {
     switch (dataTypeThrift) {
+      case BOOLEAN:
+        return DataTypes.BOOLEAN;
       case STRING:
         return DataTypes.STRING;
       case SHORT:

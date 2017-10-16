@@ -127,7 +127,11 @@ public class UnsafeCarbonRowPage {
       Object value = row[mesCount + dimensionSize];
       if (null != value) {
         DataType dataType = measureDataType[mesCount];
-        if (dataType == DataTypes.SHORT) {
+        if (dataType == DataTypes.BOOLEAN) {
+          Boolean bval = (Boolean) value;
+          CarbonUnsafe.getUnsafe().putBoolean(baseObject, address + size, bval);
+          size += 1;
+        } else if (dataType == DataTypes.SHORT) {
           Short sval = (Short) value;
           CarbonUnsafe.getUnsafe().putShort(baseObject, address + size, sval);
           size += 2;
@@ -209,7 +213,11 @@ public class UnsafeCarbonRowPage {
     for (int mesCount = 0; mesCount < measureSize; mesCount++) {
       if (isSet(nullSetWords, mesCount)) {
         DataType dataType = measureDataType[mesCount];
-        if (dataType == DataTypes.SHORT) {
+        if (dataType == DataTypes.BOOLEAN) {
+          Boolean bval = CarbonUnsafe.getUnsafe().getBoolean(baseObject, address + size);
+          size += 1;
+          rowToFill[dimensionSize + mesCount] = bval;
+        } else if (dataType == DataTypes.SHORT) {
           Short sval = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
           size += 2;
           rowToFill[dimensionSize + mesCount] = sval;

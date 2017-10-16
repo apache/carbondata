@@ -89,6 +89,63 @@ public class MeasureDataVectorProcessor {
     }
   }
 
+  /**
+   * Fill Measure Vector For Boolean data type
+   */
+  public static class BooleanMeasureVectorFiller implements MeasureVectorFiller {
+
+    @Override
+    public void fillMeasureVector(ColumnPage dataChunk, ColumnVectorInfo info) {
+      int offset = info.offset;
+      int len = offset + info.size;
+      int vectorOffset = info.vectorOffset;
+      CarbonColumnVector vector = info.vector;
+      BitSet nullBitSet = dataChunk.getNullBits();
+      if (nullBitSet.isEmpty()) {
+        for (int i = offset; i < len; i++) {
+          vector.putBoolean(vectorOffset, dataChunk.getBoolean(i));
+          vectorOffset++;
+        }
+      } else {
+        for (int i = offset; i < len; i++) {
+          if (nullBitSet.get(i)) {
+            vector.putNull(vectorOffset);
+          } else {
+            vector.putBoolean(vectorOffset, dataChunk.getBoolean(i));
+          }
+          vectorOffset++;
+        }
+      }
+    }
+
+    @Override
+    public void fillMeasureVectorForFilter(int[] rowMapping,
+        ColumnPage dataChunk, ColumnVectorInfo info) {
+      int offset = info.offset;
+      int len = offset + info.size;
+      int vectorOffset = info.vectorOffset;
+      CarbonColumnVector vector = info.vector;
+      BitSet nullBitSet = dataChunk.getNullBits();
+      if (nullBitSet.isEmpty()) {
+        for (int i = offset; i < len; i++) {
+          int currentRow = rowMapping[i];
+          vector.putBoolean(vectorOffset, dataChunk.getBoolean(currentRow));
+          vectorOffset++;
+        }
+      } else {
+        for (int i = offset; i < len; i++) {
+          int currentRow = rowMapping[i];
+          if (nullBitSet.get(currentRow)) {
+            vector.putNull(vectorOffset);
+          } else {
+            vector.putBoolean(vectorOffset, dataChunk.getBoolean(currentRow));
+          }
+          vectorOffset++;
+        }
+      }
+    }
+  }
+
   public static class ShortMeasureVectorFiller implements MeasureVectorFiller {
 
     @Override
@@ -307,7 +364,9 @@ public class MeasureDataVectorProcessor {
   public static class MeasureVectorFillerFactory {
 
     public static MeasureVectorFiller getMeasureVectorFiller(DataType dataType) {
-      if (dataType == DataTypes.SHORT) {
+      if (dataType == DataTypes.BOOLEAN) {
+        return new BooleanMeasureVectorFiller();
+      } else if (dataType == DataTypes.SHORT) {
         return new ShortMeasureVectorFiller();
       } else if (dataType == DataTypes.INT) {
         return new IntegralMeasureVectorFiller();

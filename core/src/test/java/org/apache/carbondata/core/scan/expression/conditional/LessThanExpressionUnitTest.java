@@ -279,7 +279,7 @@ public class LessThanExpressionUnitTest {
     assertTrue(result.getBoolean());
   }
 
-  @Test(expected = FilterUnsupportedException.class) public void testForLessThanExpressionWithDefaultCase()
+  @Test public void testForLessThanExpressionWithDefaultCase()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("contact", DataTypes.BOOLEAN);
     right.setColIndex(0);
