@@ -37,6 +37,7 @@ import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstant
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory}
 
 class CarbonContext(
+    @transient
     val sc: SparkContext,
     val storePath: String,
     metaStorePath: String) extends HiveContext(sc) {
@@ -60,6 +61,8 @@ class CarbonContext(
   CarbonEnv.init(this)
 
   var lastSchemaUpdatedTime = System.currentTimeMillis()
+    
+  @transient
   val hiveClientInterface = metadataHive
 
   protected[sql] override lazy val conf: SQLConf = new CarbonSQLConf
