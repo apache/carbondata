@@ -53,7 +53,7 @@ public class LazyColumnPage extends ColumnPage {
   @Override
   public long getLong(int rowId) {
     DataType dataType = columnPage.getDataType();
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       return converter.decodeLong(columnPage.getByte(rowId));
     } else if (dataType == DataTypes.SHORT) {
       return converter.decodeLong(columnPage.getShort(rowId));
@@ -71,7 +71,7 @@ public class LazyColumnPage extends ColumnPage {
   @Override
   public double getDouble(int rowId) {
     DataType dataType = columnPage.getDataType();
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       return converter.decodeDouble(columnPage.getByte(rowId));
     } else if (dataType == DataTypes.SHORT) {
       return converter.decodeDouble(columnPage.getShort(rowId));

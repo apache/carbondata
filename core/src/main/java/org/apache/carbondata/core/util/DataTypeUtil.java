@@ -34,6 +34,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -102,7 +103,9 @@ public final class DataTypeUtil {
    */
   public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
       CarbonMeasure carbonMeasure) {
-    if (dataType == DataTypes.DECIMAL) {
+    if (dataType == DataTypes.BOOLEAN) {
+      return BooleanConvert.parseBoolean(msrValue);
+    } else if (dataType == DataTypes.DECIMAL) {
       BigDecimal bigDecimal =
           new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
       return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
@@ -126,7 +129,9 @@ public final class DataTypeUtil {
       return null;
     }
     ByteBuffer bb = ByteBuffer.wrap(data);
-    if (dataType == DataTypes.SHORT) {
+    if (dataType == DataTypes.BOOLEAN) {
+      return BooleanConvert.byte2Boolean(bb.get());
+    } else if (dataType == DataTypes.SHORT) {
       return (short) bb.getLong();
     } else if (dataType == DataTypes.INT) {
       return (int) bb.getLong();
@@ -141,7 +146,9 @@ public final class DataTypeUtil {
 
   public static Object getMeasureObjectBasedOnDataType(ColumnPage measurePage, int index,
       DataType dataType, CarbonMeasure carbonMeasure) {
-    if (dataType == DataTypes.SHORT) {
+    if (dataType == DataTypes.BOOLEAN) {
+      return measurePage.getBoolean(index);
+    } else if (dataType == DataTypes.SHORT) {
       return (short) measurePage.getLong(index);
     } else if (dataType == DataTypes.INT) {
       return (int) measurePage.getLong(index);
@@ -240,6 +247,9 @@ public final class DataTypeUtil {
   public static DataType getDataType(String dataTypeStr) {
     DataType dataType = null;
     switch (dataTypeStr) {
+      case "BOOLEAN":
+        dataType = DataTypes.BOOLEAN;
+        break;
       case "DATE":
         dataType = DataTypes.DATE;
         break;
@@ -303,7 +313,12 @@ public final class DataTypeUtil {
       return null;
     }
     try {
-      if (actualDataType == DataTypes.INT) {
+      if (actualDataType == DataTypes.BOOLEAN) {
+        if (data.isEmpty()) {
+          return null;
+        }
+        return BooleanConvert.parseBoolean(data);
+      } else if (actualDataType == DataTypes.INT) {
         if (data.isEmpty()) {
           return null;
         }
@@ -366,7 +381,9 @@ public final class DataTypeUtil {
 
   public static byte[] getBytesBasedOnDataTypeForNoDictionaryColumn(String dimensionValue,
       DataType actualDataType, String dateFormat) {
-    if (actualDataType == DataTypes.STRING) {
+    if (actualDataType == DataTypes.BOOLEAN) {
+      return ByteUtil.toBytes(BooleanConvert.parseBoolean(dimensionValue));
+    } else if (actualDataType == DataTypes.STRING) {
       return ByteUtil.toBytes(dimensionValue);
     } else if (actualDataType == DataTypes.BOOLEAN) {
       return ByteUtil.toBytes(Boolean.parseBoolean(dimensionValue));
@@ -411,7 +428,9 @@ public final class DataTypeUtil {
       return null;
     }
     try {
-      if (actualDataType == DataTypes.STRING) {
+      if (actualDataType == DataTypes.BOOLEAN) {
+        return ByteUtil.toBoolean(dataInBytes);
+      } else if (actualDataType == DataTypes.STRING) {
         return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
       } else if (actualDataType == DataTypes.BOOLEAN) {
         return ByteUtil.toBoolean(dataInBytes);

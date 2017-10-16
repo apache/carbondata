@@ -43,6 +43,7 @@ import org.apache.carbondata.format.Encoding;
 import static org.apache.carbondata.format.Encoding.ADAPTIVE_DELTA_INTEGRAL;
 import static org.apache.carbondata.format.Encoding.ADAPTIVE_FLOATING;
 import static org.apache.carbondata.format.Encoding.ADAPTIVE_INTEGRAL;
+import static org.apache.carbondata.format.Encoding.BOOL_BYTE;
 import static org.apache.carbondata.format.Encoding.DIRECT_COMPRESS;
 import static org.apache.carbondata.format.Encoding.RLE_INTEGRAL;
 
@@ -91,6 +92,10 @@ public abstract class EncodingFactory {
       return new AdaptiveFloatingCodec(metadata.getSchemaDataType(), metadata.getStoreDataType(),
           stats).createDecoder(metadata);
     } else if (encoding == RLE_INTEGRAL) {
+      RLEEncoderMeta metadata = new RLEEncoderMeta();
+      metadata.readFields(in);
+      return new RLECodec().createDecoder(metadata);
+    } else if (encoding == BOOL_BYTE) {
       RLEEncoderMeta metadata = new RLEEncoderMeta();
       metadata.readFields(in);
       return new RLECodec().createDecoder(metadata);

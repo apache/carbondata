@@ -344,7 +344,9 @@ public class CarbonMetadataUtil {
   private static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {
     ByteBuffer firstBuffer = null;
     ByteBuffer secondBuffer = null;
-    if (dataType == DataTypes.DOUBLE) {
+    if (dataType == DataTypes.BOOLEAN) {
+      return first[0] - second[0];
+    } else if (dataType == DataTypes.DOUBLE) {
       firstBuffer = ByteBuffer.allocate(8);
       firstBuffer.put(first);
       secondBuffer = ByteBuffer.allocate(8);

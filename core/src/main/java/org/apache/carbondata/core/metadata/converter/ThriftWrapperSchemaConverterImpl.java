@@ -127,7 +127,9 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return null;
     }
     // data type object maybe created by GSON, use id to compare the type instead of object address
-    if (dataType.getId() == DataTypes.STRING.getId()) {
+    if (dataType.getId() == DataTypes.BOOLEAN.getId()) {
+      return org.apache.carbondata.format.DataType.BOOLEAN;
+    } else if (dataType.getId() == DataTypes.STRING.getId()) {
       return org.apache.carbondata.format.DataType.STRING;
     } else if (dataType.getId() == DataTypes.INT.getId()) {
       return org.apache.carbondata.format.DataType.INT;
@@ -361,6 +363,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return null;
     }
     switch (dataType) {
+      case BOOLEAN:
+        return DataTypes.BOOLEAN;
       case STRING:
         return DataTypes.STRING;
       case INT:

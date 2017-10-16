@@ -1938,11 +1938,10 @@ public final class CarbonUtil {
    */
   public static byte[] getValueAsBytes(DataType dataType, Object value) {
     ByteBuffer b;
-    if (dataType == DataTypes.BYTE) {
-      b = ByteBuffer.allocate(8);
-      b.putLong((byte) value);
-      b.flip();
-      return b.array();
+    if (dataType == DataTypes.BYTE || dataType == DataTypes.BOOLEAN) {
+      byte[] bytes = new byte[1];
+      bytes[0] = (byte) value;
+      return bytes;
     } else if (dataType == DataTypes.SHORT) {
       b = ByteBuffer.allocate(8);
       b.putLong((short) value);

@@ -20,9 +20,13 @@ package org.apache.carbondata.core.datastore.page.statistics;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
+import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+
+import static org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert.FALSE_VALUE;
+import static org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert.TRUE_VALUE;
 
 /** statics for primitive column page */
 public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, SimpleStatsResult {
@@ -53,7 +57,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         meta.getScale(), meta.getPrecision());
     // set min max from meta
     DataType dataType = meta.getSchemaDataType();
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       instance.minByte = (byte) meta.getMinValue();
       instance.maxByte = (byte) meta.getMaxValue();
     } else if (dataType == DataTypes.SHORT) {
@@ -87,7 +91,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         new PrimitivePageStatsCollector(DataType.getDataType(meta.getType()), -1, -1);
     // set min max from meta
     DataType dataType = DataType.getDataType(meta.getType());
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       instance.minByte = (byte) meta.getMinValue();
       instance.maxByte = (byte) meta.getMaxValue();
     } else if (dataType == DataTypes.SHORT) {
@@ -118,7 +122,10 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   private PrimitivePageStatsCollector(DataType dataType, int scale, int precision) {
     this.dataType = dataType;
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN) {
+      minByte = TRUE_VALUE;
+      maxByte = FALSE_VALUE;
+    } else if (dataType == DataTypes.BYTE) {
       minByte = Byte.MAX_VALUE;
       maxByte = Byte.MIN_VALUE;
     } else if (dataType == DataTypes.SHORT) {
@@ -148,7 +155,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   @Override
   public void updateNull(int rowId) {
     long value = 0;
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       update((byte) value);
     } else if (dataType == DataTypes.SHORT) {
       update((short) value);
@@ -270,7 +277,10 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   @Override
   public String toString() {
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN) {
+      return String.format("min: %s, max: %s ", BooleanConvert.byte2Boolean(minByte),
+              BooleanConvert.byte2Boolean(minByte));
+    } else if (dataType == DataTypes.BYTE) {
       return String.format("min: %s, max: %s, decimal: %s ", minByte, maxByte, decimal);
     } else if (dataType == DataTypes.SHORT) {
       return String.format("min: %s, max: %s, decimal: %s ", minShort, maxShort, decimal);
@@ -286,7 +296,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   @Override
   public Object getMin() {
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       return minByte;
     } else if (dataType == DataTypes.SHORT) {
       return minShort;
@@ -304,7 +314,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   @Override
   public Object getMax() {
-    if (dataType == DataTypes.BYTE) {
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       return maxByte;
     } else if (dataType == DataTypes.SHORT) {
       return maxShort;

@@ -1296,7 +1296,10 @@ public final class FilterUtil {
   public static int compareFilterKeyBasedOnDataType(String dictionaryVal, String memberVal,
       DataType dataType) {
     try {
-      if (dataType == DataTypes.SHORT) {
+      if (dataType == DataTypes.BOOLEAN) {
+        return Boolean.compare((Boolean.parseBoolean(dictionaryVal)),
+                (Boolean.parseBoolean(memberVal)));
+      } else if (dataType == DataTypes.SHORT) {
         return Short.compare((Short.parseShort(dictionaryVal)), (Short.parseShort(memberVal)));
       } else if (dataType == DataTypes.INT) {
         return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));

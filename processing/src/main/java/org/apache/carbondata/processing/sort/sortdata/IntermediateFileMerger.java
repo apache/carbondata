@@ -347,7 +347,9 @@ public class IntermediateFileMerger implements Callable<Void> {
         if (null != NonDictionaryUtil.getMeasure(fieldIndex, row)) {
           stream.write((byte) 1);
           DataType dataType = aggType[counter];
-          if (dataType == DataTypes.SHORT) {
+          if (dataType == DataTypes.BOOLEAN) {
+            stream.writeBoolean((boolean)NonDictionaryUtil.getMeasure(fieldIndex, row));
+          } else if (dataType == DataTypes.SHORT) {
             stream.writeShort((short) NonDictionaryUtil.getMeasure(fieldIndex, row));
           } else if (dataType == DataTypes.INT) {
             stream.writeInt((int) NonDictionaryUtil.getMeasure(fieldIndex, row));

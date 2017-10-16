@@ -351,7 +351,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     for (int i = 0; i < msrColEvalutorInfoList.size(); i++) {
       MeasureColumnResolvedFilterInfo msrColumnEvalutorInfo = msrColEvalutorInfoList.get(i);
       DataType dataType = msrColumnEvalutorInfo.getType();
-      if (dataType == DataTypes.SHORT) {
+      if (dataType == DataTypes.BOOLEAN) {
+        msrType = DataTypes.BOOLEAN;
+      } else if (dataType == DataTypes.SHORT) {
         msrType = DataTypes.SHORT;
       } else if (dataType == DataTypes.INT) {
         msrType = DataTypes.INT;
@@ -376,7 +378,9 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
       ColumnPage columnPage =
           blockChunkHolder.getMeasureRawDataChunk()[measureBlocksIndex[0]]
               .convertToColumnPage(pageIndex);
-      if (msrType == DataTypes.SHORT) {
+      if (msrType == DataTypes.BOOLEAN) {
+        msrValue = columnPage.getBoolean(index);
+      } else if (msrType == DataTypes.SHORT) {
         msrValue = (short) columnPage.getLong(index);
       } else if (msrType == DataTypes.INT) {
         msrValue = (int) columnPage.getLong(index);

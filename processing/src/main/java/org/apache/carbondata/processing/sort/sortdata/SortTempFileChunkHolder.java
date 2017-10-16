@@ -345,7 +345,9 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
       for (int i = 0; i < this.measureCount; i++) {
         if (stream.readByte() == 1) {
           DataType dataType = aggType[i];
-          if (dataType == DataTypes.SHORT) {
+          if (dataType == DataTypes.BOOLEAN) {
+            measures[index++] = stream.readBoolean();
+          } else if (dataType == DataTypes.SHORT) {
             measures[index++] = stream.readShort();
           } else if (dataType == DataTypes.INT) {
             measures[index++] = stream.readInt();

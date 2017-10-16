@@ -56,7 +56,8 @@ public class UnsafeFixLengthColumnPage extends ColumnPage {
   UnsafeFixLengthColumnPage(TableSpec.ColumnSpec columnSpec, DataType dataType, int pageSize)
       throws MemoryException {
     super(columnSpec, dataType, pageSize);
-    if (dataType == DataTypes.BYTE ||
+    if (dataType == DataTypes.BOOLEAN ||
+        dataType == DataTypes.BYTE ||
         dataType == DataTypes.SHORT ||
         dataType == DataTypes.INT ||
         dataType == DataTypes.LONG ||

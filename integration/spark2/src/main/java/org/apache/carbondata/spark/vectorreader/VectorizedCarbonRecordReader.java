@@ -206,7 +206,8 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     for (int i = 0; i < queryMeasures.size(); i++) {
       QueryMeasure msr = queryMeasures.get(i);
       DataType dataType = msr.getMeasure().getDataType();
-      if (dataType == DataTypes.SHORT || dataType == DataTypes.INT || dataType == DataTypes.LONG) {
+      if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.SHORT ||
+          dataType == DataTypes.INT || dataType == DataTypes.LONG) {
         fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
             CarbonScalaUtil.convertCarbonToSparkDataType(msr.getMeasure().getDataType()), true,
             null);

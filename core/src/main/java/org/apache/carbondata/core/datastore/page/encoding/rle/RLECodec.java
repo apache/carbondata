@@ -71,7 +71,8 @@ public class RLECodec implements ColumnPageCodec {
 
   // This codec supports integral type only
   private void validateDataType(DataType dataType) {
-    if (! (dataType == DataTypes.BYTE || dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
+    if (! (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE ||
+        dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
         dataType == DataTypes.LONG)) {
       throw new UnsupportedOperationException(dataType + " is not supported for RLE");
     }
@@ -293,7 +294,7 @@ public class RLECodec implements ColumnPageCodec {
       DataType dataType = columnSpec.getSchemaDataType();
       DataInputStream in = new DataInputStream(new ByteArrayInputStream(input, offset, length));
       ColumnPage resultPage = ColumnPage.newPage(columnSpec, dataType, pageSize);
-      if (dataType == DataTypes.BYTE) {
+      if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
         decodeBytePage(in, resultPage);
       } else if (dataType == DataTypes.SHORT) {
         decodeShortPage(in, resultPage);

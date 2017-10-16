@@ -54,7 +54,9 @@ public class LessThanExpression extends BinaryConditionalExpression {
 
     }
     DataType dataType = val1.getDataType();
-    if (dataType == DataTypes.STRING) {
+    if (dataType == DataTypes.BOOLEAN) {
+      result = elRes.getBoolean().compareTo(erRes.getBoolean()) < 0;
+    } else if (dataType == DataTypes.STRING) {
       result = elRes.getString().compareTo(erRes.getString()) < 0;
     } else if (dataType == DataTypes.SHORT) {
       result = elRes.getShort() < (erRes.getShort());

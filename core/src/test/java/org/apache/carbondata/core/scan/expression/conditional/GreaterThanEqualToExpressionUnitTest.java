@@ -189,7 +189,7 @@ public class GreaterThanEqualToExpressionUnitTest {
     }
   }
 
-  @Test(expected = FilterUnsupportedException.class) public void testForGreaterThanEqualToExpressionWithDefaultCase()
+  @Test public void testForGreaterThanEqualToExpressionWithDefaultCase()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("contact", DataTypes.BOOLEAN);
     right.setColIndex(0);

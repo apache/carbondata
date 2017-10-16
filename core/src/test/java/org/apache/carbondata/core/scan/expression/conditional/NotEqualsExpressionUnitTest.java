@@ -247,7 +247,7 @@ public class NotEqualsExpressionUnitTest {
     }
   }
 
-  @Test(expected = FilterUnsupportedException.class) public void testForNotEqualsExpressionWithDefaultCase()
+  @Test public void testForNotEqualsExpressionWithDefaultCase()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     ColumnExpression right = new ColumnExpression("contact", DataTypes.BOOLEAN);
     right.setColIndex(0);

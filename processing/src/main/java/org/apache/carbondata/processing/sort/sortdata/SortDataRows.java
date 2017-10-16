@@ -295,7 +295,9 @@ public class SortDataRows {
           if (null != value) {
             stream.write((byte) 1);
             DataType dataType = type[mesCount];
-            if (dataType == DataTypes.SHORT) {
+            if (dataType == DataTypes.BOOLEAN) {
+              stream.writeBoolean((boolean) value);
+            } else if (dataType == DataTypes.SHORT) {
               stream.writeShort((Short) value);
             } else if (dataType == DataTypes.INT) {
               stream.writeInt((Integer) value);
