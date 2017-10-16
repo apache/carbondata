@@ -22,9 +22,6 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-/**
-  * Created by root on 9/17/17.
-  */
 class BooleanDataTypesSortTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   val rootPath = new File(this.getClass.getResource("/").getPath
     + "../../../..").getCanonicalPath

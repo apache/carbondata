@@ -20,9 +20,6 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
-/**
-  * Created by root on 9/17/17.
-  */
 class BooleanDataTypesBaseTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
 
   override def beforeEach(): Unit = {

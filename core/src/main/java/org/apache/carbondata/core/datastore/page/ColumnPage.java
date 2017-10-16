@@ -185,15 +185,15 @@ public abstract class ColumnPage {
       int pageSize) throws MemoryException {
     ColumnPage instance;
     if (unsafe) {
-<<<<<<< HEAD
-      if (dataType == DataTypes.BOOLEAN ||
-          dataType == DataTypes.BYTE ||
-          dataType == DataTypes.SHORT ||
-          dataType == DataTypes.SHORT_INT ||
-          dataType == DataTypes.INT ||
-          dataType == DataTypes.LONG ||
-          dataType == DataTypes.FLOAT ||
-          dataType == DataTypes.DOUBLE) {
+      if (dataType == DataTypes.BOOLEAN) {
+        instance = new UnsafeFixLengthColumnPage(columnSpec, BYTE, pageSize);
+      } else if (dataType == DataTypes.BYTE ||
+              dataType == DataTypes.SHORT ||
+              dataType == DataTypes.SHORT_INT ||
+              dataType == DataTypes.INT ||
+              dataType == DataTypes.LONG ||
+              dataType == DataTypes.FLOAT ||
+              dataType == DataTypes.DOUBLE) {
         instance = new UnsafeFixLengthColumnPage(columnSpec, dataType, pageSize);
       } else if (dataType == DataTypes.DECIMAL) {
         instance = new UnsafeDecimalColumnPage(columnSpec, dataType, pageSize);
@@ -201,31 +201,6 @@ public abstract class ColumnPage {
         instance = new UnsafeVarLengthColumnPage(columnSpec, dataType, pageSize);
       } else {
         throw new RuntimeException("Unsupported data dataType: " + dataType);
-=======
-      switch (dataType) {
-        case BOOLEAN:
-          instance = new UnsafeFixLengthColumnPage(columnSpec, BYTE, pageSize);
-          break;
-        case BYTE:
-        case SHORT:
-        case SHORT_INT:
-        case INT:
-        case LONG:
-        case FLOAT:
-        case DOUBLE:
-          instance = new UnsafeFixLengthColumnPage(columnSpec, dataType, pageSize);
-          break;
-        case DECIMAL:
-          instance = new UnsafeDecimalColumnPage(columnSpec, dataType, pageSize);
-          break;
-        case STRING:
-        case BYTE_ARRAY:
-          instance =
-              new UnsafeVarLengthColumnPage(columnSpec, dataType, pageSize);
-          break;
-        default:
-          throw new RuntimeException("Unsupported data dataType: " + dataType);
->>>>>>> 5a0229dcd... optimize code by review result
       }
     } else {
       if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
@@ -372,7 +347,6 @@ public abstract class ColumnPage {
       nullBitSet.set(rowId);
       return;
     }
-<<<<<<< HEAD
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       if (columnSpec.getSchemaDataType() == DataTypes.BOOLEAN) {
         value = BooleanConvert.boolean2Byte((Boolean) value);
@@ -399,43 +373,6 @@ public abstract class ColumnPage {
       statsCollector.update((byte[]) value);
     } else {
       throw new RuntimeException("unsupported data type: " + dataType);
-=======
-    switch (dataType) {
-      case BYTE:
-        if (columnSpec.getSchemaDataType() == BOOLEAN) {
-          value = BooleanConvert.boolean2Byte((Boolean) value);
-        }
-        putByte(rowId, (byte) value);
-        statsCollector.update((byte) value);
-        break;
-      case SHORT:
-        putShort(rowId, (short) value);
-        statsCollector.update((short) value);
-        break;
-      case INT:
-        putInt(rowId, (int) value);
-        statsCollector.update((int) value);
-        break;
-      case LONG:
-        putLong(rowId, (long) value);
-        statsCollector.update((long) value);
-        break;
-      case DOUBLE:
-        putDouble(rowId, (double) value);
-        statsCollector.update((double) value);
-        break;
-      case DECIMAL:
-        putDecimal(rowId, (BigDecimal) value);
-        statsCollector.update((BigDecimal) value);
-        break;
-      case STRING:
-      case BYTE_ARRAY:
-        putBytes(rowId, (byte[]) value);
-        statsCollector.update((byte[]) value);
-        break;
-      default:
-        throw new RuntimeException("unsupported data type: " + dataType);
->>>>>>> 5a0229dcd... optimize code by review result
     }
   }
 
