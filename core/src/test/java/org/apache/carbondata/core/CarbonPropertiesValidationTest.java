@@ -17,14 +17,17 @@
 
 package org.apache.carbondata.core;
 
+import java.io.File;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonProperty;
 
 import junit.framework.TestCase;
+import org.junit.After;
 import org.junit.Test;
 
 /**
@@ -144,5 +147,15 @@ public class CarbonPropertiesValidationTest extends TestCase {
     assertTrue(!valueBeforeValidation.equals(valueAfterValidation));
     assertTrue(
         CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT.equalsIgnoreCase(valueAfterValidation));
+  }
+
+  @After
+  public void tearDown() {
+    CarbonProperties.getInstance()
+            .addProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT)
+            .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
+            .addProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE, CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT)
+            .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER, CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
+            .addProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION, CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT);
   }
 }

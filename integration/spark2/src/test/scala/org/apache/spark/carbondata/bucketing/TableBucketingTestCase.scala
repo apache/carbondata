@@ -224,5 +224,10 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS bucketed_parquet_table")
     sql("DROP TABLE IF EXISTS parquet_table")
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", threshold.toString)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT)
   }
 }

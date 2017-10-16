@@ -31,11 +31,9 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll = {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
-    dropTable
-    CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    dropTable
   }
 
   test("create partition table: hash partition") {
@@ -389,6 +387,10 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll = {
     dropTable
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
   }
 
   def dropTable = {
@@ -416,6 +418,6 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS test_range_timestamp")
     sql("DROP TABLE IF EXISTS test_range_decimal")
     sql("DROP TABLE IF EXISTS rangeTableInvalid")
-  }
+   }
 
 }

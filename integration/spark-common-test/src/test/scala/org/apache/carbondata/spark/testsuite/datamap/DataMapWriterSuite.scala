@@ -19,12 +19,12 @@ package org.apache.carbondata.spark.testsuite.datamap
 
 import java.util
 
-import scala.collection.JavaConverters._
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants
 
+import scala.collection.JavaConverters._
 import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory, DataMapWriter}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
 import org.apache.carbondata.core.datastore.page.ColumnPage
@@ -115,6 +115,8 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
       classOf[C2DataMapFactory].getName,
       "test")
 
+    val prop = CarbonProperties.getInstance()
+    val p1 = prop.getProperty("carbon.blockletgroup.size.in.mb", CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE)
     CarbonProperties.getInstance()
       .addProperty("carbon.blockletgroup.size.in.mb", "1")
 
@@ -146,6 +148,7 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
       "blocklet end: 1"
     ))
     DataMapWriterSuite.callbackSeq = Seq()
+    prop.addProperty("carbon.blockletgroup.size.in.mb", p1)
   }
 
   override def afterAll {

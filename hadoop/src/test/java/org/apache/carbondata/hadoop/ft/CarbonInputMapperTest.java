@@ -47,6 +47,7 @@ import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -58,6 +59,12 @@ public class CarbonInputMapperTest extends TestCase {
         addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
     StoreCreator.createCarbonStore();
 
+  }
+
+  @After
+  public void shutDown() throws Exception {
+    CarbonProperties.getInstance().
+            addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL);
   }
 
   @Test public void testInputFormatMapperReadAllRowsAndColumns() throws Exception {

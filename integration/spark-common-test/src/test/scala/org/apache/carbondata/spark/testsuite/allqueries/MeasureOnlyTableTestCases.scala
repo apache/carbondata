@@ -74,8 +74,6 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     clean
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
 
   test("SELECT sum(intField) FROM carbon_table where intField > 10") {

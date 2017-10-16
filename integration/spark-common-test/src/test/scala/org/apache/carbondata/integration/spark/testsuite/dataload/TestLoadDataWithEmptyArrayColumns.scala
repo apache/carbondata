@@ -58,6 +58,6 @@ class TestLoadDataWithEmptyArrayColumns extends QueryTest with BeforeAndAfterAll
   override def afterAll {
     sql("drop table nest13")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }

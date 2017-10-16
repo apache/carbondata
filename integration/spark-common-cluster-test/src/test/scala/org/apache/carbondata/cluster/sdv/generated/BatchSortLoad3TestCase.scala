@@ -18,6 +18,10 @@
 
 package org.apache.carbondata.cluster.sdv.generated
 
+import java.io.File
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.common.util._
 import org.scalatest.BeforeAndAfterAll
 
@@ -30,6 +34,10 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     sql(s"""drop table if exists uniqdata20c""").collect
     sql(s"""drop table if exists uniqdata19c""").collect
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+        new File("./target/test/badRecords")
+          .getCanonicalPath)
   }
 //Batch_sort_Loading_001-01-01-01_001-TC_020
   test("Batch_sort_Loading_001-01-01-01_001-TC_020", Include) {
@@ -186,6 +194,8 @@ class BatchSortLoad3TestCase extends QueryTest with BeforeAndAfterAll {
 //    sql(s"""drop table if exists uniqdata""").collect
 //  }
 
-  override def afterAll {
+  override def afterAll: Unit = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
   }
 }

@@ -1473,4 +1473,10 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
       TestQueryExecutor.warehouse + "/baaaaaaadrecords")
   }
+
+  override protected def afterAll(): Unit = {
+    sql(s"""drop table if exists uniqdata""").collect
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
+  }
 }

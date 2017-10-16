@@ -344,6 +344,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll = {
     dropTable
+    defaultLoadingProperties
   }
 
   def dropTable = {

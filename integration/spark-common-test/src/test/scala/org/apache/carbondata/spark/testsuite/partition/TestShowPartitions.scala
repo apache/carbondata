@@ -183,6 +183,8 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   }
 
   override def afterAll = {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     sql("drop table if exists notPartitionTable")
     sql("drop table if exists  hashTable")
     sql("drop table if exists  listTable")

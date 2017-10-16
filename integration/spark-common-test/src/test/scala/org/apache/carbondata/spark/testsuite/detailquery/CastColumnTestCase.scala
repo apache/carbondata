@@ -968,5 +968,7 @@ class CastColumnTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists DICTIONARY_HIVE_1")
     sql("drop table if exists NO_DICTIONARY_CARBON_2")
     sql("drop table if exists NO_DICTIONARY_HIVE_2")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }

@@ -51,8 +51,6 @@ class AllDataTypesTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     clean
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
 
   //Test-22

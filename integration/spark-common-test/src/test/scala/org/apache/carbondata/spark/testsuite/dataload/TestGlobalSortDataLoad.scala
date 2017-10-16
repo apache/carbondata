@@ -48,6 +48,10 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   }
 
   override def beforeAll {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+        new File("./target/test/badRecords")
+          .getCanonicalPath)
     sql("DROP TABLE IF EXISTS carbon_localsort_once")
     sql(
       """
@@ -69,6 +73,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql("DROP TABLE IF EXISTS carbon_globalsort2")
     sql("DROP TABLE IF EXISTS carbon_globalsort_partitioned")
     sql("DROP TABLE IF EXISTS carbon_globalsort_difftypes")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL)
   }
 
   // ----------------------------------- Compare Result -----------------------------------

@@ -91,7 +91,7 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
   override def afterAll {
     dropTable
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }
 

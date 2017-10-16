@@ -76,7 +76,6 @@ class DateDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-    CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }
 
 }

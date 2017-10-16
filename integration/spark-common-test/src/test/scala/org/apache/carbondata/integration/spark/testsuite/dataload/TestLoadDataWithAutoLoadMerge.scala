@@ -51,6 +51,6 @@ class TestLoadDataWithAutoLoadMerge extends QueryTest with BeforeAndAfterAll {
   override def afterAll: Unit = {
     sql("DROP TABLE IF EXISTS automerge")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
   }
 }

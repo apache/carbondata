@@ -517,8 +517,14 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("use default")
     sql("drop database  if exists iud cascade")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled , "true")
+      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , CarbonCommonConstants.ENABLE_VECTOR_READER_DEFAULT)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
+      .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled , CarbonCommonConstants.defaultIsHorizontalCompactionEnabled)
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM, CarbonCommonConstants.CARBON_UPDATE_SEGMENT_PARALLELISM_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.isPersistEnabled, CarbonCommonConstants.defaultValueIsPersistEnabled)
   }
 }

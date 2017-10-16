@@ -112,10 +112,15 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     }
   }
 
+  var p1 = CarbonProperties.getInstance()
+    .getProperty("carbon.custom.distribution", "true")
+
   def buildRelation() = {
     val warehouse = s"$resourcesPath/target/warehouse"
     val storeLocation = s"$resourcesPath/target/store"
     val metastoredb = s"$resourcesPath/target"
+    p1 = CarbonProperties.getInstance()
+      .getProperty("carbon.custom.distribution", "true")
     CarbonProperties.getInstance()
       .addProperty("carbon.custom.distribution", "true")
     CarbonProperties.getInstance()
@@ -165,5 +170,9 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table sample")
     sql("drop table complextypes")
+    CarbonProperties.getInstance()
+      .addProperty("carbon.custom.distribution", p1)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
   }
 }

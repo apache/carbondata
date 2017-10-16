@@ -246,5 +246,7 @@ test("filter with arithmetic expression") {
     sql("drop table if exists NO_DICTIONARY_CARBON_6")
     sql("drop table if exists NO_DICTIONARY_CARBON_7")
     //sql("drop cube NO_DICTIONARY_CARBON_1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }

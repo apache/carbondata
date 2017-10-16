@@ -295,6 +295,6 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS filtertestTablesWithNull")
     sql("DROP TABLE IF EXISTS filtertestTablesWithNullJoin")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }

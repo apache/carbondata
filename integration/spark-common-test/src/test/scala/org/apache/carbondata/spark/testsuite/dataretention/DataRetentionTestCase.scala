@@ -95,7 +95,13 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table if exists DataRetentionTable")
     sql("drop table if exists retentionlock")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    CarbonProperties.getInstance().
+      addProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK, CarbonCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK_DEFAULT.toString)
+    CarbonProperties.getInstance.
+      addProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME, CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME.toString)
+
   }
 
 

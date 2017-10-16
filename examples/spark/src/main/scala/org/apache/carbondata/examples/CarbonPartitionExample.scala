@@ -143,6 +143,8 @@ object CarbonPartitionExample {
     cc.sql(s"DROP TABLE IF EXISTS hiveDb.t7")
     cc.sql(s"DROP TABLE IF EXISTS partitionDB.t9")
     cc.sql(s"DROP DATABASE IF EXISTS partitionDB")
-
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }

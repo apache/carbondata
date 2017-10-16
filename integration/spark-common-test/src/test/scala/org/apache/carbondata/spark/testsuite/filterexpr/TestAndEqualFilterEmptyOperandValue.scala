@@ -71,7 +71,5 @@ class TestAndEqualFilterEmptyOperandValue extends QueryTest with BeforeAndAfterA
   override def afterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }
 }

@@ -179,12 +179,16 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
 
 
 
+    val cutOffTimeStampString = CarbonProperties.getInstance.
+      getProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, "2000-12-13 02:10.00")
+    val granularity = CarbonProperties.getInstance.
+      getProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY, TimeStampGranularityConstants.TIME_GRAN_SEC)
     try {
       CarbonProperties.getInstance()
         .addProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, "2000-12-13 02:10.00")
       CarbonProperties.getInstance()
         .addProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY,
-          TimeStampGranularityConstants.TIME_GRAN_SEC.toString
+          TimeStampGranularityConstants.TIME_GRAN_SEC
         )
       CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "true")
       sql("drop table if exists directDictionaryTable")
@@ -210,6 +214,13 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
       case x: Throwable => CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     }
+
+    CarbonProperties.getInstance()
+      .addProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP, cutOffTimeStampString)
+    CarbonProperties.getInstance()
+      .addProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY,
+        granularity
+      )
   }
 
   test("test for dictionary columns"){
@@ -667,5 +678,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists NO_DICTIONARY_HIVE_8")
     sql("drop table if exists directdictionarytable_hive")
     //sql("drop cube NO_DICTIONARY_CARBON_1")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 }
