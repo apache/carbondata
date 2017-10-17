@@ -281,6 +281,8 @@ class CarbonSqlParser() extends CarbonDDLSqlParser {
             Token("TOK_TABCOLNAME", list) :: numberOfBuckets) =>
               val cols = list.map(_.getText)
               if (cols != null) {
+                throw new MalformedCarbonCommandException (
+                  "Bucketing Is not Supported in spark 1.6 ")
                 bucketFields = Some(BucketFields(cols,
                   numberOfBuckets.head.getText.toInt))
               }
