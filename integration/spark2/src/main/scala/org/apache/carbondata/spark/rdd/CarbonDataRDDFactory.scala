@@ -54,6 +54,7 @@ import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.{ListenerBus, LoadTablePostExecutionEvent}
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.csvinput.BlockDetails
@@ -1120,6 +1121,13 @@ object CarbonDataRDDFactory {
           throw new Exception("No Data to load")
         }
         writeDictionary(carbonLoadModel, result, false)
+        // Register a handler here for executing tasks required before committing
+        // the load operation to a table status file
+        val loadTablePostExecutionEvent: LoadTablePostExecutionEvent = LoadTablePostExecutionEvent(
+          sqlContext.sparkSession,
+          carbonTable.getCarbonTableIdentifier,
+          carbonLoadModel)
+        ListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent)
         updateStatus(status, loadStatus)
 
         if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS.equals(loadStatus)) {

@@ -33,13 +33,13 @@ import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.events.Event;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
@@ -173,6 +173,10 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
     return distributables;
   }
 
+  @Override public void fireEvent(Event event) {
+
+  }
+
   @Override
   public void clear(String segmentId) {
     List<TableBlockIndexUniqueIdentifier> blockIndexes = segmentMap.remove(segmentId);
@@ -207,11 +211,6 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
       throw new RuntimeException(e);
     }
     return dataMap;
-  }
-
-  @Override
-  public void fireEvent(ChangeEvent event) {
-
   }
 
   @Override
