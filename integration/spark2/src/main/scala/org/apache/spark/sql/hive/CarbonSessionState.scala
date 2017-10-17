@@ -17,7 +17,7 @@
 package org.apache.spark.sql.hive
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.spark.sql._
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, ExperimentalMethods, SparkSession, Strategy}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, FunctionRegistry}
 import org.apache.spark.sql.catalyst.catalog.{FunctionResourceLoader, GlobalTempViewManager, SessionCatalog}
@@ -25,6 +25,7 @@ import org.apache.spark.sql.catalyst.expressions.{PredicateSubquery, ScalarSubqu
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
+import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.SparkOptimizer
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy}
@@ -136,8 +137,7 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
   override lazy val sqlParser: ParserInterface = new CarbonSparkSqlParser(conf, sparkSession)
 
   experimentalMethods.extraStrategies = extraStrategies
-
-  experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
+  experimentalMethods.extraOptimizations = extraOptimizations
 
   def extraStrategies: Seq[Strategy] = {
     Seq(new CarbonLateDecodeStrategy,
@@ -180,6 +180,10 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
       conf,
       newHadoopConf(),
       sqlParser)
+  }
+
+  def extraOptimizations: Seq[Rule[LogicalPlan]] = {
+    Seq(new CarbonLateDecodeRule)
   }
 }
 
