@@ -131,6 +131,9 @@ trait CarbonMetaStore {
   def dropTable(tablePath: String, tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession)
 
+  def dropChildTable(tablePath: String, tableIdentifier: TableIdentifier, removeFromParent: Boolean)
+    (sparkSession: SparkSession)
+
   def updateAndTouchSchemasUpdatedTime(basePath: String)
 
   def checkSchemasModifiedTimeAndReloadTables(storePath: String)

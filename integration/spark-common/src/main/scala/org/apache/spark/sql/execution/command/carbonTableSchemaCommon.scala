@@ -26,7 +26,6 @@ import scala.collection.mutable.Map
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.types.DataTypes
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -71,12 +70,12 @@ case class Field(column: String, var dataType: Option[String], name: Option[Stri
     var schemaOrdinal: Int = -1,
     var precision: Int = 0, var scale: Int = 0, var rawSchema: String = "",
     var aggregateFunction: String = "", columnTableRelation: Option[ColumnTableRelation] = None) {
-  override def equals(o: Any) = o match {
+  override def equals(o: Any): Boolean = o match {
     case that: Field =>
       that.column.equalsIgnoreCase(this.column)
     case _ => false
   }
-  override def hashCode = column.hashCode
+  override def hashCode: Int = column.hashCode
 }
 
 case class ColumnTableRelation(parentColumnName: String, parentColumnId: String,
@@ -394,10 +393,10 @@ class TableNewProcessor(cm: TableModel) {
       if (highCardinalityDims.contains(colName)) {
         encoders.remove(Encoding.DICTIONARY)
       }
-    if (dataType == DataType.DATE) {
+    if (dataType == DataTypes.DATE) {
         encoders.add(Encoding.DIRECT_DICTIONARY)
       }
-    if (dataType == DataType.TIMESTAMP && !highCardinalityDims.contains(colName)) {
+    if (dataType == DataTypes.TIMESTAMP && !highCardinalityDims.contains(colName)) {
         encoders.add(Encoding.DIRECT_DICTIONARY)
       }
     }
@@ -420,9 +419,9 @@ class TableNewProcessor(cm: TableModel) {
       val relation = field.columnTableRelation.get
       val parentColumnTableRelationList = new util.ArrayList[ParentColumnTableRelation]
       val relationIdentifier = new RelationIdentifier(
-        relation.parentDatabaseName, relation.parentTableName, relation.parentTableId)
+        relation.parentDatabaseName, relation.parentTableName, relation.parentColumnId)
       val parentColumnTableRelation = new ParentColumnTableRelation(
-        relationIdentifier, relation.parentColumnId, relation.parentColumnName)
+        relationIdentifier, relation.parentColumnId, relation.parentColumnId)
       parentColumnTableRelationList.add(parentColumnTableRelation)
       val columnRelation = new ColumnRelation(columnUniqueId, parentColumnTableRelationList)
       Some(columnRelation)
@@ -562,7 +561,7 @@ class TableNewProcessor(cm: TableModel) {
       val field = Field(column = CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
         dataType = None, name = None, children = None)
       val (columnSchema: ColumnSchema, columnRelation: Option[ColumnRelation]) =
-        getColumnSchema(DataType.DOUBLE,
+        getColumnSchema(DataTypes.DOUBLE,
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
         index,
         true,

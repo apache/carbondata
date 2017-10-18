@@ -18,8 +18,8 @@ package org.apache.spark.sql.execution.command.preaaggregate
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.{Field, RunnableCommand, SchemaProcessCommand, TableModel, TableNewProcessor}
-import PreAggregateUtil
+import org.apache.spark.sql.execution.command.{Field, RunnableCommand, SchemaProcessCommand,
+TableModel, TableNewProcessor}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -60,7 +60,7 @@ case class CreatePreAggregateTableCommand(
     val tbName = cm.tableName
     val dbName = cm.databaseName
     LOGGER.audit(s"Creating Table with Database name [$dbName] and Table name [$tbName]")
-    //getting the parent table
+    // getting the parent table
     val parentTable = PreAggregateUtil.getParentCarbonTable(dataFrame.logicalPlan)
     // getting the table name
     val parentTableName = parentTable.getFactTableName

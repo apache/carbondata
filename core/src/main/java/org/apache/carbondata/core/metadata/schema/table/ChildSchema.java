@@ -70,4 +70,26 @@ public class ChildSchema implements Serializable, Writable {
     this.relationProperties = new RelationProperties(RelationType.AGGREGATION, null);
     this.relationProperties.readFields(in);
   }
+
+  @Override public int hashCode() {
+    return tableSchema.hashCode();
+  }
+
+  @Override public boolean equals(Object obj) {
+    if (this == obj) {
+      return true;
+    }
+    if (obj == null) {
+      return false;
+    }
+    if (getClass() != obj.getClass()) {
+      return false;
+    }
+    ChildSchema other = (ChildSchema) obj;
+    if (tableSchema == null) {
+      return other.tableSchema == null;
+    }
+    return tableSchema.equals(other.tableSchema);
+  }
+
 }

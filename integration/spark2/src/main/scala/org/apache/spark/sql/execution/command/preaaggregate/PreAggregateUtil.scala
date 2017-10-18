@@ -19,16 +19,17 @@ package org.apache.spark.sql.execution.command.preaaggregate
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.SparkConf
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast}
+import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command.{ColumnTableRelation, Field}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.hive.HiveExternalCatalog.{DATASOURCE_SCHEMA_NUMPARTS, DATASOURCE_SCHEMA_PART_PREFIX}
-import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
+import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.hive.HiveExternalCatalog.{DATASOURCE_SCHEMA_NUMPARTS,
+DATASOURCE_SCHEMA_PART_PREFIX}
 import org.apache.spark.sql.types.DataType
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -61,6 +62,7 @@ object PreAggregateUtil {
    * and get the required fields from select plan
    * Currently only aggregate query is support any other type of query will
    * fail
+   *
    * @param plan
    * @param selectStmt
    * @return list of fields
@@ -108,9 +110,9 @@ object PreAggregateUtil {
               parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
           case _ =>
             throw new MalformedCarbonCommandException(s"Unsupported Select Statement:${
-              selectStmt } ")
+              selectStmt
+            } ")
         }
-        Some(carbonTable)
       case _ =>
         throw new MalformedCarbonCommandException(s"Unsupported Select Statement:${ selectStmt } ")
     }
@@ -124,6 +126,7 @@ object PreAggregateUtil {
    * in case of any other aggregate function it will throw error
    * In case of avg it will return two fields one for count
    * and other of sum of that column to support rollup
+   *
    * @param carbonTable
    * @param aggFunctions
    * @param parentTableName
@@ -135,7 +138,7 @@ object PreAggregateUtil {
       aggFunctions: AggregateFunction,
       parentTableName: String,
       parentDatabaseName: String,
-      parentTableId: String) : scala.collection.mutable.ListBuffer[Field] = {
+      parentTableId: String): scala.collection.mutable.ListBuffer[Field] = {
     val list = scala.collection.mutable.ListBuffer.empty[Field]
     aggFunctions match {
       case sum@Sum(attr: AttributeReference) =>
@@ -221,6 +224,7 @@ object PreAggregateUtil {
 
   /**
    * Below method will be used to get the fields object for pre aggregate table
+   *
    * @param columnName
    * @param dataType
    * @param aggregateType
@@ -238,9 +242,9 @@ object PreAggregateUtil {
       parentDatabaseName: String,
       parentTableId: String): Field = {
     val actualColumnName = if (aggregateType.equals("")) {
-      parentTableName+ '_' +columnName
+      parentTableName + '_' + columnName
     } else {
-      parentTableName+ '_' + columnName + '_' + aggregateType
+      parentTableName + '_' + columnName + '_' + aggregateType
     }
     val rawSchema = '`' + actualColumnName + '`' + ' ' + dataType.typeName
     val columnTableRelation = ColumnTableRelation(parentColumnName = columnName,
@@ -273,6 +277,7 @@ object PreAggregateUtil {
   /**
    * Below method will be used to update the main table about the pre aggregate table information
    * in case of any exption it will throw error so pre aggregate table creation will fail
+   *
    * @param dbName
    * @param tableName
    * @param childSchema
@@ -308,8 +313,7 @@ object PreAggregateUtil {
       val thriftTable = schemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
       updateSchemaInfo(carbonTable,
-        thriftTable)(sparkSession,
-        sparkSession.sessionState.asInstanceOf[CarbonSessionState])
+        thriftTable)(sparkSession)
       LOGGER.info(s"Pre Aggeragte Parent table updated is successful for table $dbName.$tableName")
     } catch {
       case e: Exception =>
@@ -325,14 +329,14 @@ object PreAggregateUtil {
 
   /**
    * Below method will be used to update the main table schema
+   *
    * @param carbonTable
    * @param thriftTable
    * @param sparkSession
    * @param sessionState
    */
   def updateSchemaInfo(carbonTable: CarbonTable,
-      thriftTable: TableInfo)(sparkSession: SparkSession,
-      sessionState: CarbonSessionState): Unit = {
+      thriftTable: TableInfo)(sparkSession: SparkSession): Unit = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getFactTableName
     CarbonEnv.getInstance(sparkSession).carbonMetastore
@@ -342,30 +346,6 @@ object PreAggregateUtil {
         carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     val tableIdentifier = TableIdentifier(tableName, Some(dbName))
     sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
-  }
-
-  /**
-   * This method will split schema string into multiple parts of configured size and
-   * registers the parts as keys in tableProperties which will be read by spark to prepare
-   * Carbon Table fields
-   *
-   * @param sparkConf
-   * @param schemaJsonString
-   * @return
-   */
-  private def prepareSchemaJson(sparkConf: SparkConf,
-      schemaJsonString: String): String = {
-    val threshold = sparkConf
-      .getInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD,
-        CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT)
-    // Split the JSON string.
-    val parts = schemaJsonString.grouped(threshold).toSeq
-    var schemaParts: Seq[String] = Seq.empty
-    schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_NUMPARTS'='${ parts.size }'"
-    parts.zipWithIndex.foreach { case (part, index) =>
-      schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_PART_PREFIX$index'='$part'"
-    }
-    schemaParts.mkString(",")
   }
 
   /**
@@ -431,5 +411,29 @@ object PreAggregateUtil {
         .revertTableSchemaForPreAggCreationFailure(carbonTable.getCarbonTableIdentifier,
           thriftTable, carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     }
+  }
+
+  /**
+   * This method will split schema string into multiple parts of configured size and
+   * registers the parts as keys in tableProperties which will be read by spark to prepare
+   * Carbon Table fields
+   *
+   * @param sparkConf
+   * @param schemaJsonString
+   * @return
+   */
+  private def prepareSchemaJson(sparkConf: SparkConf,
+      schemaJsonString: String): String = {
+    val threshold = sparkConf
+      .getInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD,
+        CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT)
+    // Split the JSON string.
+    val parts = schemaJsonString.grouped(threshold).toSeq
+    var schemaParts: Seq[String] = Seq.empty
+    schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_NUMPARTS'='${ parts.size }'"
+    parts.zipWithIndex.foreach { case (part, index) =>
+      schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_PART_PREFIX$index'='$part'"
+    }
+    schemaParts.mkString(",")
   }
 }

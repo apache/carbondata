@@ -18,21 +18,25 @@
 package org.apache.spark.sql.execution.command
 
 import scala.collection.mutable.ListBuffer
+import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.schema.table.ChildSchema
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 
 case class CarbonDropTableCommand(
     ifExistsSet: Boolean,
     databaseNameOp: Option[String],
-    tableName: String)
+    tableName: String,
+    removeFromParent: Boolean = true)
   extends RunnableCommand with SchemaProcessCommand with DataProcessCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
@@ -53,14 +57,32 @@ case class CarbonDropTableCommand(
         dbName.toLowerCase, tableName.toLowerCase)
     catalog.checkSchemasModifiedTimeAndReloadTables(tableIdentifier.getStorePath)
     val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
+    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation].tableMeta
+      .carbonTable
     try {
       locksToBeAcquired foreach {
         lock => carbonLocks += CarbonLockUtil.getLockObject(carbonTableIdentifier, lock)
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
-
-      CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .dropTable(tableIdentifier.getTablePath, identifier)(sparkSession)
+      if (carbonTable.getTableInfo.getParentRelationIdentifiers != null &&
+          !carbonTable.getTableInfo.getParentRelationIdentifiers.isEmpty) {
+        CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .dropChildTable(tableIdentifier.getTablePath, identifier, removeFromParent)(sparkSession)
+      } else {
+        CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .dropTable(tableIdentifier.getTablePath, identifier)(sparkSession)
+      }
+      if (carbonTable.getTableInfo.getChildSchemaList != null &&
+          !carbonTable.getTableInfo.getChildSchemaList.isEmpty) {
+        val childSchemas = carbonTable.getTableInfo.getChildSchemaList
+        for (childSchema: ChildSchema <- childSchemas.asScala) {
+          CarbonDropTableCommand(ifExistsSet = true,
+            Some(childSchema.getRelationIdentifier.getDatabaseName),
+            childSchema.getRelationIdentifier.getTableName,
+            removeFromParent = false).run(sparkSession)
+        }
+      }
       LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
     } catch {
       case ex: Exception =>
