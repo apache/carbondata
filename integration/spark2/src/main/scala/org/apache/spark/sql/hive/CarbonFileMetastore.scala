@@ -20,12 +20,14 @@ package org.apache.spark.sql.hive
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, SparkSession}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
+import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -34,11 +36,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.fileoperations.FileWriteOperation
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{schema, AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.metadata.schema
 import org.apache.carbondata.core.metadata.schema.table
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.ThriftWriter
@@ -449,6 +450,41 @@ class CarbonFileMetastore extends CarbonMetaStore {
     }
   }
 
+  protected def updateParentTableInfo(parentRelationIdentifier: RelationIdentifier,
+      childCarbonTable: CarbonTable)(sparkSession: SparkSession): Unit = {
+    val dbName = parentRelationIdentifier.getDatabaseName
+    val tableName = parentRelationIdentifier.getTableName
+    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    try {
+      val tableMeta = metaStore.getTableFromMetadataCache(dbName, tableName)
+      if (tableMeta.isDefined) {
+        val parentCarbonTable = tableMeta.get.carbonTable
+        val childSchemas = parentCarbonTable.getTableInfo.getDataMapSchemaList
+        if (childSchemas == null) {
+          throw UninitializedFieldError("Child schemas is not initialized")
+        }
+        val childSchemaIterator = childSchemas.iterator()
+        while (childSchemaIterator.hasNext) {
+          val childSchema = childSchemaIterator.next()
+          if (childSchema.getChildSchema.equals(childCarbonTable.getTableInfo.getFactTable)) {
+            childSchemaIterator.remove()
+          }
+        }
+        val schemaConverter = new ThriftWrapperSchemaConverterImpl
+        PreAggregateUtil
+          .updateSchemaInfo(parentCarbonTable,
+            schemaConverter
+              .fromWrapperToExternalTableInfo(parentCarbonTable.getTableInfo,
+                dbName,
+                tableName))(sparkSession)
+      }
+    } catch {
+      case ex: Exception =>
+        LOGGER.error(ex, s"Updating parent table $dbName.$tableName failed.")
+        throw ex
+    }
+  }
+
   def dropTable(tablePath: String, tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession) {
     val dbName = tableIdentifier.database.get
@@ -461,6 +497,14 @@ class CarbonFileMetastore extends CarbonMetaStore {
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
     }
     val fileType = FileFactory.getFileType(metadataFilePath)
+    if (carbonTable != null) {
+      val parentRelations = carbonTable.getTableInfo.getParentRelationIdentifiers
+      if (parentRelations != null && !parentRelations.isEmpty) {
+        for (parentRelation: RelationIdentifier <- parentRelations.asScala) {
+          updateParentTableInfo(parentRelation, carbonTable)(sparkSession)
+        }
+      }
+    }
 
     if (FileFactory.isFileExist(metadataFilePath, fileType)) {
       // while drop we should refresh the schema modified time so that if any thing has changed
@@ -468,6 +512,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       checkSchemasModifiedTimeAndReloadTables(identifier.getStorePath)
 
       removeTableFromMetadata(dbName, tableName)
+
       updateSchemasUpdatedTime(touchSchemaFileSystemTime(identifier.getStorePath))
       CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
       // discard cached table info in cachedDataSourceTables

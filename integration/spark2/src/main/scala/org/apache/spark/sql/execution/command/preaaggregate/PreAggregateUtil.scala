@@ -59,8 +59,8 @@ object PreAggregateUtil {
   /**
    * Below method will be used to validate the select plan
    * and get the required fields from select plan
-   * Currently only aggregate query is support any other type of query will
-   * fail
+   * Currently only aggregate query is support any other type of query will fail
+   *
    * @param plan
    * @param selectStmt
    * @return list of fields
@@ -89,11 +89,11 @@ object PreAggregateUtil {
               throw new MalformedCarbonCommandException(
                 "Distinct is not supported On Pre Aggregation")
             }
-            fieldToDataMapFieldMap ++= ((validateAggregateFunctionAndGetFields(carbonTable,
+            fieldToDataMapFieldMap ++= (validateAggregateFunctionAndGetFields(carbonTable,
               attr.aggregateFunction,
               parentTableName,
               parentDatabaseName,
-              parentTableId)))
+              parentTableId))
           case attr: AttributeReference =>
             fieldToDataMapFieldMap += getField(attr.name,
               attr.dataType,
@@ -124,6 +124,7 @@ object PreAggregateUtil {
    * in case of any other aggregate function it will throw error
    * In case of avg it will return two fields one for count
    * and other of sum of that column to support rollup
+   *
    * @param carbonTable
    * @param aggFunctions
    * @param parentTableName
@@ -220,6 +221,7 @@ object PreAggregateUtil {
 
   /**
    * Below method will be used to get the fields object for pre aggregate table
+   *
    * @param columnName
    * @param dataType
    * @param aggregateType
@@ -256,8 +258,7 @@ object PreAggregateUtil {
         precision = precision,
         scale = scale,
         rawSchema = rawSchema), dataMapField)
-    }
-    else {
+    } else {
       (Field(column = actualColumnName,
         dataType = Some(dataType.typeName),
         name = Some(actualColumnName),
@@ -268,7 +269,8 @@ object PreAggregateUtil {
 
   /**
    * Below method will be used to update the main table about the pre aggregate table information
-   * in case of any exption it will throw error so pre aggregate table creation will fail
+   * in case of any exception it will throw error so pre aggregate table creation will fail
+   *
    * @param dbName
    * @param tableName
    * @param childSchema
@@ -304,9 +306,8 @@ object PreAggregateUtil {
       val thriftTable = schemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
       updateSchemaInfo(carbonTable,
-        thriftTable)(sparkSession,
-        sparkSession.sessionState.asInstanceOf[CarbonSessionState])
-      LOGGER.info(s"Pre Aggeragte Parent table updated is successful for table $dbName.$tableName")
+        thriftTable)(sparkSession)
+      LOGGER.info(s"Parent table updated is successful for table $dbName.$tableName")
     } catch {
       case e: Exception =>
         LOGGER.error(e, "Pre Aggregate Parent table update failed reverting changes")
@@ -321,14 +322,13 @@ object PreAggregateUtil {
 
   /**
    * Below method will be used to update the main table schema
+   *
    * @param carbonTable
    * @param thriftTable
    * @param sparkSession
-   * @param sessionState
    */
   def updateSchemaInfo(carbonTable: CarbonTable,
-      thriftTable: TableInfo)(sparkSession: SparkSession,
-      sessionState: CarbonSessionState): Unit = {
+      thriftTable: TableInfo)(sparkSession: SparkSession): Unit = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getFactTableName
     CarbonEnv.getInstance(sparkSession).carbonMetastore

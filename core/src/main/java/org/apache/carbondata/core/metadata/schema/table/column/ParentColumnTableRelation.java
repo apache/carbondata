@@ -29,6 +29,8 @@ import org.apache.carbondata.core.metadata.schema.table.Writable;
  */
 public class ParentColumnTableRelation implements Serializable, Writable {
 
+  private static final long serialVersionUID = 1321746085997166646L;
+
   private RelationIdentifier relationIdentifier;
   /**
    * parent column id
