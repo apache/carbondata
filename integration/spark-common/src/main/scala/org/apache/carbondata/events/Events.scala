@@ -57,7 +57,7 @@ trait LookupRelationEventInfo {
  * event for drop table
  */
 trait DropTableEventInfo {
-  val carbonTable: CarbonTable
+  val carbonTable: Option[CarbonTable]
   val ifExistsSet: Boolean
 }
 
