@@ -25,6 +25,8 @@ public interface Compressor {
 
   byte[] compressByte(byte[] unCompInput);
 
+  byte[] compressByte(byte[] unCompInput, int byteSize);
+
   byte[] unCompressByte(byte[] compInput);
 
   byte[] unCompressByte(byte[] compInput, int offset, int length);

@@ -26,27 +26,30 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.execution.command.{TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.strategy.CarbonLateDecodeStrategy
+import org.apache.spark.sql.execution.streaming.Sink
 import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.sources._
+import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.streaming.{CarbonStreamException, StreamSinkFactory}
 
 /**
  * Carbon relation provider compliant to data source api.
  * Creates carbon relations
  */
 class CarbonSource extends CreatableRelationProvider with RelationProvider
-  with SchemaRelationProvider with DataSourceRegister {
+  with SchemaRelationProvider with StreamSinkProvider with DataSourceRegister {
 
   override def shortName(): String = "carbondata"
 
@@ -205,6 +208,31 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     } catch {
       case ex: Exception =>
         throw new Exception(s"Do not have $dbName and $tableName", ex)
+    }
+  }
+
+  override def createSink(sqlContext: SQLContext,
+      parameters: Map[String, String],
+      partitionColumns: Seq[String],
+      outputMode: OutputMode): Sink = {
+
+    // check "tablePath" option
+    val tablePathOption = parameters.get("tablePath")
+    if (tablePathOption.isDefined) {
+      val sparkSession = sqlContext.sparkSession
+      val identifier: AbsoluteTableIdentifier =
+        AbsoluteTableIdentifier.fromTablePath(tablePathOption.get)
+      val carbonTable =
+        CarbonEnv.getInstance(sparkSession).carbonMetastore.
+          createCarbonRelation(parameters, identifier, sparkSession).tableMeta.carbonTable
+
+      // create sink
+      StreamSinkFactory.createStreamTableSink(
+        sqlContext.sparkSession,
+        carbonTable,
+        parameters)
+    } else {
+      throw new CarbonStreamException("Require tablePath option for writeStream")
     }
   }
 

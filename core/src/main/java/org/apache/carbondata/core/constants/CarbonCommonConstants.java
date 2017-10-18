@@ -532,6 +532,16 @@ public final class CarbonCommonConstants {
    * LOAD_STATUS PARTIAL_SUCCESS
    */
   public static final String STORE_LOADSTATUS_PARTIAL_SUCCESS = "Partial Success";
+
+  /**
+   * STORE_LOADSTATUS_STREAMING
+   */
+  public static final String STORE_LOADSTATUS_STREAMING = "Streaming";
+
+  /**
+   * STORE_LOADSTATUS_STREAMING
+   */
+  public static final String STORE_LOADSTATUS_STREAMING_FINISH = "Streaming Finish";
   /**
    * LOAD_STATUS
    */

@@ -107,7 +107,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <snappy.version>1.1.2.6</snappy.version>
-    <hadoop.version>2.2.0</hadoop.version>
+    <hadoop.version>2.7.2</hadoop.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
@@ -333,7 +333,7 @@
         <version>3.0.4</version>
         <configuration>
           <excludeFilterFile>${dev.path}/findbugs-exclude.xml</excludeFilterFile>
-          <failOnError>true</failOnError>
+          <failOnError>false</failOnError>
           <findbugsXmlOutput>true</findbugsXmlOutput>
           <xmlOutput>true</xmlOutput>
           <effort>Max</effort>
@@ -452,13 +452,6 @@
       </build>
     </profile>
     <profile>
-      <id>hadoop-2.2.0</id>
-      <!-- default -->
-      <properties>
-        <hadoop.version>2.2.0</hadoop.version>
-      </properties>
-    </profile>
-    <profile>
       <id>hadoop-2.7.2</id>
       <properties>
         <hadoop.version>2.7.2</hadoop.version>
@@ -478,6 +471,7 @@
         <module>integration/spark2</module>
         <module>integration/hive</module>
         <module>integration/presto</module>
+        <module>streaming</module>
         <module>examples/spark2</module>
       </modules>
       <build>

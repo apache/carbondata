@@ -50,6 +50,8 @@ public class CarbonTablePath extends Path {
   protected static final String BATCH_PREFIX = "_batchno";
   protected static final String INDEX_FILE_EXT = ".carbonindex";
   protected static final String DELETE_DELTA_FILE_EXT = ".deletedelta";
+  protected static final String STREAMING_LOG_DIR = "streaming_log";
+  protected static final String STREAMING_CHECKPOINT_DIR = "streaming_checkpoint";
 
   protected String tablePath;
   protected CarbonTableIdentifier carbonTableIdentifier;
@@ -426,6 +428,14 @@ public class CarbonTablePath extends Path {
         + INDEX_FILE_EXT;
   }
 
+  public static String getCarbonStreamIndexFileName() {
+    return getCarbonIndexFileName(0, 0, 0, "0");
+  }
+
+  public static String getCarbonStreamIndexFilePath(String segmentDir) {
+    return segmentDir + File.separator + getCarbonStreamIndexFileName();
+  }
+
   /**
    * Below method will be used to get the carbon index filename
    *
@@ -438,7 +448,7 @@ public class CarbonTablePath extends Path {
     return taskNo + "-" + factUpdatedTimeStamp + indexFileExtension;
   }
 
-  private String getSegmentDir(String partitionId, String segmentId) {
+  public String getSegmentDir(String partitionId, String segmentId) {
     return getPartitionDir(partitionId) + File.separator + SEGMENT_PREFIX + segmentId;
   }
 
@@ -452,6 +462,14 @@ public class CarbonTablePath extends Path {
 
   public String getFactDir() {
     return tablePath + File.separator + FACT_DIR;
+  }
+
+  public String getStreamingLogDir() {
+    return tablePath + File.separator + STREAMING_LOG_DIR;
+  }
+
+  public String getStreamingCheckpointDir() {
+    return tablePath + File.separator + STREAMING_CHECKPOINT_DIR;
   }
 
   public CarbonTableIdentifier getCarbonTableIdentifier() {

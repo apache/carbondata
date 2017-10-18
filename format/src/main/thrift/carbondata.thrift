@@ -152,7 +152,7 @@ struct DataChunk3{
  */
 struct BlockletInfo{
     1: required i32 num_rows;	// Number of rows in this blocklet
-    2: required list<DataChunk> column_data_chunks;	// Information about all column chunks in this blocklet
+    2: optional list<DataChunk> column_data_chunks;	// Information about all column chunks in this blocklet
 }
 
 /**
@@ -209,6 +209,8 @@ struct FileHeader{
 	2: required list<schema.ColumnSchema> column_schema;  // Description of columns in this file
 	3: optional bool is_footer_present; //  To check whether footer is present or not
 	4: optional i64 time_stamp; // Timestamp to compare column schema against master schema
+	5: optional bool is_splitable; // Whether file is splitable or not
+	6: optional binary sync_marker; // 16 bytes sync marker
 }
 
 /**
@@ -225,7 +227,7 @@ enum MutationType {
 struct BlockletHeader{
 	1: required i32 blocklet_length; // Length of blocklet data
 	2: required MutationType mutation; // Mutation type of this blocklet
-	3: required BlockletIndex blocklet_index;  // Index for the following blocklet
+	3: optional BlockletIndex blocklet_index;  // Index for the following blocklet
 	4: required BlockletInfo blocklet_info;  // Info for the following blocklet
 	5: optional dictionary.ColumnDictionaryChunk dictionary; // Blocklet local dictionary
 }

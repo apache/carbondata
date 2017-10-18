@@ -64,7 +64,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   public static final String QUOTE_DEFAULT = "\"";
   public static final String ESCAPE = "carbon.csvinputformat.escape";
   public static final String ESCAPE_DEFAULT = "\\";
-  public static final String HEADER_PRESENT = "caron.csvinputformat.header.present";
+  public static final String HEADER_PRESENT = "carbon.csvinputformat.header.present";
   public static final boolean HEADER_PRESENT_DEFAULT = false;
   public static final String READ_BUFFER_SIZE = "carbon.csvinputformat.read.buffer.size";
   public static final String READ_BUFFER_SIZE_DEFAULT = "65536";
@@ -171,6 +171,24 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     configuration.set(NUMBER_OF_COLUMNS, numberOfColumns);
   }
 
+  public static CsvParserSettings extractCsvParserSettings(Configuration job) {
+    CsvParserSettings parserSettings = new CsvParserSettings();
+    parserSettings.getFormat().setDelimiter(job.get(DELIMITER, DELIMITER_DEFAULT).charAt(0));
+    parserSettings.getFormat().setComment(job.get(COMMENT, COMMENT_DEFAULT).charAt(0));
+    parserSettings.setLineSeparatorDetectionEnabled(true);
+    parserSettings.setNullValue("");
+    parserSettings.setEmptyValue("");
+    parserSettings.setIgnoreLeadingWhitespaces(false);
+    parserSettings.setIgnoreTrailingWhitespaces(false);
+    parserSettings.setSkipEmptyLines(false);
+    parserSettings.setMaxCharsPerColumn(MAX_CHARS_PER_COLUMN_DEFAULT);
+    String maxColumns = job.get(MAX_COLUMNS, "" + DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING);
+    parserSettings.setMaxColumns(Integer.parseInt(maxColumns));
+    parserSettings.getFormat().setQuote(job.get(QUOTE, QUOTE_DEFAULT).charAt(0));
+    parserSettings.getFormat().setQuoteEscape(job.get(ESCAPE, ESCAPE_DEFAULT).charAt(0));
+    return parserSettings;
+  }
+
   /**
    * Treats value as line in file. Key is null.
    */
@@ -232,30 +250,13 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       }
       reader = new InputStreamReader(inputStream,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-      csvParser = new CsvParser(extractCsvParserSettings(job));
-      csvParser.beginParsing(reader);
-    }
-
-    private CsvParserSettings extractCsvParserSettings(Configuration job) {
-      CsvParserSettings parserSettings = new CsvParserSettings();
-      parserSettings.getFormat().setDelimiter(job.get(DELIMITER, DELIMITER_DEFAULT).charAt(0));
-      parserSettings.getFormat().setComment(job.get(COMMENT, COMMENT_DEFAULT).charAt(0));
-      parserSettings.setLineSeparatorDetectionEnabled(true);
-      parserSettings.setNullValue("");
-      parserSettings.setEmptyValue("");
-      parserSettings.setIgnoreLeadingWhitespaces(false);
-      parserSettings.setIgnoreTrailingWhitespaces(false);
-      parserSettings.setSkipEmptyLines(false);
-      parserSettings.setMaxCharsPerColumn(MAX_CHARS_PER_COLUMN_DEFAULT);
-      String maxColumns = job.get(MAX_COLUMNS);
-      parserSettings.setMaxColumns(Integer.parseInt(maxColumns));
-      parserSettings.getFormat().setQuote(job.get(QUOTE, QUOTE_DEFAULT).charAt(0));
-      parserSettings.getFormat().setQuoteEscape(job.get(ESCAPE, ESCAPE_DEFAULT).charAt(0));
+      CsvParserSettings settings = extractCsvParserSettings(job);
       if (start == 0) {
-        parserSettings.setHeaderExtractionEnabled(job.getBoolean(HEADER_PRESENT,
+        settings.setHeaderExtractionEnabled(job.getBoolean(HEADER_PRESENT,
             HEADER_PRESENT_DEFAULT));
       }
-      return parserSettings;
+      csvParser = new CsvParser(settings);
+      csvParser.beginParsing(reader);
     }
 
     @Override
