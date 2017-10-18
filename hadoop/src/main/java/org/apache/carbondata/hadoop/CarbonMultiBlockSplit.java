@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.statusmanager.FileFormat;
 
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.InputSplit;
@@ -44,6 +45,8 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
    */
   private String[] locations;
 
+  private FileFormat fileFormat = FileFormat.carbondata;
+
   public CarbonMultiBlockSplit() {
     splitList = null;
     locations = null;
@@ -53,6 +56,13 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
       String[] locations) throws IOException {
     this.splitList = splitList;
     this.locations = locations;
+  }
+
+  public CarbonMultiBlockSplit(AbsoluteTableIdentifier identifier, List<CarbonInputSplit> splitList,
+      String[] locations, FileFormat fileFormat) throws IOException {
+    this.splitList = splitList;
+    this.locations = locations;
+    this.fileFormat = fileFormat;
   }
 
   /**
@@ -88,6 +98,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
     for (int i = 0; i < locations.length; i++) {
       out.writeUTF(locations[i]);
     }
+    out.writeInt(fileFormat.ordinal());
   }
 
   @Override
@@ -105,6 +116,14 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
     for (int i = 0; i < len; i++) {
       locations[i] = in.readUTF();
     }
+    fileFormat = FileFormat.getByOrdinal(in.readInt());
   }
 
+  public FileFormat getFileFormat() {
+    return fileFormat;
+  }
+
+  public void setFileFormat(FileFormat fileFormat) {
+    this.fileFormat = fileFormat;
+  }
 }

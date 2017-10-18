@@ -133,7 +133,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Get TableInfo object from `configuration`
    */
-  private TableInfo getTableInfo(Configuration configuration) throws IOException {
+  private static TableInfo getTableInfo(Configuration configuration) throws IOException {
     String tableInfoStr = configuration.get(TABLE_INFO);
     if (tableInfoStr == null) {
       return null;
@@ -192,6 +192,21 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       return this.carbonTable;
     }
   }
+
+  public static CarbonTable createCarbonTable(Configuration configuration) throws IOException {
+    // carbon table should be created either from deserialized table info (schema saved in
+    // hive metastore) or by reading schema in HDFS (schema saved in HDFS)
+    TableInfo tableInfo = getTableInfo(configuration);
+    CarbonTable carbonTable;
+    if (tableInfo != null) {
+      carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
+    } else {
+      carbonTable = SchemaReader.readCarbonTableFromStore(
+          getAbsoluteTableIdentifier(configuration));
+    }
+    return carbonTable;
+  }
+
   public static void setTablePath(Configuration configuration, String tablePath)
       throws IOException {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
@@ -295,7 +310,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     configuration.set(CarbonInputFormat.INPUT_FILES, CarbonUtil.getSegmentString(validFiles));
   }
 
-  private AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
+  private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
       throws IOException {
     String dirs = configuration.get(INPUT_DIR, "");
     String[] inputPaths = StringUtils.split(dirs);
@@ -351,7 +366,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       Expression filter = getFilterPredicates(job.getConfiguration());
       CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
       TableProvider tableProvider = new SingleTableProvider(carbonTable);
-      CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
+      CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
       BitSet matchedPartitions = null;
       PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
       if (partitionInfo != null) {
@@ -812,7 +827,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
 
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
-    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
+    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
     FilterResolverIntf filterIntf = CarbonInputFormatUtil
         .resolveFilter(filter, carbonTable.getAbsoluteTableIdentifier(), tableProvider);
     queryModel.setFilterExpressionResolverTree(filterIntf);

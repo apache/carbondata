@@ -42,7 +42,9 @@ import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -252,6 +254,23 @@ public final class CarbonDataProcessorUtil {
       if (!field.hasDictionaryEncoding() && field.getColumn().isDimension()) {
         noDictionaryMapping.add(true);
       } else if (field.getColumn().isDimension()) {
+        noDictionaryMapping.add(false);
+      }
+    }
+    return ArrayUtils
+        .toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
+  }
+
+  public static boolean[] getNoDictionaryMapping(CarbonColumn[] carbonColumns) {
+    List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
+    for (CarbonColumn column : carbonColumns) {
+      // for  complex type need to break the loop
+      if (column.isComplex()) {
+        break;
+      }
+      if (!column.hasEncoding(Encoding.DICTIONARY) && column.isDimension()) {
+        noDictionaryMapping.add(true);
+      } else if (column.isDimension()) {
         noDictionaryMapping.add(false);
       }
     }
