@@ -109,12 +109,14 @@ public class CarbonInputFormatUtil {
     plan.addDimension(queryDimension);
   }
 
-  public static void processFilterExpression(Expression filterExpression, CarbonTable carbonTable) {
+  public static void processFilterExpression(Expression filterExpression, CarbonTable carbonTable,
+      boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
     List<CarbonDimension> dimensions =
         carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
     List<CarbonMeasure> measures =
         carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
-    QueryModel.processFilterExpression(filterExpression, dimensions, measures);
+    QueryModel.processFilterExpression(filterExpression, dimensions, measures,
+        isFilterDimensions, isFilterMeasures);
 
     if (null != filterExpression) {
       // Optimize Filter Expression and fit RANGE filters is conditions apply.

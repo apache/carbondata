@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.mutate.UpdateVO;
+import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -81,6 +82,8 @@ public class CarbonInputSplit extends FileSplit
 
   private BlockletDetailInfo detailInfo;
 
+  private FileFormat fileFormat = FileFormat.carbondata;
+
   public CarbonInputSplit() {
     segmentId = null;
     taskId = "0";
@@ -109,6 +112,30 @@ public class CarbonInputSplit extends FileSplit
       int numberOfBlocklets, ColumnarFormatVersion version, String[] deleteDeltaFiles) {
     this(segmentId, path, start, length, locations, version, deleteDeltaFiles);
     this.numberOfBlocklets = numberOfBlocklets;
+  }
+
+  public CarbonInputSplit(String segmentId, Path path, long start, long length, String[] locations,
+      FileFormat fileFormat) {
+    super(path, start, length, locations);
+    this.segmentId = segmentId;
+    this.fileFormat = fileFormat;
+    taskId = "0";
+    bucketId = "0";
+    numberOfBlocklets = 0;
+    invalidSegments = new ArrayList<>();
+    version = CarbonProperties.getInstance().getFormatVersion();
+  }
+
+  public CarbonInputSplit(String segmentId, Path path, long start, long length, String[] locations,
+      String[] inMemoryHosts, FileFormat fileFormat) {
+    super(path, start, length, locations, inMemoryHosts);
+    this.segmentId = segmentId;
+    this.fileFormat = fileFormat;
+    taskId = "0";
+    bucketId = "0";
+    numberOfBlocklets = 0;
+    invalidSegments = new ArrayList<>();
+    version = CarbonProperties.getInstance().getFormatVersion();
   }
 
   /**
@@ -362,5 +389,13 @@ public class CarbonInputSplit extends FileSplit
 
   public void setDetailInfo(BlockletDetailInfo detailInfo) {
     this.detailInfo = detailInfo;
+  }
+
+  public FileFormat getFileFormat() {
+    return fileFormat;
+  }
+
+  public void setFormat(FileFormat fileFormat) {
+    this.fileFormat = fileFormat;
   }
 }

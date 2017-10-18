@@ -32,5 +32,5 @@ public class LockUsage {
   public static final String DELETE_SEGMENT_LOCK = "delete_segment.lock";
   public static final String CLEAN_FILES_LOCK = "clean_files.lock";
   public static final String DROP_TABLE_LOCK = "droptable.lock";
-
+  public static final String STREAMING_LOCK = "streaming.lock";
 }
