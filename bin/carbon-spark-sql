@@ -33,10 +33,7 @@ fi
 export FWDIR=$SPARK_HOME
 export CARBON_SOURCE="$(cd "`dirname "$0"`"/..; pwd)"
 
-ASSEMBLY_DIR="$CARBON_SOURCE/assembly/target/scala-2.10"
-if [ -d "$CARBON_SOURCE/assembly/target/scala-2.11" ]; then
-  ASSEMBLY_DIR="$CARBON_SOURCE/assembly/target/scala-2.11"
-fi
+ASSEMBLY_DIR="$CARBON_SOURCE/assembly/target/scala-2.11"
 
 GREP_OPTIONS=
 num_jars="$(ls -1 "$ASSEMBLY_DIR" | grep "^carbondata.*hadoop.*\.jar$" | wc -l)"

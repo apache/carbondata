@@ -416,7 +416,7 @@
 
   <profiles>
     <profile>
-      <!--This profile does not build spark module, so user should explicitly give spark profile also like spark-1.6 -->
+      <!--This profile does not build spark module, so user should explicitly give spark profile also like spark-2.1 -->
       <id>build-with-format</id>
       <modules>
         <module>format</module>
@@ -426,15 +426,13 @@
       <!-- This profile only should be used for release prepare to cover all the modules -->
       <id>build-all</id>
       <properties>
-        <spark.version>1.6.2</spark.version>
-        <scala.binary.version>2.10</scala.binary.version>
-        <scala.version>2.10.4</scala.version>
+        <spark.version>2.1.0</spark.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.11.8</scala.version>
         <maven.test.skip>true</maven.test.skip>
       </properties>
       <modules>
         <module>format</module>
-        <module>integration/spark</module>
-        <module>examples/spark</module>
         <module>integration/spark2</module>
         <module>examples/spark2</module>
         <module>integration/hive</module>
@@ -465,65 +463,6 @@
       <properties>
         <hadoop.version>2.7.2</hadoop.version>
       </properties>
-    </profile>
-    <profile>
-      <id>spark-1.5</id>
-      <properties>
-        <spark.version>1.5.2</spark.version>
-        <scala.binary.version>2.10</scala.binary.version>
-        <scala.version>2.10.4</scala.version>
-      </properties>
-      <modules>
-        <module>integration/spark</module>
-        <module>examples/spark</module>
-        <module>examples/flink</module>
-      </modules>
-    </profile>
-    <profile>
-      <id>spark-1.6</id>
-      <properties>
-        <spark.version>1.6.2</spark.version>
-        <scala.binary.version>2.10</scala.binary.version>
-        <scala.version>2.10.4</scala.version>
-      </properties>
-      <modules>
-        <module>integration/spark</module>
-        <module>examples/spark</module>
-        <module>examples/flink</module>
-      </modules>
-      <build>
-        <plugins>
-          <plugin>
-            <groupId>org.eluder.coveralls</groupId>
-            <artifactId>coveralls-maven-plugin</artifactId>
-            <version>4.3.0</version>
-            <configuration>
-              <repoToken>Q8mcBW8dw34wjNiPAMx0SFQidspIwHw8g</repoToken>
-              <sourceEncoding>UTF-8</sourceEncoding>
-              <jacocoReports>
-                <jacocoReport>${basedir}/target/carbondata-coverage-report/carbondata-coverage-report.xml
-              </jacocoReport>
-              </jacocoReports>
-              <sourceDirectories>
-                <sourceDirectory>${basedir}/common/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/core/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common-test/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark-common-test/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/presto/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark/src/main/java</sourceDirectory>
-              </sourceDirectories>
-            </configuration>
-          </plugin>
-        </plugins>
-      </build>
     </profile>
     <profile>
       <id>spark-2.1</id>
