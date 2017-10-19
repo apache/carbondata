@@ -55,6 +55,7 @@ public class CarbonTablePath extends Path {
   protected CarbonTableIdentifier carbonTableIdentifier;
 
   /**
+   * structure CarbonTablePath object to manage table paths
    *
    * @param carbonTableIdentifier identifier of carbon table that the segment belong to
    * @param tablePathString the store path of the segment
@@ -66,6 +67,7 @@ public class CarbonTablePath extends Path {
   }
 
   /**
+   * structure CarbonTablePath object to manage table paths
    *
    * @param storePath the store path of the segment
    * @param dbName database name
