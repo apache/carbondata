@@ -91,12 +91,6 @@
       <artifactId>carbondata-spark-common</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.spark</groupId>
-          <artifactId>spark-hive-thriftserver_2.10</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
@@ -341,16 +335,6 @@
           <artifactId>carbondata-spark</artifactId>
           <version>${project.version}</version>
           <scope>test</scope>
-          <exclusions>
-            <exclusion>
-              <groupId>org.apache.spark</groupId>
-              <artifactId>spark-hive-thriftserver_2.10</artifactId>
-            </exclusion>
-            <exclusion>
-              <groupId>org.apache.spark</groupId>
-              <artifactId>spark-repl_2.10</artifactId>
-            </exclusion>
-          </exclusions>
         </dependency>
       </dependencies>
     </profile>
@@ -362,16 +346,6 @@
           <artifactId>carbondata-spark</artifactId>
           <version>${project.version}</version>
           <scope>test</scope>
-          <exclusions>
-            <exclusion>
-              <groupId>org.apache.spark</groupId>
-              <artifactId>spark-hive-thriftserver_2.10</artifactId>
-            </exclusion>
-            <exclusion>
-              <groupId>org.apache.spark</groupId>
-              <artifactId>spark-repl_2.10</artifactId>
-            </exclusion>
-          </exclusions>
         </dependency>
       </dependencies>
     </profile>
@@ -386,16 +360,6 @@
           <artifactId>carbondata-spark2</artifactId>
           <version>${project.version}</version>
           <scope>test</scope>
-          <exclusions>
-            <exclusion>
-              <groupId>org.apache.spark</groupId>
-              <artifactId>spark-hive-thriftserver_2.10</artifactId>
-            </exclusion>
-            <exclusion>
-              <groupId>org.apache.spark</groupId>
-              <artifactId>spark-repl_2.10</artifactId>
-            </exclusion>
-          </exclusions>
         </dependency>
       </dependencies>
     </profile>
