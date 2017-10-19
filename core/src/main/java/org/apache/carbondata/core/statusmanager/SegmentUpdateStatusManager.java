@@ -348,12 +348,13 @@ public class SegmentUpdateStatusManager {
 
     return false;
   }
+
   /**
    * Returns all delta file paths of specified block
    *
    * @param blockDir
    * @param blockNameFromTuple
-   * @param listOfSegmentUpdateDetailsArray
+   * @param segment
    * @param extension
    * @return
    */
@@ -458,7 +459,7 @@ public class SegmentUpdateStatusManager {
         });
       }
     }
-    return null;
+    return  new CarbonFile[0];
   }
 
   /**
