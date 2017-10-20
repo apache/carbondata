@@ -27,6 +27,14 @@ package org.apache.carbondata.store.util
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.store.ExecutionErrors
 
+trait Value[V] extends Serializable {
+  def getValue(value: Array[Object]): V
+}
+
+class ValueImpl extends Value[Array[Object]] {
+  override def getValue(value: Array[Object]): Array[Object] = value
+}
+
 trait DataLoadResult[K, V] extends Serializable {
   def getKey(key: String, value: (LoadMetadataDetails, ExecutionErrors)): (K, V)
 }
