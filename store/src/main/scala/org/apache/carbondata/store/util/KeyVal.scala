@@ -15,7 +15,6 @@
  * limitations under the License.
  */
 
-
 /**
  * It is just Key value class. I don't get any other alternate to make the RDD class to
  * work with my minimum knowledge in scala.
@@ -23,29 +22,10 @@
  *
  */
 
-package org.apache.carbondata.spark
+package org.apache.carbondata.store.util
 
-import org.apache.spark.sql.execution.command.ExecutionErrors
-
-import org.apache.carbondata.core.mutate.SegmentUpdateDetails
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
-
-
-trait Value[V] extends Serializable {
-  def getValue(value: Array[Object]): V
-}
-
-class ValueImpl extends Value[Array[Object]] {
-  override def getValue(value: Array[Object]): Array[Object] = value
-}
-
-trait RawValue[V] extends Serializable {
-  def getValue(value: Array[Any]): V
-}
-
-class RawValueImpl extends RawValue[Array[Any]] {
-  override def getValue(value: Array[Any]): Array[Any] = value
-}
+import org.apache.carbondata.store.ExecutionErrors
 
 trait DataLoadResult[K, V] extends Serializable {
   def getKey(key: String, value: (LoadMetadataDetails, ExecutionErrors)): (K, V)
@@ -59,48 +39,8 @@ class DataLoadResultImpl extends DataLoadResult[String, (LoadMetadataDetails, Ex
   }
 }
 
-trait updateResult[K, V] extends Serializable {
-  def getKey(key: String,
-             value: (LoadMetadataDetails, ExecutionErrors)):
-  (K, V)
-}
-
-class updateResultImpl
-  extends updateResult[String, (LoadMetadataDetails, ExecutionErrors)] {
-  override def getKey(key: String,
-                      value: (LoadMetadataDetails, ExecutionErrors)):
-  (String,
-    (LoadMetadataDetails, ExecutionErrors)) = {
-    (key, value)
-  }
-}
-
-trait DeleteDelataResult[K, V] extends Serializable {
-  def getKey(key: String, value: (SegmentUpdateDetails, ExecutionErrors)): (K, V)
-}
-
-class DeleteDelataResultImpl
-  extends DeleteDelataResult[String, (SegmentUpdateDetails, ExecutionErrors)] {
-  override def getKey(key: String,
-      value: (SegmentUpdateDetails, ExecutionErrors)): (String, (SegmentUpdateDetails,
-    ExecutionErrors)) = {
-    (key, value)
-  }
-}
-
-
-trait PartitionResult[K, V] extends Serializable {
-  def getKey(key: Int, value: Boolean): (K, V)
-
-}
-
-class PartitionResultImpl extends PartitionResult[Int, Boolean] {
-  override def getKey(key: Int, value: Boolean): (Int, Boolean) = (key, value)
-}
-
 trait MergeResult[K, V] extends Serializable {
   def getKey(key: String, value: Boolean): (K, V)
-
 }
 
 class MergeResultImpl extends MergeResult[String, Boolean] {
@@ -121,12 +61,4 @@ trait DeletedLoadResult[K, V] extends Serializable {
 
 class DeletedLoadResultImpl extends DeletedLoadResult[String, String] {
   override def getKey(key: String, value: String): (String, String) = (key, value)
-}
-
-trait RestructureResult[K, V] extends Serializable {
-  def getKey(key: Int, value: Boolean): (K, V)
-}
-
-class RestructureResultImpl extends RestructureResult[Int, Boolean] {
-  override def getKey(key: Int, value: Boolean): (Int, Boolean) = (key, value)
 }

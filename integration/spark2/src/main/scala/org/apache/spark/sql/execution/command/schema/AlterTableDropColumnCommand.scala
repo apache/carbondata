@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{AlterTableDropColumnModel, RunnableCommand}
+import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
 import org.apache.spark.util.AlterTableUtil
 
@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.spark.rdd.AlterTableDropColumnRDD
+import org.apache.carbondata.store.AlterTableDropColumnModel
 
 private[sql] case class AlterTableDropColumnCommand(
     alterTableDropColumnModel: AlterTableDropColumnModel)

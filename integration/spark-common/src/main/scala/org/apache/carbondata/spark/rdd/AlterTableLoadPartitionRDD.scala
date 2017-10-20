@@ -20,18 +20,17 @@ package org.apache.carbondata.spark.rdd
 import scala.collection.JavaConverters._
 import scala.util.Random
 
-import org.apache.spark.{Partition, SparkContext, SparkEnv, TaskContext}
+import org.apache.spark.{Partition, SparkEnv, TaskContext}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.execution.command.AlterPartitionModel
-import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.partition.spliter.RowResultProcessor
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
-import org.apache.carbondata.spark.AlterPartitionResult
 import org.apache.carbondata.spark.util.Util
+import org.apache.carbondata.store.AlterPartitionModel
+import org.apache.carbondata.store.util.{AlterPartitionResult, PartitionUtils}
 
 class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
     result: AlterPartitionResult[K, V],

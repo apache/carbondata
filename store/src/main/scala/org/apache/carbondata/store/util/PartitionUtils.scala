@@ -14,7 +14,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.spark.util
+package org.apache.carbondata.store.util
 
 import java.io.{File, IOException}
 import java.text.SimpleDateFormat
@@ -26,7 +26,6 @@ import scala.collection.mutable.ListBuffer
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
-import org.apache.spark.sql.execution.command.AlterPartitionModel
 
 import org.apache.carbondata.core.datastore.block.{SegmentProperties, TableBlockInfo}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -36,8 +35,7 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
-import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.store.AlterPartitionModel
 
 object PartitionUtils {
 

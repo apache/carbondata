@@ -36,12 +36,12 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-processing</artifactId>
+      <artifactId>carbondata-hadoop</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>org.apache.carbondata</groupId>
-      <artifactId>carbondata-hadoop</artifactId>
+      <artifactId>carbondata-store</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>

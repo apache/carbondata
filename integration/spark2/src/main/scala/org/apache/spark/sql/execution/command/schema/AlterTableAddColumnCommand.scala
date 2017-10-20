@@ -19,18 +19,24 @@ package org.apache.spark.sql.execution.command.schema
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.SparkContext
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableColumnSchemaGenerator, RunnableCommand}
+import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo => CarbonTableInfo}
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.util.DataTypeUtil
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.format.TableInfo
 import org.apache.carbondata.spark.rdd.{AlterTableAddColumnRDD, AlterTableDropColumnRDD}
+import org.apache.carbondata.store.{AlterTableAddColumnsModel, CarbonSparkFactory, StoreManager}
 
 private[sql] case class AlterTableAddColumnCommand(
     alterTableAddColumnsModel: AlterTableAddColumnsModel)
@@ -113,3 +119,119 @@ private[sql] case class AlterTableAddColumnCommand(
     Seq.empty
   }
 }
+
+class AlterTableColumnSchemaGenerator(
+    alterTableModel: AlterTableAddColumnsModel,
+    dbName: String,
+    tableInfo: CarbonTableInfo,
+    carbonTablePath: CarbonTablePath,
+    tableIdentifier: CarbonTableIdentifier,
+    storePath: String, sc: SparkContext) {
+
+  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+
+  def isSortColumn(columnName: String): Boolean = {
+    val sortColumns = alterTableModel.tableProperties.get("sort_columns")
+    if(sortColumns.isDefined) {
+      sortColumns.get.contains(columnName)
+    } else {
+      true
+    }
+  }
+  def process: Seq[ColumnSchema] = {
+    val tableSchema = tableInfo.getFactTable
+    val tableCols = tableSchema.getListOfColumns.asScala
+    val existingColsSize = tableCols.size
+    var allColumns = tableCols.filter(x => x.isDimensionColumn)
+    var newCols = Seq[ColumnSchema]()
+
+    alterTableModel.dimCols.foreach(field => {
+      val encoders = new java.util.ArrayList[Encoding]()
+      encoders.add(Encoding.DICTIONARY)
+      val columnSchema: ColumnSchema = StoreManager.createColumnSchema(
+        field,
+        encoders,
+        isDimensionCol = true,
+        field.schemaOrdinal + existingColsSize,
+        alterTableModel.highCardinalityDims,
+        alterTableModel.databaseName.getOrElse(dbName),
+        isSortColumn(field.name.getOrElse(field.column)))
+      allColumns ++= Seq(columnSchema)
+      newCols ++= Seq(columnSchema)
+    })
+
+    allColumns ++= tableCols.filter(x => !x.isDimensionColumn)
+    alterTableModel.msrCols.foreach(field => {
+      val encoders = new java.util.ArrayList[Encoding]()
+      val columnSchema: ColumnSchema = StoreManager.createColumnSchema(
+        field,
+        encoders,
+        isDimensionCol = false,
+        field.schemaOrdinal + existingColsSize,
+        alterTableModel.highCardinalityDims,
+        alterTableModel.databaseName.getOrElse(dbName))
+      allColumns ++= Seq(columnSchema)
+      newCols ++= Seq(columnSchema)
+    })
+
+    // Check if there is any duplicate measures or dimensions.
+    // Its based on the dimension name and measure name
+    allColumns.filter(x => !x.isInvisible).groupBy(_.getColumnName)
+      .foreach(f => if (f._2.size > 1) {
+        val name = f._1
+        LOGGER.error(s"Duplicate column found with name: $name")
+        LOGGER.audit(
+          s"Validation failed for Create/Alter Table Operation " +
+          s"for ${ dbName }.${ alterTableModel.tableName }. " +
+          s"Duplicate column found with name: $name")
+        sys.error(s"Duplicate column found with name: $name")
+      })
+
+    val columnValidator = CarbonSparkFactory.getCarbonColumnValidator
+    columnValidator.validateColumns(allColumns)
+
+    // populate table properties map
+    val tablePropertiesMap = tableSchema.getTableProperties
+    alterTableModel.tableProperties.foreach {
+      x => val value = tablePropertiesMap.get(x._1)
+        if (null != value) {
+          tablePropertiesMap.put(x._1, value + "," + x._2)
+        } else {
+          tablePropertiesMap.put(x._1, x._2)
+        }
+    }
+    // This part will create dictionary file for all newly added dictionary columns
+    // if valid default value is provided,
+    // then that value will be included while creating dictionary file
+    val defaultValueString = "default.value."
+    newCols.foreach { col =>
+      var rawData: String = null
+      for (elem <- alterTableModel.tableProperties) {
+        if (elem._1.toLowerCase.startsWith(defaultValueString)) {
+          if (col.getColumnName.equalsIgnoreCase(elem._1.substring(defaultValueString.length))) {
+            rawData = elem._2
+            val data = DataTypeUtil.convertDataToBytesBasedOnDataType(elem._2, col)
+            if (null != data) {
+              col.setDefaultValue(data)
+            } else {
+              LOGGER
+                .error(
+                  "Invalid default value for new column " + dbName + "." +
+                  alterTableModel.tableName +
+                  "." + col.getColumnName + " : " + elem._2)
+            }
+          }
+        }
+        else if (elem._1.equalsIgnoreCase("no_inverted_index")) {
+          col.getEncodingList.remove(Encoding.INVERTED_INDEX)
+        }
+      }
+    }
+    tableSchema.setListOfColumns(allColumns.asJava)
+    tableInfo.setLastUpdatedTime(System.currentTimeMillis())
+    tableInfo.setFactTable(tableSchema)
+    newCols
+  }
+
+}
+

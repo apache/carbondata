@@ -15,122 +15,47 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.util
-
+package org.apache.carbondata.store.util
 
 import java.text.SimpleDateFormat
 import java.util
+import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
+import scala.util.matching.Regex
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
-import org.apache.spark.SparkContext
-import org.apache.spark.sql.{Row, RowFactory}
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
-import org.apache.spark.sql.types.{MetadataBuilder, StringType}
-import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.datastore.row.LoadStatusType
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
-import org.apache.carbondata.core.metadata.schema.PartitionInfo
-import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.comparator.Comparator
-import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.store.{ColumnProperty, Field, MalformedCarbonCommandException, PartitionerField}
 
 object CommonUtil {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
-  val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
-  val FIXED_DECIMALTYPE = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
+  val FIXED_DECIMAL: Regex = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
+  val FIXED_DECIMALTYPE: Regex = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
 
-  def validateColumnGroup(colGroup: String, noDictionaryDims: Seq[String],
-      msrs: Seq[Field], retrievedColGrps: Seq[String], dims: Seq[Field]) {
-    val colGrpCols = colGroup.split(',').map(_.trim)
-    colGrpCols.foreach { x =>
-      // if column is no dictionary
-      if (noDictionaryDims.contains(x)) {
-        throw new MalformedCarbonCommandException(
-          "Column group is not supported for no dictionary columns:" + x)
-      } else if (msrs.exists(msr => msr.column.equals(x))) {
-        // if column is measure
-        throw new MalformedCarbonCommandException("Column group is not supported for measures:" + x)
-      } else if (foundIndExistingColGrp(x)) {
-        throw new MalformedCarbonCommandException("Column is available in other column group:" + x)
-      } else if (isComplex(x, dims)) {
-        throw new MalformedCarbonCommandException(
-          "Column group doesn't support Complex column:" + x)
-      } else if (isTimeStampColumn(x, dims)) {
-        throw new MalformedCarbonCommandException(
-          "Column group doesn't support Timestamp datatype:" + x)
-      }// if invalid column is
-      else if (!dims.exists(dim => dim.column.equalsIgnoreCase(x))) {
-        // present
-        throw new MalformedCarbonCommandException(
-          "column in column group is not a valid column: " + x
-        )
-      }
-    }
-    // check if given column is present in other groups
-    def foundIndExistingColGrp(colName: String): Boolean = {
-      retrievedColGrps.foreach { colGrp =>
-        if (colGrp.split(",").contains(colName)) {
-          return true
-        }
-      }
-      false
-    }
-
-  }
-
-
-  def isTimeStampColumn(colName: String, dims: Seq[Field]): Boolean = {
-    dims.foreach { dim =>
-      if (dim.column.equalsIgnoreCase(colName)) {
-        if (dim.dataType.isDefined && null != dim.dataType.get &&
-            "timestamp".equalsIgnoreCase(dim.dataType.get)) {
-          return true
-        }
-      }
-    }
-    false
-  }
-
-  def isComplex(colName: String, dims: Seq[Field]): Boolean = {
-    dims.foreach { x =>
-      if (x.children.isDefined && null != x.children.get && x.children.get.nonEmpty) {
-        val children = x.children.get
-        if (x.column.equals(colName)) {
-          return true
-        } else {
-          children.foreach { child =>
-            val fieldName = x.column + "." + child.column
-            if (fieldName.equalsIgnoreCase(colName)) {
-              return true
-            }
-          }
-        }
-      }
-    }
-    false
+  def getScaleAndPrecision(dataType: String): (Int, Int) = {
+    val m: Matcher = Pattern.compile("^decimal\\(([^)]+)\\)").matcher(dataType)
+    m.find()
+    val matchedString: String = m.group(1)
+    val scaleAndPrecision = matchedString.split(",")
+    (Integer.parseInt(scaleAndPrecision(0).trim), Integer.parseInt(scaleAndPrecision(1).trim))
   }
 
   def getColumnProperties(column: String,
@@ -152,10 +77,9 @@ object CommonUtil {
   }
 
   def validateTblProperties(tableProperties: Map[String, String], fields: Seq[Field]): Boolean = {
-    val itr = tableProperties.keys
     var isValid: Boolean = true
     tableProperties.foreach {
-      case (key, value) =>
+      case (key, _) =>
         if (!validateFields(key, fields)) {
           isValid = false
           throw new MalformedCarbonCommandException(s"Invalid table properties ${ key }")
@@ -170,9 +94,7 @@ object CommonUtil {
    * 3. If partition_type is List, then list_info should be defined
    * 4. If partition_type is Range, then range_info should be defined
    * 5. Only support single level partition for now
-   * @param tableProperties
-   * @param partitionerFields
-   * @return partition clause and definition in tblproperties are valid or not
+   * return partition clause and definition in tblproperties are valid or not
    */
   def validatePartitionColumns(tableProperties: Map[String, String],
       partitionerFields: Seq[PartitionerField]): Boolean = {
@@ -186,22 +108,22 @@ object CommonUtil {
       isValid = false
     } else {
       partitionType.get.toUpperCase() match {
-        case "HASH" => if (!numPartitions.isDefined
-        || scala.util.Try(numPartitions.get.toInt).isFailure
-        || numPartitions.get.toInt <= 0) {
+        case "HASH" => if (numPartitions.isEmpty
+                           || scala.util.Try(numPartitions.get.toInt).isFailure
+                           || numPartitions.get.toInt <= 0) {
           isValid = false
         }
-        case "LIST" => if (!listInfo.isDefined) {
+        case "LIST" => if (listInfo.isEmpty) {
           isValid = false
         } else {
           listInfo.get.replace("(", "").replace(")", "").split(",").map(_.trim).foreach(
-            isValid &= validateTypeConvert(partitionerFields(0), _))
+            isValid &= validateTypeConvert(partitionerFields.head, _))
         }
-        case "RANGE" => if (!rangeInfo.isDefined) {
+        case "RANGE" => if (rangeInfo.isEmpty) {
           isValid = false
         } else {
           rangeInfo.get.split(",").map(_.trim).foreach(
-            isValid &= validateTypeConvert(partitionerFields(0), _))
+            isValid &= validateTypeConvert(partitionerFields.head, _))
         }
         case "RANGE_INTERVAL" => isValid = false
         case _ => isValid = false
@@ -315,10 +237,6 @@ object CommonUtil {
 
   /**
    * To verify the range info is in correct order
-   * @param rangeInfo
-   * @param columnDataType
-   * @param timestampFormatter
-   * @param dateFormatter
    */
   def validateRangeInfo(rangeInfo: List[String], columnDataType: DataType,
       timestampFormatter: SimpleDateFormat, dateFormatter: SimpleDateFormat): Unit = {
@@ -434,9 +352,7 @@ object CommonUtil {
   }
 
   /**
-   * @param colGrps
-   * @param dims
-   * @return columns of column groups in schema order
+   * return columns of column groups in schema order
    */
   def arrangeColGrpsInSchemaOrder(colGrps: Seq[String], dims: Seq[Field]): Seq[String] = {
     def sortByIndex(colGrp1: String, colGrp2: String) = {
@@ -451,9 +367,7 @@ object CommonUtil {
   }
 
   /**
-   * @param colName
-   * @param dims
-   * @return return index for given column in dims
+   * return index for given column in dims
    */
   def getDimIndex(colName: String, dims: Seq[Field]): Int = {
     var index: Int = -1
@@ -467,8 +381,6 @@ object CommonUtil {
 
   /**
    * This method will validate the table block size specified by the user
-   *
-   * @param tableProperties
    */
   def validateTableBlockSize(tableProperties: Map[String, String]): Unit = {
     var tableBlockSize: Integer = 0
@@ -495,8 +407,6 @@ object CommonUtil {
 
   /**
    * This method will parse the configure string from 'XX MB/M' to 'XX'
-   *
-   * @param propertyValueString
    */
   def parsePropertyValueStringInMB(propertyValueString: String): String = {
     var parsedPropertyValueString: String = propertyValueString
@@ -538,8 +448,6 @@ object CommonUtil {
 
   /**
    * This method will update the load failure entry in the table status file
-   *
-   * @param model
    */
   def updateTableStatusForFailure(
       model: CarbonLoadModel): Unit = {
@@ -580,30 +488,6 @@ object CommonUtil {
     CSVInputFormat.setReadBufferSize(configuration, CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
         CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT))
-  }
-
-  def configSplitMaxSize(context: SparkContext, filePaths: String,
-      hadoopConfiguration: Configuration): Unit = {
-    val defaultParallelism = if (context.defaultParallelism < 1) {
-      1
-    } else {
-      context.defaultParallelism
-    }
-    val spaceConsumed = FileUtils.getSpaceOccupied(filePaths)
-    val blockSize =
-      hadoopConfiguration.getLongBytes("dfs.blocksize", CarbonCommonConstants.CARBON_256MB)
-    LOGGER.info("[Block Distribution]")
-    // calculate new block size to allow use all the parallelism
-    if (spaceConsumed < defaultParallelism * blockSize) {
-      var newSplitSize: Long = spaceConsumed / defaultParallelism
-      if (newSplitSize < CarbonCommonConstants.CARBON_16MB) {
-        newSplitSize = CarbonCommonConstants.CARBON_16MB
-      }
-      hadoopConfiguration.set(FileInputFormat.SPLIT_MAXSIZE, newSplitSize.toString)
-      LOGGER.info(s"totalInputSpaceConsumed: $spaceConsumed , " +
-                  s"defaultParallelism: $defaultParallelism")
-      LOGGER.info(s"mapreduce.input.fileinputformat.split.maxsize: ${ newSplitSize.toString }")
-    }
   }
 
   def getCsvHeaderColumns(carbonLoadModel: CarbonLoadModel): Array[String] = {
@@ -698,51 +582,6 @@ object CommonUtil {
     }
   }
 
-  def getPartitionInfo(columnName: String, partitionType: PartitionType,
-      partitionInfo: PartitionInfo): Seq[Row] = {
-    var result = Seq.newBuilder[Row]
-    partitionType match {
-      case PartitionType.RANGE =>
-        result.+=(RowFactory.create("0" + ", " + columnName + " = DEFAULT"))
-        val rangeInfo = partitionInfo.getRangeInfo
-        val size = rangeInfo.size() - 1
-        for (index <- 0 to size) {
-          if (index == 0) {
-            val id = partitionInfo.getPartitionId(index + 1).toString
-            val desc = columnName + " < " + rangeInfo.get(index)
-            result.+=(RowFactory.create(id + ", " + desc))
-          } else {
-            val id = partitionInfo.getPartitionId(index + 1).toString
-            val desc = rangeInfo.get(index - 1) + " <= " + columnName + " < " + rangeInfo.get(index)
-            result.+=(RowFactory.create(id + ", " + desc))
-          }
-        }
-      case PartitionType.RANGE_INTERVAL =>
-        result.+=(RowFactory.create(columnName + " = "))
-      case PartitionType.LIST =>
-        result.+=(RowFactory.create("0" + ", " + columnName + " = DEFAULT"))
-        val listInfo = partitionInfo.getListInfo
-        listInfo.asScala.foreach {
-          f =>
-            val id = partitionInfo.getPartitionId(listInfo.indexOf(f) + 1).toString
-            val desc = columnName + " = " + f.toArray().mkString(", ")
-            result.+=(RowFactory.create(id + ", " + desc))
-        }
-      case PartitionType.HASH =>
-        val hashNumber = partitionInfo.getNumPartitions
-        result.+=(RowFactory.create(columnName + " = HASH_NUMBER(" + hashNumber.toString() + ")"))
-      case others =>
-        result.+=(RowFactory.create(columnName + " = "))
-    }
-    val rows = result.result()
-    rows
-  }
-
-  def partitionInfoOutput: Seq[Attribute] = Seq(
-    AttributeReference("Partition(Id, DESC)", StringType, false,
-      new MetadataBuilder().putString("comment", "partition").build())()
-  )
-
   /**
    * Method to clear the memory for a task
    * if present
@@ -754,81 +593,4 @@ object CommonUtil {
       INSTANCE.freeMemoryAll(taskId)
   }
 
-  /**
-   * The in-progress segments which are left when the driver is down will be marked as deleted
-   * when driver is initializing.
-   * @param storePath
-   * @param sparkContext
-   */
-  def cleanInProgressSegments(storePath: String, sparkContext: SparkContext): Unit = {
-    val loaderDriver = CarbonProperties.getInstance().
-      getProperty(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER,
-        CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT).toBoolean
-    if (!loaderDriver) {
-      return
-    }
-    try {
-      val fileType = FileFactory.getFileType(storePath)
-      if (FileFactory.isFileExist(storePath, fileType)) {
-        val file = FileFactory.getCarbonFile(storePath, fileType)
-        val databaseFolders = file.listFiles()
-        databaseFolders.foreach { databaseFolder =>
-          if (databaseFolder.isDirectory) {
-            val tableFolders = databaseFolder.listFiles()
-            tableFolders.foreach { tableFolder =>
-              if (tableFolder.isDirectory) {
-                val identifier =
-                  AbsoluteTableIdentifier.from(storePath,
-                    databaseFolder.getName, tableFolder.getName)
-                val carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier)
-                val tableStatusFile = carbonTablePath.getTableStatusFilePath
-                if (FileFactory.isFileExist(tableStatusFile, fileType)) {
-                  val segmentStatusManager = new SegmentStatusManager(identifier)
-                  val carbonLock = segmentStatusManager.getTableStatusLock
-                  try {
-                    if (carbonLock.lockWithRetries) {
-                      LOGGER.info("Acquired lock for table" +
-                        identifier.getCarbonTableIdentifier.getTableUniqueName
-                        + " for table status updation")
-                      val listOfLoadFolderDetailsArray =
-                        SegmentStatusManager.readLoadMetadata(
-                          carbonTablePath.getMetadataDirectoryPath)
-                      var loadInprogressExist = false
-                      val staleFolders: Seq[CarbonFile] = Seq()
-                      listOfLoadFolderDetailsArray.foreach { load =>
-                        if (load.getLoadStatus.equals(LoadStatusType.IN_PROGRESS.getMessage) ||
-                            load.getLoadStatus.equals(LoadStatusType.INSERT_OVERWRITE.getMessage)) {
-                          load.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE)
-                          staleFolders :+ FileFactory.getCarbonFile(
-                            carbonTablePath.getCarbonDataDirectoryPath("0", load.getLoadName))
-                          loadInprogressExist = true
-                        }
-                      }
-                      if (loadInprogressExist) {
-                        SegmentStatusManager
-                          .writeLoadDetailsIntoFile(tableStatusFile, listOfLoadFolderDetailsArray)
-                        staleFolders.foreach(CarbonUtil.deleteFoldersAndFiles(_))
-                      }
-                    }
-                  } finally {
-                    if (carbonLock.unlock) {
-                      LOGGER.info(s"Released table status lock for table " +
-                                  s"${identifier.getCarbonTableIdentifier.getTableUniqueName}")
-                    } else {
-                      LOGGER.error(s"Error while releasing table status lock for table " +
-                                  s"${identifier.getCarbonTableIdentifier.getTableUniqueName}")
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    } catch {
-      case s: java.io.FileNotFoundException =>
-        // Create folders and files.
-        LOGGER.error(s)
-    }
-  }
 }

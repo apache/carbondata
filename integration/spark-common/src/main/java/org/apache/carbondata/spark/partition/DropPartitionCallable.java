@@ -20,8 +20,7 @@ package org.apache.carbondata.spark.partition;
 import java.util.concurrent.Callable;
 
 import org.apache.carbondata.spark.rdd.PartitionDropper;
-
-import org.apache.spark.sql.execution.command.DropPartitionCallableModel;
+import org.apache.carbondata.store.DropPartitionCallableModel;
 
 public class DropPartitionCallable implements Callable<Void> {
 

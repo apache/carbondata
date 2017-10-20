@@ -22,7 +22,7 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{AlterTableDropPartitionModel, DataProcessCommand, RunnableCommand, SchemaProcessCommand}
+import org.apache.spark.sql.execution.command.{DataProcessCommand, RunnableCommand, SchemaProcessCommand}
 import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonRelation}
 import org.apache.spark.util.AlterTableUtil
 
@@ -39,6 +39,7 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
+import org.apache.carbondata.store.AlterTableDropPartitionModel
 
 case class AlterTableDropCarbonPartitionCommand(
     model: AlterTableDropPartitionModel)

@@ -27,6 +27,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.TableOptionConstant
+import org.apache.carbondata.store.util.CommonUtil
 
 /**
   * Test Case for org.apache.carbondata.integration.spark.util.GlobalDictionaryUtil

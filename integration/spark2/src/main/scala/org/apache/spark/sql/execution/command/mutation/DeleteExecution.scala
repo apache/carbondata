@@ -30,7 +30,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -46,7 +45,7 @@ import org.apache.carbondata.hadoop.CarbonInputFormat
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.processing.exception.MultipleMatchingException
 import org.apache.carbondata.processing.loading.FailureCauses
-import org.apache.carbondata.spark.DeleteDelataResultImpl
+import org.apache.carbondata.store.ExecutionErrors
 
 object DeleteExecution {
   val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
@@ -226,8 +225,6 @@ object DeleteExecution {
         timestamp: String,
         rowCountDetailsVO: RowCountDetailsVO
     ): Iterator[(String, (SegmentUpdateDetails, ExecutionErrors))] = {
-
-      val result = new DeleteDelataResultImpl()
       var deleteStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
       val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
       // here key = segment/blockName
@@ -268,8 +265,6 @@ object DeleteExecution {
             .getDeleteDeltaFilePath(blockPath, blockName, timestamp)
           val carbonDeleteWriter = new CarbonDeleteDeltaWriterImpl(deleteDeletaPath,
             FileFactory.getFileType(deleteDeletaPath))
-
-
 
           segmentUpdateDetails.setBlockName(blockName)
           segmentUpdateDetails.setActualBlockName(completeBlockName)
@@ -316,7 +311,7 @@ object DeleteExecution {
 
         override def next(): (String, (SegmentUpdateDetails, ExecutionErrors)) = {
           finished = true
-          result.getKey(deleteStatus, (segmentUpdateDetails, executorErrors))
+          (deleteStatus, (segmentUpdateDetails, executorErrors))
         }
       }
       resultIter

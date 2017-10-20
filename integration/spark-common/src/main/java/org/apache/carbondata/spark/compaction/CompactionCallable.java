@@ -20,8 +20,7 @@ package org.apache.carbondata.spark.compaction;
 import java.util.concurrent.Callable;
 
 import org.apache.carbondata.spark.rdd.Compactor;
-
-import org.apache.spark.sql.execution.command.CompactionCallableModel;
+import org.apache.carbondata.store.CompactionCallableModel;
 
 /**
  * Callable class which is used to trigger the compaction in a separate callable.

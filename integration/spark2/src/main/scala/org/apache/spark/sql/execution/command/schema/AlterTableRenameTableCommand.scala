@@ -19,7 +19,7 @@ package org.apache.spark.sql.execution.command.schema
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.{AlterTableRenameModel, RunnableCommand}
+import org.apache.spark.sql.execution.command.RunnableCommand
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
 import org.apache.spark.util.AlterTableUtil
 
@@ -32,7 +32,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.SchemaEvolutionEntry
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.store.{AlterTableRenameModel, MalformedCarbonCommandException}
 
 private[sql] case class AlterTableRenameTableCommand(
     alterTableRenameModel: AlterTableRenameModel)

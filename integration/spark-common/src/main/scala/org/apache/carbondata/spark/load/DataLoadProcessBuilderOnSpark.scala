@@ -25,7 +25,6 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{SparkContext, TaskContext}
 import org.apache.spark.rdd.NewHadoopRDD
 import org.apache.spark.sql.DataFrame
-import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -38,7 +37,8 @@ import org.apache.carbondata.processing.loading.csvinput.{CSVInputFormat, String
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.sort.sortdata.{NewRowComparator, NewRowComparatorForNormalDims, SortParameters}
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.store.ExecutionErrors
+import org.apache.carbondata.store.util.CommonUtil
 
 /**
  * Use sortBy operator in spark to load the data

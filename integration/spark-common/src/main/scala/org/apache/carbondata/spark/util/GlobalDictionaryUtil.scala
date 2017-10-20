@@ -57,9 +57,10 @@ import org.apache.carbondata.processing.loading.csvinput.{CSVInputFormat, String
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
-import org.apache.carbondata.spark.CarbonSparkFactory
 import org.apache.carbondata.spark.rdd._
 import org.apache.carbondata.spark.tasks.{DictionaryWriterTask, SortIndexWriterTask}
+import org.apache.carbondata.store.CarbonSparkFactory
+import org.apache.carbondata.store.util.CommonUtil
 
 /**
  * A object which provide a method to generate global dictionary from CSV files.

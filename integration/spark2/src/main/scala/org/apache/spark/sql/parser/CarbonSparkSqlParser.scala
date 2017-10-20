@@ -24,13 +24,13 @@ import org.apache.spark.sql.catalyst.parser.ParserUtils._
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext, TablePropertyListContext}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
-import org.apache.spark.sql.execution.command.{BucketFields, CarbonCreateTableCommand, Field, PartitionerField, TableModel}
+import org.apache.spark.sql.execution.command.CarbonCreateTableCommand
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 
-import org.apache.carbondata.core.util.{CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.CarbonOption
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.store.{MalformedCarbonCommandException, PartitionerField, StoreManager, TableModel}
+import org.apache.carbondata.store.util.CommonUtil
 
 /**
  * Concrete parser for Spark SQL stateENABLE_INMEMORY_MERGE_SORT_DEFAULTments and carbon specific
@@ -138,7 +138,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       val bucketFields = parser.getBucketFields(tableProperties, fields, options)
 
       // prepare table model of the collected tokens
-      val tableModel: TableModel = parser.prepareTableModel(ifNotExists,
+      val tableModel: TableModel = StoreManager.prepareTableModel(ifNotExists,
         convertDbNameToLowerCase(name.database),
         name.table.toLowerCase,
         fields,

@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command.schema
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, RunnableCommand}
+import org.apache.spark.sql.execution.command.{RunnableCommand}
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
 import org.apache.spark.util.AlterTableUtil
 
@@ -29,7 +29,9 @@ import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil}
+import org.apache.carbondata.spark.util.CarbonScalaUtil
+import org.apache.carbondata.store.AlterTableDataTypeChangeModel
+import org.apache.carbondata.store.util.DataTypeConverterUtil
 
 private[sql] case class AlterTableDataTypeChangeCommand(
     alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel)

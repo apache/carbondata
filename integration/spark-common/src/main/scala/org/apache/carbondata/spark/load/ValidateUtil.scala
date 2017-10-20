@@ -23,7 +23,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.store.MalformedCarbonCommandException
 
 object ValidateUtil {
   def validateDateFormat(dateFormat: String, table: CarbonTable, tableName: String): Unit = {

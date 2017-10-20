@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.util
+package org.apache.carbondata.store.util
 
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.format.{DataType => ThriftDataType}

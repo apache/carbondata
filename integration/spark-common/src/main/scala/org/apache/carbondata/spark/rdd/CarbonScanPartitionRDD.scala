@@ -27,10 +27,8 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.execution.command.AlterPartitionModel
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.unsafe.types.UTF8String
-import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.block.{Distributable, SegmentProperties, TaskBlockInfo}
@@ -48,6 +46,8 @@ import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.merger.CarbonCompactionUtil
 import org.apache.carbondata.processing.partition.spliter.CarbonSplitExecutor
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
+import org.apache.carbondata.store.AlterPartitionModel
+import org.apache.carbondata.store.util.PartitionUtils
 
 
 /**

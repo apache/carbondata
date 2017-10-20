@@ -412,16 +412,6 @@ public class CarbonTable implements Serializable {
   }
 
   /**
-   * to get the all dimension of a table
-   *
-   * @param tableName
-   * @return all dimension of a table
-   */
-  public List<CarbonDimension> getImplicitDimensionByTableName(String tableName) {
-    return tableImplicitDimensionsMap.get(tableName);
-  }
-
-  /**
    * This will give user created order column
    *
    * @return

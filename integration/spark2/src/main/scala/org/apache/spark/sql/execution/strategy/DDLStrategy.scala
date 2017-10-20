@@ -28,7 +28,7 @@ import org.apache.spark.sql.execution.command.schema.{AlterTableAddColumnCommand
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.store.{AlterTableRenameModel, MalformedCarbonCommandException}
 
 /**
  * Carbon strategies for ddl commands

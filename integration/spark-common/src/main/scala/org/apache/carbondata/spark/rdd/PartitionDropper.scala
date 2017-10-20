@@ -19,19 +19,18 @@ package org.apache.carbondata.spark.rdd
 
 import java.io.IOException
 
-import org.apache.spark.sql.execution.command.{AlterPartitionModel, DropPartitionCallableModel}
-import org.apache.spark.util.PartitionUtils
-
-import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
-import org.apache.carbondata.spark.{AlterPartitionResultImpl, PartitionFactory}
+import org.apache.carbondata.spark.PartitionFactory
+import org.apache.carbondata.store.{AlterPartitionModel, DropPartitionCallableModel}
+import org.apache.carbondata.store.util.{AlterPartitionResultImpl, PartitionUtils}
 
 object PartitionDropper {
 
-  val logger = LogServiceFactory.getLogService(PartitionDropper.getClass.getName)
+  val logger: LogService = LogServiceFactory.getLogService(PartitionDropper.getClass.getName)
 
   def triggerPartitionDrop(dropPartitionCallableModel: DropPartitionCallableModel): Unit = {
-    val alterPartitionModel = new AlterPartitionModel(dropPartitionCallableModel.carbonLoadModel,
+    val alterPartitionModel = AlterPartitionModel(dropPartitionCallableModel.carbonLoadModel,
       dropPartitionCallableModel.segmentId,
       dropPartitionCallableModel.oldPartitionIds,
       dropPartitionCallableModel.sqlContext

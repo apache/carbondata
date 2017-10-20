@@ -19,11 +19,10 @@ package org.apache.carbondata.spark.rdd
 
 import java.io.IOException
 
-import org.apache.spark.sql.execution.command.{AlterPartitionModel, SplitPartitionCallableModel}
-import org.apache.spark.util.PartitionUtils
-
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.spark.{AlterPartitionResultImpl, PartitionFactory}
+import org.apache.carbondata.spark.PartitionFactory
+import org.apache.carbondata.store.{AlterPartitionModel, SplitPartitionCallableModel}
+import org.apache.carbondata.store.util.{AlterPartitionResultImpl, PartitionUtils}
 
 object PartitionSplitter {
 

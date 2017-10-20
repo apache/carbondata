@@ -24,7 +24,6 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.execution.command.{CompactionCallableModel, CompactionModel, DropPartitionCallableModel, SplitPartitionCallableModel}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -37,10 +36,10 @@ import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentSta
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.util.{CarbonLoaderUtil, DeleteLoadFolders, LoadMetadataUtil}
-import org.apache.carbondata.spark._
 import org.apache.carbondata.spark.compaction.CompactionCallable
 import org.apache.carbondata.spark.partition.{DropPartitionCallable, SplitPartitionCallable}
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.store.{CompactionCallableModel, CompactionModel, DropPartitionCallableModel, SplitPartitionCallableModel}
+import org.apache.carbondata.store.util.{CommonUtil, DeletedLoadResultImpl}
 
 /**
  * Common functions for data life cycle management
