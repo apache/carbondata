@@ -403,8 +403,8 @@ object CarbonDataStoreCreator {
   /**
    * Execute graph which will further load data
    *
-   * @param loadModel
-   * @param storeLocation
+   * @param loadModel Carbon load model
+   * @param storeLocation store location directory
    * @throws Exception
    */
   private def executeGraph(loadModel: CarbonLoadModel, storeLocation: String): Unit = {

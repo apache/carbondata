@@ -333,10 +333,11 @@ public class SegmentUpdateStatusManager {
   }
 
   /**
+   * check the block whether is valid
    *
-   * @param segName
-   * @param blockName
-   * @return
+   * @param segName segment name
+   * @param blockName  block name
+   * @return the status of block whether is valid
    */
   public boolean isBlockValid(String segName, String blockName) {
 
@@ -351,11 +352,11 @@ public class SegmentUpdateStatusManager {
   /**
    * Returns all delta file paths of specified block
    *
-   * @param blockDir
-   * @param blockNameFromTuple
-   * @param listOfSegmentUpdateDetailsArray
-   * @param extension
-   * @return
+   * @param blockDir block directory with CarbonFile format
+   * @param blockNameFromTuple block name from tuple
+   * @param extension the file extension name
+   * @param segment the segment name
+   * @return the list of delete file
    */
   private List<String> getDeltaFiles(CarbonFile blockDir, final String blockNameFromTuple,
       final String extension,
