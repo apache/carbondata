@@ -24,7 +24,6 @@ import org.apache.commons.lang.StringUtils
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.execution.command.{TableModel, TableNewProcessor}
 import org.apache.spark.sql.execution.strategy.CarbonLateDecodeStrategy
 import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonRelation}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
@@ -39,7 +38,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.spark.CarbonOption
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.store.{MalformedCarbonCommandException, StoreManager}
 
 /**
  * Carbon relation provider compliant to data source api.
@@ -151,6 +150,10 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
   private def createTableIfNotExists(sparkSession: SparkSession, parameters: Map[String, String],
       dataSchema: StructType) = {
+//
+//    Carbon.createTable()
+//    if (using hdfs metastore) saveToDisk
+//    else serirlaize and save to hive metadata
 
     val dbName: String = parameters.getOrElse("dbName",
       CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
@@ -177,11 +180,6 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
   /**
    * Returns the path of the table
-   *
-   * @param sparkSession
-   * @param dbName
-   * @param tableName
-   * @return
    */
   private def getPathForTable(sparkSession: SparkSession, dbName: String,
       tableName : String, parameters: Map[String, String]): (String, Map[String, String]) = {
@@ -212,25 +210,21 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
 
 object CarbonSource {
 
-  def createTableInfoFromParams(parameters: Map[String, String],
+  def createTableInfo(
+      properties: Map[String, String],
       dataSchema: StructType,
       dbName: String,
-      tableName: String): TableModel = {
+      tableName: String): TableInfo = {
     val sqlParser = new CarbonSpark2SqlParser
     val fields = sqlParser.getFields(dataSchema)
     val map = scala.collection.mutable.Map[String, String]()
-    parameters.foreach { case (key, value) => map.put(key, value.toLowerCase()) }
-    val options = new CarbonOption(parameters)
-    val bucketFields = sqlParser.getBucketFields(map, fields, options)
-    sqlParser.prepareTableModel(ifNotExistPresent = false, Option(dbName),
-      tableName, fields, Nil, map, bucketFields)
+    properties.foreach { case (key, value) => map.put(key, value.toLowerCase()) }
+    val bucketFields = sqlParser.getBucketFields(map, fields, new CarbonOption(properties))
+    StoreManager.createTable(tableName, dbName, fields, Seq.empty, bucketFields, map)
   }
 
   /**
    * Update spark catalog table with schema information in case of schema storage is hive metastore
-   * @param tableDesc
-   * @param sparkSession
-   * @return
    */
   def updateCatalogTableWithCarbonSchema(tableDesc: CatalogTable,
       sparkSession: SparkSession): CatalogTable = {
@@ -246,7 +240,7 @@ object CarbonSource {
       val tableInfo = CarbonUtil.convertGsonToTableInfo(properties.asJava)
       if (!metaStore.isReadFromHiveMetaStore) {
         // save to disk
-        metaStore.saveToDisk(tableInfo, properties.get("tablePath").get)
+        metaStore.saveToDisk(tableInfo, properties("tablePath"))
         // remove schema string from map as we don't store carbon schema to hive metastore
         val map = CarbonUtil.removeSchemaFromMap(properties.asJava)
         val updatedFormat = storageFormat.copy(properties = map.asScala.toMap)
@@ -257,6 +251,8 @@ object CarbonSource {
     }
   }
 
+  // if use hive metastore, add tablePath and serialize tableInfo to the properties,
+  // if use hdfs metastore, add tablePath and persist metadata to HDFS
   def updateAndCreateTable(dataSchema: StructType,
       sparkSession: SparkSession,
       metaStore: CarbonMetaStore,
@@ -264,8 +260,8 @@ object CarbonSource {
     val dbName: String = properties.getOrElse("dbName",
       CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
     val tableName: String = properties.getOrElse("tableName", "").toLowerCase
-    val model = createTableInfoFromParams(properties, dataSchema, dbName, tableName)
-    val tableInfo: TableInfo = TableNewProcessor(model)
+    val tableInfo = createTableInfo(properties, dataSchema, dbName, tableName)
+
     val tablePath = CarbonEnv.getInstance(sparkSession).storePath + "/" + dbName + "/" + tableName
     val schemaEvolutionEntry = new SchemaEvolutionEntry
     schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)

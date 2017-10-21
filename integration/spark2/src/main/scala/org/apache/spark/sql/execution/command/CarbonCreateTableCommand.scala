@@ -26,6 +26,7 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.store.{Field, StoreManager, TableModel}
 
 case class CarbonCreateTableCommand(
     cm: TableModel,
@@ -46,7 +47,7 @@ case class CarbonCreateTableCommand(
     val dbName = cm.databaseName
     LOGGER.audit(s"Creating Table with Database name [$dbName] and Table name [$tbName]")
 
-    val tableInfo: TableInfo = TableNewProcessor(cm)
+    val tableInfo: TableInfo = StoreManager.createTable(cm)
 
     // Add validation for sort scope when create table
     val sortScope = tableInfo.getFactTable.getTableProperties

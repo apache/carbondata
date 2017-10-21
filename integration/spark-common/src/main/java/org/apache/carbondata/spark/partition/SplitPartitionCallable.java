@@ -20,8 +20,7 @@ package org.apache.carbondata.spark.partition;
 import java.util.concurrent.Callable;
 
 import org.apache.carbondata.spark.rdd.PartitionSplitter;
-
-import org.apache.spark.sql.execution.command.SplitPartitionCallableModel;
+import org.apache.carbondata.store.SplitPartitionCallableModel;
 
 /**
  * Callable class which is used to split the partition in a separate callable.

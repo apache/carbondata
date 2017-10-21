@@ -26,9 +26,15 @@ import org.apache.spark.sql.hive.CarbonSessionState
 import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.util.Utils
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.datastore.row.LoadStatusType
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.path.CarbonStorePath
 
 /**
  * Session implementation for {org.apache.spark.sql.SparkSession}
@@ -63,6 +69,8 @@ class CarbonSession(@transient val sc: SparkContext,
 object CarbonSession {
 
   implicit class CarbonBuilder(builder: Builder) {
+
+    private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
     def getOrCreateCarbonSession(): SparkSession = {
       getOrCreateCarbonSession(
@@ -157,7 +165,7 @@ object CarbonSession {
         session = new CarbonSession(sparkContext)
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
-        CommonUtil.cleanInProgressSegments(
+        cleanInProgressSegments(
           carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION), sparkContext)
         // Register a successfully instantiated context to the singleton. This should be at the
         // end of the class definition so that the singleton is updated only if there is no
@@ -171,6 +179,83 @@ object CarbonSession {
       }
 
       return session
+    }
+
+    /**
+     * The in-progress segments which are left when the driver is down will be marked as deleted
+     * when driver is initializing.
+     */
+    private def cleanInProgressSegments(storePath: String, sparkContext: SparkContext): Unit = {
+      val loaderDriver = CarbonProperties.getInstance().
+        getProperty(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER,
+          CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT).toBoolean
+      if (!loaderDriver) {
+        return
+      }
+      try {
+        val fileType = FileFactory.getFileType(storePath)
+        if (FileFactory.isFileExist(storePath, fileType)) {
+          val file = FileFactory.getCarbonFile(storePath, fileType)
+          val databaseFolders = file.listFiles()
+          databaseFolders.foreach { databaseFolder =>
+            if (databaseFolder.isDirectory) {
+              val tableFolders = databaseFolder.listFiles()
+              tableFolders.foreach { tableFolder =>
+                if (tableFolder.isDirectory) {
+                  val identifier =
+                    AbsoluteTableIdentifier.from(storePath,
+                      databaseFolder.getName, tableFolder.getName)
+                  val carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier)
+                  val tableStatusFile = carbonTablePath.getTableStatusFilePath
+                  if (FileFactory.isFileExist(tableStatusFile, fileType)) {
+                    val segmentStatusManager = new SegmentStatusManager(identifier)
+                    val carbonLock = segmentStatusManager.getTableStatusLock
+                    try {
+                      if (carbonLock.lockWithRetries) {
+                        LOGGER.info("Acquired lock for table" +
+                                    identifier.getCarbonTableIdentifier.getTableUniqueName
+                                    + " for table status updation")
+                        val listOfLoadFolderDetailsArray =
+                          SegmentStatusManager.readLoadMetadata(
+                            carbonTablePath.getMetadataDirectoryPath)
+                        var loadInprogressExist = false
+                        val staleFolders: Seq[CarbonFile] = Seq()
+                        listOfLoadFolderDetailsArray.foreach { load =>
+                          if (load.getLoadStatus.equals(LoadStatusType.IN_PROGRESS.getMessage) ||
+                              load.getLoadStatus.equals(LoadStatusType.INSERT_OVERWRITE.getMessage))
+                          {
+                            load.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE)
+                            staleFolders :+ FileFactory.getCarbonFile(
+                              carbonTablePath.getCarbonDataDirectoryPath("0", load.getLoadName))
+                            loadInprogressExist = true
+                          }
+                        }
+                        if (loadInprogressExist) {
+                          SegmentStatusManager
+                            .writeLoadDetailsIntoFile(tableStatusFile, listOfLoadFolderDetailsArray)
+                          staleFolders.foreach(CarbonUtil.deleteFoldersAndFiles(_))
+                        }
+                      }
+                    } finally {
+                      if (carbonLock.unlock) {
+                        LOGGER.info(s"Released table status lock for table " +
+                                    s"${identifier.getCarbonTableIdentifier.getTableUniqueName}")
+                      } else {
+                        LOGGER.error(s"Error while releasing table status lock for table " +
+                                     s"${identifier.getCarbonTableIdentifier.getTableUniqueName}")
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch {
+        case s: java.io.FileNotFoundException =>
+          // Create folders and files.
+          LOGGER.error(s)
+      }
     }
 
     /**

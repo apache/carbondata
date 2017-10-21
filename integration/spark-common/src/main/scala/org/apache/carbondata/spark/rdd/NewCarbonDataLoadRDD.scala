@@ -34,7 +34,6 @@ import org.apache.spark.{Partition, SerializableWritable, SparkContext, SparkEnv
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionWrap, RDD}
 import org.apache.spark.serializer.SerializerInstance
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.execution.command.ExecutionErrors
 import org.apache.spark.util.SparkUtil
 
 import org.apache.carbondata.common.CarbonIterator
@@ -49,8 +48,9 @@ import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.splits.TableSplit
 import org.apache.carbondata.processing.util.{CarbonLoaderUtil, CarbonQueryUtil}
-import org.apache.carbondata.spark.DataLoadResult
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, Util}
+import org.apache.carbondata.store.ExecutionErrors
+import org.apache.carbondata.store.util.{CommonUtil, DataLoadResult}
 
 class SerializableConfiguration(@transient var value: Configuration) extends Serializable {
 

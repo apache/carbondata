@@ -23,7 +23,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
-import org.apache.spark.sql.execution.command.{DataLoadTableFileMapping, DataProcessCommand, RunnableCommand, UpdateTableModel}
+import org.apache.spark.sql.execution.command.{DataProcessCommand, RunnableCommand}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.{CausedBy, FileUtils}
 
@@ -43,10 +43,11 @@ import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConst
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.TableOptionConstant
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.load.ValidateUtil
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
-import org.apache.carbondata.spark.util.{CommonUtil, GlobalDictionaryUtil}
+import org.apache.carbondata.spark.util.GlobalDictionaryUtil
+import org.apache.carbondata.store.{DataLoadTableFileMapping, MalformedCarbonCommandException, UpdateTableModel}
+import org.apache.carbondata.store.util.CommonUtil
 
 case class LoadTableCommand(
     databaseNameOp: Option[String],

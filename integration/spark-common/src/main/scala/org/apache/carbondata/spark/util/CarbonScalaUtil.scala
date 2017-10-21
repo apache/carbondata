@@ -21,12 +21,12 @@ import java.nio.charset.Charset
 import java.text.SimpleDateFormat
 
 import org.apache.spark.sql._
-import org.apache.spark.sql.execution.command.DataTypeInfo
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.store.DataTypeInfo
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(

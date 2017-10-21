@@ -18,7 +18,6 @@
 package org.apache.carbondata.api
 
 import java.lang.Long
-import java.text.SimpleDateFormat
 
 import scala.collection.JavaConverters._
 
@@ -27,12 +26,11 @@ import org.apache.spark.sql.catalyst.expressions.{Cast, Literal}
 import org.apache.spark.sql.types.TimestampType
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.DataManagementFunc
+import org.apache.carbondata.store.MalformedCarbonCommandException
 
 object CarbonStore {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -44,7 +42,6 @@ object CarbonStore {
       tableFolderPath: String): Seq[Row] = {
     val loadMetadataDetailsArray = SegmentStatusManager.readLoadMetadata(tableFolderPath)
     if (loadMetadataDetailsArray.nonEmpty) {
-      val parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
       var loadMetadataDetailsSortedArray = loadMetadataDetailsArray.sortWith { (l1, l2) =>
         java.lang.Double.parseDouble(l1.getLoadName) > java.lang.Double.parseDouble(l2.getLoadName)
       }
@@ -163,7 +160,7 @@ object CarbonStore {
     val validAndInvalidSegments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = new
         SegmentStatusManager(
           identifier).getValidAndInvalidSegments
-    return validAndInvalidSegments.getValidSegments.contains(segmentId)
+    validAndInvalidSegments.getValidSegments.contains(segmentId)
   }
 
   private def validateTimeFormat(timestamp: String): Long = {

@@ -31,12 +31,11 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
-import org.apache.spark.{SparkEnv, SparkException, TaskContext}
+import org.apache.spark.{SparkContext, SparkEnv, SparkException, TaskContext}
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, NewHadoopRDD, RDD}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
-import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.hive.DistributionUtil
-import org.apache.spark.util.SparkUtil
+import org.apache.spark.util.{FileUtils, SparkUtil}
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -46,7 +45,7 @@ import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, ColumnarFormatVersion}
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -66,9 +65,12 @@ import org.apache.carbondata.processing.loading.sort.SortScopeOptions
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.processing.splits.TableSplit
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil, CarbonQueryUtil}
-import org.apache.carbondata.spark.{DataLoadResultImpl, PartitionFactory, _}
+import org.apache.carbondata.spark.PartitionFactory
 import org.apache.carbondata.spark.load._
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, Util}
+import org.apache.carbondata.store.{AlterTableModel, CompactionModel, ExecutionErrors, UpdateTableModel}
+import org.apache.carbondata.store.util.{CommonUtil, DataLoadResultImpl}
+
 
 /**
  * This is the factory class which can create different RDD depends on user needs.
@@ -395,7 +397,7 @@ object CarbonDataRDDFactory {
             LOGGER.error(s"Exception in partition split thread: ${ e.getMessage } }")
           exception = e
         }
-        if (triggeredSplitPartitionStatus == false) {
+        if (!triggeredSplitPartitionStatus) {
           throw new Exception("Exception in split partition " + exception.getMessage)
         }
       }
@@ -593,8 +595,32 @@ object CarbonDataRDDFactory {
       }
     }
 
+    def configSplitMaxSize(context: SparkContext, filePaths: String,
+        hadoopConfiguration: Configuration): Unit = {
+      val defaultParallelism = if (context.defaultParallelism < 1) {
+        1
+      } else {
+        context.defaultParallelism
+      }
+      val spaceConsumed = FileUtils.getSpaceOccupied(filePaths)
+      val blockSize =
+        hadoopConfiguration.getLongBytes("dfs.blocksize", CarbonCommonConstants.CARBON_256MB)
+      LOGGER.info("[Block Distribution]")
+      // calculate new block size to allow use all the parallelism
+      if (spaceConsumed < defaultParallelism * blockSize) {
+        var newSplitSize: Long = spaceConsumed / defaultParallelism
+        if (newSplitSize < CarbonCommonConstants.CARBON_16MB) {
+          newSplitSize = CarbonCommonConstants.CARBON_16MB
+        }
+        hadoopConfiguration.set(FileInputFormat.SPLIT_MAXSIZE, newSplitSize.toString)
+        LOGGER.info(s"totalInputSpaceConsumed: $spaceConsumed , " +
+                    s"defaultParallelism: $defaultParallelism")
+        LOGGER.info(s"mapreduce.input.fileinputformat.split.maxsize: ${ newSplitSize.toString }")
+      }
+    }
+
     def updateStatus(status: Array[(String, (LoadMetadataDetails, ExecutionErrors))],
-        loadStatus: String) = {
+        loadStatus: String): Unit = {
       val metadataDetails = if (status != null && status(0) != null) {
         status(0)._2._1
       } else {
@@ -697,7 +723,7 @@ object CarbonDataRDDFactory {
                org.apache.hadoop.io.compress.DefaultCodec,
                org.apache.hadoop.io.compress.BZip2Codec""".stripMargin)
 
-          CommonUtil.configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
+          configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
 
           val inputFormat = new org.apache.hadoop.mapreduce.lib.input.TextInputFormat
           val jobContext = new Job(hadoopConfiguration)
@@ -785,12 +811,11 @@ object CarbonDataRDDFactory {
 
         def triggerDataLoadForSegment(key: String, taskNo: Int,
             iter: Iterator[Row]): Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] = {
-          val rddResult = new updateResultImpl()
           val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
           val resultIter = new Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] {
             var partitionID = "0"
             val loadMetadataDetails = new LoadMetadataDetails
-            val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
+            val executionErrors = ExecutionErrors(FailureCauses.NONE, "")
             var uniqueLoadStatusId = ""
             try {
               val segId = key
@@ -800,7 +825,6 @@ object CarbonDataRDDFactory {
                                    (index + "_0")
 
               // convert timestamp
-              val timeStampInLong = updateModel.get.updatedTimeStamp + ""
               loadMetadataDetails.setPartitionCount(partitionID)
               loadMetadataDetails.setLoadName(segId)
               loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
@@ -841,9 +865,7 @@ object CarbonDataRDDFactory {
 
             override def next(): (String, (LoadMetadataDetails, ExecutionErrors)) = {
               finished = true
-              rddResult
-                .getKey(uniqueLoadStatusId,
-                  (loadMetadataDetails, executionErrors))
+              (uniqueLoadStatusId, (loadMetadataDetails, executionErrors))
             }
           }
           resultIter
@@ -1144,10 +1166,6 @@ object CarbonDataRDDFactory {
 
   /**
    * repartition the input data for partition table.
-   * @param sqlContext
-   * @param dataFrame
-   * @param carbonLoadModel
-   * @return
    */
   private def repartitionInputData(sqlContext: SQLContext,
       dataFrame: Option[DataFrame],
@@ -1253,7 +1271,7 @@ object CarbonDataRDDFactory {
   }
 
   private def writeDictionary(carbonLoadModel: CarbonLoadModel,
-      result: Option[DictionaryServer], writeAll: Boolean) = {
+      result: Option[DictionaryServer], writeAll: Boolean): Unit = {
     // write dictionary file
     val uniqueTableName: String = s"${ carbonLoadModel.getDatabaseName }_${
       carbonLoadModel.getTableName

@@ -68,7 +68,7 @@ case class CarbonRelation(
   }
 
   def getStructChildren(dimName: String): String = {
-    metaData.carbonTable.getChildren(dimName).asScala.map(childDim => {
+    metaData.carbonTable.getChildren(dimName).asScala.map { childDim =>
       childDim.getDataType.getName.toLowerCase match {
         case "array" => s"${
           childDim.getColName.substring(dimName.length + 1)
@@ -81,7 +81,7 @@ case class CarbonRelation(
         case dType => s"${ childDim.getColName
           .substring(dimName.length() + 1) }:${ addDecimalScaleAndPrecision(childDim, dType) }"
       }
-    }).mkString(",")
+    }.mkString(",")
   }
 
   override def newInstance(): LogicalPlan = {
@@ -93,7 +93,7 @@ case class CarbonRelation(
     val sett = new LinkedHashSet(
       tableMeta.carbonTable.getDimensionByTableName(tableMeta.carbonTableIdentifier.getTableName)
         .asScala.asJava)
-    sett.asScala.toSeq.map(dim => {
+    sett.asScala.toSeq.map { dim =>
       val dimval = metaData.carbonTable
         .getDimensionByName(metaData.carbonTable.getFactTableName, dim.getColName)
       val output: DataType = dimval.getDataType.getName.toLowerCase match {
@@ -110,7 +110,7 @@ case class CarbonRelation(
         dim.getColName,
         output,
         nullable = true)()
-    })
+    }
   }
 
   val measureAttr = {

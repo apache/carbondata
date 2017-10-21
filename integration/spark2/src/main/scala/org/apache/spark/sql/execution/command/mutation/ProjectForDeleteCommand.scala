@@ -26,6 +26,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.store.ExecutionErrors
 
 /**
  * IUD update delete and compaction framework.

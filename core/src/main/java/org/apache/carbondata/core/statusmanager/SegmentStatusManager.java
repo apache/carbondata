@@ -343,8 +343,11 @@ public class SegmentStatusManager {
    * @param tableFolderPath
    * @return
    */
-  public static List<String> updateDeletionStatus(AbsoluteTableIdentifier identifier,
-      String loadDate, String tableFolderPath, Long loadStartTime) throws Exception {
+  public static List<String> updateDeletionStatus(
+      AbsoluteTableIdentifier identifier,
+      String loadDate,
+      String tableFolderPath,
+      Long loadStartTime) throws Exception {
     CarbonTableIdentifier carbonTableIdentifier = identifier.getCarbonTableIdentifier();
     ICarbonLock carbonDeleteSegmentLock =
         CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK);

@@ -32,6 +32,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.store.{ExecutionErrors, UpdateTableModel}
 
 private[sql] case class ProjectForUpdateCommand(
     plan: LogicalPlan, tableIdentifier: Seq[String])

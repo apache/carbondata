@@ -25,7 +25,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.processing.util.CarbonQueryUtil
-import org.apache.carbondata.spark.DeletedLoadResult
+import org.apache.carbondata.store.util.DeletedLoadResult
 
 class CarbonDeleteLoadByDateRDD[K, V](
     sc: SparkContext,

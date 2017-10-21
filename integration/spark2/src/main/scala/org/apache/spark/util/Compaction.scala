@@ -17,11 +17,10 @@
 package org.apache.spark.util
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.execution.command.AlterTableModel
 import org.apache.spark.sql.execution.command.management.AlterTableCompactionCommand
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.processing.merger.CompactionType
+import org.apache.carbondata.store.AlterTableModel
 
 /**
  * table compaction api

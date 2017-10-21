@@ -20,10 +20,9 @@ package org.apache.carbondata.spark.rdd
 import scala.reflect.ClassTag
 
 import org.apache.spark.{Partition, SparkContext, TaskContext}
-import org.apache.spark.rdd.RDD
 
 import org.apache.carbondata.processing.util.CarbonQueryUtil
-import org.apache.carbondata.spark.Value
+import org.apache.carbondata.store.util.Value
 
 class CarbonDropTableRDD[V: ClassTag](
     sc: SparkContext,

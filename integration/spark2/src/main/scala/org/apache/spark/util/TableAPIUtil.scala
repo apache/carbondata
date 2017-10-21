@@ -22,7 +22,7 @@ import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.store.MalformedCarbonCommandException
 
 /**
  * table api util

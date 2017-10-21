@@ -33,8 +33,8 @@ import org.apache.spark.sql.types.StructField
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonOption
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.store._
+import org.apache.carbondata.store.util.CommonUtil
 
 /**
  * TODO remove the duplicate code and add the common methods to common class.
@@ -335,7 +335,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (TBLPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
       case dbName ~ table ~ fields ~ tblProp =>
         fields.foreach{ f =>
-          if (isComplexDimDictionaryExclude(f.dataType.get)) {
+          if (StoreManager.isComplexDimDictionaryExclude(f.dataType.get)) {
             throw new MalformedCarbonCommandException(
               s"Add column is unsupported for complex datatype column: ${f.column}")
           }
@@ -380,7 +380,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           scala.collection.mutable.Map.empty[String, String]
         }
 
-        val tableModel = prepareTableModel (false,
+        val tableModel = StoreManager.prepareTableModel (false,
           convertDbNameToLowerCase(dbName),
           table.toLowerCase,
           fields.map(convertFieldNamesToLowercase),
@@ -440,7 +440,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
       // so checking the start of the string and taking the precision and scale.
       // resetting the data type with decimal
       if (f.dataType.getOrElse("").startsWith("decimal")) {
-        val (precision, scale) = getScaleAndPrecision(col.dataType.catalogString)
+        val (precision, scale) = CommonUtil.getScaleAndPrecision(col.dataType.catalogString)
         f.precision = precision
         f.scale = scale
         f.dataType = Some("decimal")

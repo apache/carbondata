@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark
+package org.apache.carbondata.store
 
 import scala.collection.mutable.HashMap
 

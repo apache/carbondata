@@ -21,11 +21,10 @@ import scala.collection.JavaConverters._
 import scala.reflect.ClassTag
 
 import org.apache.spark.{Partition, SparkContext, TaskContext}
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.execution.command.Partitioner
 
 import org.apache.carbondata.processing.util.CarbonQueryUtil
-import org.apache.carbondata.spark.Value
+import org.apache.carbondata.store.Partitioner
+import org.apache.carbondata.store.util.Value
 
 class CarbonDeleteLoadRDD[V: ClassTag](
     sc: SparkContext,

@@ -19,23 +19,21 @@ package org.apache.carbondata.spark.rdd
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel}
-
-import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
-import org.apache.carbondata.spark.MergeResultImpl
+import org.apache.carbondata.store.{CarbonMergerMapping, CompactionCallableModel}
+import org.apache.carbondata.store.util.MergeResultImpl
 
 /**
  * Compactor class which handled the compaction cases.
  */
 object Compactor {
 
-  val logger = LogServiceFactory.getLogService(Compactor.getClass.getName)
+  val logger: LogService = LogServiceFactory.getLogService(Compactor.getClass.getName)
 
   def triggerCompaction(compactionCallableModel: CompactionCallableModel): Unit = {
-
     val storeLocation = compactionCallableModel.storeLocation
     val carbonTable = compactionCallableModel.carbonTable
     val loadsToMerge = compactionCallableModel.loadsToMerge
@@ -109,15 +107,14 @@ object Compactor {
       val endTime = System.nanoTime()
       logger.info(s"time taken to merge $mergedLoadName is ${ endTime - startTime }")
       val statusFileUpdation =
-        (((compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) &&
-          (CarbonDataMergerUtil
-            .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
-              carbonTable.getMetaDataFilepath(),
-              carbonLoadModel))) ||
-         (CarbonDataMergerUtil
-           .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath(),
-             mergedLoadName, carbonLoadModel, mergeLoadStartTime, compactionType))
-          )
+        ((compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) &&
+         CarbonDataMergerUtil
+           .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
+             carbonTable.getMetaDataFilepath,
+             carbonLoadModel)) ||
+        CarbonDataMergerUtil
+          .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath,
+            mergedLoadName, carbonLoadModel, mergeLoadStartTime, compactionType)
 
       if (!statusFileUpdation) {
         logger.audit(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +

@@ -14,19 +14,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.carbondata.store
 
-package org.apache.carbondata.hadoop.internal;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 
-import org.apache.hadoop.mapreduce.InputSplit;
-
-/**
- * Carbon input split can be different format, application should create the record reader
- * based on format type.
- */
-public abstract class CarbonInputSplit extends InputSplit {
-
-  /**
-   * @return the format type of this split.
-   */
-  public abstract CarbonFormatType formatType();
+ /**
+  * Carbon column validator
+  */
+class CarbonColumnValidator extends ColumnValidator {
+  def validateColumns(allColumns: Seq[ColumnSchema]) {
+    allColumns.foreach { columnSchema =>
+      val colWithSameId = allColumns.filter { x =>
+        x.getColumnUniqueId.equals(columnSchema.getColumnUniqueId)
+      }
+      if (colWithSameId.size > 1) {
+        throw new MalformedCarbonCommandException("Two column can not have same columnId")
+      }
+    }
+  }
 }
