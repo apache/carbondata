@@ -224,106 +224,6 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>1.6</version>
-        <executions>
-          <execution>
-            <phase>post-integration-test</phase>
-            <goals>
-              <goal>run</goal>
-            </goals>
-            <configuration>
-              <target>
-                <echo message="Generating JaCoCo Reports" />
-                <taskdef name="report" classname="org.jacoco.ant.ReportTask">
-                  <classpath path="${basedir}/target/jacoco-jars/org.jacoco.ant.jar" />
-                </taskdef>
-                <mkdir dir="${basedir}/target/coverage-report" />
-                <report>
-                  <executiondata>
-                    <fileset dir="${build.directory.projectCommon}">
-                      <include name="jacoco.exec" />
-                    </fileset>
-                    <fileset dir="${build.directory.projectCore}">
-                      <include name="jacoco.exec" />
-                    </fileset>
-                    <fileset dir="${build.directory.projectProcessing}">
-                      <include name="jacoco.exec" />
-                    </fileset>
-                    <fileset dir="${build.directory.projectHadoop}">
-                      <include name="jacoco.exec" />
-                    </fileset>
-                    <fileset dir="${build.directory.projectFormat}" erroronmissingdir="false">
-                      <include name="jacoco.exec" />
-                    </fileset>
-                    <fileset dir="${build.directory.projectSpark}" erroronmissingdir="false">
-                      <include name="jacoco.exec" />
-                    </fileset>
-                    <fileset dir="${build.directory.projectSpark2}" erroronmissingdir="false">
-                      <include name="jacoco.exec" />
-                    </fileset>
-                    <fileset dir="${build.directory.projectSparkCommon}">
-                      <include name="jacoco.exec" />
-                    </fileset>
-                    <fileset dir="${build.directory.projectSparkCommonTest}">
-                      <include name="jacoco.exec" />
-                    </fileset>
-                    <fileset dir="${build.directory.projectHive}" erroronmissingdir="false">
-                      <include name="jacoco.exec" />
-                    </fileset>
-                    <fileset dir="${build.directory.projectPresto}" erroronmissingdir="false">
-                      <include name="jacoco.exec" />
-                    </fileset>
-
-                  </executiondata>
-                  <structure name="jacoco-CarbonData Coverage Project">
-                    <group name="carbondata-coverage">
-                      <classfiles>
-                        <fileset dir="${classes.directory.projectCommon}" />
-                        <fileset dir="${classes.directory.projectCore}" />
-                        <fileset dir="${classes.directory.projectProcessing}" />
-                        <fileset dir="${classes.directory.projectHadoop}" />
-                        <fileset dir="${classes.directory.projectFormat}" erroronmissingdir="false"/>
-                        <fileset dir="${classes.directory.projectSpark}" erroronmissingdir="false"/>
-                        <fileset dir="${classes.directory.projectSpark2}" erroronmissingdir="false"/>
-                        <fileset dir="${classes.directory.projectSparkCommon}" />
-                        <fileset dir="${classes.directory.projectSparkCommonTest}" />
-                        <fileset dir="${classes.directory.projectHive}" erroronmissingdir="false" />
-                        <fileset dir="${classes.directory.projectPresto}" erroronmissingdir="false" />
-
-                      </classfiles>
-                      <sourcefiles encoding="UTF-8">
-                        <fileset dir="${sources.directory.projectCommon}" />
-                        <fileset dir="${sources.directory.projectCore}" />
-                        <fileset dir="${sources.directory.projectProcessing}" />
-                        <fileset dir="${sources.directory.projectHadoop}" />
-                        <fileset dir="${sources.directory.projectFormat}" erroronmissingdir="false"/>
-                        <fileset dir="${sources.directory.projectSpark}" erroronmissingdir="false"/>
-                        <fileset dir="${sources.directory.projectSpark2}" erroronmissingdir="false"/>
-                        <fileset dir="${sources.directory.projectSparkCommon}" />
-                        <fileset dir="${sources.directory.projectHive}" erroronmissingdir="false" />
-                        <fileset dir="${sources.directory.projectPresto}" erroronmissingdir="false" />
-                      </sourcefiles>
-                    </group>
-                  </structure>
-                  <html destdir="../../target/carbondata-coverage-report/html" />
-                  <xml destfile="../../target/carbondata-coverage-report/carbondata-coverage-report.xml" />
-                  <csv destfile="../../target/carbondata-coverage-report/carbondata-coverage-report.csv" />
-                </report>
-              </target>
-            </configuration>
-          </execution>
-        </executions>
-        <dependencies>
-          <dependency>
-            <groupId>org.jacoco</groupId>
-            <artifactId>org.jacoco.ant</artifactId>
-            <version>0.7.9</version>
-          </dependency>
-        </dependencies>
-      </plugin>
     </plugins>
   </build>
   <profiles>
@@ -348,6 +248,105 @@
           <scope>test</scope>
         </dependency>
       </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <phase>post-integration-test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <echo message="Generating JaCoCo Reports" />
+                    <taskdef name="report" classname="org.jacoco.ant.ReportTask">
+                      <classpath path="${basedir}/target/jacoco-jars/org.jacoco.ant.jar" />
+                    </taskdef>
+                    <mkdir dir="${basedir}/target/coverage-report" />
+                    <report>
+                      <executiondata>
+                        <fileset dir="${build.directory.projectCommon}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectCore}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectProcessing}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectHadoop}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectFormat}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectSpark}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectSparkCommon}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectSparkCommonTest}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectHive}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectPresto}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+
+                      </executiondata>
+                      <structure name="jacoco-CarbonData Coverage Project">
+                        <group name="carbondata-coverage">
+                          <classfiles>
+                            <fileset dir="${classes.directory.projectCommon}"  erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectCore}"  erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectProcessing}"  erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectHadoop}"  erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectFormat}" erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectSpark}" erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectSparkCommon}"  erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectSparkCommonTest}"  erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectHive}" erroronmissingdir="false" />
+                            <fileset dir="${classes.directory.projectPresto}" erroronmissingdir="false" />
+
+                          </classfiles>
+                          <sourcefiles encoding="UTF-8">
+                            <fileset dir="${sources.directory.projectCommon}" erroronmissingdir="false" />
+                            <fileset dir="${sources.directory.projectCore}"  erroronmissingdir="false"/>
+                            <fileset dir="${sources.directory.projectProcessing}"  erroronmissingdir="false"/>
+                            <fileset dir="${sources.directory.projectHadoop}"  erroronmissingdir="false"/>
+                            <fileset dir="${sources.directory.projectFormat}" erroronmissingdir="false"/>
+                            <fileset dir="${sources.directory.projectSpark}" erroronmissingdir="false"/>
+                            <fileset dir="${sources.directory.projectSparkCommon}"  erroronmissingdir="false"/>
+                            <fileset dir="${sources.directory.projectHive}" erroronmissingdir="false" />
+                            <fileset dir="${sources.directory.projectPresto}" erroronmissingdir="false" />
+                          </sourcefiles>
+                        </group>
+                      </structure>
+                      <html destdir="../../target/carbondata-coverage-report/html" />
+                      <xml destfile="../../target/carbondata-coverage-report/carbondata-coverage-report.xml" />
+                      <csv destfile="../../target/carbondata-coverage-report/carbondata-coverage-report.csv" />
+                    </report>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>org.jacoco</groupId>
+                <artifactId>org.jacoco.ant</artifactId>
+                <version>0.7.9</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
     <profile>
       <id>spark-2.1</id>
@@ -362,6 +361,105 @@
           <scope>test</scope>
         </dependency>
       </dependencies>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-antrun-plugin</artifactId>
+            <version>1.6</version>
+            <executions>
+              <execution>
+                <phase>post-integration-test</phase>
+                <goals>
+                  <goal>run</goal>
+                </goals>
+                <configuration>
+                  <target>
+                    <echo message="Generating JaCoCo Reports" />
+                    <taskdef name="report" classname="org.jacoco.ant.ReportTask">
+                      <classpath path="${basedir}/target/jacoco-jars/org.jacoco.ant.jar" />
+                    </taskdef>
+                    <mkdir dir="${basedir}/target/coverage-report" />
+                    <report>
+                      <executiondata>
+                        <fileset dir="${build.directory.projectCommon}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectCore}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectProcessing}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectHadoop}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectFormat}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectSpark2}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectSparkCommon}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectSparkCommonTest}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectHive}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+                        <fileset dir="${build.directory.projectPresto}" erroronmissingdir="false">
+                          <include name="jacoco.exec" />
+                        </fileset>
+
+                      </executiondata>
+                      <structure name="jacoco-CarbonData Coverage Project">
+                        <group name="carbondata-coverage">
+                          <classfiles>
+                            <fileset dir="${classes.directory.projectCommon}"  erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectCore}"  erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectProcessing}"  erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectHadoop}"  erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectFormat}" erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectSpark2}" erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectSparkCommon}"  erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectSparkCommonTest}"  erroronmissingdir="false"/>
+                            <fileset dir="${classes.directory.projectHive}" erroronmissingdir="false" />
+                            <fileset dir="${classes.directory.projectPresto}" erroronmissingdir="false" />
+
+                          </classfiles>
+                          <sourcefiles encoding="UTF-8">
+                            <fileset dir="${sources.directory.projectCommon}" erroronmissingdir="false" />
+                            <fileset dir="${sources.directory.projectCore}"  erroronmissingdir="false"/>
+                            <fileset dir="${sources.directory.projectProcessing}"  erroronmissingdir="false"/>
+                            <fileset dir="${sources.directory.projectHadoop}"  erroronmissingdir="false"/>
+                            <fileset dir="${sources.directory.projectFormat}" erroronmissingdir="false"/>
+                            <fileset dir="${sources.directory.projectSpark2}" erroronmissingdir="false"/>
+                            <fileset dir="${sources.directory.projectSparkCommon}"  erroronmissingdir="false"/>
+                            <fileset dir="${sources.directory.projectHive}" erroronmissingdir="false" />
+                            <fileset dir="${sources.directory.projectPresto}" erroronmissingdir="false" />
+                          </sourcefiles>
+                        </group>
+                      </structure>
+                      <html destdir="../../target/carbondata-coverage-report/html" />
+                      <xml destfile="../../target/carbondata-coverage-report/carbondata-coverage-report.xml" />
+                      <csv destfile="../../target/carbondata-coverage-report/carbondata-coverage-report.csv" />
+                    </report>
+                  </target>
+                </configuration>
+              </execution>
+            </executions>
+            <dependencies>
+              <dependency>
+                <groupId>org.jacoco</groupId>
+                <artifactId>org.jacoco.ant</artifactId>
+                <version>0.7.9</version>
+              </dependency>
+            </dependencies>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
     <profile>
       <id>sdvtest</id>
