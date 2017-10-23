@@ -16,9 +16,8 @@
  */
 package org.apache.carbondata.core.scan.filter.intf;
 
-import java.io.Serializable;
 
-public enum FilterExecuterType implements Serializable {
+public enum FilterExecuterType {
 
   INCLUDE, EXCLUDE, OR, AND, RESTRUCTURE, ROWLEVEL, RANGE, ROWLEVEL_GREATERTHAN,
   ROWLEVEL_GREATERTHAN_EQUALTO, ROWLEVEL_LESSTHAN_EQUALTO, ROWLEVEL_LESSTHAN, TRUE

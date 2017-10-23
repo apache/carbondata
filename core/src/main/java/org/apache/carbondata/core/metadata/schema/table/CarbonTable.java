@@ -175,14 +175,7 @@ public class CarbonTable implements Serializable {
     while (msrItr.hasNext()) {
       columns.add(msrItr.next());
     }
-    Collections.sort(columns, new Comparator<CarbonColumn>() {
-
-      @Override public int compare(CarbonColumn o1, CarbonColumn o2) {
-
-        return Integer.compare(o1.getSchemaOrdinal(), o2.getSchemaOrdinal());
-      }
-
-    });
+    Collections.sort(columns, new CarbonColumnComparator());
     this.createOrderColumn.put(tableName, columns);
   }
 
@@ -656,5 +649,11 @@ public class CarbonTable implements Serializable {
 
   public TableInfo getTableInfo() {
     return tableInfo;
+  }
+
+  private static class CarbonColumnComparator implements Comparator<CarbonColumn> {
+    public int compare(CarbonColumn o1, CarbonColumn o2) {
+      return Integer.compare(o1.getSchemaOrdinal(), o2.getSchemaOrdinal());
+    }
   }
 }
