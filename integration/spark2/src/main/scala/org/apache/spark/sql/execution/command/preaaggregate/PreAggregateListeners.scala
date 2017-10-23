@@ -24,7 +24,7 @@ import org.apache.spark.sql.execution.command.CarbonDropTableCommand
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
-import org.apache.carbondata.events.{DropTablePostEvent, Event, LoadTablePostExecutionEvent, OperationContext, OperationEventListener}
+import org.apache.carbondata.events._
 
 object DropPreAggregateTablePostListener extends OperationEventListener {
 
@@ -75,6 +75,192 @@ object LoadPostAggregateListener extends OperationEventListener {
         val childDatabaseName = dataMapSchema.getRelationIdentifier.getDatabaseName
         val selectQuery = dataMapSchema.getProperties.get("CHILD_SELECT QUERY")
         sparkSession.sql(s"insert into $childDatabaseName.$childTableName $selectQuery")
+      }
+    }
+  }
+}
+
+object PreAggregateDataTypeChangePreListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val dataTypeChangePreListener = event.asInstanceOf[AlterTableDataTypeChangePreEvent]
+    val carbonTable = dataTypeChangePreListener.carbonTable
+    val alterTableDataTypeChangeModel = dataTypeChangePreListener.alterTableDataTypeChangeModel
+    val columnToBeAltered: String = alterTableDataTypeChangeModel.columnName
+    val dataMapSchemas = carbonTable.getTableInfo.getDataMapSchemaList
+    if (dataMapSchemas != null && !dataMapSchemas.isEmpty) {
+      dataMapSchemas.asScala.foreach { dataMapSchema =>
+          val childColumns = dataMapSchema.getChildSchema.getListOfColumns
+          if (childColumns.asScala.exists(_.getColumnName.equalsIgnoreCase(columnToBeAltered))) {
+            throw new UnsupportedOperationException(s"Column $columnToBeAltered exists in a " +
+                                                    s"pre-aggregate table ${ dataMapSchema.toString
+                                                    }. Cannot change datatype")
+          }
+      }
+
+      if (carbonTable.isPreAggregateTable) {
+        throw new UnsupportedOperationException(s"Cannot change data type for columns in " +
+                                                s"pre-aggreagate table ${
+                                                  carbonTable.getDatabaseName
+                                                }.${ carbonTable.getFactTableName }")
+      }
+    }
+  }
+}
+
+object PreAggregateDeleteSegmentByDatePreListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val deleteSegmentByDatePreEvent = event.asInstanceOf[DeleteSegmentByDatePreEvent]
+    val carbonTable = deleteSegmentByDatePreEvent.carbonTable
+    if (carbonTable != null) {
+      if (carbonTable.hasPreAggregateTables) {
+        throw new UnsupportedOperationException(
+          "Delete segment operation is not supported on tables which have a pre-aggregate table. " +
+          "Drop pre-aggregation table to continue")
+      }
+      if (carbonTable.isPreAggregateTable) {
+        throw new UnsupportedOperationException(
+          "Delete segment operation is not supported on pre-aggregate table")
+      }
+    }
+  }
+}
+
+object PreAggregateDeleteSegmentByIdPreListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val tableEvent = event.asInstanceOf[DeleteSegmentByIdPreEvent]
+    val carbonTable = tableEvent.carbonTable
+    if (carbonTable != null) {
+      if (carbonTable.hasPreAggregateTables) {
+        throw new UnsupportedOperationException(
+          "Delete segment operation is not supported on tables which have a pre-aggregate table")
+      }
+      if (carbonTable.isPreAggregateTable) {
+        throw new UnsupportedOperationException(
+          "Delete segment operation is not supported on pre-aggregate table")
+      }
+    }
+  }
+
+}
+
+object PreAggregateDropColumnPreListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val dataTypeChangePreListener = event.asInstanceOf[AlterTableDropColumnPreEvent]
+    val carbonTable = dataTypeChangePreListener.carbonTable
+    val alterTableDropColumnModel = dataTypeChangePreListener.alterTableDropColumnModel
+    val columnsToBeDropped = alterTableDropColumnModel.columns
+    val dataMapSchemas = carbonTable.getTableInfo.getDataMapSchemaList
+    if (dataMapSchemas != null && !dataMapSchemas.isEmpty) {
+      dataMapSchemas.asScala.foreach { dataMapSchema =>
+          val parentColumnNames = dataMapSchema.getChildSchema.getListOfColumns.asScala
+            .flatMap(_.getParentColumnTableRelations.asScala.map(_.getColumnName))
+          val columnExistsInChild = parentColumnNames.collectFirst {
+            case parentColumnName if columnsToBeDropped.contains(parentColumnName) =>
+              parentColumnName
+          }
+          if (columnExistsInChild.isDefined) {
+            throw new UnsupportedOperationException(
+              s"Column ${ columnExistsInChild.head } cannot be dropped because it exists in a " +
+              s"pre-aggregate table ${ dataMapSchema.getRelationIdentifier.toString}")
+          }
+      }
+      if (carbonTable.isPreAggregateTable) {
+        throw new UnsupportedOperationException(s"Cannot drop columns in pre-aggreagate table ${
+          carbonTable.getDatabaseName}.${ carbonTable.getFactTableName }")
+      }
+    }
+  }
+}
+
+object PreAggregateRenameTablePreListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event,
+      operationContext: OperationContext): Unit = {
+    val renameTablePostListener = event.asInstanceOf[AlterTableRenamePreEvent]
+    val carbonTable = renameTablePostListener.carbonTable
+    if (carbonTable.isPreAggregateTable) {
+      throw new UnsupportedOperationException(
+        "Rename operation for pre-aggregate table is not supported.")
+    }
+    if (carbonTable.hasPreAggregateTables) {
+      throw new UnsupportedOperationException(
+        "Rename operation is not supported for table with pre-aggregate tables")
+    }
+  }
+}
+
+object UpdatePreAggregatePreListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val tableEvent = event.asInstanceOf[UpdateTablePreEvent]
+    val carbonTable = tableEvent.carbonTable
+    if (carbonTable != null) {
+      if (carbonTable.hasPreAggregateTables) {
+        throw new UnsupportedOperationException(
+          "Update operation is not supported for tables which have a pre-aggregate table. Drop " +
+          "pre-aggregate tables to continue.")
+      }
+      if (carbonTable.isPreAggregateTable) {
+        throw new UnsupportedOperationException(
+          "Update operation is not supported for pre-aggregate table")
+      }
+    }
+  }
+}
+
+object DeletePreAggregatePreListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val tableEvent = event.asInstanceOf[DeleteFromTablePreEvent]
+    val carbonTable = tableEvent.carbonTable
+    if (carbonTable != null) {
+      if (carbonTable.hasPreAggregateTables) {
+        throw new UnsupportedOperationException(
+          "Delete operation is not supported for tables which have a pre-aggregate table. Drop " +
+          "pre-aggregate tables to continue.")
+      }
+      if (carbonTable.isPreAggregateTable) {
+        throw new UnsupportedOperationException(
+          "Delete operation is not supported for pre-aggregate table")
       }
     }
   }

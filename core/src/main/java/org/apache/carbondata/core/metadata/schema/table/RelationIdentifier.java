@@ -26,6 +26,18 @@ import java.io.Serializable;
  */
 public class RelationIdentifier implements Serializable, Writable {
 
+  public void setDatabaseName(String databaseName) {
+    this.databaseName = databaseName;
+  }
+
+  public void setTableName(String tableName) {
+    this.tableName = tableName;
+  }
+
+  public void setTableId(String tableId) {
+    this.tableId = tableId;
+  }
+
   private String databaseName;
 
   private String tableName;

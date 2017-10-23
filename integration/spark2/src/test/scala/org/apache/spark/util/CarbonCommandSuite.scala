@@ -22,12 +22,11 @@ import java.sql.Timestamp
 import java.util.Date
 
 import org.apache.spark.sql.common.util.Spark2QueryTest
-import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.CarbonProperties
 
 class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -140,6 +139,21 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     assert(!f.exists())
 
     dropTable(table)
+  }
+
+  test("test if delete segments by id is unsupported for pre-aggregate tables") {
+    dropTable("preaggMain")
+    dropTable("preagg1")
+    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
+    sql("create table preagg1 stored BY 'carbondata' tblproperties('parent'='PreAggMain') as select a,sum(b) from PreAggMain group by a")
+    intercept[UnsupportedOperationException] {
+      sql("delete from table preaggMain where segment.id in (1,2)")
+    }.getMessage.contains("Delete segment operation is not supported on tables")
+    intercept[UnsupportedOperationException] {
+      sql("delete from table preagg1 where segment.id in (1,2)")
+    }.getMessage.contains("Delete segment operation is not supported on pre-aggregate tables")
+    dropTable("preaggMain")
+    dropTable("preagg1")
   }
 
   protected def dropTable(tableName: String): Unit ={

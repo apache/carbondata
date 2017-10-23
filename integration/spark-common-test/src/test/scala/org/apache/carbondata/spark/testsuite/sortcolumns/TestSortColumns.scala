@@ -35,7 +35,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql("CREATE TABLE tableOne(id int, name string, city string, age int) STORED BY 'org.apache.carbondata.format'")
     sql("CREATE TABLE tableTwo(id int, age int) STORED BY 'org.apache.carbondata.format'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table tableOne")
-    sql("insert into table tableTwo select id, count(age) from tableOne group by id")
+
   }
 
   test("create table sort columns dictionary include - int") {
@@ -335,6 +335,7 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Test tableTwo data") {
+    sql("insert into table tableTwo select id, count(age) from tableOne group by id")
     checkAnswer(
       sql("select id,age from tableTwo order by id"),
       Seq(Row(1, 1), Row(2, 1), Row(3, 2), Row(4, 2)))
