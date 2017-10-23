@@ -57,7 +57,7 @@ case class DeleteLoadByIdCommand(
       DeleteSegmentByIdPostEvent(carbonTable,
         loadIds,
         sparkSession)
-    OperationListenerBus.getInstance.fireEvent(deleteSegmentByIdPreEvent, operationContext)
+    OperationListenerBus.getInstance.fireEvent(deleteSegmentPostEvent, operationContext)
     Seq.empty
   }
 }

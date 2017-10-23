@@ -17,33 +17,30 @@
 
 package org.apache.spark.sql.execution.command.preaaggregate
 
-import scala.collection.JavaConverters._
+import org.apache.carbondata.events.{DeleteFromTablePreEvent, Event, OperationContext,
+OperationEventListener}
 
-import org.apache.spark.sql.execution.command.CarbonDropTableCommand
-
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
-import org.apache.carbondata.events.{DropTablePostEvent, Event, OperationContext, OperationEventListener}
-
-object DropPreAggregateTablePostListener extends OperationEventListener {
-
+object DeletePreAggregatePreListener extends OperationEventListener {
   /**
    * Called on a specified event occurrence
    *
    * @param event
+   * @param operationContext
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val dropPostEvent = event.asInstanceOf[DropTablePostEvent]
-    val carbonTable = dropPostEvent.carbonTable
-    val sparkSession = dropPostEvent.sparkSession
-    if (carbonTable.isDefined && carbonTable.get.getTableInfo.getDataMapSchemaList != null &&
-        !carbonTable.get.getTableInfo.getDataMapSchemaList.isEmpty) {
-      val childSchemas = carbonTable.get.getTableInfo.getDataMapSchemaList
-      for (childSchema: DataMapSchema <- childSchemas.asScala) {
-        CarbonDropTableCommand(ifExistsSet = true,
-          Some(childSchema.getRelationIdentifier.getDatabaseName),
-          childSchema.getRelationIdentifier.getTableName).run(sparkSession)
+    val tableEvent = event.asInstanceOf[DeleteFromTablePreEvent]
+    val carbonTable = tableEvent.carbonTable
+    if (carbonTable != null) {
+      if (carbonTable.hasPreAggregateTables) {
+        throw new UnsupportedOperationException(
+          "Delete operation is not supported for tables which have a pre-aggregate table. Drop " +
+          "pre-aggregate tables to continue.")
+      }
+      if (carbonTable.isPreAggregateTable) {
+        throw new UnsupportedOperationException(
+          "Delete operation is not supported for pre-aggregate table")
       }
     }
-
   }
+
 }

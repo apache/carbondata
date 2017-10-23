@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.SparkOptimizer
-import org.apache.spark.sql.execution.command.preaaggregate.DropPreAggregateTablePostListener
+import org.apache.spark.sql.execution.command.preaaggregate.{DeletePreAggregatePreListener, DropPreAggregateTablePostListener, PreAggregateDeleteSegmentByDatePreListener, PreAggregateDeleteSegmentByIdPreListener, UpdatePreAggregatePreListener}
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
 import org.apache.spark.sql.internal.SQLConf
@@ -35,7 +35,8 @@ import org.apache.spark.sql.parser.CarbonSparkSqlParser
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.events.{DropTablePostEvent, Event, OperationListenerBus}
+import org.apache.carbondata.events._
+import org.apache.carbondata.events.{DropTablePostEvent, OperationListenerBus}
 
 /**
  * This class will have carbon catalog and refresh the relation from cache if the carbontable in
@@ -130,7 +131,15 @@ object CarbonSessionState {
 
   def init(): Unit = {
     OperationListenerBus.getInstance()
-      .addListener(classOf[DropTablePostEvent], new DropPreAggregateTablePostListener)
+      .addListener(classOf[DropTablePostEvent], DropPreAggregateTablePostListener)
+    OperationListenerBus.getInstance()
+      .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
+    OperationListenerBus.getInstance()
+      .addListener(classOf[DeleteSegmentByDatePreEvent], PreAggregateDeleteSegmentByDatePreListener)
+    OperationListenerBus.getInstance()
+      .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
+    OperationListenerBus.getInstance()
+      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
   }
 
 }
