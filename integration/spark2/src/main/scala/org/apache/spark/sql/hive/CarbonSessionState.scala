@@ -26,7 +26,8 @@ import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.SparkOptimizer
-import org.apache.spark.sql.execution.command.preaaggregate.{DeletePreAggregatePreListener, DropPreAggregateTablePostListener, PreAggregateDeleteSegmentByDatePreListener, PreAggregateDeleteSegmentByIdPreListener, UpdatePreAggregatePreListener}
+import org.apache.spark.sql.execution.command.preaaggregate._
+import org.apache.spark.sql.execution.command.preaaggregate.listeners._
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
 import org.apache.spark.sql.internal.SQLConf
@@ -132,16 +133,15 @@ object CarbonSessionState {
   def init(): Unit = {
     OperationListenerBus.getInstance()
       .addListener(classOf[DropTablePostEvent], DropPreAggregateTablePostListener)
-    OperationListenerBus.getInstance()
       .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
-    OperationListenerBus.getInstance()
       .addListener(classOf[DeleteSegmentByDatePreEvent], PreAggregateDeleteSegmentByDatePreListener)
-    OperationListenerBus.getInstance()
       .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
-    OperationListenerBus.getInstance()
       .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+      .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
+      .addListener(classOf[AlterTableRenamePreEvent], PreAggregateRenameTablePreListener)
+      .addListener(classOf[AlterTableDataTypeChangePreEvent], PreAggregateDataTypeChangePreListener)
   }
-
 }
 
 /**

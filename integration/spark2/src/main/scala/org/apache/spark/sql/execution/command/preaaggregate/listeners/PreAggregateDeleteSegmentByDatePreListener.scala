@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.command.preaaggregate
+package org.apache.spark.sql.execution.command.preaaggregate.listeners
 
-import org.apache.carbondata.events.{Event, OperationContext, OperationEventListener, UpdateTablePreEvent}
+import org.apache.carbondata.events.{DeleteSegmentByDatePreEvent, Event, OperationContext, OperationEventListener}
 
-object UpdatePreAggregatePreListener extends OperationEventListener {
+object PreAggregateDeleteSegmentByDatePreListener extends OperationEventListener {
   /**
    * Called on a specified event occurrence
    *
@@ -27,17 +27,17 @@ object UpdatePreAggregatePreListener extends OperationEventListener {
    * @param operationContext
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val tableEvent = event.asInstanceOf[UpdateTablePreEvent]
-    val carbonTable = tableEvent.carbonTable
+    val deleteSegmentByDatePreEvent = event.asInstanceOf[DeleteSegmentByDatePreEvent]
+    val carbonTable = deleteSegmentByDatePreEvent.carbonTable
     if (carbonTable != null) {
       if (carbonTable.hasPreAggregateTables) {
         throw new UnsupportedOperationException(
-          "Update operation is not supported for tables which have a pre-aggregate table. Drop " +
-          "pre-aggregate tables to continue.")
+          "Delete segment operation is not supported on tables which have a pre-aggregate table. " +
+          "Drop pre-aggregation table to continue")
       }
       if (carbonTable.isPreAggregateTable) {
         throw new UnsupportedOperationException(
-          "Update operation is not supported for pre-aggregate table")
+          "Delete segment operation is not supported on pre-aggregate table")
       }
     }
   }

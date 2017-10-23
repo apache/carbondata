@@ -15,32 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.command.preaaggregate
+package org.apache.spark.sql.execution.command.preaaggregate.listeners
 
-import org.apache.carbondata.events.{DeleteFromTablePreEvent, Event, OperationContext,
-OperationEventListener}
+import org.apache.carbondata.events.{AlterTableRenamePreEvent, Event, OperationContext, OperationEventListener}
 
-object DeletePreAggregatePreListener extends OperationEventListener {
+object PreAggregateRenameTablePreListener extends OperationEventListener {
   /**
    * Called on a specified event occurrence
    *
    * @param event
    * @param operationContext
    */
-  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val tableEvent = event.asInstanceOf[DeleteFromTablePreEvent]
-    val carbonTable = tableEvent.carbonTable
-    if (carbonTable != null) {
-      if (carbonTable.hasPreAggregateTables) {
-        throw new UnsupportedOperationException(
-          "Delete operation is not supported for tables which have a pre-aggregate table. Drop " +
-          "pre-aggregate tables to continue.")
-      }
-      if (carbonTable.isPreAggregateTable) {
-        throw new UnsupportedOperationException(
-          "Delete operation is not supported for pre-aggregate table")
-      }
+  override def onEvent(event: Event,
+      operationContext: OperationContext): Unit = {
+    val renameTablePostListener = event.asInstanceOf[AlterTableRenamePreEvent]
+    val carbonTable = renameTablePostListener.carbonTable
+    if (carbonTable.isPreAggregateTable) {
+      throw new UnsupportedOperationException(
+        "Rename operation for pre-aggregate table is not supported.")
+    }
+    if (carbonTable.hasPreAggregateTables) {
+      throw new UnsupportedOperationException(
+        "Rename operation is not supported for table with pre-aggregate tables")
     }
   }
-
 }

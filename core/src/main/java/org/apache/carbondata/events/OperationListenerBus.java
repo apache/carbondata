@@ -53,7 +53,7 @@ public class OperationListenerBus {
    * @param eventClass
    * @param operationEventListener
    */
-  public void addListener(Class<? extends Event> eventClass,
+  public OperationListenerBus addListener(Class<? extends Event> eventClass,
       OperationEventListener operationEventListener) {
 
     String eventType = eventClass.getName();
@@ -63,6 +63,7 @@ public class OperationListenerBus {
       eventMap.put(eventType, operationEventListeners);
     }
     operationEventListeners.add(operationEventListener);
+    return INSTANCE;
   }
 
   /**

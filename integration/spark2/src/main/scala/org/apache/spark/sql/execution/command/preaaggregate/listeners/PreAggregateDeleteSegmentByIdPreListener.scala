@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.command.preaaggregate
+package org.apache.spark.sql.execution.command.preaaggregate.listeners
 
 import org.apache.carbondata.events.{DeleteSegmentByIdPreEvent, Event, OperationContext, OperationEventListener}
 

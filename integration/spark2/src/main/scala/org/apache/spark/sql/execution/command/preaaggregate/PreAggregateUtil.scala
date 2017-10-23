@@ -428,4 +428,20 @@ object PreAggregateUtil {
           thriftTable, carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     }
   }
+
+  def getChildCarbonTable(databaseName: String, tableName: String)
+    (sparkSession: SparkSession): Option[CarbonTable] = {
+    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    metaStore.getTableFromMetadataCache(databaseName, tableName) match {
+      case Some(tableMeta) => Some(tableMeta.carbonTable)
+      case None => try {
+        Some(metaStore.lookupRelation(Some(databaseName), tableName)(sparkSession)
+          .asInstanceOf[CarbonRelation].metaData.carbonTable)
+      } catch {
+        case _: Exception =>
+          None
+      }
+    }
+  }
+
 }

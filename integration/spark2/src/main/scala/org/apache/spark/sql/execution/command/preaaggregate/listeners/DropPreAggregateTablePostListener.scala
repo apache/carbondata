@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.command.preaaggregate
+package org.apache.spark.sql.execution.command.preaaggregate.listeners
 
 import scala.collection.JavaConverters._
 
