@@ -136,7 +136,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
         alterTableRenameModel,
         newTablePath,
         sparkSession)
-      OperationListenerBus.getInstance().fireEvent(alterTableRenamePreEvent, operationContext)
+      OperationListenerBus.getInstance().fireEvent(alterTableRenamePostEvent, operationContext)
 
       sparkSession.catalog.refreshTable(TableIdentifier(newTableName,
         Some(oldDatabaseName)).quotedString)

@@ -18,7 +18,7 @@
 package org.apache.carbondata.events
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.execution.command.{AlterTableDropColumnModel, AlterTableRenameModel}
+import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel}
 
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -67,6 +67,11 @@ trait DropTableEventInfo {
 trait AlterTableDropColumnEventInfo {
   val carbonTable: CarbonTable
   val alterTableDropColumnModel: AlterTableDropColumnModel
+}
+
+trait AlterTableDataTypeChangeEventInfo {
+  val carbonTable: CarbonTable
+  val alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel
 }
 
 /**
