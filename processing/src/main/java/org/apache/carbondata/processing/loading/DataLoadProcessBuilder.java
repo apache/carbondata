@@ -189,7 +189,6 @@ public final class DataLoadProcessBuilder {
         CarbonDataProcessorUtil.getDateFormatMap(loadModel.getDateFormat());
     List<DataField> dataFields = new ArrayList<>();
     List<DataField> complexDataFields = new ArrayList<>();
-
     // First add dictionary and non dictionary dimensions because these are part of mdk key.
     // And then add complex data types and measures.
     for (CarbonColumn column : dimensions) {
