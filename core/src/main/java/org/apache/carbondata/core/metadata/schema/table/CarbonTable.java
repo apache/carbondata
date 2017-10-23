@@ -707,4 +707,8 @@ public class CarbonTable implements Serializable {
         .getParentRelationIdentifiers().isEmpty();
   }
 
+  public boolean hasPreAggregateTables() {
+    return tableInfo.getDataMapSchemaList() != null && !tableInfo
+        .getDataMapSchemaList().isEmpty();
+  }
 }
