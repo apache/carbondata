@@ -15,23 +15,27 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datamap;
+package org.apache.carbondata.core.datamap.dev;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
-import org.apache.carbondata.core.indexstore.schema.FilterType;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
-public class DataMapMeta {
+public abstract class DataMapExpression {
 
-  private Map<String, FilterType> indexedColumnsAndOperations;
+  protected List<DataMapExpression> children =
+      new ArrayList<DataMapExpression>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-  public DataMapMeta(Map<String, FilterType> indexedColumnsOptimized) {
-    this.indexedColumnsAndOperations = indexedColumnsOptimized;
-  }
+  public abstract DataMapExpressionType getDataMapExpressionType();
 
-  public Map<String, FilterType> getIndexedColumns() {
-    return indexedColumnsAndOperations;
+  public abstract List<Blocklet> prune(FilterResolverIntf filterExp);
+
+  public List<DataMapExpression> getChildren() {
+    return children;
   }
 
 }

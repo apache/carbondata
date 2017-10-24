@@ -15,23 +15,41 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datamap;
-
-import java.util.List;
-import java.util.Map;
+package org.apache.carbondata.core.datamap.dev;
 
 import org.apache.carbondata.core.indexstore.schema.FilterType;
+import org.apache.carbondata.core.scan.expression.Expression;
 
-public class DataMapMeta {
+public class DataMapColumnExpression {
+  private Expression expr;
 
-  private Map<String, FilterType> indexedColumnsAndOperations;
+  private String ColumnName;
 
-  public DataMapMeta(Map<String, FilterType> indexedColumnsOptimized) {
-    this.indexedColumnsAndOperations = indexedColumnsOptimized;
+  private FilterType filterType;
+
+  private boolean covered;
+
+  public DataMapColumnExpression(Expression expr, String columnName, FilterType filterType,
+      boolean covered) {
+    this.expr = expr;
+    this.ColumnName = columnName;
+    this.filterType = filterType;
+    this.covered = covered;
   }
 
-  public Map<String, FilterType> getIndexedColumns() {
-    return indexedColumnsAndOperations;
+  public Expression getExpr() {
+    return expr;
   }
 
+  public String getColumnName() {
+    return ColumnName;
+  }
+
+  public FilterType getFilterType() {
+    return filterType;
+  }
+
+  public boolean isCovered() {
+    return covered;
+  }
 }

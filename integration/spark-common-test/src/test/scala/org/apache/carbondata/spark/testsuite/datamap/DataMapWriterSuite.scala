@@ -20,6 +20,7 @@ package org.apache.carbondata.spark.testsuite.datamap
 import java.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
@@ -51,7 +52,11 @@ class C2DataMapFactory() extends DataMapFactory {
 
   override def createWriter(segmentId: String): DataMapWriter = DataMapWriterSuite.dataMapWriterC2Mock
 
-  override def getMeta: DataMapMeta = new DataMapMeta(List("c2").asJava, FilterType.EQUALTO)
+
+  var meta = new java.util.HashMap[String, FilterType]()
+  meta.put("c2", FilterType.EQUALTO)
+
+  override def getMeta: DataMapMeta = new DataMapMeta(meta)
 
   /**
    * Get all distributable objects of a segmentid

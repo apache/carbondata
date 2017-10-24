@@ -15,23 +15,28 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datamap;
+package org.apache.carbondata.core.datamap.dev;
 
 import java.util.List;
-import java.util.Map;
 
-import org.apache.carbondata.core.indexstore.schema.FilterType;
+import org.apache.carbondata.core.datamap.DataMapMeta;
+import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.scan.expression.Expression;
+import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
-public class DataMapMeta {
+public class DataMapLessThanNodeExpression extends DataMapFilterNode {
 
-  private Map<String, FilterType> indexedColumnsAndOperations;
-
-  public DataMapMeta(Map<String, FilterType> indexedColumnsOptimized) {
-    this.indexedColumnsAndOperations = indexedColumnsOptimized;
+  public DataMapLessThanNodeExpression (DataMapExpression columnExpr, DataMapExpression literal,
+      Expression expr, DataMapFactory dataMapFactory, DataMapMeta dataMapMeta) {
+    super(columnExpr, literal, expr, dataMapFactory, dataMapMeta);
   }
 
-  public Map<String, FilterType> getIndexedColumns() {
-    return indexedColumnsAndOperations;
+  @Override public DataMapExpressionType getDataMapExpressionType() {
+    return DataMapExpressionType.LESSTHAN_DATAMAP_FILTERTYPE;
+  }
+
+  @Override public List<Blocklet> prune(FilterResolverIntf filterExp) {
+    return null;
   }
 
 }

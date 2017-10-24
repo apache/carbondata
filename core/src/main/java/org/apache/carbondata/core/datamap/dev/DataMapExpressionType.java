@@ -15,23 +15,19 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datamap;
+package org.apache.carbondata.core.datamap.dev;
 
-import java.util.List;
-import java.util.Map;
+public enum DataMapExpressionType {
 
-import org.apache.carbondata.core.indexstore.schema.FilterType;
-
-public class DataMapMeta {
-
-  private Map<String, FilterType> indexedColumnsAndOperations;
-
-  public DataMapMeta(Map<String, FilterType> indexedColumnsOptimized) {
-    this.indexedColumnsAndOperations = indexedColumnsOptimized;
-  }
-
-  public Map<String, FilterType> getIndexedColumns() {
-    return indexedColumnsAndOperations;
-  }
-
+  NODE_DATAMAP,
+  AND_DATAMAP,
+  OR_DATAMAP,
+  LITERAL_DATAMAP,
+  COLUMN_DATAMAP,
+  EQUALS_DATAMAP_FILTERTYPE,
+  GREATERTHAN_DATAMAP_FILTERTYPE,
+  GREATERTHAN_EQUALTO_DATAMAP_FILTERTYPE,
+  LESSTHAN_DATAMAP_FILTERTYPE,
+  LESSTHAN_EQUALTO_DATAMAP_FILTERTYPE,
+  LIKE_DATAMAP_FILTERTYPE
 }

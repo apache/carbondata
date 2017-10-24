@@ -15,23 +15,18 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datamap;
+package org.apache.carbondata.core.datamap.dev;
 
-import java.util.List;
-import java.util.Map;
+import org.apache.carbondata.core.scan.expression.Expression;
 
-import org.apache.carbondata.core.indexstore.schema.FilterType;
+public class DataMapExpressionContainer {
+  private Expression expressionBlock;
 
-public class DataMapMeta {
-
-  private Map<String, FilterType> indexedColumnsAndOperations;
-
-  public DataMapMeta(Map<String, FilterType> indexedColumnsOptimized) {
-    this.indexedColumnsAndOperations = indexedColumnsOptimized;
+  public void setDataMapExpressionContainer (Expression expr) {
+    this.expressionBlock = expr;
   }
 
-  public Map<String, FilterType> getIndexedColumns() {
-    return indexedColumnsAndOperations;
+  public Expression getExpressionBlock () {
+    return expressionBlock;
   }
-
 }

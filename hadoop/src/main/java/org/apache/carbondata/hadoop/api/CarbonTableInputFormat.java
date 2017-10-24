@@ -272,7 +272,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
     TableDataMap blockletMap =
-        DataMapStoreManager.getInstance().getDataMap(identifier, BlockletDataMap.NAME,
+        DataMapStoreManager.getInstance().getDataMap(identifier, null, BlockletDataMap.NAME,
             BlockletDataMapFactory.class.getName());
     List<String> invalidSegments = new ArrayList<>();
     List<UpdateVO> invalidTimestampsList = new ArrayList<>();
@@ -536,7 +536,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         new Path[] { new Path(absoluteTableIdentifier.getTablePath()) }, job.getConfiguration());
 
     TableDataMap blockletMap = DataMapStoreManager.getInstance()
-        .getDataMap(absoluteTableIdentifier, BlockletDataMap.NAME,
+        .getDataMap(absoluteTableIdentifier, resolver, BlockletDataMap.NAME,
             BlockletDataMapFactory.class.getName());
     DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
     List<ExtendedBlocklet> prunedBlocklets;
@@ -713,7 +713,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   public BlockMappingVO getBlockRowCount(JobContext job, AbsoluteTableIdentifier identifier)
       throws IOException, KeyGenException {
     TableDataMap blockletMap = DataMapStoreManager.getInstance()
-        .getDataMap(identifier, BlockletDataMap.NAME, BlockletDataMapFactory.class.getName());
+        .getDataMap(identifier, null, BlockletDataMap.NAME, BlockletDataMapFactory.class.getName());
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
     SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments =
         new SegmentStatusManager(identifier).getValidAndInvalidSegments();

@@ -31,6 +31,7 @@ import org.apache.carbondata.core.datamap.TableDataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.indexstore.schema.FilterType;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.processing.store.TablePage;
 
@@ -69,7 +70,8 @@ public class DataMapWriterListener {
       // if data map does not have meta, no need to register
       return;
     }
-    List<String> columns = factory.getMeta().getIndexedColumns();
+    Map<String, FilterType> columnsFilterType = factory.getMeta().getIndexedColumns();
+    List<String> columns = new ArrayList<>(columnsFilterType.keySet());
     List<DataMapWriter> writers = registry.get(columns);
     DataMapWriter writer = factory.createWriter(segmentId);
     if (writers != null) {

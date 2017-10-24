@@ -15,23 +15,26 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.datamap;
+package org.apache.carbondata.core.datamap.dev;
 
-import java.util.List;
-import java.util.Map;
+/* Data Map Covering Options */
 
-import org.apache.carbondata.core.indexstore.schema.FilterType;
+public class DataMapCoveringOptions {
 
-public class DataMapMeta {
-
-  private Map<String, FilterType> indexedColumnsAndOperations;
-
-  public DataMapMeta(Map<String, FilterType> indexedColumnsOptimized) {
-    this.indexedColumnsAndOperations = indexedColumnsOptimized;
+  public static DataMapCovered getDataMapCoveringOptions (String dataMapCoveringOptions) {
+    switch (dataMapCoveringOptions.toUpperCase()) {
+      case "NOT_COVERED":
+        return DataMapCovered.NOT_COVERED;
+      case "PARTIALLY_COVERED":
+        return DataMapCovered.PARTIALLY_COVERED;
+      case "FULLY_COVERED":
+        return DataMapCovered.FULLY_COVERED;
+      default:
+          return DataMapCovered.NOT_COVERED;
+    }
   }
-
-  public Map<String, FilterType> getIndexedColumns() {
-    return indexedColumnsAndOperations;
+  public enum DataMapCovered {
+    NOT_COVERED, PARTIALLY_COVERED, FULLY_COVERED;
   }
-
 }
+
