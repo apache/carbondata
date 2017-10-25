@@ -681,6 +681,14 @@ public class CarbonTablePath extends Path {
   }
 
   /**
+   *
+   * @return carbon index merge file extension
+   */
+  public static String getCarbonMergeIndexExtension() {
+    return MERGE_INDEX_FILE_EXT;
+  }
+
+  /**
    * This method will remove strings in path and return short block id
    *
    * @param blockId

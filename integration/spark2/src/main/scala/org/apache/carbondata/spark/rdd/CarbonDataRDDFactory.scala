@@ -55,11 +55,8 @@ import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{LoadTablePostExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
-import org.apache.carbondata.processing.loading.csvinput.BlockDetails
-import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
-import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable
-import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
-import org.apache.carbondata.processing.loading.exception.NoRetryException
+import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, StringArrayWritable}
+import org.apache.carbondata.processing.loading.exception.{CarbonDataLoadingException, NoRetryException}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
@@ -292,6 +289,7 @@ object CarbonDataRDDFactory {
     var executorMessage: String = ""
     val isSortTable = carbonTable.getNumberOfSortColumns > 0
     val sortScope = CarbonDataProcessorUtil.getSortScope(carbonLoadModel.getSortScope)
+
     try {
       if (updateModel.isDefined) {
         res = loadDataFrameForUpdate(
@@ -748,6 +746,7 @@ object CarbonDataRDDFactory {
       loadStatus: SegmentStatus,
       overwriteTable: Boolean
   ): Boolean = {
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val metadataDetails = if (status != null && status(0) != null) {
       status(0)._2._1
     } else {
@@ -758,6 +757,8 @@ object CarbonDataRDDFactory {
       loadStatus,
       carbonLoadModel.getFactTimeStamp,
       true)
+    CarbonUtil
+      .addDataIndexSizeIntoMetaEntry(metadataDetails, carbonLoadModel.getSegmentId, carbonTable)
     val done = CarbonLoaderUtil.recordLoadMetadata(metadataDetails, carbonLoadModel, false,
       overwriteTable)
     if (!done) {

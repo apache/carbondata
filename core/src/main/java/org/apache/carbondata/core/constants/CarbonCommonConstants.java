@@ -1380,6 +1380,32 @@ public final class CarbonCommonConstants {
 
   public static final String AGGREGATIONDATAMAPSCHEMA = "AggregateDataMapHandler";
 
+  /*
+   * The total size of carbon data
+   */
+  public static final String CARBON_TOTAL_DATA_SIZE = "datasize";
+
+  /**
+   * The total size of carbon index
+   */
+  public static final String CARBON_TOTAL_INDEX_SIZE = "indexsize";
+
+  /**
+   * ENABLE_CALCULATE_DATA_INDEX_SIZE
+   */
+  @CarbonProperty public static final String ENABLE_CALCULATE_SIZE = "carbon.enable.calculate.size";
+
+  /**
+   * DEFAULT_ENABLE_CALCULATE_DATA_INDEX_SIZE
+   */
+  @CarbonProperty public static final String DEFAULT_ENABLE_CALCULATE_SIZE = "true";
+
+  public static final String TABLE_DATA_SIZE = "Table Data Size";
+
+  public static final String TABLE_INDEX_SIZE = "Table Index Size";
+
+  public static final String LAST_UPDATE_TIME = "Last Update Time";
+
   private CarbonCommonConstants() {
   }
 }
