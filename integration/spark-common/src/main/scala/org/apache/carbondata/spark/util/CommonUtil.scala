@@ -28,7 +28,7 @@ import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.{Row, RowFactory}
+import org.apache.spark.sql.{Row, RowFactory, SQLContext}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
 import org.apache.spark.sql.types.{MetadataBuilder, StringType}
@@ -44,6 +44,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
@@ -55,6 +56,7 @@ import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingExcep
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.rdd.CarbonMergeFilesRDD
 
 object CommonUtil {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -829,6 +831,22 @@ object CommonUtil {
       case s: java.io.FileNotFoundException =>
         // Create folders and files.
         LOGGER.error(s)
+    }
+  }
+
+  /**
+   * Merge the carbonindex files with in the segment to carbonindexmerge file inside same segment
+   */
+  def mergeIndexFiles(sparkContext: SparkContext,
+      segmentIds: Seq[String],
+      storePath: String,
+      carbonTable: CarbonTable): Unit = {
+    if (CarbonProperties.getInstance().getProperty(
+      CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+      CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
+      new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(storePath,
+        carbonTable.getDatabaseName, carbonTable.getFactTableName).getTablePath,
+        segmentIds).collect()
     }
   }
 }

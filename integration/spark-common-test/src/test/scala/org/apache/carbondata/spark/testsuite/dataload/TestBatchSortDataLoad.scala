@@ -21,9 +21,12 @@ import java.io.{BufferedWriter, File, FileWriter, FilenameFilter}
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 
 class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
   var filePath: String = _
@@ -184,10 +187,7 @@ class TestBatchSortDataLoad extends QueryTest with BeforeAndAfterAll {
 
   def getIndexfileCount(tableName: String, segmentNo: String = "0"): Int = {
     val store  = storeLocation +"/default/"+ tableName + "/Fact/Part0/Segment_"+segmentNo
-    val list = new File(store).list(new FilenameFilter {
-      override def accept(dir: File, name: String) = name.endsWith(".carbonindex")
-    })
-    list.size
+    new SegmentIndexFileStore().getIndexFiles(store).size()
   }
 
   override def afterAll {

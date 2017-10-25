@@ -31,7 +31,6 @@ import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.indexstore.Blocklet;
@@ -78,15 +77,16 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
   }
 
   private List<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(
-      String segmentId) {
+      String segmentId) throws IOException {
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         segmentMap.get(segmentId);
     if (tableBlockIndexUniqueIdentifiers == null) {
       tableBlockIndexUniqueIdentifiers = new ArrayList<>();
-      CarbonFile[] listFiles = getCarbonIndexFiles(segmentId);
-      for (int i = 0; i < listFiles.length; i++) {
+      String path = identifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId;
+      List<String> indexFiles = new SegmentIndexFileStore().getIndexFiles(path);
+      for (int i = 0; i < indexFiles.size(); i++) {
         tableBlockIndexUniqueIdentifiers.add(
-            new TableBlockIndexUniqueIdentifier(identifier, segmentId, listFiles[i].getName()));
+            new TableBlockIndexUniqueIdentifier(identifier, segmentId, indexFiles.get(i)));
       }
       segmentMap.put(segmentId, tableBlockIndexUniqueIdentifiers);
     }
@@ -141,19 +141,10 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
     throw new IOException("Blocklet with blockid " + blocklet.getPath() + " not found ");
   }
 
-  private CarbonFile[] getCarbonIndexFiles(String segmentId) {
-    String path = identifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId;
-    CarbonFile carbonFile = FileFactory.getCarbonFile(path);
-    return carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
-        return file.getName().endsWith(".carbonindex");
-      }
-    });
-  }
 
   @Override
   public List<DataMapDistributable> toDistributable(String segmentId) {
-    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentId);
+    CarbonFile[] carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentId);
     List<DataMapDistributable> distributables = new ArrayList<>();
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       Path path = new Path(carbonIndexFiles[i].getPath());

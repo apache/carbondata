@@ -746,4 +746,11 @@ public class CarbonTablePath extends Path {
     return DataFileUtil.getTaskNo(actualBlockName) + "-" + DataFileUtil.getBucketNo(actualBlockName)
         + "-" + DataFileUtil.getTimeStampFromFileName(actualBlockName) + INDEX_FILE_EXT;
   }
+
+  /**
+   * Get the segment path from table path and segmentid
+   */
+  public static String getSegmentPath(String tablePath, String segmentId) {
+    return tablePath + "/Fact/Part0/Segment_" + segmentId;
+  }
 }

@@ -14,19 +14,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.processing.merger;
+package org.apache.carbondata.core.indexstore.blockletindex;
 
-/**
- * This enum is used to define the types of Compaction.
- * We have 3 types. one is Minor another is Major and
- * finally a compaction done after UPDATE-DELETE operation
- * called IUD compaction.
- */
-public enum CompactionType {
-    MINOR_COMPACTION,
-    MAJOR_COMPACTION,
-    IUD_UPDDEL_DELTA_COMPACTION,
-    IUD_DELETE_DELTA_COMPACTION,
-    SEGMENT_INDEX_COMPACTION,
-    NONE
+import org.apache.carbondata.core.datamap.dev.DataMapInfo;
+
+public class BlockletDataMapInfo extends DataMapInfo {
+
+  private byte[] fileData;
+
+  public BlockletDataMapInfo(String filePath, byte[] fileData) {
+    super(filePath);
+    this.fileData = fileData;
+  }
+
+  public byte[] getFileData() {
+    return fileData;
+  }
 }
