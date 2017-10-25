@@ -41,6 +41,24 @@ public class LoadMetadataDetails implements Serializable {
   private String partitionCount;
 
   private String isDeleted = CarbonCommonConstants.KEYWORD_FALSE;
+  private String dataSize;
+  private String indexSize;
+
+  public String getDataSize() {
+    return dataSize;
+  }
+
+  public void setDataSize(String dataSize) {
+    this.dataSize = dataSize;
+  }
+
+  public String getIndexSize() {
+    return indexSize;
+  }
+
+  public void setIndexSize(String indexSize) {
+    this.indexSize = indexSize;
+  }
 
   // update delta end timestamp
   private String updateDeltaEndTimestamp = "";

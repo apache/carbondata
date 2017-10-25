@@ -30,6 +30,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.CarbonUtil
 
 private[sql] case class CarbonDescribeFormattedCommand(
     child: SparkPlan,
@@ -112,6 +113,15 @@ private[sql] case class CarbonDescribeFormattedCommand(
       .getOrDefault(CarbonCommonConstants.TABLE_COMMENT, "")
     results ++= Seq(("Comment: ", tableComment, ""))
     results ++= Seq(("Table Block Size : ", carbonTable.getBlockSizeInMB + " MB", ""))
+    val dataIndexSize = CarbonUtil.calculateDataIndexSize(carbonTable)
+    if (!dataIndexSize.isEmpty) {
+      results ++= Seq((CarbonCommonConstants.TABLE_DATA_SIZE + ":",
+        dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE).toString, ""))
+      results ++= Seq((CarbonCommonConstants.TABLE_INDEX_SIZE + ":",
+        dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE).toString, ""))
+      results ++= Seq((CarbonCommonConstants.LAST_UPDATE_TIME + ":",
+        dataIndexSize.get(CarbonCommonConstants.LAST_UPDATE_TIME).toString, ""))
+    }
     results ++= Seq(("SORT_SCOPE", carbonTable.getTableInfo.getFactTable
       .getTableProperties.getOrDefault("sort_scope", CarbonCommonConstants
       .LOAD_SORT_SCOPE_DEFAULT), CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
