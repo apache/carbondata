@@ -126,13 +126,17 @@ public abstract class AbstractDataFileFooterConverter {
    * @return list of index info
    * @throws IOException problem while reading the index file
    */
-  public List<DataFileFooter> getIndexInfo(String filePath) throws IOException {
+  public List<DataFileFooter> getIndexInfo(String filePath, byte[] fileData) throws IOException {
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
     String parentPath = filePath.substring(0, filePath.lastIndexOf("/"));
     try {
       // open the reader
-      indexReader.openThriftReader(filePath);
+      if (fileData != null) {
+        indexReader.openThriftReader(fileData);
+      } else {
+        indexReader.openThriftReader(filePath);
+      }
       // get the index header
       org.apache.carbondata.format.IndexHeader readIndexHeader = indexReader.readIndexHeader();
       List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();

@@ -98,8 +98,10 @@ object CarbonDataRDDFactory {
           .setLoadMetadataDetails(alterTableModel.segmentUpdateStatusManager.get
             .getLoadMetadataDetails.toList.asJava)
       }
-    }
-    else {
+    } else if (alterTableModel.compactionType.
+      equalsIgnoreCase(CompactionType.SEGMENT_INDEX_COMPACTION.toString)) {
+      compactionType = CompactionType.SEGMENT_INDEX_COMPACTION
+    } else {
       compactionType = CompactionType.MINOR_COMPACTION
     }
 
@@ -109,6 +111,14 @@ object CarbonDataRDDFactory {
 
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel)
+    }
+    if (compactionType == CompactionType.SEGMENT_INDEX_COMPACTION) {
+      // Just launch job to merge index and return
+      CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
+        carbonLoadModel.getLoadMetadataDetails.asScala.map(_.getLoadName),
+        carbonLoadModel.getStorePath,
+        carbonTable)
+      return
     }
     // reading the start time of data load.
     val loadStartTime : Long =
@@ -959,9 +969,10 @@ object CarbonDataRDDFactory {
             }
           ))
 
-        }
-        else {
-        val newStatusMap = scala.collection.mutable.Map.empty[String, String]
+        } else {
+          CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
+            Seq(carbonLoadModel.getSegmentId), storePath, carbonTable)
+          val newStatusMap = scala.collection.mutable.Map.empty[String, String]
           if (status.nonEmpty) {
             status.foreach { eachLoadStatus =>
               val state = newStatusMap.get(eachLoadStatus._1)
@@ -1142,8 +1153,10 @@ object CarbonDataRDDFactory {
 
   }
 
+
   /**
    * repartition the input data for partition table.
+   *
    * @param sqlContext
    * @param dataFrame
    * @param carbonLoadModel

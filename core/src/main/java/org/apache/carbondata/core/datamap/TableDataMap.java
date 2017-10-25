@@ -118,7 +118,11 @@ public final class TableDataMap implements EventListener {
   public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
       FilterResolverIntf filterExp) throws IOException {
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>();
-    List<Blocklet> blocklets = dataMapFactory.getDataMap(distributable).prune(filterExp);
+    List<Blocklet> blocklets = new ArrayList<>();
+    List<DataMap> dataMaps = dataMapFactory.getDataMaps(distributable);
+    for (DataMap dataMap : dataMaps) {
+      blocklets.addAll(dataMap.prune(filterExp));
+    }
     for (Blocklet blocklet: blocklets) {
       ExtendedBlocklet detailedBlocklet =
           blockletDetailsFetcher.getExtendedBlocklet(blocklet, distributable.getSegmentId());
