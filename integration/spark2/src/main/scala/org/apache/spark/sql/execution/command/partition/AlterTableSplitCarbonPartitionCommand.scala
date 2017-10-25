@@ -109,7 +109,7 @@ case class AlterTableSplitCarbonPartitionCommand(
     CarbonUtil.writeThriftTableToSchemaFile(schemaFilePath, thriftTable)
     // update the schema modified time
     carbonMetaStore.updateAndTouchSchemasUpdatedTime(storePath)
-    sparkSession.catalog.refreshTable(tableName)
+    sparkSession.catalog.refreshTable(s"$dbName.$tableName")
     Seq.empty
   }
 
