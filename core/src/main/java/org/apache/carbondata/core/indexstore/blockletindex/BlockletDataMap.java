@@ -35,6 +35,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -96,10 +97,13 @@ public class BlockletDataMap implements DataMap, Cacheable {
   private int[] columnCardinality;
 
   @Override
-  public void init(String filePath) throws IOException, MemoryException {
+  public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
     long startTime = System.currentTimeMillis();
+    assert (dataMapModel instanceof BlockletDataMapModel);
+    BlockletDataMapModel blockletDataMapInfo = (BlockletDataMapModel) dataMapModel;
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
-    List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(filePath);
+    List<DataFileFooter> indexInfo = fileFooterConverter
+        .getIndexInfo(blockletDataMapInfo.getFilePath(), blockletDataMapInfo.getFileData());
     for (DataFileFooter fileFooter : indexInfo) {
       List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
       if (segmentProperties == null) {
@@ -119,8 +123,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
     if (unsafeMemoryDMStore != null) {
       unsafeMemoryDMStore.finishWriting();
     }
-    LOGGER.info("Time taken to load blocklet datamap from file : " + filePath + "is " +
-        (System.currentTimeMillis() - startTime));
+    LOGGER.info(
+        "Time taken to load blocklet datamap from file : " + dataMapModel.getFilePath() + "is " + (
+            System.currentTimeMillis() - startTime));
   }
 
   private void loadToUnsafe(DataFileFooter fileFooter, SegmentProperties segmentProperties,

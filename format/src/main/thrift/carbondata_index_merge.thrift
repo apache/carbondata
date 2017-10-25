@@ -14,19 +14,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.processing.merger;
 
 /**
- * This enum is used to define the types of Compaction.
- * We have 3 types. one is Minor another is Major and
- * finally a compaction done after UPDATE-DELETE operation
- * called IUD compaction.
+ * File format description for CarbonData merged index file.
  */
-public enum CompactionType {
-    MINOR_COMPACTION,
-    MAJOR_COMPACTION,
-    IUD_UPDDEL_DELTA_COMPACTION,
-    IUD_DELETE_DELTA_COMPACTION,
-    SEGMENT_INDEX_COMPACTION,
-    NONE
+namespace java org.apache.carbondata.format
+
+struct MergedBlockIndexHeader{
+  1: required list<string> file_names; // list of carbon index file names
+}
+
+/**
+ * Merged carbon index file information
+ */
+struct MergedBlockIndex {
+  1: required list<binary> fileData;	// content of the indexed files
 }

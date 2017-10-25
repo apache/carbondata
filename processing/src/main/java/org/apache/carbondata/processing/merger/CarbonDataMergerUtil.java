@@ -131,24 +131,6 @@ public final class CarbonDataMergerUtil {
 
 
   /**
-   * Form the Name of the New Merge Folder
-   *
-   * @param segmentToBeMerged
-   * @return
-   */
-  public static String getMergedLoadName(final String segmentToBeMerged) {
-    if (segmentToBeMerged.contains(".")) {
-      String beforeDecimal = segmentToBeMerged.substring(0, segmentToBeMerged.indexOf("."));
-      String afterDecimal = segmentToBeMerged.substring(segmentToBeMerged.indexOf(".") + 1);
-      int fraction = Integer.parseInt(afterDecimal) + 1;
-      return beforeDecimal + "." + fraction;
-    } else {
-      return segmentToBeMerged + "." + 1;
-    }
-
-  }
-
-  /**
    * Update Both Segment Update Status and Table Status for the case of IUD Delete
    * delta compaction.
    *
@@ -294,13 +276,13 @@ public final class CarbonDataMergerUtil {
    * method to update table status in case of IUD Update Delta Compaction.
    * @param loadsToMerge
    * @param metaDataFilepath
-   * @param MergedLoadName
+   * @param mergedLoadNumber
    * @param carbonLoadModel
    * @param compactionType
    * @return
    */
   public static boolean updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
-      String metaDataFilepath, String MergedLoadName, CarbonLoadModel carbonLoadModel,
+      String metaDataFilepath, String mergedLoadNumber, CarbonLoadModel carbonLoadModel,
       long mergeLoadStartTime, CompactionType compactionType) {
 
     boolean tableStatusUpdationStatus = false;
@@ -322,10 +304,6 @@ public final class CarbonDataMergerUtil {
         String statusFilePath = carbonTablePath.getTableStatusFilePath();
 
         LoadMetadataDetails[] loadDetails = SegmentStatusManager.readLoadMetadata(metaDataFilepath);
-
-        String mergedLoadNumber = MergedLoadName.substring(
-            MergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER)
-                + CarbonCommonConstants.LOAD_FOLDER.length(), MergedLoadName.length());
 
         long modificationOrDeletionTimeStamp = CarbonUpdateUtil.readCurrentTime();
         for (LoadMetadataDetails loadDetail : loadDetails) {
@@ -388,6 +366,17 @@ public final class CarbonDataMergerUtil {
       }
     }
     return tableStatusUpdationStatus;
+  }
+
+  /**
+   * Get the load number from load name.
+   * @param loadName
+   * @return
+   */
+  public static String getLoadNumberFromLoadName(String loadName) {
+    return loadName.substring(
+        loadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) + CarbonCommonConstants.LOAD_FOLDER
+            .length(), loadName.length());
   }
 
   /**
