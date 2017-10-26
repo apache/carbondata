@@ -19,12 +19,14 @@ package org.apache.spark.sql.execution.command.preaaggregate
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.CarbonSession
 import org.apache.spark.sql.execution.command.CarbonDropTableCommand
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
-import org.apache.carbondata.events.{DropTablePostEvent, Event, OperationContext, OperationEventListener}
+import org.apache.carbondata.events.{DropTablePostEvent, Event, LoadTablePostExecutionEvent, OperationContext, OperationEventListener}
 
-class DropPreAggregateTablePostListener extends OperationEventListener {
+object DropPreAggregateTablePostListener extends OperationEventListener {
 
   /**
    * Called on a specified event occurrence
@@ -45,5 +47,35 @@ class DropPreAggregateTablePostListener extends OperationEventListener {
       }
     }
 
+  }
+}
+
+object LoadPostAggregateListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val loadEvent = event.asInstanceOf[LoadTablePostExecutionEvent]
+    val sparkSession = loadEvent.sparkSession
+    val carbonLoadModel = loadEvent.carbonLoadModel
+    val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    if (!table.getTableInfo.getDataMapSchemaList.isEmpty) {
+      for (dataMapSchema: DataMapSchema <- table.getTableInfo.getDataMapSchemaList.asScala) {
+        CarbonSession
+          .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+                     carbonLoadModel.getDatabaseName + "." +
+                     carbonLoadModel.getTableName,
+            carbonLoadModel.getSegmentId)
+        CarbonSession.threadSet(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+                                carbonLoadModel.getDatabaseName + "." +
+                                carbonLoadModel.getTableName, "false")
+        val childTableName = dataMapSchema.getRelationIdentifier.getTableName
+        val childDatabaseName = dataMapSchema.getRelationIdentifier.getDatabaseName
+        val selectQuery = dataMapSchema.getProperties.get("CHILD_SELECT QUERY")
+        sparkSession.sql(s"insert into $childDatabaseName.$childTableName $selectQuery")
+      }
+    }
   }
 }

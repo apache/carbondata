@@ -66,6 +66,13 @@ public class SessionParams implements Serializable {
     return sProps.get(key);
   }
 
+  public String getProperty(String key, String defaultValue) {
+    if (!sProps.containsKey(key)) {
+      return defaultValue;
+    }
+    return sProps.get(key);
+  }
+
   /**
    * This method will be used to add a new property
    *
@@ -172,12 +179,18 @@ public class SessionParams implements Serializable {
           if (!isValid) {
             throw new InvalidConfigurationException("Invalid CARBON_INPUT_SEGMENT_IDs");
           }
+        } else if (key.startsWith(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS)) {
+          isValid = true;
         } else {
           throw new InvalidConfigurationException(
               "The key " + key + " not supported for dynamic configuration.");
         }
     }
     return isValid;
+  }
+
+  public void removeProperty(String property) {
+    sProps.remove(property);
   }
 
   /**

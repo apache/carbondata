@@ -263,6 +263,14 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     configuration.set(CarbonTableInputFormat.VALIDATE_INPUT_SEGMENT_IDs, validate.toString());
   }
 
+  public static void setAggeragateTableSegments(Configuration configuration, String segments) {
+    configuration.set(CarbonCommonConstants.CARBON_INPUT_SEGMENTS, segments);
+  }
+
+  private static String getAggeragateTableSegments(Configuration configuration) {
+    return configuration.get(CarbonCommonConstants.CARBON_INPUT_SEGMENTS);
+  }
+
   /**
    * get list of segment to access
    */
@@ -300,6 +308,11 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   @Override public List<InputSplit> getSplits(JobContext job) throws IOException {
     AbsoluteTableIdentifier identifier = getAbsoluteTableIdentifier(job.getConfiguration());
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
+    CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
+    if (null == carbonTable) {
+      throw new IOException("Missing/Corrupt schema file for table.");
+    }
+    String aggregateTableSegments = getAggeragateTableSegments(job.getConfiguration());
     TableDataMap blockletMap =
         DataMapStoreManager.getInstance().getDataMap(identifier, BlockletDataMap.NAME,
             BlockletDataMapFactory.class.getName());
@@ -352,6 +365,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       if (invalidSegments.size() > 0) {
         blockletMap.clear(invalidSegments);
       }
+    } else {
+      filteredSegmentToAccess = Arrays.asList(aggregateTableSegments.split(","));
     }
 
     // Clean the updated segments from memory if the update happens on segments
@@ -376,12 +391,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
     // process and resolve the expression
     Expression filter = getFilterPredicates(job.getConfiguration());
-    CarbonTable carbonTable = getOrCreateCarbonTable(job.getConfiguration());
     TableProvider tableProvider = new SingleTableProvider(carbonTable);
     // this will be null in case of corrupt schema file.
-    if (null == carbonTable) {
-      throw new IOException("Missing/Corrupt schema file for table.");
-    }
     PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
 

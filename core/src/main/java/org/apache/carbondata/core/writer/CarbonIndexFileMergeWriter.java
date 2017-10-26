@@ -49,7 +49,7 @@ public class CarbonIndexFileMergeWriter {
         return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT);
       }
     });
-    if (indexFiles.length > 0) {
+    if (indexFiles != null && indexFiles.length > 0) {
       SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
       fileStore.readAllIIndexOfSegment(segmentPath);
       openThriftWriter(segmentPath + "/" +

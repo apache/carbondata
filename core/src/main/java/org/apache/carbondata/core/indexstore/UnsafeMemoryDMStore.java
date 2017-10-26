@@ -18,7 +18,7 @@ package org.apache.carbondata.core.indexstore;
 
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.UnsafeDataMapRow;
-import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
+import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
@@ -44,7 +44,7 @@ public class UnsafeMemoryDMStore {
 
   private boolean isMemoryFreed;
 
-  private DataMapSchema[] schema;
+  private CarbonRowSchema[] schema;
 
   private int[] pointers;
 
@@ -52,7 +52,7 @@ public class UnsafeMemoryDMStore {
 
   private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
 
-  public UnsafeMemoryDMStore(DataMapSchema[] schema) throws MemoryException {
+  public UnsafeMemoryDMStore(CarbonRowSchema[] schema) throws MemoryException {
     this.schema = schema;
     this.allocatedSize = capacity;
     this.memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, allocatedSize);
@@ -101,7 +101,7 @@ public class UnsafeMemoryDMStore {
     pointers[rowCount++] = pointer;
   }
 
-  private void addToUnsafe(DataMapSchema schema, DataMapRow row, int index) {
+  private void addToUnsafe(CarbonRowSchema schema, DataMapRow row, int index) {
     switch (schema.getSchemaType()) {
       case FIXED:
         DataType dataType = schema.getDataType();
@@ -154,8 +154,8 @@ public class UnsafeMemoryDMStore {
         runningLength += data.length;
         break;
       case STRUCT:
-        DataMapSchema[] childSchemas =
-            ((DataMapSchema.StructDataMapSchema) schema).getChildSchemas();
+        CarbonRowSchema[] childSchemas =
+            ((CarbonRowSchema.StructCarbonRowSchema) schema).getChildSchemas();
         DataMapRow struct = row.getRow(index);
         for (int i = 0; i < childSchemas.length; i++) {
           addToUnsafe(childSchemas[i], struct, i);
@@ -200,7 +200,7 @@ public class UnsafeMemoryDMStore {
     return runningLength;
   }
 
-  public DataMapSchema[] getSchema() {
+  public CarbonRowSchema[] getSchema() {
     return schema;
   }
 

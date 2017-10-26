@@ -16,7 +16,7 @@
  */
 package org.apache.carbondata.core.indexstore.row;
 
-import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
+import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 /**
@@ -26,7 +26,7 @@ public class DataMapRowImpl extends DataMapRow {
 
   private Object[] data;
 
-  public DataMapRowImpl(DataMapSchema[] schemas) {
+  public DataMapRowImpl(CarbonRowSchema[] schemas) {
     super(schemas);
     this.data = new Object[schemas.length];
   }

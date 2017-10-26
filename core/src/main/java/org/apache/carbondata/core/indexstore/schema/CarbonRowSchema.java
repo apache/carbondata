@@ -21,11 +21,11 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 /**
  * It just have 2 types right now, either fixed or variable.
  */
-public abstract class DataMapSchema {
+public abstract class CarbonRowSchema {
 
   protected DataType dataType;
 
-  public DataMapSchema(DataType dataType) {
+  public CarbonRowSchema(DataType dataType) {
     this.dataType = dataType;
   }
 
@@ -55,15 +55,15 @@ public abstract class DataMapSchema {
  * It has always fixed length, length cannot be updated later.
  * Usage examples : all primitive types like short, int etc
  */
-  public static class FixedDataMapSchema extends DataMapSchema {
+  public static class FixedCarbonRowSchema extends CarbonRowSchema {
 
     private int length;
 
-    public FixedDataMapSchema(DataType dataType) {
+    public FixedCarbonRowSchema(DataType dataType) {
       super(dataType);
     }
 
-    public FixedDataMapSchema(DataType dataType, int length) {
+    public FixedCarbonRowSchema(DataType dataType, int length) {
       super(dataType);
       this.length = length;
     }
@@ -81,9 +81,9 @@ public abstract class DataMapSchema {
     }
   }
 
-  public static class VariableDataMapSchema extends DataMapSchema {
+  public static class VariableCarbonRowSchema extends CarbonRowSchema {
 
-    public VariableDataMapSchema(DataType dataType) {
+    public VariableCarbonRowSchema(DataType dataType) {
       super(dataType);
     }
 
@@ -96,11 +96,11 @@ public abstract class DataMapSchema {
     }
   }
 
-  public static class StructDataMapSchema extends DataMapSchema {
+  public static class StructCarbonRowSchema extends CarbonRowSchema {
 
-    private DataMapSchema[] childSchemas;
+    private CarbonRowSchema[] childSchemas;
 
-    public StructDataMapSchema(DataType dataType, DataMapSchema[] childSchemas) {
+    public StructCarbonRowSchema(DataType dataType, CarbonRowSchema[] childSchemas) {
       super(dataType);
       this.childSchemas = childSchemas;
     }
@@ -109,7 +109,7 @@ public abstract class DataMapSchema {
       return dataType.getSizeInBytes();
     }
 
-    public DataMapSchema[] getChildSchemas() {
+    public CarbonRowSchema[] getChildSchemas() {
       return childSchemas;
     }
 

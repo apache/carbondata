@@ -34,10 +34,11 @@ import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.scan.executor.util.QueryUtil
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
@@ -271,11 +272,24 @@ case class CarbonDictionaryDecoder(
       case (tableName, columnIdentifier, carbonDimension) =>
         if (columnIdentifier != null) {
           try {
+            val (newCarbonTableIdentifier, newColumnIdentifier) =
+              if (null != carbonDimension.getColumnSchema.getParentColumnTableRelations &&
+                  !carbonDimension
+                    .getColumnSchema.getParentColumnTableRelations.isEmpty) {
+                (QueryUtil.getTableIdentifierForColumn(carbonDimension),
+                  new ColumnIdentifier(carbonDimension.getColumnSchema
+                    .getParentColumnTableRelations.get(0).getColumnId,
+                    carbonDimension.getColumnProperties,
+                    carbonDimension.getDataType))
+              } else {
+                (atiMap(tableName).getCarbonTableIdentifier, columnIdentifier)
+              }
             val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
-              atiMap(tableName).getCarbonTableIdentifier,
-              columnIdentifier, carbonDimension.getDataType,
-              CarbonStorePath.getCarbonTablePath(atiMap(tableName)))
-            allDictIdentifiers += dictionaryColumnUniqueIdentifier;
+              newCarbonTableIdentifier,
+              newColumnIdentifier, carbonDimension.getDataType,
+              CarbonStorePath
+                .getCarbonTablePath(atiMap(tableName).getStorePath, newCarbonTableIdentifier))
+            allDictIdentifiers += dictionaryColumnUniqueIdentifier
             new ForwardDictionaryWrapper(
               storePath,
               dictionaryColumnUniqueIdentifier)

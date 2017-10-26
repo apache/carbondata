@@ -702,4 +702,9 @@ public class CarbonTable implements Serializable {
     this.dimensionOrdinalMax = dimensionOrdinalMax;
   }
 
+  public boolean isPreAggregateTable() {
+    return tableInfo.getParentRelationIdentifiers() != null && !tableInfo
+        .getParentRelationIdentifiers().isEmpty();
+  }
+
 }
