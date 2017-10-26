@@ -38,6 +38,10 @@ public class RelationIdentifier implements Serializable, Writable {
     this.tableId = tableId;
   }
 
+  public RelationIdentifier() {
+    this(null, null, null);
+  }
+
   public String getDatabaseName() {
     return databaseName;
   }

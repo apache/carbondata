@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField, Field}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
+import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.hive.HiveExternalCatalog.{DATASOURCE_SCHEMA_NUMPARTS, DATASOURCE_SCHEMA_PART_PREFIX}
 import org.apache.spark.sql.types.DataType
 
@@ -35,6 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.TableInfo
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -427,5 +428,25 @@ object PreAggregateUtil {
         .revertTableSchemaForPreAggCreationFailure(carbonTable.getCarbonTableIdentifier,
           thriftTable, carbonTable.getAbsoluteTableIdentifier.getTablePath)(sparkSession)
     }
+  }
+
+  def getChildCarbonTable(databaseName: String, tableName: String)
+    (sparkSession: SparkSession): Option[CarbonTable] = {
+    val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    metaStore.getTableFromMetadataCache(databaseName, tableName) match {
+      case Some(tableMeta) => Some(tableMeta.carbonTable)
+      case None => try {
+        Some(metaStore.lookupRelation(Some(databaseName), tableName)(sparkSession)
+          .asInstanceOf[CarbonRelation].metaData.carbonTable)
+      } catch {
+        case _: Exception =>
+          None
+      }
+    }
+  }
+
+  def checkMainTableLoad(carbonTable: CarbonTable): Boolean = {
+    SegmentStatusManager.readLoadMetadata(
+      carbonTable.getMetaDataFilepath).nonEmpty
   }
 }

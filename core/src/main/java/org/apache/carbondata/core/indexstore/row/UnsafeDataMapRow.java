@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.core.indexstore.row;
 
-import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
+import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.memory.MemoryBlock;
 
 import static org.apache.carbondata.core.memory.CarbonUnsafe.BYTE_ARRAY_OFFSET;
@@ -32,7 +32,7 @@ public class UnsafeDataMapRow extends DataMapRow {
 
   private int pointer;
 
-  public UnsafeDataMapRow(DataMapSchema[] schemas, MemoryBlock block, int pointer) {
+  public UnsafeDataMapRow(CarbonRowSchema[] schemas, MemoryBlock block, int pointer) {
     super(schemas);
     this.block = block;
     this.pointer = pointer;
@@ -84,8 +84,8 @@ public class UnsafeDataMapRow extends DataMapRow {
   }
 
   @Override public DataMapRow getRow(int ordinal) {
-    DataMapSchema[] childSchemas =
-        ((DataMapSchema.StructDataMapSchema) schemas[ordinal]).getChildSchemas();
+    CarbonRowSchema[] childSchemas =
+        ((CarbonRowSchema.StructCarbonRowSchema) schemas[ordinal]).getChildSchemas();
     return new UnsafeDataMapRow(childSchemas, block, pointer + getPosition(ordinal));
   }
 

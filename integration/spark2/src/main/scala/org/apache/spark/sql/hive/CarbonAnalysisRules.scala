@@ -20,7 +20,8 @@ package org.apache.spark.sql.hive
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute, UnresolvedFunction, UnresolvedRelation, UnresolvedStar}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, ExprId, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.aggregate.{DeclarativeAggregate, _}
 import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
@@ -57,8 +58,16 @@ object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
           .DEFAULT_MAX_NUMBER_OF_COLUMNS
         )
     }
-    if (child.output.size >= relation.carbonRelation.output.size) {
-      val newChildOutput = child.output.zipWithIndex.map { columnWithIndex =>
+    val isAggregateTable = !relation.carbonRelation.tableMeta.carbonTable.getTableInfo
+      .getParentRelationIdentifiers.isEmpty
+    // transform logical plan if the load is for aggregate table.
+    val childPlan = if (isAggregateTable) {
+      transformAggregatePlan(child)
+    } else {
+      child
+    }
+    if (childPlan.output.size >= relation.carbonRelation.output.size) {
+      val newChildOutput = childPlan.output.zipWithIndex.map { columnWithIndex =>
         columnWithIndex._1 match {
           case attr: Alias =>
             Alias(attr.child, s"col${ columnWithIndex._2 }")(attr.exprId)
@@ -67,14 +76,52 @@ object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
           case attr => attr
         }
       }
-      val newChild: LogicalPlan = if (newChildOutput == child.output) {
+      val newChild: LogicalPlan = if (newChildOutput == childPlan.output) {
         p.child
       } else {
-        Project(newChildOutput, child)
+        Project(newChildOutput, childPlan)
       }
       InsertIntoCarbonTable(relation, p.partition, newChild, p.overwrite, p.ifNotExists)
     } else {
       sys.error("Cannot insert into target table because column number are different")
+    }
+  }
+
+  /**
+   * Transform the logical plan with average(col1) aggregation type to sum(col1) and count(col1).
+   *
+   * @param logicalPlan
+   * @return
+   */
+  private def transformAggregatePlan(logicalPlan: LogicalPlan): LogicalPlan = {
+    logicalPlan transform {
+      case aggregate@Aggregate(_, aExp, _) =>
+        val newExpressions = aExp flatMap {
+          case alias@Alias(attrExpression: AggregateExpression, _) =>
+            attrExpression.aggregateFunction flatMap {
+              case Average(attr: AttributeReference) =>
+                Seq(Alias(attrExpression
+                  .copy(aggregateFunction = Sum(attr.withName(attr.name)),
+                    resultId = NamedExpression.newExprId),
+                  attr.name)(),
+                  Alias(attrExpression
+                    .copy(aggregateFunction = Count(attr.withName(attr.name)),
+                      resultId = NamedExpression.newExprId), attr.name)())
+              case Average(Cast(attr: AttributeReference, _)) =>
+                Seq(Alias(attrExpression
+                  .copy(aggregateFunction = Sum(attr.withName(attr.name)),
+                    resultId = NamedExpression.newExprId),
+                  attr.name)(),
+                  Alias(attrExpression
+                    .copy(aggregateFunction = Count(attr.withName(attr.name)),
+                      resultId = NamedExpression.newExprId), attr.name)())
+              case _: DeclarativeAggregate => Seq(alias)
+              case _ => Nil
+            }
+          case namedExpr: NamedExpression => Seq(namedExpr)
+        }
+        aggregate.copy(aggregateExpressions = newExpressions)
+      case plan: LogicalPlan => plan
     }
   }
 }

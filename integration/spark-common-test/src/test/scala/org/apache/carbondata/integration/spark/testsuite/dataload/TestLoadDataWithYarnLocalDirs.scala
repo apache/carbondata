@@ -87,7 +87,7 @@ class TestLoadDataWithYarnLocalDirs extends QueryTest with BeforeAndAfterAll {
     disableMultipleDir
 
     checkAnswer(sql("select id from carbontable_yarnLocalDirs"),
-      Seq(Row(1), Row(2), Row(3), Row(3)))
+      Seq(Row(1), Row(2), Row(3), Row(3), Row(4), Row(4)))
 
     cleanUpYarnLocalDir
   }

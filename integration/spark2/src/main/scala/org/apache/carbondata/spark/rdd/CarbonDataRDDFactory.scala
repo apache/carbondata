@@ -265,8 +265,7 @@ object CarbonDataRDDFactory {
       result: Option[DictionaryServer],
       overwriteTable: Boolean,
       dataFrame: Option[DataFrame] = None,
-      updateModel: Option[UpdateTableModel] = None
-  ): Unit = {
+      updateModel: Option[UpdateTableModel] = None): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val operationContext = new OperationContext
     // for handling of the segment Merging.
@@ -350,7 +349,7 @@ object CarbonDataRDDFactory {
               if (value == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
                 loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
               } else if (value == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
-                         !loadStatus.equals(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)) {
+                  !loadStatus.equals(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)) {
                 loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
               }
           }
@@ -464,7 +463,8 @@ object CarbonDataRDDFactory {
         throw new Exception(status(0)._2._2.errorMsg)
       }
       // if segment is empty then fail the data load
-      if (!CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
+      if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isPreAggregateTable &&
+          !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
         // update the load entry in table status file for changing the status to failure
         CommonUtil.updateTableStatusForFailure(carbonLoadModel)
         LOGGER.info("********starting clean up**********")

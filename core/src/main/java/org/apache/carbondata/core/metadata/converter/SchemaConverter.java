@@ -106,7 +106,7 @@ public interface SchemaConverter {
    * method to convert thrift datamap schema object to wrapper
    * data map object
    * @param thriftchildSchema
-   * @return DataMapSchema
+   * @return CarbonRowSchema
    */
   DataMapSchema fromExternalToWrapperDataMapSchema(
       org.apache.carbondata.format.DataMapSchema thriftchildSchema);

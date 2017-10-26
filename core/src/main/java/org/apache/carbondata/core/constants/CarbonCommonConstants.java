@@ -57,6 +57,12 @@ public final class CarbonCommonConstants {
   public static final String CARBON_INPUT_SEGMENTS = "carbon.input.segments.";
 
   /**
+   * Fetch and validate the segments.
+   * Used for aggregate table load as segment validation is not required.
+   */
+  public static final String VALIDATE_CARBON_INPUT_SEGMENTS = "validate.carbon.input.segments.";
+
+  /**
    * location of the carbon member, hierarchy and fact files
    */
   @CarbonProperty

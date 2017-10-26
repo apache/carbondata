@@ -261,7 +261,7 @@ public class TableInfo implements Serializable, Writable {
     out.writeUTF(metaDataFilepath);
     out.writeUTF(storePath);
     boolean isChildSchemaExists =
-        null != dataMapSchemaList && dataMapSchemaList.size() > 0 ? true : false;
+        null != dataMapSchemaList && dataMapSchemaList.size() > 0;
     out.writeBoolean(isChildSchemaExists);
     if (isChildSchemaExists) {
       out.writeShort(dataMapSchemaList.size());

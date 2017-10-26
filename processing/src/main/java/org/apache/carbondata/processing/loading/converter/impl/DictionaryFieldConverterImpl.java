@@ -37,7 +37,6 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
 import org.apache.carbondata.processing.loading.dictionary.DictionaryServerClientDictionary;
@@ -68,15 +67,12 @@ public class DictionaryFieldConverterImpl extends AbstractDictionaryFieldConvert
       Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
       CarbonTableIdentifier carbonTableIdentifier, String nullFormat, int index,
       DictionaryClient client, boolean useOnePass, String storePath,
-      Map<Object, Integer> localCache, boolean isEmptyBadRecord) throws IOException {
+      Map<Object, Integer> localCache, boolean isEmptyBadRecord,
+      DictionaryColumnUniqueIdentifier identifier) throws IOException {
     this.index = index;
     this.carbonDimension = (CarbonDimension) dataField.getColumn();
     this.nullFormat = nullFormat;
     this.isEmptyBadRecord = isEmptyBadRecord;
-    DictionaryColumnUniqueIdentifier identifier =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
-            dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType(),
-            CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
 
     // if use one pass, use DictionaryServerClientDictionary
     if (useOnePass) {
