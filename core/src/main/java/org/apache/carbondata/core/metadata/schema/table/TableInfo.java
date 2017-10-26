@@ -79,6 +79,9 @@ public class TableInfo implements Serializable, Writable {
   // this idenifier is a lazy field which will be created when it is used first time
   private AbsoluteTableIdentifier identifier;
 
+  // table comment
+  private String tableComment;
+
   public TableInfo() {
   }
 
@@ -158,6 +161,14 @@ public class TableInfo implements Serializable, Writable {
 
   public void setStorePath(String storePath) {
     this.storePath = storePath;
+  }
+
+  public String getTableComment() {
+    return tableComment;
+  }
+
+  public void setTableComment(String tableComment) {
+    this.tableComment = tableComment;
   }
 
   /**
