@@ -186,6 +186,12 @@ case class LoadTableCommand(
           LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")
           throw new RuntimeException(s"Dataload failure for $dbName.$tableName, ${ex.getMessage}")
         case ex: Exception =>
+          if (ex.isInstanceOf[InterruptedException] &&
+              ex.getMessage.contains("update fail status")) {
+            if (Thread.currentThread().isInterrupted) {
+              CommonUtil.cleanSegmentForInterrupt(carbonLoadModel)
+            }
+          }
           LOGGER.error(ex)
           LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
           throw ex

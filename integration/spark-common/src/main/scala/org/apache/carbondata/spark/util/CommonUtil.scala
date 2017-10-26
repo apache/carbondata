@@ -540,6 +540,23 @@ object CommonUtil {
   }
 
   /**
+   * this method will clean segment if interrupted
+   * @param carbonLoadModel
+   */
+  def cleanSegmentForInterrupt(carbonLoadModel: CarbonLoadModel): Unit = {
+    LOGGER.info("using new thread to clean segment for interrupt")
+    val thread = new Thread() {
+      override def run(): Unit = {
+        LOGGER.info("start to clean segment for interrupt")
+        updateTableStatusForFailure(carbonLoadModel)
+        CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+        LOGGER.info("clean segments for interrupt is finished")
+      }
+    }
+    thread.start()
+  }
+
+  /**
    * This method will update the load failure entry in the table status file
    *
    * @param model

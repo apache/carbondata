@@ -437,11 +437,20 @@ object CarbonDataRDDFactory {
       return
     }
     if (loadStatus == SegmentStatus.LOAD_FAILURE) {
-      // update the load entry in table status file for changing the status to failure
-      CommonUtil.updateTableStatusForFailure(carbonLoadModel)
-      LOGGER.info("********starting clean up**********")
-      CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
-      LOGGER.info("********clean up done**********")
+      if (!Thread.currentThread().isInterrupted) {
+        try {
+          // update the load entry in table status file for changing the status to failure
+          CommonUtil.updateTableStatusForFailure(carbonLoadModel)
+          LOGGER.info("********starting clean up**********")
+          CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+          LOGGER.info("********clean up done**********")
+        } catch {
+          case ex =>
+            // catch exceptions and throw InterruptedException
+            LOGGER.error(ex)
+            throw new InterruptedException("update fail status failed")
+        }
+      }
       LOGGER.audit(s"Data load is failed for " +
                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       LOGGER.warn("Cannot write load metadata file as data load failed")
