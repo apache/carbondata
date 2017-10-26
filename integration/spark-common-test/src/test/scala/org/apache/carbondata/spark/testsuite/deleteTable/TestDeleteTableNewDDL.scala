@@ -182,6 +182,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
 
   test("drop table and create table with dictionary exclude string scenario") {
     try {
+
       sql("create database test")
       sql(
         "CREATE table test.dropTableTest3 (ID int, date String, country String, name " +
@@ -242,6 +243,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists dropTableTest4")
     sql("drop table if exists table1")
     sql("drop table if exists table2")
+    sql("drop database if exists test cascade")
   }
 
 }

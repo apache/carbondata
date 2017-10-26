@@ -152,6 +152,10 @@ case class LoadTableCommand(
           LOGGER.audit(s"Cannot use single_pass=true for $dbName.$tableName during the first load")
           carbonLoadModel.setUseOnePass(false)
         }
+        // if table is an aggregate table then disable single pass.
+        if (carbonLoadModel.isAggLoadRequest) {
+          carbonLoadModel.setUseOnePass(false)
+        }
         // Create table and metadata folders if not exist
         val carbonTablePath = CarbonStorePath
           .getCarbonTablePath(storePath, table.getCarbonTableIdentifier)

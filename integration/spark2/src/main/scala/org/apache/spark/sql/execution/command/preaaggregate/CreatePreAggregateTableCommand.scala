@@ -115,6 +115,11 @@ case class CreatePreAggregateTableCommand(
             .buildChildSchema("", tableInfo.getDatabaseName, queryString, "AGGREGATION")
           // upadting the parent table about child table
           PreAggregateUtil.updateMainTable(parentDbName, parentTableName, childSchema, sparkSession)
+          val loadAvailable = PreAggregateUtil
+            .checkMainTableLoad(parentTable)
+          if (loadAvailable) {
+            sparkSession.sql(s"insert into ${ cm.databaseName }.${ cm.tableName } $queryString")
+          }
         } catch {
           case e: Exception =>
             val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))

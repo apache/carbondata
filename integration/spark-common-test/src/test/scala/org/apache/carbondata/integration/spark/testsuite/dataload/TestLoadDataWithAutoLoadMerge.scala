@@ -44,7 +44,7 @@ class TestLoadDataWithAutoLoadMerge extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table automerge")
     checkAnswer(
       sql("SELECT COUNT(*) FROM automerge"),
-      Seq(Row(4))
+      Seq(Row(6))
     )
   }
 

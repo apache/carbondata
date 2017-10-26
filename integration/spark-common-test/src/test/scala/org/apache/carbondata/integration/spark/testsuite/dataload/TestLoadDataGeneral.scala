@@ -65,7 +65,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(4))
+      Seq(Row(6))
     )
   }
 
@@ -74,7 +74,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(8))
+      Seq(Row(10))
     )
   }
 
@@ -83,7 +83,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(12))
+      Seq(Row(14))
     )
   }
 
@@ -92,7 +92,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(16))
+      Seq(Row(18))
     )
   }
 
@@ -101,7 +101,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table loadtest options ('delimiter'='\\017')")
     checkAnswer(
       sql("SELECT COUNT(*) FROM loadtest"),
-      Seq(Row(20))
+      Seq(Row(22))
     )
   }
 

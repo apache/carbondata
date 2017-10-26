@@ -42,6 +42,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -353,14 +354,15 @@ public class QueryUtil {
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
         .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath());
-
     List<Dictionary> columnDictionaryList =
         forwardDictionaryCache.getAll(dictionaryColumnUniqueIdentifiers);
     Map<String, Dictionary> columnDictionaryMap = new HashMap<>(columnDictionaryList.size());
     for (int i = 0; i < dictionaryColumnUniqueIdentifiers.size(); i++) {
       // TODO: null check for column dictionary, if cache size is less it
       // might return null here, in that case throw exception
-      columnDictionaryMap.put(dictionaryColumnIdList.get(i), columnDictionaryList.get(i));
+      columnDictionaryMap
+          .put(dictionaryColumnUniqueIdentifiers.get(i).getColumnIdentifier().getColumnId(),
+              columnDictionaryList.get(i));
     }
     return columnDictionaryMap;
   }
@@ -376,25 +378,45 @@ public class QueryUtil {
       List<String> dictionaryColumnIdList, CarbonTableIdentifier carbonTableIdentifier,
       TableProvider tableProvider) throws IOException {
     CarbonTable carbonTable = tableProvider.getCarbonTable(carbonTableIdentifier);
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath(), carbonTableIdentifier);
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
         new ArrayList<>(dictionaryColumnIdList.size());
     for (String columnId : dictionaryColumnIdList) {
       CarbonDimension dimension = CarbonMetadata.getInstance()
           .getCarbonDimensionBasedOnColIdentifier(carbonTable, columnId);
       if (dimension != null) {
+        CarbonTableIdentifier newCarbonTableIdentifier;
+        ColumnIdentifier columnIdentifier;
+        if (null != dimension.getColumnSchema().getParentColumnTableRelations() && !dimension
+            .getColumnSchema().getParentColumnTableRelations().isEmpty()) {
+          newCarbonTableIdentifier = getTableIdentifierForColumn(dimension);
+          columnIdentifier = new ColumnIdentifier(
+              dimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
+              dimension.getColumnProperties(), dimension.getDataType());
+        } else {
+          newCarbonTableIdentifier = carbonTableIdentifier;
+          columnIdentifier = dimension.getColumnIdentifier();
+        }
+        CarbonTablePath newCarbonTablePath = CarbonStorePath
+            .getCarbonTablePath(carbonTable.getStorePath(), newCarbonTableIdentifier);
+
         dictionaryColumnUniqueIdentifiers.add(
-            new DictionaryColumnUniqueIdentifier(
-                carbonTableIdentifier,
-                dimension.getColumnIdentifier(),
-                dimension.getDataType(),
-                carbonTablePath
-            )
-        );
+            new DictionaryColumnUniqueIdentifier(newCarbonTableIdentifier, columnIdentifier,
+                dimension.getDataType(), newCarbonTablePath));
       }
     }
     return dictionaryColumnUniqueIdentifiers;
+  }
+
+  public static CarbonTableIdentifier getTableIdentifierForColumn(CarbonDimension carbonDimension) {
+    String parentTableName =
+        carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
+            .getRelationIdentifier().getTableName();
+    String parentDatabaseName =
+        carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
+            .getRelationIdentifier().getDatabaseName();
+    String parentTableId = carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
+        .getRelationIdentifier().getTableId();
+    return new CarbonTableIdentifier(parentDatabaseName, parentTableName, parentTableId);
   }
 
   /**

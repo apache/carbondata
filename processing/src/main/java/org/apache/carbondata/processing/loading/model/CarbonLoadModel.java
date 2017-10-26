@@ -163,6 +163,16 @@ public class CarbonLoadModel implements Serializable {
    */
   private String globalSortPartitions;
 
+  private boolean isAggLoadRequest;
+
+  public boolean isAggLoadRequest() {
+    return isAggLoadRequest;
+  }
+
+  public void setAggLoadRequest(boolean aggLoadRequest) {
+    isAggLoadRequest = aggLoadRequest;
+  }
+
   /**
    * get escape char
    *
@@ -353,6 +363,7 @@ public class CarbonLoadModel implements Serializable {
     copy.sortScope = sortScope;
     copy.batchSortSizeInMb = batchSortSizeInMb;
     copy.badRecordsLocation = badRecordsLocation;
+    copy.isAggLoadRequest = isAggLoadRequest;
     return copy;
   }
 
@@ -399,6 +410,7 @@ public class CarbonLoadModel implements Serializable {
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
     copy.sortScope = sortScope;
     copy.batchSortSizeInMb = batchSortSizeInMb;
+    copy.isAggLoadRequest = isAggLoadRequest;
     return copy;
   }
 
@@ -449,6 +461,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.sortScope = sortScope;
     copyObj.batchSortSizeInMb = batchSortSizeInMb;
     copyObj.badRecordsLocation = badRecordsLocation;
+    copyObj.isAggLoadRequest = isAggLoadRequest;
     return copyObj;
   }
 
