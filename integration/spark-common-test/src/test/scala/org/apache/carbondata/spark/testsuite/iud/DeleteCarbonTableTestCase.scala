@@ -129,7 +129,42 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS default.carbon2")
   }
 
+  test("test array delete complex "){
 
+    sql("DROP TABLE IF EXISTS testarraydelete")
+
+    sql("CREATE TABLE  testarraydelete (f1 int ,f2 array<array<String>>,f3 array<int>) STORED BY 'org.apache.carbondata.format' ").show
+
+    sql("insert into testarraydelete values (1 , 'ab:ab1$bc:bc1$cd:cd1:cd2' , '1$2$3') ")
+
+    sql("insert into testarraydelete values (2 , 'ef:ef1$gh:gh11$ij:ij1:ij2' , '2$2$3') ")
+
+    sql("insert into testarraydelete values (3 , 'lm:lm11$pq:pq11$:rs1:rs2' , '2$2$3') ")
+
+    sql("delete from testarraydelete where f1 =1 ");
+
+    checkAnswer(sql("select count(*) from testarraydelete") , Seq(Row("2")));
+
+    sql("DROP TABLE IF EXISTS testarraydelete")
+  }
+
+  test("delete table with struct data ") {
+    sql("DROP TABLE IF EXISTS st")
+    sql("create table st (id int, structelem struct<id1:int, structelem: struct<id2:int, name:string>>)" +
+      "stored by 'carbondata'").show
+    sql("insert into st values (1 , '1$1:aa')").show
+    sql("insert into st values (2 , '2$2:bb')").show
+    sql("insert into st values (3 , '3$3:cc')").show
+    sql("insert into st values (4 , '4$4:ff')").show
+    sql("insert into st values (5 , '5$5:ee')").show
+
+    sql("delete from st where id =5").show
+
+    checkAnswer(sql("select count(*) from st  ")
+      ,Seq(Row(4)))
+    sql("DROP TABLE IF EXISTS st")
+  }
+  
   override def afterAll {
     sql("use default")
     sql("drop database  if exists iud_db cascade")
