@@ -18,7 +18,7 @@ package org.apache.spark.sql.execution.command.preaaggregate
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.{Field, RunnableCommand, SchemaProcessCommand, TableModel, TableNewProcessor}
+import org.apache.spark.sql.execution.command._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -43,7 +43,8 @@ case class CreatePreAggregateTableCommand(
     cm: TableModel,
     dataFrame: DataFrame,
     createDSTable: Boolean = true,
-    queryString: String)
+    queryString: String,
+    fieldRelationMap: scala.collection.mutable.LinkedHashMap[Field, DataMapField])
   extends RunnableCommand with SchemaProcessCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
@@ -69,6 +70,7 @@ case class CreatePreAggregateTableCommand(
     // which can be used during dropping of pre-aggreate table as parent table will
     // also get updated
     cm.parentTable = Some(parentTable)
+    cm.dataMapRelation = Some(fieldRelationMap)
     val tableInfo: TableInfo = TableNewProcessor(cm)
     // Add validation for sort scope when create table
     val sortScope = tableInfo.getFactTable.getTableProperties
@@ -130,3 +132,5 @@ case class CreatePreAggregateTableCommand(
     Seq.empty
   }
 }
+
+

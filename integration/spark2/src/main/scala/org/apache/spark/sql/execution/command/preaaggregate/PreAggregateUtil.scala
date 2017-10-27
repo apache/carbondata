@@ -24,7 +24,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.execution.command.{ColumnTableRelation, Field}
+import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField, Field}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
 import org.apache.spark.sql.hive.HiveExternalCatalog.{DATASOURCE_SCHEMA_NUMPARTS, DATASOURCE_SCHEMA_PART_PREFIX}
@@ -66,8 +66,8 @@ object PreAggregateUtil {
    * @return list of fields
    */
   def validateActualSelectPlanAndGetAttrubites(plan: LogicalPlan,
-      selectStmt: String): Seq[Field] = {
-    val list = scala.collection.mutable.LinkedHashSet.empty[Field]
+      selectStmt: String): scala.collection.mutable.LinkedHashMap[Field, DataMapField] = {
+    val fieldToDataMapFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, DataMapField]
     plan match {
       case Aggregate(_, aExp, SubqueryAlias(_, l: LogicalRelation, _))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
@@ -89,19 +89,19 @@ object PreAggregateUtil {
               throw new MalformedCarbonCommandException(
                 "Distinct is not supported On Pre Aggregation")
             }
-            list ++= validateAggregateFunctionAndGetFields(carbonTable,
+            fieldToDataMapFieldMap ++= ((validateAggregateFunctionAndGetFields(carbonTable,
               attr.aggregateFunction,
               parentTableName,
               parentDatabaseName,
-              parentTableId)
+              parentTableId)))
           case attr: AttributeReference =>
-            list += getField(attr.name,
+            fieldToDataMapFieldMap += getField(attr.name,
               attr.dataType,
               parentColumnId = carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
               parentTableName = parentTableName,
               parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
           case Alias(attr: AttributeReference, _) =>
-            list += getField(attr.name,
+            fieldToDataMapFieldMap += getField(attr.name,
               attr.dataType,
               parentColumnId = carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
               parentTableName = parentTableName,
@@ -114,7 +114,7 @@ object PreAggregateUtil {
       case _ =>
         throw new MalformedCarbonCommandException(s"Unsupported Select Statement:${ selectStmt } ")
     }
-    list.toSeq
+    fieldToDataMapFieldMap
   }
 
   /**
@@ -135,8 +135,8 @@ object PreAggregateUtil {
       aggFunctions: AggregateFunction,
       parentTableName: String,
       parentDatabaseName: String,
-      parentTableId: String) : scala.collection.mutable.ListBuffer[Field] = {
-    val list = scala.collection.mutable.ListBuffer.empty[Field]
+      parentTableId: String) : scala.collection.mutable.ListBuffer[(Field, DataMapField)] = {
+    val list = scala.collection.mutable.ListBuffer.empty[(Field, DataMapField)]
     aggFunctions match {
       case sum@Sum(attr: AttributeReference) =>
         list += getField(attr.name,
@@ -188,7 +188,7 @@ object PreAggregateUtil {
           parentTableName,
           parentDatabaseName, parentTableId = parentTableId)
       case Average(attr: AttributeReference) =>
-        list += getField(attr.name,
+        getField(attr.name,
           attr.dataType,
           "sum",
           carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
@@ -216,7 +216,6 @@ object PreAggregateUtil {
       case _ =>
         throw new MalformedCarbonCommandException("Un-Supported Aggregation Type")
     }
-    list
   }
 
   /**
@@ -236,7 +235,7 @@ object PreAggregateUtil {
       parentColumnId: String,
       parentTableName: String,
       parentDatabaseName: String,
-      parentTableId: String): Field = {
+      parentTableId: String): (Field, DataMapField) = {
     val actualColumnName = if (aggregateType.equals("")) {
       parentTableName + '_' + columnName
     } else {
@@ -247,26 +246,23 @@ object PreAggregateUtil {
       parentColumnId = parentColumnId,
       parentTableName = parentTableName,
       parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
+    val dataMapField = DataMapField(aggregateType, Some(columnTableRelation))
     if (dataType.typeName.startsWith("decimal")) {
       val (precision, scale) = CommonUtil.getScaleAndPrecision(dataType.catalogString)
-      Field(column = actualColumnName,
+      (Field(column = actualColumnName,
         dataType = Some(dataType.typeName),
         name = Some(actualColumnName),
         children = None,
         precision = precision,
         scale = scale,
-        rawSchema = rawSchema,
-        aggregateFunction = aggregateType,
-        columnTableRelation = Some(columnTableRelation))
+        rawSchema = rawSchema), dataMapField)
     }
     else {
-      Field(column = actualColumnName,
+      (Field(column = actualColumnName,
         dataType = Some(dataType.typeName),
         name = Some(actualColumnName),
         children = None,
-        rawSchema = rawSchema,
-        aggregateFunction = aggregateType,
-        columnTableRelation = Some(columnTableRelation))
+        rawSchema = rawSchema), dataMapField)
     }
   }
 

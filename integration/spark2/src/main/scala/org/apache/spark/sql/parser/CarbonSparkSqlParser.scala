@@ -18,7 +18,7 @@ package org.apache.spark.sql.parser
 
 import scala.collection.mutable
 
-import org.apache.spark.sql.{CarbonEnv, Dataset, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, DataFrame, Dataset, SparkSession}
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateTableContext, TablePropertyListContext}
@@ -60,7 +60,7 @@ class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends Ab
           case e =>
             sys
               .error("\n" + "BaseSqlParser>>>> " + ex.getMessage + "\n" + "CarbonSqlParser>>>> " +
-                     e)
+                     e.getMessage)
         }
     }
   }
@@ -86,7 +86,6 @@ class CarbonSqlAstBuilder(conf: SQLConf, sparkSession: SparkSession)
         }
       case _ => ""
     }
-
     if (fileStorage.equalsIgnoreCase("'carbondata'") ||
         fileStorage.equalsIgnoreCase("'org.apache.carbondata.format'")) {
       val (name, temp, ifNotExists, external) = visitCreateTableHeader(ctx.createTableHeader)
@@ -136,13 +135,13 @@ class CarbonSqlAstBuilder(conf: SQLConf, sparkSession: SparkSession)
         }
       }
       var fields = parser.getFields(cols ++ partitionByStructFields)
-
-      val dataFrame = if (isAggTable) {
+      val dfAndFieldRelationTuple = if (isAggTable) {
         val selectQuery = Option(ctx.query).map(plan).get
         val df = Dataset.ofRows(sparkSession, selectQuery)
-        fields = PreAggregateUtil
+        val fieldRelationMap = PreAggregateUtil
           .validateActualSelectPlanAndGetAttrubites(df.logicalPlan, source(ctx.query()))
-        Some(df)
+        fields = fieldRelationMap.keySet.toSeq
+        Some(df, fieldRelationMap)
       } else {
         None
       }
@@ -163,8 +162,9 @@ class CarbonSqlAstBuilder(conf: SQLConf, sparkSession: SparkSession)
         CarbonCreateTableCommand(tableModel)
       } else {
         CreatePreAggregateTableCommand(tableModel,
-          dataFrame.get,
-          queryString = source(ctx.query).toString)
+          dfAndFieldRelationTuple.get._1,
+          queryString = source(ctx.query).toString,
+          fieldRelationMap = dfAndFieldRelationTuple.get._2)
       }
     } else {
       super.visitCreateTable(ctx)
