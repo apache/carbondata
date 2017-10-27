@@ -33,8 +33,8 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier, TableInfo, TableSchema}
+import org.apache.carbondata.core.metadata.schema.table.column.{ColumnRelation, ColumnSchema, ParentColumnTableRelation}
 import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.DataTypeUtil
@@ -60,13 +60,27 @@ case class TableModel(
     colProps: Option[util.Map[String,
     util.List[ColumnProperty]]] = None,
     bucketFields: Option[BucketFields],
-    partitionInfo: Option[PartitionInfo])
+    partitionInfo: Option[PartitionInfo],
+    var relationIdentifier: Option[RelationIdentifier] = None,
+    var parentTable: Option[CarbonTable] = None)
 
 case class Field(column: String, var dataType: Option[String], name: Option[String],
     children: Option[List[Field]], parent: String = null,
     storeType: Option[String] = Some("columnar"),
     var schemaOrdinal: Int = -1,
-    var precision: Int = 0, var scale: Int = 0, var rawSchema: String = "")
+    var precision: Int = 0, var scale: Int = 0, var rawSchema: String = "",
+    var aggregateFunction: String = "", columnTableRelation: Option[ColumnTableRelation] = None) {
+  override def equals(o: Any): Boolean = o match {
+    case that: Field =>
+      that.column.equalsIgnoreCase(this.column)
+    case _ => false
+  }
+  override def hashCode: Int = column.hashCode
+}
+
+case class ColumnTableRelation(parentColumnName: String, parentColumnId: String,
+    parentTableName: String, parentDatabaseName: String, parentTableId: String) {
+}
 
 case class ColumnProperty(key: String, value: String)
 
@@ -351,11 +365,10 @@ class TableNewProcessor(cm: TableModel) {
       fields.foreach(field => {
         val encoders = new java.util.ArrayList[Encoding]()
         encoders.add(Encoding.DICTIONARY)
-        val columnSchema: ColumnSchema = getColumnSchema(
+        val (columnSchema: ColumnSchema, columnRelation: Option[ColumnRelation]) = getColumnSchema(
           DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
           field.name.getOrElse(field.column), index,
-          isCol = true, encoders, isDimensionCol = true, rowGroup, field.precision, field.scale,
-          field.schemaOrdinal)
+          isCol = true, encoders, isDimensionCol = true, rowGroup, field)
         allColumns ++= Seq(columnSchema)
         index = index + 1
         rowGroup = rowGroup + 1
@@ -370,19 +383,22 @@ class TableNewProcessor(cm: TableModel) {
 
   def getColumnSchema(dataType: DataType, colName: String, index: Integer, isCol: Boolean,
       encoders: java.util.List[Encoding], isDimensionCol: Boolean,
-      colGroup: Integer, precision: Integer, scale: Integer, schemaOrdinal: Int): ColumnSchema = {
+      colGroup: Integer, field: Field
+      ) : (ColumnSchema, Option[ColumnRelation]) = {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
-    val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
-    if (highCardinalityDims.contains(colName)) {
-      encoders.remove(Encoding.DICTIONARY)
-    }
+    if(field.columnTableRelation.isEmpty) {
+      val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
+      if (highCardinalityDims.contains(colName)) {
+        encoders.remove(Encoding.DICTIONARY)
+      }
     if (dataType == DataTypes.DATE) {
-      encoders.add(Encoding.DIRECT_DICTIONARY)
-    }
+        encoders.add(Encoding.DIRECT_DICTIONARY)
+      }
     if (dataType == DataTypes.TIMESTAMP && !highCardinalityDims.contains(colName)) {
-      encoders.add(Encoding.DIRECT_DICTIONARY)
+        encoders.add(Encoding.DIRECT_DICTIONARY)
+      }
     }
     columnSchema.setEncodingList(encoders)
     val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
@@ -393,28 +409,52 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setColumnar(isCol)
     columnSchema.setDimensionColumn(isDimensionCol)
     columnSchema.setColumnGroup(colGroup)
-    columnSchema.setPrecision(precision)
-    columnSchema.setScale(scale)
-    columnSchema.setSchemaOrdinal(schemaOrdinal)
+    columnSchema.setPrecision(field.precision)
+    columnSchema.setScale(field.scale)
+    columnSchema.setSchemaOrdinal(field.schemaOrdinal)
     columnSchema.setSortColumn(false)
+    columnSchema.setAggFunction(field.aggregateFunction);
+
+    val columnRelation = if (field.columnTableRelation.isDefined) {
+      val relation = field.columnTableRelation.get
+      val parentColumnTableRelationList = new util.ArrayList[ParentColumnTableRelation]
+      val relationIdentifier = new RelationIdentifier(
+        relation.parentDatabaseName, relation.parentTableName, relation.parentColumnId)
+      val parentColumnTableRelation = new ParentColumnTableRelation(
+        relationIdentifier, relation.parentColumnId, relation.parentColumnId)
+      parentColumnTableRelationList.add(parentColumnTableRelation)
+      val columnRelation = new ColumnRelation(columnUniqueId, parentColumnTableRelationList)
+      Some(columnRelation)
+    } else {
+      None
+    }
+
     // TODO: Need to fill RowGroupID, converted type
     // & Number of Children after DDL finalization
-    columnSchema
+    (columnSchema, columnRelation)
   }
 
   // process create dml fields and create wrapper TableInfo object
   def process: TableInfo = {
     val LOGGER = LogServiceFactory.getLogService(TableNewProcessor.getClass.getName)
     var allColumns = Seq[ColumnSchema]()
+    var allColumnRelation = Seq[ColumnRelation]()
     var index = 0
     var measureCount = 0
 
     // Sort columns should be at the begin of all columns
     cm.sortKeyDims.get.foreach { keyDim =>
       val field = cm.dimCols.find(keyDim equals _.column).get
-      val encoders = new java.util.ArrayList[Encoding]()
-      encoders.add(Encoding.DICTIONARY)
-      val columnSchema: ColumnSchema = getColumnSchema(
+      val encoders = if (cm.parentTable.isDefined && field.columnTableRelation.isDefined) {
+        cm.parentTable.get.getColumnByName(
+          cm.parentTable.get.getFactTableName,
+          field.columnTableRelation.get.parentColumnName).getEncoder
+      } else {
+        val encoders = new java.util.ArrayList[Encoding]()
+        encoders.add(Encoding.DICTIONARY)
+        encoders
+      }
+      val (columnSchema: ColumnSchema, columnRelation: Option[ColumnRelation]) = getColumnSchema(
         DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
         field.name.getOrElse(field.column),
         index,
@@ -422,20 +462,28 @@ class TableNewProcessor(cm: TableModel) {
         encoders,
         isDimensionCol = true,
         -1,
-        field.precision,
-        field.scale,
-        field.schemaOrdinal)
+        field)
       columnSchema.setSortColumn(true)
       allColumns :+= columnSchema
+      if (columnRelation.isDefined) {
+        allColumnRelation :+= columnRelation.get
+      }
       index = index + 1
     }
 
     cm.dimCols.foreach(field => {
       val sortField = cm.sortKeyDims.get.find(field.column equals _)
       if (sortField.isEmpty) {
-        val encoders = new java.util.ArrayList[Encoding]()
-        encoders.add(Encoding.DICTIONARY)
-        val columnSchema: ColumnSchema = getColumnSchema(
+        val encoders = if (cm.parentTable.isDefined && field.columnTableRelation.isDefined) {
+          cm.parentTable.get.getColumnByName(
+            cm.parentTable.get.getFactTableName,
+            field.columnTableRelation.get.parentColumnName).getEncoder
+        } else {
+          val encoders = new java.util.ArrayList[Encoding]()
+          encoders.add(Encoding.DICTIONARY)
+          encoders
+        }
+        val (columnSchema: ColumnSchema, columnRelation: Option[ColumnRelation]) = getColumnSchema(
           DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
           field.name.getOrElse(field.column),
           index,
@@ -443,10 +491,11 @@ class TableNewProcessor(cm: TableModel) {
           encoders,
           isDimensionCol = true,
           -1,
-          field.precision,
-          field.scale,
-          field.schemaOrdinal)
+          field)
         allColumns :+= columnSchema
+        if (columnRelation.isDefined) {
+          allColumnRelation :+= columnRelation.get
+        }
         index = index + 1
         if (field.children.isDefined && field.children.get != null) {
           columnSchema.setNumberOfChild(field.children.get.size)
@@ -457,7 +506,7 @@ class TableNewProcessor(cm: TableModel) {
 
     cm.msrCols.foreach(field => {
       val encoders = new java.util.ArrayList[Encoding]()
-      val columnSchema: ColumnSchema = getColumnSchema(
+      val (columnSchema: ColumnSchema, columnRelation: Option[ColumnRelation]) = getColumnSchema(
         DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
         field.name.getOrElse(field.column),
         index,
@@ -465,10 +514,11 @@ class TableNewProcessor(cm: TableModel) {
         encoders,
         isDimensionCol = false,
         -1,
-        field.precision,
-        field.scale,
-        field.schemaOrdinal)
+        field)
       allColumns :+= columnSchema
+      if (columnRelation.isDefined) {
+        allColumnRelation :+= columnRelation.get
+      }
       index = index + 1
       measureCount += 1
     })
@@ -508,13 +558,16 @@ class TableNewProcessor(cm: TableModel) {
     // Adding dummy measure if no measure is provided
     if (measureCount == 0) {
       val encoders = new java.util.ArrayList[Encoding]()
-      val columnSchema: ColumnSchema = getColumnSchema(DataTypes.DOUBLE,
+      val field = Field(column = CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
+        dataType = None, name = None, children = None)
+      val (columnSchema: ColumnSchema, columnRelation: Option[ColumnRelation]) =
+        getColumnSchema(DataTypes.DOUBLE,
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
         index,
         true,
         encoders,
         false,
-        -1, 0, 0, schemaOrdinal = -1)
+        -1, field)
       columnSchema.setInvisible(true)
       allColumns :+= columnSchema
     }
@@ -523,6 +576,7 @@ class TableNewProcessor(cm: TableModel) {
 
     val tableInfo = new TableInfo()
     val tableSchema = new TableSchema()
+
     val schemaEvol = new SchemaEvolution()
     schemaEvol.setSchemaEvolutionEntryList(new util.ArrayList[SchemaEvolutionEntry]())
     tableSchema.setTableId(UUID.randomUUID().toString)
@@ -562,6 +616,7 @@ class TableNewProcessor(cm: TableModel) {
       partitionInfo.setColumnSchemaList(partitionCols)
       tableSchema.setPartitionInfo(partitionInfo)
     }
+    tableSchema.setColumnRelations(allColumnRelation.asJava)
     tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)
@@ -569,6 +624,11 @@ class TableNewProcessor(cm: TableModel) {
     tableInfo.setTableUniqueName(cm.databaseName + "_" + cm.tableName)
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
+    if(cm.relationIdentifier.isDefined) {
+      val relationIdentifierList = new util.ArrayList[RelationIdentifier]
+      relationIdentifierList.add(cm.relationIdentifier.get)
+      tableInfo.setParentRelationIdentifiers(relationIdentifierList)
+    }
     tableInfo
   }
 

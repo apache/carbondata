@@ -21,6 +21,7 @@ import java.io.Serializable;
 
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
+import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
 
 /**
  * Metadata class for each column of table.
@@ -34,6 +35,8 @@ public class DataField implements Serializable {
   private CarbonColumn column;
 
   private String dateFormat;
+
+  private ParentColumnTableRelation parentColumnTableRelation;
 
   public boolean hasDictionaryEncoding() {
     return column.hasEncoding(Encoding.DICTIONARY);
@@ -49,5 +52,13 @@ public class DataField implements Serializable {
 
   public void setDateFormat(String dateFormat) {
     this.dateFormat = dateFormat;
+  }
+
+  public ParentColumnTableRelation getParentColumnTableRelation() {
+    return parentColumnTableRelation;
+  }
+
+  public void setParentColumnTableRelation(ParentColumnTableRelation parentColumnTableRelation) {
+    this.parentColumnTableRelation = parentColumnTableRelation;
   }
 }

@@ -32,6 +32,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
@@ -189,7 +190,7 @@ public final class DataLoadProcessBuilder {
         CarbonDataProcessorUtil.getDateFormatMap(loadModel.getDateFormat());
     List<DataField> dataFields = new ArrayList<>();
     List<DataField> complexDataFields = new ArrayList<>();
-
+    boolean isPreAggTable = carbonTable.getTableInfo().getParentRelationIdentifiers() != null;
     // First add dictionary and non dictionary dimensions because these are part of mdk key.
     // And then add complex data types and measures.
     for (CarbonColumn column : dimensions) {
@@ -198,6 +199,15 @@ public final class DataLoadProcessBuilder {
       if (column.isComplex()) {
         complexDataFields.add(dataField);
       } else {
+        if (isPreAggTable) {
+          List<ParentColumnTableRelation> parentColumnTableRelations =
+              carbonTable.getTableInfo().getParentColumnTableRelation(column.getColumnId());
+          // when pre aggregate table column depends on only one parent table in that case
+          // it will use parent dictionary below check of size one is for the same
+          if (null != parentColumnTableRelations && parentColumnTableRelations.size() == 1) {
+            dataField.setParentColumnTableRelation(parentColumnTableRelations.get(0));
+          }
+        }
         dataFields.add(dataField);
       }
     }

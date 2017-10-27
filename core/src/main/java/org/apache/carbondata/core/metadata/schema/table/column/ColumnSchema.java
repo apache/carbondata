@@ -121,6 +121,11 @@ public class ColumnSchema implements Serializable, Writable {
   private boolean isSortColumn = false;
 
   /**
+   * aggregate function used in pre aggregate table
+   */
+  private String aggFunction = "";
+
+  /**
    * @return the columnName
    */
   public String getColumnName() {
@@ -408,6 +413,14 @@ public class ColumnSchema implements Serializable, Writable {
     isSortColumn = sortColumn;
   }
 
+  public String getAggFunction() {
+    return aggFunction;
+  }
+
+  public void setAggFunction(String aggFunction) {
+    this.aggFunction = aggFunction;
+  }
+
   @Override
   public void write(DataOutput out) throws IOException {
     out.writeShort(dataType.getId());
@@ -439,6 +452,7 @@ public class ColumnSchema implements Serializable, Writable {
     }
     out.writeBoolean(invisible);
     out.writeBoolean(isSortColumn);
+    out.writeUTF(null != aggFunction ? aggFunction : "");
   }
 
   @Override
@@ -469,5 +483,6 @@ public class ColumnSchema implements Serializable, Writable {
     }
     this.invisible = in.readBoolean();
     this.isSortColumn = in.readBoolean();
+    this.aggFunction = in.readUTF();
   }
 }

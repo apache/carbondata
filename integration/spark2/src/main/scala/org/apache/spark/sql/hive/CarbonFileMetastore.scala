@@ -21,11 +21,13 @@ import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.mutable.ArrayBuffer
+import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, SparkSession}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
+import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -35,13 +37,14 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.fileoperations.FileWriteOperation
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
-import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
+import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
 import org.apache.carbondata.core.metadata.schema
 import org.apache.carbondata.core.metadata.schema.table
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, ChildSchema, RelationIdentifier}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.ThriftWriter
+import org.apache.carbondata.format
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.processing.merger.TableMeta
 import org.apache.carbondata.spark.util.CarbonSparkUtil
@@ -108,6 +111,40 @@ class CarbonFileMetastore extends CarbonMetaStore {
             throw new NoSuchTableException(database, tableName)
         }
     }
+  }
+
+  /**
+   * This method will overwrite the existing schema and update it with the given details
+   *
+   * @param newTableIdentifier
+   * @param thriftTableInfo
+   * @param carbonStorePath
+   * @param sparkSession
+   */
+  def updateTableSchemaForPreAgg(newTableIdentifier: CarbonTableIdentifier,
+      oldTableIdentifier: CarbonTableIdentifier,
+      thriftTableInfo: org.apache.carbondata.format.TableInfo,
+      carbonStorePath: String)(sparkSession: SparkSession): String = {
+    val absoluteTableIdentifier = AbsoluteTableIdentifier.fromTablePath(carbonStorePath)
+    val schemaConverter = new ThriftWrapperSchemaConverterImpl
+    val wrapperTableInfo = schemaConverter
+      .fromExternalToWrapperTableInfo(thriftTableInfo,
+        newTableIdentifier.getDatabaseName,
+        newTableIdentifier.getTableName,
+        absoluteTableIdentifier.getStorePath)
+    val identifier =
+      new CarbonTableIdentifier(newTableIdentifier.getDatabaseName,
+        newTableIdentifier.getTableName,
+        wrapperTableInfo.getFactTable.getTableId)
+    val path = createSchemaThriftFile(wrapperTableInfo,
+      thriftTableInfo,
+      identifier)
+    addTableCache(wrapperTableInfo,
+      AbsoluteTableIdentifier.from(absoluteTableIdentifier.getStorePath,
+        newTableIdentifier.getDatabaseName,
+        newTableIdentifier.getTableName))
+    path
+
   }
 
   def lookupRelation(dbName: Option[String], tableName: String)
@@ -205,7 +242,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
    * @param tablePath
    * @param sparkSession
    */
-  def updateTableSchema(newTableIdentifier: CarbonTableIdentifier,
+  def updateTableSchemaForAlter(newTableIdentifier: CarbonTableIdentifier,
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       schemaEvolutionEntry: SchemaEvolutionEntry,
@@ -242,7 +279,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
    * @param tablePath
    * @param sparkSession
    */
-  def revertTableSchema(carbonTableIdentifier: CarbonTableIdentifier,
+  def revertTableSchemaInAlterFailure(carbonTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       tablePath: String)(sparkSession: SparkSession): String = {
     val tableIdentifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
@@ -262,7 +299,27 @@ class CarbonFileMetastore extends CarbonMetaStore {
     path
   }
 
+  override def revertTableSchemaForPreAggCreationFailure(carbonTableIdentifier:
+  CarbonTableIdentifier,
+      thriftTableInfo: org.apache.carbondata.format.TableInfo,
+      tablePath: String)(sparkSession: SparkSession): String = {
+    val tableIdentifier = AbsoluteTableIdentifier.fromTablePath(tablePath)
+    val schemaConverter = new ThriftWrapperSchemaConverterImpl
+    val wrapperTableInfo = schemaConverter
+      .fromExternalToWrapperTableInfo(thriftTableInfo,
+        carbonTableIdentifier.getDatabaseName,
+        carbonTableIdentifier.getTableName,
+        tableIdentifier.getStorePath)
+    val childSchemaList = wrapperTableInfo.getChildSchemaList
+    childSchemaList.remove(childSchemaList.size() - 1)
+    wrapperTableInfo.setStorePath(tableIdentifier.getStorePath)
+    val path = createSchemaThriftFile(wrapperTableInfo,
+      thriftTableInfo,
+      tableIdentifier.getCarbonTableIdentifier)
+    addTableCache(wrapperTableInfo, tableIdentifier)
+    path
 
+  }
 
   /**
    *
@@ -401,6 +458,50 @@ class CarbonFileMetastore extends CarbonMetaStore {
       case e: Exception =>
         false
     }
+  }
+
+  override def dropChildTable(tablePath: String,
+      tableIdentifier: TableIdentifier, removeFromParent: Boolean)
+    (sparkSession: SparkSession): Unit = {
+    val dbName = tableIdentifier.database.get
+    val tableName = tableIdentifier.table
+    val childCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
+      .tableMeta.carbonTable
+    if (null != childCarbonTable) {
+      // clear driver B-tree and dictionary cache
+      ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(childCarbonTable)
+    }
+    if (removeFromParent) {
+      val parentRelations = childCarbonTable.getTableInfo.getParentRelationIdentifiers
+      for (parentRelation: RelationIdentifier <- parentRelations.asScala) {
+        val parentTableName = parentRelation.getTableName
+        val parentDatabaseName = parentRelation.getDatabaseName
+        val parentCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .lookupRelation(Some(parentDatabaseName), parentTableName)(sparkSession)
+          .asInstanceOf[CarbonRelation]
+          .tableMeta.carbonTable
+        val childSchemas = parentCarbonTable.getTableInfo.getChildSchemaList
+        val childSchemaIterator = childSchemas.iterator()
+        while(childSchemaIterator.hasNext) {
+          val childSchema = childSchemaIterator.next()
+          if (childSchema.getTableSchema.equals(childCarbonTable.getTableInfo.getFactTable)) {
+            childSchemaIterator.remove()
+          }
+        }
+        val schemaConverter = new ThriftWrapperSchemaConverterImpl
+        removeTableFromMetadata(dbName, tableName)
+        PreAggregateUtil
+          .updateSchemaInfo(parentCarbonTable,
+            schemaConverter
+              .fromWrapperToExternalTableInfo(parentCarbonTable.getTableInfo,
+                parentDatabaseName,
+                parentTableName))(sparkSession)
+      }
+    }
+    CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
+    sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
+    DataMapStoreManager.getInstance().clearDataMap(childCarbonTable.getAbsoluteTableIdentifier)
   }
 
   def dropTable(tablePath: String, tableIdentifier: TableIdentifier)

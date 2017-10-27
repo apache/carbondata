@@ -165,9 +165,46 @@ struct TableSchema{
   4: optional map<string,string> tableProperties; // Table properties configured by the user
   5: optional BucketingInfo bucketingInfo; // Bucketing information
   6: optional PartitionInfo partitionInfo; // Partition information
+  7: optional list<ColumnRelation> columnRelationList;
 }
 
+struct RelationIdentifier {
+   1: optional string databaseName;
+   2: required string tableName;
+   3: required string tableId;
+}
+
+struct ColumnRelation{
+   // child column id
+   1: required string columnId;
+   2: optional list<ParentColumnTableRelation> columnTableRelation;
+}
+
+struct ParentColumnTableRelation {
+   1: required RelationIdentifier relationInfo;
+   2: required string columnId;
+   3: required string columnName
+}
+
+enum RelationType {
+  AGGREGATION = 0;
+}
+struct RelationProperties {
+  1: optional RelationType relationTypes;
+  // to maintain properties like select query, query type like groupby, join
+  2: optional map<string, string> properties;
+}
+
+struct ChildSchema {
+  1: required RelationIdentifier relationInfo;
+  2: required TableSchema childTableSchema;
+  3: optional RelationProperties relationProperties;
+}
 struct TableInfo{
 	1: required TableSchema fact_table;
 	2: required list<TableSchema> aggregate_table_list;
+	3: optional list<ChildSchema> childSchemas; // childSchema information
+ // only in case of child table it will be filled to maintain the relation with parent tables
+   // to hanle operation like drop in that case parent table will be also updated
+  4: optional list<RelationIdentifier> parentRelationInfo;
 }
