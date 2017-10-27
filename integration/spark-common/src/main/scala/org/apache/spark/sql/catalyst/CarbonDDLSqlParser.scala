@@ -248,7 +248,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       partitionCols: Seq[PartitionerField],
       tableProperties: mutable.Map[String, String],
       bucketFields: Option[BucketFields], isAlterFlow: Boolean = false,
-      comment: Option[String] = None): TableModel = {
+      tableComment: Option[String] = None): TableModel = {
 
     fields.zipWithIndex.foreach { case (field, index) =>
       field.schemaOrdinal = index
@@ -289,7 +289,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       Some(colProps),
       bucketFields: Option[BucketFields],
       partitionInfo,
-      comment)
+      tableComment)
   }
 
   /**

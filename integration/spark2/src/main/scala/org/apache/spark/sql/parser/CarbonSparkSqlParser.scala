@@ -103,7 +103,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
       val partitionerFields = partitionByStructFields.map { structField =>
         PartitionerField(structField.name, Some(structField.dataType.toString), null)
       }
-      val comment = Option(ctx.STRING()).map(string)
+      val tableComment = Option(ctx.STRING()).map(string)
       val cols = Option(ctx.columns).toSeq.flatMap(visitColTypeList)
       val properties = Option(ctx.tablePropertyList).map(visitPropertyKeyValues)
         .getOrElse(Map.empty)
@@ -147,7 +147,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
         tableProperties,
         bucketFields,
         false,
-        comment)
+        tableComment)
 
       CarbonCreateTableCommand(tableModel)
     } else {
