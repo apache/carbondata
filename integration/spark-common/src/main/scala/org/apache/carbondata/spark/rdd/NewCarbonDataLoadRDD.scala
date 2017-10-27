@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.rdd
 
-import java.io.{File, IOException, ObjectInputStream, ObjectOutputStream}
+import java.io._
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
@@ -41,7 +41,9 @@ import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses}
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
@@ -187,9 +189,23 @@ class NewCarbonDataLoadRDD[K, V](
     formatter.format(new Date())
   }
 
-  // A Hadoop Configuration can be about 10 KB, which is pretty big, so broadcast it
-  private val confBroadcast =
-    sc.broadcast(new SerializableConfiguration(sc.hadoopConfiguration))
+  private val confBytes = {
+    val bao = new ByteArrayOutputStream()
+    val oos = new ObjectOutputStream(bao)
+    sc.hadoopConfiguration.write(oos)
+    oos.close()
+    CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
+  }
+
+  private def getConf = {
+    val configuration = new Configuration(false)
+    val bai = new ByteArrayInputStream(CompressorFactory.getInstance().getCompressor
+      .unCompressByte(confBytes))
+    val ois = new ObjectInputStream(bai)
+    configuration.readFields(ois)
+    ois.close()
+    configuration
+  }
 
   override def getPartitions: Array[Partition] = {
     blocksGroupBy.zipWithIndex.map { b =>
@@ -255,7 +271,7 @@ class NewCarbonDataLoadRDD[K, V](
 
       def getInputIterators: Array[CarbonIterator[Array[AnyRef]]] = {
         val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, theSplit.index, 0)
-        var configuration: Configuration = confBroadcast.value.value
+        var configuration: Configuration = getConf
         if (configuration == null) {
           configuration = new Configuration()
         }
