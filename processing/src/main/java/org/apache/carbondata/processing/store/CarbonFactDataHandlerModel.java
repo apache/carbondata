@@ -299,12 +299,12 @@ public class CarbonFactDataHandlerModel {
     Map<Integer, GenericDataType> complexIndexMap =
         new HashMap<Integer, GenericDataType>(segmentProperties.getComplexDimensions().size());
     carbonFactDataHandlerModel.setComplexIndexMap(complexIndexMap);
-    DataType[] aggType = new DataType[segmentProperties.getMeasures().size()];
+    DataType[] measureDataTypes = new DataType[segmentProperties.getMeasures().size()];
     int i = 0;
     for (CarbonMeasure msr : segmentProperties.getMeasures()) {
-      aggType[i++] = msr.getDataType();
+      measureDataTypes[i++] = msr.getDataType();
     }
-    carbonFactDataHandlerModel.setMeasureDataType(aggType);
+    carbonFactDataHandlerModel.setMeasureDataType(measureDataTypes);
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
         .checkAndCreateCarbonStoreLocation(loadModel.getStorePath(), loadModel.getDatabaseName(),
             tableName, loadModel.getPartitionId(), loadModel.getSegmentId());

@@ -161,10 +161,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     // calculating the total number of aggeragted columns
-    int aggTypeCount = queryModel.getQueryMeasures().size();
+    int measureCount = queryModel.getQueryMeasures().size();
 
     int currentIndex = 0;
-    DataType[] dataTypes = new DataType[aggTypeCount];
+    DataType[] dataTypes = new DataType[measureCount];
 
     for (QueryMeasure carbonMeasure : queryModel.getQueryMeasures()) {
       // adding the data type and aggregation type of all the measure this

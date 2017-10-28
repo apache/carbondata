@@ -326,7 +326,7 @@ public class IntermediateFileMerger implements Callable<Void> {
       return;
     }
     try {
-      DataType[] aggType = mergerParameters.getMeasureDataType();
+      DataType[] measureDataType = mergerParameters.getMeasureDataType();
       int[] mdkArray = (int[]) row[0];
       byte[][] nonDictArray = (byte[][]) row[1];
       int mdkIndex = 0;
@@ -346,7 +346,7 @@ public class IntermediateFileMerger implements Callable<Void> {
       for (int counter = 0; counter < mergerParameters.getMeasureColCount(); counter++) {
         if (null != NonDictionaryUtil.getMeasure(fieldIndex, row)) {
           stream.write((byte) 1);
-          DataType dataType = aggType[counter];
+          DataType dataType = measureDataType[counter];
           if (dataType == DataTypes.BOOLEAN) {
             stream.writeBoolean((boolean)NonDictionaryUtil.getMeasure(fieldIndex, row));
           } else if (dataType == DataTypes.SHORT) {
@@ -362,7 +362,7 @@ public class IntermediateFileMerger implements Callable<Void> {
             stream.writeInt(bigDecimalInBytes.length);
             stream.write(bigDecimalInBytes);
           } else {
-            throw new IllegalArgumentException("unsupported data type:" + aggType[counter]);
+            throw new IllegalArgumentException("unsupported data type:" + measureDataType[counter]);
           }
         } else {
           stream.write((byte) 0);
