@@ -86,6 +86,16 @@ public abstract class SafeAbsractDimensionDataChunkStore implements DimensionDat
   }
 
   /**
+   * Below method will be used to get the inverted index reverse
+   *
+   * @param rowId row id
+   * @return inverted index based on row id passed
+   */
+  @Override public int getInvertedReverseIndex(int rowId) {
+    return invertedIndexReverse[rowId];
+  }
+
+  /**
    * Below method will be used to get the surrogate key of the based on the row
    * id passed
    *

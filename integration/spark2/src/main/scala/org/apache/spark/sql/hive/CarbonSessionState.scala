@@ -25,15 +25,15 @@ import org.apache.spark.sql.catalyst.expressions.{PredicateSubquery, ScalarSubqu
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
-import org.apache.spark.sql.execution.CarbonLateDecodeStrategy
-import org.apache.spark.sql.execution.command.DDLStrategy
-import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.SparkOptimizer
+import org.apache.spark.sql.execution.datasources._
+import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSparkSqlParser
 
-import org.apache.carbondata.processing.merger.TableMeta
+import org.apache.carbondata.core.datamap.DataMapStoreManager
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 
 /**
  * This class will have carbon catalog and refresh the relation from cache if the carbontable in
@@ -99,22 +99,26 @@ class CarbonSessionCatalog(
     }
   }
 
-  private def refreshRelationFromCache(name: TableIdentifier,
+  private def refreshRelationFromCache(identifier: TableIdentifier,
       alias: Option[String],
       carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): Boolean = {
     var isRefreshed = false
+    val storePath = CarbonEnv.getInstance(sparkSession).storePath
     carbonEnv.carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(sparkSession).storePath)
+      checkSchemasModifiedTimeAndReloadTables(storePath)
 
     val tableMeta = carbonEnv.carbonMetastore
       .getTableFromMetadataCache(carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
         carbonDatasourceHadoopRelation.carbonTable.getFactTableName)
-    if (tableMeta.isDefined &&
+    if (tableMeta.isEmpty || (tableMeta.isDefined &&
         tableMeta.get.carbonTable.getTableLastUpdatedTime !=
-          carbonDatasourceHadoopRelation.carbonTable.getTableLastUpdatedTime) {
-      refreshTable(name)
+          carbonDatasourceHadoopRelation.carbonTable.getTableLastUpdatedTime)) {
+      refreshTable(identifier)
+      DataMapStoreManager.getInstance().
+        clearDataMap(AbsoluteTableIdentifier.from(storePath,
+          identifier.database.getOrElse("default"), identifier.table))
       isRefreshed = true
-      logInfo(s"Schema changes have been detected for table: $name")
+      logInfo(s"Schema changes have been detected for table: $identifier")
     }
     isRefreshed
   }

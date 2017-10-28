@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datastore.page.EncodedTablePage;
 import org.apache.carbondata.core.datastore.page.statistics.TablePageStatistics;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.format.BlockIndex;
@@ -340,33 +341,32 @@ public class CarbonMetadataUtil {
     return CarbonMetadataUtil.getDataChunk3(dataChunksList);
   }
 
-  public static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {
+  private static int compareMeasureData(byte[] first, byte[] second, DataType dataType) {
     ByteBuffer firstBuffer = null;
     ByteBuffer secondBuffer = null;
-    switch (dataType) {
-      case DOUBLE:
-        firstBuffer = ByteBuffer.allocate(8);
-        firstBuffer.put(first);
-        secondBuffer = ByteBuffer.allocate(8);
-        secondBuffer.put(second);
-        firstBuffer.flip();
-        secondBuffer.flip();
-        return (int) (firstBuffer.getDouble() - secondBuffer.getDouble());
-      case LONG:
-      case INT:
-      case SHORT:
-        firstBuffer = ByteBuffer.allocate(8);
-        firstBuffer.put(first);
-        secondBuffer = ByteBuffer.allocate(8);
-        secondBuffer.put(second);
-        firstBuffer.flip();
-        secondBuffer.flip();
-        return (int) (firstBuffer.getLong() - secondBuffer.getLong());
-      case DECIMAL:
-        return DataTypeUtil.byteToBigDecimal(first)
-            .compareTo(DataTypeUtil.byteToBigDecimal(second));
-      default:
-        throw new IllegalArgumentException("Invalid data type");
+    if (dataType == DataTypes.BOOLEAN) {
+      return first[0] - second[0];
+    } else if (dataType == DataTypes.DOUBLE) {
+      firstBuffer = ByteBuffer.allocate(8);
+      firstBuffer.put(first);
+      secondBuffer = ByteBuffer.allocate(8);
+      secondBuffer.put(second);
+      firstBuffer.flip();
+      secondBuffer.flip();
+      return (int) (firstBuffer.getDouble() - secondBuffer.getDouble());
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.INT
+        || dataType == DataTypes.SHORT) {
+      firstBuffer = ByteBuffer.allocate(8);
+      firstBuffer.put(first);
+      secondBuffer = ByteBuffer.allocate(8);
+      secondBuffer.put(second);
+      firstBuffer.flip();
+      secondBuffer.flip();
+      return (int) (firstBuffer.getLong() - secondBuffer.getLong());
+    } else if (dataType == DataTypes.DECIMAL) {
+      return DataTypeUtil.byteToBigDecimal(first).compareTo(DataTypeUtil.byteToBigDecimal(second));
+    } else {
+      throw new IllegalArgumentException("Invalid data type");
     }
   }
 

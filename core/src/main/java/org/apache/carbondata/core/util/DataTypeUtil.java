@@ -34,14 +34,15 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-
-
 
 public final class DataTypeUtil {
 
@@ -54,9 +55,11 @@ public final class DataTypeUtil {
 
   private static final ThreadLocal<DateFormat> timeStampformatter = new ThreadLocal<DateFormat>() {
     @Override protected DateFormat initialValue() {
-      return new SimpleDateFormat(CarbonProperties.getInstance()
+      DateFormat dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
               CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+      dateFormat.setLenient(false);
+      return dateFormat;
     }
   };
 
@@ -70,19 +73,19 @@ public final class DataTypeUtil {
 
   static {
     dataTypeDisplayNames = new HashMap<String, String>(16);
-    dataTypeDisplayNames.put(DataType.DATE.toString(), DataType.DATE.getName());
-    dataTypeDisplayNames.put(DataType.LONG.toString(), DataType.LONG.getName());
-    dataTypeDisplayNames.put(DataType.INT.toString(), DataType.INT.getName());
-    dataTypeDisplayNames.put(DataType.FLOAT.toString(), DataType.FLOAT.getName());
-    dataTypeDisplayNames.put(DataType.BOOLEAN.toString(), DataType.BOOLEAN.getName());
-    dataTypeDisplayNames.put(DataType.NULL.toString(), DataType.NULL.getName());
-    dataTypeDisplayNames.put(DataType.DECIMAL.toString(), DataType.DECIMAL.getName());
-    dataTypeDisplayNames.put(DataType.ARRAY.toString(), DataType.ARRAY.getName());
-    dataTypeDisplayNames.put(DataType.STRUCT.toString(), DataType.STRUCT.getName());
-    dataTypeDisplayNames.put(DataType.TIMESTAMP.toString(), DataType.TIMESTAMP.getName());
-    dataTypeDisplayNames.put(DataType.DATE.toString(), DataType.DATE.getName());
-    dataTypeDisplayNames.put(DataType.SHORT.toString(), DataType.SHORT.getName());
-    dataTypeDisplayNames.put(DataType.STRING.toString(), DataType.STRING.getName());
+    dataTypeDisplayNames.put(DataTypes.DATE.toString(), DataTypes.DATE.getName());
+    dataTypeDisplayNames.put(DataTypes.LONG.toString(), DataTypes.LONG.getName());
+    dataTypeDisplayNames.put(DataTypes.INT.toString(), DataTypes.INT.getName());
+    dataTypeDisplayNames.put(DataTypes.FLOAT.toString(), DataTypes.FLOAT.getName());
+    dataTypeDisplayNames.put(DataTypes.BOOLEAN.toString(), DataTypes.BOOLEAN.getName());
+    dataTypeDisplayNames.put(DataTypes.NULL.toString(), DataTypes.NULL.getName());
+    dataTypeDisplayNames.put(DataTypes.DECIMAL.toString(), DataTypes.DECIMAL.getName());
+    dataTypeDisplayNames.put(DataTypes.ARRAY.toString(), DataTypes.ARRAY.getName());
+    dataTypeDisplayNames.put(DataTypes.STRUCT.toString(), DataTypes.STRUCT.getName());
+    dataTypeDisplayNames.put(DataTypes.TIMESTAMP.toString(), DataTypes.TIMESTAMP.getName());
+    dataTypeDisplayNames.put(DataTypes.DATE.toString(), DataTypes.DATE.getName());
+    dataTypeDisplayNames.put(DataTypes.SHORT.toString(), DataTypes.SHORT.getName());
+    dataTypeDisplayNames.put(DataTypes.STRING.toString(), DataTypes.STRING.getName());
   }
 
   /**
@@ -100,23 +103,24 @@ public final class DataTypeUtil {
    */
   public static Object getMeasureValueBasedOnDataType(String msrValue, DataType dataType,
       CarbonMeasure carbonMeasure) {
-    switch (dataType) {
-      case DECIMAL:
-        BigDecimal bigDecimal =
-            new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
-        return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
-      case SHORT:
-        return Short.parseShort(msrValue);
-      case INT:
-        return Integer.parseInt(msrValue);
-      case LONG:
-        return Long.valueOf(msrValue);
-      default:
-        Double parsedValue = Double.valueOf(msrValue);
-        if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
-          return null;
-        }
-        return parsedValue;
+    if (dataType == DataTypes.BOOLEAN) {
+      return BooleanConvert.parseBoolean(msrValue);
+    } else if (dataType == DataTypes.DECIMAL) {
+      BigDecimal bigDecimal =
+          new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+      return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
+    } else if (dataType == DataTypes.SHORT) {
+      return Short.parseShort(msrValue);
+    } else if (dataType == DataTypes.INT) {
+      return Integer.parseInt(msrValue);
+    } else if (dataType == DataTypes.LONG) {
+      return Long.valueOf(msrValue);
+    } else {
+      Double parsedValue = Double.valueOf(msrValue);
+      if (Double.isInfinite(parsedValue) || Double.isNaN(parsedValue)) {
+        return null;
+      }
+      return parsedValue;
     }
   }
 
@@ -125,42 +129,44 @@ public final class DataTypeUtil {
       return null;
     }
     ByteBuffer bb = ByteBuffer.wrap(data);
-    switch (dataType) {
-      case SHORT:
-        return (short)bb.getLong();
-      case INT:
-        return (int)bb.getLong();
-      case LONG:
-        return bb.getLong();
-      case DECIMAL:
-        return byteToBigDecimal(data);
-      default:
-        return bb.getDouble();
+    if (dataType == DataTypes.BOOLEAN) {
+      return BooleanConvert.byte2Boolean(bb.get());
+    } else if (dataType == DataTypes.SHORT) {
+      return (short) bb.getLong();
+    } else if (dataType == DataTypes.INT) {
+      return (int) bb.getLong();
+    } else if (dataType == DataTypes.LONG) {
+      return bb.getLong();
+    } else if (dataType == DataTypes.DECIMAL) {
+      return byteToBigDecimal(data);
+    } else {
+      return bb.getDouble();
     }
   }
 
   public static Object getMeasureObjectBasedOnDataType(ColumnPage measurePage, int index,
       DataType dataType, CarbonMeasure carbonMeasure) {
-    switch (dataType) {
-      case SHORT:
-        return (short)measurePage.getLong(index);
-      case INT:
-        return (int)measurePage.getLong(index);
-      case LONG:
-        return measurePage.getLong(index);
-      case DECIMAL:
-        BigDecimal bigDecimalMsrValue = measurePage.getDecimal(index);
-        if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
-          bigDecimalMsrValue =
-              bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
-        }
-        if (null != bigDecimalMsrValue) {
-          return normalizeDecimalValue(bigDecimalMsrValue, carbonMeasure.getPrecision());
-        } else {
-          return bigDecimalMsrValue;
-        }
-      default:
-        return measurePage.getDouble(index);
+    if (dataType == DataTypes.BOOLEAN) {
+      return measurePage.getBoolean(index);
+    } else if (dataType == DataTypes.SHORT) {
+      return (short) measurePage.getLong(index);
+    } else if (dataType == DataTypes.INT) {
+      return (int) measurePage.getLong(index);
+    } else if (dataType == DataTypes.LONG) {
+      return measurePage.getLong(index);
+    } else if (dataType == DataTypes.DECIMAL) {
+      BigDecimal bigDecimalMsrValue = measurePage.getDecimal(index);
+      if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
+        bigDecimalMsrValue =
+            bigDecimalMsrValue.setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
+      }
+      if (null != bigDecimalMsrValue) {
+        return normalizeDecimalValue(bigDecimalMsrValue, carbonMeasure.getPrecision());
+      } else {
+        return bigDecimalMsrValue;
+      }
+    } else {
+      return measurePage.getDouble(index);
     }
   }
 
@@ -241,39 +247,42 @@ public final class DataTypeUtil {
   public static DataType getDataType(String dataTypeStr) {
     DataType dataType = null;
     switch (dataTypeStr) {
+      case "BOOLEAN":
+        dataType = DataTypes.BOOLEAN;
+        break;
       case "DATE":
-        dataType = DataType.DATE;
+        dataType = DataTypes.DATE;
         break;
       case "TIMESTAMP":
-        dataType = DataType.TIMESTAMP;
+        dataType = DataTypes.TIMESTAMP;
         break;
       case "STRING":
-        dataType = DataType.STRING;
+        dataType = DataTypes.STRING;
         break;
       case "INT":
-        dataType = DataType.INT;
+        dataType = DataTypes.INT;
         break;
       case "SMALLINT":
-        dataType = DataType.SHORT;
+        dataType = DataTypes.SHORT;
         break;
       case "LONG":
-        dataType = DataType.LONG;
+        dataType = DataTypes.LONG;
         break;
       case "DOUBLE":
-        dataType = DataType.DOUBLE;
+        dataType = DataTypes.DOUBLE;
         break;
       case "DECIMAL":
-        dataType = DataType.DECIMAL;
+        dataType = DataTypes.DECIMAL;
         break;
       case "ARRAY":
-        dataType = DataType.ARRAY;
+        dataType = DataTypes.ARRAY;
         break;
       case "STRUCT":
-        dataType = DataType.STRUCT;
+        dataType = DataTypes.STRUCT;
         break;
       case "MAP":
       default:
-        dataType = DataType.STRING;
+        dataType = DataTypes.STRING;
     }
     return dataType;
   }
@@ -304,61 +313,65 @@ public final class DataTypeUtil {
       return null;
     }
     try {
-      switch (actualDataType) {
-        case INT:
-          if (data.isEmpty()) {
-            return null;
-          }
-          return Integer.parseInt(data);
-        case SHORT:
-          if (data.isEmpty()) {
-            return null;
-          }
-          return Short.parseShort(data);
-        case FLOAT:
-          if (data.isEmpty()) {
-            return null;
-          }
-          return Float.parseFloat(data);
-        case DOUBLE:
-          if (data.isEmpty()) {
-            return null;
-          }
-          return Double.parseDouble(data);
-        case LONG:
-          if (data.isEmpty()) {
-            return null;
-          }
-          return Long.parseLong(data);
-        case DATE:
-          if (data.isEmpty()) {
-            return null;
-          }
-          try {
-            Date dateToStr = dateformatter.get().parse(data);
-            return dateToStr.getTime() * 1000;
-          } catch (ParseException e) {
-            LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
-            return null;
-          }
-        case TIMESTAMP:
-          if (data.isEmpty()) {
-            return null;
-          }
-          try {
-            Date dateToStr = timeStampformatter.get().parse(data);
-            return dateToStr.getTime() * 1000;
-          } catch (ParseException e) {
-            LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
-            return null;
-          }
-        case DECIMAL:
-          if (data.isEmpty()) {
-            return null;
-          }
-          return converter.convertToDecimal(data);
-        default:
-          return converter.convertFromStringToUTF8String(data);
+      if (actualDataType == DataTypes.BOOLEAN) {
+        if (data.isEmpty()) {
+          return null;
+        }
+        return BooleanConvert.parseBoolean(data);
+      } else if (actualDataType == DataTypes.INT) {
+        if (data.isEmpty()) {
+          return null;
+        }
+        return Integer.parseInt(data);
+      } else if (actualDataType == DataTypes.SHORT) {
+        if (data.isEmpty()) {
+          return null;
+        }
+        return Short.parseShort(data);
+      } else if (actualDataType == DataTypes.FLOAT) {
+        if (data.isEmpty()) {
+          return null;
+        }
+        return Float.parseFloat(data);
+      } else if (actualDataType == DataTypes.DOUBLE) {
+        if (data.isEmpty()) {
+          return null;
+        }
+        return Double.parseDouble(data);
+      } else if (actualDataType == DataTypes.LONG) {
+        if (data.isEmpty()) {
+          return null;
+        }
+        return Long.parseLong(data);
+      } else if (actualDataType == DataTypes.DATE) {
+        if (data.isEmpty()) {
+          return null;
+        }
+        try {
+          Date dateToStr = dateformatter.get().parse(data);
+          return dateToStr.getTime() * 1000;
+        } catch (ParseException e) {
+          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
+          return null;
+        }
+      } else if (actualDataType == DataTypes.TIMESTAMP) {
+        if (data.isEmpty()) {
+          return null;
+        }
+        try {
+          Date dateToStr = timeStampformatter.get().parse(data);
+          return dateToStr.getTime() * 1000;
+        } catch (ParseException e) {
+          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
+          return null;
+        }
+      } else if (actualDataType == DataTypes.DECIMAL) {
+        if (data.isEmpty()) {
+          return null;
+        }
+        return converter.convertToDecimal(data);
+      } else {
+        return converter.convertFromStringToUTF8String(data);
       }
     } catch (NumberFormatException ex) {
       LOGGER.error("Problem while converting data type" + data);
@@ -367,20 +380,35 @@ public final class DataTypeUtil {
   }
 
   public static byte[] getBytesBasedOnDataTypeForNoDictionaryColumn(String dimensionValue,
-      DataType actualDataType) {
-    switch (actualDataType) {
-      case STRING:
-        return ByteUtil.toBytes(dimensionValue);
-      case BOOLEAN:
-        return ByteUtil.toBytes(Boolean.parseBoolean(dimensionValue));
-      case SHORT:
-        return ByteUtil.toBytes(Short.parseShort(dimensionValue));
-      case INT:
-        return ByteUtil.toBytes(Integer.parseInt(dimensionValue));
-      case LONG:
-        return ByteUtil.toBytes(Long.parseLong(dimensionValue));
-      default:
-        return ByteUtil.toBytes(dimensionValue);
+      DataType actualDataType, String dateFormat) {
+    if (actualDataType == DataTypes.BOOLEAN) {
+      return ByteUtil.toBytes(BooleanConvert.parseBoolean(dimensionValue));
+    } else if (actualDataType == DataTypes.STRING) {
+      return ByteUtil.toBytes(dimensionValue);
+    } else if (actualDataType == DataTypes.BOOLEAN) {
+      return ByteUtil.toBytes(Boolean.parseBoolean(dimensionValue));
+    } else if (actualDataType == DataTypes.SHORT) {
+      return ByteUtil.toBytes(Short.parseShort(dimensionValue));
+    } else if (actualDataType == DataTypes.INT) {
+      return ByteUtil.toBytes(Integer.parseInt(dimensionValue));
+    } else if (actualDataType == DataTypes.LONG) {
+      return ByteUtil.toBytes(Long.parseLong(dimensionValue));
+    } else if (actualDataType == DataTypes.TIMESTAMP) {
+      Date dateToStr = null;
+      DateFormat dateFormatter = null;
+      try {
+        if (null != dateFormat) {
+          dateFormatter = new SimpleDateFormat(dateFormat);
+        } else {
+          dateFormatter = timeStampformatter.get();
+        }
+        dateToStr = dateFormatter.parse(dimensionValue);
+        return ByteUtil.toBytes(dateToStr.getTime());
+      } catch (ParseException e) {
+        throw new NumberFormatException(e.getMessage());
+      }
+    } else {
+      return ByteUtil.toBytes(dimensionValue);
     }
   }
 
@@ -400,19 +428,22 @@ public final class DataTypeUtil {
       return null;
     }
     try {
-      switch (actualDataType) {
-        case STRING:
-          return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
-        case BOOLEAN:
-          return ByteUtil.toBoolean(dataInBytes);
-        case SHORT:
-          return ByteUtil.toShort(dataInBytes, 0, dataInBytes.length);
-        case INT:
-          return ByteUtil.toInt(dataInBytes, 0, dataInBytes.length);
-        case LONG:
-          return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length);
-        default:
-          return ByteUtil.toString(dataInBytes, 0, dataInBytes.length);
+      if (actualDataType == DataTypes.BOOLEAN) {
+        return ByteUtil.toBoolean(dataInBytes);
+      } else if (actualDataType == DataTypes.STRING) {
+        return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
+      } else if (actualDataType == DataTypes.BOOLEAN) {
+        return ByteUtil.toBoolean(dataInBytes);
+      } else if (actualDataType == DataTypes.SHORT) {
+        return ByteUtil.toShort(dataInBytes, 0, dataInBytes.length);
+      } else if (actualDataType == DataTypes.INT) {
+        return ByteUtil.toInt(dataInBytes, 0, dataInBytes.length);
+      } else if (actualDataType == DataTypes.LONG) {
+        return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length);
+      } else if (actualDataType == DataTypes.TIMESTAMP) {
+        return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length) * 1000L;
+      } else {
+        return ByteUtil.toString(dataInBytes, 0, dataInBytes.length);
       }
     } catch (Throwable ex) {
       String data = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
@@ -438,68 +469,67 @@ public final class DataTypeUtil {
       return null;
     }
     try {
-      switch (dimension.getDataType()) {
-        case INT:
-          String data1 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-          if (data1.isEmpty()) {
-            return null;
-          }
-          return Integer.parseInt(data1);
-        case SHORT:
-          String data2 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-          if (data2.isEmpty()) {
-            return null;
-          }
-          return Short.parseShort(data2);
-        case DOUBLE:
-          String data3 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-          if (data3.isEmpty()) {
-            return null;
-          }
-          return Double.parseDouble(data3);
-        case LONG:
-          String data4 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-          if (data4.isEmpty()) {
-            return null;
-          }
-          return Long.parseLong(data4);
-        case DATE:
-          String data5 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-          if (data5.isEmpty()) {
-            return null;
-          }
-          try {
-            Date dateToStr = dateformatter.get().parse(data5);
-            return dateToStr.getTime() * 1000;
-          } catch (ParseException e) {
-            LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
-            return null;
-          }
-
-        case TIMESTAMP:
-          String data6 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-          if (data6.isEmpty()) {
-            return null;
-          }
-          try {
-            Date dateToStr = timeStampformatter.get().parse(data6);
-            return dateToStr.getTime() * 1000;
-          } catch (ParseException e) {
-            LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
-            return null;
-          }
-        case DECIMAL:
-          String data7 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
-          if (data7.isEmpty()) {
-            return null;
-          }
-          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data7);
-          if (dimension.getColumnSchema().getScale() > javaDecVal.scale()) {
-            javaDecVal = javaDecVal.setScale(dimension.getColumnSchema().getScale());
-          }
-          return getDataTypeConverter().convertToDecimal(javaDecVal);
-        default:
-          return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
+      DataType dataType = dimension.getDataType();
+      if (dataType == DataTypes.INT) {
+        String data1 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        if (data1.isEmpty()) {
+          return null;
+        }
+        return Integer.parseInt(data1);
+      } else if (dataType == DataTypes.SHORT) {
+        String data2 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        if (data2.isEmpty()) {
+          return null;
+        }
+        return Short.parseShort(data2);
+      } else if (dataType == DataTypes.DOUBLE) {
+        String data3 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        if (data3.isEmpty()) {
+          return null;
+        }
+        return Double.parseDouble(data3);
+      } else if (dataType == DataTypes.LONG) {
+        String data4 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        if (data4.isEmpty()) {
+          return null;
+        }
+        return Long.parseLong(data4);
+      } else if (dataType == DataTypes.DATE) {
+        String data5 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        if (data5.isEmpty()) {
+          return null;
+        }
+        try {
+          Date dateToStr = dateformatter.get().parse(data5);
+          return dateToStr.getTime() * 1000;
+        } catch (ParseException e) {
+          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
+          return null;
+        }
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        String data6 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        if (data6.isEmpty()) {
+          return null;
+        }
+        try {
+          Date dateToStr = timeStampformatter.get().parse(data6);
+          return dateToStr.getTime() * 1000;
+        } catch (ParseException e) {
+          LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
+          return null;
+        }
+      } else if (dataType == DataTypes.DECIMAL) {
+        String data7 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        if (data7.isEmpty()) {
+          return null;
+        }
+        java.math.BigDecimal javaDecVal = new java.math.BigDecimal(data7);
+        if (dimension.getColumnSchema().getScale() > javaDecVal.scale()) {
+          javaDecVal = javaDecVal.setScale(dimension.getColumnSchema().getScale());
+        }
+        return getDataTypeConverter().convertToDecimal(javaDecVal);
+      } else {
+        return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
       }
     } catch (NumberFormatException ex) {
       String data = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
@@ -523,18 +553,14 @@ public final class DataTypeUtil {
     }
     try {
       Object parsedValue = null;
-      switch (actualDataType) {
-        case SHORT:
-          parsedValue = Short.parseShort(data);
-          break;
-        case INT:
-          parsedValue = Integer.parseInt(data);
-          break;
-        case LONG:
-          parsedValue = Long.parseLong(data);
-          break;
-        default:
-          return data;
+      if (actualDataType == DataTypes.SHORT) {
+        parsedValue = Short.parseShort(data);
+      } else if (actualDataType == DataTypes.INT) {
+        parsedValue = Integer.parseInt(data);
+      } else if (actualDataType == DataTypes.LONG) {
+        parsedValue = Long.parseLong(data);
+      } else {
+        return data;
       }
       if (null != parsedValue) {
         return data;
@@ -558,19 +584,16 @@ public final class DataTypeUtil {
       Object parsedValue = null;
       // validation will not be done for timestamp datatype as for timestamp direct dictionary
       // is generated. No dictionary file is created for timestamp datatype column
-      switch (dimension.getDataType()) {
-        case DECIMAL:
-          return parseStringToBigDecimal(value, dimension);
-        case SHORT:
-        case INT:
-        case LONG:
-          parsedValue = normalizeIntAndLongValues(value, dimension.getDataType());
-          break;
-        case DOUBLE:
-          parsedValue = Double.parseDouble(value);
-          break;
-        default:
-          return value;
+      DataType dataType = dimension.getDataType();
+      if (dataType == DataTypes.DECIMAL) {
+        return parseStringToBigDecimal(value, dimension);
+      } else if (dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
+          dataType == DataTypes.LONG) {
+        parsedValue = normalizeIntAndLongValues(value, dimension.getDataType());
+      } else if (dataType == DataTypes.DOUBLE) {
+        parsedValue = Double.parseDouble(value);
+      } else {
+        return value;
       }
       if (null != parsedValue) {
         return value;
@@ -594,23 +617,19 @@ public final class DataTypeUtil {
       return null;
     }
     try {
-      switch (dimension.getDataType()) {
-        case DECIMAL:
-          return parseStringToBigDecimal(value, dimension);
-        case INT:
-          Integer.parseInt(value);
-          break;
-        case DOUBLE:
-          Double.parseDouble(value);
-          break;
-        case LONG:
-          Long.parseLong(value);
-          break;
-        case FLOAT:
-          Float.parseFloat(value);
-          break;
-        default:
-          // do nothing
+      DataType dataType = dimension.getDataType();
+      if (dataType == DataTypes.DECIMAL) {
+        return parseStringToBigDecimal(value, dimension);
+      } else if (dataType == DataTypes.INT) {
+        Integer.parseInt(value);
+      } else if (dataType == DataTypes.DOUBLE) {
+        Double.parseDouble(value);
+      } else if (dataType == DataTypes.LONG) {
+        Long.parseLong(value);
+      } else if (dataType == DataTypes.FLOAT) {
+        Float.parseFloat(value);
+      } else {
+        // do nothing
       }
     } catch (NumberFormatException e) {
       return null;
@@ -663,37 +682,54 @@ public final class DataTypeUtil {
     }
     try {
       long parsedIntVal = 0;
-      switch (columnSchema.getDataType()) {
-        case INT:
-          parsedIntVal = (long) Integer.parseInt(data);
-          return String.valueOf(parsedIntVal)
-              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-        case SHORT:
-          parsedIntVal = (long) Short.parseShort(data);
-          return String.valueOf(parsedIntVal)
-              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-        case DOUBLE:
-          return String.valueOf(Double.parseDouble(data))
-              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-        case LONG:
-          return String.valueOf(Long.parseLong(data))
-              .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-        case DATE:
-        case TIMESTAMP:
-          DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+      DataType dataType = columnSchema.getDataType();
+      if (dataType == DataTypes.INT) {
+        parsedIntVal = (long) Integer.parseInt(data);
+        return String.valueOf(parsedIntVal)
+            .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      } else if (dataType == DataTypes.SHORT) {
+        parsedIntVal = (long) Short.parseShort(data);
+        return String.valueOf(parsedIntVal)
+            .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      } else if (dataType == DataTypes.DOUBLE) {
+        return String.valueOf(Double.parseDouble(data))
+            .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      } else if (dataType == DataTypes.LONG) {
+        return String.valueOf(Long.parseLong(data))
+            .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      } else if (dataType == DataTypes.DATE) {
+        DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+            .getDirectDictionaryGenerator(columnSchema.getDataType());
+        int value = directDictionaryGenerator.generateDirectSurrogateKey(data);
+        return String.valueOf(value)
+            .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        if (columnSchema.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
+          DirectDictionaryGenerator directDictionaryGenerator1 = DirectDictionaryKeyGeneratorFactory
               .getDirectDictionaryGenerator(columnSchema.getDataType());
-          int value = directDictionaryGenerator.generateDirectSurrogateKey(data);
-          return String.valueOf(value)
+          int value1 = directDictionaryGenerator1.generateDirectSurrogateKey(data);
+          return String.valueOf(value1)
               .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-        case DECIMAL:
-          String parsedValue = parseStringToBigDecimal(data, columnSchema);
-          if (null == parsedValue) {
+        } else {
+          try {
+            Date dateToStr = timeStampformatter.get().parse(data);
+            return ByteUtil.toBytes(dateToStr.getTime());
+          } catch (ParseException e) {
+            LOGGER.error(
+                "Cannot convert value to Time/Long type value. Value is considered as null" + e
+                    .getMessage());
             return null;
           }
-          java.math.BigDecimal javaDecVal = new java.math.BigDecimal(parsedValue);
-          return bigDecimalToByte(javaDecVal);
-        default:
-          return getDataTypeConverter().convertFromStringToByte(data);
+        }
+      } else if (dataType == DataTypes.DECIMAL) {
+        String parsedValue = parseStringToBigDecimal(data, columnSchema);
+        if (null == parsedValue) {
+          return null;
+        }
+        java.math.BigDecimal javaDecVal = new java.math.BigDecimal(parsedValue);
+        return bigDecimalToByte(javaDecVal);
+      } else {
+        return getDataTypeConverter().convertFromStringToByte(data);
       }
     } catch (NumberFormatException ex) {
       LOGGER.error("Problem while converting data type" + data);
@@ -712,19 +748,16 @@ public final class DataTypeUtil {
   public static String normalizeColumnValueForItsDataType(String value, ColumnSchema columnSchema) {
     try {
       Object parsedValue = null;
-      switch (columnSchema.getDataType()) {
-        case DECIMAL:
-          return parseStringToBigDecimal(value, columnSchema);
-        case SHORT:
-        case INT:
-        case LONG:
-          parsedValue = normalizeIntAndLongValues(value, columnSchema.getDataType());
-          break;
-        case DOUBLE:
-          parsedValue = Double.parseDouble(value);
-          break;
-        default:
-          return value;
+      DataType dataType = columnSchema.getDataType();
+      if (dataType == DataTypes.DECIMAL) {
+        return parseStringToBigDecimal(value, columnSchema);
+      } else if (dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
+          dataType == DataTypes.LONG) {
+        parsedValue = normalizeIntAndLongValues(value, columnSchema.getDataType());
+      } else if (dataType == DataTypes.DOUBLE) {
+        parsedValue = Double.parseDouble(value);
+      } else {
+        return value;
       }
       if (null != parsedValue) {
         return value;

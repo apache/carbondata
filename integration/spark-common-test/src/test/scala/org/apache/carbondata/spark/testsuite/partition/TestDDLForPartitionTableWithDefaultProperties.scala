@@ -19,7 +19,7 @@ package org.apache.carbondata.spark.testsuite.partition
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.util.CarbonProperties
@@ -48,7 +48,7 @@ class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with Befo
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("empno"))
-    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.INT)
+    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.INT)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 0)
     assert(partitionInfo.getPartitionType ==  PartitionType.HASH)
     assert(partitionInfo.getNumPartitions == 3)
@@ -64,14 +64,14 @@ class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with Befo
         | PARTITIONED BY (doj Timestamp)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('PARTITION_TYPE'='RANGE',
-        |  'RANGE_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59')
+        |  'RANGE_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59','DICTIONARY_INCLUDE'='doj')
       """.stripMargin)
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_rangeTable")
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("doj"))
-    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.TIMESTAMP)
+    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.TIMESTAMP)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 3)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(0) == Encoding.DICTIONARY)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(1) == Encoding.DIRECT_DICTIONARY)
@@ -92,13 +92,14 @@ class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with Befo
         | PARTITIONED BY (projectenddate Timestamp)
         | STORED BY 'org.apache.carbondata.format'
         | TBLPROPERTIES('PARTITION_TYPE'='LIST',
-        |  'LIST_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59')
+        |  'LIST_INFO'='2017-06-11 00:00:02, 2017-06-13 23:59:59',
+        |  'DICTIONARY_INCLUDE'='projectenddate')
       """.stripMargin)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_listTable")
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("projectenddate"))
-    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.TIMESTAMP)
+    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.TIMESTAMP)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 3)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(0) == Encoding.DICTIONARY)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(1) == Encoding.DIRECT_DICTIONARY)
@@ -130,7 +131,7 @@ class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with Befo
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("projectenddate"))
-    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataType.DATE)
+    assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.DATE)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.size == 3)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(0) == Encoding.DICTIONARY)
     assert(partitionInfo.getColumnSchemaList.get(0).getEncodingList.get(1) == Encoding.DIRECT_DICTIONARY)

@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.apache.carbondata</groupId>
     <artifactId>carbondata-parent</artifactId>
-    <version>1.2.0-SNAPSHOT</version>
+    <version>1.3.0-SNAPSHOT</version>
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -91,12 +91,6 @@
       <artifactId>carbondata-spark-common</artifactId>
       <version>${project.version}</version>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.spark</groupId>
-          <artifactId>spark-hive-thriftserver_2.10</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
@@ -334,48 +328,6 @@
   </build>
   <profiles>
     <profile>
-      <id>spark-1.5</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.carbondata</groupId>
-          <artifactId>carbondata-spark</artifactId>
-          <version>${project.version}</version>
-          <scope>test</scope>
-          <exclusions>
-            <exclusion>
-              <groupId>org.apache.spark</groupId>
-              <artifactId>spark-hive-thriftserver_2.10</artifactId>
-            </exclusion>
-            <exclusion>
-              <groupId>org.apache.spark</groupId>
-              <artifactId>spark-repl_2.10</artifactId>
-            </exclusion>
-          </exclusions>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <id>spark-1.6</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.carbondata</groupId>
-          <artifactId>carbondata-spark</artifactId>
-          <version>${project.version}</version>
-          <scope>test</scope>
-          <exclusions>
-            <exclusion>
-              <groupId>org.apache.spark</groupId>
-              <artifactId>spark-hive-thriftserver_2.10</artifactId>
-            </exclusion>
-            <exclusion>
-              <groupId>org.apache.spark</groupId>
-              <artifactId>spark-repl_2.10</artifactId>
-            </exclusion>
-          </exclusions>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
       <id>spark-2.1</id>
       <activation>
         <activeByDefault>true</activeByDefault>
@@ -386,16 +338,6 @@
           <artifactId>carbondata-spark2</artifactId>
           <version>${project.version}</version>
           <scope>test</scope>
-          <exclusions>
-            <exclusion>
-              <groupId>org.apache.spark</groupId>
-              <artifactId>spark-hive-thriftserver_2.10</artifactId>
-            </exclusion>
-            <exclusion>
-              <groupId>org.apache.spark</groupId>
-              <artifactId>spark-repl_2.10</artifactId>
-            </exclusion>
-          </exclusions>
         </dependency>
       </dependencies>
     </profile>

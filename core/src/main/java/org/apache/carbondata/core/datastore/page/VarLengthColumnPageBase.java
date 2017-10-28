@@ -27,19 +27,20 @@ import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalConverterFactory;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
 
-import static org.apache.carbondata.core.metadata.datatype.DataType.BYTE;
-import static org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.DECIMAL;
 
 public abstract class VarLengthColumnPageBase extends ColumnPage {
 
   static final int byteBits = BYTE.getSizeBits();
-  static final int shortBits = DataType.SHORT.getSizeBits();
-  static final int intBits = DataType.INT.getSizeBits();
-  static final int longBits = DataType.LONG.getSizeBits();
+  static final int shortBits = DataTypes.SHORT.getSizeBits();
+  static final int intBits = DataTypes.INT.getSizeBits();
+  static final int longBits = DataTypes.LONG.getSizeBits();
   // default size for each row, grows as needed
   static final int DEFAULT_ROW_SIZE = 8;
 
@@ -115,7 +116,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
             columnSpec.getScale());
     int size = decimalConverter.getSize();
     if (size < 0) {
-      return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataType.DECIMAL);
+      return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataTypes.DECIMAL);
     } else {
       // Here the size is always fixed.
       return getDecimalColumnPage(columnSpec, lvEncodedBytes, size);
@@ -127,7 +128,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
    */
   static ColumnPage newLVBytesColumnPage(TableSpec.ColumnSpec columnSpec, byte[] lvEncodedBytes)
       throws MemoryException {
-    return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataType.BYTE_ARRAY);
+    return getLVBytesColumnPage(columnSpec, lvEncodedBytes, DataTypes.BYTE_ARRAY);
   }
 
   private static ColumnPage getDecimalColumnPage(TableSpec.ColumnSpec columnSpec,
@@ -363,7 +364,7 @@ public abstract class VarLengthColumnPageBase extends ColumnPage {
    */
   protected void ensureMemory(int requestSize) throws MemoryException {
     if (totalLength + requestSize > capacity) {
-      int newSize = 2 * capacity;
+      int newSize = Math.max(2 * capacity, totalLength + requestSize);
       MemoryBlock newBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, newSize);
       CarbonUnsafe.getUnsafe().copyMemory(baseAddress, baseOffset,
           newBlock.getBaseObject(), newBlock.getBaseOffset(), capacity);

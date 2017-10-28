@@ -23,11 +23,11 @@ import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -50,11 +50,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   private int scale;
   private int precision;
 
-  public static final char DOUBLE_MEASURE = 'n';
-  public static final char STRING = 's';
-  public static final char TIMESTAMP = 't';
-  public static final char DATE = 'x';
-  public static final char BYTE_ARRAY = 'y';
+
 
   public ColumnPageEncoderMeta() {
   }
@@ -73,38 +69,13 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     this.columnSpec = columnSpec;
     this.storeDataType = storeDataType;
     this.compressorName = compressorName;
-    setType(convertType(storeDataType));
+    setType(DataType.convertType(storeDataType));
     if (stats != null) {
       setDecimal(stats.getDecimalCount());
       setMaxValue(stats.getMax());
       setMinValue(stats.getMin());
       this.scale = stats.getScale();
       this.precision = stats.getPrecision();
-    }
-  }
-
-  private char convertType(DataType type) {
-    switch (type) {
-      case BYTE:
-      case SHORT:
-      case SHORT_INT:
-      case INT:
-      case LONG:
-        return CarbonCommonConstants.BIG_INT_MEASURE;
-      case DOUBLE:
-        return CarbonCommonConstants.DOUBLE_MEASURE;
-      case DECIMAL:
-        return CarbonCommonConstants.BIG_DECIMAL_MEASURE;
-      case STRING:
-        return STRING;
-      case TIMESTAMP:
-        return TIMESTAMP;
-      case DATE:
-        return DATE;
-      case BYTE_ARRAY:
-        return BYTE_ARRAY;
-      default:
-        throw new RuntimeException("Unexpected type: " + type);
     }
   }
 
@@ -115,7 +86,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   @Override
   public void write(DataOutput out) throws IOException {
     columnSpec.write(out);
-    out.writeByte(storeDataType.ordinal());
+    out.writeByte(storeDataType.getId());
     out.writeInt(getDecimal());
     out.writeByte(getDataTypeSelected());
     writeMinMax(out);
@@ -126,7 +97,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   public void readFields(DataInput in) throws IOException {
     columnSpec = new TableSpec.ColumnSpec();
     columnSpec.readFields(in);
-    storeDataType = DataType.valueOf(in.readByte());
+    storeDataType = DataTypes.valueOf(in.readByte());
     setDecimal(in.readInt());
     setDataTypeSelected(in.readByte());
     readMinMax(in);
@@ -134,109 +105,95 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   }
 
   private void writeMinMax(DataOutput out) throws IOException {
-    switch (columnSpec.getSchemaDataType()) {
-      case BYTE:
-        out.writeByte((byte) getMaxValue());
-        out.writeByte((byte) getMinValue());
-        out.writeLong(0L); // unique value is obsoleted, maintain for compatibility
-        break;
-      case SHORT:
-        out.writeShort((short) getMaxValue());
-        out.writeShort((short) getMinValue());
-        out.writeLong(0L); // unique value is obsoleted, maintain for compatibility
-        break;
-      case INT:
-        out.writeInt((int) getMaxValue());
-        out.writeInt((int) getMinValue());
-        out.writeLong(0L); // unique value is obsoleted, maintain for compatibility
-        break;
-      case LONG:
-        out.writeLong((Long) getMaxValue());
-        out.writeLong((Long) getMinValue());
-        out.writeLong(0L); // unique value is obsoleted, maintain for compatibility
-        break;
-      case DOUBLE:
-        out.writeDouble((Double) getMaxValue());
-        out.writeDouble((Double) getMinValue());
-        out.writeDouble(0d); // unique value is obsoleted, maintain for compatibility
-        break;
-      case DECIMAL:
-        byte[] maxAsBytes = getMaxAsBytes(columnSpec.getSchemaDataType());
-        byte[] minAsBytes = getMinAsBytes(columnSpec.getSchemaDataType());
-        byte[] unique = DataTypeUtil.bigDecimalToByte(BigDecimal.ZERO);
-        out.writeShort((short) maxAsBytes.length);
-        out.write(maxAsBytes);
-        out.writeShort((short) minAsBytes.length);
-        out.write(minAsBytes);
-        // unique value is obsoleted, maintain for compatibility
-        out.writeShort((short) unique.length);
-        out.write(unique);
-        out.writeInt(scale);
-        out.writeInt(precision);
-        break;
-      case BYTE_ARRAY:
-        // for complex type, it will come here, ignoring stats for complex type
-        // TODO: support stats for complex type
-        break;
-      default:
-        throw new IllegalArgumentException("invalid data type: " + storeDataType);
+    DataType dataType = columnSpec.getSchemaDataType();
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+      out.writeByte((byte) getMaxValue());
+      out.writeByte((byte) getMinValue());
+      out.writeLong(0L); // unique value is obsoleted, maintain for compatibility
+    } else if (dataType == DataTypes.SHORT) {
+      out.writeShort((short) getMaxValue());
+      out.writeShort((short) getMinValue());
+      out.writeLong(0L); // unique value is obsoleted, maintain for compatibility
+    } else if (dataType == DataTypes.INT) {
+      out.writeInt((int) getMaxValue());
+      out.writeInt((int) getMinValue());
+      out.writeLong(0L); // unique value is obsoleted, maintain for compatibility
+    } else if (dataType == DataTypes.LONG) {
+      out.writeLong((Long) getMaxValue());
+      out.writeLong((Long) getMinValue());
+      out.writeLong(0L); // unique value is obsoleted, maintain for compatibility
+    } else if (dataType == DataTypes.DOUBLE) {
+      out.writeDouble((Double) getMaxValue());
+      out.writeDouble((Double) getMinValue());
+      out.writeDouble(0d); // unique value is obsoleted, maintain for compatibility
+    } else if (dataType == DataTypes.DECIMAL) {
+      byte[] maxAsBytes = getMaxAsBytes(columnSpec.getSchemaDataType());
+      byte[] minAsBytes = getMinAsBytes(columnSpec.getSchemaDataType());
+      byte[] unique = DataTypeUtil.bigDecimalToByte(BigDecimal.ZERO);
+      out.writeShort((short) maxAsBytes.length);
+      out.write(maxAsBytes);
+      out.writeShort((short) minAsBytes.length);
+      out.write(minAsBytes);
+      // unique value is obsoleted, maintain for compatibility
+      out.writeShort((short) unique.length);
+      out.write(unique);
+      out.writeInt(scale);
+      out.writeInt(precision);
+    } else if (dataType == DataTypes.BYTE_ARRAY) {
+      // for complex type, it will come here, ignoring stats for complex type
+      // TODO: support stats for complex type
+    } else {
+      throw new IllegalArgumentException("invalid data type: " + storeDataType);
     }
   }
 
   private void readMinMax(DataInput in) throws IOException {
-    switch (columnSpec.getSchemaDataType()) {
-      case BYTE:
-        this.setMaxValue(in.readByte());
-        this.setMinValue(in.readByte());
-        in.readLong();  // for non exist value which is obsoleted, it is backward compatibility;
-        break;
-      case SHORT:
-        this.setMaxValue(in.readShort());
-        this.setMinValue(in.readShort());
-        in.readLong();  // for non exist value which is obsoleted, it is backward compatibility;
-        break;
-      case INT:
-        this.setMaxValue(in.readInt());
-        this.setMinValue(in.readInt());
-        in.readLong();  // for non exist value which is obsoleted, it is backward compatibility;
-        break;
-      case LONG:
-        this.setMaxValue(in.readLong());
-        this.setMinValue(in.readLong());
-        in.readLong();  // for non exist value which is obsoleted, it is backward compatibility;
-        break;
-      case DOUBLE:
-        this.setMaxValue(in.readDouble());
-        this.setMinValue(in.readDouble());
-        in.readDouble(); // for non exist value which is obsoleted, it is backward compatibility;
-        break;
-      case DECIMAL:
-        byte[] max = new byte[in.readShort()];
-        in.readFully(max);
-        this.setMaxValue(DataTypeUtil.byteToBigDecimal(max));
-        byte[] min = new byte[in.readShort()];
-        in.readFully(min);
-        this.setMinValue(DataTypeUtil.byteToBigDecimal(min));
-        // unique value is obsoleted, maintain for compatiability
-        short uniqueLength = in.readShort();
-        in.readFully(new byte[uniqueLength]);
-        this.scale = in.readInt();
-        this.precision = in.readInt();
-        break;
-      case BYTE_ARRAY:
-        // for complex type, it will come here, ignoring stats for complex type
-        // TODO: support stats for complex type
-        break;
-      default:
-        throw new IllegalArgumentException("invalid data type: " + storeDataType);
+    DataType dataType = columnSpec.getSchemaDataType();
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+      this.setMaxValue(in.readByte());
+      this.setMinValue(in.readByte());
+      in.readLong();  // for non exist value which is obsoleted, it is backward compatibility;
+    } else if (dataType == DataTypes.SHORT) {
+      this.setMaxValue(in.readShort());
+      this.setMinValue(in.readShort());
+      in.readLong();  // for non exist value which is obsoleted, it is backward compatibility;
+    } else if (dataType == DataTypes.INT) {
+      this.setMaxValue(in.readInt());
+      this.setMinValue(in.readInt());
+      in.readLong();  // for non exist value which is obsoleted, it is backward compatibility;
+    } else if (dataType == DataTypes.LONG) {
+      this.setMaxValue(in.readLong());
+      this.setMinValue(in.readLong());
+      in.readLong();  // for non exist value which is obsoleted, it is backward compatibility;
+    } else if (dataType == DataTypes.DOUBLE) {
+      this.setMaxValue(in.readDouble());
+      this.setMinValue(in.readDouble());
+      in.readDouble(); // for non exist value which is obsoleted, it is backward compatibility;
+    } else if (dataType == DataTypes.DECIMAL) {
+      byte[] max = new byte[in.readShort()];
+      in.readFully(max);
+      this.setMaxValue(DataTypeUtil.byteToBigDecimal(max));
+      byte[] min = new byte[in.readShort()];
+      in.readFully(min);
+      this.setMinValue(DataTypeUtil.byteToBigDecimal(min));
+      // unique value is obsoleted, maintain for compatiability
+      short uniqueLength = in.readShort();
+      in.readFully(new byte[uniqueLength]);
+      this.scale = in.readInt();
+      this.precision = in.readInt();
+    } else if (dataType == DataTypes.BYTE_ARRAY) {
+      // for complex type, it will come here, ignoring stats for complex type
+      // TODO: support stats for complex type
+    } else {
+      throw new IllegalArgumentException("invalid data type: " + storeDataType);
     }
   }
 
-  public byte[] getMaxAsBytes(DataType dataType) {
+  private byte[] getMaxAsBytes(DataType dataType) {
     return getValueAsBytes(getMaxValue(), dataType);
   }
 
-  public byte[] getMinAsBytes(DataType dataType) {
+  private byte[] getMinAsBytes(DataType dataType) {
     return getValueAsBytes(getMinValue(), dataType);
   }
 
@@ -245,40 +202,38 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
    */
   private byte[] getValueAsBytes(Object value, DataType dataType) {
     ByteBuffer b;
-    switch (dataType) {
-      case BYTE:
-        b = ByteBuffer.allocate(8);
-        b.putLong((byte) value);
-        b.flip();
-        return b.array();
-      case SHORT:
-        b = ByteBuffer.allocate(8);
-        b.putLong((short) value);
-        b.flip();
-        return b.array();
-      case INT:
-        b = ByteBuffer.allocate(8);
-        b.putLong((int) value);
-        b.flip();
-        return b.array();
-      case LONG:
-        b = ByteBuffer.allocate(8);
-        b.putLong((long) value);
-        b.flip();
-        return b.array();
-      case DOUBLE:
-        b = ByteBuffer.allocate(8);
-        b.putDouble((double) value);
-        b.flip();
-        return b.array();
-      case DECIMAL:
-        return DataTypeUtil.bigDecimalToByte((BigDecimal)value);
-      case STRING:
-      case TIMESTAMP:
-      case DATE:
-        return (byte[]) value;
-      default:
-        throw new IllegalArgumentException("Invalid data type: " + storeDataType);
+    if (dataType == DataTypes.BYTE_ARRAY) {
+      b = ByteBuffer.allocate(8);
+      b.putLong((byte) value);
+      b.flip();
+      return b.array();
+    } else if (dataType == DataTypes.SHORT) {
+      b = ByteBuffer.allocate(8);
+      b.putLong((short) value);
+      b.flip();
+      return b.array();
+    } else if (dataType == DataTypes.INT) {
+      b = ByteBuffer.allocate(8);
+      b.putLong((int) value);
+      b.flip();
+      return b.array();
+    } else if (dataType == DataTypes.LONG) {
+      b = ByteBuffer.allocate(8);
+      b.putLong((long) value);
+      b.flip();
+      return b.array();
+    } else if (dataType == DataTypes.DOUBLE) {
+      b = ByteBuffer.allocate(8);
+      b.putDouble((double) value);
+      b.flip();
+      return b.array();
+    } else if (dataType == DataTypes.DECIMAL) {
+      return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.TIMESTAMP
+        || dataType == DataTypes.DATE) {
+      return (byte[]) value;
+    } else {
+      throw new IllegalArgumentException("Invalid data type: " + storeDataType);
     }
   }
 

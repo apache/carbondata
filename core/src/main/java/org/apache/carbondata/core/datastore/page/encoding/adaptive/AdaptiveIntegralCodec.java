@@ -33,6 +33,7 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -93,12 +94,10 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
         ColumnPage page = null;
-        switch (meta.getSchemaDataType()) {
-          case DECIMAL:
-            page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
-            break;
-          default:
-            page = ColumnPage.decompress(meta, input, offset, length);
+        if (meta.getSchemaDataType() == DataTypes.DECIMAL) {
+          page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
+        } else {
+          page = ColumnPage.decompress(meta, input, offset, length);
         }
         return LazyColumnPage.newPage(page, converter);
       }
@@ -109,103 +108,85 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
   private ColumnPageValueConverter converter = new ColumnPageValueConverter() {
     @Override
     public void encode(int rowId, byte value) {
-      switch (targetDataType) {
-        default:
-          throw new RuntimeException("internal error: " + debugInfo());
+      if (targetDataType == DataTypes.BYTE) {
+        encodedPage.putByte(rowId, value);
+      } else {
+        throw new RuntimeException("internal error: " + debugInfo());
       }
     }
 
     @Override
     public void encode(int rowId, short value) {
-      switch (targetDataType) {
-        case BYTE:
-          encodedPage.putByte(rowId, (byte) value);
-          break;
-        default:
-          throw new RuntimeException("internal error: " + debugInfo());
+      if (targetDataType == DataTypes.BYTE) {
+        encodedPage.putByte(rowId, (byte) value);
+      } else if (targetDataType == DataTypes.SHORT) {
+        encodedPage.putShort(rowId, value);
+      } else {
+        throw new RuntimeException("internal error: " + debugInfo());
       }
     }
 
     @Override
     public void encode(int rowId, int value) {
-      switch (targetDataType) {
-        case BYTE:
-          encodedPage.putByte(rowId, (byte) value);
-          break;
-        case SHORT:
-          encodedPage.putShort(rowId, (short) value);
-          break;
-        case SHORT_INT:
-          encodedPage.putShortInt(rowId, value);
-          break;
-        default:
-          throw new RuntimeException("internal error: " + debugInfo());
+      if (targetDataType == DataTypes.BYTE) {
+        encodedPage.putByte(rowId, (byte) value);
+      } else if (targetDataType == DataTypes.SHORT) {
+        encodedPage.putShort(rowId, (short) value);
+      } else if (targetDataType == DataTypes.SHORT_INT) {
+        encodedPage.putShortInt(rowId, value);
+      } else if (targetDataType == DataTypes.INT) {
+        encodedPage.putInt(rowId, value);
+      } else {
+        throw new RuntimeException("internal error: " + debugInfo());
       }
     }
 
     @Override
     public void encode(int rowId, long value) {
-      switch (targetDataType) {
-        case BYTE:
-          encodedPage.putByte(rowId, (byte) value);
-          break;
-        case SHORT:
-          encodedPage.putShort(rowId, (short) value);
-          break;
-        case SHORT_INT:
-          encodedPage.putShortInt(rowId, (int) value);
-          break;
-        case INT:
-          encodedPage.putInt(rowId, (int) value);
-          break;
-        case LONG:
-          encodedPage.putLong(rowId, (long) value);
-          break;
-        default:
-          throw new RuntimeException("internal error: " + debugInfo());
+      if (targetDataType == DataTypes.BYTE) {
+        encodedPage.putByte(rowId, (byte) value);
+      } else if (targetDataType == DataTypes.SHORT) {
+        encodedPage.putShort(rowId, (short) value);
+      } else if (targetDataType == DataTypes.SHORT_INT) {
+        encodedPage.putShortInt(rowId, (int) value);
+      } else if (targetDataType == DataTypes.INT) {
+        encodedPage.putInt(rowId, (int) value);
+      } else if (targetDataType == DataTypes.LONG) {
+        encodedPage.putLong(rowId, (long) value);
+      } else {
+        throw new RuntimeException("internal error: " + debugInfo());
       }
     }
 
     @Override
     public void encode(int rowId, float value) {
-      switch (targetDataType) {
-        case BYTE:
-          encodedPage.putByte(rowId, (byte) value);
-          break;
-        case SHORT:
-          encodedPage.putShort(rowId, (short) value);
-          break;
-        case SHORT_INT:
-          encodedPage.putShortInt(rowId, (int) value);
-          break;
-        case INT:
-          encodedPage.putInt(rowId, (int) value);
-          break;
-        default:
-          throw new RuntimeException("internal error: " + debugInfo());
+      if (targetDataType == DataTypes.BYTE) {
+        encodedPage.putByte(rowId, (byte) value);
+      } else if (targetDataType == DataTypes.SHORT) {
+        encodedPage.putShort(rowId, (short) value);
+      } else if (targetDataType == DataTypes.SHORT_INT) {
+        encodedPage.putShortInt(rowId, (int) value);
+      } else if (targetDataType == DataTypes.INT) {
+        encodedPage.putInt(rowId, (int) value);
+      } else {
+        throw new RuntimeException("internal error: " + debugInfo());
       }
     }
 
     @Override
     public void encode(int rowId, double value) {
-      switch (targetDataType) {
-        case BYTE:
-          encodedPage.putByte(rowId, (byte) value);
-          break;
-        case SHORT:
-          encodedPage.putShort(rowId, (short) value);
-          break;
-        case SHORT_INT:
-          encodedPage.putShortInt(rowId, (int) value);
-          break;
-        case INT:
-          encodedPage.putInt(rowId, (int) value);
-          break;
-        case LONG:
-          encodedPage.putLong(rowId, (long) value);
-          break;
-        default:
-          throw new RuntimeException("internal error: " + debugInfo());
+      if (targetDataType == DataTypes.BYTE) {
+        encodedPage.putByte(rowId, (byte) value);
+      } else if (targetDataType == DataTypes.SHORT) {
+        encodedPage.putShort(rowId, (short) value);
+      } else if (targetDataType == DataTypes.SHORT_INT) {
+        encodedPage.putShortInt(rowId, (int) value);
+      } else if (targetDataType == DataTypes.INT) {
+        encodedPage.putInt(rowId, (int) value);
+      } else if (targetDataType == DataTypes.LONG) {
+        encodedPage.putLong(rowId, (long) value);
+      } else {
+        throw new RuntimeException("internal error: " + debugInfo());
       }
     }
 

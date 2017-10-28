@@ -39,6 +39,7 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.datachunk.DataChunk;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -507,14 +508,14 @@ public class CarbonUtilTest {
   }
 
   @Test public void testForHasDataTypes() {
-    DataType[] dataTypes = { DataType.DECIMAL, DataType.BOOLEAN, DataType.INT };
-    assertTrue(CarbonUtil.hasDataType(DataType.BOOLEAN, dataTypes));
-    assertTrue(!CarbonUtil.hasDataType(DataType.DATE, dataTypes));
+    DataType[] dataTypes = { DataTypes.DECIMAL, DataTypes.BOOLEAN, DataTypes.INT };
+    assertTrue(CarbonUtil.hasDataType(DataTypes.BOOLEAN, dataTypes));
+    assertTrue(!CarbonUtil.hasDataType(DataTypes.DATE, dataTypes));
   }
 
   @Test public void testForHasComplexDataTypes() {
-    assertTrue(CarbonUtil.hasComplexDataType(DataType.ARRAY));
-    assertTrue(!CarbonUtil.hasComplexDataType(DataType.DATE));
+    assertTrue(DataTypes.ARRAY.isComplexType());
+    assertTrue(!DataTypes.DATE.isComplexType());
   }
 
   @Test public void testToGetDictionaryEncodingArray() {
@@ -575,11 +576,11 @@ public class CarbonUtilTest {
     ColumnSchema column1Schema = new ColumnSchema();
     ColumnSchema column2Schema = new ColumnSchema();
     column1Schema.setColumnName("Column1");
-    column1Schema.setDataType(DataType.DATE);
+    column1Schema.setDataType(DataTypes.DATE);
     column1.setDimension(new CarbonDimension(column1Schema, 1, 1, 1, 1));
 
     column2Schema.setColumnName("Column2");
-    column2Schema.setDataType(DataType.ARRAY);
+    column2Schema.setDataType(DataTypes.ARRAY);
     column2.setDimension(new CarbonDimension(column2Schema, 1, 1, 1, 1));
 
     QueryDimension[] queryDimensions = { column1, column2 };

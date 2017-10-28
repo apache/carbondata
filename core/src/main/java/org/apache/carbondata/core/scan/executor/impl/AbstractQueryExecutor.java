@@ -49,6 +49,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -296,18 +297,12 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       blockExecutionInfo.setFilterExecuterTree(FilterUtil
           .getFilterExecuterTree(queryModel.getFilterExpressionResolverTree(), segmentProperties,
               blockExecutionInfo.getComlexDimensionInfoMap()));
-      List<IndexKey> listOfStartEndKeys = new ArrayList<IndexKey>(2);
-      FilterUtil.traverseResolverTreeAndGetStartAndEndKey(segmentProperties,
-          queryModel.getFilterExpressionResolverTree(), listOfStartEndKeys);
-      startIndexKey = listOfStartEndKeys.get(0);
-      endIndexKey = listOfStartEndKeys.get(1);
-    } else {
-      try {
-        startIndexKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);
-        endIndexKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
-      } catch (KeyGenException e) {
-        throw new QueryExecutionException(e);
-      }
+    }
+    try {
+      startIndexKey = FilterUtil.prepareDefaultStartIndexKey(segmentProperties);
+      endIndexKey = FilterUtil.prepareDefaultEndIndexKey(segmentProperties);
+    } catch (KeyGenException e) {
+      throw new QueryExecutionException(e);
     }
     //setting the start index key of the block node
     blockExecutionInfo.setStartKey(startIndexKey);
@@ -484,7 +479,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     List<Integer> parentBlockIndexList = new ArrayList<Integer>();
     for (QueryDimension queryDimension : queryDimensions) {
       if (CarbonUtil.hasDataType(queryDimension.getDimension().getDataType(),
-          new DataType[] { DataType.ARRAY, DataType.STRUCT, DataType.MAP })) {
+          new DataType[] { DataTypes.ARRAY, DataTypes.STRUCT, DataTypes.MAP })) {
         parentBlockIndexList.add(queryDimension.getDimension().getOrdinal());
       }
     }

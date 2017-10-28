@@ -448,6 +448,41 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS default.carbon1")
   }
 
+  test("""CARBONDATA-1445 carbon.update.persist.enable=false it will fail to update data""") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.isPersistEnabled, "false")
+    import sqlContext.implicits._
+    val df = sqlContext.sparkContext.parallelize(0 to 50)
+      .map(x => ("a", x.toString, (x % 2).toString, x, x.toLong, x * 2))
+      .toDF("stringField1", "stringField2", "stringField3", "intField", "longField", "int2Field")
+    sql("DROP TABLE IF EXISTS default.study_carbondata ")
+    sql(s""" CREATE TABLE IF NOT EXISTS default.study_carbondata (
+           |    stringField1          string,
+           |    stringField2          string,
+           |    stringField3          string,
+           |    intField              int,
+           |    longField             bigint,
+           |    int2Field             int) STORED BY 'carbondata'""".stripMargin)
+    df.write
+      .format("carbondata")
+      .option("tableName", "study_carbondata")
+      .option("compress", "true")  // just valid when tempCSV is true
+      .option("tempCSV", "false")
+      .option("single_pass", "true")
+      .option("sort_scope", "LOCAL_SORT")
+      .mode(SaveMode.Append)
+      .save()
+    sql("""
+      UPDATE default.study_carbondata a
+          SET (a.stringField1, a.stringField2) = (concat(a.stringField1 , "_test" ), concat(a.stringField2 , "_test" ))
+      WHERE a.stringField2 = '1'
+      """).show()
+    assert(sql("select stringField1 from default.study_carbondata where stringField2 = '1_test'").collect().length == 1)
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.isPersistEnabled, "true")
+    sql("DROP TABLE IF EXISTS default.study_carbondata ")
+  }
+
   test("update table in carbondata with rand() ") {
 
     sql("""CREATE TABLE iud.rand(imei string,age int,task bigint,num double,level decimal(10,3),name string)STORED BY 'org.apache.carbondata.format' """)

@@ -40,3 +40,6 @@
   * Complex Types
     * arrays: ARRAY``<data_type>``
     * structs: STRUCT``<col_name : data_type COMMENT col_comment, ...>``
+
+  * Other Types
+    * BOOLEAN

@@ -36,6 +36,7 @@ import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
@@ -156,7 +157,12 @@ public abstract class AbstractDataFileFooterConverter {
         tableBlockInfo.setVersion(version);
         int blockletSize = getBlockletSize(readBlockIndexInfo);
         tableBlockInfo.getBlockletInfos().setNoOfBlockLets(blockletSize);
-        tableBlockInfo.setFilePath(parentPath + "/" + readBlockIndexInfo.file_name);
+        String fileName = readBlockIndexInfo.file_name;
+        // Take only name of file.
+        if (fileName.lastIndexOf("/") > 0) {
+          fileName = fileName.substring(fileName.lastIndexOf("/"));
+        }
+        tableBlockInfo.setFilePath(parentPath + "/" + fileName);
         dataFileFooter.setBlockletIndex(blockletIndex);
         dataFileFooter.setColumnInTable(columnSchemaList);
         dataFileFooter.setNumberOfRows(readBlockIndexInfo.getNum_rows());
@@ -346,28 +352,30 @@ public abstract class AbstractDataFileFooterConverter {
   protected DataType thriftDataTyopeToWrapperDataType(
       org.apache.carbondata.format.DataType dataTypeThrift) {
     switch (dataTypeThrift) {
+      case BOOLEAN:
+        return DataTypes.BOOLEAN;
       case STRING:
-        return DataType.STRING;
+        return DataTypes.STRING;
       case SHORT:
-        return DataType.SHORT;
+        return DataTypes.SHORT;
       case INT:
-        return DataType.INT;
+        return DataTypes.INT;
       case LONG:
-        return DataType.LONG;
+        return DataTypes.LONG;
       case DOUBLE:
-        return DataType.DOUBLE;
+        return DataTypes.DOUBLE;
       case DECIMAL:
-        return DataType.DECIMAL;
+        return DataTypes.DECIMAL;
       case DATE:
-        return DataType.DATE;
+        return DataTypes.DATE;
       case TIMESTAMP:
-        return DataType.TIMESTAMP;
+        return DataTypes.TIMESTAMP;
       case ARRAY:
-        return DataType.ARRAY;
+        return DataTypes.ARRAY;
       case STRUCT:
-        return DataType.STRUCT;
+        return DataTypes.STRUCT;
       default:
-        return DataType.STRING;
+        return DataTypes.STRING;
     }
   }
 

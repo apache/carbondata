@@ -26,21 +26,23 @@ import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
+import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
 import org.apache.carbondata.core.datastore.page.statistics.ColumnPageStatsCollector;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
 
-import static org.apache.carbondata.core.metadata.datatype.DataType.BYTE;
-import static org.apache.carbondata.core.metadata.datatype.DataType.BYTE_ARRAY;
-import static org.apache.carbondata.core.metadata.datatype.DataType.DECIMAL;
-import static org.apache.carbondata.core.metadata.datatype.DataType.DOUBLE;
-import static org.apache.carbondata.core.metadata.datatype.DataType.FLOAT;
-import static org.apache.carbondata.core.metadata.datatype.DataType.INT;
-import static org.apache.carbondata.core.metadata.datatype.DataType.LONG;
-import static org.apache.carbondata.core.metadata.datatype.DataType.SHORT;
-import static org.apache.carbondata.core.metadata.datatype.DataType.SHORT_INT;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE_ARRAY;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.DECIMAL;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.FLOAT;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.INT;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.LONG;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT;
+import static org.apache.carbondata.core.metadata.datatype.DataTypes.SHORT_INT;
 
 public abstract class ColumnPage {
 
@@ -183,59 +185,44 @@ public abstract class ColumnPage {
       int pageSize) throws MemoryException {
     ColumnPage instance;
     if (unsafe) {
-      switch (dataType) {
-        case BYTE:
-        case SHORT:
-        case SHORT_INT:
-        case INT:
-        case LONG:
-        case FLOAT:
-        case DOUBLE:
-          instance = new UnsafeFixLengthColumnPage(columnSpec, dataType, pageSize);
-          break;
-        case DECIMAL:
-          instance = new UnsafeDecimalColumnPage(columnSpec, dataType, pageSize);
-          break;
-        case STRING:
-        case BYTE_ARRAY:
-          instance =
-              new UnsafeVarLengthColumnPage(columnSpec, dataType, pageSize);
-          break;
-        default:
-          throw new RuntimeException("Unsupported data dataType: " + dataType);
+      if (dataType == DataTypes.BOOLEAN) {
+        instance = new UnsafeFixLengthColumnPage(columnSpec, BYTE, pageSize);
+      } else if (dataType == DataTypes.BYTE ||
+          dataType == DataTypes.SHORT ||
+          dataType == DataTypes.SHORT_INT ||
+          dataType == DataTypes.INT ||
+          dataType == DataTypes.LONG ||
+          dataType == DataTypes.FLOAT ||
+          dataType == DataTypes.DOUBLE) {
+        instance = new UnsafeFixLengthColumnPage(columnSpec, dataType, pageSize);
+      } else if (dataType == DataTypes.DECIMAL) {
+        instance = new UnsafeDecimalColumnPage(columnSpec, dataType, pageSize);
+      } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+        instance = new UnsafeVarLengthColumnPage(columnSpec, dataType, pageSize);
+      } else {
+        throw new RuntimeException("Unsupported data dataType: " + dataType);
       }
     } else {
-      switch (dataType) {
-        case BYTE:
-          instance = newBytePage(columnSpec, new byte[pageSize]);
-          break;
-        case SHORT:
-          instance = newShortPage(columnSpec, new short[pageSize]);
-          break;
-        case SHORT_INT:
-          instance = newShortIntPage(columnSpec, new byte[pageSize * 3]);
-          break;
-        case INT:
-          instance = newIntPage(columnSpec, new int[pageSize]);
-          break;
-        case LONG:
-          instance = newLongPage(columnSpec, new long[pageSize]);
-          break;
-        case FLOAT:
-          instance = newFloatPage(columnSpec, new float[pageSize]);
-          break;
-        case DOUBLE:
-          instance = newDoublePage(columnSpec, new double[pageSize]);
-          break;
-        case DECIMAL:
-          instance = newDecimalPage(columnSpec, new byte[pageSize][]);
-          break;
-        case STRING:
-        case BYTE_ARRAY:
-          instance = new SafeVarLengthColumnPage(columnSpec, dataType, pageSize);
-          break;
-        default:
-          throw new RuntimeException("Unsupported data dataType: " + dataType);
+      if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+        instance = newBytePage(columnSpec, new byte[pageSize]);
+      } else if (dataType == DataTypes.SHORT) {
+        instance = newShortPage(columnSpec, new short[pageSize]);
+      } else if (dataType == DataTypes.SHORT_INT) {
+        instance = newShortIntPage(columnSpec, new byte[pageSize * 3]);
+      } else if (dataType == DataTypes.INT) {
+        instance = newIntPage(columnSpec, new int[pageSize]);
+      } else if (dataType == DataTypes.LONG) {
+        instance = newLongPage(columnSpec, new long[pageSize]);
+      } else if (dataType == DataTypes.FLOAT) {
+        instance = newFloatPage(columnSpec, new float[pageSize]);
+      } else if (dataType == DataTypes.DOUBLE) {
+        instance = newDoublePage(columnSpec, new double[pageSize]);
+      } else if (dataType == DataTypes.DECIMAL) {
+        instance = newDecimalPage(columnSpec, new byte[pageSize][]);
+      } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+        instance = new SafeVarLengthColumnPage(columnSpec, dataType, pageSize);
+      } else {
+        throw new RuntimeException("Unsupported data dataType: " + dataType);
       }
     }
     return instance;
@@ -360,38 +347,32 @@ public abstract class ColumnPage {
       nullBitSet.set(rowId);
       return;
     }
-    switch (dataType) {
-      case BYTE:
-        putByte(rowId, (byte) value);
-        statsCollector.update((byte) value);
-        break;
-      case SHORT:
-        putShort(rowId, (short) value);
-        statsCollector.update((short) value);
-        break;
-      case INT:
-        putInt(rowId, (int) value);
-        statsCollector.update((int) value);
-        break;
-      case LONG:
-        putLong(rowId, (long) value);
-        statsCollector.update((long) value);
-        break;
-      case DOUBLE:
-        putDouble(rowId, (double) value);
-        statsCollector.update((double) value);
-        break;
-      case DECIMAL:
-        putDecimal(rowId, (BigDecimal) value);
-        statsCollector.update((BigDecimal) value);
-        break;
-      case STRING:
-      case BYTE_ARRAY:
-        putBytes(rowId, (byte[]) value);
-        statsCollector.update((byte[]) value);
-        break;
-      default:
-        throw new RuntimeException("unsupported data type: " + dataType);
+    if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
+      if (columnSpec.getSchemaDataType() == DataTypes.BOOLEAN) {
+        value = BooleanConvert.boolean2Byte((Boolean) value);
+      }
+      putByte(rowId, (byte) value);
+      statsCollector.update((byte) value);
+    } else if (dataType == DataTypes.SHORT) {
+      putShort(rowId, (short) value);
+      statsCollector.update((short) value);
+    } else if (dataType == DataTypes.INT) {
+      putInt(rowId, (int) value);
+      statsCollector.update((int) value);
+    } else if (dataType == DataTypes.LONG) {
+      putLong(rowId, (long) value);
+      statsCollector.update((long) value);
+    } else if (dataType == DataTypes.DOUBLE) {
+      putDouble(rowId, (double) value);
+      statsCollector.update((double) value);
+    } else if (dataType == DataTypes.DECIMAL) {
+      putDecimal(rowId, (BigDecimal) value);
+      statsCollector.update((BigDecimal) value);
+    } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
+      putBytes(rowId, (byte[]) value);
+      statsCollector.update((byte[]) value);
+    } else {
+      throw new RuntimeException("unsupported data type: " + dataType);
     }
   }
 
@@ -436,6 +417,13 @@ public abstract class ColumnPage {
   public abstract void putShortInt(int rowId, int value);
 
   /**
+   * Set boolean value at rowId
+   */
+  public void putBoolean(int rowId, boolean value) {
+    putByte(rowId, BooleanConvert.boolean2Byte(value));
+  }
+
+  /**
    * Set byte array from offset to length at rowId
    */
   public abstract void putBytes(int rowId, byte[] bytes, int offset, int length);
@@ -445,27 +433,22 @@ public abstract class ColumnPage {
    * Set null at rowId
    */
   private void putNull(int rowId) {
-    switch (dataType) {
-      case BYTE:
-        putByte(rowId, (byte) 0);
-        break;
-      case SHORT:
-        putShort(rowId, (short) 0);
-        break;
-      case INT:
-        putInt(rowId, 0);
-        break;
-      case LONG:
-        putLong(rowId, 0L);
-        break;
-      case DOUBLE:
-        putDouble(rowId, 0.0);
-        break;
-      case DECIMAL:
-        putDecimal(rowId, BigDecimal.ZERO);
-        break;
-      default:
-        throw new IllegalArgumentException("unsupported data type: " + dataType);
+    if (dataType == DataTypes.BOOLEAN) {
+      putBoolean(rowId, false);
+    } else if (dataType == DataTypes.BYTE) {
+      putByte(rowId, (byte) 0);
+    } else if (dataType == DataTypes.SHORT) {
+      putShort(rowId, (short) 0);
+    } else if (dataType == DataTypes.INT) {
+      putInt(rowId, 0);
+    } else if (dataType == DataTypes.LONG) {
+      putLong(rowId, 0L);
+    } else if (dataType == DataTypes.DOUBLE) {
+      putDouble(rowId, 0.0);
+    } else if (dataType == DataTypes.DECIMAL) {
+      putDecimal(rowId, BigDecimal.ZERO);
+    } else {
+      throw new IllegalArgumentException("unsupported data type: " + dataType);
     }
   }
 
@@ -483,6 +466,13 @@ public abstract class ColumnPage {
    * Get short int value at rowId
    */
   public abstract int getShortInt(int rowId);
+
+  /**
+   * Get boolean value at rowId
+   */
+  public boolean getBoolean(int rowId) {
+    return BooleanConvert.byte2Boolean(getByte(rowId));
+  }
 
   /**
    * Get int value at rowId
@@ -530,6 +520,13 @@ public abstract class ColumnPage {
   public abstract byte[] getShortIntPage();
 
   /**
+   * Get boolean value page
+   */
+  public byte[] getBooleanPage() {
+    return getBytePage();
+  }
+
+  /**
    * Get int value page
    */
   public abstract int[] getIntPage();
@@ -573,27 +570,28 @@ public abstract class ColumnPage {
    * Compress page data using specified compressor
    */
   public byte[] compress(Compressor compressor) throws MemoryException, IOException {
-    switch (dataType) {
-      case BYTE:
-        return compressor.compressByte(getBytePage());
-      case SHORT:
-        return compressor.compressShort(getShortPage());
-      case SHORT_INT:
-        return compressor.compressByte(getShortIntPage());
-      case INT:
-        return compressor.compressInt(getIntPage());
-      case LONG:
-        return compressor.compressLong(getLongPage());
-      case FLOAT:
-        return compressor.compressFloat(getFloatPage());
-      case DOUBLE:
-        return compressor.compressDouble(getDoublePage());
-      case DECIMAL:
-        return compressor.compressByte(getDecimalPage());
-      case BYTE_ARRAY:
-        return compressor.compressByte(getLVFlattenedBytePage());
-      default:
-        throw new UnsupportedOperationException("unsupport compress column page: " + dataType);
+    if (dataType == DataTypes.BOOLEAN) {
+      return compressor.compressByte(getBooleanPage());
+    } else if (dataType == DataTypes.BYTE) {
+      return compressor.compressByte(getBytePage());
+    } else if (dataType == DataTypes.SHORT) {
+      return compressor.compressShort(getShortPage());
+    } else if (dataType == DataTypes.SHORT_INT) {
+      return compressor.compressByte(getShortIntPage());
+    } else if (dataType == DataTypes.INT) {
+      return compressor.compressInt(getIntPage());
+    } else if (dataType == DataTypes.LONG) {
+      return compressor.compressLong(getLongPage());
+    } else if (dataType == DataTypes.FLOAT) {
+      return compressor.compressFloat(getFloatPage());
+    } else if (dataType == DataTypes.DOUBLE) {
+      return compressor.compressDouble(getDoublePage());
+    } else if (dataType == DataTypes.DECIMAL) {
+      return compressor.compressByte(getDecimalPage());
+    } else if (dataType == DataTypes.BYTE_ARRAY) {
+      return compressor.compressByte(getLVFlattenedBytePage());
+    } else {
+      throw new UnsupportedOperationException("unsupport compress column page: " + dataType);
     }
   }
 
@@ -606,34 +604,34 @@ public abstract class ColumnPage {
       throws MemoryException {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
-    switch (meta.getStoreDataType()) {
-      case BYTE:
-        byte[] byteData = compressor.unCompressByte(compressedData, offset, length);
-        return newBytePage(columnSpec, byteData);
-      case SHORT:
-        short[] shortData = compressor.unCompressShort(compressedData, offset, length);
-        return newShortPage(columnSpec, shortData);
-      case SHORT_INT:
-        byte[] shortIntData = compressor.unCompressByte(compressedData, offset, length);
-        return newShortIntPage(columnSpec, shortIntData);
-      case INT:
-        int[] intData = compressor.unCompressInt(compressedData, offset, length);
-        return newIntPage(columnSpec, intData);
-      case LONG:
-        long[] longData = compressor.unCompressLong(compressedData, offset, length);
-        return newLongPage(columnSpec, longData);
-      case FLOAT:
-        float[] floatData = compressor.unCompressFloat(compressedData, offset, length);
-        return newFloatPage(columnSpec, floatData);
-      case DOUBLE:
-        double[] doubleData = compressor.unCompressDouble(compressedData, offset, length);
-        return newDoublePage(columnSpec, doubleData);
-      case BYTE_ARRAY:
-        byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
-        return newLVBytesPage(columnSpec, lvVarBytes);
-      default:
-        throw new UnsupportedOperationException("unsupport uncompress column page: " +
-            meta.getStoreDataType());
+    DataType storeDataType = meta.getStoreDataType();
+    if (storeDataType == DataTypes.BOOLEAN || storeDataType == DataTypes.BYTE) {
+      byte[] byteData = compressor.unCompressByte(compressedData, offset, length);
+      return newBytePage(columnSpec, byteData);
+    } else if (storeDataType == DataTypes.SHORT) {
+      short[] shortData = compressor.unCompressShort(compressedData, offset, length);
+      return newShortPage(columnSpec, shortData);
+    } else if (storeDataType == DataTypes.SHORT_INT) {
+      byte[] shortIntData = compressor.unCompressByte(compressedData, offset, length);
+      return newShortIntPage(columnSpec, shortIntData);
+    } else if (storeDataType == DataTypes.INT) {
+      int[] intData = compressor.unCompressInt(compressedData, offset, length);
+      return newIntPage(columnSpec, intData);
+    } else if (storeDataType == DataTypes.LONG) {
+      long[] longData = compressor.unCompressLong(compressedData, offset, length);
+      return newLongPage(columnSpec, longData);
+    } else if (storeDataType == DataTypes.FLOAT) {
+      float[] floatData = compressor.unCompressFloat(compressedData, offset, length);
+      return newFloatPage(columnSpec, floatData);
+    } else if (storeDataType == DataTypes.DOUBLE) {
+      double[] doubleData = compressor.unCompressDouble(compressedData, offset, length);
+      return newDoublePage(columnSpec, doubleData);
+    } else if (storeDataType == DataTypes.BYTE_ARRAY) {
+      byte[] lvVarBytes = compressor.unCompressByte(compressedData, offset, length);
+      return newLVBytesPage(columnSpec, lvVarBytes);
+    } else {
+      throw new UnsupportedOperationException("unsupport uncompress column page: " +
+          meta.getStoreDataType());
     }
   }
 
@@ -645,35 +643,35 @@ public abstract class ColumnPage {
     Compressor compressor = CompressorFactory.getInstance().getCompressor(meta.getCompressorName());
     TableSpec.ColumnSpec columnSpec = meta.getColumnSpec();
     ColumnPage decimalPage = null;
-    switch (meta.getStoreDataType()) {
-      case BYTE:
-        byte[] byteData = compressor.unCompressByte(compressedData, offset, length);
-        decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), byteData.length);
-        decimalPage.setBytePage(byteData);
-        return decimalPage;
-      case SHORT:
-        short[] shortData = compressor.unCompressShort(compressedData, offset, length);
-        decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), shortData.length);
-        decimalPage.setShortPage(shortData);
-        return decimalPage;
-      case SHORT_INT:
-        byte[] shortIntData = compressor.unCompressByte(compressedData, offset, length);
-        decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), shortIntData.length);
-        decimalPage.setShortIntPage(shortIntData);
-        return decimalPage;
-      case INT:
-        int[] intData = compressor.unCompressInt(compressedData, offset, length);
-        decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), intData.length);
-        decimalPage.setIntPage(intData);
-        return decimalPage;
-      case LONG:
-        long[] longData = compressor.unCompressLong(compressedData, offset, length);
-        decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), longData.length);
-        decimalPage.setLongPage(longData);
-        return decimalPage;
-      default:
-        byte[] lvEncodedBytes = compressor.unCompressByte(compressedData, offset, length);
-        return newDecimalPage(columnSpec, lvEncodedBytes);
+    DataType storeDataType = meta.getStoreDataType();
+    if (storeDataType == DataTypes.BYTE) {
+      byte[] byteData = compressor.unCompressByte(compressedData, offset, length);
+      decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), byteData.length);
+      decimalPage.setBytePage(byteData);
+      return decimalPage;
+    } else if (storeDataType == DataTypes.SHORT) {
+      short[] shortData = compressor.unCompressShort(compressedData, offset, length);
+      decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), shortData.length);
+      decimalPage.setShortPage(shortData);
+      return decimalPage;
+    } else if (storeDataType == DataTypes.SHORT_INT) {
+      byte[] shortIntData = compressor.unCompressByte(compressedData, offset, length);
+      decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), shortIntData.length);
+      decimalPage.setShortIntPage(shortIntData);
+      return decimalPage;
+    }  else if (storeDataType == DataTypes.INT) {
+      int[] intData = compressor.unCompressInt(compressedData, offset, length);
+      decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), intData.length);
+      decimalPage.setIntPage(intData);
+      return decimalPage;
+    } else if (storeDataType == DataTypes.LONG) {
+      long[] longData = compressor.unCompressLong(compressedData, offset, length);
+      decimalPage = createDecimalPage(columnSpec, meta.getStoreDataType(), longData.length);
+      decimalPage.setLongPage(longData);
+      return decimalPage;
+    } else {
+      byte[] lvEncodedBytes = compressor.unCompressByte(compressedData, offset, length);
+      return newDecimalPage(columnSpec, lvEncodedBytes);
     }
   }
 

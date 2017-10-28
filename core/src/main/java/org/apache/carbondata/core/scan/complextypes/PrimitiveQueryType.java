@@ -96,21 +96,20 @@ public class PrimitiveQueryType extends ComplexQueryType implements GenericQuery
   }
 
   @Override public DataType getSchemaType() {
-    switch (dataType) {
-      case INT:
-        return IntegerType$.MODULE$;
-      case DOUBLE:
-        return DoubleType$.MODULE$;
-      case LONG:
-        return LongType$.MODULE$;
-      case BOOLEAN:
-        return BooleanType$.MODULE$;
-      case TIMESTAMP:
-        return TimestampType$.MODULE$;
-      case DATE:
-        return DateType$.MODULE$;
-      default:
-        return IntegerType$.MODULE$;
+    if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.INT) {
+      return IntegerType$.MODULE$;
+    } else if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE) {
+      return DoubleType$.MODULE$;
+    } else if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.LONG) {
+      return LongType$.MODULE$;
+    } else if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BOOLEAN) {
+      return BooleanType$.MODULE$;
+    } else if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.TIMESTAMP) {
+      return TimestampType$.MODULE$;
+    } else if (dataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DATE) {
+      return DateType$.MODULE$;
+    } else {
+      return IntegerType$.MODULE$;
     }
   }
 

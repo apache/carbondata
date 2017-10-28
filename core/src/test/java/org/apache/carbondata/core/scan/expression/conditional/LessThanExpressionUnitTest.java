@@ -24,6 +24,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
@@ -44,9 +45,9 @@ public class LessThanExpressionUnitTest {
 
   @Test public void testEvaluateForLessThanExpressionWithStringDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression left = new ColumnExpression("left_name", DataType.STRING);
+    ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("right_name", DataType.STRING);
+    ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
     right.setColIndex(1);
     lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
@@ -75,9 +76,9 @@ public class LessThanExpressionUnitTest {
 
   @Test public void testEvaluateForLessThanExpressionWithShortDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("id", DataType.SHORT);
+    ColumnExpression right = new ColumnExpression("id", DataTypes.SHORT);
     right.setColIndex(0);
-    ColumnExpression left = new ColumnExpression("id", DataType.SHORT);
+    ColumnExpression left = new ColumnExpression("id", DataTypes.SHORT);
     left.setColIndex(1);
     lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
@@ -109,9 +110,9 @@ public class LessThanExpressionUnitTest {
 
   @Test public void testEvaluateForLessThanExpressionWithDoubleDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("right_contact", DataType.DOUBLE);
+    ColumnExpression right = new ColumnExpression("right_contact", DataTypes.DOUBLE);
     right.setColIndex(0);
-    ColumnExpression left = new ColumnExpression("left_contact", DataType.DOUBLE);
+    ColumnExpression left = new ColumnExpression("left_contact", DataTypes.DOUBLE);
     left.setColIndex(1);
     lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
@@ -142,9 +143,9 @@ public class LessThanExpressionUnitTest {
 
   @Test public void testEvaluateForLessThanExpressionWithIntDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("right_number", DataType.INT);
+    ColumnExpression right = new ColumnExpression("right_number", DataTypes.INT);
     right.setColIndex(0);
-    ColumnExpression left = new ColumnExpression("left_number", DataType.INT);
+    ColumnExpression left = new ColumnExpression("left_number", DataTypes.INT);
     left.setColIndex(1);
     lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
@@ -176,9 +177,9 @@ public class LessThanExpressionUnitTest {
  @Test public void testEvaluateForLessThanExpressionWithTimestampDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
     try {
-      ColumnExpression left = new ColumnExpression("timestamp", DataType.TIMESTAMP);
+      ColumnExpression left = new ColumnExpression("timestamp", DataTypes.TIMESTAMP);
       left.setColIndex(0);
-      ColumnExpression right = new ColumnExpression("timestamp", DataType.TIMESTAMP);
+      ColumnExpression right = new ColumnExpression("timestamp", DataTypes.TIMESTAMP);
       right.setColIndex(1);
 
       lessThanExpression = new LessThanExpression(left, right);
@@ -220,9 +221,9 @@ public class LessThanExpressionUnitTest {
 
  @Test public void testEvaluateForLessThanExpressionWithLongDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("contact", DataType.LONG);
+    ColumnExpression right = new ColumnExpression("contact", DataTypes.LONG);
     right.setColIndex(0);
-    ColumnExpression left = new ColumnExpression("contact", DataType.LONG);
+    ColumnExpression left = new ColumnExpression("contact", DataTypes.LONG);
     left.setColIndex(1);
     lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
@@ -250,9 +251,9 @@ public class LessThanExpressionUnitTest {
 
  @Test public void testEvaluateForLessThanExpressionWithDecimalDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("contact", DataType.DECIMAL);
+    ColumnExpression right = new ColumnExpression("contact", DataTypes.DECIMAL);
     right.setColIndex(0);
-    ColumnExpression left = new ColumnExpression("contact", DataType.DECIMAL);
+    ColumnExpression left = new ColumnExpression("contact", DataTypes.DECIMAL);
     left.setColIndex(1);
     lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
@@ -278,9 +279,9 @@ public class LessThanExpressionUnitTest {
     assertTrue(result.getBoolean());
   }
 
-  @Test(expected = FilterUnsupportedException.class) public void testForLessThanExpressionWithDefaultCase()
+  @Test public void testForLessThanExpressionWithDefaultCase()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("contact", DataType.BOOLEAN);
+    ColumnExpression right = new ColumnExpression("contact", DataTypes.BOOLEAN);
     right.setColIndex(0);
     lessThanExpression = new LessThanExpression(right, right);
     RowImpl value = new RowImpl();
@@ -292,7 +293,7 @@ public class LessThanExpressionUnitTest {
 
   @Test public void testEvaluateForLessThanExpressionWithIsNullReturnTrue()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression right = new ColumnExpression("id", DataType.SHORT);
+    ColumnExpression right = new ColumnExpression("id", DataTypes.SHORT);
     right.setColIndex(0);
     lessThanExpression = new LessThanExpression(right, right);
     RowImpl value = new RowImpl();
@@ -319,9 +320,9 @@ public class LessThanExpressionUnitTest {
 
   @Test public void testEvaluateForLessThanExpressionWithLeftAndRightDifferentDataType()
       throws FilterUnsupportedException, FilterIllegalMemberException {
-    ColumnExpression left = new ColumnExpression("name", DataType.STRING);
+    ColumnExpression left = new ColumnExpression("name", DataTypes.STRING);
     left.setColIndex(0);
-    ColumnExpression right = new ColumnExpression("number", DataType.INT);
+    ColumnExpression right = new ColumnExpression("number", DataTypes.INT);
     right.setColIndex(1);
     lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
@@ -350,9 +351,9 @@ public class LessThanExpressionUnitTest {
   }
 
  @Test public void testForLessThanExpressionWithGetString() throws Exception {
-    ColumnExpression right = new ColumnExpression("right_name", DataType.STRING);
+    ColumnExpression right = new ColumnExpression("right_name", DataTypes.STRING);
     right.setColIndex(0);
-    ColumnExpression left = new ColumnExpression("left_name", DataType.STRING);
+    ColumnExpression left = new ColumnExpression("left_name", DataTypes.STRING);
     left.setColIndex(0);
     lessThanExpression = new LessThanExpression(left, right);
     String expected_result = "LessThan(ColumnExpression(left_name),ColumnExpression(right_name))";

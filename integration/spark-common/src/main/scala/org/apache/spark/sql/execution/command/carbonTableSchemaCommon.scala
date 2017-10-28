@@ -30,7 +30,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
@@ -39,12 +39,11 @@ import org.apache.carbondata.core.service.CarbonCommonFactory
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
+import org.apache.carbondata.processing.loading.FailureCauses
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CompactionType
-import org.apache.carbondata.processing.model.CarbonLoadModel
 import org.apache.carbondata.spark.CarbonSparkFactory
-import org.apache.carbondata.spark.load.FailureCauses
-import org.apache.carbondata.spark.rdd.AlterTableAddColumnRDD
-import org.apache.carbondata.spark.util.{DataTypeConverterUtil, GlobalDictionaryUtil}
+import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
 case class TableModel(
     ifNotExistsSet: Boolean,
@@ -118,19 +117,31 @@ case class CompactionModel(compactionSize: Long,
     carbonTable: CarbonTable,
     isDDLTrigger: Boolean)
 
-case class CompactionCallableModel(storePath: String,
-    carbonLoadModel: CarbonLoadModel,
+case class CompactionCallableModel(carbonLoadModel: CarbonLoadModel,
     storeLocation: String,
     carbonTable: CarbonTable,
     loadsToMerge: util.List[LoadMetadataDetails],
     sqlContext: SQLContext,
     compactionType: CompactionType)
 
-case class SplitPartitionCallableModel(storePath: String,
-    carbonLoadModel: CarbonLoadModel,
+case class AlterPartitionModel(carbonLoadModel: CarbonLoadModel,
+    segmentId: String,
+    oldPartitionIds: List[Int],
+    sqlContext: SQLContext
+)
+
+case class SplitPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
     segmentId: String,
     partitionId: String,
-    oldPartitionIdList: List[Int],
+    oldPartitionIds: List[Int],
+    sqlContext: SQLContext)
+
+case class DropPartitionCallableModel(carbonLoadModel: CarbonLoadModel,
+    segmentId: String,
+    partitionId: String,
+    oldPartitionIds: List[Int],
+    dropWithData: Boolean,
+    carbonTable: CarbonTable,
     sqlContext: SQLContext)
 
 case class DataTypeInfo(dataType: String, precision: Int = 0, scale: Int = 0)
@@ -160,7 +171,8 @@ case class AlterTableDropColumnModel(databaseName: Option[String],
 
 case class AlterTableDropPartitionModel(databaseName: Option[String],
     tableName: String,
-    partitionId: String)
+    partitionId: String,
+    dropWithData: Boolean)
 
 case class AlterTableSplitPartitionModel(databaseName: Option[String],
     tableName: String,
@@ -177,6 +189,14 @@ class AlterTableColumnSchemaGenerator(
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
+  def isSortColumn(columnName: String): Boolean = {
+    val sortColumns = alterTableModel.tableProperties.get("sort_columns")
+    if(sortColumns.isDefined) {
+      sortColumns.get.contains(columnName)
+    } else {
+      true
+    }
+  }
   def process: Seq[ColumnSchema] = {
     val tableSchema = tableInfo.getFactTable
     val tableCols = tableSchema.getListOfColumns.asScala
@@ -196,7 +216,8 @@ class AlterTableColumnSchemaGenerator(
         -1,
         field.precision,
         field.scale,
-        field.schemaOrdinal + existingColsSize)
+        field.schemaOrdinal + existingColsSize,
+        isSortColumn(field.name.getOrElse(field.column)))
       allColumns ++= Seq(columnSchema)
       newCols ++= Seq(columnSchema)
     })
@@ -213,7 +234,8 @@ class AlterTableColumnSchemaGenerator(
         -1,
         field.precision,
         field.scale,
-        field.schemaOrdinal + existingColsSize)
+        field.schemaOrdinal + existingColsSize,
+        false)
       allColumns ++= Seq(columnSchema)
       newCols ++= Seq(columnSchema)
     })
@@ -279,14 +301,18 @@ class AlterTableColumnSchemaGenerator(
 
   private def getColumnSchema(dataType: DataType, colName: String, isCol: Boolean,
       encoders: java.util.List[Encoding], isDimensionCol: Boolean,
-      colGroup: Integer, precision: Integer, scale: Integer, schemaOrdinal: Int): ColumnSchema = {
+      colGroup: Integer, precision: Integer, scale: Integer, schemaOrdinal: Int,
+      isSortColumn: Boolean): ColumnSchema = {
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
     columnSchema.setColumnName(colName)
     if (alterTableModel.highCardinalityDims.contains(colName)) {
       encoders.remove(Encoding.DICTIONARY)
     }
-    if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
+    if (dataType == DataTypes.DATE) {
+      encoders.add(Encoding.DIRECT_DICTIONARY)
+    }
+    if (dataType == DataTypes.TIMESTAMP && !alterTableModel.highCardinalityDims.contains(colName)) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     val colPropMap = new java.util.HashMap[String, String]()
@@ -304,6 +330,7 @@ class AlterTableColumnSchemaGenerator(
     columnSchema.setScale(scale)
     columnSchema.setSchemaOrdinal(schemaOrdinal)
     columnSchema.setUseInvertedIndex(isDimensionCol)
+    columnSchema.setSortColumn(isSortColumn)
     columnSchema
   }
 }
@@ -351,7 +378,10 @@ class TableNewProcessor(cm: TableModel) {
     if (highCardinalityDims.contains(colName)) {
       encoders.remove(Encoding.DICTIONARY)
     }
-    if (dataType == DataType.TIMESTAMP || dataType == DataType.DATE) {
+    if (dataType == DataTypes.DATE) {
+      encoders.add(Encoding.DIRECT_DICTIONARY)
+    }
+    if (dataType == DataTypes.TIMESTAMP && !highCardinalityDims.contains(colName)) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
     columnSchema.setEncodingList(encoders)
@@ -478,7 +508,7 @@ class TableNewProcessor(cm: TableModel) {
     // Adding dummy measure if no measure is provided
     if (measureCount == 0) {
       val encoders = new java.util.ArrayList[Encoding]()
-      val columnSchema: ColumnSchema = getColumnSchema(DataType.DOUBLE,
+      val columnSchema: ColumnSchema = getColumnSchema(DataTypes.DOUBLE,
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
         index,
         true,
@@ -507,7 +537,7 @@ class TableNewProcessor(cm: TableModel) {
         val col = allColumns.find(_.getColumnName.equalsIgnoreCase(b))
         col match {
           case Some(colSchema: ColumnSchema) =>
-            if (colSchema.isDimensionColumn && !colSchema.isComplex) {
+            if (colSchema.isDimensionColumn && !colSchema.getDataType.isComplexType) {
               colSchema
             } else {
               LOGGER.error(s"Bucket field must be dimension column and " +

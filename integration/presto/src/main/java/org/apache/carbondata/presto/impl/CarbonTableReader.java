@@ -99,6 +99,7 @@ public class CarbonTableReader {
   @Inject public CarbonTableReader(CarbonTableConfig config) {
     this.config = requireNonNull(config, "CarbonTableConfig is null");
     this.cc = new ConcurrentHashMap<>();
+    tableList = new LinkedList<>();
   }
 
   /**
@@ -121,7 +122,7 @@ public class CarbonTableReader {
           }
         }
       }
-      updateSchemaTables();
+      updateSchemaTables(table);
       parseCarbonMetadata(table);
     }
 
@@ -207,7 +208,7 @@ public class CarbonTableReader {
    */
   public CarbonTable getTable(SchemaTableName schemaTableName) {
     try {
-      updateSchemaTables();
+      updateSchemaTables(schemaTableName);
     } catch (Exception e) {
       throw new RuntimeException(e);
     }
@@ -223,16 +224,17 @@ public class CarbonTableReader {
    * and cache all the table names in this.tableList. Notice that whenever this method
    * is called, it clears this.tableList and populate the list by reading the files.
    */
-  private void updateSchemaTables() {
+  private void updateSchemaTables(SchemaTableName schemaTableName) {
     // update logic determine later
     if (carbonFileList == null) {
       updateSchemaList();
     }
-    tableList = new LinkedList<>();
-    for (CarbonFile cf : carbonFileList.listFiles()) {
-      if (!cf.getName().endsWith(".mdt")) {
-        for (CarbonFile table : cf.listFiles()) {
-          tableList.add(new SchemaTableName(cf.getName(), table.getName()));
+    if(!tableList.contains(schemaTableName)) {
+      for (CarbonFile cf : carbonFileList.listFiles()) {
+        if (!cf.getName().endsWith(".mdt")) {
+          for (CarbonFile table : cf.listFiles()) {
+            tableList.add(new SchemaTableName(cf.getName(), table.getName()));
+          }
         }
       }
     }

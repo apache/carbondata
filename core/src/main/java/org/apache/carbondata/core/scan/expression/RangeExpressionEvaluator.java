@@ -27,6 +27,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.conditional.GreaterThanEqualToExpression;
 import org.apache.carbondata.core.scan.expression.conditional.GreaterThanExpression;
 import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
@@ -279,8 +280,8 @@ public class RangeExpressionEvaluator {
         if (((ColumnExpression) exp).isDimension() == false) {
           return false;
         }
-        if ((((ColumnExpression) exp).getDimension().getDataType() == DataType.ARRAY) || (
-            ((ColumnExpression) exp).getDimension().getDataType() == DataType.STRUCT)) {
+        if ((((ColumnExpression) exp).getDimension().getDataType() == DataTypes.ARRAY) || (
+            ((ColumnExpression) exp).getDimension().getDataType() == DataTypes.STRUCT)) {
           return false;
         } else {
           return true;

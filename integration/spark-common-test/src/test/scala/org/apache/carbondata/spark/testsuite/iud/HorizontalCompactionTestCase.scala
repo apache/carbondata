@@ -359,6 +359,7 @@ class HorizontalCompactionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists iud4 cascade")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled , "true")
+    sql("""drop table if exists t_carbn01""")
   }
 
 }

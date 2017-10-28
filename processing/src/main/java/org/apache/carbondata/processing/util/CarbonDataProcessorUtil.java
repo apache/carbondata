@@ -41,6 +41,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -52,10 +53,10 @@ import org.apache.carbondata.processing.datatypes.ArrayDataType;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
-import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
-import org.apache.carbondata.processing.newflow.CarbonDataLoadConfiguration;
-import org.apache.carbondata.processing.newflow.DataField;
-import org.apache.carbondata.processing.newflow.sort.SortScopeOptions;
+import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
+import org.apache.carbondata.processing.loading.DataField;
+import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
+import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -278,8 +279,8 @@ public final class CarbonDataProcessorUtil {
     StringBuilder dimString = new StringBuilder();
     for (int i = 0; i < dataFields.length; i++) {
       DataField dataField = dataFields[i];
-      if (dataField.getColumn().getDataType().equals(DataType.ARRAY) || dataField.getColumn()
-          .getDataType().equals(DataType.STRUCT)) {
+      if (dataField.getColumn().getDataType() == DataTypes.ARRAY ||
+          dataField.getColumn().getDataType() == DataTypes.STRUCT) {
         addAllComplexTypeChildren((CarbonDimension) dataField.getColumn(), dimString, "");
         dimString.append(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
       }
@@ -321,22 +322,19 @@ public final class CarbonDataProcessorUtil {
     for (int i = 0; i < hierarchies.length; i++) {
       String[] levels = hierarchies[i].split(CarbonCommonConstants.HASH_SPC_CHARACTER);
       String[] levelInfo = levels[0].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-      GenericDataType g = levelInfo[1].equals(CarbonCommonConstants.ARRAY) ?
+      GenericDataType g = levelInfo[1].toLowerCase().contains(CarbonCommonConstants.ARRAY) ?
           new ArrayDataType(levelInfo[0], "", levelInfo[3]) :
           new StructDataType(levelInfo[0], "", levelInfo[3]);
       complexTypesMap.put(levelInfo[0], g);
       for (int j = 1; j < levels.length; j++) {
         levelInfo = levels[j].split(CarbonCommonConstants.COLON_SPC_CHARACTER);
-        switch (levelInfo[1]) {
-          case CarbonCommonConstants.ARRAY:
-            g.addChildren(new ArrayDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
-            break;
-          case CarbonCommonConstants.STRUCT:
-            g.addChildren(new StructDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
-            break;
-          default:
-            g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[3],
-                Integer.parseInt(levelInfo[4])));
+        if (levelInfo[1].toLowerCase().contains(CarbonCommonConstants.ARRAY)) {
+          g.addChildren(new ArrayDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
+        } else if (levelInfo[1].toLowerCase().contains(CarbonCommonConstants.STRUCT)) {
+          g.addChildren(new StructDataType(levelInfo[0], levelInfo[2], levelInfo[3]));
+        } else {
+          g.addChildren(new PrimitiveDataType(levelInfo[0], levelInfo[2], levelInfo[3],
+              Integer.parseInt(levelInfo[4])));
         }
       }
     }
@@ -396,7 +394,7 @@ public final class CarbonDataProcessorUtil {
       String tableName) {
     DataType[] type = new DataType[measureCount];
     for (int i = 0; i < type.length; i++) {
-      type[i] = DataType.DOUBLE;
+      type[i] = DataTypes.DOUBLE;
     }
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
         databaseName + CarbonCommonConstants.UNDERSCORE + tableName);
@@ -458,7 +456,7 @@ public final class CarbonDataProcessorUtil {
       int measureCount) {
     DataType[] type = new DataType[measureCount];
     for (int i = 0; i < type.length; i++) {
-      type[i] = DataType.DOUBLE;
+      type[i] = DataTypes.DOUBLE;
     }
     List<CarbonMeasure> measures = carbonTable.getMeasureByTableName(tableName);
     for (int i = 0; i < measureCount; i++) {

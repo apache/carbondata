@@ -615,7 +615,7 @@ public final class CarbonProperties {
   /**
    * gettting the unmerged segment numbers to be merged.
    *
-   * @return
+   * @return corrected value of unmerged segments to be merged
    */
   public int[] getCompactionSegmentLevelCount() {
     String commaSeparatedLevels;
@@ -632,8 +632,10 @@ public final class CarbonProperties {
   }
 
   /**
-   * @param commaSeparatedLevels
-   * @return
+   * Separating the count for Number of segments to be merged in levels by comma
+   *
+   * @param commaSeparatedLevels the string format value before separating
+   * @return the int array format value after separating by comma
    */
   private int[] getIntArray(String commaSeparatedLevels) {
     String[] levels = commaSeparatedLevels.split(",");
@@ -727,11 +729,11 @@ public final class CarbonProperties {
   /**
    * Validate the restrictions
    *
-   * @param actual
-   * @param max
-   * @param min
-   * @param defaultVal
-   * @return
+   * @param actual the actual value for minor compaction
+   * @param max max value for minor compaction
+   * @param min min value for minor compaction
+   * @param defaultVal default value when the actual is improper
+   * @return  corrected Value after validating
    */
   public int validate(int actual, int max, int min, int defaultVal) {
     if (actual <= max && actual >= min) {

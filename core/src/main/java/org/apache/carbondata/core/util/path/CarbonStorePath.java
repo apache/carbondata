@@ -37,6 +37,10 @@ public class CarbonStorePath extends Path {
 
   /**
    * gets CarbonTablePath object to manage table paths
+   *
+   * @param storePath the store path of the segment
+   * @param tableIdentifier identifier of carbon table that the segment belong to
+   * @return the store location of the segment
    */
   public static CarbonTablePath getCarbonTablePath(String storePath,
       CarbonTableIdentifier tableIdentifier) {

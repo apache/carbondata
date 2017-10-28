@@ -26,7 +26,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 /**
  * The class provides the method to generate dictionary key and getting the actual value from
@@ -51,11 +51,6 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   public DateDirectDictionaryGenerator(String dateFormat) {
     this.dateFormat = dateFormat;
     initialize();
-  }
-
-  public DateDirectDictionaryGenerator() {
-    this(CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
   }
 
   /**
@@ -159,6 +154,6 @@ public class DateDirectDictionaryGenerator implements DirectDictionaryGenerator 
   }
 
   @Override public DataType getReturnType() {
-    return DataType.INT;
+    return DataTypes.INT;
   }
 }

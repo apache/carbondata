@@ -50,7 +50,7 @@ import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
  * <Column3 Data ChunkV3><Column3<Page1><Page2><Page3><Page4>>
  * <Column4 Data ChunkV3><Column4<Page1><Page2><Page3><Page4>>
  */
-public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> {
+public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
 
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonFactDataWriterImplV3.class.getName());
@@ -99,6 +99,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       buffer.flip();
       channel.write(buffer);
     } catch (IOException e) {
+      LOGGER.error(e, "Problem while writing the carbon file");
       throw new CarbonDataWriterException("Problem while writing the carbon file: ", e);
     }
   }
@@ -184,7 +185,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
       }
       pageId = 0;
     } catch (IOException e) {
-      throw new CarbonDataWriterException("Problem when writing file", e);
+      LOGGER.error(e, "Problem while writing file");
+      throw new CarbonDataWriterException("Problem while writing file", e);
     }
     // clear the data holder
     blockletDataHolder.clear();
@@ -213,6 +215,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
         measureStartIndex++;
       }
     } catch (IOException e) {
+      LOGGER.error(e, "Problem while getting the data chunks");
       throw new CarbonDataWriterException("Problem while getting the data chunks", e);
     }
     return size;
@@ -346,6 +349,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter<short[]> 
     try {
       writeIndexFile();
     } catch (IOException e) {
+      LOGGER.error(e, "Problem while writing the index file");
       throw new CarbonDataWriterException("Problem while writing the index file", e);
     }
     closeExecutorService();

@@ -21,8 +21,8 @@ import scala.collection.JavaConverters._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.processing.model.CarbonLoadModel
-import org.apache.carbondata.processing.newflow.sort.SortScopeOptions
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.processing.loading.sort.SortScopeOptions
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object ValidateUtil {
@@ -52,7 +52,7 @@ object ValidateUtil {
     if (sortScope != null) {
       // Don't support use global sort on partitioned table.
       if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null &&
-        sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT.toString)) {
+        sortScope.equalsIgnoreCase(SortScopeOptions.SortScope.GLOBAL_SORT.toString)) {
         throw new MalformedCarbonCommandException("Don't support use global sort on partitioned " +
           "table.")
       }

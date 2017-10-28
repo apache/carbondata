@@ -26,7 +26,7 @@ import java.util.List;
 import org.apache.carbondata.core.devapi.DictionaryGenerationException;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
-import org.apache.carbondata.processing.newflow.complexobjects.StructObject;
+import org.apache.carbondata.processing.loading.complexobjects.StructObject;
 
 /**
  * Struct DataType stateless object used in data loading
@@ -176,8 +176,8 @@ public class StructDataType implements GenericDataType<StructObject> {
   }
 
   /*
-       * parse bytearray and bit pack
-       */
+   * parse bytearray and bit pack
+   */
   @Override
   public void parseAndBitPack(ByteBuffer byteArrayInput, DataOutputStream dataOutputStream,
       KeyGenerator[] generator) throws IOException, KeyGenException {

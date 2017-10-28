@@ -20,26 +20,27 @@ package org.apache.carbondata.core.util.comparator;
 import java.math.BigDecimal;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil;
 
 public final class Comparator {
 
   public static SerializableComparator getComparator(DataType dataType) {
-    switch (dataType) {
-      case INT:
-        return new IntSerializableComparator();
-      case SHORT:
-        return new ShortSerializableComparator();
-      case DOUBLE:
-        return new DoubleSerializableComparator();
-      case LONG:
-      case DATE:
-      case TIMESTAMP:
-        return new LongSerializableComparator();
-      case DECIMAL:
-        return new BigDecimalSerializableComparator();
-      default:
-        return new ByteArraySerializableComparator();
+    if (dataType == DataTypes.BOOLEAN) {
+      return new BooleanSerializableComparator();
+    } else if (dataType == DataTypes.INT) {
+      return new IntSerializableComparator();
+    } else if (dataType == DataTypes.SHORT) {
+      return new ShortSerializableComparator();
+    } else if (dataType == DataTypes.DOUBLE) {
+      return new DoubleSerializableComparator();
+    } else if (dataType == DataTypes.LONG || dataType == DataTypes.DATE
+        || dataType == DataTypes.TIMESTAMP) {
+      return new LongSerializableComparator();
+    } else if (dataType == DataTypes.DECIMAL) {
+      return new BigDecimalSerializableComparator();
+    } else {
+      return new ByteArraySerializableComparator();
     }
   }
 
@@ -50,19 +51,20 @@ public final class Comparator {
    * @return
    */
   public static SerializableComparator getComparatorByDataTypeForMeasure(DataType dataType) {
-    switch (dataType) {
-      case INT:
-        return new IntSerializableComparator();
-      case SHORT:
-        return new ShortSerializableComparator();
-      case LONG:
-        return new LongSerializableComparator();
-      case DOUBLE:
-        return new DoubleSerializableComparator();
-      case DECIMAL:
-        return new BigDecimalSerializableComparator();
-      default:
-        throw new IllegalArgumentException("Unsupported data type");
+    if (dataType == DataTypes.BOOLEAN) {
+      return new BooleanSerializableComparator();
+    } else if (dataType == DataTypes.INT) {
+      return new IntSerializableComparator();
+    } else if (dataType == DataTypes.SHORT) {
+      return new ShortSerializableComparator();
+    } else if (dataType == DataTypes.LONG) {
+      return new LongSerializableComparator();
+    } else if (dataType == DataTypes.DOUBLE) {
+      return new DoubleSerializableComparator();
+    } else if (dataType == DataTypes.DECIMAL) {
+      return new BigDecimalSerializableComparator();
+    } else {
+      throw new IllegalArgumentException("Unsupported data type");
     }
   }
 }
@@ -70,6 +72,26 @@ public final class Comparator {
 class ByteArraySerializableComparator implements SerializableComparator {
   @Override public int compare(Object key1, Object key2) {
     return ByteUtil.compare((byte[]) key1, (byte[]) key2);
+  }
+}
+
+class BooleanSerializableComparator implements SerializableComparator {
+  @Override
+  public int compare(Object key1, Object key2) {
+    if (key1 == null && key2 == null) {
+      return 0;
+    } else if (key1 == null) {
+      return -1;
+    } else if (key2 == null) {
+      return 1;
+    }
+    if (Boolean.compare((boolean) key1, (boolean) key2) < 0) {
+      return -1;
+    } else if (Boolean.compare((boolean) key1, (boolean) key2) > 0) {
+      return 1;
+    } else {
+      return 0;
+    }
   }
 }
 

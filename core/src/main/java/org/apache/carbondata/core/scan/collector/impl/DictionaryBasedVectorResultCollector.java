@@ -70,6 +70,9 @@ public class DictionaryBasedVectorResultCollector extends AbstractScannedResultC
     List<ColumnVectorInfo> complexList = new ArrayList<>();
     List<ColumnVectorInfo> implictColumnList = new ArrayList<>();
     for (int i = 0; i < queryDimensions.length; i++) {
+      if (!dimensionInfo.getDimensionExists()[i]) {
+        continue;
+      }
       if (queryDimensions[i].getDimension().hasEncoding(Encoding.IMPLICIT)) {
         ColumnVectorInfo columnVectorInfo = new ColumnVectorInfo();
         implictColumnList.add(columnVectorInfo);

@@ -17,10 +17,10 @@
 
 package org.apache.carbondata.presto.util
 
-import java.util
 import java.io._
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
+import java.util
 import java.util.{ArrayList, Date, List, UUID}
 
 import scala.collection.JavaConversions._
@@ -30,42 +30,33 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapred.TaskAttemptID
-import org.apache.hadoop.mapreduce.{RecordReader, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
+import org.apache.hadoop.mapreduce.{RecordReader, TaskType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier, ReverseDictionary}
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
-import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier,
-ReverseDictionary}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.fileoperations.{AtomicFileOperations, AtomicFileOperationsImpl,
-FileWriteOperation}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata,
-CarbonTableIdentifier, ColumnIdentifier}
-import org.apache.carbondata.core.metadata.converter.{SchemaConverter,
-ThriftWrapperSchemaConverterImpl}
-import org.apache.carbondata.core.metadata.datatype.DataType
+import org.apache.carbondata.core.fileoperations.{AtomicFileOperations, AtomicFileOperationsImpl, FileWriteOperation}
+import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
-import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, CarbonMeasure, ColumnSchema}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
-import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension,
-CarbonMeasure, ColumnSchema}
+import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl,
-ThriftWriter}
-import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter,
-CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
-import org.apache.carbondata.processing.api.dataloader.SchemaInfo
-import org.apache.carbondata.processing.constants.TableOptionConstant
-import org.apache.carbondata.processing.csvload.{BlockDetails, CSVInputFormat,
-CSVRecordReaderIterator, StringArrayWritable}
-import org.apache.carbondata.processing.model.{CarbonDataLoadSchema, CarbonLoadModel}
-import org.apache.carbondata.processing.newflow.DataLoadExecutor
-import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants
-import org.apache.carbondata.processing.newflow.exception.CarbonDataLoadingException
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
+import org.apache.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl, ThriftWriter}
+import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator, StringArrayWritable}
+import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
+import org.apache.carbondata.processing.loading.DataLoadExecutor
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
+import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
+import org.apache.carbondata.processing.util.TableOptionConstant
 
 object CarbonDataStoreCreator {
 
@@ -162,7 +153,7 @@ object CarbonDataStoreCreator {
     val id: ColumnSchema = new ColumnSchema()
     id.setColumnName("ID")
     id.setColumnar(true)
-    id.setDataType(DataType.INT)
+    id.setDataType(DataTypes.INT)
     id.setEncodingList(encodings)
     id.setColumnUniqueId(UUID.randomUUID().toString)
     id.setColumnReferenceId(id.getColumnUniqueId)
@@ -178,7 +169,7 @@ object CarbonDataStoreCreator {
     val date: ColumnSchema = new ColumnSchema()
     date.setColumnName("date")
     date.setColumnar(true)
-    date.setDataType(DataType.DATE)
+    date.setDataType(DataTypes.DATE)
     date.setEncodingList(dictEncoding)
     date.setColumnUniqueId(UUID.randomUUID().toString)
     date.setDimensionColumn(true)
@@ -189,7 +180,7 @@ object CarbonDataStoreCreator {
     val country: ColumnSchema = new ColumnSchema()
     country.setColumnName("country")
     country.setColumnar(true)
-    country.setDataType(DataType.STRING)
+    country.setDataType(DataTypes.STRING)
     country.setEncodingList(encodings)
     country.setColumnUniqueId(UUID.randomUUID().toString)
     country.setColumnReferenceId(country.getColumnUniqueId)
@@ -201,7 +192,7 @@ object CarbonDataStoreCreator {
     val name: ColumnSchema = new ColumnSchema()
     name.setColumnName("name")
     name.setColumnar(true)
-    name.setDataType(DataType.STRING)
+    name.setDataType(DataTypes.STRING)
     name.setEncodingList(encodings)
     name.setColumnUniqueId(UUID.randomUUID().toString)
     name.setDimensionColumn(true)
@@ -212,7 +203,7 @@ object CarbonDataStoreCreator {
     val phonetype: ColumnSchema = new ColumnSchema()
     phonetype.setColumnName("phonetype")
     phonetype.setColumnar(true)
-    phonetype.setDataType(DataType.STRING)
+    phonetype.setDataType(DataTypes.STRING)
     phonetype.setEncodingList(encodings)
     phonetype.setColumnUniqueId(UUID.randomUUID().toString)
     phonetype.setDimensionColumn(true)
@@ -223,7 +214,7 @@ object CarbonDataStoreCreator {
     val serialname: ColumnSchema = new ColumnSchema()
     serialname.setColumnName("serialname")
     serialname.setColumnar(true)
-    serialname.setDataType(DataType.STRING)
+    serialname.setDataType(DataTypes.STRING)
     serialname.setEncodingList(encodings)
     serialname.setColumnUniqueId(UUID.randomUUID().toString)
     serialname.setDimensionColumn(true)
@@ -234,7 +225,7 @@ object CarbonDataStoreCreator {
     val salary: ColumnSchema = new ColumnSchema()
     salary.setColumnName("salary")
     salary.setColumnar(true)
-    salary.setDataType(DataType.DOUBLE)
+    salary.setDataType(DataTypes.DOUBLE)
     salary.setEncodingList(encodings)
     salary.setColumnUniqueId(UUID.randomUUID().toString)
     salary.setDimensionColumn(false)
@@ -245,7 +236,7 @@ object CarbonDataStoreCreator {
     val bonus: ColumnSchema = new ColumnSchema()
     bonus.setColumnName("bonus")
     bonus.setColumnar(true)
-    bonus.setDataType(DataType.DECIMAL)
+    bonus.setDataType(DataTypes.DECIMAL)
     bonus.setPrecision(10)
     bonus.setScale(4)
     bonus.setEncodingList(encodings)
@@ -258,7 +249,7 @@ object CarbonDataStoreCreator {
     val dob: ColumnSchema = new ColumnSchema()
     dob.setColumnName("dob")
     dob.setColumnar(true)
-    dob.setDataType(DataType.TIMESTAMP)
+    dob.setDataType(DataTypes.TIMESTAMP)
     dob.setEncodingList(dictEncoding)
     dob.setColumnUniqueId(UUID.randomUUID().toString)
     dob.setDimensionColumn(true)
@@ -269,7 +260,7 @@ object CarbonDataStoreCreator {
     val shortField: ColumnSchema = new ColumnSchema()
     shortField.setColumnName("shortField")
     shortField.setColumnar(true)
-    shortField.setDataType(DataType.SHORT)
+    shortField.setDataType(DataTypes.SHORT)
     shortField.setEncodingList(encodings)
     shortField.setColumnUniqueId(UUID.randomUUID().toString)
     shortField.setDimensionColumn(false)
@@ -412,8 +403,8 @@ object CarbonDataStoreCreator {
   /**
    * Execute graph which will further load data
    *
-   * @param loadModel
-   * @param storeLocation
+   * @param loadModel Carbon load model
+   * @param storeLocation store location directory
    * @throws Exception
    */
   private def executeGraph(loadModel: CarbonLoadModel, storeLocation: String): Unit = {
@@ -455,7 +446,6 @@ object CarbonDataStoreCreator {
     if (path.exists()) {
       path.delete()
     }
-    val info: SchemaInfo = new SchemaInfo()
     val blockDetails: BlockDetails = new BlockDetails(
       new Path(loadModel.getFactFilePath),
       0,
@@ -488,8 +478,6 @@ object CarbonDataStoreCreator {
       hadoopAttemptContext)
     new DataLoadExecutor()
       .execute(loadModel, Array(storeLocation), Array(readerIterator))
-    info.setDatabaseName(databaseName)
-    info.setTableName(tableName)
     writeLoadMetadata(loadModel.getCarbonDataLoadSchema,
       loadModel.getTableName,
       loadModel.getTableName,

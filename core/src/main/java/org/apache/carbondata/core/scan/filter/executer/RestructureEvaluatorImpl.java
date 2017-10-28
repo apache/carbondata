@@ -21,6 +21,7 @@ import java.nio.charset.Charset;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -53,10 +54,12 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
     if (!dimension.hasEncoding(Encoding.DICTIONARY)) {
       // for no dictionary cases
       // 3 cases: is NUll, is Not Null and filter on default value of newly added column
-      if (null == defaultValue) {
+      if (null == defaultValue && dimension.getDataType() == DataTypes.STRING) {
         // default value for case where user gives is Null condition
         defaultValue = CarbonCommonConstants.MEMBER_DEFAULT_VAL
             .getBytes(Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      } else if (null == defaultValue) {
+        defaultValue = CarbonCommonConstants.EMPTY_BYTE_ARRAY;
       }
       List<byte[]> noDictionaryFilterValuesList = filterValues.getNoDictionaryFilterValuesList();
       for (byte[] filterValue : noDictionaryFilterValuesList) {

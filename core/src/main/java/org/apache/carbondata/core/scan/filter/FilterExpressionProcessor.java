@@ -30,7 +30,7 @@ import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.scan.expression.BinaryExpression;
@@ -113,23 +113,13 @@ public class FilterExpressionProcessor implements FilterProcessor {
       LOGGER.debug("preparing the start and end key for finding"
           + "start and end block as per filter resolver");
     }
-    List<IndexKey> listOfStartEndKeys = new ArrayList<IndexKey>(2);
-    FilterUtil.traverseResolverTreeAndGetStartAndEndKey(tableSegment.getSegmentProperties(),
-        filterResolver, listOfStartEndKeys);
-    // reading the first value from list which has start key
-    IndexKey searchStartKey = listOfStartEndKeys.get(0);
-    // reading the last value from list which has end key
-    IndexKey searchEndKey = listOfStartEndKeys.get(1);
-    if (null == searchStartKey && null == searchEndKey) {
-      try {
-        // TODO need to handle for no dictionary dimensions
-        searchStartKey =
-            FilterUtil.prepareDefaultStartIndexKey(tableSegment.getSegmentProperties());
-        // TODO need to handle for no dictionary dimensions
-        searchEndKey = FilterUtil.prepareDefaultEndIndexKey(tableSegment.getSegmentProperties());
-      } catch (KeyGenException e) {
-        return listOfDataBlocksToScan;
-      }
+    IndexKey searchStartKey = null;
+    IndexKey searchEndKey = null;
+    try {
+      searchStartKey = FilterUtil.prepareDefaultStartIndexKey(tableSegment.getSegmentProperties());
+      searchEndKey = FilterUtil.prepareDefaultEndIndexKey(tableSegment.getSegmentProperties());
+    } catch (KeyGenException e) {
+      throw new RuntimeException(e);
     }
     if (LOGGER.isDebugEnabled()) {
       char delimiter = ',';
@@ -414,9 +404,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
         currentCondExpression = (BinaryConditionalExpression) expression;
         if (currentCondExpression.isSingleColumn()
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.ARRAY
+            != DataTypes.ARRAY
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.STRUCT) {
+            != DataTypes.STRUCT) {
 
           if (currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure()) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
@@ -475,9 +465,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
         currentCondExpression = (BinaryConditionalExpression) expression;
         if (currentCondExpression.isSingleColumn()
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.ARRAY
+            != DataTypes.ARRAY
             && currentCondExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-            != DataType.STRUCT) {
+            != DataTypes.STRUCT) {
 
           if (currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure()) {
             if (FilterUtil.checkIfExpressionContainsColumn(currentCondExpression.getLeft())
@@ -534,9 +524,9 @@ public class FilterExpressionProcessor implements FilterProcessor {
           condExpression = (ConditionalExpression) expression;
           if (condExpression.isSingleColumn()
               && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-              != DataType.ARRAY
+              != DataTypes.ARRAY
               && condExpression.getColumnList().get(0).getCarbonColumn().getDataType()
-              != DataType.STRUCT) {
+              != DataTypes.STRUCT) {
             condExpression = (ConditionalExpression) expression;
             if ((condExpression.getColumnList().get(0).getCarbonColumn()
                 .hasEncoding(Encoding.DICTIONARY) && !condExpression.getColumnList().get(0)

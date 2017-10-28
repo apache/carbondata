@@ -23,6 +23,7 @@ import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -122,33 +123,34 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
    * @return
    */
   private org.apache.carbondata.format.DataType fromWrapperToExternalDataType(DataType dataType) {
-
     if (null == dataType) {
       return null;
     }
-    switch (dataType) {
-      case STRING:
-        return org.apache.carbondata.format.DataType.STRING;
-      case INT:
-        return org.apache.carbondata.format.DataType.INT;
-      case SHORT:
-        return org.apache.carbondata.format.DataType.SHORT;
-      case LONG:
-        return org.apache.carbondata.format.DataType.LONG;
-      case DOUBLE:
-        return org.apache.carbondata.format.DataType.DOUBLE;
-      case DECIMAL:
-        return org.apache.carbondata.format.DataType.DECIMAL;
-      case DATE:
-        return org.apache.carbondata.format.DataType.DATE;
-      case TIMESTAMP:
-        return org.apache.carbondata.format.DataType.TIMESTAMP;
-      case ARRAY:
-        return org.apache.carbondata.format.DataType.ARRAY;
-      case STRUCT:
-        return org.apache.carbondata.format.DataType.STRUCT;
-      default:
-        return org.apache.carbondata.format.DataType.STRING;
+    // data type object maybe created by GSON, use id to compare the type instead of object address
+    if (dataType.getId() == DataTypes.BOOLEAN.getId()) {
+      return org.apache.carbondata.format.DataType.BOOLEAN;
+    } else if (dataType.getId() == DataTypes.STRING.getId()) {
+      return org.apache.carbondata.format.DataType.STRING;
+    } else if (dataType.getId() == DataTypes.INT.getId()) {
+      return org.apache.carbondata.format.DataType.INT;
+    } else if (dataType.getId() == DataTypes.SHORT.getId()) {
+      return org.apache.carbondata.format.DataType.SHORT;
+    } else if (dataType.getId() == DataTypes.LONG.getId()) {
+      return org.apache.carbondata.format.DataType.LONG;
+    } else if (dataType.getId() == DataTypes.DOUBLE.getId()) {
+      return org.apache.carbondata.format.DataType.DOUBLE;
+    } else if (dataType.getId() == DataTypes.DECIMAL.getId()) {
+      return org.apache.carbondata.format.DataType.DECIMAL;
+    } else if (dataType.getId() == DataTypes.DATE.getId()) {
+      return org.apache.carbondata.format.DataType.DATE;
+    } else if (dataType.getId() == DataTypes.TIMESTAMP.getId()) {
+      return org.apache.carbondata.format.DataType.TIMESTAMP;
+    } else if (dataType.getId() == DataTypes.ARRAY.getId()) {
+      return org.apache.carbondata.format.DataType.ARRAY;
+    } else if (dataType.getId() == DataTypes.STRUCT.getId()) {
+      return org.apache.carbondata.format.DataType.STRUCT;
+    } else {
+      return org.apache.carbondata.format.DataType.STRING;
     }
   }
 
@@ -219,7 +221,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     externalPartitionInfo.setList_info(wrapperPartitionInfo.getListInfo());
     externalPartitionInfo.setRange_info(wrapperPartitionInfo.getRangeInfo());
     externalPartitionInfo.setNum_partitions(wrapperPartitionInfo.getNumPartitions());
-    externalPartitionInfo.setMax_partition(wrapperPartitionInfo.getMAX_PARTITION());
+    externalPartitionInfo.setMax_partition(wrapperPartitionInfo.getMaxPartitionId());
     externalPartitionInfo.setPartition_ids(wrapperPartitionInfo
         .getPartitionIds());
     return externalPartitionInfo;
@@ -361,28 +363,30 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return null;
     }
     switch (dataType) {
+      case BOOLEAN:
+        return DataTypes.BOOLEAN;
       case STRING:
-        return DataType.STRING;
+        return DataTypes.STRING;
       case INT:
-        return DataType.INT;
+        return DataTypes.INT;
       case SHORT:
-        return DataType.SHORT;
+        return DataTypes.SHORT;
       case LONG:
-        return DataType.LONG;
+        return DataTypes.LONG;
       case DOUBLE:
-        return DataType.DOUBLE;
+        return DataTypes.DOUBLE;
       case DECIMAL:
-        return DataType.DECIMAL;
+        return DataTypes.DECIMAL;
       case TIMESTAMP:
-        return DataType.TIMESTAMP;
+        return DataTypes.TIMESTAMP;
       case DATE:
-        return DataType.DATE;
+        return DataTypes.DATE;
       case ARRAY:
-        return DataType.ARRAY;
+        return DataTypes.ARRAY;
       case STRUCT:
-        return DataType.STRUCT;
+        return DataTypes.STRUCT;
       default:
-        return DataType.STRING;
+        return DataTypes.STRING;
     }
   }
 
@@ -454,7 +458,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperPartitionInfo.setNumPartitions(externalPartitionInfo.getNum_partitions());
     wrapperPartitionInfo.setPartitionIds(externalPartitionInfo
         .getPartition_ids());
-    wrapperPartitionInfo.setMAX_PARTITION(externalPartitionInfo.getMax_partition());
+    wrapperPartitionInfo.setMaxPartitionId(externalPartitionInfo.getMax_partition());
     return wrapperPartitionInfo;
   }
 

@@ -50,6 +50,7 @@ import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
@@ -72,16 +73,15 @@ import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWrit
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfo;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfoPreparator;
-import org.apache.carbondata.processing.api.dataloader.SchemaInfo;
-import org.apache.carbondata.processing.constants.TableOptionConstant;
-import org.apache.carbondata.processing.csvload.BlockDetails;
-import org.apache.carbondata.processing.csvload.CSVInputFormat;
-import org.apache.carbondata.processing.csvload.CSVRecordReaderIterator;
-import org.apache.carbondata.processing.csvload.StringArrayWritable;
-import org.apache.carbondata.processing.model.CarbonDataLoadSchema;
-import org.apache.carbondata.processing.model.CarbonLoadModel;
-import org.apache.carbondata.processing.newflow.DataLoadExecutor;
-import org.apache.carbondata.processing.newflow.constants.DataLoadProcessorConstants;
+import org.apache.carbondata.processing.util.TableOptionConstant;
+import org.apache.carbondata.processing.loading.csvinput.BlockDetails;
+import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
+import org.apache.carbondata.processing.loading.csvinput.CSVRecordReaderIterator;
+import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable;
+import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.processing.loading.DataLoadExecutor;
+import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 
 import com.google.gson.Gson;
 import org.apache.hadoop.conf.Configuration;
@@ -184,7 +184,7 @@ public class StoreCreator {
     ColumnSchema id = new ColumnSchema();
     id.setColumnName("ID");
     id.setColumnar(true);
-    id.setDataType(DataType.INT);
+    id.setDataType(DataTypes.INT);
     id.setEncodingList(encodings);
     id.setColumnUniqueId(UUID.randomUUID().toString());
     id.setDimensionColumn(true);
@@ -194,7 +194,7 @@ public class StoreCreator {
     ColumnSchema date = new ColumnSchema();
     date.setColumnName("date");
     date.setColumnar(true);
-    date.setDataType(DataType.STRING);
+    date.setDataType(DataTypes.STRING);
     date.setEncodingList(encodings);
     date.setColumnUniqueId(UUID.randomUUID().toString());
     date.setDimensionColumn(true);
@@ -204,7 +204,7 @@ public class StoreCreator {
     ColumnSchema country = new ColumnSchema();
     country.setColumnName("country");
     country.setColumnar(true);
-    country.setDataType(DataType.STRING);
+    country.setDataType(DataTypes.STRING);
     country.setEncodingList(encodings);
     country.setColumnUniqueId(UUID.randomUUID().toString());
     country.setDimensionColumn(true);
@@ -214,7 +214,7 @@ public class StoreCreator {
     ColumnSchema name = new ColumnSchema();
     name.setColumnName("name");
     name.setColumnar(true);
-    name.setDataType(DataType.STRING);
+    name.setDataType(DataTypes.STRING);
     name.setEncodingList(encodings);
     name.setColumnUniqueId(UUID.randomUUID().toString());
     name.setDimensionColumn(true);
@@ -224,7 +224,7 @@ public class StoreCreator {
     ColumnSchema phonetype = new ColumnSchema();
     phonetype.setColumnName("phonetype");
     phonetype.setColumnar(true);
-    phonetype.setDataType(DataType.STRING);
+    phonetype.setDataType(DataTypes.STRING);
     phonetype.setEncodingList(encodings);
     phonetype.setColumnUniqueId(UUID.randomUUID().toString());
     phonetype.setDimensionColumn(true);
@@ -234,7 +234,7 @@ public class StoreCreator {
     ColumnSchema serialname = new ColumnSchema();
     serialname.setColumnName("serialname");
     serialname.setColumnar(true);
-    serialname.setDataType(DataType.STRING);
+    serialname.setDataType(DataTypes.STRING);
     serialname.setEncodingList(encodings);
     serialname.setColumnUniqueId(UUID.randomUUID().toString());
     serialname.setDimensionColumn(true);
@@ -244,7 +244,7 @@ public class StoreCreator {
     ColumnSchema salary = new ColumnSchema();
     salary.setColumnName("salary");
     salary.setColumnar(true);
-    salary.setDataType(DataType.INT);
+    salary.setDataType(DataTypes.INT);
     salary.setEncodingList(new ArrayList<Encoding>());
     salary.setColumnUniqueId(UUID.randomUUID().toString());
     salary.setDimensionColumn(false);
@@ -384,7 +384,6 @@ public class StoreCreator {
       path.delete();
     }
 
-    SchemaInfo info = new SchemaInfo();
     BlockDetails blockDetails = new BlockDetails(new Path(loadModel.getFactFilePath()),
         0, new File(loadModel.getFactFilePath()).length(), new String[] {"localhost"});
     Configuration configuration = new Configuration();
@@ -410,9 +409,6 @@ public class StoreCreator {
     new DataLoadExecutor().execute(loadModel,
         storeLocationArray,
         new CarbonIterator[]{readerIterator});
-
-    info.setDatabaseName(databaseName);
-    info.setTableName(tableName);
 
     writeLoadMetadata(loadModel.getCarbonDataLoadSchema(), loadModel.getTableName(), loadModel.getTableName(),
         new ArrayList<LoadMetadataDetails>());

@@ -25,6 +25,7 @@ import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
@@ -81,7 +82,9 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
 
   }
 
-  @Override public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder) throws IOException {
+  @Override
+  public BitSetGroup applyFilter(BlocksChunkHolder blockChunkHolder, boolean useBitsetPipeLine)
+      throws IOException {
     if (isDimensionPresentInCurrentBlock == true) {
       int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
           .get(dimColumnEvaluatorInfo.getColumnIndex());
@@ -97,12 +100,14 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
           if (isScanRequired(dimensionRawColumnChunk.getMaxValues()[i],
               dimensionRawColumnChunk.getMinValues()[i], dimColumnExecuterInfo.getFilterKeys())) {
             BitSet bitSet = getFilteredIndexes(dimensionRawColumnChunk.convertToDimColDataChunk(i),
-                dimensionRawColumnChunk.getRowCount()[i]);
+                dimensionRawColumnChunk.getRowCount()[i], useBitsetPipeLine,
+                blockChunkHolder.getBitSetGroup(), i);
             bitSetGroup.setBitSet(bitSet, i);
           }
         } else {
           BitSet bitSet = getFilteredIndexes(dimensionRawColumnChunk.convertToDimColDataChunk(i),
-              dimensionRawColumnChunk.getRowCount()[i]);
+              dimensionRawColumnChunk.getRowCount()[i], useBitsetPipeLine,
+              blockChunkHolder.getBitSetGroup(), i);
           bitSetGroup.setBitSet(bitSet, i);
         }
       }
@@ -124,14 +129,16 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
               measureRawColumnChunk.getMinValues()[i], msrColumnExecutorInfo.getFilterKeys(),
               msrColumnEvaluatorInfo.getType())) {
             BitSet bitSet =
-                getFilteredIndexesForMeasures(measureRawColumnChunk.convertToColumnPage(i),
-                    measureRawColumnChunk.getRowCount()[i], msrType);
+                getFilteredIndexesForMeasure(measureRawColumnChunk.convertToColumnPage(i),
+                    measureRawColumnChunk.getRowCount()[i], useBitsetPipeLine,
+                    blockChunkHolder.getBitSetGroup(), i, msrType);
             bitSetGroup.setBitSet(bitSet, i);
           }
         } else {
           BitSet bitSet =
-              getFilteredIndexesForMeasures(measureRawColumnChunk.convertToColumnPage(i),
-                  measureRawColumnChunk.getRowCount()[i], msrType);
+              getFilteredIndexesForMeasure(measureRawColumnChunk.convertToColumnPage(i),
+                  measureRawColumnChunk.getRowCount()[i], useBitsetPipeLine,
+                  blockChunkHolder.getBitSetGroup(), i, msrType);
           bitSetGroup.setBitSet(bitSet, i);
         }
       }
@@ -141,17 +148,18 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
   }
 
   private DataType getMeasureDataType(MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo) {
-    switch (msrColumnEvaluatorInfo.getType()) {
-      case SHORT:
-        return DataType.SHORT;
-      case INT:
-        return DataType.INT;
-      case LONG:
-        return DataType.LONG;
-      case DECIMAL:
-        return DataType.DECIMAL;
-      default:
-        return DataType.DOUBLE;
+    if (msrColumnEvaluatorInfo.getType() == DataTypes.BOOLEAN) {
+      return DataTypes.BOOLEAN;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.SHORT) {
+      return DataTypes.SHORT;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.INT) {
+      return DataTypes.INT;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.LONG) {
+      return DataTypes.LONG;
+    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.DECIMAL) {
+      return DataTypes.DECIMAL;
+    } else {
+      return DataTypes.DOUBLE;
     }
   }
 
@@ -189,14 +197,137 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     return bitSet;
   }
 
-  protected BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
-      int numerOfRows) {
-    if (dimensionColumnDataChunk.isExplicitSorted()) {
-      return setFilterdIndexToBitSetWithColumnIndex(dimensionColumnDataChunk, numerOfRows);
+  /**
+   * Below method will be used to apply filter on measure column
+   * @param measureColumnPage
+   * @param numberOfRows
+   * @param useBitsetPipeLine
+   * @param prvBitSetGroup
+   * @param pageNumber
+   * @param msrDataType
+   * @return filtered indexes bitset
+   */
+  private BitSet getFilteredIndexesForMeasure(ColumnPage measureColumnPage, int numberOfRows,
+      boolean useBitsetPipeLine, BitSetGroup prvBitSetGroup, int pageNumber, DataType msrDataType) {
+    // check whether previous indexes can be optimal to apply filter on measure column
+    if (CarbonUtil.usePreviousFilterBitsetGroup(useBitsetPipeLine, prvBitSetGroup, pageNumber,
+        msrColumnExecutorInfo.getFilterKeys().length)) {
+      return getFilteredIndexesForMsrUsingPrvBitSet(measureColumnPage, prvBitSetGroup, pageNumber,
+          numberOfRows, msrDataType);
+    } else {
+      return getFilteredIndexesForMeasures(measureColumnPage, numberOfRows, msrDataType);
     }
-    return setFilterdIndexToBitSet(dimensionColumnDataChunk, numerOfRows);
   }
 
+  /**
+   * Below method will be used to apply filter on measure column based on previous filtered indexes
+   * @param measureColumnPage
+   * @param prvBitSetGroup
+   * @param pageNumber
+   * @param numberOfRows
+   * @param msrDataType
+   * @return filtred indexes bitset
+   */
+  private BitSet getFilteredIndexesForMsrUsingPrvBitSet(ColumnPage measureColumnPage,
+      BitSetGroup prvBitSetGroup, int pageNumber, int numberOfRows, DataType msrDataType) {
+    BitSet bitSet = new BitSet(numberOfRows);
+    Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
+    BitSet nullBitSet = measureColumnPage.getNullBits();
+    BitSet prvPageBitSet = prvBitSetGroup.getBitSet(pageNumber);
+    SerializableComparator comparator = Comparator.getComparatorByDataTypeForMeasure(msrDataType);
+    for (int i = 0; i < filterValues.length; i++) {
+      if (filterValues[i] == null) {
+        for (int j = nullBitSet.nextSetBit(0); j >= 0; j = nullBitSet.nextSetBit(j + 1)) {
+          bitSet.set(j);
+        }
+        continue;
+      }
+      for (int index = prvPageBitSet.nextSetBit(0);
+           index >= 0; index = prvPageBitSet.nextSetBit(index + 1)) {
+        if (!nullBitSet.get(index)) {
+          // Check if filterValue[i] matches with measure Values.
+          Object msrValue = DataTypeUtil
+              .getMeasureObjectBasedOnDataType(measureColumnPage, index,
+                  msrDataType, msrColumnEvaluatorInfo.getMeasure());
+
+          if (comparator.compare(msrValue, filterValues[i]) == 0) {
+            // This is a match.
+            bitSet.set(index);
+          }
+        }
+      }
+    }
+    return bitSet;
+  }
+
+  /**
+   * Below method will be used to apply filter on dimension column
+   * @param dimensionColumnDataChunk
+   * @param numberOfRows
+   * @param useBitsetPipeLine
+   * @param prvBitSetGroup
+   * @param pageNumber
+   * @return filtered indexes bitset
+   */
+  private BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
+      int numberOfRows, boolean useBitsetPipeLine, BitSetGroup prvBitSetGroup, int pageNumber) {
+    // check whether previous indexes can be optimal to apply filter on dimension column
+    if (CarbonUtil.usePreviousFilterBitsetGroup(useBitsetPipeLine, prvBitSetGroup, pageNumber,
+        dimColumnExecuterInfo.getFilterKeys().length)) {
+      return getFilteredIndexesUisngPrvBitset(dimensionColumnDataChunk, prvBitSetGroup, pageNumber,
+          numberOfRows);
+    } else {
+      return getFilteredIndexes(dimensionColumnDataChunk, numberOfRows);
+    }
+  }
+
+  private BitSet getFilteredIndexes(DimensionColumnDataChunk dimensionColumnDataChunk,
+      int numberOfRows) {
+    if (dimensionColumnDataChunk.isExplicitSorted()) {
+      return setFilterdIndexToBitSetWithColumnIndex(dimensionColumnDataChunk, numberOfRows);
+    }
+    return setFilterdIndexToBitSet(dimensionColumnDataChunk, numberOfRows);
+  }
+
+  /**
+   * Below method will be used to apply filter on dimension
+   * column based on previous filtered indexes
+   * @param dimensionColumnDataChunk
+   * @param prvBitSetGroup
+   * @param pageNumber
+   * @param numberOfRows
+   * @return filtered bitset
+   */
+  private BitSet getFilteredIndexesUisngPrvBitset(DimensionColumnDataChunk dimensionColumnDataChunk,
+      BitSetGroup prvBitSetGroup, int pageNumber, int numberOfRows) {
+    BitSet prvPageBitSet = prvBitSetGroup.getBitSet(pageNumber);
+    BitSet bitSet = new BitSet(numberOfRows);
+    byte[][] filterKeys = dimColumnExecuterInfo.getFilterKeys();
+    int compareResult = 0;
+    // if dimension data was natural sorted then get the index from previous bitset
+    // and use the same in next column data, otherwise use the inverted index reverse
+    if (!dimensionColumnDataChunk.isExplicitSorted()) {
+      for (int index = prvPageBitSet.nextSetBit(0);
+           index >= 0; index = prvPageBitSet.nextSetBit(index + 1)) {
+        compareResult = CarbonUtil
+            .isFilterPresent(filterKeys, dimensionColumnDataChunk, 0, filterKeys.length - 1, index);
+        if (compareResult == 0) {
+          bitSet.set(index);
+        }
+      }
+    } else {
+      for (int index = prvPageBitSet.nextSetBit(0);
+           index >= 0; index = prvPageBitSet.nextSetBit(index + 1)) {
+        compareResult = CarbonUtil
+            .isFilterPresent(filterKeys, dimensionColumnDataChunk, 0, filterKeys.length - 1,
+                dimensionColumnDataChunk.getInvertedReverseIndex(index));
+        if (compareResult == 0) {
+          bitSet.set(index);
+        }
+      }
+    }
+    return bitSet;
+  }
   private BitSet setFilterdIndexToBitSetWithColumnIndex(
       DimensionColumnDataChunk dimensionColumnDataChunk, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);

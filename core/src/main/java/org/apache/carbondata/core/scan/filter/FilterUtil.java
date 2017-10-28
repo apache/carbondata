@@ -54,6 +54,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -329,7 +330,7 @@ public final class FilterUtil {
     if (expression.getFilterExpressionType() == ExpressionType.LITERAL
         && expression instanceof LiteralExpression) {
       DataType dataType = ((LiteralExpression) expression).getLiteralExpDataType();
-      if (!(dataType == DataType.TIMESTAMP || dataType == DataType.DATE)) {
+      if (!(dataType == DataTypes.TIMESTAMP || dataType == DataTypes.DATE)) {
         return true;
       }
     }
@@ -414,14 +415,21 @@ public final class FilterUtil {
     String result = null;
     try {
       int length = evaluateResultListFinal.size();
+      String timeFormat = CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
       for (int i = 0; i < length; i++) {
         result = evaluateResultListFinal.get(i);
         if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(result)) {
-          filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+          if (dataType == DataTypes.STRING) {
+            filterValuesList.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY);
+          } else {
+            filterValuesList.add(CarbonCommonConstants.EMPTY_BYTE_ARRAY);
+          }
           continue;
         }
-        filterValuesList.add(
-              DataTypeUtil.getBytesBasedOnDataTypeForNoDictionaryColumn(result, dataType));
+        filterValuesList.add(DataTypeUtil
+            .getBytesBasedOnDataTypeForNoDictionaryColumn(result, dataType, timeFormat));
       }
     } catch (Throwable ex) {
       throw new FilterUnsupportedException("Unsupported Filter condition: " + result, ex);
@@ -1059,12 +1067,16 @@ public final class FilterUtil {
         continue;
       }
       int keyOrdinalOfDimensionFromCurrentBlock = dimensionFromCurrentBlock.getKeyOrdinal();
+      int endFilterValue = 0;
       for (ColumnFilterInfo info : values) {
         if (keyOrdinalOfDimensionFromCurrentBlock < endKey.length) {
-          if (endKey[keyOrdinalOfDimensionFromCurrentBlock] > info.getFilterList()
-              .get(info.getFilterList().size() - 1)) {
-            endKey[keyOrdinalOfDimensionFromCurrentBlock] =
-                info.getFilterList().get(info.getFilterList().size() - 1);
+          endFilterValue = info.getFilterList().get(info.getFilterList().size() - 1);
+          if (endFilterValue == 0) {
+            endFilterValue =
+                segmentProperties.getDimColumnsCardinality()[keyOrdinalOfDimensionFromCurrentBlock];
+          }
+          if (endKey[keyOrdinalOfDimensionFromCurrentBlock] > endFilterValue) {
+            endKey[keyOrdinalOfDimensionFromCurrentBlock] = endFilterValue;
           }
         }
       }
@@ -1284,39 +1296,36 @@ public final class FilterUtil {
   public static int compareFilterKeyBasedOnDataType(String dictionaryVal, String memberVal,
       DataType dataType) {
     try {
-      switch (dataType) {
-        case SHORT:
-          return Short.compare((Short.parseShort(dictionaryVal)), (Short.parseShort(memberVal)));
-        case INT:
-          return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
-        case DOUBLE:
-          return Double
-              .compare((Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
-        case LONG:
-          return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
-        case BOOLEAN:
-          return Boolean
-              .compare((Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
-        case DATE:
-        case TIMESTAMP:
-          String format = CarbonUtil.getFormatFromProperty(dataType);
-          SimpleDateFormat parser = new SimpleDateFormat(format);
-          Date dateToStr;
-          Date dictionaryDate;
-          dateToStr = parser.parse(memberVal);
-          dictionaryDate = parser.parse(dictionaryVal);
-          return dictionaryDate.compareTo(dateToStr);
-
-        case DECIMAL:
-          java.math.BigDecimal javaDecValForDictVal = new java.math.BigDecimal(dictionaryVal);
-          java.math.BigDecimal javaDecValForMemberVal = new java.math.BigDecimal(memberVal);
-          return javaDecValForDictVal.compareTo(javaDecValForMemberVal);
-        default:
-          return -1;
+      if (dataType == DataTypes.BOOLEAN) {
+        return Boolean.compare((Boolean.parseBoolean(dictionaryVal)),
+                (Boolean.parseBoolean(memberVal)));
+      } else if (dataType == DataTypes.SHORT) {
+        return Short.compare((Short.parseShort(dictionaryVal)), (Short.parseShort(memberVal)));
+      } else if (dataType == DataTypes.INT) {
+        return Integer.compare((Integer.parseInt(dictionaryVal)), (Integer.parseInt(memberVal)));
+      } else if (dataType == DataTypes.DOUBLE) {
+        return Double.compare((Double.parseDouble(dictionaryVal)), (Double.parseDouble(memberVal)));
+      } else if (dataType == DataTypes.LONG) {
+        return Long.compare((Long.parseLong(dictionaryVal)), (Long.parseLong(memberVal)));
+      } else if (dataType == DataTypes.BOOLEAN) {
+        return Boolean.compare(
+            (Boolean.parseBoolean(dictionaryVal)), (Boolean.parseBoolean(memberVal)));
+      } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+        String format = CarbonUtil.getFormatFromProperty(dataType);
+        SimpleDateFormat parser = new SimpleDateFormat(format);
+        Date dateToStr;
+        Date dictionaryDate;
+        dateToStr = parser.parse(memberVal);
+        dictionaryDate = parser.parse(dictionaryVal);
+        return dictionaryDate.compareTo(dateToStr);
+      } else if (dataType == DataTypes.DECIMAL) {
+        java.math.BigDecimal javaDecValForDictVal = new java.math.BigDecimal(dictionaryVal);
+        java.math.BigDecimal javaDecValForMemberVal = new java.math.BigDecimal(memberVal);
+        return javaDecValForDictVal.compareTo(javaDecValForMemberVal);
+      } else {
+        return -1;
       }
-    } catch (ParseException e) {
-      return -1;
-    } catch (NumberFormatException e) {
+    } catch (ParseException | NumberFormatException e) {
       return -1;
     }
   }
@@ -1411,53 +1420,47 @@ public final class FilterUtil {
   private static int compareFilterMembersBasedOnActualDataType(String filterMember1,
       String filterMember2, DataType dataType) {
     try {
-      switch (dataType) {
-        case SHORT:
-        case INT:
-        case LONG:
-        case DOUBLE:
-
-          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
-            return 1;
-          }
-          Double d1 = Double.parseDouble(filterMember1);
-          Double d2 = Double.parseDouble(filterMember2);
-          return d1.compareTo(d2);
-        case DECIMAL:
-          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
-            return 1;
-          }
-          java.math.BigDecimal val1 = new BigDecimal(filterMember1);
-          java.math.BigDecimal val2 = new BigDecimal(filterMember2);
-          return val1.compareTo(val2);
-        case DATE:
-        case TIMESTAMP:
-          if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
-            return 1;
-          }
-          String format = null;
-          if (dataType == DataType.DATE) {
-            format = CarbonProperties.getInstance()
-                .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-                    CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
-          } else {
-            format = CarbonProperties.getInstance()
-                .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                    CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
-          }
-          SimpleDateFormat parser = new SimpleDateFormat(format);
-          Date date1 = null;
-          Date date2 = null;
-          date1 = parser.parse(filterMember1);
-          date2 = parser.parse(filterMember2);
-          return date1.compareTo(date2);
-        case STRING:
-        default:
-          return filterMember1.compareTo(filterMember2);
+      if (dataType == DataTypes.SHORT ||
+          dataType == DataTypes.INT ||
+          dataType == DataTypes.LONG ||
+          dataType == DataTypes.DOUBLE) {
+        if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
+          return 1;
+        }
+        Double d1 = Double.parseDouble(filterMember1);
+        Double d2 = Double.parseDouble(filterMember2);
+        return d1.compareTo(d2);
+      } else if (dataType == DataTypes.DECIMAL) {
+        if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
+          return 1;
+        }
+        java.math.BigDecimal val1 = new BigDecimal(filterMember1);
+        java.math.BigDecimal val2 = new BigDecimal(filterMember2);
+        return val1.compareTo(val2);
+      } else if (dataType == DataTypes.DATE || dataType == DataTypes.TIMESTAMP) {
+        if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
+          return 1;
+        }
+        String format = null;
+        if (dataType == DataTypes.DATE) {
+          format = CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+                  CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+        } else {
+          format = CarbonProperties.getInstance()
+              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+        }
+        SimpleDateFormat parser = new SimpleDateFormat(format);
+        Date date1 = null;
+        Date date2 = null;
+        date1 = parser.parse(filterMember1);
+        date2 = parser.parse(filterMember2);
+        return date1.compareTo(date2);
+      } else {
+        return filterMember1.compareTo(filterMember2);
       }
-    } catch (ParseException e) {
-      return -1;
-    } catch (NumberFormatException e) {
+    } catch (ParseException | NumberFormatException e) {
       return -1;
     }
   }
@@ -1551,7 +1554,7 @@ public final class FilterUtil {
    */
   public static boolean isExpressionNeedsToResolved(Expression rightExp, boolean isIncludeFilter) {
     if (!isIncludeFilter && rightExp instanceof LiteralExpression && (
-        DataType.NULL == ((LiteralExpression) rightExp)
+        DataTypes.NULL == ((LiteralExpression) rightExp)
             .getLiteralExpDataType())) {
       return true;
     }

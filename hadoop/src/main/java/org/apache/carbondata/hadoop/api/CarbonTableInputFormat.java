@@ -21,12 +21,18 @@ import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
-import org.apache.carbondata.core.indexstore.Blocklet;
+import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
@@ -272,16 +278,15 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     List<UpdateVO> invalidTimestampsList = new ArrayList<>();
     List<String> validSegments = Arrays.asList(getSegmentsToAccess(job));
     // get all valid segments and set them into the configuration
+    SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
     if (validSegments.size() == 0) {
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
       SegmentStatusManager.ValidAndInvalidSegmentsInfo segments =
           segmentStatusManager.getValidAndInvalidSegments();
-      SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
       validSegments = segments.getValidSegments();
       if (validSegments.size() == 0) {
         return new ArrayList<>(0);
       }
-
       // remove entry in the segment index if there are invalid segments
       invalidSegments.addAll(segments.getInvalidSegments());
       for (String invalidSegmentId : invalidSegments) {
@@ -291,6 +296,26 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         blockletMap.clear(invalidSegments);
       }
     }
+
+    // Clean the updated segments from memory if the update happens on segments
+    List<String> toBeCleanedSegments = new ArrayList<>();
+    for (SegmentUpdateDetails segmentUpdateDetail : updateStatusManager
+        .getUpdateStatusDetails()) {
+      boolean refreshNeeded =
+          DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
+              .isRefreshNeeded(segmentUpdateDetail.getSegmentName(), updateStatusManager);
+      if (refreshNeeded) {
+        toBeCleanedSegments.add(segmentUpdateDetail.getSegmentName());
+      }
+    }
+    // Clean segments if refresh is needed
+    for (String segment : validSegments) {
+      if (DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
+          .isRefreshNeeded(segment)) {
+        toBeCleanedSegments.add(segment);
+      }
+    }
+    blockletMap.clear(toBeCleanedSegments);
 
     // process and resolve the expression
     Expression filter = getFilterPredicates(job.getConfiguration());
@@ -306,7 +331,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     // prune partitions for filter query on partition table
     BitSet matchedPartitions = null;
     if (partitionInfo != null) {
-      matchedPartitions = setMatchedPartitions(null, filter, partitionInfo);
+      matchedPartitions = setMatchedPartitions(null, filter, partitionInfo, null);
       if (matchedPartitions != null) {
         if (matchedPartitions.cardinality() == 0) {
           return new ArrayList<InputSplit>();
@@ -366,9 +391,11 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       TableProvider tableProvider = new SingleTableProvider(carbonTable);
       // prune partitions for filter query on partition table
       String partitionIds = job.getConfiguration().get(ALTER_PARTITION_ID);
+      // matchedPartitions records partitionIndex, not partitionId
       BitSet matchedPartitions = null;
       if (partitionInfo != null) {
-        matchedPartitions = setMatchedPartitions(partitionIds, filter, partitionInfo);
+        matchedPartitions =
+            setMatchedPartitions(partitionIds, filter, partitionInfo, oldPartitionIdList);
         if (matchedPartitions != null) {
           if (matchedPartitions.cardinality() == 0) {
             return new ArrayList<InputSplit>();
@@ -396,15 +423,24 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     }
   }
 
+  /**
+   * set the matched partition indices into a BitSet
+   * @param partitionIds  from alter table command, for normal query, it's null
+   * @param filter   from query
+   * @param partitionInfo
+   * @param oldPartitionIdList  only used in alter table command
+   * @return
+   */
   private BitSet setMatchedPartitions(String partitionIds, Expression filter,
-      PartitionInfo partitionInfo) {
+      PartitionInfo partitionInfo, List<Integer> oldPartitionIdList) {
     BitSet matchedPartitions = null;
     if (null != partitionIds) {
       String[] partList = partitionIds.replace("[", "").replace("]", "").split(",");
-      // only one partitionId in current alter table statement
-      matchedPartitions = new BitSet(Integer.parseInt(partList[0]));
+      // partList[0] -> use the first element to initiate BitSet, will auto expand later
+      matchedPartitions = new BitSet(Integer.parseInt(partList[0].trim()));
       for (String partitionId : partList) {
-        matchedPartitions.set(Integer.parseInt(partitionId));
+        Integer index = oldPartitionIdList.indexOf(Integer.parseInt(partitionId.trim()));
+        matchedPartitions.set(index);
       }
     } else {
       if (null != filter) {
@@ -503,7 +539,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         .getDataMap(absoluteTableIdentifier, BlockletDataMap.NAME,
             BlockletDataMapFactory.class.getName());
     DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
-    List<Blocklet> prunedBlocklets;
+    List<ExtendedBlocklet> prunedBlocklets;
     if (dataMapJob != null) {
       DistributableDataMapFormat datamapDstr =
           new DistributableDataMapFormat(absoluteTableIdentifier, BlockletDataMap.NAME,
@@ -519,7 +555,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     if (partitionInfo != null) {
       partitionIdList = partitionInfo.getPartitionIds();
     }
-    for (Blocklet blocklet : prunedBlocklets) {
+    for (ExtendedBlocklet blocklet : prunedBlocklets) {
       int partitionId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(
           CarbonTablePath.DataFileUtil.getTaskNo(blocklet.getPath().toString()));
 
@@ -550,7 +586,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return resultFilterredBlocks;
   }
 
-  private org.apache.carbondata.hadoop.CarbonInputSplit convertToCarbonInputSplit(Blocklet blocklet)
+  private CarbonInputSplit convertToCarbonInputSplit(ExtendedBlocklet blocklet)
       throws IOException {
     blocklet.updateLocations();
     org.apache.carbondata.hadoop.CarbonInputSplit split =
@@ -685,9 +721,10 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     Map<String, Long> segmentAndBlockCountMapping =
         new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    List<Blocklet> blocklets = blockletMap.prune(validAndInvalidSegments.getValidSegments(), null);
-    for (Blocklet blocklet : blocklets) {
-      String blockName = blocklet.getPath().toString();
+    List<ExtendedBlocklet> blocklets =
+        blockletMap.prune(validAndInvalidSegments.getValidSegments(), null);
+    for (ExtendedBlocklet blocklet : blocklets) {
+      String blockName = blocklet.getPath();
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);
       blockName = blockName + CarbonTablePath.getCarbonDataExtension();
 

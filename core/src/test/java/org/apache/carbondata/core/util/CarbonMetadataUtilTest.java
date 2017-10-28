@@ -123,7 +123,7 @@ public class CarbonMetadataUtilTest {
     meta.setDecimal(5);
     meta.setMinValue(objMinArr);
     meta.setMaxValue(objMaxArr);
-    meta.setType(ColumnPageEncoderMeta.DOUBLE_MEASURE);
+    meta.setType(org.apache.carbondata.core.metadata.datatype.DataType.DOUBLE_MEASURE_CHAR);
 
     List<Encoding> encoders = new ArrayList<>();
     encoders.add(Encoding.INVERTED_INDEX);
@@ -189,7 +189,7 @@ public class CarbonMetadataUtilTest {
 
     final EncodedColumnPage measure = new EncodedColumnPage(new DataChunk2(), new byte[]{0,1},
         PrimitivePageStatsCollector.newInstance(
-        org.apache.carbondata.core.metadata.datatype.DataType.BYTE, 0, 0));
+        org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE, 0, 0));
     new MockUp<EncodedTablePage>() {
       @SuppressWarnings("unused") @Mock
       public EncodedColumnPage getMeasure(int measureIndex) {

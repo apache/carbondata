@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.presto;
 
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.presto.impl.CarbonTableReader;
 import com.facebook.presto.spi.*;
@@ -221,32 +222,30 @@ public class CarbondataMetadata implements ConnectorMetadata {
 
   public static Type carbonDataType2SpiMapper(ColumnSchema columnSchema) {
     DataType colType = columnSchema.getDataType();
-    switch (colType) {
-      case BOOLEAN:
-        return BooleanType.BOOLEAN;
-      case SHORT:
-        return SmallintType.SMALLINT;
-      case INT:
-        return IntegerType.INTEGER;
-      case LONG:
-        return BigintType.BIGINT;
-      case FLOAT:
-      case DOUBLE:
-        return DoubleType.DOUBLE;
-      case DECIMAL:
-        if(columnSchema.getPrecision() > 0){
-          return DecimalType.createDecimalType(columnSchema.getPrecision(), columnSchema.getScale());
-        } else {
-          return DecimalType.createDecimalType();
-        }
-      case STRING:
-        return VarcharType.VARCHAR;
-      case DATE:
-        return DateType.DATE;
-      case TIMESTAMP:
-        return TimestampType.TIMESTAMP;
-      default:
-        return VarcharType.VARCHAR;
+    if (colType == DataTypes.BOOLEAN) {
+      return BooleanType.BOOLEAN;
+    } else if (colType == DataTypes.SHORT) {
+      return SmallintType.SMALLINT;
+    } else if (colType == DataTypes.INT) {
+      return IntegerType.INTEGER;
+    } else if (colType == DataTypes.LONG) {
+      return BigintType.BIGINT;
+    } else if (colType == DataTypes.FLOAT || colType == DataTypes.DOUBLE) {
+      return DoubleType.DOUBLE;
+    } else if (colType == DataTypes.DECIMAL) {
+      if (columnSchema.getPrecision() > 0) {
+        return DecimalType.createDecimalType(columnSchema.getPrecision(), columnSchema.getScale());
+      } else {
+        return DecimalType.createDecimalType();
+      }
+    } else if (colType == DataTypes.STRING) {
+      return VarcharType.VARCHAR;
+    } else if (colType == DataTypes.DATE) {
+      return DateType.DATE;
+    } else if (colType == DataTypes.TIMESTAMP) {
+      return TimestampType.TIMESTAMP;
+    } else {
+      return VarcharType.VARCHAR;
     }
   }
 

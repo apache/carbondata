@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 
 import org.junit.BeforeClass;
@@ -43,7 +44,7 @@ public class ExpressionResultTest {
   private static ExpressionResult expressionResult;
 
   @BeforeClass public static void setUp() {
-    expressionResult = new ExpressionResult(DataType.INT, null);
+    expressionResult = new ExpressionResult(DataTypes.INT, null);
   }
 
   @Test public void testGetIntForNull() throws FilterIllegalMemberException {
@@ -51,7 +52,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetIntForString() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.STRING, "5");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "5");
     int actualValue = expressionResultForString.getInt();
     int expectedValue = 5;
     assertEquals(expectedValue, actualValue);
@@ -59,19 +60,19 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetIntForNumberFormatException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.STRING, "FOOBAR");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "FOOBAR");
     expressionResultForString.getInt();
   }
 
   @Test public void testGetIntForDouble() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForDouble = new ExpressionResult(DataType.DOUBLE, 5.0);
+    ExpressionResult expressionResultForDouble = new ExpressionResult(DataTypes.DOUBLE, 5.0);
     int actualValue = expressionResultForDouble.getInt();
     int expectedValue = 5;
     assertEquals(expectedValue, actualValue);
   }
 
   @Test public void testGetIntForInt() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForInt = new ExpressionResult(DataType.INT, 5);
+    ExpressionResult expressionResultForInt = new ExpressionResult(DataTypes.INT, 5);
     int actualValue = expressionResultForInt.getInt();
     int expectedValue = 5;
     assertEquals(expectedValue, actualValue);
@@ -79,13 +80,13 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetIntForIllegalMemberException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForInt = new ExpressionResult(DataType.FLOAT, 25.36);
+    ExpressionResult expressionResultForInt = new ExpressionResult(DataTypes.FLOAT, 25.36);
     expressionResultForInt.getInt();
   }
 
   @Test(expected = FilterIllegalMemberException.class) public void testGetIntForClassCastException()
       throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForInt = new ExpressionResult(DataType.INT, "STRING");
+    ExpressionResult expressionResultForInt = new ExpressionResult(DataTypes.INT, "STRING");
     expressionResultForInt.getInt();
   }
 
@@ -94,7 +95,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetShortForString() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.STRING, "5");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "5");
     short actualValue = expressionResultForString.getShort();
     short expectedValue = 5;
     assertEquals(expectedValue, actualValue);
@@ -102,19 +103,19 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetShortForNumberFormatException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.STRING, "FOOBAR");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "FOOBAR");
     expressionResultForString.getShort();
   }
 
   @Test public void testGetShortForDouble() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForDouble = new ExpressionResult(DataType.DOUBLE, 5.0);
+    ExpressionResult expressionResultForDouble = new ExpressionResult(DataTypes.DOUBLE, 5.0);
     short actualValue = expressionResultForDouble.getShort();
     short expectedValue = 5;
     assertEquals(expectedValue, actualValue);
   }
 
   @Test public void testGetShortForInt() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForInt = new ExpressionResult(DataType.INT, 5);
+    ExpressionResult expressionResultForInt = new ExpressionResult(DataTypes.INT, 5);
     short actualValue = expressionResultForInt.getShort();
     short expectedValue = 5;
     assertEquals(expectedValue, actualValue);
@@ -122,13 +123,13 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetShortForIllegalMemberException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForInt = new ExpressionResult(DataType.FLOAT, 25.36);
+    ExpressionResult expressionResultForInt = new ExpressionResult(DataTypes.FLOAT, 25.36);
     expressionResultForInt.getShort();
   }
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetShortForClassCastException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForInt = new ExpressionResult(DataType.INT, "STRING");
+    ExpressionResult expressionResultForInt = new ExpressionResult(DataTypes.INT, "STRING");
     expressionResultForInt.getShort();
   }
 
@@ -137,14 +138,14 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetStringForString() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.STRING, "5");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "5");
     String actualValue = expressionResultForString.getString();
     String expectedValue = "5";
     assertEquals(expectedValue, actualValue);
   }
 
   @Test public void testGetStringForException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.INT, "5");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.INT, "5");
     String actualValue = expressionResultForString.getString();
     String expectedValue = "5";
     assertEquals(expectedValue, actualValue);
@@ -155,7 +156,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetDoubleForString() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.STRING, "5");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "5");
     double actualValue = expressionResultForString.getDouble();
     double expectedValue = 5;
     assertEquals(expectedValue, actualValue, DELTA);
@@ -163,19 +164,19 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetDoubleForNumberFormatException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.STRING, "FOOBAR");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "FOOBAR");
     expressionResultForString.getDouble();
   }
 
   @Test public void testGetDoubleForInt() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForDouble = new ExpressionResult(DataType.INT, 5);
+    ExpressionResult expressionResultForDouble = new ExpressionResult(DataTypes.INT, 5);
     double actualValue = expressionResultForDouble.getDouble();
     double expectedValue = 5.0;
     assertEquals(expectedValue, actualValue, DELTA);
   }
 
   @Test public void testGetDoubleForDouble() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForDouble = new ExpressionResult(DataType.DOUBLE, 5.0);
+    ExpressionResult expressionResultForDouble = new ExpressionResult(DataTypes.DOUBLE, 5.0);
     double actualValue = expressionResultForDouble.getDouble();
     double expectedValue = 5;
     assertEquals(expectedValue, actualValue, DELTA);
@@ -183,13 +184,13 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetDoubleForIllegalMemberException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForDouble = new ExpressionResult(DataType.FLOAT, 25.36);
+    ExpressionResult expressionResultForDouble = new ExpressionResult(DataTypes.FLOAT, 25.36);
     expressionResultForDouble.getDouble();
   }
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetDoubleForClassCastException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForDouble = new ExpressionResult(DataType.DOUBLE, "STRING");
+    ExpressionResult expressionResultForDouble = new ExpressionResult(DataTypes.DOUBLE, "STRING");
     expressionResultForDouble.getDouble();
   }
 
@@ -198,7 +199,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetLongForString() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.STRING, "5");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "5");
     long actualValue = expressionResultForString.getLong();
     long expectedValue = 5;
     assertEquals(expectedValue, actualValue);
@@ -206,19 +207,19 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetLongForNumberFormatException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.STRING, "FOOBAR");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "FOOBAR");
     expressionResultForString.getLong();
   }
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetLongForIllegalMemberException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForLong = new ExpressionResult(DataType.FLOAT, 25.36);
+    ExpressionResult expressionResultForLong = new ExpressionResult(DataTypes.FLOAT, 25.36);
     expressionResultForLong.getLong();
   }
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetLongForClassCastException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForLong = new ExpressionResult(DataType.LONG, "STRING");
+    ExpressionResult expressionResultForLong = new ExpressionResult(DataTypes.LONG, "STRING");
     expressionResultForLong.getLong();
   }
 
@@ -227,7 +228,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetDecimalForString() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.STRING, "5");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "5");
     BigDecimal actualValue = expressionResultForString.getDecimal();
     BigDecimal expectedValue = new BigDecimal(5.00);
     assertEquals(expectedValue, actualValue);
@@ -235,26 +236,26 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetDecimalForNumberFormatException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.STRING, "FOOBAR");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "FOOBAR");
     expressionResultForString.getDecimal();
   }
 
   @Test public void testGetDecimalForInt() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForInt = new ExpressionResult(DataType.INT, 5);
+    ExpressionResult expressionResultForInt = new ExpressionResult(DataTypes.INT, 5);
     BigDecimal actualValue = expressionResultForInt.getDecimal();
     BigDecimal expectedValue = new BigDecimal(5);
     assertEquals(expectedValue, actualValue);
   }
 
   @Test public void testGetDecimalForDouble() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForDouble = new ExpressionResult(DataType.DOUBLE, 5);
+    ExpressionResult expressionResultForDouble = new ExpressionResult(DataTypes.DOUBLE, 5);
     BigDecimal actualValue = expressionResultForDouble.getDecimal();
     BigDecimal expectedValue = new BigDecimal(5);
     assertEquals(expectedValue, actualValue);
   }
 
   @Test public void testGetDecimalForDecimal() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForDecimal = new ExpressionResult(DataType.DECIMAL, 5);
+    ExpressionResult expressionResultForDecimal = new ExpressionResult(DataTypes.DECIMAL, 5);
     BigDecimal actualValue = expressionResultForDecimal.getDecimal();
     BigDecimal expectedValue = new BigDecimal(5);
     assertEquals(expectedValue, actualValue);
@@ -262,13 +263,13 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetDecimalForIllegalMemberException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForFloat = new ExpressionResult(DataType.FLOAT, 25.36);
+    ExpressionResult expressionResultForFloat = new ExpressionResult(DataTypes.FLOAT, 25.36);
     expressionResultForFloat.getDecimal();
   }
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetDecimalForClassCastException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForException = new ExpressionResult(DataType.LONG, "STRING");
+    ExpressionResult expressionResultForException = new ExpressionResult(DataTypes.LONG, "STRING");
     expressionResultForException.getDecimal();
   }
 
@@ -278,7 +279,7 @@ public class ExpressionResultTest {
 
   @Test public void testGetTimeForString() throws FilterIllegalMemberException {
     ExpressionResult expressionResultForString =
-        new ExpressionResult(DataType.STRING, "2016-11-07 10:15:09");
+        new ExpressionResult(DataTypes.STRING, "2016-11-07 10:15:09");
     long actualValue = expressionResultForString.getTime();
     long expectedValue = getTime("2016-11-07 10:15:09");
     assertEquals(expectedValue, actualValue);
@@ -302,19 +303,19 @@ public class ExpressionResultTest {
   @Test(expected = FilterIllegalMemberException.class) public void testGetTimeForParseException()
       throws FilterIllegalMemberException {
     ExpressionResult expressionResultForParseException =
-        new ExpressionResult(DataType.STRING, "FOOBAR");
+        new ExpressionResult(DataTypes.STRING, "FOOBAR");
     expressionResultForParseException.getTime();
   }
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetTimeForIllegalMemberException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForFloat = new ExpressionResult(DataType.FLOAT, 25.36);
+    ExpressionResult expressionResultForFloat = new ExpressionResult(DataTypes.FLOAT, 25.36);
     expressionResultForFloat.getTime();
   }
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetTimeForClassCastException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForException = new ExpressionResult(DataType.LONG, "STRING");
+    ExpressionResult expressionResultForException = new ExpressionResult(DataTypes.LONG, "STRING");
     expressionResultForException.getTime();
   }
 
@@ -323,14 +324,14 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetBooleanForString() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.STRING, "true");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.STRING, "true");
     boolean actualValue = expressionResultForString.getBoolean();
     boolean expectedValue = true;
     assertEquals(expectedValue, actualValue);
   }
 
   @Test public void testGetBooleanForBoolean() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForString = new ExpressionResult(DataType.BOOLEAN, "true");
+    ExpressionResult expressionResultForString = new ExpressionResult(DataTypes.BOOLEAN, "true");
     boolean actualValue = expressionResultForString.getBoolean();
     boolean expectedValue = true;
     assertEquals(expectedValue, actualValue);
@@ -338,12 +339,12 @@ public class ExpressionResultTest {
 
   @Test(expected = FilterIllegalMemberException.class)
   public void testGetBooleanForIllegalMemberException() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForFloat = new ExpressionResult(DataType.FLOAT, 25.36);
+    ExpressionResult expressionResultForFloat = new ExpressionResult(DataTypes.FLOAT, 25.36);
     expressionResultForFloat.getBoolean();
   }
 
   @Test public void testGetList() {
-    ExpressionResult obj = new ExpressionResult(DataType.STRING, "test");
+    ExpressionResult obj = new ExpressionResult(DataTypes.STRING, "test");
     List<ExpressionResult> actualValue = obj.getList();
     List<ExpressionResult> expected = new ArrayList<>();
     expected.add(0, obj);
@@ -351,7 +352,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testHashCode() {
-    ExpressionResult obj = new ExpressionResult(DataType.INT, 1);
+    ExpressionResult obj = new ExpressionResult(DataTypes.INT, 1);
     int actualValue = obj.hashCode();
     int expectedValue = 80;
     assertEquals(expectedValue, actualValue);
@@ -365,14 +366,14 @@ public class ExpressionResultTest {
   }
 
   @Test public void testHashCodeForNul() {
-    ExpressionResult obj = new ExpressionResult(DataType.DOUBLE, null);
+    ExpressionResult obj = new ExpressionResult(DataTypes.DOUBLE, null);
     int actualValue = obj.hashCode();
     int expectedValue = 31;
     assertEquals(expectedValue, actualValue);
   }
 
   @Test public void testEqualsForObjNOtInstanceOfExpressionResult() {
-    ExpressionResult expressionResult = new ExpressionResult(DataType.INT, 5);
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.INT, 5);
     List obj = new ArrayList();
     obj.add(0, 0);
     obj.add(1, 1);
@@ -381,60 +382,60 @@ public class ExpressionResultTest {
   }
 
   @Test public void testEqualsForString() {
-    ExpressionResult expressionResult = new ExpressionResult(DataType.STRING, "5");
-    ExpressionResult objToCompare = new ExpressionResult(DataType.STRING, "6");
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.STRING, "5");
+    ExpressionResult objToCompare = new ExpressionResult(DataTypes.STRING, "6");
     boolean result = expressionResult.equals(objToCompare);
     assertFalse(result);
   }
 
   @Test public void testEqualsForShort() {
-    ExpressionResult expressionResult = new ExpressionResult(DataType.SHORT, 5);
-    ExpressionResult objToCompare = new ExpressionResult(DataType.SHORT, 6);
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.SHORT, 5);
+    ExpressionResult objToCompare = new ExpressionResult(DataTypes.SHORT, 6);
     boolean result = expressionResult.equals(objToCompare);
     assertFalse(result);
   }
 
   @Test public void testEqualsForInt() {
-    ExpressionResult expressionResult = new ExpressionResult(DataType.INT, 5);
-    ExpressionResult objToCompare = new ExpressionResult(DataType.INT, 6);
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.INT, 5);
+    ExpressionResult objToCompare = new ExpressionResult(DataTypes.INT, 6);
     boolean result = expressionResult.equals(objToCompare);
     assertFalse(result);
   }
 
   @Test public void testEqualsForDecimal() {
-    ExpressionResult expressionResult = new ExpressionResult(DataType.DECIMAL, 5);
-    ExpressionResult objToCompare = new ExpressionResult(DataType.DECIMAL, 6);
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.DECIMAL, 5);
+    ExpressionResult objToCompare = new ExpressionResult(DataTypes.DECIMAL, 6);
     boolean result = expressionResult.equals(objToCompare);
     assertFalse(result);
   }
 
   @Test public void testEqualsForDouble() {
-    ExpressionResult expressionResult = new ExpressionResult(DataType.DOUBLE, 5.89);
-    ExpressionResult objToCompare = new ExpressionResult(DataType.DOUBLE, 6.90);
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.DOUBLE, 5.89);
+    ExpressionResult objToCompare = new ExpressionResult(DataTypes.DOUBLE, 6.90);
     boolean result = expressionResult.equals(objToCompare);
     assertFalse(result);
   }
 
   @Test public void testEqualsForException() {
     ExpressionResult expressionResult =
-        new ExpressionResult(DataType.TIMESTAMP, "2016-11-07 10:15:09");
-    ExpressionResult objToCompare = new ExpressionResult(DataType.DOUBLE, "2016-11-06 10:15:09");
+        new ExpressionResult(DataTypes.TIMESTAMP, "2016-11-07 10:15:09");
+    ExpressionResult objToCompare = new ExpressionResult(DataTypes.DOUBLE, "2016-11-06 10:15:09");
     boolean result = expressionResult.equals(objToCompare);
     assertFalse(result);
   }
 
   @Test public void testEqualsForLongAndTimeStamp() {
     ExpressionResult expressionResult =
-        new ExpressionResult(DataType.TIMESTAMP, new Long(11111111111111111L));
+        new ExpressionResult(DataTypes.TIMESTAMP, new Long(11111111111111111L));
     ExpressionResult objToCompare =
-        new ExpressionResult(DataType.LONG, new Long(11111111111111111L));
+        new ExpressionResult(DataTypes.LONG, new Long(11111111111111111L));
     boolean result = expressionResult.equals(objToCompare);
     assertTrue(result);
   }
 
   @Test public void compareToForInt() {
-    ExpressionResult obj = new ExpressionResult(DataType.INT, 5);
-    ExpressionResult expressionResult = new ExpressionResult(DataType.INT, 6);
+    ExpressionResult obj = new ExpressionResult(DataTypes.INT, 5);
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.INT, 6);
     int actualValue = expressionResult.compareTo(obj);
     int expectedValue = 1;
     assertEquals(expectedValue, actualValue);
@@ -442,32 +443,32 @@ public class ExpressionResultTest {
   }
 
   @Test public void compareToForDecimal() {
-    ExpressionResult obj = new ExpressionResult(DataType.DECIMAL, 5);
-    ExpressionResult expressionResult = new ExpressionResult(DataType.DECIMAL, 6);
+    ExpressionResult obj = new ExpressionResult(DataTypes.DECIMAL, 5);
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.DECIMAL, 6);
     int actualValue = expressionResult.compareTo(obj);
     int expectedValue = 1;
     assertEquals(expectedValue, actualValue);
   }
 
   @Test public void compareToForException() {
-    ExpressionResult obj = new ExpressionResult(DataType.INT, 5);
-    ExpressionResult expressionResult = new ExpressionResult(DataType.DECIMAL, 6);
+    ExpressionResult obj = new ExpressionResult(DataTypes.INT, 5);
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.DECIMAL, 6);
     int actualValue = expressionResult.compareTo(obj);
     int expectedValue = -1;
     assertEquals(expectedValue, actualValue);
   }
 
   @Test public void compareToForTimestamp() {
-    ExpressionResult obj = new ExpressionResult(DataType.TIMESTAMP, "2016-11-07 10:15:09");
+    ExpressionResult obj = new ExpressionResult(DataTypes.TIMESTAMP, "2016-11-07 10:15:09");
     ExpressionResult expressionResult =
-        new ExpressionResult(DataType.TIMESTAMP, "2016-11-07 10:15:09");
+        new ExpressionResult(DataTypes.TIMESTAMP, "2016-11-07 10:15:09");
     int actualValue = expressionResult.compareTo(obj);
     int expectedValue = 0;
     assertEquals(expectedValue, actualValue);
   }
 
   @Test public void testGetListAsString() throws FilterIllegalMemberException {
-    ExpressionResult obj = new ExpressionResult(DataType.INT, 6);
+    ExpressionResult obj = new ExpressionResult(DataTypes.INT, 6);
     List<String> actualValue = obj.getListAsString();
     List<String> expectedValue = new ArrayList<>();
     expectedValue.add("6");
@@ -475,21 +476,21 @@ public class ExpressionResultTest {
   }
 
   @Test public void compareToForString() {
-    ExpressionResult obj = new ExpressionResult(DataType.STRING, "2016");
-    ExpressionResult expressionResult = new ExpressionResult(DataType.STRING, "2016");
+    ExpressionResult obj = new ExpressionResult(DataTypes.STRING, "2016");
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.STRING, "2016");
     int actualValue = expressionResult.compareTo(obj);
     int expectedValue = 0;
     assertEquals(expectedValue, actualValue);
   }
 
   @Test public void testIsNullForNull() {
-    ExpressionResult obj = new ExpressionResult(DataType.STRING, null);
+    ExpressionResult obj = new ExpressionResult(DataTypes.STRING, null);
     boolean actualValue = obj.isNull();
     assertTrue(actualValue);
   }
 
   @Test public void testIsNullForNotNull() {
-    ExpressionResult obj = new ExpressionResult(DataType.STRING, "test");
+    ExpressionResult obj = new ExpressionResult(DataTypes.STRING, "test");
     boolean actualValue = obj.isNull();
     assertFalse(actualValue);
   }

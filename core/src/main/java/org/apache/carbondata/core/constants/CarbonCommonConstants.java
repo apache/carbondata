@@ -190,6 +190,12 @@ public final class CarbonCommonConstants {
    * Bytes for string 0, it is used in codegen in case of null values.
    */
   public static final byte[] ZERO_BYTE_ARRAY = "0".getBytes(Charset.forName(DEFAULT_CHARSET));
+
+  /**
+   * Empty byte array
+   */
+  public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
   /**
    * FILE STATUS IN-PROGRESS
    */
@@ -626,8 +632,8 @@ public final class CarbonCommonConstants {
   public static final String SHORT = "Short";
   public static final String NUMERIC = "Numeric";
   public static final String TIMESTAMP = "Timestamp";
-  public static final String ARRAY = "ARRAY";
-  public static final String STRUCT = "STRUCT";
+  public static final String ARRAY = "array";
+  public static final String STRUCT = "struct";
   public static final String FROM = "from";
   /**
    * FACT_UPDATE_EXTENSION.
@@ -664,6 +670,7 @@ public final class CarbonCommonConstants {
   public static final String DEFAULT_INVISIBLE_DUMMY_MEASURE = "default_dummy_measure";
   public static final String CARBON_IMPLICIT_COLUMN_POSITIONID = "positionId";
   public static final String CARBON_IMPLICIT_COLUMN_TUPLEID = "tupleId";
+  public static final String CARBON_IMPLICIT_COLUMN_SEGMENTID = "segId";
   /**
    * max driver lru cache size upto which lru cache will be loaded in memory
    */
@@ -689,22 +696,7 @@ public final class CarbonCommonConstants {
    * max lru cache size default value in MB
    */
   public static final String CARBON_MAX_LRU_CACHE_SIZE_DEFAULT = "-1";
-  /**
-   * DOUBLE_VALUE_MEASURE
-   */
-  public static final char DOUBLE_MEASURE = 'n';
-  /**
-   * BYTE_VALUE_MEASURE
-   */
-  public static final char BYTE_VALUE_MEASURE = 'c';
-  /**
-   * BIG_DECIMAL_MEASURE
-   */
-  public static final char BIG_DECIMAL_MEASURE = 'b';
-  /**
-   * BIG_INT_MEASURE
-   */
-  public static final char BIG_INT_MEASURE = 'd';
+
   /**
    * CARBON_PREFETCH_BUFFERSIZE
    */
@@ -1039,7 +1031,7 @@ public final class CarbonCommonConstants {
   public static final String CARBON_DATA_FILE_VERSION = "carbon.data.file.version";
 
   /**
-   * property to set is IS_DRIVER_INSTANCE
+   * Index file name will end with this extension when update.
    */
   public static final String UPDATE_INDEX_FILE_EXT = ".carbonindex";
 
@@ -1374,6 +1366,15 @@ public final class CarbonCommonConstants {
   public static final String CARBON_USE_BLOCKLET_DISTRIBUTION = "carbon.blocklet.distribution";
 
   public static final String CARBON_USE_BLOCKLET_DISTRIBUTION_DEFAULT = "true";
+
+  /**
+   * this will be used to pass bitset value in filter to another filter for
+   * faster execution of filter query
+   */
+  @CarbonProperty
+  public static final String BITSET_PIPE_LINE = "carbon.use.bitset.pipe.line";
+
+  public static final String BITSET_PIPE_LINE_DEFAULT = "true";
 
   private CarbonCommonConstants() {
   }

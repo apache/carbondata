@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
@@ -265,7 +266,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.BOOLEAN;
+        return DataTypes.BOOLEAN;
       }
 
       @Mock public String getColumnName() {
@@ -349,7 +350,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.BOOLEAN;
+        return DataTypes.BOOLEAN;
       }
 
       @Mock public String getColumnName() {
@@ -413,7 +414,11 @@ public class ThriftWrapperSchemaConverterImplTest {
     assertEquals(expectedResult, actualResult);
   }
 
-  @Test public void testFromWrapperToExternalColumnSchema() {
+  @Test public void testFromWrapperToExternalColumnSchemaForBooleanDataType() {
+    org.apache.carbondata.format.ColumnSchema thriftColumnSchema =
+            new org.apache.carbondata.format.ColumnSchema(org.apache.carbondata.format.DataType.BOOLEAN,
+                    "columnName", "1", true, encoders, true);
+    thriftColumnSchema.setSchemaOrdinal(1);
     ColumnSchema wrapperColumnSchema = new ColumnSchema();
 
     new MockUp<ColumnSchema>() {
@@ -426,7 +431,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.BOOLEAN;
+        return DataTypes.BOOLEAN;
       }
 
       @Mock public String getColumnName() {
@@ -500,7 +505,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.STRING;
+        return DataTypes.STRING;
       }
 
       @Mock public String getColumnName() {
@@ -575,7 +580,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.INT;
+        return DataTypes.INT;
       }
 
       @Mock public String getColumnName() {
@@ -648,7 +653,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.SHORT;
+        return DataTypes.SHORT;
       }
 
       @Mock public String getColumnName() {
@@ -722,7 +727,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.LONG;
+        return DataTypes.LONG;
       }
 
       @Mock public String getColumnName() {
@@ -796,7 +801,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.DOUBLE;
+        return DataTypes.DOUBLE;
       }
 
       @Mock public String getColumnName() {
@@ -869,7 +874,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.DECIMAL;
+        return DataTypes.DECIMAL;
       }
 
       @Mock public String getColumnName() {
@@ -944,7 +949,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.TIMESTAMP;
+        return DataTypes.TIMESTAMP;
       }
 
       @Mock public String getColumnName() {
@@ -1018,7 +1023,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.ARRAY;
+        return DataTypes.ARRAY;
       }
 
       @Mock public String getColumnName() {
@@ -1092,7 +1097,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.STRUCT;
+        return DataTypes.STRUCT;
       }
 
       @Mock public String getColumnName() {
@@ -1241,7 +1246,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.BOOLEAN;
+        return DataTypes.BOOLEAN;
       }
 
       @Mock public String getColumnName() {
@@ -1303,7 +1308,7 @@ public class ThriftWrapperSchemaConverterImplTest {
     encoders.add(null);
     org.apache.carbondata.format.ColumnSchema thriftColumnSchema = null;
     thriftColumnSchema =
-        new org.apache.carbondata.format.ColumnSchema(org.apache.carbondata.format.DataType.STRING,
+        new org.apache.carbondata.format.ColumnSchema(org.apache.carbondata.format.DataType.BOOLEAN,
             "columnName", "1", true, encoders, true);
     thriftColumnSchema.setSchemaOrdinal(1);
 
@@ -1326,7 +1331,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.BOOLEAN;
+        return DataTypes.STRING;
       }
 
       @Mock public String getColumnName() {
@@ -1444,7 +1449,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataType.BOOLEAN;
+        return DataTypes.STRING;
       }
 
       @Mock public String getColumnName() {
@@ -1539,7 +1544,7 @@ long time =1112745600000L;
     wrapperColumnSchema.setColumnUniqueId("1");
     wrapperColumnSchema.setColumnName("columnName");
     wrapperColumnSchema.setColumnar(true);
-    wrapperColumnSchema.setDataType(DataType.STRING);
+    wrapperColumnSchema.setDataType(DataTypes.STRING);
     wrapperColumnSchema.setDimensionColumn(true);
     wrapperColumnSchema.setEncodingList(encodings);
     wrapperColumnSchema.setNumberOfChild(1);

@@ -65,7 +65,7 @@ case class IncludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attr
 
 case class ExcludeProfile(attributes: Seq[Attribute]) extends CarbonProfile(attributes)
 
-object getDB {
+object GetDB {
 
   def getDatabaseName(dbName: Option[String], sparkSession: SparkSession): String = {
     dbName.getOrElse(
@@ -76,7 +76,10 @@ object getDB {
 /**
  * Shows Loads in a table
  */
-case class ShowLoadsCommand(databaseNameOp: Option[String], table: String, limit: Option[String])
+case class ShowLoadsCommand(
+    databaseNameOp: Option[String],
+    table: String,
+    limit: Option[String])
   extends Command {
 
   override def output: Seq[Attribute] = {
@@ -108,15 +111,6 @@ case class DeleteRecords(
     table: UnresolvedRelation) extends LogicalPlan {
   override def children: Seq[LogicalPlan] = Seq.empty
   override def output: Seq[AttributeReference] = Seq.empty
-}
-
-/**
- * Describe formatted for hive table
- */
-case class DescribeFormattedCommand(sql: String, tblIdentifier: TableIdentifier) extends Command {
-
-  override def output: Seq[AttributeReference] =
-    Seq(AttributeReference("result", StringType, nullable = false)())
 }
 
 /**

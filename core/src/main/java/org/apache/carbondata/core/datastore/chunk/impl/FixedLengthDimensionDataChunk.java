@@ -19,6 +19,8 @@ package org.apache.carbondata.core.datastore.chunk.impl;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory;
 import org.apache.carbondata.core.datastore.chunk.store.DimensionChunkStoreFactory.DimensionStoreType;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.executor.infos.KeyStructureInfo;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.scan.result.vector.ColumnVectorInfo;
@@ -103,17 +105,14 @@ public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
         if (valueFromSurrogate == null) {
           vector.putNull(vectorOffset++);
         } else {
-          switch (columnVectorInfo.directDictionaryGenerator.getReturnType()) {
-            case INT:
-              vector.putInt(vectorOffset++, (int) valueFromSurrogate);
-              break;
-            case LONG:
-              vector.putLong(vectorOffset++, (long) valueFromSurrogate);
-              break;
-            default:
-              throw new IllegalArgumentException(
-                  "unsupported data type: " + columnVectorInfo.directDictionaryGenerator
-                      .getReturnType());
+          DataType dataType = columnVectorInfo.directDictionaryGenerator.getReturnType();
+          if (dataType == DataTypes.INT) {
+            vector.putInt(vectorOffset++, (int) valueFromSurrogate);
+          } else if (dataType == DataTypes.LONG) {
+            vector.putLong(vectorOffset++, (long) valueFromSurrogate);
+          } else {
+            throw new IllegalArgumentException("unsupported data type: " +
+                columnVectorInfo.directDictionaryGenerator.getReturnType());
           }
         }
       }
@@ -147,17 +146,14 @@ public class FixedLengthDimensionDataChunk extends AbstractDimensionDataChunk {
         if (valueFromSurrogate == null) {
           vector.putNull(vectorOffset++);
         } else {
-          switch (columnVectorInfo.directDictionaryGenerator.getReturnType()) {
-            case INT:
-              vector.putInt(vectorOffset++, (int) valueFromSurrogate);
-              break;
-            case LONG:
-              vector.putLong(vectorOffset++, (long) valueFromSurrogate);
-              break;
-            default:
-              throw new IllegalArgumentException(
-                  "unsupported data type: " + columnVectorInfo.directDictionaryGenerator
-                      .getReturnType());
+          DataType dataType = columnVectorInfo.directDictionaryGenerator.getReturnType();
+          if (dataType == DataTypes.INT) {
+            vector.putInt(vectorOffset++, (int) valueFromSurrogate);
+          } else if (dataType == DataTypes.LONG) {
+            vector.putLong(vectorOffset++, (long) valueFromSurrogate);
+          } else {
+            throw new IllegalArgumentException("unsupported data type: " +
+                columnVectorInfo.directDictionaryGenerator.getReturnType());
           }
         }
       }
