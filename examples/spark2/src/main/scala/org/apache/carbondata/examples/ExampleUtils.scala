@@ -71,7 +71,8 @@ object ExampleUtils {
    * This func will append data to the CarbonData file
    * Returns table path
    */
-  def appendSampleCarbonFile(spark: SparkSession, tableName: String, numRows: Int = 1000): String = {
+  def appendSampleCarbonFile(
+      spark: SparkSession, tableName: String, numRows: Int = 1000): String = {
     writeDataframe(spark, tableName, numRows, SaveMode.Append)
     s"$storeLocation/default/$tableName"
   }
