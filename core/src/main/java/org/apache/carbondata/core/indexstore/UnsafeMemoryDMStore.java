@@ -22,7 +22,8 @@ import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
 import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
-import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import static org.apache.carbondata.core.memory.CarbonUnsafe.BYTE_ARRAY_OFFSET;
 import static org.apache.carbondata.core.memory.CarbonUnsafe.getUnsafe;
@@ -48,7 +49,7 @@ public class UnsafeMemoryDMStore {
 
   private int rowCount;
 
-  private final long taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
+  private final long taskId = System.nanoTime();
 
   public UnsafeMemoryDMStore(DataMapSchema[] schema) throws MemoryException {
     this.schema = schema;
