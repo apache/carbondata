@@ -129,7 +129,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
 
   private int noDictionaryCount;
 
-  private DataType[] aggType;
+  private DataType[] measureDataTypes;
 
   /**
    * to store whether dimension is of dictionary type or not
@@ -150,11 +150,11 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    * @param measureCount
    * @param fileBufferSize
    * @param noDictionaryCount
-   * @param aggType
+   * @param measureDataTypes
    * @param isNoDictionaryDimensionColumn
    */
   public SortTempFileChunkHolder(File tempFile, int dimensionCount, int complexDimensionCount,
-      int measureCount, int fileBufferSize, int noDictionaryCount, DataType[] aggType,
+      int measureCount, int fileBufferSize, int noDictionaryCount, DataType[] measureDataTypes,
       boolean[] isNoDictionaryDimensionColumn, boolean[] isNoDictionarySortColumn,
       String tableName) {
     // set temp file
@@ -170,7 +170,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     this.fileBufferSize = fileBufferSize;
     this.executorService = Executors
         .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool:" + tableName));
-    this.aggType = aggType;
+    this.measureDataTypes = measureDataTypes;
 
     this.isNoDictionaryDimensionColumn = isNoDictionaryDimensionColumn;
     this.isNoDictionarySortColumn = isNoDictionarySortColumn;
@@ -344,7 +344,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
       // read measure values
       for (int i = 0; i < this.measureCount; i++) {
         if (stream.readByte() == 1) {
-          DataType dataType = aggType[i];
+          DataType dataType = measureDataTypes[i];
           if (dataType == DataTypes.BOOLEAN) {
             measures[index++] = stream.readBoolean();
           } else if (dataType == DataTypes.SHORT) {
@@ -361,7 +361,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
             stream.readFully(buff);
             measures[index++] = DataTypeUtil.byteToBigDecimal(buff);
           } else {
-            throw new IllegalArgumentException("unsupported data type:" + aggType[i]);
+            throw new IllegalArgumentException("unsupported data type:" + measureDataTypes[i]);
           }
         } else {
           measures[index++] = null;
