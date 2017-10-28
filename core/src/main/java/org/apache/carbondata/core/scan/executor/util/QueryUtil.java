@@ -678,23 +678,6 @@ public class QueryUtil {
   }
 
   /**
-   * below method will be used to get the actual type aggregator
-   *
-   * @param aggType
-   * @return index in aggrgetor
-   */
-  public static int[] getActualTypeIndex(List<String> aggType) {
-    List<Integer> indexList = new ArrayList<Integer>();
-    for (int i = 0; i < aggType.size(); i++) {
-      if (!CarbonCommonConstants.SUM.equals(aggType.get(i)) && !CarbonCommonConstants.AVERAGE
-          .equals(aggType.get(i))) {
-        indexList.add(i);
-      }
-    }
-    return ArrayUtils.toPrimitive(indexList.toArray(new Integer[indexList.size()]));
-  }
-
-  /**
    * Below method will be used to get the key structure for the column group
    *
    * @param segmentProperties      segment properties
