@@ -90,7 +90,6 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
   val measureIndexGroup: ArrayBuffer[Int] = new ArrayBuffer[Int]()
 
   override def getPartitions: Array[Partition] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val parallelism = sparkContext.defaultParallelism
     val jobConf = new JobConf(new Configuration)
     val job = new Job(jobConf)

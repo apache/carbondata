@@ -74,7 +74,6 @@ class CarbonScanRDD(
 
   private val bucketedTable = tableInfo.getFactTable.getBucketingInfo
 
-  @transient private val jobId = new JobID(jobTrackerId, id)
   @transient val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def getPartitions: Array[Partition] = {
@@ -284,7 +283,7 @@ class CarbonScanRDD(
         private var havePair = false
         private var finished = false
 
-        context.addTaskCompletionListener { context =>
+        context.addTaskCompletionListener { _ =>
           reader.close()
           close()
           logStatistics(queryStartTime, model.getStatisticsRecorder)
@@ -374,7 +373,7 @@ class CarbonScanRDD(
   }
 
   def logStatistics(queryStartTime: Long, recorder: QueryStatisticsRecorder): Unit = {
-    var queryStatistic = new QueryStatistic()
+    val queryStatistic = new QueryStatistic()
     queryStatistic.addFixedTimeStatistic(QueryStatisticsConstants.EXECUTOR_PART,
       System.currentTimeMillis - queryStartTime)
     recorder.recordStatistics(queryStatistic)

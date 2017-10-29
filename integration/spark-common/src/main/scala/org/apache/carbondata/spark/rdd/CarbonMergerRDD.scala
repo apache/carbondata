@@ -232,7 +232,6 @@ class CarbonMergerRDD[K, V](
           throw e
       } finally {
         // delete temp location data
-        val newSlice = CarbonCommonConstants.LOAD_FOLDER + mergeNumber
         try {
           val isCompactionFlow = true
           CarbonLoaderUtil
@@ -242,7 +241,7 @@ class CarbonMergerRDD[K, V](
             LOGGER.error(e)
         }
         if (null != exec) {
-          exec.finish
+          exec.finish()
         }
       }
 
@@ -279,12 +278,7 @@ class CarbonMergerRDD[K, V](
     val result = new java.util.ArrayList[Partition](defaultParallelism)
     var taskPartitionNo = 0
     var carbonPartitionId = 0;
-    var columnSize = 0
     var noOfBlocks = 0
-
-    // mapping of the node and block list.
-    var nodeBlockMapping: java.util.Map[String, java.util.List[Distributable]] = new
-        java.util.HashMap[String, java.util.List[Distributable]]
 
     val taskInfoList = new java.util.ArrayList[Distributable]
     var carbonInputSplits = mutable.Seq[CarbonInputSplit]()
@@ -304,7 +298,7 @@ class CarbonMergerRDD[K, V](
          updateDetails = updateStatusManager.getInvalidTimestampRange(eachSeg)
       }
 
-      var updated: Boolean = updateStatusManager.getUpdateStatusDetails.length != 0
+      val updated: Boolean = updateStatusManager.getUpdateStatusDetails.length != 0
       // get splits
       val splits = format.getSplits(job)
 
@@ -320,7 +314,7 @@ class CarbonMergerRDD[K, V](
           entry.getLocations, entry.getLength, entry.getVersion,
           updateStatusManager.getDeleteDeltaFilePath(entry.getPath.toString)
         )
-        ((!updated) || (updated && (!CarbonUtil
+        (!updated || (updated && (!CarbonUtil
           .isInvalidTableBlock(blockInfo.getSegmentId, blockInfo.getFilePath,
             updateDetails, updateStatusManager)))) &&
         FileFormat.COLUMNAR_V3.equals(entry.getFileFormat)
