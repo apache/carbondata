@@ -515,6 +515,17 @@
       </build>
     </profile>
     <profile>
+      <id>spark-2.2</id>
+      <properties>
+        <spark.version>2.1.0</spark.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.11.8</scala.version>
+      </properties>
+      <modules>
+
+      </modules>
+    </profile>
+    <profile>
       <id>include-all</id>
     </profile>
     <profile>
