@@ -19,9 +19,10 @@ package org.apache.carbondata.integration.spark.testsuite.complexType
 
 import java.io.{File, FileOutputStream, PrintStream}
 
+import org.scalatest.BeforeAndAfterAll
+
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterAll
 
 class TestComplexTypeCompaction extends QueryTest with BeforeAndAfterAll {
 
