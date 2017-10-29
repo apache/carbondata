@@ -657,4 +657,12 @@ public class CarbonTable implements Serializable {
   public TableInfo getTableInfo() {
     return tableInfo;
   }
+
+  /**
+   * Return true if this is a streaming table (table with property "streaming"="true")
+   */
+  public boolean isStreamingTable() {
+    String streaming = getTableInfo().getFactTable().getTableProperties().get("streaming");
+    return streaming != null && streaming.equalsIgnoreCase("true");
+  }
 }
