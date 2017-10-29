@@ -43,7 +43,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, ColumnIdentifier}
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
 import org.apache.carbondata.core.reader.CarbonDictionaryReader
@@ -52,7 +52,6 @@ import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter
-import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.csvinput.{CSVInputFormat, StringArrayWritable}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
@@ -573,7 +572,7 @@ object GlobalDictionaryUtil {
         try {
           columnName = csvFileColumns(tokens(0).toInt)
         } catch {
-          case ex: Exception =>
+          case _: Exception =>
             LOGGER.error("Read a bad dictionary record: " + x)
             accum += 1
         }
@@ -583,7 +582,7 @@ object GlobalDictionaryUtil {
         columnName = csvFileColumns(tokens(0).toInt)
         value = tokens(1)
       } catch {
-        case ex: Exception =>
+        case _: Exception =>
           LOGGER.error("Read a bad dictionary record: " + x)
           accum += 1
       }
@@ -823,9 +822,6 @@ object GlobalDictionaryUtil {
       absoluteTableIdentifier: AbsoluteTableIdentifier,
       defaultValue: String): Unit = {
 
-    var carbonDictionarySortIndexWriter: CarbonDictionarySortIndexWriter = null
-    var dictionary: Dictionary = null
-
     val dictLock = CarbonLockFactory
       .getCarbonLockObj(absoluteTableIdentifier,
         columnSchema.getColumnUniqueId + LockUsage.LOCK)
@@ -856,7 +852,7 @@ object GlobalDictionaryUtil {
         valuesBuffer += parsedValue
       }
       val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
-        dictionary,
+        dictionary = null,
         dictionaryColumnUniqueIdentifier,
         columnSchema,
         false
@@ -870,13 +866,9 @@ object GlobalDictionaryUtil {
         val sortIndexWriteTask = new SortIndexWriterTask(
           dictionaryColumnUniqueIdentifier,
           columnSchema.getDataType,
-          dictionary,
+          dictionary = null,
           distinctValues)
         sortIndexWriteTask.execute()
-      }
-
-      if (null != carbonDictionarySortIndexWriter) {
-        carbonDictionarySortIndexWriter.close()
       }
 
       LOGGER.info(s"SortIndex file writing is successful for new column ${
@@ -894,7 +886,6 @@ object GlobalDictionaryUtil {
         LOGGER.error(ex)
         throw ex
     } finally {
-      CarbonUtil.clearDictionaryCache(dictionary)
       if (dictLock != null && isDictionaryLocked) {
         if (dictLock.unlock()) {
           LOGGER.info(s"Dictionary ${

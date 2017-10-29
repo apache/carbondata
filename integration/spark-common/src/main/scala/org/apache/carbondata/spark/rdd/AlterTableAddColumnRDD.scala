@@ -18,9 +18,7 @@
 package org.apache.carbondata.spark.rdd
 
 import org.apache.spark.{Partition, SparkContext, TaskContext}
-import org.apache.spark.rdd.RDD
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
@@ -65,7 +63,6 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
 
   override def internalCompute(split: Partition,
       context: TaskContext): Iterator[(Int, SegmentStatus)] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val status = SegmentStatus.SUCCESS
     val iter = new Iterator[(Int, SegmentStatus)] {
       try {

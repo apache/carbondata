@@ -37,7 +37,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.service.{CarbonCommonFactory, PathService}
@@ -342,7 +342,6 @@ class CarbonGlobalDictionaryGenerateRDD(
     var status = SegmentStatus.SUCCESS
     val iter = new Iterator[(Int, SegmentStatus)] {
       var dictionaryForDistinctValueLookUp: Dictionary = _
-      var dictionaryForSortIndexWriting: Dictionary = _
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
       val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
           DictionaryColumnUniqueIdentifier(
@@ -366,7 +365,7 @@ class CarbonGlobalDictionaryGenerateRDD(
         CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
           model.zooKeeperUrl)
       }
-      val dictLock = CarbonLockFactory
+      val dictLock: ICarbonLock = CarbonLockFactory
         .getCarbonLockObj(model.table,
           model.columnIdentifier(split.index).getColumnId + LockUsage.LOCK)
       var isDictionaryLocked = false
@@ -452,7 +451,6 @@ class CarbonGlobalDictionaryGenerateRDD(
         if (!dictionaryForDistinctValueLookUpCleared) {
           CarbonUtil.clearDictionaryCache(dictionaryForDistinctValueLookUp)
         }
-        CarbonUtil.clearDictionaryCache(dictionaryForSortIndexWriting)
         if (dictLock != null && isDictionaryLocked) {
           if (dictLock.unlock()) {
             logInfo(s"Dictionary ${
@@ -496,7 +494,7 @@ class CarbonGlobalDictionaryGenerateRDD(
 class CarbonColumnDictPatition(id: Int, dimension: CarbonDimension)
   extends Partition {
   override val index: Int = id
-  val preDefDictDimension = dimension
+  val preDefDictDimension: CarbonDimension = dimension
 }
 
 
