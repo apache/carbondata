@@ -42,4 +42,5 @@ struct BlockIndex{
   3: required i64 offset; // Offset of the footer
   4: required carbondata.BlockletIndex block_index;	// Blocklet index
   5: optional carbondata.BlockletInfo3 blocklet_info;
+  6: optional i64 file_size // Record the valid size for appendable carbon file
 }

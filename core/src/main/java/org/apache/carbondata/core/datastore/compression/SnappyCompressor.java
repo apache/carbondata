@@ -63,6 +63,15 @@ public class SnappyCompressor implements Compressor {
     }
   }
 
+  @Override public byte[] compressByte(byte[] unCompInput, int byteSize) {
+    try {
+      return Snappy.rawCompress(unCompInput, byteSize);
+    } catch (IOException e) {
+      LOGGER.error(e, e.getMessage());
+      return null;
+    }
+  }
+
   @Override public byte[] unCompressByte(byte[] compInput) {
     try {
       return Snappy.uncompress(compInput);
