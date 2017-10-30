@@ -126,6 +126,8 @@ public class CarbonTable implements Serializable {
 
   private int dimensionOrdinalMax;
 
+  private boolean hasDataMapSchema;
+
   private CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -158,6 +160,8 @@ public class CarbonTable implements Serializable {
       table.tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
           tableInfo.getFactTable().getPartitionInfo());
     }
+    table.hasDataMapSchema =
+        null != tableInfo.getDataMapSchemaList() && tableInfo.getDataMapSchemaList().size() > 0;
     return table;
   }
 
@@ -702,13 +706,13 @@ public class CarbonTable implements Serializable {
     this.dimensionOrdinalMax = dimensionOrdinalMax;
   }
 
-  public boolean isPreAggregateTable() {
-    return tableInfo.getParentRelationIdentifiers() != null && !tableInfo
-        .getParentRelationIdentifiers().isEmpty();
+
+  public boolean hasDataMapSchema() {
+    return hasDataMapSchema;
   }
 
-  public boolean hasPreAggregateTables() {
-    return tableInfo.getDataMapSchemaList() != null && !tableInfo
-        .getDataMapSchemaList().isEmpty();
+  public boolean isChildDataMap() {
+    return null != tableInfo.getParentRelationIdentifiers()
+        && !tableInfo.getParentRelationIdentifiers().isEmpty();
   }
 }

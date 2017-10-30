@@ -295,7 +295,12 @@ public class TableInfo implements Serializable, Writable {
       for (int i = 0; i < numberOfChildTable; i++) {
         DataMapSchema childSchema = new DataMapSchema();
         childSchema.readFields(in);
-        dataMapSchemaList.add(childSchema);
+        DataMapSchema dataMapSchema = DataMapSchemaFactory.INSTANCE
+            .getDataMapSchema(childSchema.getDataMapName(), childSchema.getClassName());
+        dataMapSchema.setChildSchema(childSchema.getChildSchema());
+        dataMapSchema.setRelationIdentifier(childSchema.getRelationIdentifier());
+        dataMapSchema.setProperties(childSchema.getProperties());
+        dataMapSchemaList.add(dataMapSchema);
       }
     }
     boolean isParentTableRelationIndentifierExists = in.readBoolean();
