@@ -16,13 +16,14 @@
  */
 package org.apache.spark.sql.execution.command.preaaggregate
 
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast}
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFunction, UnresolvedRelation}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Expression, NamedExpression, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField, Field}
@@ -51,9 +52,14 @@ object PreAggregateUtil {
 
   def getParentCarbonTable(plan: LogicalPlan): CarbonTable = {
     plan match {
-      case Aggregate(_, aExp, SubqueryAlias(_, l: LogicalRelation, _))
-        if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.metaData.carbonTable
+      case Aggregate(_, _, SubqueryAlias(_, logicalRelation: LogicalRelation, _))
+        if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+        logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].
+          carbonRelation.metaData.carbonTable
+      case Aggregate(_, _, logicalRelation: LogicalRelation)
+        if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+        logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].
+          carbonRelation.metaData.carbonTable
       case _ => throw new MalformedCarbonCommandException("table does not exist")
     }
   }
@@ -67,54 +73,86 @@ object PreAggregateUtil {
    * @param selectStmt
    * @return list of fields
    */
-  def validateActualSelectPlanAndGetAttrubites(plan: LogicalPlan,
+  def validateActualSelectPlanAndGetAttributes(plan: LogicalPlan,
       selectStmt: String): scala.collection.mutable.LinkedHashMap[Field, DataMapField] = {
-    val fieldToDataMapFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, DataMapField]
     plan match {
-      case Aggregate(_, aExp, SubqueryAlias(_, l: LogicalRelation, _))
-        if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        val carbonTable = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation
-          .metaData.carbonTable
-        val parentTableName = carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier
-          .getTableName
-        val parentDatabaseName = carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier
-          .getDatabaseName
-        val parentTableId = carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier
-          .getTableId
-        if (!carbonTable.getTableInfo.getParentRelationIdentifiers.isEmpty) {
-          throw new MalformedCarbonCommandException(
-            "Pre Aggregation is not supported on Pre-Aggregated Table")
-        }
-        aExp.map {
-          case Alias(attr: AggregateExpression, _) =>
-            if (attr.isDistinct) {
-              throw new MalformedCarbonCommandException(
-                "Distinct is not supported On Pre Aggregation")
-            }
-            fieldToDataMapFieldMap ++= (validateAggregateFunctionAndGetFields(carbonTable,
-              attr.aggregateFunction,
-              parentTableName,
-              parentDatabaseName,
-              parentTableId))
-          case attr: AttributeReference =>
-            fieldToDataMapFieldMap += getField(attr.name,
-              attr.dataType,
-              parentColumnId = carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-              parentTableName = parentTableName,
-              parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
-          case Alias(attr: AttributeReference, _) =>
-            fieldToDataMapFieldMap += getField(attr.name,
-              attr.dataType,
-              parentColumnId = carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-              parentTableName = parentTableName,
-              parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
-          case _ =>
-            throw new MalformedCarbonCommandException(s"Unsupported Select Statement:${
-              selectStmt } ")
-        }
-        Some(carbonTable)
+      case Aggregate(groupByExp, aggExp, SubqueryAlias(_, logicalRelation: LogicalRelation, _)) =>
+        getFieldsFromPlan(groupByExp, aggExp, logicalRelation, selectStmt)
+      case Aggregate(groupByExp, aggExp, logicalRelation: LogicalRelation) =>
+        getFieldsFromPlan(groupByExp, aggExp, logicalRelation, selectStmt)
+    }
+  }
+
+  /**
+   * Below method will be used to get the fields from expressions
+   * @param groupByExp
+   *                  grouping expression
+   * @param aggExp
+   *               aggregate expression
+   * @param logicalRelation
+   *                        logical relation
+   * @param selectStmt
+   *                   select statement
+   * @return fields from expressions
+   */
+  def getFieldsFromPlan(groupByExp: Seq[Expression],
+      aggExp: Seq[NamedExpression], logicalRelation: LogicalRelation, selectStmt: String):
+  scala.collection.mutable.LinkedHashMap[Field, DataMapField] = {
+    val fieldToDataMapFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, DataMapField]
+    if (!logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) {
+      throw new MalformedCarbonCommandException("Un-supported table")
+    }
+    val carbonTable = logicalRelation.relation.
+      asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation
+      .metaData.carbonTable
+    val parentTableName = carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier
+      .getTableName
+    val parentDatabaseName = carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier
+      .getDatabaseName
+    val parentTableId = carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier
+      .getTableId
+    if (!carbonTable.getTableInfo.getParentRelationIdentifiers.isEmpty) {
+      throw new MalformedCarbonCommandException(
+        "Pre Aggregation is not supported on Pre-Aggregated Table")
+    }
+    groupByExp.map {
+      case attr: AttributeReference =>
+        fieldToDataMapFieldMap += getField(attr.name,
+          attr.dataType,
+          parentColumnId = carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
+          parentTableName = parentTableName,
+          parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
       case _ =>
-        throw new MalformedCarbonCommandException(s"Unsupported Select Statement:${ selectStmt } ")
+        throw new MalformedCarbonCommandException(s"Unsupported Function in select Statement:${
+          selectStmt } ")
+    }
+    aggExp.map {
+      case Alias(attr: AggregateExpression, _) =>
+        if (attr.isDistinct) {
+          throw new MalformedCarbonCommandException(
+            "Distinct is not supported On Pre Aggregation")
+        }
+        fieldToDataMapFieldMap ++= validateAggregateFunctionAndGetFields(carbonTable,
+          attr.aggregateFunction,
+          parentTableName,
+          parentDatabaseName,
+          parentTableId)
+      case attr: AttributeReference =>
+        fieldToDataMapFieldMap += getField(attr.name,
+          attr.dataType,
+          parentColumnId = carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
+          parentTableName = parentTableName,
+          parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
+      case Alias(attr: AttributeReference, _) =>
+        fieldToDataMapFieldMap += getField(attr.name,
+          attr.dataType,
+          parentColumnId = carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
+          parentTableName = parentTableName,
+          parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
+      case _@Alias(s: ScalaUDF, name) if name.equals("preAgg") =>
+      case _ =>
+        throw new MalformedCarbonCommandException(s"Unsupported Select Statement:${
+          selectStmt } ")
     }
     fieldToDataMapFieldMap
   }
@@ -347,30 +385,6 @@ object PreAggregateUtil {
   }
 
   /**
-   * This method will split schema string into multiple parts of configured size and
-   * registers the parts as keys in tableProperties which will be read by spark to prepare
-   * Carbon Table fields
-   *
-   * @param sparkConf
-   * @param schemaJsonString
-   * @return
-   */
-  private def prepareSchemaJson(sparkConf: SparkConf,
-      schemaJsonString: String): String = {
-    val threshold = sparkConf
-      .getInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD,
-        CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT)
-    // Split the JSON string.
-    val parts = schemaJsonString.grouped(threshold).toSeq
-    var schemaParts: Seq[String] = Seq.empty
-    schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_NUMPARTS'='${ parts.size }'"
-    parts.zipWithIndex.foreach { case (part, index) =>
-      schemaParts = schemaParts :+ s"'$DATASOURCE_SCHEMA_PART_PREFIX$index'='$part'"
-    }
-    schemaParts.mkString(",")
-  }
-
-  /**
    * Validates that the table exists and acquires meta lock on it.
    *
    * @param dbName
@@ -452,5 +466,31 @@ object PreAggregateUtil {
 
   def checkMainTableLoad(carbonTable: CarbonTable): Boolean = {
     SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath).nonEmpty
+  }
+
+  /**
+   * Below method will be used to update logical plan
+   * this is required for creating pre aggregate tables,
+   * so @CarbonPreAggregateRules will not be applied during creation
+   * @param logicalPlan
+   *                    actual logical plan
+   * @return updated plan
+   */
+  def updatePreAggQueyPlan(logicalPlan: LogicalPlan): LogicalPlan = {
+    val updatedPlan = logicalPlan.transform {
+      case _@Project(projectList, child) =>
+        val buffer = new ArrayBuffer[NamedExpression]()
+        buffer ++= projectList
+        buffer += UnresolvedAlias(Alias(UnresolvedFunction("preAgg",
+          Seq.empty, isDistinct = false), "preAgg")())
+        Project(buffer, child)
+      case Aggregate(groupByExp, aggExp, l: UnresolvedRelation) =>
+        val buffer = new ArrayBuffer[NamedExpression]()
+        buffer ++= aggExp
+        buffer += UnresolvedAlias(Alias(UnresolvedFunction("preAgg",
+          Seq.empty, isDistinct = false), "preAgg")())
+        Aggregate(groupByExp, buffer, l)
+    }
+    updatedPlan
   }
 }

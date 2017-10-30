@@ -263,9 +263,10 @@ public class TableSchema implements Serializable, Writable {
     Map<String, String> properties = new HashMap<>();
     properties.put("CHILD_SELECT QUERY", queryString);
     properties.put("QUERYTYPE", queryType);
-    DataMapSchema dataMapSchema = new DataMapSchema(dataMapName, className);
-    dataMapSchema.setChildSchema(this);
+    DataMapSchema dataMapSchema =
+        new DataMapSchema(dataMapName, className);
     dataMapSchema.setProperties(properties);
+    dataMapSchema.setChildSchema(this);
     dataMapSchema.setRelationIdentifier(relationIdentifier);
     return dataMapSchema;
   }

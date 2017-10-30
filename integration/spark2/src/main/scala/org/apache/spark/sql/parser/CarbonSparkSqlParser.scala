@@ -18,7 +18,7 @@ package org.apache.spark.sql.parser
 
 import scala.collection.mutable
 
-import org.apache.spark.sql.{CarbonSession, DataFrame, Dataset, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonSession, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
@@ -74,6 +74,7 @@ class CarbonSqlAstBuilder(conf: SQLConf) extends SparkSqlAstBuilder(conf) {
   val parser = new CarbonSpark2SqlParser
 
   override def visitCreateTable(ctx: CreateTableContext): LogicalPlan = {
+    Option(ctx.query()).map(plan)
     val fileStorage = Option(ctx.createFileFormat) match {
       case Some(value) =>
         if (value.children.get(1).getText.equalsIgnoreCase("by")) {
