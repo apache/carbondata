@@ -107,6 +107,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <snappy.version>1.1.2.6</snappy.version>
+    <spark.version>2.1.0</spark.version>
     <hadoop.version>2.2.0</hadoop.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
     <spark.deps.scope>compile</spark.deps.scope>
@@ -517,13 +518,47 @@
     <profile>
       <id>spark-2.2</id>
       <properties>
-        <spark.version>2.1.0</spark.version>
+        <spark.version>2.2.0</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
       </properties>
       <modules>
-
+        <module>integration/spark2</module>
+        <module>examples/spark2</module>
       </modules>
+      <build>
+        <plugins>
+          <plugin>
+            <groupId>org.eluder.coveralls</groupId>
+            <artifactId>coveralls-maven-plugin</artifactId>
+            <version>4.3.0</version>
+            <configuration>
+              <repoToken>Q8mcBW8dw34wjNiPAMx0SFQidspIwHw8g</repoToken>
+              <sourceEncoding>UTF-8</sourceEncoding>
+              <jacocoReports>
+                <jacocoReport>${basedir}/target/carbondata-coverage-report/carbondata-coverage-report.xml
+                </jacocoReport>
+              </jacocoReports>
+              <sourceDirectories>
+                <sourceDirectory>${basedir}/common/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/core/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark2/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark2/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark-common/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark-common/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark-common-test/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark-common-test/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/hive/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/presto/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
+              </sourceDirectories>
+            </configuration>
+          </plugin>
+        </plugins>
+      </build>
     </profile>
     <profile>
       <id>include-all</id>
