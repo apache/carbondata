@@ -45,7 +45,7 @@ class C2DataMapFactory() extends DataMapFactory {
 
   override def clear(): Unit = {}
 
-  override def getDataMap(distributable: DataMapDistributable): DataMap = ???
+  override def getDataMaps(distributable: DataMapDistributable): DataMap = ???
 
   override def getDataMaps(segmentId: String): util.List[DataMap] = ???
 

@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.MergedBlockIndex;
 import org.apache.carbondata.format.MergedBlockIndexHeader;
 
@@ -45,13 +46,14 @@ public class CarbonIndexFileMergeWriter {
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
     CarbonFile[] indexFiles = carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
-        return file.getName().endsWith(".carbonindex");
+        return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT);
       }
     });
     if (indexFiles.length > 0) {
       SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
       fileStore.readAllIIndexOfSegment(segmentPath);
-      openThriftWriter(segmentPath + "/" + System.currentTimeMillis() + ".carbonindexmerge");
+      openThriftWriter(segmentPath + "/" +
+          System.currentTimeMillis() + CarbonTablePath.MERGE_INDEX_FILE_EXT);
       Map<String, byte[]> indexMap = fileStore.getCarbonIndexMap();
       MergedBlockIndexHeader indexHeader = new MergedBlockIndexHeader();
       MergedBlockIndex mergedBlockIndex = new MergedBlockIndex();

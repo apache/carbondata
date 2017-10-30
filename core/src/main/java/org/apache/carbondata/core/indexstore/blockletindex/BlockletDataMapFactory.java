@@ -82,8 +82,8 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
         segmentMap.get(segmentId);
     if (tableBlockIndexUniqueIdentifiers == null) {
       tableBlockIndexUniqueIdentifiers = new ArrayList<>();
-      String path = identifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId;
-      List<String> indexFiles = new SegmentIndexFileStore().getIndexFiles(path);
+      String path = CarbonTablePath.getSegmentPath(identifier.getTablePath(), segmentId);
+      List<String> indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(path);
       for (int i = 0; i < indexFiles.size(); i++) {
         tableBlockIndexUniqueIdentifiers.add(
             new TableBlockIndexUniqueIdentifier(identifier, segmentId, indexFiles.get(i)));
@@ -186,18 +186,30 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
   }
 
   @Override
-  public DataMap getDataMap(DataMapDistributable distributable) {
+  public List<DataMap> getDataMaps(DataMapDistributable distributable) throws IOException {
     BlockletDataMapDistributable mapDistributable = (BlockletDataMapDistributable) distributable;
-    TableBlockIndexUniqueIdentifier uniqueIdentifier =
-        new TableBlockIndexUniqueIdentifier(identifier, distributable.getSegmentId(),
-            mapDistributable.getFilePath());
-    DataMap dataMap;
+    List<TableBlockIndexUniqueIdentifier> identifiers = new ArrayList<>();
+    if (mapDistributable.getFilePath().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+      identifiers.add(new TableBlockIndexUniqueIdentifier(identifier, distributable.getSegmentId(),
+          mapDistributable.getFilePath()));
+    } else if (mapDistributable.getFilePath().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+      SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
+      List<String> indexFiles = fileStore.getIndexFilesFromMergeFile(
+          CarbonTablePath.getSegmentPath(identifier.getTablePath(), mapDistributable.getSegmentId())
+              + "/" + mapDistributable.getFilePath());
+      for (String indexFile : indexFiles) {
+        identifiers.add(
+            new TableBlockIndexUniqueIdentifier(identifier, distributable.getSegmentId(),
+                indexFile));
+      }
+    }
+    List<DataMap> dataMaps;
     try {
-      dataMap = cache.get(uniqueIdentifier);
+      dataMaps = cache.getAll(identifiers);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    return dataMap;
+    return dataMaps;
   }
 
   @Override

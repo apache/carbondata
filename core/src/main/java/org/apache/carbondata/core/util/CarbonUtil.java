@@ -391,7 +391,7 @@ public final class CarbonUtil {
     for (int i = 0; i < intermediateFiles.length; i++) {
       // ignore deleting for index file since it is inside merged file.
       if (!intermediateFiles[i].delete() && !intermediateFiles[i].getName()
-          .endsWith(".carbonindex")) {
+          .endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
         throw new IOException("Problem while deleting intermediate file");
       }
     }

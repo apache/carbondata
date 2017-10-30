@@ -130,7 +130,8 @@ class CarbonIndexFileMergeTestCase
     val path = CarbonTablePath
       .getSegmentPath(table.getAbsoluteTableIdentifier.getTablePath, segment)
     val carbonFiles = FileFactory.getCarbonFile(path).listFiles(new CarbonFileFilter {
-      override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".carbonindex")
+      override def accept(file: CarbonFile): Boolean = file.getName.endsWith(CarbonTablePath
+        .INDEX_FILE_EXT)
     })
     if (carbonFiles != null) {
       carbonFiles.length

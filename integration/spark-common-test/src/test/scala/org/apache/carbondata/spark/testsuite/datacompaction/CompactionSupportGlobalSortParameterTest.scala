@@ -25,6 +25,9 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
+import org.apache.carbondata.core.util.path.CarbonTablePath
+
 class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   val filePath: String = s"$resourcesPath/globalsort"
   val file1: String = resourcesPath + "/globalsort/sample1.csv"
@@ -526,9 +529,6 @@ class CompactionSupportGlobalSortParameterTest extends QueryTest with BeforeAndA
 
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {
     val store = storeLocation + "/default/" + tableName + "/Fact/Part0/Segment_" + segmentNo
-    val list = new File(store).list(new FilenameFilter {
-      override def accept(dir: File, name: String) = name.endsWith(".carbonindex")
-    })
-    list.size
+    new SegmentIndexFileStore().getIndexFilesFromSegment(store).size()
   }
 }

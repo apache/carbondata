@@ -48,8 +48,10 @@ public class CarbonTablePath extends Path {
   protected static final String CARBON_UPDATE_DELTA_EXT = ".updatedelta";
   protected static final String DATA_PART_PREFIX = "part-";
   protected static final String BATCH_PREFIX = "_batchno";
-  protected static final String INDEX_FILE_EXT = ".carbonindex";
   protected static final String DELETE_DELTA_FILE_EXT = ".deletedelta";
+
+  public static final String INDEX_FILE_EXT = ".carbonindex";
+  public static final String MERGE_INDEX_FILE_EXT = ".carbonindexmerge";
 
   protected String tablePath;
   protected CarbonTableIdentifier carbonTableIdentifier;

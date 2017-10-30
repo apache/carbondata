@@ -19,22 +19,22 @@ package org.apache.carbondata.core.indexstore.blockletindex;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.reader.ThriftReader;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.MergedBlockIndex;
 import org.apache.carbondata.format.MergedBlockIndexHeader;
 
 import org.apache.thrift.TBase;
 
+/**
+ * This class manages reading of index files with in the segment. The files it read can be
+ * carbonindex or carbonindexmerge files.
+ */
 public class SegmentIndexFileStore {
 
   private Map<String, byte[]> carbonIndexMap;
@@ -43,35 +43,66 @@ public class SegmentIndexFileStore {
     carbonIndexMap = new HashMap<>();
   }
 
+  /**
+   * Read all index files and keep the cache in it.
+   *
+   * @param segmentPath
+   * @throws IOException
+   */
   public void readAllIIndexOfSegment(String segmentPath) throws IOException {
     CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath);
     for (int i = 0; i < carbonIndexFiles.length; i++) {
-      if (carbonIndexFiles[i].getName().endsWith(".carbonindexmerge")) {
+      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
         readMergeFile(carbonIndexFiles[i].getCanonicalPath());
-      } else if (carbonIndexFiles[i].getName().endsWith(".carbonindex")) {
+      } else if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
         readIndexFile(carbonIndexFiles[i]);
       }
     }
   }
 
-  public List<String> getIndexFiles(String segmentPath) throws IOException {
+  /**
+   * Read all index file names of the segment
+   *
+   * @param segmentPath
+   * @return
+   * @throws IOException
+   */
+  public List<String> getIndexFilesFromSegment(String segmentPath) throws IOException {
     CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentPath);
     Set<String> indexFiles = new HashSet<>();
     for (int i = 0; i < carbonIndexFiles.length; i++) {
-      if (carbonIndexFiles[i].getName().endsWith(".carbonindexmerge")) {
-        ThriftReader thriftReader = new ThriftReader(carbonIndexFiles[i].getCanonicalPath());
-        thriftReader.open();
-        MergedBlockIndexHeader indexHeader = readMergeBlockIndexHeader(thriftReader);
-        List<String> file_names = indexHeader.getFile_names();
-        indexFiles.addAll(file_names);
-        thriftReader.close();
-      } else if (carbonIndexFiles[i].getName().endsWith(".carbonindex")) {
+      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        indexFiles.addAll(getIndexFilesFromMergeFile(carbonIndexFiles[i].getCanonicalPath()));
+      } else if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
         indexFiles.add(carbonIndexFiles[i].getName());
       }
     }
     return new ArrayList<>(indexFiles);
   }
 
+  /**
+   * List all the index files inside merge file.
+   * @param mergeFile
+   * @return
+   * @throws IOException
+   */
+  public List<String> getIndexFilesFromMergeFile(String mergeFile) throws IOException {
+    List<String> indexFiles = new ArrayList<>();
+    ThriftReader thriftReader = new ThriftReader(mergeFile);
+    thriftReader.open();
+    MergedBlockIndexHeader indexHeader = readMergeBlockIndexHeader(thriftReader);
+    List<String> file_names = indexHeader.getFile_names();
+    indexFiles.addAll(file_names);
+    thriftReader.close();
+    return indexFiles;
+  }
+
+  /**
+   * Read carbonindexmerge file and update the map
+   *
+   * @param mergeFilePath
+   * @throws IOException
+   */
   private void readMergeFile(String mergeFilePath) throws IOException {
     ThriftReader thriftReader = new ThriftReader(mergeFilePath);
     thriftReader.open();
@@ -86,6 +117,12 @@ public class SegmentIndexFileStore {
     thriftReader.close();
   }
 
+  /**
+   * Read carbonindex file and convert to stream and add to map
+   *
+   * @param indexFile
+   * @throws IOException
+   */
   private void readIndexFile(CarbonFile indexFile) throws IOException {
     String indexFilePath = indexFile.getCanonicalPath();
     DataInputStream dataInputStream =
@@ -112,20 +149,37 @@ public class SegmentIndexFileStore {
     });
   }
 
+  /**
+   * Get the carbonindex file content
+   *
+   * @param fileName
+   * @return
+   */
   public byte[] getFileData(String fileName) {
     return carbonIndexMap.get(fileName);
   }
 
+  /**
+   * List all the index files of the segment.
+   *
+   * @param segmentPath
+   * @return
+   */
   public static CarbonFile[] getCarbonIndexFiles(String segmentPath) {
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
     return carbonFile.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
-        return file.getName().endsWith(".carbonindex") || file.getName()
-            .endsWith(".carbonindexmerge");
+        return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) || file.getName()
+            .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT);
       }
     });
   }
 
+  /**
+   * Return the map tht contain index file name and content of the file.
+   *
+   * @return
+   */
   public Map<String, byte[]> getCarbonIndexMap() {
     return carbonIndexMap;
   }
