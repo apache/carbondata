@@ -30,6 +30,7 @@ import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
@@ -100,6 +101,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
     final Iterator<CarbonRowBatch>[] iterators = child.execute();
     tableIdentifier = configuration.getTableIdentifier().getCarbonTableIdentifier();
     tableName = tableIdentifier.getTableName();
+    ExecutorService executorService = null;
     try {
       readCounter = new long[iterators.length];
       writeCounter = new long[iterators.length];
@@ -122,7 +124,9 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       if (iterators.length == 1) {
         doExecute(iterators[0], 0, 0);
       } else {
-        ExecutorService executorService = Executors.newFixedThreadPool(iterators.length);
+        executorService = Executors.newFixedThreadPool(iterators.length,
+            new CarbonThreadFactory("NoSortDataWriterPool:" + configuration.getTableIdentifier()
+                .getCarbonTableIdentifier().getTableName()));
         Future[] futures = new Future[iterators.length];
         for (int i = 0; i < iterators.length; i++) {
           futures[i] = executorService.submit(new DataWriterRunnable(iterators[i], i));
@@ -141,6 +145,10 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
         throw new BadRecordFoundException(e.getMessage(), e);
       }
       throw new CarbonDataLoadingException("There is an unexpected error: " + e.getMessage(), e);
+    } finally {
+      if (null != executorService && executorService.isShutdown()) {
+        executorService.shutdownNow();
+      }
     }
     return null;
   }
