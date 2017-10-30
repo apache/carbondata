@@ -30,14 +30,17 @@ case class CarbonMergeFilePartition(rddId: Int, val idx: Int, segmentPath: Strin
   override def hashCode(): Int = 41 * (41 + rddId) + idx
 }
 
+/**
+ * RDD to merge all carbonindex files of each segment to carbonindex file into the same segment.
+ * @param sc
+ * @param tablePath
+ * @param segments segments to be merged
+ */
 class CarbonMergeFilesRDD(
     sc: SparkContext,
     tablePath: String,
     segments: Seq[String])
   extends CarbonRDD[String](sc, Nil) {
-
-  sc.setLocalProperty("spark.scheduler.pool", "DDL")
-
 
   override def getPartitions: Array[Partition] = {
     segments.zipWithIndex.map {s =>

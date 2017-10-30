@@ -35,7 +35,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMap;
-import org.apache.carbondata.core.datamap.dev.DataMapInfo;
+import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -97,10 +97,10 @@ public class BlockletDataMap implements DataMap, Cacheable {
   private int[] columnCardinality;
 
   @Override
-  public void init(DataMapInfo dataMapInfo) throws IOException, MemoryException {
+  public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
     long startTime = System.currentTimeMillis();
-    assert (dataMapInfo instanceof BlockletDataMapInfo);
-    BlockletDataMapInfo blockletDataMapInfo = (BlockletDataMapInfo) dataMapInfo;
+    assert (dataMapModel instanceof BlockletDataMapModel);
+    BlockletDataMapModel blockletDataMapInfo = (BlockletDataMapModel) dataMapModel;
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     List<DataFileFooter> indexInfo = fileFooterConverter
         .getIndexInfo(blockletDataMapInfo.getFilePath(), blockletDataMapInfo.getFileData());
@@ -124,7 +124,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
       unsafeMemoryDMStore.finishWriting();
     }
     LOGGER.info(
-        "Time taken to load blocklet datamap from file : " + dataMapInfo.getFilePath() + "is " + (
+        "Time taken to load blocklet datamap from file : " + dataMapModel.getFilePath() + "is " + (
             System.currentTimeMillis() - startTime));
   }
 

@@ -16,13 +16,13 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
-import org.apache.carbondata.core.datamap.dev.DataMapInfo;
+import org.apache.carbondata.core.datamap.dev.DataMapModel;
 
-public class BlockletDataMapInfo extends DataMapInfo {
+public class BlockletDataMapModel extends DataMapModel {
 
   private byte[] fileData;
 
-  public BlockletDataMapInfo(String filePath, byte[] fileData) {
+  public BlockletDataMapModel(String filePath, byte[] fileData) {
     super(filePath);
     this.fileData = fileData;
   }

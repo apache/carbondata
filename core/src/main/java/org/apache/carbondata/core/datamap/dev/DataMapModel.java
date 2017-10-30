@@ -20,11 +20,11 @@ package org.apache.carbondata.core.datamap.dev;
 /**
  * Information required to build datamap
  */
-public class DataMapInfo {
+public class DataMapModel {
 
   private String filePath;
 
-  public DataMapInfo(String filePath) {
+  public DataMapModel(String filePath) {
     this.filePath = filePath;
   }
 

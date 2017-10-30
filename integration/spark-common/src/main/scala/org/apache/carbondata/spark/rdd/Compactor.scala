@@ -108,9 +108,7 @@ object Compactor {
     }
 
     if (finalMergeStatus) {
-      val mergedLoadNumber = mergedLoadName
-        .substring(mergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) +
-                   CarbonCommonConstants.LOAD_FOLDER.length, mergedLoadName.length)
+      val mergedLoadNumber = CarbonDataMergerUtil.getLoadNumberFromLoadName(mergedLoadName)
       CommonUtil.mergeIndexFiles(sc.sparkContext, Seq(mergedLoadNumber), storePath, carbonTable)
       val endTime = System.nanoTime()
       logger.info(s"time taken to merge $mergedLoadName is ${ endTime - startTime }")
@@ -122,7 +120,7 @@ object Compactor {
               carbonLoadModel))) ||
          (CarbonDataMergerUtil
            .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath(),
-             mergedLoadName, carbonLoadModel, mergeLoadStartTime, compactionType))
+             mergedLoadNumber, carbonLoadModel, mergeLoadStartTime, compactionType))
           )
 
       if (!statusFileUpdation) {

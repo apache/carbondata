@@ -528,6 +528,6 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {
     val store = storeLocation + "/default/" + tableName + "/Fact/Part0/Segment_" + segmentNo
-    new SegmentIndexFileStore().getIndexFiles(store).size()
+    new SegmentIndexFileStore().getIndexFilesFromSegment(store).size()
   }
 }

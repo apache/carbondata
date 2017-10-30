@@ -33,28 +33,28 @@ import org.apache.hadoop.fs.Path;
  */
 public class CarbonTablePath extends Path {
 
-  protected static final String METADATA_DIR = "Metadata";
-  protected static final String DICTIONARY_EXT = ".dict";
-  protected static final String DICTIONARY_META_EXT = ".dictmeta";
-  protected static final String SORT_INDEX_EXT = ".sortindex";
-  protected static final String SCHEMA_FILE = "schema";
-  protected static final String TABLE_STATUS_FILE = "tablestatus";
-  protected static final String TABLE_UPDATE_STATUS_FILE = "tableupdatestatus";
-  protected static final String FACT_DIR = "Fact";
-  protected static final String SEGMENT_PREFIX = "Segment_";
-  protected static final String PARTITION_PREFIX = "Part";
-  protected static final String CARBON_DATA_EXT = ".carbondata";
-  protected static final String CARBON_DELTE_DELTA_EXT = ".deletedelta";
-  protected static final String CARBON_UPDATE_DELTA_EXT = ".updatedelta";
-  protected static final String DATA_PART_PREFIX = "part-";
-  protected static final String BATCH_PREFIX = "_batchno";
-  protected static final String DELETE_DELTA_FILE_EXT = ".deletedelta";
+  private static final String METADATA_DIR = "Metadata";
+  private static final String DICTIONARY_EXT = ".dict";
+  private static final String DICTIONARY_META_EXT = ".dictmeta";
+  private static final String SORT_INDEX_EXT = ".sortindex";
+  private static final String SCHEMA_FILE = "schema";
+  private static final String TABLE_STATUS_FILE = "tablestatus";
+  private static final String TABLE_UPDATE_STATUS_FILE = "tableupdatestatus";
+  private static final String FACT_DIR = "Fact";
+  private static final String SEGMENT_PREFIX = "Segment_";
+  private static final String PARTITION_PREFIX = "Part";
+  private static final String CARBON_DATA_EXT = ".carbondata";
+  private static final String CARBON_DELTE_DELTA_EXT = ".deletedelta";
+  private static final String CARBON_UPDATE_DELTA_EXT = ".updatedelta";
+  private static final String DATA_PART_PREFIX = "part-";
+  private static final String BATCH_PREFIX = "_batchno";
+  private static final String DELETE_DELTA_FILE_EXT = ".deletedelta";
 
   public static final String INDEX_FILE_EXT = ".carbonindex";
   public static final String MERGE_INDEX_FILE_EXT = ".carbonindexmerge";
 
-  protected String tablePath;
-  protected CarbonTableIdentifier carbonTableIdentifier;
+  private String tablePath;
+  private CarbonTableIdentifier carbonTableIdentifier;
 
   /**
    * structure CarbonTablePath object to manage table paths

@@ -37,6 +37,9 @@ import org.apache.thrift.TBase;
  */
 public class SegmentIndexFileStore {
 
+  /**
+   * Stores the indexfile name and related binary file data in it.
+   */
   private Map<String, byte[]> carbonIndexMap;
 
   public SegmentIndexFileStore() throws IOException {
@@ -176,7 +179,7 @@ public class SegmentIndexFileStore {
   }
 
   /**
-   * Return the map tht contain index file name and content of the file.
+   * Return the map that contain index file name and content of the file.
    *
    * @return
    */
