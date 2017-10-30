@@ -173,6 +173,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val DATAMAP = carbonKeyWord("DATAMAP")
   protected val ON = carbonKeyWord("ON")
   protected val DMPROPERTIES = carbonKeyWord("DMPROPERTIES")
+  protected val SELECT = carbonKeyWord("SELECT")
 
   protected val doubleQuotedString = "\"([^\"]+)\"".r
   protected val singleQuotedString = "'([^']+)'".r
@@ -987,6 +988,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     (ident | stringLit) ~ (":".? ~> nestedType) ~ (IN ~> (ident | stringLit)).? ^^ {
       case e1 ~ e2 ~ e3 =>
         Field(e1, e2.dataType, Some(e1), e2.children, null, e3)
+    }
+
+  lazy val addPreAgg: Parser[String] =
+    SELECT ~> restInput <~ opt(";") ^^ {
+      case query =>
+        "select preAGG() as preAgg, " + query
     }
 
   protected lazy val primitiveFieldType: Parser[Field] =

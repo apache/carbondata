@@ -25,6 +25,8 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+
 /**
  * Below command class will be used to create pre-aggregate table
  * and updating the parent table about the child table information
@@ -47,9 +49,10 @@ case class CreatePreAggregateTableCommand(
   }
 
   override def processSchema(sparkSession: SparkSession): Seq[Row] = {
-    val df = sparkSession.sql(queryString)
-    val fieldRelationMap = PreAggregateUtil
-      .validateActualSelectPlanAndGetAttrubites(df.logicalPlan, queryString)
+    val updatedQuery = new CarbonSpark2SqlParser().addPreAggFunction(queryString)
+    val df = sparkSession.sql(updatedQuery)
+    val fieldRelationMap = PreAggregateUtil.validateActualSelectPlanAndGetAttributes(
+      df.logicalPlan, queryString)
     val fields = fieldRelationMap.keySet.toSeq
     val tableProperties = mutable.Map[String, String]()
     dmproperties.foreach(t => tableProperties.put(t._1, t._2))
@@ -87,7 +90,8 @@ case class CreatePreAggregateTableCommand(
       val tableInfo = relation.tableMeta.carbonTable.getTableInfo
       // child schema object which will be updated on parent table about the
       val childSchema = tableInfo.getFactTable.buildChildSchema(
-        dataMapName, "", tableInfo.getDatabaseName, queryString, "AGGREGATION")
+        dataMapName, CarbonCommonConstants.AGGREGATIONDATAMAPSCHEMA,
+        tableInfo.getDatabaseName, queryString, "AGGREGATION")
       dmproperties.foreach(f => childSchema.getProperties.put(f._1, f._2))
       // updating the parent table about child table
       PreAggregateUtil.updateMainTable(parentDbName, parentTableName, childSchema, sparkSession)

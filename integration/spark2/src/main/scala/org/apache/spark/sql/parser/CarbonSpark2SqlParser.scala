@@ -476,6 +476,14 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
   }
 
+  def addPreAggFunction(sql: String): String = {
+    addPreAgg(new lexical.Scanner(sql.toLowerCase)) match {
+      case Success(query, _) => query
+      case failureOrError => throw new MalformedCarbonCommandException(
+        s"Unsupported query")
+    }
+  }
+
   def getBucketFields(
       properties: mutable.Map[String, String],
       fields: Seq[Field],

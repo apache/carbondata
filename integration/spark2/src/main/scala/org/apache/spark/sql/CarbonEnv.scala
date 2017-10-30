@@ -52,6 +52,9 @@ class CarbonEnv {
 
   def init(sparkSession: SparkSession): Unit = {
     sparkSession.udf.register("getTupleId", () => "")
+    // added for handling preaggregate table creation. when user will fire create ddl for
+    // create table we are adding a udf so no need to apply PreAggregate rules.
+    sparkSession.udf.register("preAgg", () => "")
     if (!initialized) {
       // update carbon session parameters , preserve thread parameters
       val currentThreadSesssionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo

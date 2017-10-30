@@ -1416,6 +1416,8 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT = "true";
 
+  public static final String AGGREGATIONDATAMAPSCHEMA = "AggregateDataMapHandler";
+
   private CarbonCommonConstants() {
   }
 }

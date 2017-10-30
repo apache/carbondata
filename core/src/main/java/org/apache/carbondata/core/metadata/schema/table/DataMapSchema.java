@@ -30,20 +30,20 @@ public class DataMapSchema implements Serializable, Writable {
 
   private static final long serialVersionUID = 6577149126264181553L;
 
-  private String dataMapName;
+  protected String dataMapName;
 
   private String className;
 
-  private RelationIdentifier relationIdentifier;
+  protected RelationIdentifier relationIdentifier;
   /**
    * child table schema
    */
-  private TableSchema childSchema;
+  protected TableSchema childSchema;
 
   /**
    * relation properties
    */
-  private Map<String, String> properties;
+  protected Map<String, String> properties;
 
   public DataMapSchema() {
   }
@@ -69,6 +69,10 @@ public class DataMapSchema implements Serializable, Writable {
     return properties;
   }
 
+  public String getDataMapName() {
+    return dataMapName;
+  }
+
   public void setRelationIdentifier(RelationIdentifier relationIdentifier) {
     this.relationIdentifier = relationIdentifier;
   }
@@ -79,10 +83,6 @@ public class DataMapSchema implements Serializable, Writable {
 
   public void setProperties(Map<String, String> properties) {
     this.properties = properties;
-  }
-
-  public String getDataMapName() {
-    return dataMapName;
   }
 
   @Override public void write(DataOutput out) throws IOException {
@@ -114,7 +114,7 @@ public class DataMapSchema implements Serializable, Writable {
     this.className = in.readUTF();
     boolean isRelationIdnentifierExists = in.readBoolean();
     if (isRelationIdnentifierExists) {
-      this.relationIdentifier = new RelationIdentifier();
+      this.relationIdentifier = new RelationIdentifier(null, null, null);
       this.relationIdentifier.readFields(in);
     }
     boolean isChildSchemaExists = in.readBoolean();
@@ -130,6 +130,5 @@ public class DataMapSchema implements Serializable, Writable {
       String value = in.readUTF();
       this.properties.put(key, value);
     }
-
   }
 }
