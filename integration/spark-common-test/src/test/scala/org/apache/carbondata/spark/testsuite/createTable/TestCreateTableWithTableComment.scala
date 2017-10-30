@@ -63,6 +63,7 @@ class TestCreateTableWithTableComment extends QueryTest with BeforeAndAfterAll {
     val result = sql("describe formatted withoutTableComment")
 
     checkExistence(result, true, "Comment:")
+    checkExistence(result, false, "This table has table comment")
   }
 
   override def afterAll: Unit = {
