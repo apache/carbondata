@@ -82,7 +82,7 @@ public class CarbonDictionarySortModel implements Comparable<CarbonDictionarySor
         return -1;
       }
       return d1.compareTo(d2);
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       java.math.BigDecimal val1 = null;
       java.math.BigDecimal val2 = null;
       try {

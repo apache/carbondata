@@ -156,8 +156,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       return DataTypes.INT;
     } else if (msrColumnEvaluatorInfo.getType() == DataTypes.LONG) {
       return DataTypes.LONG;
-    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.DECIMAL) {
-      return DataTypes.DECIMAL;
+    } else if (DataTypes.isDecimal(msrColumnEvaluatorInfo.getType())) {
+      return DataTypes.createDefaultDecimalType();
     } else {
       return DataTypes.DOUBLE;
     }

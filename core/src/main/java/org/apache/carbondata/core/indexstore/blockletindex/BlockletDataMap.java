@@ -206,7 +206,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
         } else if (dataType == DataTypes.LONG) {
           buffer.putLong(Long.MIN_VALUE);
           updatedValues[minValues.length + i] = buffer.array().clone();
-        } else if (dataType == DataTypes.DECIMAL) {
+        } else if (DataTypes.isDecimal(dataType)) {
           updatedValues[minValues.length + i] =
               DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Long.MIN_VALUE));
         } else {
@@ -244,7 +244,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
         } else if (dataType == DataTypes.LONG) {
           buffer.putLong(Long.MAX_VALUE);
           updatedValues[maxValues.length + i] = buffer.array().clone();
-        } else if (dataType == DataTypes.DECIMAL) {
+        } else if (DataTypes.isDecimal(dataType)) {
           updatedValues[maxValues.length + i] =
               DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Long.MAX_VALUE));
         } else {

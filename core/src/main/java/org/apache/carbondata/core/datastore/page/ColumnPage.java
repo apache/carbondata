@@ -36,7 +36,6 @@ import org.apache.carbondata.core.util.CarbonProperties;
 
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE;
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE_ARRAY;
-import static org.apache.carbondata.core.metadata.datatype.DataTypes.DECIMAL;
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.DOUBLE;
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.FLOAT;
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.INT;
@@ -96,13 +95,6 @@ public abstract class ColumnPage {
       return BYTE_ARRAY;
     }
 
-    @Override public int getScale() {
-      return 0;
-    }
-
-    @Override public int getPrecision() {
-      return 0;
-    }
   };
 
   public SimpleStatsResult getStatistics() {
@@ -163,7 +155,7 @@ public abstract class ColumnPage {
 
   private static ColumnPage createPage(TableSpec.ColumnSpec columnSpec, DataType dataType,
       int pageSize) {
-    if (dataType.equals(DECIMAL)) {
+    if (DataTypes.isDecimal(dataType)) {
       return createDecimalPage(columnSpec, dataType, pageSize);
     } else if (dataType.equals(BYTE_ARRAY)) {
       return createVarLengthPage(columnSpec, dataType, pageSize);
@@ -195,7 +187,7 @@ public abstract class ColumnPage {
           dataType == DataTypes.FLOAT ||
           dataType == DataTypes.DOUBLE) {
         instance = new UnsafeFixLengthColumnPage(columnSpec, dataType, pageSize);
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         instance = new UnsafeDecimalColumnPage(columnSpec, dataType, pageSize);
       } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
         instance = new UnsafeVarLengthColumnPage(columnSpec, dataType, pageSize);
@@ -217,7 +209,7 @@ public abstract class ColumnPage {
         instance = newFloatPage(columnSpec, new float[pageSize]);
       } else if (dataType == DataTypes.DOUBLE) {
         instance = newDoublePage(columnSpec, new double[pageSize]);
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         instance = newDecimalPage(columnSpec, new byte[pageSize][]);
       } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
         instance = new SafeVarLengthColumnPage(columnSpec, dataType, pageSize);
@@ -277,7 +269,8 @@ public abstract class ColumnPage {
   }
 
   private static ColumnPage newDecimalPage(TableSpec.ColumnSpec columnSpec, byte[][] byteArray) {
-    ColumnPage columnPage = createPage(columnSpec, DECIMAL, byteArray.length);
+    ColumnPage columnPage =
+        createPage(columnSpec, columnSpec.getSchemaDataType(), byteArray.length);
     columnPage.setByteArrayPage(byteArray);
     return columnPage;
   }
@@ -365,7 +358,7 @@ public abstract class ColumnPage {
     } else if (dataType == DataTypes.DOUBLE) {
       putDouble(rowId, (double) value);
       statsCollector.update((double) value);
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       putDecimal(rowId, (BigDecimal) value);
       statsCollector.update((BigDecimal) value);
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.BYTE_ARRAY) {
@@ -445,7 +438,7 @@ public abstract class ColumnPage {
       putLong(rowId, 0L);
     } else if (dataType == DataTypes.DOUBLE) {
       putDouble(rowId, 0.0);
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       putDecimal(rowId, BigDecimal.ZERO);
     } else {
       throw new IllegalArgumentException("unsupported data type: " + dataType);
@@ -586,7 +579,7 @@ public abstract class ColumnPage {
       return compressor.compressFloat(getFloatPage());
     } else if (dataType == DataTypes.DOUBLE) {
       return compressor.compressDouble(getDoublePage());
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return compressor.compressByte(getDecimalPage());
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       return compressor.compressByte(getLVFlattenedBytePage());

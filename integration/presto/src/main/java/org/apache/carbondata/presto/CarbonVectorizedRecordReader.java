@@ -205,7 +205,7 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
         fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
             CarbonTypeUtil.convertCarbonToSparkDataType(msr.getMeasure().getDataType()), true,
             null);
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
             new DecimalType(msr.getMeasure().getPrecision(), msr.getMeasure().getScale()), true,
             null);

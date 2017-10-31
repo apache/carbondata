@@ -1318,7 +1318,7 @@ public final class FilterUtil {
         dateToStr = parser.parse(memberVal);
         dictionaryDate = parser.parse(dictionaryVal);
         return dictionaryDate.compareTo(dateToStr);
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         java.math.BigDecimal javaDecValForDictVal = new java.math.BigDecimal(dictionaryVal);
         java.math.BigDecimal javaDecValForMemberVal = new java.math.BigDecimal(memberVal);
         return javaDecValForDictVal.compareTo(javaDecValForMemberVal);
@@ -1430,7 +1430,7 @@ public final class FilterUtil {
         Double d1 = Double.parseDouble(filterMember1);
         Double d2 = Double.parseDouble(filterMember2);
         return d1.compareTo(d2);
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
           return 1;
         }
