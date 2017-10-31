@@ -55,9 +55,5 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("USE default")
     sql("DROP DATABASE IF EXISTS streaming CASCADE")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.isHorizontalCompactionEnabled , "true")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_VECTOR_READER , "true")
   }
 }
