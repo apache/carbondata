@@ -154,28 +154,6 @@
   </build>
   <profiles>
     <profile>
-      <id>spark-1.5</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.carbondata</groupId>
-          <artifactId>carbondata-spark</artifactId>
-          <version>${project.version}</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <id>spark-1.6</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.carbondata</groupId>
-          <artifactId>carbondata-spark</artifactId>
-          <version>${project.version}</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
       <id>spark-2.1</id>
       <activation>
         <activeByDefault>true</activeByDefault>
