@@ -37,7 +37,7 @@ public final class Comparator {
     } else if (dataType == DataTypes.LONG || dataType == DataTypes.DATE
         || dataType == DataTypes.TIMESTAMP) {
       return new LongSerializableComparator();
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return new BigDecimalSerializableComparator();
     } else {
       return new ByteArraySerializableComparator();
@@ -61,7 +61,7 @@ public final class Comparator {
       return new LongSerializableComparator();
     } else if (dataType == DataTypes.DOUBLE) {
       return new DoubleSerializableComparator();
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return new BigDecimalSerializableComparator();
     } else {
       throw new IllegalArgumentException("Unsupported data type");

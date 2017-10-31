@@ -329,7 +329,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
         } else if (dataType == DataTypes.DOUBLE) {
           rowData.putDouble(size, (Double) value);
           size += 8;
-        } else if (dataType == DataTypes.DECIMAL) {
+        } else if (DataTypes.isDecimal(dataType)) {
           byte[] bigDecimalInBytes = (byte[]) value;
           rowData.putShort(size, (short) bigDecimalInBytes.length);
           size += 2;

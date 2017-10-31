@@ -44,7 +44,6 @@ public class DataTypes {
   // Only for internal use for backward compatability. It is only used for V1 version
   public static final DataType LEGACY_LONG = LegacyLongType.LEGACY_LONG;
 
-  public static final DataType DECIMAL = DecimalType.DECIMAL;
   public static final DataType ARRAY = ArrayType.ARRAY;
   public static final DataType STRUCT = StructType.STRUCT;
   public static final DataType MAP = MapType.MAP;
@@ -99,8 +98,8 @@ public class DataTypes {
       return DOUBLE;
     } else if (id == NULL.getId()) {
       return NULL;
-    } else if (id == DECIMAL.getId()) {
-      return DECIMAL;
+    } else if (id == DECIMAL_TYPE_ID) {
+      return createDefaultDecimalType();
     } else if (id == ARRAY.getId()) {
       return ARRAY;
     } else if (id == STRUCT.getId()) {
@@ -112,6 +111,24 @@ public class DataTypes {
     } else {
       throw new RuntimeException("create DataType with invalid id: " + id);
     }
+  }
+
+  /**
+   * create a decimal type object with specified precision and scale
+   */
+  public static DecimalType createDecimalType(int precision, int scale) {
+    return new DecimalType(precision, scale);
+  }
+
+  /**
+   * create a decimal type object with default precision = 10 and scale = 2
+   */
+  public static DecimalType createDefaultDecimalType() {
+    return new DecimalType(10, 2);
+  }
+
+  public static boolean isDecimal(DataType dataType) {
+    return dataType.getId() == DECIMAL_TYPE_ID;
   }
 
 }

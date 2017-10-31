@@ -20,7 +20,7 @@ public class CarbonTypeUtil {
         return DataTypes.DoubleType;
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.BOOLEAN) {
         return DataTypes.BooleanType;
-    } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.DECIMAL) {
+    } else if (org.apache.carbondata.core.metadata.datatype.DataTypes.isDecimal(carbonDataType)) {
         return DataTypes.createDecimalType();
     } else if (carbonDataType == org.apache.carbondata.core.metadata.datatype.DataTypes.TIMESTAMP) {
         return DataTypes.TimestampType;

@@ -305,7 +305,7 @@ public class SortDataRows {
               stream.writeLong((Long) value);
             } else if (dataType == DataTypes.DOUBLE) {
               stream.writeDouble((Double) value);
-            } else if (dataType == DataTypes.DECIMAL) {
+            } else if (DataTypes.isDecimal(dataType)) {
               BigDecimal val = (BigDecimal) value;
               byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
               stream.writeInt(bigDecimalInBytes.length);

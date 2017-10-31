@@ -114,14 +114,13 @@ public class TablePage {
     for (int i = 0; i < measurePages.length; i++) {
       TableSpec.MeasureSpec spec = model.getTableSpec().getMeasureSpec(i);
       ColumnPage page;
-      if (spec.getSchemaDataType() == DataTypes.DECIMAL) {
+      if (DataTypes.isDecimal(spec.getSchemaDataType())) {
         page = ColumnPage.newDecimalPage(spec, dataTypes[i], pageSize);
       } else {
         page = ColumnPage.newPage(spec, dataTypes[i], pageSize);
       }
       page.setStatsCollector(
-          PrimitivePageStatsCollector.newInstance(
-              dataTypes[i], spec.getScale(), spec.getPrecision()));
+          PrimitivePageStatsCollector.newInstance(dataTypes[i]));
       measurePages[i] = page;
     }
     boolean hasNoDictionary = noDictDimensionPages.length > 0;
@@ -183,7 +182,7 @@ public class TablePage {
 
       // in compaction flow the measure with decimal type will come as Spark decimal.
       // need to convert it to byte array.
-      if (measurePages[i].getDataType() == DataTypes.DECIMAL &&
+      if (DataTypes.isDecimal(measurePages[i].getDataType()) &&
           model.isCompactionFlow() &&
           value != null) {
         value = ((Decimal) value).toJavaBigDecimal();

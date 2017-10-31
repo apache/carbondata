@@ -37,7 +37,6 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   private long minLong, maxLong;
   private double minDouble, maxDouble;
   private BigDecimal minDecimal, maxDecimal;
-  private int scale, precision;
 
   // scale of the double value, apply adaptive encoding if this is positive
   private int decimal;
@@ -46,15 +45,14 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   private BigDecimal zeroDecimal;
 
   // this is for encode flow
-  public static PrimitivePageStatsCollector newInstance(DataType dataType,
-      int scale, int precision) {
-    return new PrimitivePageStatsCollector(dataType, scale, precision);
+  public static PrimitivePageStatsCollector newInstance(DataType dataType) {
+    return new PrimitivePageStatsCollector(dataType);
   }
 
   // this is for decode flow, create stats from encoder meta in carbondata file
   public static PrimitivePageStatsCollector newInstance(ColumnPageEncoderMeta meta) {
-    PrimitivePageStatsCollector instance = new PrimitivePageStatsCollector(meta.getSchemaDataType(),
-        meta.getScale(), meta.getPrecision());
+    PrimitivePageStatsCollector instance =
+        new PrimitivePageStatsCollector(meta.getSchemaDataType());
     // set min max from meta
     DataType dataType = meta.getSchemaDataType();
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
@@ -73,12 +71,10 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       instance.minDouble = (double) meta.getMinValue();
       instance.maxDouble = (double) meta.getMaxValue();
       instance.decimal = meta.getDecimal();
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       instance.minDecimal = (BigDecimal) meta.getMinValue();
       instance.maxDecimal = (BigDecimal) meta.getMaxValue();
       instance.decimal = meta.getDecimal();
-      instance.scale = meta.getScale();
-      instance.precision = meta.getPrecision();
     } else {
       throw new UnsupportedOperationException(
           "unsupported data type for stats collection: " + meta.getSchemaDataType());
@@ -88,7 +84,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
 
   public static PrimitivePageStatsCollector newInstance(ValueEncoderMeta meta) {
     PrimitivePageStatsCollector instance =
-        new PrimitivePageStatsCollector(DataType.getDataType(meta.getType()), -1, -1);
+        new PrimitivePageStatsCollector(DataType.getDataType(meta.getType()));
     // set min max from meta
     DataType dataType = DataType.getDataType(meta.getType());
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
@@ -107,12 +103,10 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       instance.minDouble = (double) meta.getMinValue();
       instance.maxDouble = (double) meta.getMaxValue();
       instance.decimal = meta.getDecimal();
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       instance.minDecimal = (BigDecimal) meta.getMinValue();
       instance.maxDecimal = (BigDecimal) meta.getMaxValue();
       instance.decimal = meta.getDecimal();
-      instance.scale = -1;
-      instance.precision = -1;
     } else {
       throw new UnsupportedOperationException(
           "unsupported data type for Stats collection: " + meta.getType());
@@ -120,7 +114,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
     return instance;
   }
 
-  private PrimitivePageStatsCollector(DataType dataType, int scale, int precision) {
+  private PrimitivePageStatsCollector(DataType dataType) {
     this.dataType = dataType;
     if (dataType == DataTypes.BOOLEAN) {
       minByte = TRUE_VALUE;
@@ -141,11 +135,9 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       minDouble = Double.POSITIVE_INFINITY;
       maxDouble = Double.NEGATIVE_INFINITY;
       decimal = 0;
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       this.zeroDecimal = BigDecimal.ZERO;
-      decimal = scale;
-      this.scale = scale;
-      this.precision = precision;
+      decimal = 0;
     } else {
       throw new UnsupportedOperationException(
           "unsupported data type for Stats collection: " + dataType);
@@ -165,7 +157,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       update(value);
     } else if (dataType == DataTypes.DOUBLE) {
       update(0d);
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       if (isFirst) {
         maxDecimal = zeroDecimal;
         minDecimal = zeroDecimal;
@@ -306,7 +298,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       return minLong;
     } else if (dataType == DataTypes.DOUBLE) {
       return minDouble;
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return minDecimal;
     }
     return null;
@@ -324,7 +316,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       return maxLong;
     } else if (dataType == DataTypes.DOUBLE) {
       return maxDouble;
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return maxDecimal;
     }
     return null;
@@ -338,16 +330,6 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   @Override
   public DataType getDataType() {
     return dataType;
-  }
-
-  @Override
-  public int getScale() {
-    return scale;
-  }
-
-  @Override
-  public int getPrecision() {
-    return precision;
   }
 
 }

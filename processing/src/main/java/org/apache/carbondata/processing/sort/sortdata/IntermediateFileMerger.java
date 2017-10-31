@@ -357,7 +357,7 @@ public class IntermediateFileMerger implements Callable<Void> {
             stream.writeLong((long) NonDictionaryUtil.getMeasure(fieldIndex, row));
           } else if (dataType == DataTypes.DOUBLE) {
             stream.writeDouble((Double) NonDictionaryUtil.getMeasure(fieldIndex, row));
-          } else if (dataType == DataTypes.DECIMAL) {
+          } else if (DataTypes.isDecimal(dataType)) {
             byte[] bigDecimalInBytes = (byte[]) NonDictionaryUtil.getMeasure(fieldIndex, row);
             stream.writeInt(bigDecimalInBytes.length);
             stream.write(bigDecimalInBytes);

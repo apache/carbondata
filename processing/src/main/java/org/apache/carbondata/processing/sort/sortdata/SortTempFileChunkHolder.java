@@ -355,7 +355,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
             measures[index++] = stream.readLong();
           } else if (dataType == DataTypes.DOUBLE) {
             measures[index++] = stream.readDouble();
-          } else if (dataType == DataTypes.DECIMAL) {
+          } else if (DataTypes.isDecimal(dataType)) {
             int len = stream.readInt();
             byte[] buff = new byte[len];
             stream.readFully(buff);

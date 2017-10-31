@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
@@ -46,11 +47,6 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
 
   // compressor name for compressing and decompressing this column
   private String compressorName;
-
-  private int scale;
-  private int precision;
-
-
 
   public ColumnPageEncoderMeta() {
   }
@@ -74,8 +70,6 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       setDecimal(stats.getDecimalCount());
       setMaxValue(stats.getMax());
       setMinValue(stats.getMin());
-      this.scale = stats.getScale();
-      this.precision = stats.getPrecision();
     }
   }
 
@@ -98,6 +92,12 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
     columnSpec = new TableSpec.ColumnSpec();
     columnSpec.readFields(in);
     storeDataType = DataTypes.valueOf(in.readByte());
+    if (DataTypes.isDecimal(storeDataType)) {
+      DecimalType decimalType = (DecimalType) storeDataType;
+      decimalType.setPrecision(columnSpec.getPrecision());
+      decimalType.setScale(columnSpec.getScale());
+    }
+
     setDecimal(in.readInt());
     setDataTypeSelected(in.readByte());
     readMinMax(in);
@@ -126,7 +126,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       out.writeDouble((Double) getMaxValue());
       out.writeDouble((Double) getMinValue());
       out.writeDouble(0d); // unique value is obsoleted, maintain for compatibility
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       byte[] maxAsBytes = getMaxAsBytes(columnSpec.getSchemaDataType());
       byte[] minAsBytes = getMinAsBytes(columnSpec.getSchemaDataType());
       byte[] unique = DataTypeUtil.bigDecimalToByte(BigDecimal.ZERO);
@@ -137,8 +137,14 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       // unique value is obsoleted, maintain for compatibility
       out.writeShort((short) unique.length);
       out.write(unique);
-      out.writeInt(scale);
-      out.writeInt(precision);
+      if (DataTypes.isDecimal(dataType)) {
+        DecimalType decimalType = (DecimalType) dataType;
+        out.writeInt(decimalType.getScale());
+        out.writeInt(decimalType.getPrecision());
+      } else {
+        out.writeInt(-1);
+        out.writeInt(-1);
+      }
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       // for complex type, it will come here, ignoring stats for complex type
       // TODO: support stats for complex type
@@ -169,7 +175,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       this.setMaxValue(in.readDouble());
       this.setMinValue(in.readDouble());
       in.readDouble(); // for non exist value which is obsoleted, it is backward compatibility;
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       byte[] max = new byte[in.readShort()];
       in.readFully(max);
       this.setMaxValue(DataTypeUtil.byteToBigDecimal(max));
@@ -179,8 +185,10 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       // unique value is obsoleted, maintain for compatiability
       short uniqueLength = in.readShort();
       in.readFully(new byte[uniqueLength]);
-      this.scale = in.readInt();
-      this.precision = in.readInt();
+      // scale field is obsoleted. It is stored in the schema data type in columnSpec
+      in.readInt();
+      // precision field is obsoleted. It is stored in the schema data type in columnSpec
+      in.readInt();
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       // for complex type, it will come here, ignoring stats for complex type
       // TODO: support stats for complex type
@@ -227,7 +235,7 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
       b.putDouble((double) value);
       b.flip();
       return b.array();
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
     } else if (dataType == DataTypes.STRING || dataType == DataTypes.TIMESTAMP
         || dataType == DataTypes.DATE) {
@@ -238,11 +246,17 @@ public class ColumnPageEncoderMeta extends ValueEncoderMeta implements Writable 
   }
 
   public int getScale() {
-    return scale;
+    if (DataTypes.isDecimal(columnSpec.getSchemaDataType())) {
+      return columnSpec.getScale();
+    }
+    throw new UnsupportedOperationException();
   }
 
   public int getPrecision() {
-    return precision;
+    if (DataTypes.isDecimal(columnSpec.getSchemaDataType())) {
+      return columnSpec.getPrecision();
+    }
+    throw new UnsupportedOperationException();
   }
 
   public TableSpec.ColumnSpec getColumnSpec() {

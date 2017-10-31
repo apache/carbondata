@@ -94,7 +94,7 @@ public class AdaptiveIntegralCodec extends AdaptiveCodec {
       public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
         ColumnPage page = null;
-        if (meta.getSchemaDataType() == DataTypes.DECIMAL) {
+        if (DataTypes.isDecimal(meta.getSchemaDataType())) {
           page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
         } else {
           page = ColumnPage.decompress(meta, input, offset, length);
