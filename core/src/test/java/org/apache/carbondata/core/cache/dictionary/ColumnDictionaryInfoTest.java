@@ -25,6 +25,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import mockit.Mock;
@@ -244,7 +245,7 @@ public class ColumnDictionaryInfoTest {
   }
 
   @Test public void testGetIncrementalSurrogateKeyFromDictionaryWithDecimalType() {
-    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.DECIMAL);
+    columnDictionaryInfo = new ColumnDictionaryInfo(DataTypes.createDefaultDecimalType());
 
     List<String> evaluateResultList = Arrays.asList("150011.550");
     List<byte[]> byteValuesOfFilterMembers = convertListElementsIntoByteArray(evaluateResultList);

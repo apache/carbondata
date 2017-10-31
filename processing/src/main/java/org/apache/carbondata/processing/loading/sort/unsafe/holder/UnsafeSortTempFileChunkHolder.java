@@ -335,7 +335,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
             row[dimensionCount + mesCount] = stream.readLong();
           } else if (dataType == DataTypes.DOUBLE) {
             row[dimensionCount + mesCount] = stream.readDouble();
-          } else if (dataType == DataTypes.DECIMAL) {
+          } else if (DataTypes.isDecimal(dataType)) {
             short aShort = stream.readShort();
             byte[] bigDecimalInBytes = new byte[aShort];
             stream.readFully(bigDecimalInBytes);
