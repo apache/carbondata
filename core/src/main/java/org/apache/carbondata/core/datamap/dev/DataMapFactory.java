@@ -45,9 +45,9 @@ public interface DataMapFactory {
   List<DataMap> getDataMaps(String segmentId) throws IOException;
 
   /**
-   * Get datamap for distributable object.
+   * Get datamaps for distributable object.
    */
-  DataMap getDataMap(DataMapDistributable distributable);
+  List<DataMap> getDataMaps(DataMapDistributable distributable) throws IOException;
 
   /**
    * Get all distributable objects of a segmentid

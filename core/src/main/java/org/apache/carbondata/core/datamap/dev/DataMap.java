@@ -31,7 +31,7 @@ public interface DataMap {
   /**
    * It is called to load the data map to memory or to initialize it.
    */
-  void init(String filePath) throws MemoryException, IOException;
+  void init(DataMapModel dataMapModel) throws MemoryException, IOException;
 
   /**
    * Prune the datamap with filter expression. It returns the list of

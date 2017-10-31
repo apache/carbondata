@@ -14,19 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.processing.merger;
+
+package org.apache.carbondata.core.datamap.dev;
 
 /**
- * This enum is used to define the types of Compaction.
- * We have 3 types. one is Minor another is Major and
- * finally a compaction done after UPDATE-DELETE operation
- * called IUD compaction.
+ * Information required to build datamap
  */
-public enum CompactionType {
-    MINOR_COMPACTION,
-    MAJOR_COMPACTION,
-    IUD_UPDDEL_DELTA_COMPACTION,
-    IUD_DELETE_DELTA_COMPACTION,
-    SEGMENT_INDEX_COMPACTION,
-    NONE
+public class DataMapModel {
+
+  private String filePath;
+
+  public DataMapModel(String filePath) {
+    this.filePath = filePath;
+  }
+
+  public String getFilePath() {
+    return filePath;
+  }
 }
