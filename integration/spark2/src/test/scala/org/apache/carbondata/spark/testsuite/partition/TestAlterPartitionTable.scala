@@ -779,21 +779,23 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
          .contains("Data in range info must be the same type with the partition field's type"))
   }
 
-  test("Alter table in or not in default database") {
-    sql("DROP TABLE IF EXISTS carbonTable_default_db")
-    sql("""
-          | create table carbonTable_default_db(id int, name string) partitioned by (city string)
-          | row format delimited fields terminated by ','
-        """.stripMargin)
-    sql("alter table carbonTable_default_db add partition (city = 'Beijing')")
+  test("Add partition to table in or not in default database") {
+    sql("DROP TABLE IF EXISTS carbon_table_default_db")
+    sql(
+      """
+        | CREATE TABLE carbon_table_default_db(id INT, name STRING) PARTITIONED BY (dt STRING)
+        | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='2015,2016')
+      """.stripMargin)
+    sql("ALTER TABLE carbon_table_default_db ADD PARTITION ('2017')")
 
-    sql(s"CREATE DATABASE if not exists carbonDB")
-    sql("DROP TABLE IF EXISTS carbonDB.carbonTable")
-    sql("""
-          | create table carbonDB.carbonTable(id int, name string) partitioned by (city string)
-          | row format delimited fields terminated by ','
-        """.stripMargin)
-    sql("alter table carbonDB.carbonTable add partition (city = 'Beijing')")
+    sql("CREATE DATABASE IF NOT EXISTS carbondb")
+    sql("DROP TABLE IF EXISTS carbondb.carbontable")
+    sql(
+      """
+        | CREATE TABLE carbondb.carbontable(id INT, name STRING) PARTITIONED BY (dt STRING)
+        | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='2015,2016')
+      """.stripMargin)
+    sql("ALTER TABLE carbondb.carbontable ADD PARTITION ('2017')")
   }
 
   def validateDataFiles(tableUniqueName: String, segmentId: String, partitions: Seq[Int]): Unit = {
