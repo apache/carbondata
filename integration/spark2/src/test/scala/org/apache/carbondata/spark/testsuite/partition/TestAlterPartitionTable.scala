@@ -788,6 +788,17 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
     sql("ALTER TABLE carbon_table_default_db ADD PARTITION ('2017')")
 
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_carbon_table_default_db")
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionIds = partitionInfo.getPartitionIds
+    val range_info = partitionInfo.getRangeInfo
+    assert(partitionIds == List(0, 1, 2, 3).map(Integer.valueOf(_)).asJava)
+    assert(partitionInfo.getMaxPartitionId == 3)
+    assert(partitionInfo.getNumPartitions == 4)
+    assert(range_info.get(0) == "2015")
+    assert(range_info.get(1) == "2016")
+    assert(range_info.get(2) == "2017")
+
     sql("CREATE DATABASE IF NOT EXISTS carbondb")
     sql("DROP TABLE IF EXISTS carbondb.carbontable")
     sql(
@@ -796,6 +807,33 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
         | STORED BY 'carbondata' TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='2015,2016')
       """.stripMargin)
     sql("ALTER TABLE carbondb.carbontable ADD PARTITION ('2017')")
+
+    val carbonTable1 = CarbonMetadata.getInstance().getCarbonTable("carbondb_carbontable")
+    val partitionInfo1 = carbonTable1.getPartitionInfo(carbonTable1.getFactTableName)
+    val partitionIds1 = partitionInfo1.getPartitionIds
+    val range_info1 = partitionInfo1.getRangeInfo
+    assert(partitionIds1 == List(0, 1, 2, 3).map(Integer.valueOf(_)).asJava)
+    assert(partitionInfo1.getMaxPartitionId == 3)
+    assert(partitionInfo1.getNumPartitions == 4)
+    assert(range_info1.get(0) == "2015")
+    assert(range_info1.get(1) == "2016")
+    assert(range_info1.get(2) == "2017")
+  }
+
+  test("test exception when alter partition's table doesn't exist in a perticular database") {
+    val exception_test_add_partition: Exception = intercept[Exception] {
+      sql("CREATE DATABASE IF NOT EXISTS carbondb")
+      sql("USE default")
+      sql(
+        """
+          | CREATE TABLE carbon_table_in_default_db(id INT, name STRING)
+          | PARTITIONED BY (dt STRING) STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='RANGE', 'RANGE_INFO'='2015,2016')
+        """.stripMargin)
+      sql("ALTER TABLE carbondb.carbon_table_in_default_db ADD PARTITION ('2017')")
+    }
+    assert(exception_test_add_partition.getMessage
+      .contains("Table or view 'carbon_table_in_default_db' not found in database 'carbondb'"))
   }
 
   def validateDataFiles(tableUniqueName: String, segmentId: String, partitions: Seq[Int]): Unit = {
