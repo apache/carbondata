@@ -306,6 +306,11 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE = "16384";
   /**
+   * Number of cores to be configured for spark executor
+   */
+  @CarbonProperty
+  public static final String NUM_CORES_FOR_EXECUTOR = "carbon.number.of.cores.for.executor";
+  /**
    * Number of cores to be used while loading
    */
   @CarbonProperty

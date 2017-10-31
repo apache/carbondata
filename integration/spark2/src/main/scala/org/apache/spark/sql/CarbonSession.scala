@@ -154,6 +154,8 @@ object CarbonSession {
           carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION,
             sparkContext.conf.get("spark.sql.warehouse.dir"))
         }
+        carbonProperties.addProperty(CarbonCommonConstants.NUM_CORES_FOR_EXECUTOR,
+          sparkContext.conf.get("spark.executor.cores", "1"))
         session = new CarbonSession(sparkContext)
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
