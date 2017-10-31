@@ -779,6 +779,23 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
          .contains("Data in range info must be the same type with the partition field's type"))
   }
 
+  test("Alter table in or not in default database") {
+    sql("DROP TABLE IF EXISTS carbonTable_default_db")
+    sql("""
+          | create table carbonTable_default_db(id int, name string) partitioned by (city string)
+          | row format delimited fields terminated by ','
+        """.stripMargin)
+    sql("alter table carbonTable_default_db add partition (city = 'Beijing')")
+
+    sql(s"CREATE DATABASE if not exists carbonDB")
+    sql("DROP TABLE IF EXISTS carbonDB.carbonTable")
+    sql("""
+          | create table carbonDB.carbonTable(id int, name string) partitioned by (city string)
+          | row format delimited fields terminated by ','
+        """.stripMargin)
+    sql("alter table carbonDB.carbonTable add partition (city = 'Beijing')")
+  }
+
   def validateDataFiles(tableUniqueName: String, segmentId: String, partitions: Seq[Int]): Unit = {
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
     val dataFiles = getDataFiles(carbonTable, segmentId)
