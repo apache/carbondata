@@ -532,6 +532,8 @@ class TableNewProcessor(cm: TableModel) {
     cm.tableProperties.foreach {
       x => tablePropertiesMap.put(x._1, x._2)
     }
+    // Add table comment to table properties
+    tablePropertiesMap.put("comment", cm.tableComment.getOrElse(""))
     tableSchema.setTableProperties(tablePropertiesMap)
     if (cm.bucketFields.isDefined) {
       val bucketCols = cm.bucketFields.get.bucketColumns.map { b =>
