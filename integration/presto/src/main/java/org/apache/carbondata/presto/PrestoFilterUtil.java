@@ -258,6 +258,8 @@ public class PrestoFilterUtil {
         return new BigDecimal(new BigInteger(String.valueOf(rawdata)),
             ((DecimalType) type).getScale());
       }
+    } else if (type.equals(TimestampType.TIMESTAMP)) {
+      return (Long)rawdata * 1000;
     }
 
     return rawdata;
