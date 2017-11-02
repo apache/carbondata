@@ -257,7 +257,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @return
    */
   private Object getConvertedMeasureValue(Object value, DataType type) {
-    if (type == DataTypes.DECIMAL) {
+    if (DataTypes.isDecimal(type)) {
       if (value != null) {
         value = ((Decimal) value).toJavaBigDecimal();
       }

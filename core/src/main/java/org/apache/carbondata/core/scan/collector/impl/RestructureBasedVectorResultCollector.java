@@ -236,7 +236,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
           } else if (dataType == DataTypes.LONG) {
             vector.putLongs(columnVectorInfo.vectorOffset, columnVectorInfo.size,
                 (long) defaultValue);
-          } else if (dataType == DataTypes.DECIMAL) {
+          } else if (DataTypes.isDecimal(dataType)) {
             vector.putDecimals(columnVectorInfo.vectorOffset, columnVectorInfo.size,
                 (Decimal) defaultValue, measure.getPrecision());
           } else {

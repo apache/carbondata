@@ -30,7 +30,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
@@ -207,16 +207,15 @@ class AlterTableColumnSchemaGenerator(
     alterTableModel.dimCols.foreach(field => {
       val encoders = new java.util.ArrayList[Encoding]()
       encoders.add(Encoding.DICTIONARY)
-      val columnSchema: ColumnSchema = getColumnSchema(
-        DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
-        field.name.getOrElse(field.column),
-        isCol = true,
+      val columnSchema: ColumnSchema = TableNewProcessor.createColumnSchema(
+        field,
         encoders,
         isDimensionCol = true,
-        -1,
         field.precision,
         field.scale,
         field.schemaOrdinal + existingColsSize,
+        alterTableModel.highCardinalityDims,
+        alterTableModel.databaseName.getOrElse(dbName),
         isSortColumn(field.name.getOrElse(field.column)))
       allColumns ++= Seq(columnSchema)
       newCols ++= Seq(columnSchema)
@@ -225,17 +224,16 @@ class AlterTableColumnSchemaGenerator(
     allColumns ++= tableCols.filter(x => !x.isDimensionColumn)
     alterTableModel.msrCols.foreach(field => {
       val encoders = new java.util.ArrayList[Encoding]()
-      val columnSchema: ColumnSchema = getColumnSchema(
-        DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
-        field.name.getOrElse(field.column),
-        isCol = true,
+      val columnSchema: ColumnSchema = TableNewProcessor.createColumnSchema(
+        field,
         encoders,
         isDimensionCol = false,
-        -1,
         field.precision,
         field.scale,
         field.schemaOrdinal + existingColsSize,
-        false)
+        alterTableModel.highCardinalityDims,
+        alterTableModel.databaseName.getOrElse(dbName)
+      )
       allColumns ++= Seq(columnSchema)
       newCols ++= Seq(columnSchema)
     })
@@ -299,33 +297,49 @@ class AlterTableColumnSchemaGenerator(
     newCols
   }
 
-  private def getColumnSchema(dataType: DataType, colName: String, isCol: Boolean,
-      encoders: java.util.List[Encoding], isDimensionCol: Boolean,
-      colGroup: Integer, precision: Integer, scale: Integer, schemaOrdinal: Int,
-      isSortColumn: Boolean): ColumnSchema = {
+}
+
+// TODO: move this to carbon store API
+object TableNewProcessor {
+  def apply(cm: TableModel): TableInfo = {
+    new TableNewProcessor(cm).process
+  }
+
+  def createColumnSchema(
+      field: Field,
+      encoders: java.util.List[Encoding],
+      isDimensionCol: Boolean,
+      precision: Int,
+      scale: Int,
+      schemaOrdinal: Int,
+      highCardinalityDims: Seq[String],
+      databaseName: String,
+      isSortColumn: Boolean = false): ColumnSchema = {
+    val dataType = DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse(""))
+    if (DataTypes.isDecimal(dataType)) {
+      dataType.asInstanceOf[DecimalType].setPrecision(field.precision)
+      dataType.asInstanceOf[DecimalType].setScale(field.scale)
+    }
     val columnSchema = new ColumnSchema()
     columnSchema.setDataType(dataType)
+    val colName = field.name.getOrElse(field.column)
     columnSchema.setColumnName(colName)
-    if (alterTableModel.highCardinalityDims.contains(colName)) {
+    if (highCardinalityDims.contains(colName)) {
       encoders.remove(Encoding.DICTIONARY)
     }
     if (dataType == DataTypes.DATE) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
-    if (dataType == DataTypes.TIMESTAMP && !alterTableModel.highCardinalityDims.contains(colName)) {
+    if (dataType == DataTypes.TIMESTAMP && ! highCardinalityDims.contains(colName)) {
       encoders.add(Encoding.DIRECT_DICTIONARY)
     }
-    val colPropMap = new java.util.HashMap[String, String]()
     columnSchema.setEncodingList(encoders)
     val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
-    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(
-      alterTableModel.databaseName.getOrElse(dbName),
-      columnSchema)
+    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(databaseName, columnSchema)
     columnSchema.setColumnUniqueId(columnUniqueId)
     columnSchema.setColumnReferenceId(columnUniqueId)
-    columnSchema.setColumnar(isCol)
+    columnSchema.setColumnar(true)
     columnSchema.setDimensionColumn(isDimensionCol)
-    columnSchema.setColumnGroup(colGroup)
     columnSchema.setPrecision(precision)
     columnSchema.setScale(scale)
     columnSchema.setSchemaOrdinal(schemaOrdinal)
@@ -334,16 +348,8 @@ class AlterTableColumnSchemaGenerator(
     columnSchema
   }
 }
-object TableNewProcessor {
-  def apply(cm: TableModel): TableInfo = {
-    new TableNewProcessor(cm).process
-  }
-}
 
 class TableNewProcessor(cm: TableModel) {
-
-  var index = 0
-  var rowGroup = 0
 
   def getAllChildren(fieldChildren: Option[List[Field]]): Seq[ColumnSchema] = {
     var allColumns: Seq[ColumnSchema] = Seq[ColumnSchema]()
@@ -351,14 +357,16 @@ class TableNewProcessor(cm: TableModel) {
       fields.foreach(field => {
         val encoders = new java.util.ArrayList[Encoding]()
         encoders.add(Encoding.DICTIONARY)
-        val columnSchema: ColumnSchema = getColumnSchema(
-          DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
-          field.name.getOrElse(field.column), index,
-          isCol = true, encoders, isDimensionCol = true, rowGroup, field.precision, field.scale,
-          field.schemaOrdinal)
+        val columnSchema: ColumnSchema = TableNewProcessor.createColumnSchema(
+          field,
+          encoders,
+          isDimensionCol = true,
+          field.precision,
+          field.scale,
+          field.schemaOrdinal,
+          cm.highcardinalitydims.getOrElse(Seq()),
+          cm.databaseName)
         allColumns ++= Seq(columnSchema)
-        index = index + 1
-        rowGroup = rowGroup + 1
         if (field.children.get != null) {
           columnSchema.setNumberOfChild(field.children.get.size)
           allColumns ++= getAllChildren(field.children)
@@ -368,39 +376,6 @@ class TableNewProcessor(cm: TableModel) {
     allColumns
   }
 
-  def getColumnSchema(dataType: DataType, colName: String, index: Integer, isCol: Boolean,
-      encoders: java.util.List[Encoding], isDimensionCol: Boolean,
-      colGroup: Integer, precision: Integer, scale: Integer, schemaOrdinal: Int): ColumnSchema = {
-    val columnSchema = new ColumnSchema()
-    columnSchema.setDataType(dataType)
-    columnSchema.setColumnName(colName)
-    val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
-    if (highCardinalityDims.contains(colName)) {
-      encoders.remove(Encoding.DICTIONARY)
-    }
-    if (dataType == DataTypes.DATE) {
-      encoders.add(Encoding.DIRECT_DICTIONARY)
-    }
-    if (dataType == DataTypes.TIMESTAMP && !highCardinalityDims.contains(colName)) {
-      encoders.add(Encoding.DIRECT_DICTIONARY)
-    }
-    columnSchema.setEncodingList(encoders)
-    val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
-    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(cm.databaseName,
-      columnSchema)
-    columnSchema.setColumnUniqueId(columnUniqueId)
-    columnSchema.setColumnReferenceId(columnUniqueId)
-    columnSchema.setColumnar(isCol)
-    columnSchema.setDimensionColumn(isDimensionCol)
-    columnSchema.setColumnGroup(colGroup)
-    columnSchema.setPrecision(precision)
-    columnSchema.setScale(scale)
-    columnSchema.setSchemaOrdinal(schemaOrdinal)
-    columnSchema.setSortColumn(false)
-    // TODO: Need to fill RowGroupID, converted type
-    // & Number of Children after DDL finalization
-    columnSchema
-  }
 
   // process create dml fields and create wrapper TableInfo object
   def process: TableInfo = {
@@ -414,38 +389,34 @@ class TableNewProcessor(cm: TableModel) {
       val field = cm.dimCols.find(keyDim equals _.column).get
       val encoders = new java.util.ArrayList[Encoding]()
       encoders.add(Encoding.DICTIONARY)
-      val columnSchema: ColumnSchema = getColumnSchema(
-        DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
-        field.name.getOrElse(field.column),
-        index,
-        isCol = true,
+      val columnSchema: ColumnSchema = TableNewProcessor.createColumnSchema(
+        field,
         encoders,
         isDimensionCol = true,
-        -1,
         field.precision,
         field.scale,
-        field.schemaOrdinal)
+        field.schemaOrdinal,
+        cm.highcardinalitydims.getOrElse(Seq()),
+        cm.databaseName)
       columnSchema.setSortColumn(true)
       allColumns :+= columnSchema
       index = index + 1
     }
 
-    cm.dimCols.foreach(field => {
+    cm.dimCols.foreach { field =>
       val sortField = cm.sortKeyDims.get.find(field.column equals _)
       if (sortField.isEmpty) {
         val encoders = new java.util.ArrayList[Encoding]()
         encoders.add(Encoding.DICTIONARY)
-        val columnSchema: ColumnSchema = getColumnSchema(
-          DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
-          field.name.getOrElse(field.column),
-          index,
-          isCol = true,
+        val columnSchema: ColumnSchema = TableNewProcessor.createColumnSchema(
+          field,
           encoders,
           isDimensionCol = true,
-          -1,
           field.precision,
           field.scale,
-          field.schemaOrdinal)
+          field.schemaOrdinal,
+          cm.highcardinalitydims.getOrElse(Seq()),
+          cm.databaseName)
         allColumns :+= columnSchema
         index = index + 1
         if (field.children.isDefined && field.children.get != null) {
@@ -453,37 +424,37 @@ class TableNewProcessor(cm: TableModel) {
           allColumns ++= getAllChildren(field.children)
         }
       }
-    })
+    }
 
-    cm.msrCols.foreach(field => {
+    cm.msrCols.foreach { field =>
       val encoders = new java.util.ArrayList[Encoding]()
-      val columnSchema: ColumnSchema = getColumnSchema(
-        DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
-        field.name.getOrElse(field.column),
-        index,
-        isCol = true,
+      val columnSchema: ColumnSchema = TableNewProcessor.createColumnSchema(
+        field,
         encoders,
         isDimensionCol = false,
-        -1,
         field.precision,
         field.scale,
-        field.schemaOrdinal)
+        field.schemaOrdinal,
+        cm.highcardinalitydims.getOrElse(Seq()),
+        cm.databaseName)
       allColumns :+= columnSchema
       index = index + 1
       measureCount += 1
-    })
+    }
 
     // Check if there is any duplicate measures or dimensions.
     // Its based on the dimension name and measure name
-    allColumns.groupBy(_.getColumnName).foreach(f => if (f._2.size > 1) {
-      val name = f._1
-      LOGGER.error(s"Duplicate column found with name: $name")
-      LOGGER.audit(
-        s"Validation failed for Create/Alter Table Operation " +
-            s"for ${ cm.databaseName }.${ cm.tableName }" +
-            s"Duplicate column found with name: $name")
-      sys.error(s"Duplicate dimensions found with name: $name")
-    })
+    allColumns.groupBy(_.getColumnName).foreach { f =>
+      if (f._2.size > 1) {
+        val name = f._1
+        LOGGER.error(s"Duplicate column found with name: $name")
+        LOGGER.audit(
+          s"Validation failed for Create/Alter Table Operation " +
+          s"for ${ cm.databaseName }.${ cm.tableName }" +
+          s"Duplicate column found with name: $name")
+        sys.error(s"Duplicate dimensions found with name: $name")
+      }
+    }
 
     val highCardinalityDims = cm.highcardinalitydims.getOrElse(Seq())
 
@@ -508,13 +479,21 @@ class TableNewProcessor(cm: TableModel) {
     // Adding dummy measure if no measure is provided
     if (measureCount == 0) {
       val encoders = new java.util.ArrayList[Encoding]()
-      val columnSchema: ColumnSchema = getColumnSchema(DataTypes.DOUBLE,
+      val field = Field(
         CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
-        index,
-        true,
+        Some(DataTypes.DOUBLE.getName),
+        Some(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE),
+        None
+      )
+      val columnSchema: ColumnSchema = TableNewProcessor.createColumnSchema(
+        field,
         encoders,
-        false,
-        -1, 0, 0, schemaOrdinal = -1)
+        isDimensionCol = false,
+        field.precision,
+        field.scale,
+        -1,
+        cm.highcardinalitydims.getOrElse(Seq()),
+        cm.databaseName)
       columnSchema.setInvisible(true)
       allColumns :+= columnSchema
     }

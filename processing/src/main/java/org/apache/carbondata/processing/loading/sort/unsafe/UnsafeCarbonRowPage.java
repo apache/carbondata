@@ -147,7 +147,7 @@ public class UnsafeCarbonRowPage {
           Double doubleVal = (Double) value;
           CarbonUnsafe.getUnsafe().putDouble(baseObject, address + size, doubleVal);
           size += 8;
-        } else if (dataType == DataTypes.DECIMAL) {
+        } else if (DataTypes.isDecimal(dataType)) {
           BigDecimal decimalVal = (BigDecimal) value;
           byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(decimalVal);
           CarbonUnsafe.getUnsafe()
@@ -233,7 +233,7 @@ public class UnsafeCarbonRowPage {
           Double doubleVal = CarbonUnsafe.getUnsafe().getDouble(baseObject, address + size);
           size += 8;
           rowToFill[dimensionSize + mesCount] = doubleVal;
-        } else if (dataType == DataTypes.DECIMAL) {
+        } else if (DataTypes.isDecimal(dataType)) {
           short aShort = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
           byte[] bigDecimalInBytes = new byte[aShort];
           size += 2;
@@ -315,7 +315,7 @@ public class UnsafeCarbonRowPage {
           double doubleVal = CarbonUnsafe.getUnsafe().getDouble(baseObject, address + size);
           size += 8;
           stream.writeDouble(doubleVal);
-        } else if (dataType == DataTypes.DECIMAL) {
+        } else if (DataTypes.isDecimal(dataType)) {
           short aShort = CarbonUnsafe.getUnsafe().getShort(baseObject, address + size);
           byte[] bigDecimalInBytes = new byte[aShort];
           size += 2;

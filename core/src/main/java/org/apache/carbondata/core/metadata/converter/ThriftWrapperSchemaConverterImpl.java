@@ -139,7 +139,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return org.apache.carbondata.format.DataType.LONG;
     } else if (dataType.getId() == DataTypes.DOUBLE.getId()) {
       return org.apache.carbondata.format.DataType.DOUBLE;
-    } else if (dataType.getId() == DataTypes.DECIMAL.getId()) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return org.apache.carbondata.format.DataType.DECIMAL;
     } else if (dataType.getId() == DataTypes.DATE.getId()) {
       return org.apache.carbondata.format.DataType.DATE;
@@ -167,12 +167,21 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     }
     org.apache.carbondata.format.ColumnSchema thriftColumnSchema =
         new org.apache.carbondata.format.ColumnSchema(
-            fromWrapperToExternalDataType(wrapperColumnSchema.getDataType()),
-            wrapperColumnSchema.getColumnName(), wrapperColumnSchema.getColumnUniqueId(),
-            wrapperColumnSchema.isColumnar(), encoders, wrapperColumnSchema.isDimensionColumn());
+            fromWrapperToExternalDataType(
+                wrapperColumnSchema.getDataType()),
+            wrapperColumnSchema.getColumnName(),
+            wrapperColumnSchema.getColumnUniqueId(),
+            wrapperColumnSchema.isColumnar(),
+            encoders,
+            wrapperColumnSchema.isDimensionColumn());
     thriftColumnSchema.setColumn_group_id(wrapperColumnSchema.getColumnGroupId());
-    thriftColumnSchema.setScale(wrapperColumnSchema.getScale());
-    thriftColumnSchema.setPrecision(wrapperColumnSchema.getPrecision());
+    if (DataTypes.isDecimal(wrapperColumnSchema.getDataType())) {
+      thriftColumnSchema.setScale(wrapperColumnSchema.getScale());
+      thriftColumnSchema.setPrecision(wrapperColumnSchema.getPrecision());
+    } else {
+      thriftColumnSchema.setScale(-1);
+      thriftColumnSchema.setPrecision(-1);
+    }
     thriftColumnSchema.setNum_child(wrapperColumnSchema.getNumberOfChild());
     thriftColumnSchema.setDefault_value(wrapperColumnSchema.getDefaultValue());
     thriftColumnSchema.setColumnProperties(wrapperColumnSchema.getColumnProperties());
@@ -358,7 +367,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
    * @param dataType
    * @return
    */
-  private DataType fromExternalToWrapperDataType(org.apache.carbondata.format.DataType dataType) {
+  private DataType fromExternalToWrapperDataType(org.apache.carbondata.format.DataType dataType,
+      int precision, int scale) {
     if (null == dataType) {
       return null;
     }
@@ -376,7 +386,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       case DOUBLE:
         return DataTypes.DOUBLE;
       case DECIMAL:
-        return DataTypes.DECIMAL;
+        return DataTypes.createDecimalType(precision, scale);
       case TIMESTAMP:
         return DataTypes.TIMESTAMP;
       case DATE:
@@ -399,7 +409,11 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
     wrapperColumnSchema.setColumnar(externalColumnSchema.isColumnar());
-    wrapperColumnSchema.setDataType(fromExternalToWrapperDataType(externalColumnSchema.data_type));
+    wrapperColumnSchema.setDataType(
+        fromExternalToWrapperDataType(
+            externalColumnSchema.data_type,
+            externalColumnSchema.precision,
+            externalColumnSchema.scale));
     wrapperColumnSchema.setDimensionColumn(externalColumnSchema.isDimension());
     List<Encoding> encoders = new ArrayList<Encoding>();
     for (org.apache.carbondata.format.Encoding encoder : externalColumnSchema.getEncoders()) {

@@ -164,46 +164,49 @@ case class CarbonDictionaryDecoder(
              |}
              """.stripMargin
 
-            val caseCode = getDictionaryColumnIds(index)._3.getDataType match {
-              case CarbonDataTypes.INT =>
-                s"""
-                   |int $value = Integer.parseInt(new String($valueIntern,
-                   |org.apache.carbondata.core.constants.CarbonCommonConstants
-                   |.DEFAULT_CHARSET_CLASS));
-                 """.stripMargin
-              case CarbonDataTypes.SHORT =>
-                s"""
-                   |short $value =
-                   |Short.parseShort(new String($valueIntern,
-                   |org.apache.carbondata.core.constants.CarbonCommonConstants
-                   |.DEFAULT_CHARSET_CLASS));
-                 """.stripMargin
-              case CarbonDataTypes.DOUBLE =>
-                s"""
-                   |double $value =
-                   |Double.parseDouble(new String($valueIntern,
-                   |org.apache.carbondata.core.constants.CarbonCommonConstants
-                   |.DEFAULT_CHARSET_CLASS));
-                 """.stripMargin
-              case CarbonDataTypes.LONG =>
-                s"""
-                   |long $value =
-                   |Long.parseLong(new String($valueIntern,
-                   |org.apache.carbondata.core.constants.CarbonCommonConstants
-                   |.DEFAULT_CHARSET_CLASS));
-                 """.stripMargin
-              case CarbonDataTypes.DECIMAL =>
+            val caseCode =
+              if (CarbonDataTypes.isDecimal(getDictionaryColumnIds(index)._3.getDataType)) {
                 s"""
                    |org.apache.spark.sql.types.Decimal $value =
                    |Decimal.apply(new java.math.BigDecimal(
                    |new String($valueIntern, org.apache.carbondata.core.constants
                    |.CarbonCommonConstants.DEFAULT_CHARSET_CLASS)));
                  """.stripMargin
-              case _ =>
-                s"""
-                   | UTF8String $value = UTF8String.fromBytes($valueIntern);
+              } else {
+                getDictionaryColumnIds(index)._3.getDataType match {
+                  case CarbonDataTypes.INT =>
+                    s"""
+                       |int $value = Integer.parseInt(new String($valueIntern,
+                       |org.apache.carbondata.core.constants.CarbonCommonConstants
+                       |.DEFAULT_CHARSET_CLASS));
                  """.stripMargin
-            }
+                  case CarbonDataTypes.SHORT =>
+                    s"""
+                       |short $value =
+                       |Short.parseShort(new String($valueIntern,
+                       |org.apache.carbondata.core.constants.CarbonCommonConstants
+                       |.DEFAULT_CHARSET_CLASS));
+                 """.stripMargin
+                  case CarbonDataTypes.DOUBLE =>
+                    s"""
+                       |double $value =
+                       |Double.parseDouble(new String($valueIntern,
+                       |org.apache.carbondata.core.constants.CarbonCommonConstants
+                       |.DEFAULT_CHARSET_CLASS));
+                 """.stripMargin
+                  case CarbonDataTypes.LONG =>
+                    s"""
+                       |long $value =
+                       |Long.parseLong(new String($valueIntern,
+                       |org.apache.carbondata.core.constants.CarbonCommonConstants
+                       |.DEFAULT_CHARSET_CLASS));
+                 """.stripMargin
+                  case _ =>
+                    s"""
+                       | UTF8String $value = UTF8String.fromBytes($valueIntern);
+                 """.stripMargin
+                }
+              }
           code +=
             s"""
                |$caseCode
@@ -381,29 +384,31 @@ object CarbonDictionaryDecoder {
    */
   def convertCarbonToSparkDataType(carbonDimension: CarbonDimension,
       relation: CarbonRelation): types.DataType = {
-    carbonDimension.getDataType match {
-      case CarbonDataTypes.STRING => StringType
-      case CarbonDataTypes.SHORT => ShortType
-      case CarbonDataTypes.INT => IntegerType
-      case CarbonDataTypes.LONG => LongType
-      case CarbonDataTypes.DOUBLE => DoubleType
-      case CarbonDataTypes.BOOLEAN => BooleanType
-      case CarbonDataTypes.DECIMAL =>
-        val scale: Int = carbonDimension.getColumnSchema.getScale
-        val precision: Int = carbonDimension.getColumnSchema.getPrecision
-        if (scale == 0 && precision == 0) {
-          DecimalType(18, 2)
-        } else {
-          DecimalType(precision, scale)
-        }
-      case CarbonDataTypes.TIMESTAMP => TimestampType
-      case CarbonDataTypes.DATE => DateType
-      case CarbonDataTypes.STRUCT =>
-        CarbonMetastoreTypes
-          .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
-      case CarbonDataTypes.ARRAY =>
-        CarbonMetastoreTypes
-          .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
+    if (CarbonDataTypes.isDecimal(carbonDimension.getDataType)) {
+      val scale: Int = carbonDimension.getColumnSchema.getScale
+      val precision: Int = carbonDimension.getColumnSchema.getPrecision
+      if (scale == 0 && precision == 0) {
+        DecimalType(18, 2)
+      } else {
+        DecimalType(precision, scale)
+      }
+    } else {
+      carbonDimension.getDataType match {
+        case CarbonDataTypes.STRING => StringType
+        case CarbonDataTypes.SHORT => ShortType
+        case CarbonDataTypes.INT => IntegerType
+        case CarbonDataTypes.LONG => LongType
+        case CarbonDataTypes.DOUBLE => DoubleType
+        case CarbonDataTypes.BOOLEAN => BooleanType
+        case CarbonDataTypes.TIMESTAMP => TimestampType
+        case CarbonDataTypes.DATE => DateType
+        case CarbonDataTypes.STRUCT =>
+          CarbonMetastoreTypes
+            .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
+        case CarbonDataTypes.ARRAY =>
+          CarbonMetastoreTypes
+            .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
+      }
     }
   }
 
@@ -461,34 +466,6 @@ class CarbonDecoderRDD(
         !ep.attributes
           .exists(a => a.name.equalsIgnoreCase(attr.name) && a.exprId == attr.exprId)
       case _ => true
-    }
-  }
-
-  def convertCarbonToSparkDataType(carbonDimension: CarbonDimension,
-      relation: CarbonRelation): types.DataType = {
-    carbonDimension.getDataType match {
-      case CarbonDataTypes.STRING => StringType
-      case CarbonDataTypes.SHORT => ShortType
-      case CarbonDataTypes.INT => IntegerType
-      case CarbonDataTypes.LONG => LongType
-      case CarbonDataTypes.DOUBLE => DoubleType
-      case CarbonDataTypes.BOOLEAN => BooleanType
-      case CarbonDataTypes.DECIMAL =>
-        val scale: Int = carbonDimension.getColumnSchema.getScale
-        val precision: Int = carbonDimension.getColumnSchema.getPrecision
-        if (scale == 0 && precision == 0) {
-          DecimalType(18, 2)
-        } else {
-          DecimalType(precision, scale)
-        }
-      case CarbonDataTypes.TIMESTAMP => TimestampType
-      case CarbonDataTypes.DATE => DateType
-      case CarbonDataTypes.STRUCT =>
-        CarbonMetastoreTypes
-          .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
-      case CarbonDataTypes.ARRAY =>
-        CarbonMetastoreTypes
-          .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
     }
   }
 

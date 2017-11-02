@@ -21,6 +21,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
@@ -30,9 +31,7 @@ import static junit.framework.TestCase.assertEquals;
 import static junit.framework.TestCase.assertTrue;
 import static org.apache.carbondata.core.util.DataTypeUtil.bigDecimalToByte;
 import static org.apache.carbondata.core.util.DataTypeUtil.byteToBigDecimal;
-import static org.apache.carbondata.core.util.DataTypeUtil.getColumnDataTypeDisplayName;
 import static org.apache.carbondata.core.util.DataTypeUtil.getDataBasedOnDataType;
-import static org.apache.carbondata.core.util.DataTypeUtil.getDataType;
 import static org.apache.carbondata.core.util.DataTypeUtil.getMeasureValueBasedOnDataType;
 import static org.apache.carbondata.core.util.DataTypeUtil.normalizeIntAndLongValues;
 
@@ -40,7 +39,7 @@ public class DataTypeUtilTest {
 
   @Test public void testGetColumnDataTypeDisplayName() {
     String expected = DataTypes.INT.getName();
-    String result = getColumnDataTypeDisplayName("INT");
+    String result = "INT";
     assertEquals(expected, result);
 
   }
@@ -60,22 +59,6 @@ public class DataTypeUtilTest {
     assertTrue(result == result);
   }
 
-  @Test public void testGetDataType() {
-    assertEquals(DataTypes.TIMESTAMP, getDataType("TIMESTAMP"));
-    assertEquals(DataTypes.DATE, getDataType("DATE"));
-    assertEquals(DataTypes.STRING, getDataType("STRING"));
-    assertEquals(DataTypes.INT, getDataType("INT"));
-    assertEquals(DataTypes.SHORT, getDataType("SMALLINT"));
-    assertEquals(DataTypes.LONG, getDataType("LONG"));
-    assertEquals(DataTypes.DOUBLE, getDataType("DOUBLE"));
-    assertEquals(DataTypes.DECIMAL, getDataType("DECIMAL"));
-    assertEquals(DataTypes.ARRAY, getDataType("ARRAY"));
-    assertEquals(DataTypes.STRUCT, getDataType("STRUCT"));
-    assertEquals(DataTypes.STRING, getDataType("MAP"));
-    assertEquals(DataTypes.STRING, getDataType("default"));
-
-  }
-
   @Test public void testGetDataBasedOnDataType() throws NumberFormatException {
     String data = " ";
     if (data.isEmpty()) {
@@ -87,7 +70,7 @@ public class DataTypeUtilTest {
     assertEquals(getDataBasedOnDataType("0", DataTypes.LONG), 0L);
     java.math.BigDecimal javaDecVal = new java.math.BigDecimal(1);
     scala.math.BigDecimal scalaDecVal = new scala.math.BigDecimal(javaDecVal);
-    assertEquals(getDataBasedOnDataType("1", DataTypes.DECIMAL),
+    assertEquals(getDataBasedOnDataType("1", DataTypes.createDefaultDecimalType()),
         DataTypeUtil.getDataTypeConverter().convertToDecimal(scalaDecVal));
     assertEquals(getDataBasedOnDataType("default", DataTypes.NULL),
         DataTypeUtil.getDataTypeConverter().convertFromStringToUTF8String("default"));

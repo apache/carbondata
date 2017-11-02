@@ -23,6 +23,8 @@ import java.util.Map;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
+import org.apache.carbondata.core.metadata.datatype.IntType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
@@ -874,7 +876,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return DataTypes.DECIMAL;
+        return DataTypes.createDefaultDecimalType();
       }
 
       @Mock public String getColumnName() {
@@ -1158,7 +1160,12 @@ public class ThriftWrapperSchemaConverterImplTest {
   @Test public void testFromWrapperToExternalColumnSchemaForDatatypeNullCase() {
 
     org.apache.carbondata.format.ColumnSchema thriftColumnSchema =
-        new org.apache.carbondata.format.ColumnSchema(null, "columnName", "1", true, encoders,
+        new org.apache.carbondata.format.ColumnSchema(
+            org.apache.carbondata.format.DataType.INT,
+            "columnName",
+            "1",
+            true,
+            encoders,
             true);
     thriftColumnSchema.setSchemaOrdinal(1);
 
@@ -1172,7 +1179,7 @@ public class ThriftWrapperSchemaConverterImplTest {
       }
 
       @Mock public DataType getDataType() {
-        return null;
+        return DataTypes.INT;
       }
 
       @Mock public String getColumnName() {
@@ -1548,9 +1555,7 @@ long time =1112745600000L;
     wrapperColumnSchema.setDimensionColumn(true);
     wrapperColumnSchema.setEncodingList(encodings);
     wrapperColumnSchema.setNumberOfChild(1);
-    wrapperColumnSchema.setPrecision(1);
     wrapperColumnSchema.setColumnGroup(1);
-    wrapperColumnSchema.setScale(1);
     wrapperColumnSchema.setDefaultValue(new byte[] { 1, 2 });
     wrapperColumnSchema.setColumnProperties(columnPropertyMap);
     wrapperColumnSchema.setInvisible(true);
@@ -1686,8 +1691,9 @@ long time =1112745600000L;
   @Test public void testFromExternalToWrapperColumnSchemaForDatatypeNullCase() {
 
     org.apache.carbondata.format.ColumnSchema thriftColumnSchema =
-        new org.apache.carbondata.format.ColumnSchema(null, "columnName", "1", true, encoders,
-            true);
+        new org.apache.carbondata.format.ColumnSchema(
+            org.apache.carbondata.format.DataType.STRING,
+            "columnName", "1", true, encoders, true);
     ColumnSchema actualResult =
         thriftWrapperSchemaConverter.fromExternalToWrapperColumnSchema(thriftColumnSchema);
     Boolean expectedResult = true;

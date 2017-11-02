@@ -45,22 +45,27 @@ public class RestructureUtilTest {
     encodingList.add(Encoding.DICTIONARY);
     ColumnSchema columnSchema1 = new ColumnSchema();
     columnSchema1.setColumnName("Id");
+    columnSchema1.setDataType(DataTypes.STRING);
     columnSchema1.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema1.setEncodingList(encodingList);
     ColumnSchema columnSchema2 = new ColumnSchema();
     columnSchema2.setColumnName("Name");
+    columnSchema2.setDataType(DataTypes.STRING);
     columnSchema2.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema2.setEncodingList(encodingList);
     ColumnSchema columnSchema3 = new ColumnSchema();
     columnSchema3.setColumnName("Age");
+    columnSchema3.setDataType(DataTypes.INT);
     columnSchema3.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema3.setEncodingList(encodingList);
     ColumnSchema columnSchema4 = new ColumnSchema();
     columnSchema4.setColumnName("Salary");
+    columnSchema4.setDataType(DataTypes.INT);
     columnSchema4.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema4.setEncodingList(encodingList);
     ColumnSchema columnSchema5 = new ColumnSchema();
     columnSchema5.setColumnName("Address");
+    columnSchema5.setDataType(DataTypes.STRING);
     columnSchema5.setColumnUniqueId(UUID.randomUUID().toString());
     columnSchema5.setEncodingList(encodingList);
 
