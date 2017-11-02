@@ -39,7 +39,7 @@ This tutorial is designed to provide a quick introduction to create and use part
    PARTITIONED BY (partition_col_name data_type)
    STORED BY 'carbondata'
    [TBLPROPERTIES ('PARTITION_TYPE'='HASH',
-                   'PARTITION_NUM'='N' ...)]
+                   'NUM_PARTITION'='N' ...)]
    //N is the number of hash partitions
 ```
 
@@ -54,7 +54,7 @@ Example:
       col_F Timestamp
    ) partitioned by (col_E Long)
    stored by 'carbondata'
-   tblproperties('partition_type'='Hash','partition_num'='9')
+   tblproperties('partition_type'='Hash','num_partition'='9')
 ```
 
 ### Create Range Partition Table
