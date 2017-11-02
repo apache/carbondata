@@ -23,6 +23,7 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{AlterTableSplitPartitionModel, DataProcessCommand, RunnableCommand, SchemaProcessCommand}
 import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonRelation}
 import org.apache.spark.util.{AlterTableUtil, PartitionUtils}
@@ -109,7 +110,7 @@ case class AlterTableSplitCarbonPartitionCommand(
     CarbonUtil.writeThriftTableToSchemaFile(schemaFilePath, thriftTable)
     // update the schema modified time
     carbonMetaStore.updateAndTouchSchemasUpdatedTime(storePath)
-    sparkSession.catalog.refreshTable(tableName)
+    sparkSession.sessionState.catalog.refreshTable(TableIdentifier(tableName, Option(dbName)))
     Seq.empty
   }
 
