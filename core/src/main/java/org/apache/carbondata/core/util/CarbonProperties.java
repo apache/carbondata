@@ -670,8 +670,7 @@ public final class CarbonProperties {
     try {
       numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
-              CarbonProperties.getInstance()
-                  .getProperty(CarbonCommonConstants.NUM_CORES_FOR_EXECUTOR)));
+              CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
     } catch (NumberFormatException exc) {
       LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_LOADING
           + "is wrong. Falling back to the default value "

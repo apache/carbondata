@@ -84,6 +84,10 @@ case class LoadTableCommand(
 
     val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
     carbonProperty.addProperty("zookeeper.enable.lock", "false")
+    carbonProperty.addProperty(CarbonCommonConstants.NUM_CORES_LOADING,
+        carbonProperty.getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
+            Math.min(sparkSession.sparkContext.conf.getInt("spark.executor.cores", 1),
+                CarbonCommonConstants.NUM_CORES_MAX_VAL).toString()))
     val optionsFinal = DataLoadingUtil.getDataLoadingOptions(carbonProperty, options)
 
     val tableProperties = relation.tableMeta.carbonTable.getTableInfo
