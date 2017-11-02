@@ -23,8 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.fileoperations.FileWriteOperation;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.MergedBlockIndex;
@@ -43,17 +42,13 @@ public class CarbonIndexFileMergeWriter {
    * @throws IOException
    */
   public void mergeCarbonIndexFilesOfSegment(String segmentPath) throws IOException {
-    CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
-    CarbonFile[] indexFiles = carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
-        return file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT);
-      }
-    });
-    if (indexFiles != null && indexFiles.length > 0) {
+    CarbonFile[] indexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath);
+    if (isCarbonIndexFilePresent(indexFiles)) {
       SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
       fileStore.readAllIIndexOfSegment(segmentPath);
-      openThriftWriter(segmentPath + "/" +
-          System.currentTimeMillis() + CarbonTablePath.MERGE_INDEX_FILE_EXT);
+      openThriftWriter(
+          segmentPath + "/" +
+              System.currentTimeMillis() + CarbonTablePath.MERGE_INDEX_FILE_EXT);
       Map<String, byte[]> indexMap = fileStore.getCarbonIndexMap();
       MergedBlockIndexHeader indexHeader = new MergedBlockIndexHeader();
       MergedBlockIndex mergedBlockIndex = new MergedBlockIndex();
@@ -72,7 +67,15 @@ public class CarbonIndexFileMergeWriter {
         indexFile.delete();
       }
     }
+  }
 
+  private boolean isCarbonIndexFilePresent(CarbonFile[] indexFiles) {
+    for (CarbonFile file : indexFiles) {
+      if (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /**
@@ -103,7 +106,7 @@ public class CarbonIndexFileMergeWriter {
     // create thrift writer instance
     thriftWriter = new ThriftWriter(filePath, false);
     // open the file stream
-    thriftWriter.open();
+    thriftWriter.open(FileWriteOperation.OVERWRITE);
   }
 
   /**
