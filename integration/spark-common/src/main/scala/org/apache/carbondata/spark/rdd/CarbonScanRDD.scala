@@ -126,8 +126,8 @@ class CarbonScanRDD(
         // create a list of block based on split
         val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
 
-        // get the list of executors and map blocks to executors based on locality
-        val activeNodes = DistributionUtil.ensureExecutorsAndGetNodeList(blockList, sparkContext)
+        // get the list of executors
+        val activeNodes = DistributionUtil.getNodeList(sparkContext)
 
         // divide the blocks among the tasks of the nodes as per the data locality
         val nodeBlockMapping = CarbonLoaderUtil.nodeBlockTaskMapping(blockList.asJava, -1,

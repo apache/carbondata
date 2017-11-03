@@ -721,8 +721,7 @@ object CarbonDataRDDFactory {
           }
           // group blocks to nodes, tasks
           val startTime = System.currentTimeMillis
-          val activeNodes = DistributionUtil
-              .ensureExecutorsAndGetNodeList(blockList, sqlContext.sparkContext)
+          val activeNodes = DistributionUtil.getNodeList(sqlContext.sparkContext).distinct
           val nodeBlockMapping =
             CarbonLoaderUtil
                 .nodeBlockMapping(blockList.toSeq.asJava, -1, activeNodes.toList.asJava).asScala
@@ -771,11 +770,7 @@ object CarbonDataRDDFactory {
         try {
           val rdd = dataFrame.get.rdd
 
-          val nodeNumOfData = rdd.partitions.flatMap[String, Array[String]]{ p =>
-            DataLoadPartitionCoalescer.getPreferredLocs(rdd, p).map(_.host)
-          }.distinct.size
-          val nodes = DistributionUtil.ensureExecutorsByNumberAndGetNodeList(nodeNumOfData,
-            sqlContext.sparkContext)
+          val nodes = DistributionUtil.getNodeList(sqlContext.sparkContext)
           val newRdd = new DataLoadCoalescedRDD[Row](rdd, nodes.toArray.distinct)
 
           status = new NewDataFrameLoaderRDD(sqlContext.sparkContext,
