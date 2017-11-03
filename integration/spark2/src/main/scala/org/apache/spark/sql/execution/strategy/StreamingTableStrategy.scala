@@ -56,7 +56,7 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
       .isStreamingTable
     if (streaming) {
       throw new MalformedCarbonCommandException(
-        s"$operation is not allowed for streaming segment")
+        s"$operation is not allowed for streaming table")
     }
   }
 }
