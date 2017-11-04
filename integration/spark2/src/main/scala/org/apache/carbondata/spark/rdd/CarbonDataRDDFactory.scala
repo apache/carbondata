@@ -653,40 +653,21 @@ object CarbonDataRDDFactory {
          * 3) output Array[(partitionID,Array[BlockDetails])] to blocksGroupBy
          */
           var splits = Array[TableSplit]()
-          if (carbonLoadModel.isDirectLoad) {
-            // get all table Splits, this part means files were divide to different partitions
-            splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath)
-            // get all partition blocks from file list
-            blocksGroupBy = splits.map {
-              split =>
-                val pathBuilder = new StringBuilder()
-                for (path <- split.getPartition.getFilesPath.asScala) {
-                  pathBuilder.append(path).append(",")
-                }
-                if (pathBuilder.nonEmpty) {
-                  pathBuilder.substring(0, pathBuilder.size - 1)
-                }
-                (split.getPartition.getUniqueID, SparkUtil.getSplits(pathBuilder.toString(),
-                  sqlContext.sparkContext
-                ))
-            }
-          } else {
-            // get all table Splits,when come to this, means data have been partition
-            splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getDatabaseName,
-              carbonLoadModel.getTableName, null)
-            // get all partition blocks from factFilePath/uniqueID/
-            blocksGroupBy = splits.map {
-              split =>
-                val pathBuilder = new StringBuilder()
-                pathBuilder.append(carbonLoadModel.getFactFilePath)
-                if (!carbonLoadModel.getFactFilePath.endsWith("/")
-                    && !carbonLoadModel.getFactFilePath.endsWith("\\")) {
-                  pathBuilder.append("/")
-                }
-                pathBuilder.append(split.getPartition.getUniqueID).append("/")
-                (split.getPartition.getUniqueID,
-                    SparkUtil.getSplits(pathBuilder.toString, sqlContext.sparkContext))
-            }
+          // get all table Splits, this part means files were divide to different partitions
+          splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath)
+          // get all partition blocks from file list
+          blocksGroupBy = splits.map {
+            split =>
+              val pathBuilder = new StringBuilder()
+              for (path <- split.getPartition.getFilesPath.asScala) {
+                pathBuilder.append(path).append(",")
+              }
+              if (pathBuilder.nonEmpty) {
+                pathBuilder.substring(0, pathBuilder.size - 1)
+              }
+              (split.getPartition.getUniqueID, SparkUtil.getSplits(pathBuilder.toString(),
+                sqlContext.sparkContext
+              ))
           }
         } else {
           /*
