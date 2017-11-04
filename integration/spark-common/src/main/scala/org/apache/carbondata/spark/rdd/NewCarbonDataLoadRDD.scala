@@ -196,13 +196,7 @@ class NewCarbonDataLoadRDD[K, V](
     if (isTableSplitPartition) {
       // for table split partition
       var splits: Array[TableSplit] = null
-
-      if (carbonLoadModel.isDirectLoad) {
-        splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath)
-      } else {
-        splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getDatabaseName,
-          carbonLoadModel.getTableName, null)
-      }
+      splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath)
 
       splits.zipWithIndex.map { s =>
         // filter the same partition unique id, because only one will match, so get 0 element
@@ -289,15 +283,10 @@ class NewCarbonDataLoadRDD[K, V](
           val split = theSplit.asInstanceOf[CarbonTableSplitPartition]
           logInfo("Input split: " + split.serializableHadoopSplit.value)
           carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-          if (carbonLoadModel.isDirectLoad) {
-            model = carbonLoadModel.getCopyWithPartition(
-                split.serializableHadoopSplit.value.getPartition.getUniqueID,
-                split.serializableHadoopSplit.value.getPartition.getFilesPath,
-                carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
-          } else {
-            model = carbonLoadModel.getCopyWithPartition(
-                split.serializableHadoopSplit.value.getPartition.getUniqueID)
-          }
+          model = carbonLoadModel.getCopyWithPartition(
+              split.serializableHadoopSplit.value.getPartition.getUniqueID,
+              split.serializableHadoopSplit.value.getPartition.getFilesPath,
+              carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
           partitionID = split.serializableHadoopSplit.value.getPartition.getUniqueID
           StandardLogService.setThreadName(StandardLogService
             .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
@@ -320,15 +309,11 @@ class NewCarbonDataLoadRDD[K, V](
               split.serializableHadoopSplit, split.nodeBlocksDetail.length)
           val blocksID = gernerateBlocksID
           carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-          if (carbonLoadModel.isDirectLoad) {
-            val filelist: java.util.List[String] = new java.util.ArrayList[String](
-                CarbonCommonConstants.CONSTANT_SIZE_TEN)
-            CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, filelist, ",")
-            model = carbonLoadModel.getCopyWithPartition(partitionID, filelist,
-                carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
-          } else {
-            model = carbonLoadModel.getCopyWithPartition(partitionID)
-          }
+          val filelist: java.util.List[String] = new java.util.ArrayList[String](
+              CarbonCommonConstants.CONSTANT_SIZE_TEN)
+          CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, filelist, ",")
+          model = carbonLoadModel.getCopyWithPartition(partitionID, filelist,
+              carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
           StandardLogService.setThreadName(StandardLogService
             .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
             , ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId + "")

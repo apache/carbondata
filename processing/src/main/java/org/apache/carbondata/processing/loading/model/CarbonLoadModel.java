@@ -53,7 +53,6 @@ public class CarbonLoadModel implements Serializable {
   private String complexDelimiterLevel1;
   private String complexDelimiterLevel2;
 
-  private boolean isDirectLoad;
   private List<LoadMetadataDetails> loadMetadataDetails;
   private transient SegmentUpdateStatusManager segmentUpdateStatusManager;
 
@@ -204,14 +203,6 @@ public class CarbonLoadModel implements Serializable {
 
   public void setComplexDelimiterLevel2(String complexDelimiterLevel2) {
     this.complexDelimiterLevel2 = complexDelimiterLevel2;
-  }
-
-  public boolean isDirectLoad() {
-    return isDirectLoad;
-  }
-
-  public void setDirectLoad(boolean isDirectLoad) {
-    this.isDirectLoad = isDirectLoad;
   }
 
   public String getAllDictPath() {
@@ -383,7 +374,6 @@ public class CarbonLoadModel implements Serializable {
     copy.isRetentionRequest = isRetentionRequest;
     copy.csvHeader = csvHeader;
     copy.csvHeaderColumns = csvHeaderColumns;
-    copy.isDirectLoad = isDirectLoad;
     copy.csvDelimiter = csvDelimiter;
     copy.complexDelimiterLevel1 = complexDelimiterLevel1;
     copy.complexDelimiterLevel2 = complexDelimiterLevel2;
@@ -434,7 +424,6 @@ public class CarbonLoadModel implements Serializable {
     copyObj.carbonDataLoadSchema = carbonDataLoadSchema;
     copyObj.csvHeader = header;
     copyObj.csvHeaderColumns = csvHeaderColumns;
-    copyObj.isDirectLoad = true;
     copyObj.csvDelimiter = delimiter;
     copyObj.complexDelimiterLevel1 = complexDelimiterLevel1;
     copyObj.complexDelimiterLevel2 = complexDelimiterLevel2;
