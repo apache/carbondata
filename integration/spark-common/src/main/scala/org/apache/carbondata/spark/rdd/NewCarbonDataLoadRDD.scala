@@ -177,8 +177,7 @@ class NewCarbonDataLoadRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    blocksGroupBy: Array[(String, Array[BlockDetails])],
-    isTableSplitPartition: Boolean)
+    blocksGroupBy: Array[(String, Array[BlockDetails])])
   extends CarbonRDD[(K, V)](sc, Nil) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -193,22 +192,8 @@ class NewCarbonDataLoadRDD[K, V](
     sc.broadcast(new SerializableConfiguration(sc.hadoopConfiguration))
 
   override def getPartitions: Array[Partition] = {
-    if (isTableSplitPartition) {
-      // for table split partition
-      var splits: Array[TableSplit] = null
-      splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath)
-
-      splits.zipWithIndex.map { s =>
-        // filter the same partition unique id, because only one will match, so get 0 element
-        val blocksDetails: Array[BlockDetails] = blocksGroupBy.filter(p =>
-          p._1 == s._1.getPartition.getUniqueID)(0)._2
-        new CarbonTableSplitPartition(id, s._2, s._1, blocksDetails)
-      }
-    } else {
-      // for node partition
-      blocksGroupBy.zipWithIndex.map { b =>
-        new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
-      }
+    blocksGroupBy.zipWithIndex.map { b =>
+      new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
     }
   }
 
@@ -278,50 +263,25 @@ class NewCarbonDataLoadRDD[K, V](
         CommonUtil.configureCSVInputFormat(configuration, carbonLoadModel)
         val hadoopAttemptContext = new TaskAttemptContextImpl(configuration, attemptId)
         val format = new CSVInputFormat
-        if (isTableSplitPartition) {
-          // for table split partition
-          val split = theSplit.asInstanceOf[CarbonTableSplitPartition]
-          logInfo("Input split: " + split.serializableHadoopSplit.value)
-          carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-          model = carbonLoadModel.getCopyWithPartition(
-              split.serializableHadoopSplit.value.getPartition.getUniqueID,
-              split.serializableHadoopSplit.value.getPartition.getFilesPath,
-              carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
-          partitionID = split.serializableHadoopSplit.value.getPartition.getUniqueID
-          StandardLogService.setThreadName(StandardLogService
-            .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
-            , ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId + "")
-          CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordPartitionBlockMap(
-              partitionID, split.partitionBlocksDetail.length)
-          val readers =
-          split.partitionBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
-          readers.zipWithIndex.map { case (reader, index) =>
-            new CSVRecordReaderIterator(reader,
-              split.partitionBlocksDetail(index),
-              hadoopAttemptContext)
-          }
-        } else {
-          // for node partition
-          val split = theSplit.asInstanceOf[CarbonNodePartition]
-          logInfo("Input split: " + split.serializableHadoopSplit)
-          logInfo("The Block Count in this node :" + split.nodeBlocksDetail.length)
-          CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordHostBlockMap(
-              split.serializableHadoopSplit, split.nodeBlocksDetail.length)
-          val blocksID = gernerateBlocksID
-          carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-          val filelist: java.util.List[String] = new java.util.ArrayList[String](
-              CarbonCommonConstants.CONSTANT_SIZE_TEN)
-          CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, filelist, ",")
-          model = carbonLoadModel.getCopyWithPartition(partitionID, filelist,
-              carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
-          StandardLogService.setThreadName(StandardLogService
-            .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
-            , ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId + "")
-          val readers =
-            split.nodeBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
-          readers.zipWithIndex.map { case (reader, index) =>
-            new CSVRecordReaderIterator(reader, split.nodeBlocksDetail(index), hadoopAttemptContext)
-          }
+
+        val split = theSplit.asInstanceOf[CarbonNodePartition]
+        logInfo("Input split: " + split.serializableHadoopSplit)
+        logInfo("The Block Count in this node :" + split.nodeBlocksDetail.length)
+        CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordHostBlockMap(
+            split.serializableHadoopSplit, split.nodeBlocksDetail.length)
+        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+        val fileList: java.util.List[String] = new java.util.ArrayList[String](
+            CarbonCommonConstants.CONSTANT_SIZE_TEN)
+        CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, fileList, ",")
+        model = carbonLoadModel.getCopyWithPartition(partitionID, fileList,
+            carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
+        StandardLogService.setThreadName(StandardLogService
+          .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
+          , ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId + "")
+        val readers =
+          split.nodeBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
+        readers.zipWithIndex.map { case (reader, index) =>
+          new CSVRecordReaderIterator(reader, split.nodeBlocksDetail(index), hadoopAttemptContext)
         }
       }
       /**
@@ -330,14 +290,8 @@ class NewCarbonDataLoadRDD[K, V](
        * @return
        */
       def gernerateBlocksID: String = {
-        if (isTableSplitPartition) {
-          carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
-          theSplit.asInstanceOf[CarbonTableSplitPartition].serializableHadoopSplit.value
-            .getPartition.getUniqueID + "_" + UUID.randomUUID()
-        } else {
-          carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
-          UUID.randomUUID()
-        }
+        carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
+        UUID.randomUUID()
       }
 
       var finished = false
@@ -355,23 +309,17 @@ class NewCarbonDataLoadRDD[K, V](
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
-    if (isTableSplitPartition) {
-      val theSplit = split.asInstanceOf[CarbonTableSplitPartition]
-      val location = theSplit.serializableHadoopSplit.value.getLocations.asScala
-      location
-    } else {
-      val theSplit = split.asInstanceOf[CarbonNodePartition]
-      val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
-      logInfo("Preferred Location for split : " + firstOptionLocation.mkString(","))
-      /**
-       * At original logic, we were adding the next preferred location so that in case of the
-       * failure the Spark should know where to schedule the failed task.
-       * Remove the next preferred location is because some time Spark will pick the same node
-       * for 2 tasks, so one node is getting over loaded with the task and one have no task to
-       * do. And impacting the performance despite of any failure.
-       */
-      firstOptionLocation
-    }
+    val theSplit = split.asInstanceOf[CarbonNodePartition]
+    val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
+    logInfo("Preferred Location for split : " + firstOptionLocation.mkString(","))
+    /**
+     * At original logic, we were adding the next preferred location so that in case of the
+     * failure the Spark should know where to schedule the failed task.
+     * Remove the next preferred location is because some time Spark will pick the same node
+     * for 2 tasks, so one node is getting over loaded with the task and one have no task to
+     * do. And impacting the performance despite of any failure.
+     */
+    firstOptionLocation
   }
 }
 
