@@ -145,9 +145,9 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return org.apache.carbondata.format.DataType.DATE;
     } else if (dataType.getId() == DataTypes.TIMESTAMP.getId()) {
       return org.apache.carbondata.format.DataType.TIMESTAMP;
-    } else if (dataType.getId() == DataTypes.ARRAY.getId()) {
+    } else if (DataTypes.isArrayType(dataType)) {
       return org.apache.carbondata.format.DataType.ARRAY;
-    } else if (dataType.getId() == DataTypes.STRUCT.getId()) {
+    } else if (DataTypes.isStructType(dataType)) {
       return org.apache.carbondata.format.DataType.STRUCT;
     } else {
       return org.apache.carbondata.format.DataType.STRING;
@@ -392,9 +392,9 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       case DATE:
         return DataTypes.DATE;
       case ARRAY:
-        return DataTypes.ARRAY;
+        return DataTypes.createDefaultArrayType();
       case STRUCT:
-        return DataTypes.STRUCT;
+        return DataTypes.createDefaultStructType();
       default:
         return DataTypes.STRING;
     }

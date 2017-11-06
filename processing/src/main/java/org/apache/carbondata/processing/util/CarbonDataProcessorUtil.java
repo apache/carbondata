@@ -296,10 +296,8 @@ public final class CarbonDataProcessorUtil {
 
   private static String getComplexTypeString(DataField[] dataFields) {
     StringBuilder dimString = new StringBuilder();
-    for (int i = 0; i < dataFields.length; i++) {
-      DataField dataField = dataFields[i];
-      if (dataField.getColumn().getDataType() == DataTypes.ARRAY ||
-          dataField.getColumn().getDataType() == DataTypes.STRUCT) {
+    for (DataField dataField : dataFields) {
+      if (dataField.getColumn().getDataType().isComplexType()) {
         addAllComplexTypeChildren((CarbonDimension) dataField.getColumn(), dimString, "");
         dimString.append(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
       }

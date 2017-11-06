@@ -763,10 +763,10 @@ public class QueryUtil {
       int[] eachComplexColumnValueSize, Map<String, Dictionary> columnIdToDictionaryMap) {
     int parentBlockIndex = dimensionToBlockIndexMap.get(dimension.getOrdinal());
     GenericQueryType parentQueryType;
-    if (dimension.getDataType() == DataTypes.ARRAY) {
+    if (DataTypes.isArrayType(dimension.getDataType())) {
       parentQueryType =
           new ArrayQueryType(dimension.getColName(), dimension.getColName(), parentBlockIndex);
-    } else if (dimension.getDataType() == DataTypes.STRUCT) {
+    } else if (DataTypes.isStructType(dimension.getDataType())) {
       parentQueryType =
           new StructQueryType(dimension.getColName(), dimension.getColName(),
               dimensionToBlockIndexMap.get(dimension.getOrdinal()));
@@ -784,11 +784,11 @@ public class QueryUtil {
       CarbonDimension dimension, GenericQueryType parentQueryType) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       DataType dataType = dimension.getListOfChildDimensions().get(i).getDataType();
-      if (dataType == DataTypes.ARRAY) {
+      if (DataTypes.isArrayType(dataType)) {
         parentQueryType.addChildren(
             new ArrayQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
                 dimension.getColName(), ++parentBlockIndex));
-      } else if (dataType == DataTypes.STRUCT) {
+      } else if (DataTypes.isStructType(dataType)) {
         parentQueryType.addChildren(
             new StructQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
                 dimension.getColName(), ++parentBlockIndex));

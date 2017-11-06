@@ -297,8 +297,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             getDimensionDefaultValue(dimColumnEvaluatorInfo);
         continue;
       }
-      if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.ARRAY
-          && dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.STRUCT) {
+      if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
         if (!dimColumnEvaluatorInfo.isDimensionExistsInCurrentSilce()) {
           record[dimColumnEvaluatorInfo.getRowIndex()] =
               dimColumnEvaluatorInfo.getDimension().getDefaultValue();
@@ -534,8 +533,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
-      if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.ARRAY
-          && dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.STRUCT) {
+      if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
         if (null == blockChunkHolder.getDimensionRawDataChunk()[dimensionBlocksIndex[i]]) {
           blockChunkHolder.getDimensionRawDataChunk()[dimensionBlocksIndex[i]] =
               blockChunkHolder.getDataBlock()

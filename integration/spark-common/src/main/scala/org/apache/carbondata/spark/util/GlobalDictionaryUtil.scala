@@ -259,17 +259,16 @@ object GlobalDictionaryUtil {
       case None =>
         None
       case Some(dim) =>
-        dim.getDataType match {
-          case DataTypes.ARRAY =>
-            val arrDim = ArrayParser(dim, format)
-            generateParserForChildrenDimension(dim, format, mapColumnValuesWithId, arrDim)
-            Some(arrDim)
-          case DataTypes.STRUCT =>
-            val stuDim = StructParser(dim, format)
-            generateParserForChildrenDimension(dim, format, mapColumnValuesWithId, stuDim)
-            Some(stuDim)
-          case _ =>
-            Some(PrimitiveParser(dim, mapColumnValuesWithId.get(dim.getColumnId)))
+        if (DataTypes.isArrayType(dim.getDataType)) {
+          val arrDim = ArrayParser(dim, format)
+          generateParserForChildrenDimension(dim, format, mapColumnValuesWithId, arrDim)
+          Some(arrDim)
+        } else if (DataTypes.isStructType(dim.getDataType)) {
+          val stuDim = StructParser(dim, format)
+          generateParserForChildrenDimension(dim, format, mapColumnValuesWithId, stuDim)
+          Some(stuDim)
+        } else {
+          Some(PrimitiveParser(dim, mapColumnValuesWithId.get(dim.getColumnId)))
         }
     }
   }
@@ -477,14 +476,14 @@ object GlobalDictionaryUtil {
       val children = preDictDimension.getListOfChildDimensions.asScala.toArray
       // for Array, user set ArrayFiled: path, while ArrayField has a child Array.val
       val currentColName = {
-        preDictDimension.getDataType match {
-          case DataTypes.ARRAY =>
-            if (children(0).isComplex) {
-              "val." + colName.substring(middleDimName.length + 1)
-            } else {
-              "val"
-            }
-          case _ => colName.substring(middleDimName.length + 1)
+        if (DataTypes.isArrayType(preDictDimension.getDataType)) {
+          if (children(0).isComplex) {
+            "val." + colName.substring(middleDimName.length + 1)
+          } else {
+            "val"
+          }
+        } else {
+          colName.substring(middleDimName.length + 1)
         }
       }
       setPredefineDict(carbonLoadModel, children, table, currentColName,

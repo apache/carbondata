@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class StringType extends DataType {
-  public static final DataType STRING = new StringType(DataTypes.STRING_TYPE_ID, 0, "STRING", -1);
+class StringType extends DataType {
+  static final DataType STRING = new StringType(DataTypes.STRING_TYPE_ID, 0, "STRING", -1);
 
   private StringType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);

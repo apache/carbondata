@@ -17,17 +17,26 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-class BooleanType extends DataType {
+import java.io.Serializable;
 
-  static final DataType BOOLEAN =
-      new BooleanType(DataTypes.BOOLEAN_TYPE_ID, 1, "BOOLEAN", 1);
+public class StructField implements Serializable {
 
-  private BooleanType(int id, int precedenceOrder, String name, int sizeInBytes) {
-    super(id, precedenceOrder, name, sizeInBytes);
+  private static final long serialVersionUID = 3271726L;
+
+  private String fieldName;
+
+  private DataType dataType;
+
+  public StructField(String fieldName, DataType dataType) {
+    this.fieldName = fieldName;
+    this.dataType = dataType;
   }
 
-  // this function is needed to ensure singleton pattern while supporting java serialization
-  private Object readResolve() {
-    return DataTypes.BOOLEAN;
+  public DataType getDataType() {
+    return dataType;
+  }
+
+  public String getFieldName() {
+    return fieldName;
   }
 }

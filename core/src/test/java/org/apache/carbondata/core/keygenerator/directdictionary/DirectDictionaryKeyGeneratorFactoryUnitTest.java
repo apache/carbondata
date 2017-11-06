@@ -37,7 +37,7 @@ public class DirectDictionaryKeyGeneratorFactoryUnitTest {
 
   @Test public void testGetDirectDictionaryGeneratorReturnNull() throws Exception {
     DirectDictionaryGenerator result =
-        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.ARRAY);
+        DirectDictionaryKeyGeneratorFactory.getDirectDictionaryGenerator(DataTypes.STRING);
     Assert.assertNull(result);
   }
 }

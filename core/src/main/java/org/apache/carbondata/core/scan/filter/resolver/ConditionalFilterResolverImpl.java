@@ -167,11 +167,8 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
             metadata);
 
       } else if ((null != columnList.get(0).getDimension()) && (
-          columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) && !(
-              columnList.get(0).getDimension().getDataType()
-                  == org.apache.carbondata.core.metadata.datatype.DataTypes.STRUCT
-                  || columnList.get(0).getDimension().getDataType()
-                  == org.apache.carbondata.core.metadata.datatype.DataTypes.ARRAY))) {
+          columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) &&
+              ! columnList.get(0).getDimension().getDataType().isComplexType())) {
         dimColResolvedFilterInfo.setFilterValues(FilterUtil
             .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
                 isIncludeFilter, tableProvider));

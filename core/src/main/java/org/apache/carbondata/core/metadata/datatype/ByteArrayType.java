@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class ByteArrayType extends DataType {
+class ByteArrayType extends DataType {
 
-  public static final DataType BYTE_ARRAY =
+  static final DataType BYTE_ARRAY =
       new ByteArrayType(DataTypes.BYTE_ARRAY_TYPE_ID, 13, "BYTE_ARRAY", -1);
 
   private ByteArrayType(int id, int precedenceOrder, String name, int sizeInBytes) {

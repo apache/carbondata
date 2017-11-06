@@ -284,7 +284,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
           mapSchemas[i] = new DataMapSchema.FixedDataMapSchema(DataTypes.BYTE_ARRAY, minMaxLen[i]);
         }
       }
-      DataMapSchema mapSchema = new DataMapSchema.StructDataMapSchema(DataTypes.STRUCT, mapSchemas);
+      DataMapSchema mapSchema = new DataMapSchema.StructDataMapSchema(
+          DataTypes.createDefaultStructType(), mapSchemas);
       indexSchemas.add(mapSchema);
     }
 

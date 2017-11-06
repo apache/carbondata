@@ -179,7 +179,7 @@ public class SegmentPropertiesTestUtil {
     dimColumn.setColumnar(true);
     dimColumn.setColumnName("IMEI5");
     dimColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    dimColumn.setDataType(DataTypes.ARRAY);
+    dimColumn.setDataType(DataTypes.createDefaultArrayType());
     dimColumn.setDimensionColumn(true);
     List<Encoding> encodeList =
         new ArrayList<Encoding>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);

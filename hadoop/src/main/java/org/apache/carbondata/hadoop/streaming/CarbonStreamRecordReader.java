@@ -35,6 +35,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -75,12 +76,9 @@ import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 import org.apache.spark.sql.execution.vectorized.ColumnVector;
 import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
 import org.apache.spark.sql.types.CalendarIntervalType;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.DateType;
 import org.apache.spark.sql.types.Decimal;
 import org.apache.spark.sql.types.DecimalType;
 import org.apache.spark.sql.types.StructType;
-import org.apache.spark.sql.types.TimestampType;
 import org.apache.spark.unsafe.types.CalendarInterval;
 import org.apache.spark.unsafe.types.UTF8String;
 
@@ -95,7 +93,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
   private CarbonTable carbonTable;
   private CarbonColumn[] storageColumns;
   private boolean[] isRequired;
-  private int[] measureDataTypes;
+  private DataType[] measureDataTypes;
   private int dimensionCount;
   private int measureCount;
 
@@ -171,9 +169,9 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
             .getDirectDictionaryGenerator(storageColumns[i].getDataType());
       }
     }
-    measureDataTypes = new int[measureCount];
+    measureDataTypes = new DataType[measureCount];
     for (int i = 0; i < measureCount; i++) {
-      measureDataTypes[i] = storageColumns[dimensionCount + i].getDataType().getId();
+      measureDataTypes[i] = storageColumns[dimensionCount + i].getDataType();
     }
 
     // decode data
@@ -518,7 +516,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
       }
     }
     // measure
-    int dataType;
+    DataType dataType;
     for (int msrCount = 0; msrCount < measureCount; msrCount++, colCount++) {
       if (nullBitSet.get(colCount)) {
         if (isFilterRequired[colCount]) {
@@ -529,7 +527,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
         }
       } else {
         dataType = measureDataTypes[msrCount];
-        if (dataType == DataTypes.BOOLEAN_TYPE_ID) {
+        if (dataType == DataTypes.BOOLEAN) {
           if (isRequired[colCount]) {
             boolean v = input.readBoolean();
             if (isFilterRequired[colCount]) {
@@ -541,7 +539,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
           } else {
             input.skipBytes(1);
           }
-        } else if (dataType == DataTypes.SHORT_TYPE_ID) {
+        } else if (dataType == DataTypes.SHORT) {
           if (isRequired[colCount]) {
             short v = input.readShort();
             if (isFilterRequired[colCount]) {
@@ -553,7 +551,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
           } else {
             input.skipBytes(2);
           }
-        } else if (dataType == DataTypes.INT_TYPE_ID) {
+        } else if (dataType == DataTypes.INT) {
           if (isRequired[colCount]) {
             int v = input.readInt();
             if (isFilterRequired[colCount]) {
@@ -565,7 +563,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
           } else {
             input.skipBytes(4);
           }
-        } else if (dataType == DataTypes.LONG_TYPE_ID) {
+        } else if (dataType == DataTypes.LONG) {
           if (isRequired[colCount]) {
             long v = input.readLong();
             if (isFilterRequired[colCount]) {
@@ -577,7 +575,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
           } else {
             input.skipBytes(8);
           }
-        } else if (dataType == DataTypes.DOUBLE_TYPE_ID) {
+        } else if (dataType == DataTypes.DOUBLE) {
           if (isRequired[colCount]) {
             double v = input.readDouble();
             if (isFilterRequired[colCount]) {
@@ -589,7 +587,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
           } else {
             input.skipBytes(8);
           }
-        } else if (dataType == DataTypes.DECIMAL_TYPE_ID) {
+        } else if (DataTypes.isDecimal(dataType)) {
           int len = input.readShort();
           if (isRequired[colCount]) {
             BigDecimal v = DataTypeUtil.byteToBigDecimal(input.readBytes(len));
@@ -611,7 +609,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     for (int i = 0; i < projection.length; i++) {
       Object value = outputValues[i];
       ColumnVector col = columnarBatch.column(i);
-      DataType t = col.dataType();
+      org.apache.spark.sql.types.DataType t = col.dataType();
       if (null == value) {
         col.putNull(rowId);
       } else {
@@ -632,7 +630,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
         } else if (t == org.apache.spark.sql.types.DataTypes.StringType) {
           UTF8String v = (UTF8String) value;
           col.putByteArray(rowId, v.getBytes());
-        } else if (t instanceof DecimalType) {
+        } else if (t instanceof org.apache.spark.sql.types.DecimalType) {
           DecimalType dt = (DecimalType)t;
           Decimal d = (Decimal) value;
           if (dt.precision() <= Decimal.MAX_INT_DIGITS()) {
@@ -648,9 +646,9 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
           CalendarInterval c = (CalendarInterval) value;
           col.getChildColumn(0).putInt(rowId, c.months);
           col.getChildColumn(1).putLong(rowId, c.microseconds);
-        } else if (t instanceof DateType) {
+        } else if (t instanceof org.apache.spark.sql.types.DateType) {
           col.putInt(rowId, (int) value);
-        } else if (t instanceof TimestampType) {
+        } else if (t instanceof org.apache.spark.sql.types.TimestampType) {
           col.putLong(rowId, (long) value);
         }
       }

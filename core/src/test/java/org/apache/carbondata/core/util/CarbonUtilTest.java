@@ -515,7 +515,7 @@ public class CarbonUtilTest {
   }
 
   @Test public void testForHasComplexDataTypes() {
-    assertTrue(DataTypes.ARRAY.isComplexType());
+    assertTrue(DataTypes.createDefaultArrayType().isComplexType());
     assertTrue(!DataTypes.DATE.isComplexType());
   }
 
@@ -581,7 +581,7 @@ public class CarbonUtilTest {
     column1.setDimension(new CarbonDimension(column1Schema, 1, 1, 1, 1));
 
     column2Schema.setColumnName("Column2");
-    column2Schema.setDataType(DataTypes.ARRAY);
+    column2Schema.setDataType(DataTypes.createDefaultArrayType());
     column2.setDimension(new CarbonDimension(column2Schema, 1, 1, 1, 1));
 
     QueryDimension[] queryDimensions = { column1, column2 };
