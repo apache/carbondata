@@ -59,10 +59,10 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
     GenericQueryType[] queryTypes = new GenericQueryType[carbonColumns.length];
     for (int i = 0; i < carbonColumns.length; i++) {
       if (carbonColumns[i].isComplex()) {
-        if (carbonColumns[i].getDataType() == DataTypes.ARRAY) {
+        if (DataTypes.isArrayType(carbonColumns[i].getDataType())) {
           queryTypes[i] = new ArrayQueryType(carbonColumns[i].getColName(),
               carbonColumns[i].getColName(), i);
-        } else if (carbonColumns[i].getDataType() == DataTypes.STRUCT) {
+        } else if (DataTypes.isStructType(carbonColumns[i].getDataType())) {
           queryTypes[i] = new StructQueryType(carbonColumns[i].getColName(),
               carbonColumns[i].getColName(), i);
         } else {
@@ -84,11 +84,11 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
       CarbonDimension child = dimension.getListOfChildDimensions().get(i);
       DataType dataType = child.getDataType();
       GenericQueryType queryType = null;
-      if (dataType == DataTypes.ARRAY) {
+      if (DataTypes.isArrayType(dataType)) {
         queryType =
             new ArrayQueryType(child.getColName(), dimension.getColName(), ++parentBlockIndex);
 
-      } else if (dataType == DataTypes.STRUCT) {
+      } else if (DataTypes.isStructType(dataType)) {
         queryType =
             new StructQueryType(child.getColName(), dimension.getColName(), ++parentBlockIndex);
         parentQueryType.addChildren(queryType);

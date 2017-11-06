@@ -54,7 +54,7 @@ public final class CarbonParserFactory {
   private static GenericParser createParser(CarbonColumn carbonColumn, String[] complexDelimiters,
       String nullFormat, int depth) {
     DataType dataType = carbonColumn.getDataType();
-    if (dataType == DataTypes.ARRAY) {
+    if (DataTypes.isArrayType(dataType)) {
       List<CarbonDimension> listOfChildDimensions =
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create array parser with complex delimiter
@@ -63,7 +63,7 @@ public final class CarbonParserFactory {
         arrayParser.addChildren(createParser(dimension, complexDelimiters, nullFormat, depth + 1));
       }
       return arrayParser;
-    } else if (dataType == DataTypes.STRUCT) {
+    } else if (DataTypes.isStructType(dataType)) {
       List<CarbonDimension> dimensions =
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create struct parser with complex delimiter
@@ -72,7 +72,7 @@ public final class CarbonParserFactory {
         parser.addChildren(createParser(dimension, complexDelimiters, nullFormat, depth + 1));
       }
       return parser;
-    } else if (dataType == DataTypes.MAP) {
+    } else if (DataTypes.isMapType(dataType)) {
       throw new UnsupportedOperationException("Complex type Map is not supported yet");
     } else {
       return new PrimitiveParserImpl();

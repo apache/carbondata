@@ -17,8 +17,9 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class FloatType extends DataType {
-  public static final DataType FLOAT = new FloatType(DataTypes.FLOAT_TYPE_ID, 4, "FLOAT", 4);
+class FloatType extends DataType {
+
+  static final DataType FLOAT = new FloatType(DataTypes.FLOAT_TYPE_ID, 4, "FLOAT", 4);
 
   private FloatType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);

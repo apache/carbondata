@@ -381,9 +381,9 @@ public abstract class AbstractDataFileFooterConverter {
       case TIMESTAMP:
         return DataTypes.TIMESTAMP;
       case ARRAY:
-        return DataTypes.ARRAY;
+        return DataTypes.createDefaultArrayType();
       case STRUCT:
-        return DataTypes.STRUCT;
+        return DataTypes.createDefaultStructType();
       default:
         return DataTypes.STRING;
     }

@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class ByteType extends DataType {
+class ByteType extends DataType {
 
-  public static final DataType BYTE = new ByteType(DataTypes.BYTE_TYPE_ID, 12, "BYTE", 1);
+  static final DataType BYTE = new ByteType(DataTypes.BYTE_TYPE_ID, 12, "BYTE", 1);
 
   private ByteType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);

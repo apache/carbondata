@@ -30,6 +30,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
@@ -83,7 +84,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   private boolean[] isNoDictionaryDimensionColumn;
   private int dimensionWithComplexCount;
   private int measureCount;
-  private int[] measureDataTypes;
+  private DataType[] measureDataTypes;
   private StreamBlockletWriter output = null;
 
   // data write
@@ -129,10 +130,10 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     dimensionWithComplexCount = configuration.getDimensionCount();
     measureCount = configuration.getMeasureCount();
     dataFields = configuration.getDataFields();
-    measureDataTypes = new int[measureCount];
+    measureDataTypes = new DataType[measureCount];
     for (int i = 0; i < measureCount; i++) {
       measureDataTypes[i] =
-          dataFields[dimensionWithComplexCount + i].getColumn().getDataType().getId();
+          dataFields[dimensionWithComplexCount + i].getColumn().getDataType();
     }
 
     // initialize parser and converter
@@ -211,22 +212,22 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       }
     }
     // measure
-    int dataType;
+    DataType dataType;
     for (int msrCount = 0; msrCount < measureCount; msrCount++) {
       columnValue = currentRow.getObject(dimCount + msrCount);
       if (null != columnValue) {
         dataType = measureDataTypes[msrCount];
-        if (dataType == DataTypes.BOOLEAN_TYPE_ID) {
+        if (dataType == DataTypes.BOOLEAN) {
           output.writeBoolean((boolean) columnValue);
-        } else if (dataType == DataTypes.SHORT_TYPE_ID) {
+        } else if (dataType == DataTypes.SHORT) {
           output.writeShort((short) columnValue);
-        } else if (dataType == DataTypes.INT_TYPE_ID) {
+        } else if (dataType == DataTypes.INT) {
           output.writeInt((int) columnValue);
-        } else if (dataType == DataTypes.LONG_TYPE_ID) {
+        } else if (dataType == DataTypes.LONG) {
           output.writeLong((long) columnValue);
-        } else if (dataType == DataTypes.DOUBLE_TYPE_ID) {
+        } else if (dataType == DataTypes.DOUBLE) {
           output.writeDouble((double) columnValue);
-        } else if (dataType == DataTypes.DECIMAL_TYPE_ID) {
+        } else if (DataTypes.isDecimal(dataType)) {
           BigDecimal val = (BigDecimal) columnValue;
           byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
           output.writeShort(bigDecimalInBytes.length);

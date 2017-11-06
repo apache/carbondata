@@ -49,17 +49,17 @@ public class DictionaryColumnUniqueIdentifierTest {
     ColumnIdentifier columnIdentifier2 = new ColumnIdentifier("1", properties, DataTypes.INT);
     dictionaryColumnUniqueIdentifier1 =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier1, columnIdentifier,
-            DataTypes.MAP, null);
+            DataTypes.STRING, null);
     dictionaryColumnUniqueIdentifier2 =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2, columnIdentifier2,
-            DataTypes.MAP, null);
+            DataTypes.STRING, null);
     dictionaryColumnUniqueIdentifier3 =
         new DictionaryColumnUniqueIdentifier(carbonTableIdentifier2, columnIdentifier,
-            DataTypes.MAP, null);
+            DataTypes.STRING, null);
   }
 
   @Test public void testToGetDataType() {
-    assertEquals(dictionaryColumnUniqueIdentifier1.getDataType(), DataTypes.MAP);
+    assertEquals(dictionaryColumnUniqueIdentifier1.getDataType(), DataTypes.STRING);
   }
 
   @Test public void testForEqualsWithDifferentObjectsWithDifferentColumnIdentifier() {

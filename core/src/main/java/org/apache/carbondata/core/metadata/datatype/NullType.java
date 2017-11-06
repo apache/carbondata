@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class NullType extends DataType {
+class NullType extends DataType {
 
-  public static final DataType NULL = new NullType(DataTypes.NULL_TYPE_ID, 7, "NULL", 1);
+  static final DataType NULL = new NullType(DataTypes.NULL_TYPE_ID, 7, "NULL", 1);
 
   private NullType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);
