@@ -18,6 +18,7 @@
 package org.apache.spark.util
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.SparkConf
@@ -30,10 +31,13 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock}
+import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
+import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
+import org.apache.carbondata.format.TableInfo
 
 object AlterTableUtil {
 
@@ -317,4 +321,82 @@ object AlterTableUtil {
     }
   }
 
+  /**
+   * This method add/modify the table comments.
+   *
+   * @param tableIdentifier
+   * @param properties
+   * @param propKeys
+   * @param set
+   * @param sparkSession
+   * @param sessionState
+   */
+  def modifyTableComment(tableIdentifier: TableIdentifier, properties: Map[String, String],
+                         propKeys: Seq[String], set: Boolean)
+                        (sparkSession: SparkSession, sessionState: CarbonSessionState): Unit = {
+    val tableName = tableIdentifier.table
+    val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
+    LOGGER.audit(s"Alter table comment request has been received for $dbName.$tableName")
+    val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
+    var locks = List.empty[ICarbonLock]
+    var timeStamp = 0L
+    var newCols = Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]()
+    var carbonTable: CarbonTable = null
+    try {
+      locks = AlterTableUtil
+        .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
+      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      carbonTable = metastore
+        .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
+        .tableMeta.carbonTable
+      // get the latest carbon table
+      // read the latest schema file
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
+        carbonTable.getCarbonTableIdentifier)
+      val thriftTableInfo: TableInfo = metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
+      val schemaConverter = new ThriftWrapperSchemaConverterImpl()
+      val wrapperTableInfo = schemaConverter
+        .fromExternalToWrapperTableInfo(thriftTableInfo,
+          dbName,
+          tableName,
+          carbonTable.getStorePath)
+      val schemaEvolutionEntry = new org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
+      schemaEvolutionEntry.setTimeStamp(timeStamp)
+      val thriftTable = schemaConverter
+        .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
+      val tblPropertiesMap: mutable.Map[String, String] =
+        thriftTable.fact_table.getTableProperties.asScala
+      if (set) {
+        //       This overrides old properties and update the comment parameter of thriftTable
+        //       with the newly added/modified comment since thriftTable also holds comment as its
+        //       direct property.
+
+        properties.foreach { x =>
+          if (x._1.equalsIgnoreCase(CarbonCommonConstants.TABLE_COMMENT)) {
+            tblPropertiesMap.put(x._1, x._2)
+          }
+        }
+      } else {
+        // This removes the comment parameter from thriftTable
+        // since thriftTable also holds comment as its property.
+        propKeys.foreach { x =>
+          if (x.equalsIgnoreCase(CarbonCommonConstants.TABLE_COMMENT)) {
+            tblPropertiesMap.remove(x)
+          }
+        }
+      }
+      updateSchemaInfo(carbonTable,
+        schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
+        thriftTable)(sparkSession, sessionState)
+      LOGGER.info(s"Alter table comment is successful for table $dbName.$tableName")
+      LOGGER.audit(s"Alter table comment is successful for table $dbName.$tableName")
+    } catch {
+      case e: Exception =>
+        LOGGER.error(e, "Alter table comment failed")
+        sys.error(s"Alter table comment operation failed: ${e.getMessage}")
+    } finally {
+      // release lock after command execution completion
+      AlterTableUtil.releaseLocks(locks)
+    }
+  }
 }
