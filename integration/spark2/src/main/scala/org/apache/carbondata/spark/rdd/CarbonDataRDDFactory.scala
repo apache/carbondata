@@ -64,8 +64,7 @@ import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
-import org.apache.carbondata.processing.splits.TableSplit
-import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil, CarbonQueryUtil}
+import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.{DataLoadResultImpl, PartitionFactory, _}
 import org.apache.carbondata.spark.load._
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
@@ -635,117 +634,86 @@ object CarbonDataRDDFactory {
       // Check if any load need to be deleted before loading new data
       DataManagementFunc.deleteLoadsAndUpdateMetadata(carbonLoadModel.getDatabaseName,
         carbonLoadModel.getTableName, storePath, false, carbonTable)
-      // get partition way from configuration
-      // val isTableSplitPartition = CarbonProperties.getInstance().getProperty(
-      // CarbonCommonConstants.TABLE_SPLIT_PARTITION,
-      // CarbonCommonConstants.TABLE_SPLIT_PARTITION_DEFAULT_VALUE).toBoolean
-      val isTableSplitPartition = false
       var blocksGroupBy: Array[(String, Array[BlockDetails])] = null
       var status: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
       var res: Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = null
 
       def loadDataFile(): Unit = {
-        if (isTableSplitPartition) {
-          /*
-         * when data handle by table split partition
-         * 1) get partition files, direct load or not will get the different files path
-         * 2) get files blocks by using SplitUtils
-         * 3) output Array[(partitionID,Array[BlockDetails])] to blocksGroupBy
+        /*
+         * when data load handle by node partition
+         * 1)clone the hadoop configuration,and set the file path to the configuration
+         * 2)use org.apache.hadoop.mapreduce.lib.input.TextInputFormat to get splits,size info
+         * 3)use CarbonLoaderUtil.nodeBlockMapping to get mapping info of node and block,
+         *   for locally writing carbondata files(one file one block) in nodes
+         * 4)use NewCarbonDataLoadRDD to load data and write to carbondata files
          */
-          var splits = Array[TableSplit]()
-          // get all table Splits, this part means files were divide to different partitions
-          splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath)
-          // get all partition blocks from file list
-          blocksGroupBy = splits.map {
-            split =>
-              val pathBuilder = new StringBuilder()
-              for (path <- split.getPartition.getFilesPath.asScala) {
-                pathBuilder.append(path).append(",")
-              }
-              if (pathBuilder.nonEmpty) {
-                pathBuilder.substring(0, pathBuilder.size - 1)
-              }
-              (split.getPartition.getUniqueID, SparkUtil.getSplits(pathBuilder.toString(),
-                sqlContext.sparkContext
-              ))
-          }
-        } else {
-          /*
-           * when data load handle by node partition
-           * 1)clone the hadoop configuration,and set the file path to the configuration
-           * 2)use org.apache.hadoop.mapreduce.lib.input.TextInputFormat to get splits,size info
-           * 3)use CarbonLoaderUtil.nodeBlockMapping to get mapping info of node and block,
-           *   for locally writing carbondata files(one file one block) in nodes
-           * 4)use NewCarbonDataLoadRDD to load data and write to carbondata files
-           */
-          val hadoopConfiguration = new Configuration(sqlContext.sparkContext.hadoopConfiguration)
-          // FileUtils will skip file which is no csv, and return all file path which split by ','
-          val filePaths = carbonLoadModel.getFactFilePath
-          hadoopConfiguration.set(FileInputFormat.INPUT_DIR, filePaths)
-          hadoopConfiguration.set(FileInputFormat.INPUT_DIR_RECURSIVE, "true")
-          hadoopConfiguration.set("io.compression.codecs",
-            """org.apache.hadoop.io.compress.GzipCodec,
-               org.apache.hadoop.io.compress.DefaultCodec,
-               org.apache.hadoop.io.compress.BZip2Codec""".stripMargin)
+        val hadoopConfiguration = new Configuration(sqlContext.sparkContext.hadoopConfiguration)
+        // FileUtils will skip file which is no csv, and return all file path which split by ','
+        val filePaths = carbonLoadModel.getFactFilePath
+        hadoopConfiguration.set(FileInputFormat.INPUT_DIR, filePaths)
+        hadoopConfiguration.set(FileInputFormat.INPUT_DIR_RECURSIVE, "true")
+        hadoopConfiguration.set("io.compression.codecs",
+          """org.apache.hadoop.io.compress.GzipCodec,
+             org.apache.hadoop.io.compress.DefaultCodec,
+             org.apache.hadoop.io.compress.BZip2Codec""".stripMargin)
 
-          CommonUtil.configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
+        CommonUtil.configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
 
-          val inputFormat = new org.apache.hadoop.mapreduce.lib.input.TextInputFormat
-          val jobContext = new Job(hadoopConfiguration)
-          val rawSplits = inputFormat.getSplits(jobContext).toArray
-          val blockList = rawSplits.map { inputSplit =>
-            val fileSplit = inputSplit.asInstanceOf[FileSplit]
-            new TableBlockInfo(fileSplit.getPath.toString,
-              fileSplit.getStart, "1",
-              fileSplit.getLocations, fileSplit.getLength, ColumnarFormatVersion.V1, null
-            ).asInstanceOf[Distributable]
-          }
-          // group blocks to nodes, tasks
-          val startTime = System.currentTimeMillis
-          val activeNodes = DistributionUtil
-              .ensureExecutorsAndGetNodeList(blockList, sqlContext.sparkContext)
-          val nodeBlockMapping =
-            CarbonLoaderUtil
-                .nodeBlockMapping(blockList.toSeq.asJava, -1, activeNodes.toList.asJava).asScala
-                .toSeq
-          val timeElapsed: Long = System.currentTimeMillis - startTime
-          LOGGER.info("Total Time taken in block allocation: " + timeElapsed)
-          LOGGER.info(s"Total no of blocks: ${ blockList.length }, " +
-              s"No.of Nodes: ${nodeBlockMapping.size}")
-          var str = ""
-          nodeBlockMapping.foreach(entry => {
-            val tableBlock = entry._2
-            str = str + "#Node: " + entry._1 + " no.of.blocks: " + tableBlock.size()
-            tableBlock.asScala.foreach(tableBlockInfo =>
-              if (!tableBlockInfo.getLocations.exists(hostentry =>
-                hostentry.equalsIgnoreCase(entry._1)
-              )) {
-                str = str + " , mismatch locations: " + tableBlockInfo.getLocations
-                    .foldLeft("")((a, b) => a + "," + b)
-              }
-            )
-            str = str + "\n"
-          }
-          )
-          LOGGER.info(str)
-          blocksGroupBy = nodeBlockMapping.map(entry => {
-            val blockDetailsList =
-              entry._2.asScala.map(distributable => {
-                val tableBlock = distributable.asInstanceOf[TableBlockInfo]
-                new BlockDetails(new Path(tableBlock.getFilePath),
-                  tableBlock.getBlockOffset, tableBlock.getBlockLength, tableBlock.getLocations
-                )
-              }).toArray
-            (entry._1, blockDetailsList)
-          }
-          ).toArray
+        val inputFormat = new org.apache.hadoop.mapreduce.lib.input.TextInputFormat
+        val jobContext = new Job(hadoopConfiguration)
+        val rawSplits = inputFormat.getSplits(jobContext).toArray
+        val blockList = rawSplits.map { inputSplit =>
+          val fileSplit = inputSplit.asInstanceOf[FileSplit]
+          new TableBlockInfo(fileSplit.getPath.toString,
+            fileSplit.getStart, "1",
+            fileSplit.getLocations, fileSplit.getLength, ColumnarFormatVersion.V1, null
+          ).asInstanceOf[Distributable]
         }
+        // group blocks to nodes, tasks
+        val startTime = System.currentTimeMillis
+        val activeNodes = DistributionUtil
+            .ensureExecutorsAndGetNodeList(blockList, sqlContext.sparkContext)
+        val nodeBlockMapping =
+          CarbonLoaderUtil
+              .nodeBlockMapping(blockList.toSeq.asJava, -1, activeNodes.toList.asJava).asScala
+              .toSeq
+        val timeElapsed: Long = System.currentTimeMillis - startTime
+        LOGGER.info("Total Time taken in block allocation: " + timeElapsed)
+        LOGGER.info(s"Total no of blocks: ${ blockList.length }, " +
+            s"No.of Nodes: ${nodeBlockMapping.size}")
+        var str = ""
+        nodeBlockMapping.foreach(entry => {
+          val tableBlock = entry._2
+          str = str + "#Node: " + entry._1 + " no.of.blocks: " + tableBlock.size()
+          tableBlock.asScala.foreach(tableBlockInfo =>
+            if (!tableBlockInfo.getLocations.exists(hostentry =>
+              hostentry.equalsIgnoreCase(entry._1)
+            )) {
+              str = str + " , mismatch locations: " + tableBlockInfo.getLocations
+                  .foldLeft("")((a, b) => a + "," + b)
+            }
+          )
+          str = str + "\n"
+        }
+        )
+        LOGGER.info(str)
+        blocksGroupBy = nodeBlockMapping.map { entry =>
+          val blockDetailsList =
+            entry._2.asScala.map { distributable =>
+              val tableBlock = distributable.asInstanceOf[TableBlockInfo]
+              new BlockDetails(new Path(tableBlock.getFilePath),
+                tableBlock.getBlockOffset, tableBlock.getBlockLength, tableBlock.getLocations
+              )
+            }.toArray
+          (entry._1, blockDetailsList)
+        }.toArray
 
-        status = new NewCarbonDataLoadRDD(sqlContext.sparkContext,
+        status = new NewCarbonDataLoadRDD(
+          sqlContext.sparkContext,
           new DataLoadResultImpl(),
           carbonLoadModel,
-          blocksGroupBy,
-          isTableSplitPartition).collect()
+          blocksGroupBy
+        ).collect()
       }
 
       def loadDataFrame(): Unit = {
