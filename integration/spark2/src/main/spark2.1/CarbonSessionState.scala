@@ -24,15 +24,17 @@ import org.apache.spark.sql.catalyst.catalog.{FunctionResourceLoader, GlobalTemp
 import org.apache.spark.sql.catalyst.expressions.{PredicateSubquery, ScalarSubquery}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
+import org.apache.spark.sql.catalyst.parser.ParserUtils._
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser.CreateTableContext
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
-import org.apache.spark.sql.execution.SparkOptimizer
+import org.apache.spark.sql.execution.{SparkOptimizer, SparkSqlAstBuilder}
 import org.apache.spark.sql.execution.command.datamap.{DataMapDropTablePostListener, DropDataMapPostListener}
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
-import org.apache.spark.sql.parser.CarbonSparkSqlParser
+import org.apache.spark.sql.parser.{CarbonHelperSqlAstBuilder, CarbonSpark2SqlParser, CarbonSparkSqlParser}
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -88,8 +90,7 @@ class CarbonSessionCatalog(
     var toRefreshRelation = false
     rtnRelation match {
       case SubqueryAlias(_,
-          LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _),
-          _) =>
+      LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _), _) =>
         toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
       case LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
         toRefreshRelation = refreshRelationFromCache(name, alias, carbonDatasourceHadoopRelation)
@@ -151,7 +152,7 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
       override val extendedResolutionRules =
         catalog.ParquetConversions ::
         catalog.OrcConversions ::
-        CarbonPreInsertionCasts ::
+        CarbonPreInsertionCasts(sparkSession) ::
         CarbonPreAggregateQueryRules(sparkSession) ::
         CarbonIUDAnalysisRule(sparkSession) ::
         AnalyzeCreateTable(sparkSession) ::
@@ -213,5 +214,28 @@ class CarbonOptimizer(
         }
     }
     super.execute(transFormedPlan)
+  }
+}
+
+class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser) extends
+  SparkSqlAstBuilder(conf) {
+
+  val helper = new CarbonHelperSqlAstBuilder(conf, parser)
+
+  override def visitCreateTable(ctx: CreateTableContext): LogicalPlan = {
+    val fileStorage = helper.getFileStorage(ctx.createFileFormat)
+
+    if (fileStorage.equalsIgnoreCase("'carbondata'") ||
+        fileStorage.equalsIgnoreCase("'org.apache.carbondata.format'")) {
+      helper.createCarbonTable(ctx.createTableHeader,
+          ctx.skewSpec,
+          ctx.bucketSpec,
+          ctx.partitionColumns,
+          ctx.columns,
+          ctx.tablePropertyList,
+          Option(ctx.STRING()).map(string))
+    } else {
+      super.visitCreateTable(ctx)
+    }
   }
 }

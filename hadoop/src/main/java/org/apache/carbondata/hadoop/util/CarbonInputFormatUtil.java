@@ -18,7 +18,9 @@
 package org.apache.carbondata.hadoop.util;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.List;
+import java.util.Locale;
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -39,8 +41,8 @@ import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.JobID;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
-
 
 /**
  * Utility class
@@ -151,5 +153,14 @@ public class CarbonInputFormatUtil {
     } catch (Exception e) {
       throw new RuntimeException("Error while resolving filter expression", e);
     }
+  }
+
+  public static String createJobTrackerID(java.util.Date date) {
+    return new SimpleDateFormat("yyyyMMddHHmmss", Locale.US).format(date);
+  }
+
+  public static JobID getJobId(java.util.Date date, int batch) {
+    String jobtrackerID = createJobTrackerID(date);
+    return new JobID(jobtrackerID, batch);
   }
 }

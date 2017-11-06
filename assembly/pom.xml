@@ -140,6 +140,16 @@
       </dependencies>
     </profile>
     <profile>
+      <id>spark-2.2</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.carbondata</groupId>
+          <artifactId>carbondata-spark2</artifactId>
+          <version>${project.version}</version>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
       <id>include-all</id>
       <properties>
         <hadoop.deps.scope>compile</hadoop.deps.scope>

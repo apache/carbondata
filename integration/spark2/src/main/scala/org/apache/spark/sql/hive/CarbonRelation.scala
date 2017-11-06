@@ -171,7 +171,13 @@ case class CarbonRelation(
   }
 
   // TODO: Use data from the footers.
-  override lazy val statistics = Statistics(sizeInBytes = this.sizeInBytes)
+  // TODO For 2.1
+  //  override lazy val statistics = Statistics(sizeInBytes = this.sizeInBytes)
+  // Todo for 2.2
+  //  override def computeStats(conf: SQLConf): Statistics = Statistics(sizeInBytes =
+  //  this.sizeInBytes)
+
+  // override lazy val statistics = Statistics(sizeInBytes = this.sizeInBytes)
 
   override def equals(other: Any): Boolean = {
     other match {

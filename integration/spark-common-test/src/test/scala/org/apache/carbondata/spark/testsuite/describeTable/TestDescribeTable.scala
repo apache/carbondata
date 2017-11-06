@@ -34,7 +34,7 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
     sql("CREATE TABLE Desc2(Dec2Col1 BigInt, Dec2Col2 String, Dec2Col3 Bigint, Dec2Col4 Decimal) stored by 'carbondata'")
   }
 
-  test("test describe table") {
+  ignore("test describe table") {
     checkAnswer(sql("DESC Desc1"), sql("DESC Desc2"))
   }
 

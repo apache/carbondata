@@ -27,10 +27,9 @@ import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.execution.command.datamap.{DataMapDropTablePostListener, DropDataMapPostListener}
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.streaming.CarbonStreamingQueryListener
-import org.apache.spark.sql.hive.CarbonSessionState
 import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
 import org.apache.spark.sql.internal.{SessionState, SharedState}
-import org.apache.spark.util.Utils
+import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
@@ -50,14 +49,15 @@ class CarbonSession(@transient val sc: SparkContext,
   }
 
   @transient
-  override lazy val sessionState: SessionState = new CarbonSessionState(this)
+  override lazy val sessionState: SessionState =
+    CarbonReflectionUtils.getSessionState(sparkContext, this).asInstanceOf[SessionState]
 
   /**
    * State shared across sessions, including the `SparkContext`, cached data, listener,
    * and a catalog that interacts with external systems.
    */
   @transient
- override private[sql] lazy val sharedState: SharedState = {
+ override lazy val sharedState: SharedState = {
     existingSharedState.getOrElse(new SharedState(sparkContext))
   }
 

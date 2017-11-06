@@ -26,12 +26,14 @@ import org.apache.spark.sql.execution.command.management.{AlterTableCompactionCo
 import org.apache.spark.sql.execution.command.partition.ShowCarbonPartitionsCommand
 import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
+import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
 
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
  * Carbon strategies for ddl commands
  */
+
 class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
 
   def apply(plan: LogicalPlan): Seq[SparkPlan] = {
@@ -73,7 +75,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             plan.output)) :: Nil
       case InsertIntoCarbonTable(relation: CarbonDatasourceHadoopRelation,
       _, child: LogicalPlan, overwrite, _) =>
-        ExecutedCommandExec(LoadTableByInsertCommand(relation, child, overwrite.enabled)) :: Nil
+        ExecutedCommandExec(LoadTableByInsertCommand(relation, child, overwrite)) :: Nil
       case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
         ExecutedCommandExec(createDb) :: Nil
       case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>
@@ -122,11 +124,11 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         } else {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
-      case desc@DescribeTableCommand(identifier, partitionSpec, isExtended, isFormatted)
+      case desc@DescribeTableCommand(identifier, partitionSpec, isExtended)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
-          .tableExists(identifier)(sparkSession) && isFormatted =>
+          .tableExists(identifier)(sparkSession) =>
         val resolvedTable =
-          sparkSession.sessionState.executePlan(UnresolvedRelation(identifier, None)).analyzed
+          sparkSession.sessionState.executePlan(UnresolvedRelation(identifier)).analyzed
         val resultPlan = sparkSession.sessionState.executePlan(resolvedTable).executedPlan
         ExecutedCommandExec(
           CarbonDescribeFormattedCommand(
@@ -152,6 +154,12 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           CarbonSource.updateCatalogTableWithCarbonSchema(tableDesc, sparkSession)
         val cmd =
           CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists = mode == SaveMode.Ignore)
+        ExecutedCommandExec(cmd) :: Nil
+      case CreateDataSourceTableCommand(table, ignoreIfExists)
+        if table.provider.get != DDLUtils.HIVE_PROVIDER
+           && table.provider.get.equals("org.apache.spark.sql.CarbonSource") =>
+        val updatedCatalog = CarbonSource.updateCatalogTableWithCarbonSchema(table, sparkSession)
+        val cmd = CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists)
         ExecutedCommandExec(cmd) :: Nil
       case AlterTableSetPropertiesCommand(tableName, properties, isView)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore

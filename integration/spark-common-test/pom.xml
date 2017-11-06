@@ -342,6 +342,17 @@
       </dependencies>
     </profile>
     <profile>
+      <id>spark-2.2</id>
+      <dependencies>
+        <dependency>
+          <groupId>org.apache.carbondata</groupId>
+          <artifactId>carbondata-spark2</artifactId>
+          <version>${project.version}</version>
+          <scope>test</scope>
+        </dependency>
+      </dependencies>
+    </profile>
+    <profile>
       <id>sdvtest</id>
       <properties>
         <maven.test.skip>true</maven.test.skip>
