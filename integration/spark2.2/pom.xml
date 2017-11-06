@@ -26,12 +26,11 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <artifactId>carbondata-spark-common-cluster-test</artifactId>
-  <name>Apache CarbonData :: Spark Common Cluster Test</name>
+  <artifactId>carbondata-spark2.2</artifactId>
+  <name>Apache CarbonData :: Spark2.2</name>
 
   <properties>
     <dev.path>${basedir}/../../dev</dev.path>
-    <jacoco.skip>true</jacoco.skip>
   </properties>
 
   <dependencies>
@@ -39,12 +38,14 @@
       <groupId>org.apache.carbondata</groupId>
       <artifactId>carbondata-spark-common</artifactId>
       <version>${project.version}</version>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
-      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.spark</groupId>
+      <artifactId>spark-repl_${scala.binary.version}</artifactId>
     </dependency>
     <dependency>
       <groupId>junit</groupId>
@@ -113,7 +114,7 @@
         <!-- Note config is repeated in scalatest config -->
         <configuration>
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
-          <argLine>-Xmx6g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m</argLine>
+          <argLine>-Xmx3g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m</argLine>
           <systemProperties>
             <java.awt.headless>true</java.awt.headless>
           </systemProperties>
@@ -126,19 +127,16 @@
         <version>1.0</version>
         <!-- Note config is repeated in surefire config -->
         <configuration>
-          <suites>${suite.name}</suites>
           <reportsDirectory>${project.build.directory}/surefire-reports</reportsDirectory>
           <junitxml>.</junitxml>
           <filereports>CarbonTestSuite.txt</filereports>
-          <argLine> ${argLine} -ea -Xmx5g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
+          <argLine> ${argLine} -ea -Xmx3g -XX:MaxPermSize=512m -XX:ReservedCodeCacheSize=512m
           </argLine>
           <stderr />
           <environmentVariables>
           </environmentVariables>
           <systemProperties>
             <java.awt.headless>true</java.awt.headless>
-            <spark.master.url>${spark.master.url}</spark.master.url>
-            <hdfs.url>${hdfs.url}</hdfs.url>
           </systemProperties>
         </configuration>
         <executions>
@@ -154,29 +152,19 @@
   </build>
   <profiles>
     <profile>
-      <id>spark-2.1</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.carbondata</groupId>
-          <artifactId>carbondata-spark2</artifactId>
-          <version>${project.version}</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
+      <id>build-all</id>
+      <properties>
+        <spark.version>2.2.0</spark.version>
+        <scala.binary.version>2.11</scala.binary.version>
+        <scala.version>2.11.8</scala.version>
+      </properties>
     </profile>
     <profile>
-      <id>spark-2.2</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.carbondata</groupId>
-          <artifactId>carbondata-spark2</artifactId>
-          <version>${project.version}</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
+      <id>sdvtest</id>
+      <properties>
+        <maven.test.skip>true</maven.test.skip>
+      </properties>
     </profile>
   </profiles>
+
 </project>

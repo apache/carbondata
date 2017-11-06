@@ -126,7 +126,7 @@
   </build>
   <profiles>
     <profile>
-      <id>spark-2.1</id>
+      <id>spark-2.2</id>
       <!-- default -->
       <activation>
         <activeByDefault>true</activeByDefault>
