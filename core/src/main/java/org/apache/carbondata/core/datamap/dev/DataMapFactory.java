@@ -21,13 +21,14 @@ import java.util.List;
 
 import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapMeta;
+import org.apache.carbondata.core.datamap.DataMapType;
 import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
 /**
  * Interface for datamap factory, it is responsible for creating the datamap.
  */
-public interface DataMapFactory {
+public interface DataMapFactory<T extends DataMap> {
 
   /**
    * Initialization of Datamap factory with the identifier and datamap name
@@ -42,12 +43,12 @@ public interface DataMapFactory {
   /**
    * Get the datamap for segmentid
    */
-  List<DataMap> getDataMaps(String segmentId) throws IOException;
+  List<T> getDataMaps(String segmentId) throws IOException;
 
   /**
    * Get datamap for distributable object.
    */
-  DataMap getDataMap(DataMapDistributable distributable);
+  T getDataMap(DataMapDistributable distributable);
 
   /**
    * Get all distributable objects of a segmentid
@@ -75,4 +76,9 @@ public interface DataMapFactory {
    * Return metadata of this datamap
    */
   DataMapMeta getMeta();
+
+  /**
+   *  Type of datamap whether it is FG or CG
+   */
+  DataMapType getDataMapType();
 }
