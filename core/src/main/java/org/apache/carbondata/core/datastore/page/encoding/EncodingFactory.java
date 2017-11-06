@@ -155,11 +155,11 @@ public abstract class EncodingFactory {
                 compressor);
         return codec.createDecoder(meta);
       } else if (codec instanceof AdaptiveDeltaFloatingCodec) {
-          AdaptiveDeltaFloatingCodec adaptiveCodec = (AdaptiveDeltaFloatingCodec) codec;
-          ColumnPageEncoderMeta meta = new ColumnPageEncoderMeta(spec,
-              adaptiveCodec.getTargetDataType(), stats, compressor);
-          return codec.createDecoder(meta);
-        } else {
+        AdaptiveDeltaFloatingCodec adaptiveCodec = (AdaptiveDeltaFloatingCodec) codec;
+        ColumnPageEncoderMeta meta =
+            new ColumnPageEncoderMeta(spec, adaptiveCodec.getTargetDataType(), stats, compressor);
+        return codec.createDecoder(meta);
+      } else {
         throw new RuntimeException("internal error");
       }
     } else if (DataTypes.isDecimal(dataType) || dataType == DataTypes.BYTE_ARRAY) {

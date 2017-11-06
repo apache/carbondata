@@ -34,6 +34,7 @@ import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.format.Encoding;
 
 /**
@@ -137,44 +138,33 @@ public class AdaptiveDeltaFloatingCodec extends AdaptiveCodec {
 
     @Override
     public void encode(int rowId, float value) {
-      switch (targetDataType) {
-        case BYTE:
-          encodedPage.putByte(rowId, (byte) (max - (value * factor)));
-          break;
-        case SHORT:
-          encodedPage.putShort(rowId, (short) (max - (value * factor)));
-          break;
-        case SHORT_INT:
-          encodedPage.putShortInt(rowId, (int) (max - (value * factor)));
-          break;
-        case INT:
-          encodedPage.putInt(rowId, (int) (max - (value * factor)));
-          break;
-        default:
-          throw new RuntimeException("internal error: " + debugInfo());
+      if (targetDataType.equals(DataTypes.BYTE)) {
+        encodedPage.putByte(rowId, (byte) (max - (value * factor)));
+      } else if (targetDataType.equals(DataTypes.SHORT)) {
+        encodedPage.putShort(rowId, (short) (max - (value * factor)));
+      } else if (targetDataType.equals(DataTypes.SHORT_INT)) {
+        encodedPage.putShortInt(rowId, (int) (max - (value * factor)));
+      } else if (targetDataType.equals(DataTypes.INT)) {
+        encodedPage.putInt(rowId, (int) (max - (value * factor)));
+      } else {
+        throw new RuntimeException("internal error: " + debugInfo());
       }
     }
 
     @Override
     public void encode(int rowId, double value) {
-      switch (targetDataType) {
-        case BYTE:
-          encodedPage.putByte(rowId, (byte) (max - (value * factor)));
-          break;
-        case SHORT:
-          encodedPage.putShort(rowId, (short) (max - (value * factor)));
-          break;
-        case SHORT_INT:
-          encodedPage.putShortInt(rowId, (int) (max - (value * factor)));
-          break;
-        case INT:
-          encodedPage.putInt(rowId, (int) (max - (value * factor)));
-          break;
-        case DOUBLE:
-          encodedPage.putDouble(rowId, value);
-          break;
-        default:
-          throw new RuntimeException("internal error: " + debugInfo());
+      if (targetDataType.equals(DataTypes.BYTE)) {
+        encodedPage.putByte(rowId, (byte) (max - (value * factor)));
+      } else if (targetDataType.equals(DataTypes.SHORT)) {
+        encodedPage.putShort(rowId, (short) (max - (value * factor)));
+      } else if (targetDataType.equals(DataTypes.SHORT_INT)) {
+        encodedPage.putShortInt(rowId, (int) (max - (value * factor)));
+      } else if (targetDataType.equals(DataTypes.INT)) {
+        encodedPage.putInt(rowId, (int) (max - (value * factor)));
+      } else if (targetDataType.equals(DataTypes.DOUBLE)) {
+        encodedPage.putDouble(rowId, value);
+      } else {
+        throw new RuntimeException("internal error: " + debugInfo());
       }
     }
 
