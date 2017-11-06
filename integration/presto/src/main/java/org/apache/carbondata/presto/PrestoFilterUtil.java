@@ -79,7 +79,10 @@ public class PrestoFilterUtil {
     else if (colType == DateType.DATE) return DataTypes.DATE;
     else if (colType == TimestampType.TIMESTAMP) return DataTypes.TIMESTAMP;
     else if (colType.equals(DecimalType.createDecimalType(carbondataColumnHandle.getPrecision(),
-        carbondataColumnHandle.getScale()))) return DataTypes.DECIMAL;
+        carbondataColumnHandle.getScale())))
+      return org.apache.carbondata.core.metadata.datatype.DataTypes.createDecimalType(
+          carbondataColumnHandle.getPrecision(),
+          carbondataColumnHandle.getScale());
     else return DataTypes.STRING;
   }
 

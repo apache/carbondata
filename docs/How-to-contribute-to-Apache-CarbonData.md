@@ -152,9 +152,13 @@ $ git rebase -i origin/master
 Navigate to the CarbonData GitHub mirror to create a pull request. The title of the pull request
 should be strictly in the following format:
 ```
-[CARBONDATA-issue number>] Title of the pull request
+[CARBONDATA-JiraTicketNumer][FeatureName] Description of pull request    
 ```
-Please include a descriptive pull request message to help make the reviewer’s job easier.
+Please include a descriptive pull request message to help make the reviewer’s job easier:
+```
+ - The root cause/problem statement
+ - What is the implemented solution
+ ```
 
 If you know a good committer to review your pull request, please make a comment like the following.
 If not, don’t worry, a committer will pick it up.

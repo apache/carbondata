@@ -308,7 +308,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         return new BigDecimal((int) value);
       } else if (dataType == DataTypes.LONG) {
         return new BigDecimal((long) value);
-      } else if (dataType == DataTypes.DOUBLE || dataType == DataTypes.DECIMAL) {
+      } else if (dataType == DataTypes.DOUBLE || DataTypes.isDecimal(dataType)) {
         return new BigDecimal(value.toString());
       } else if (dataType == DataTypes.DATE) {
         if (value instanceof java.sql.Date) {
@@ -494,7 +494,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         result = this.getLong().equals(objToCompare.getLong());
       } else if (dataType == DataTypes.DOUBLE) {
         result = this.getDouble().equals(objToCompare.getDouble());
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         result = this.getDecimal().equals(objToCompare.getDecimal());
       }
     } catch (FilterIllegalMemberException ex) {
@@ -518,7 +518,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         Double d1 = this.getDouble();
         Double d2 = o.getDouble();
         return d1.compareTo(d2);
-      } else if (type == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(type)) {
         java.math.BigDecimal val1 = this.getDecimal();
         java.math.BigDecimal val2 = o.getDecimal();
         return val1.compareTo(val2);

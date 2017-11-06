@@ -359,8 +359,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         msrType = DataTypes.INT;
       } else if (dataType == DataTypes.LONG) {
         msrType = DataTypes.LONG;
-      } else if (dataType == DataTypes.DECIMAL) {
-        msrType = DataTypes.DECIMAL;
+      } else if (DataTypes.isDecimal(dataType)) {
+        msrType = DataTypes.createDefaultDecimalType();
       } else {
         msrType = DataTypes.DOUBLE;
       }
@@ -386,7 +386,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         msrValue = (int) columnPage.getLong(index);
       } else if (msrType == DataTypes.LONG) {
         msrValue = columnPage.getLong(index);
-      } else if (msrType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(msrType)) {
         BigDecimal bigDecimalValue = columnPage.getDecimal(index);
         if (null != bigDecimalValue
             && msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale()

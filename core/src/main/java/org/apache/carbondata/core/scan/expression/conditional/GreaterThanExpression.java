@@ -66,7 +66,7 @@ public class GreaterThanExpression extends BinaryConditionalExpression {
       result = exprLeftRes.getTime() > (exprRightRes.getTime());
     } else if (dataType == DataTypes.LONG) {
       result = exprLeftRes.getLong() > (exprRightRes.getLong());
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       result = exprLeftRes.getDecimal().compareTo(exprRightRes.getDecimal()) > 0;
     } else {
       throw new FilterUnsupportedException(

@@ -78,7 +78,8 @@ class SDVSuites1 extends Suites with BeforeAndAfterAll {
                    new PartitionTestCase ::
                    new QueriesBasicTestCase ::
                    new BatchSortLoad3TestCase ::
-                   new GlobalSortTestCase :: Nil
+                   new GlobalSortTestCase ::
+                   new MergeIndexTestCase :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 

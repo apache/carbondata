@@ -427,14 +427,14 @@
       <!-- This profile only should be used for release prepare to cover all the modules -->
       <id>build-all</id>
       <properties>
-        <spark.version>2.1.0</spark.version>
+        <spark.version>2.2.0</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
         <maven.test.skip>true</maven.test.skip>
       </properties>
       <modules>
         <module>format</module>
-        <module>integration/spark2</module>
+        <module>integration/spark2.2</module>
         <module>examples/spark2</module>
         <module>integration/hive</module>
         <module>integration/presto</module>
@@ -466,17 +466,17 @@
       </properties>
     </profile>
     <profile>
-      <id>spark-2.1</id>
+      <id>spark-2.2</id>
       <activation>
         <activeByDefault>true</activeByDefault>
       </activation>
       <properties>
-        <spark.version>2.1.0</spark.version>
+        <spark.version>2.2.0</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
         <scala.version>2.11.8</scala.version>
       </properties>
       <modules>
-        <module>integration/spark2</module>
+        <module>integration/spark2.2</module>
         <module>integration/hive</module>
         <module>integration/presto</module>
         <module>examples/spark2</module>
@@ -499,8 +499,8 @@
                 <sourceDirectory>${basedir}/core/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/processing/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/hadoop/src/main/java</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/scala</sourceDirectory>
-                <sourceDirectory>${basedir}/integration/spark2/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark2.2/src/main/scala</sourceDirectory>
+                <sourceDirectory>${basedir}/integration/spark2.2/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark-common/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark-common/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/spark-common-test/src/main/scala</sourceDirectory>

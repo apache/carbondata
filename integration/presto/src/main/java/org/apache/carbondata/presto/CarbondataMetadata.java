@@ -232,7 +232,7 @@ public class CarbondataMetadata implements ConnectorMetadata {
       return BigintType.BIGINT;
     } else if (colType == DataTypes.FLOAT || colType == DataTypes.DOUBLE) {
       return DoubleType.DOUBLE;
-    } else if (colType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(colType)) {
       if (columnSchema.getPrecision() > 0) {
         return DecimalType.createDecimalType(columnSchema.getPrecision(), columnSchema.getScale());
       } else {

@@ -19,6 +19,7 @@ package org.apache.carbondata.hadoop.api;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -576,7 +577,10 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         // for partition table, the task id of carbaondata file name is the partition id.
         // if this partition is not required, here will skip it.
         if (matchedPartitions == null || matchedPartitions.get(partitionIndex)) {
-          resultFilterredBlocks.add(convertToCarbonInputSplit(blocklet));
+          CarbonInputSplit inputSplit = convertToCarbonInputSplit(blocklet);
+          if (inputSplit != null) {
+            resultFilterredBlocks.add(inputSplit);
+          }
         }
       }
     }
@@ -588,7 +592,13 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
 
   private CarbonInputSplit convertToCarbonInputSplit(ExtendedBlocklet blocklet)
       throws IOException {
-    blocklet.updateLocations();
+    try {
+      blocklet.updateLocations();
+    } catch (FileNotFoundException e) {
+      // In case of clean files there is a chance of carbondata file is deleted but index file
+      // exist inside merged file. So just return null.
+      return null;
+    }
     org.apache.carbondata.hadoop.CarbonInputSplit split =
         org.apache.carbondata.hadoop.CarbonInputSplit.from(blocklet.getSegmentId(),
             new FileSplit(new Path(blocklet.getPath()), 0, blocklet.getLength(),

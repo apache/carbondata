@@ -53,20 +53,18 @@ public class UnsafeDecimalColumnPage extends DecimalColumnPage {
         dataType == DataTypes.LONG) {
       int size = pageSize << dataType.getSizeBits();
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
-      baseAddress = memoryBlock.getBaseObject();
-      baseOffset = memoryBlock.getBaseOffset();
     } else if (dataType == DataTypes.SHORT_INT) {
       int size = pageSize * 3;
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, size);
-      baseAddress = memoryBlock.getBaseObject();
-      baseOffset = memoryBlock.getBaseOffset();
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
-      baseAddress = memoryBlock.getBaseObject();
-      baseOffset = memoryBlock.getBaseOffset();
+    } else if (dataType == DataTypes.BYTE_ARRAY) {
+      memoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, (long) (capacity));
     } else {
       throw new UnsupportedOperationException("invalid data type: " + dataType);
     }
+    baseAddress = memoryBlock.getBaseObject();
+    baseOffset = memoryBlock.getBaseOffset();
   }
 
   @Override

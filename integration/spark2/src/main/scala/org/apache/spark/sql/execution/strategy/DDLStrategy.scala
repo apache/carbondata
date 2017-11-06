@@ -87,7 +87,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
             altertablemodel.dbName))(sparkSession)
         if (isCarbonTable) {
           if (altertablemodel.compactionType.equalsIgnoreCase("minor") ||
-              altertablemodel.compactionType.equalsIgnoreCase("major")) {
+              altertablemodel.compactionType.equalsIgnoreCase("major") ||
+              altertablemodel.compactionType.equalsIgnoreCase("SEGMENT_INDEX_COMPACTION")) {
             ExecutedCommandExec(alterTable) :: Nil
           } else {
             throw new MalformedCarbonCommandException(

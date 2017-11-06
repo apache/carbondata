@@ -61,7 +61,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
       this.max = (long) stats.getMax();
     } else if (srcDataType == DataTypes.DOUBLE) {
       this.max = (long) (double) stats.getMax();
-    } else if (srcDataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(srcDataType)) {
       this.max = ((BigDecimal) stats.getMax()).unscaledValue().longValue();
     } else {
       // this codec is for integer type only
@@ -114,7 +114,7 @@ public class AdaptiveDeltaIntegralCodec extends AdaptiveCodec {
       @Override public ColumnPage decode(byte[] input, int offset, int length)
           throws MemoryException, IOException {
         ColumnPage page = null;
-        if (meta.getSchemaDataType() == DataTypes.DECIMAL) {
+        if (DataTypes.isDecimal(meta.getSchemaDataType())) {
           page = ColumnPage.decompressDecimalPage(meta, input, offset, length);
         } else {
           page = ColumnPage.decompress(meta, input, offset, length);

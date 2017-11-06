@@ -108,7 +108,7 @@ public class LazyColumnPage extends ColumnPage {
       return decimalConverter.getDecimal(converter.decodeLong(columnPage.getShortInt(rowId)));
     } else if (dataType == DataTypes.INT) {
       return decimalConverter.getDecimal(converter.decodeLong(columnPage.getInt(rowId)));
-    } else if (dataType == DataTypes.LONG || dataType == DataTypes.DECIMAL) {
+    } else if (dataType == DataTypes.LONG || DataTypes.isDecimal(dataType)) {
       return columnPage.getDecimal(rowId);
     } else {
       throw new RuntimeException("internal error: " + this.toString());

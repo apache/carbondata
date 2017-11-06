@@ -111,8 +111,8 @@ public abstract class EncodingFactory {
    */
   public ColumnPageDecoder createDecoderLegacy(ValueEncoderMeta metadata) {
     SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
-    TableSpec.ColumnSpec spec = new TableSpec.ColumnSpec("legacy", stats.getDataType(),
-        ColumnType.MEASURE);
+    TableSpec.ColumnSpec spec =
+        TableSpec.ColumnSpec.newInstanceLegacy("legacy", stats.getDataType(), ColumnType.MEASURE);
     String compressor = "snappy";
     DataType dataType = DataType.getDataType(metadata.getType());
     if (dataType == DataTypes.BYTE ||
@@ -155,7 +155,7 @@ public abstract class EncodingFactory {
       } else {
         throw new RuntimeException("internal error");
       }
-    } else if (dataType == DataTypes.DECIMAL || dataType == DataTypes.BYTE_ARRAY) {
+    } else if (DataTypes.isDecimal(dataType) || dataType == DataTypes.BYTE_ARRAY) {
       // no dictionary dimension
       return new DirectCompressCodec(stats.getDataType())
           .createDecoder(new ColumnPageEncoderMeta(spec, stats.getDataType(), stats, compressor));
