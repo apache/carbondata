@@ -92,7 +92,7 @@ object GetDB {
       fixedStorePath: String): String = {
     var databaseLocation =
       sparkSession.sessionState.catalog.asInstanceOf[HiveSessionCatalog].getDatabaseMetadata(dbName)
-        .locationUri
+        .locationUri.toString
     // for default database and db ends with .db
     // check whether the carbon store and hive store is same or different.
     if (dbName.equals("default") || databaseLocation.endsWith(".db")) {
@@ -142,6 +142,7 @@ case class UpdateTable(
     table: UnresolvedRelation,
     columns: List[String],
     selectStmt: String,
+    alias: Option[String] = None,
     filer: String) extends LogicalPlan {
   override def children: Seq[LogicalPlan] = Seq.empty
   override def output: Seq[AttributeReference] = Seq.empty
@@ -149,6 +150,7 @@ case class UpdateTable(
 
 case class DeleteRecords(
     statement: String,
+    alias: Option[String] = None,
     table: UnresolvedRelation) extends LogicalPlan {
   override def children: Seq[LogicalPlan] = Seq.empty
   override def output: Seq[AttributeReference] = Seq.empty
@@ -162,7 +164,7 @@ case class DeleteRecords(
 case class InsertIntoCarbonTable (table: CarbonDatasourceHadoopRelation,
     partition: Map[String, Option[String]],
     child: LogicalPlan,
-    overwrite: OverwriteOptions,
+    overwrite: Boolean,
     ifNotExists: Boolean)
   extends Command {
 

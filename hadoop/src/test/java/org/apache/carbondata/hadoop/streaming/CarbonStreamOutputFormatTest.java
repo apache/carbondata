@@ -27,6 +27,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.hadoop.test.util.StoreCreator;
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import junit.framework.TestCase;
@@ -38,7 +39,6 @@ import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.spark.SparkHadoopWriter;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -51,7 +51,7 @@ public class CarbonStreamOutputFormatTest extends TestCase {
 
   @Override protected void setUp() throws Exception {
     super.setUp();
-    JobID jobId = SparkHadoopWriter.createJobID(new Date(), 0);
+    JobID jobId = CarbonInputFormatUtil.getJobId(new Date(), 0);
     TaskID taskId = new TaskID(jobId, TaskType.MAP, 0);
     taskAttemptId = new TaskAttemptID(taskId, 0);
 

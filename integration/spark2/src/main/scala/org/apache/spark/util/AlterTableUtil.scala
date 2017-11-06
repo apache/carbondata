@@ -23,9 +23,9 @@ import scala.collection.mutable.ListBuffer
 
 import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkConf
-import org.apache.spark.sql.{CarbonEnv, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonSession, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
+import org.apache.spark.sql.hive.{CarbonRelation, HiveExternalCatalog}
 import org.apache.spark.sql.hive.HiveExternalCatalog._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -130,8 +130,7 @@ object AlterTableUtil {
    */
   def updateSchemaInfo(carbonTable: CarbonTable,
       schemaEvolutionEntry: SchemaEvolutionEntry,
-      thriftTable: TableInfo)(sparkSession: SparkSession,
-      sessionState: CarbonSessionState): Unit = {
+      thriftTable: TableInfo)(sparkSession: SparkSession): Unit = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
     CarbonEnv.getInstance(sparkSession).carbonMetastore
@@ -145,8 +144,9 @@ object AlterTableUtil {
     val schema = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tableIdentifier)(sparkSession).schema.json
     val schemaParts = prepareSchemaJsonForAlterTable(sparkSession.sparkContext.getConf, schema)
-    sessionState.metadataHive.runSqlHive(
-      s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES($schemaParts)")
+    val hiveClient = sparkSession.asInstanceOf[CarbonSession].sharedState.externalCatalog
+      .asInstanceOf[HiveExternalCatalog].client
+    hiveClient.runSqlHive(s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES($schemaParts)")
     sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
   }
 
@@ -329,7 +329,7 @@ object AlterTableUtil {
    */
   def modifyTableComment(tableIdentifier: TableIdentifier, properties: Map[String, String],
                          propKeys: Seq[String], set: Boolean)
-                        (sparkSession: SparkSession, sessionState: CarbonSessionState): Unit = {
+                        (sparkSession: SparkSession): Unit = {
     val tableName = tableIdentifier.table
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
     LOGGER.audit(s"Alter table comment request has been received for $dbName.$tableName")
@@ -380,7 +380,7 @@ object AlterTableUtil {
       }
       updateSchemaInfo(carbonTable,
         schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
-        thriftTable)(sparkSession, sessionState)
+        thriftTable)(sparkSession)
       LOGGER.info(s"Alter table comment is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table comment is successful for table $dbName.$tableName")
     } catch {

@@ -20,7 +20,6 @@ package org.apache.spark.sql.execution.command.schema
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionState}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -38,7 +37,7 @@ private[sql] case class AlterTableSetCommand(val tableIdentifier: TableIdentifie
   override def processSchema(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     AlterTableUtil.modifyTableComment(tableIdentifier, properties, Nil,
-      true)(sparkSession, sparkSession.sessionState.asInstanceOf[CarbonSessionState])
+      true)(sparkSession)
     Seq.empty
   }
 }

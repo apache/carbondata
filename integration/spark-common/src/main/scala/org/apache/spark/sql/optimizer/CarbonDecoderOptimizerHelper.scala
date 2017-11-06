@@ -22,8 +22,10 @@ import java.util
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
@@ -84,7 +86,17 @@ class CarbonDecoderProcessor {
         }
         nodeList.add(ArrayCarbonNode(nodeListSeq))
       case e: UnaryNode => process(e.child, nodeList)
-      case i: InsertIntoTable => process(i.child, nodeList)
+      case i: InsertIntoTable =>
+        val version = SparkSession.getActiveSession.get.version
+
+        val child: LogicalPlan = if (version.startsWith("2.1")) {
+          CarbonReflectionUtils.getField("child", i).asInstanceOf[LogicalPlan]
+        } else if (version.startsWith("2.2")) {
+          CarbonReflectionUtils.getField("query", i).asInstanceOf[LogicalPlan]
+        } else {
+          throw new UnsupportedOperationException(s"Spark version $version is not supported")
+        }
+        process(child, nodeList)
       case _ =>
     }
   }

@@ -85,6 +85,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     dropTable("csv_table")
     dropTable("carbon_table")
+    dropTable("carbon_table2")
     createAndLoadInputTable("csv_table", s"$resourcesPath/data_alltypes.csv")
     createAndLoadTestTable("carbon_table", "csv_table")
   }

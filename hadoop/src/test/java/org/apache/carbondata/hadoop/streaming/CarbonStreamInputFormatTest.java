@@ -30,6 +30,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 
 import junit.framework.TestCase;
 import org.apache.hadoop.conf.Configuration;
@@ -41,7 +42,6 @@ import org.apache.hadoop.mapreduce.TaskAttemptID;
 import org.apache.hadoop.mapreduce.TaskID;
 import org.apache.hadoop.mapreduce.TaskType;
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
-import org.apache.spark.SparkHadoopWriter;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -53,6 +53,7 @@ public class CarbonStreamInputFormatTest extends TestCase {
   private AbsoluteTableIdentifier identifier;
   private String storePath;
 
+
   @Override protected void setUp() throws Exception {
     storePath = new File("target/stream_input").getCanonicalPath();
     String dbName = "default";
@@ -60,7 +61,7 @@ public class CarbonStreamInputFormatTest extends TestCase {
     identifier = new AbsoluteTableIdentifier(storePath,
         new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
 
-    JobID jobId = SparkHadoopWriter.createJobID(new Date(), 0);
+    JobID jobId = CarbonInputFormatUtil.getJobId(new Date(), 0);
     TaskID taskId = new TaskID(jobId, TaskType.MAP, 0);
     taskAttemptId = new TaskAttemptID(taskId, 0);
 

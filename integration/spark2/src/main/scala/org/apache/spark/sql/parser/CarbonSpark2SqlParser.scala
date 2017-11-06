@@ -20,10 +20,9 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-import org.apache.spark.sql.{AnalysisException, DeleteRecords, ShowLoadsCommand, UpdateTable}
+import org.apache.spark.sql.{AnalysisException, DeleteRecords, ShowLoadsCommand, SparkSession, UpdateTable}
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
-import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
@@ -31,7 +30,10 @@ import org.apache.spark.sql.execution.command.management.{AlterTableCompactionCo
 import org.apache.spark.sql.execution.command.partition.{AlterTableDropCarbonPartitionCommand, AlterTableSplitCarbonPartitionCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
 import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
+import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonOption
@@ -164,15 +166,27 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
 
   protected lazy val deleteRecords: Parser[LogicalPlan] =
-    (DELETE ~> FROM ~> table) ~ restInput.? <~ opt(";") ^^ {
+    (DELETE ~> FROM ~> aliasTable) ~ restInput.? <~ opt(";") ^^ {
       case table ~ rest =>
-        val tableName = getTableName(table.tableIdentifier)
-        val alias = table.alias.getOrElse("")
-        DeleteRecords("select tupleId from " + tableName + " " + alias + rest.getOrElse(""), table)
+        val tableName = getTableName(table._2)
+        val relation: LogicalPlan = table._3 match {
+          case Some(a) =>
+            DeleteRecords(
+              "select tupleId from " + tableName + " " + table._3.getOrElse("")
+                + rest.getOrElse(""),
+              Some(table._3.get),
+              table._1)
+          case None =>
+            DeleteRecords(
+              "select tupleId from " + tableName + " " + rest.getOrElse(""),
+              None,
+              table._1)
+        }
+        relation
     }
 
   protected lazy val updateTable: Parser[LogicalPlan] =
-    UPDATE ~> table ~
+    UPDATE ~> aliasTable ~
     (SET ~> "(" ~> repsep(element, ",") <~ ")") ~
     ("=" ~> restInput) <~ opt(";") ^^ {
       case tab ~ columns ~ rest =>
@@ -184,31 +198,58 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
             }
             // only list of expression are given, need to convert that list of expressions into
             // select statement on destination table
-            val relation = tab match {
-              case r@UnresolvedRelation(tableIdentifier, alias) =>
-                updateRelation(r, tableIdentifier, alias)
-              case _ => tab
+            val relation : UnresolvedRelation = tab._1 match {
+              case r@CarbonUnresolvedRelation(tableIdentifier) =>
+                tab._3 match {
+                  case Some(a) => (updateRelation(r, tableIdentifier, tab._4, Some(tab._3.get)))
+                  case None => (updateRelation(r, tableIdentifier, tab._4, None))
+                }
+              case _ => tab._1
             }
-            ("select " + sel + " from " + getTableName(relation.tableIdentifier) + " " +
-             relation.alias.get, relation)
+
+            tab._3 match {
+              case Some(a) =>
+                ("select " + sel + " from " + getTableName(tab._2) + " " + tab._3.get, relation)
+              case None =>
+                ("select " + sel + " from " + getTableName(tab._2), relation)
+            }
+
           } else {
-            (sel, updateRelation(tab, tab.tableIdentifier, tab.alias))
+            (sel, updateRelation(tab._1, tab._2, tab._4, Some(tab._3.get)))
           }
-        UpdateTable(relation, columns, selectStmt, where)
+        val rel = tab._3 match {
+          case Some(a) => UpdateTable(relation, columns, selectStmt, Some(tab._3.get), where)
+          case None => UpdateTable(relation,
+            columns,
+            selectStmt,
+            Some(tab._1.tableIdentifier.table),
+            where)
+        }
+        rel
     }
+
+
 
   private def updateRelation(
       r: UnresolvedRelation,
-      tableIdentifier: Seq[String],
+      tableIdent: Seq[String],
+      tableIdentifier: TableIdentifier,
       alias: Option[String]): UnresolvedRelation = {
     alias match {
       case Some(_) => r
       case _ =>
-        val tableAlias = tableIdentifier match {
+        val tableAlias = tableIdent match {
           case Seq(dbName, tableName) => Some(tableName)
           case Seq(tableName) => Some(tableName)
         }
-        UnresolvedRelation(tableIdentifier, tableAlias)
+        // Use Reflection to choose between Spark2.1 and Spark2.2
+        // Move UnresolvedRelation(tableIdentifier, tableAlias) to reflection.
+        val unresolvedrelation =
+        CarbonReflectionUtils.getUnresolvedRelation(
+          tableIdentifier,
+          SparkSession.getActiveSession.get.version,
+          tableAlias)
+        unresolvedrelation
     }
   }
 
@@ -219,7 +260,26 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
   protected lazy val table: Parser[UnresolvedRelation] = {
     rep1sep(attributeName, ".") ~ opt(ident) ^^ {
-      case tableIdent ~ alias => UnresolvedRelation(tableIdent, alias)
+      case tableIdent ~ alias => UnresolvedRelation(tableIdent)
+    }
+  }
+
+  protected lazy val aliasTable: Parser[(UnresolvedRelation, List[String], Option[String],
+    TableIdentifier)] = {
+    rep1sep(attributeName, ".") ~ opt(ident) ^^ {
+      case tableIdent ~ alias =>
+
+        val tableIdentifier: TableIdentifier = toTableIdentifier(tableIdent)
+
+        // Use Reflection to choose between Spark2.1 and Spark2.2
+        // Move (UnresolvedRelation(tableIdent, alias), tableIdent, alias) to reflection.
+        val unresolvedRelation =
+        CarbonReflectionUtils.getUnresolvedRelation(
+          tableIdentifier,
+          SparkSession.getActiveSession.get.version,
+          alias)
+
+        (unresolvedRelation, tableIdent, alias, tableIdentifier)
     }
   }
 

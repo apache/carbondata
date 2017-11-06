@@ -14,7 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.spark.sql.internal
+
+package org.apache.spark.sql.hive
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.internal.SQLConf.SQLConfigBuilder
@@ -34,7 +35,7 @@ class CarbonSQLConf(sparkSession: SparkSession) {
    */
   def addDefaultCarbonParams(): Unit = {
     val ENABLE_UNSAFE_SORT =
-      SQLConfigBuilder(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
+        SQLConfigBuilder(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
         .doc("To enable/ disable unsafe sort.")
         .booleanConf
         .createWithDefault(carbonProperties.getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
@@ -107,7 +108,6 @@ class CarbonSQLConf(sparkSession: SparkSession) {
       .createWithDefault(carbonProperties
         .getProperty("carbon.input.segments.<database_name>.<table_name>", "*"))
   }
-
   /**
    * to set the dynamic properties default values
    */

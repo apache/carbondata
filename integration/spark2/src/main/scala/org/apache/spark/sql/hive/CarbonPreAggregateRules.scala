@@ -19,16 +19,19 @@ package org.apache.spark.sql.hive
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{AnalysisException, CarbonDatasourceHadoopRelation, InsertIntoCarbonTable, SparkSession}
+import org.apache.spark.sql._
+import org.apache.spark.sql.CarbonExpressions.CarbonSubqueryAlias
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Divide, Expression, NamedExpression, PredicateSubquery, ScalaUDF}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Divide, Expression, NamedExpression, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.sql.CarbonExpressions.MatchCast
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema}
@@ -100,7 +103,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         // subquery
         case Aggregate(groupingExp,
         aggregateExp,
-        SubqueryAlias(_, logicalRelation: LogicalRelation, _))
+        CarbonSubqueryAlias(_, logicalRelation: LogicalRelation))
           // only carbon query plan is supported checking whether logical relation is
           // is for carbon
           if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation]   &&
@@ -120,7 +123,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         // filter expression
         case Aggregate(groupingExp, aggregateExp,
         Filter(filterExp,
-        SubqueryAlias(_, logicalRelation: LogicalRelation, _)))
+        CarbonSubqueryAlias(_, logicalRelation: LogicalRelation)))
           // only carbon query plan is supported checking whether logical relation is
           // is for carbon
           if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation]   &&
@@ -134,7 +137,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             tableName,
             list)
           // TODO need to handle filter predicate subquery scenario
-          isValidPlan = !PredicateSubquery.hasPredicateSubquery(filterExp)
+          // isValidPlan = !PredicateSubquery.hasPredicateSubquery(filterExp)
           // getting the columns from filter expression
           if(isValidPlan) {
             filterExp.transform {
@@ -187,19 +190,19 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         // if it doesnot match with any pre aggregate table return the same plan
         if (!selectedDataMapSchemas.isEmpty) {
           // sort the selected child schema based on size to select smallest pre aggregate table
-          val (aggDataMapSchema, carbonRelation) =
+          val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          val (aggDataMapSchema, carbonRelation, relation) =
             selectedDataMapSchemas.asScala.map { selectedDataMapSchema =>
-              val catalog = sparkSession.sessionState.catalog
-              val carbonRelation = catalog
-                .lookupRelation(TableIdentifier(selectedDataMapSchema.getRelationIdentifier
-                  .getTableName,
-                  Some(selectedDataMapSchema.getRelationIdentifier
-                    .getDatabaseName))).asInstanceOf[SubqueryAlias].child
-                .asInstanceOf[LogicalRelation]
-              (selectedDataMapSchema, carbonRelation)
-            }.minBy(f => f._2.relation.asInstanceOf[CarbonDatasourceHadoopRelation].sizeInBytes)
+              val identifier = TableIdentifier(
+                selectedDataMapSchema.getRelationIdentifier.getTableName,
+                Some(selectedDataMapSchema.getRelationIdentifier.getDatabaseName))
+              val carbonRelation =
+                catalog.lookupRelation(identifier)(sparkSession).asInstanceOf[CarbonRelation]
+              val relation = sparkSession.sessionState.catalog.lookupRelation(identifier)
+              (selectedDataMapSchema, carbonRelation, relation)
+            }.minBy(f => f._2.sizeInBytes)
           // transform the query plan based on selected child schema
-          transformPreAggQueryPlan(plan, aggDataMapSchema, carbonRelation)
+          transformPreAggQueryPlan(plan, aggDataMapSchema, relation)
         } else {
           plan
         }
@@ -217,7 +220,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * child schema
    * @param attributeReference
    * parent attribute reference
-   * @param childCarbonRelation
+   * @param attributes
    * child logical relation
    * @param aggFunction
    * aggregation function applied on child
@@ -225,7 +228,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    */
   def getChildAttributeReference(dataMapSchema: DataMapSchema,
       attributeReference: AttributeReference,
-      childCarbonRelation: LogicalRelation,
+      attributes: Seq[AttributeReference],
       aggFunction: String = ""): AttributeReference = {
     val aggregationDataMapSchema = dataMapSchema.asInstanceOf[AggregationDataMapSchema];
     val columnSchema = if (aggFunction.isEmpty) {
@@ -240,7 +243,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       throw new AnalysisException("Column does not exists in Pre Aggregate table")
     }
     // finding the child attribute from child logical relation
-    childCarbonRelation.attributeMap.find(p => p._2.name.equals(columnSchema.getColumnName)).get._2
+    attributes.find(p => p.name.equals(columnSchema.getColumnName)).get
   }
 
   /**
@@ -268,14 +271,16 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * parent logical plan
    * @param aggDataMapSchema
    * select data map schema
-   * @param childCarbonRelation
+   * @param childPlan
    * child carbon table relation
    * @return transformed plan
    */
   def transformPreAggQueryPlan(logicalPlan: LogicalPlan,
-      aggDataMapSchema: DataMapSchema, childCarbonRelation: LogicalRelation): LogicalPlan = {
+      aggDataMapSchema: DataMapSchema,
+      childPlan: LogicalPlan): LogicalPlan = {
+    val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
     logicalPlan.transform {
-      case Aggregate(grExp, aggExp, child@SubqueryAlias(_, l: LogicalRelation, _))
+      case Aggregate(grExp, aggExp, child@CarbonSubqueryAlias(_, l: LogicalRelation))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
            l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable.hasDataMapSchema =>
         val (updatedGroupExp, updatedAggExp, newChild, None) =
@@ -284,13 +289,14 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             child,
             None,
             aggDataMapSchema,
-            childCarbonRelation)
+            attributes,
+            childPlan)
         Aggregate(updatedGroupExp,
           updatedAggExp,
           newChild)
       case Aggregate(grExp,
       aggExp,
-      Filter(expression, child@SubqueryAlias(_, l: LogicalRelation, _)))
+      Filter(expression, child@CarbonSubqueryAlias(_, l: LogicalRelation)))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
            l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable.hasDataMapSchema =>
         val (updatedGroupExp, updatedAggExp, newChild, updatedFilterExpression) =
@@ -299,7 +305,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             child,
             Some(expression),
             aggDataMapSchema,
-            childCarbonRelation)
+            attributes,
+            childPlan)
         Aggregate(updatedGroupExp,
           updatedAggExp,
           Filter(updatedFilterExpression.get,
@@ -313,7 +320,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             l,
             None,
             aggDataMapSchema,
-            childCarbonRelation)
+            attributes,
+            childPlan)
         Aggregate(updatedGroupExp,
           updatedAggExp,
           newChild)
@@ -339,7 +347,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * filter expression
    * @param aggDataMapSchema
    * pre aggregate table schema
-   * @param childCarbonRelation
+   * @param attributes
    * pre aggregate table logical relation
    * @return tuple of(updated grouping expression,
    *         updated aggregate expression,
@@ -350,13 +358,14 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       aggregateExpressions: Seq[NamedExpression],
       child: LogicalPlan, filterExpression: Option[Expression] = None,
       aggDataMapSchema: DataMapSchema,
-      childCarbonRelation: LogicalRelation): (Seq[Expression], Seq[NamedExpression], LogicalPlan,
+      attributes: Seq[AttributeReference],
+      aggPlan: LogicalPlan): (Seq[Expression], Seq[NamedExpression], LogicalPlan,
     Option[Expression]) = {
     // transforming the group by expression attributes with child attributes
     val updatedGroupExp = groupingExpressions.map { exp =>
       exp.transform {
         case attr: AttributeReference =>
-          getChildAttributeReference(aggDataMapSchema, attr, childCarbonRelation)
+          getChildAttributeReference(aggDataMapSchema, attr, attributes)
       }
     }
     // below code is for updating the aggregate expression.
@@ -379,7 +388,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case attr: AttributeReference =>
         val childAttributeReference = getChildAttributeReference(aggDataMapSchema,
           attr,
-          childCarbonRelation)
+          attributes)
         // returning the alias to show proper column name in output
         Alias(childAttributeReference,
           attr.name)(NamedExpression.newExprId,
@@ -388,7 +397,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case Alias(attr: AttributeReference, name) =>
         val childAttributeReference = getChildAttributeReference(aggDataMapSchema,
           attr,
-          childCarbonRelation)
+          attributes)
         // returning alias with child attribute reference
         Alias(childAttributeReference,
           name)(NamedExpression.newExprId,
@@ -398,7 +407,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         // get the updated aggregate aggregate function
         val aggExp = getUpdatedAggregateExpressionForChild(attr,
           aggDataMapSchema,
-          childCarbonRelation)
+          attributes)
         // returning alias with child attribute reference
         Alias(aggExp,
           name)(NamedExpression.newExprId,
@@ -407,16 +416,19 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     // transformaing the logical relation
     val newChild = child.transform {
       case _: LogicalRelation =>
-        childCarbonRelation
+        aggPlan
       case _: SubqueryAlias =>
-        childCarbonRelation
+        aggPlan match {
+          case s: SubqueryAlias => s.child
+          case others => others
+        }
     }
     // updating the filter expression if present
     val updatedFilterExpression = if (filterExpression.isDefined) {
       val filterExp = filterExpression.get
       Some(filterExp.transform {
         case attr: AttributeReference =>
-          getChildAttributeReference(aggDataMapSchema, attr, childCarbonRelation)
+          getChildAttributeReference(aggDataMapSchema, attr, attributes)
       })
     } else {
       None
@@ -441,13 +453,13 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * aggregate expression
    * @param dataMapSchema
    * child data map schema
-   * @param childCarbonRelation
+   * @param attributes
    * child logical relation
    * @return updated expression
    */
   def getUpdatedAggregateExpressionForChild(aggExp: AggregateExpression,
       dataMapSchema: DataMapSchema,
-      childCarbonRelation: LogicalRelation):
+      attributes: Seq[AttributeReference]):
   Expression = {
     aggExp.aggregateFunction match {
       // Change the count AggregateExpression to Sum as count
@@ -456,7 +468,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case count@Count(Seq(attr: AttributeReference)) =>
         AggregateExpression(Sum(Cast(getChildAttributeReference(dataMapSchema,
           attr,
-          childCarbonRelation,
+          attributes,
           count.prettyName),
           LongType)),
           aggExp.mode,
@@ -464,44 +476,44 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case sum@Sum(attr: AttributeReference) =>
         AggregateExpression(Sum(getChildAttributeReference(dataMapSchema,
           attr,
-          childCarbonRelation,
+          attributes,
           sum.prettyName)),
           aggExp.mode,
           isDistinct = false)
       case max@Max(attr: AttributeReference) =>
         AggregateExpression(Max(getChildAttributeReference(dataMapSchema,
           attr,
-          childCarbonRelation,
+          attributes,
           max.prettyName)),
           aggExp.mode,
           isDistinct = false)
       case min@Min(attr: AttributeReference) =>
         AggregateExpression(Min(getChildAttributeReference(dataMapSchema,
           attr,
-          childCarbonRelation,
+          attributes,
           min.prettyName)),
           aggExp.mode,
           isDistinct = false)
-      case sum@Sum(Cast(attr: AttributeReference, changeDataType: DataType)) =>
+      case sum@Sum(MatchCast(attr: AttributeReference, changeDataType: DataType)) =>
         AggregateExpression(Sum(Cast(getChildAttributeReference(dataMapSchema,
           attr,
-          childCarbonRelation,
+          attributes,
           sum.prettyName),
           changeDataType)),
           aggExp.mode,
           isDistinct = false)
-      case min@Min(Cast(attr: AttributeReference, changeDataType: DataType)) =>
+      case min@Min(MatchCast(attr: AttributeReference, changeDataType: DataType)) =>
         AggregateExpression(Min(Cast(getChildAttributeReference(dataMapSchema,
           attr,
-          childCarbonRelation,
+          attributes,
           min.prettyName),
           changeDataType)),
           aggExp.mode,
           isDistinct = false)
-      case max@Max(Cast(attr: AttributeReference, changeDataType: DataType)) =>
+      case max@Max(MatchCast(attr: AttributeReference, changeDataType: DataType)) =>
         AggregateExpression(Max(Cast(getChildAttributeReference(dataMapSchema,
           attr,
-          childCarbonRelation,
+          attributes,
           max.prettyName),
           changeDataType)),
           aggExp.mode,
@@ -513,13 +525,13 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case Average(attr: AttributeReference) =>
         Divide(AggregateExpression(Sum(getChildAttributeReference(dataMapSchema,
           attr,
-          childCarbonRelation,
+          attributes,
           "sum")),
           aggExp.mode,
           isDistinct = false),
           AggregateExpression(Sum(Cast(getChildAttributeReference(dataMapSchema,
             attr,
-            childCarbonRelation,
+            attributes,
             "count"),
             LongType)),
             aggExp.mode,
@@ -527,17 +539,17 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       // In case of average aggregate function select 2 columns from aggregate table
       // with aggregation sum and count.
       // Then add divide(sum(column with sum), sum(column with count)).
-      case Average(Cast(attr: AttributeReference, changeDataType: DataType)) =>
+      case Average(MatchCast(attr: AttributeReference, changeDataType: DataType)) =>
         Divide(AggregateExpression(Sum(Cast(getChildAttributeReference(dataMapSchema,
           attr,
-          childCarbonRelation,
+          attributes,
           "sum"),
           changeDataType)),
           aggExp.mode,
           isDistinct = false),
           AggregateExpression(Sum(Cast(getChildAttributeReference(dataMapSchema,
             attr,
-            childCarbonRelation,
+            attributes,
             "count"),
             LongType)),
             aggExp.mode,
@@ -632,7 +644,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           carbonTable,
           tableName,
           sum.prettyName))
-      case sum@Sum(Cast(attr: AttributeReference, changeDataType: DataType)) =>
+      case sum@Sum(MatchCast(attr: AttributeReference, changeDataType: DataType)) =>
         Seq(getQueryColumn(attr.name,
           carbonTable,
           tableName,
@@ -649,7 +661,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           carbonTable,
           tableName,
           min.prettyName))
-      case min@Min(Cast(attr: AttributeReference, changeDataType: DataType)) =>
+      case min@Min(MatchCast(attr: AttributeReference, changeDataType: DataType)) =>
         Seq(getQueryColumn(attr.name,
           carbonTable,
           tableName,
@@ -661,7 +673,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           carbonTable,
           tableName,
           max.prettyName))
-      case max@Max(Cast(attr: AttributeReference, changeDataType: DataType)) =>
+      case max@Max(MatchCast(attr: AttributeReference, changeDataType: DataType)) =>
         Seq(getQueryColumn(attr.name,
           carbonTable,
           tableName,
@@ -682,7 +694,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         ))
       // in case of average need to return two columns
       // sum and count of the column to added during table creation to support rollup
-      case Average(Cast(attr: AttributeReference, changeDataType: DataType)) =>
+      case Average(MatchCast(attr: AttributeReference, changeDataType: DataType)) =>
         Seq(getQueryColumn(attr.name,
           carbonTable,
           tableName,
@@ -742,7 +754,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
 /**
  * Insert into carbon table from other source
  */
-object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
+case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[LogicalPlan] {
   def apply(plan: LogicalPlan): LogicalPlan = {
     plan.transform {
       // Wait until children are resolved.
@@ -781,12 +793,22 @@ object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
           case attr => attr
         }
       }
+      val version = sparkSession.version
       val newChild: LogicalPlan = if (newChildOutput == childPlan.output) {
-        p.child
+        if (version.startsWith("2.1")) {
+          CarbonReflectionUtils.getField("child", p).asInstanceOf[LogicalPlan]
+        } else if (version.startsWith("2.2")) {
+          CarbonReflectionUtils.getField("query", p).asInstanceOf[LogicalPlan]
+        } else {
+          throw new UnsupportedOperationException(s"Spark version $version is not supported")
+        }
       } else {
         Project(newChildOutput, childPlan)
       }
-      InsertIntoCarbonTable(relation, p.partition, newChild, p.overwrite, p.ifNotExists)
+
+      val overwrite = CarbonReflectionUtils.getOverWriteOption("overwrite", p)
+
+      InsertIntoCarbonTable(relation, p.partition, newChild, overwrite, true)
     } else {
       CarbonException.analysisException(
         "Cannot insert into target table because number of columns mismatch")
@@ -812,7 +834,7 @@ object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
                   Alias(attrExpression
                     .copy(aggregateFunction = Count(attr),
                       resultId = NamedExpression.newExprId), attr.name + "_count")())
-              case Average(cast@Cast(attr: AttributeReference, _)) =>
+              case Average(cast@MatchCast(attr: AttributeReference, _)) =>
                 Seq(Alias(attrExpression
                   .copy(aggregateFunction = Sum(cast),
                     resultId = NamedExpression.newExprId),
