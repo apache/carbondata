@@ -31,6 +31,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, Lock
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.{ListenerBus, UpdateTablePreEvent}
 import org.apache.carbondata.processing.loading.FailureCauses
 
 private[sql] case class ProjectForUpdateCommand(
@@ -67,6 +68,12 @@ private[sql] case class ProjectForUpdateCommand(
     //      .lookupRelation1(deleteExecution.getTableIdentifier(tableIdentifier))(sqlContext).
     //      asInstanceOf[CarbonRelation]
     val carbonTable = relation.tableMeta.carbonTable
+
+    //trigger event for Update table
+    val updateTablePreEvent: UpdateTablePreEvent =
+      UpdateTablePreEvent(carbonTable)
+    ListenerBus.getInstance.fireEvent(updateTablePreEvent)
+
     val metadataLock = CarbonLockFactory
       .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
         LockUsage.METADATA_LOCK)

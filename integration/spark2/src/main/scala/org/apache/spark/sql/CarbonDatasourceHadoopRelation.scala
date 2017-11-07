@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql
 
+import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.CarbonInputMetrics
@@ -100,5 +101,4 @@ case class CarbonDatasourceHadoopRelation(
       sys.error("Cannot insert into target table because column number are different")
     }
   }
-
 }

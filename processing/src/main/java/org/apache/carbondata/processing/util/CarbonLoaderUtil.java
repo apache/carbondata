@@ -142,6 +142,11 @@ public final class CarbonLoaderUtil {
   public static void deletePartialLoadDataIfExist(CarbonLoadModel loadModel,
       final boolean isCompactionFlow) throws IOException {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
+    deletePartialLoad(loadModel, carbonTable, isCompactionFlow);
+  }
+
+  public static void deletePartialLoad(CarbonLoadModel loadModel, CarbonTable carbonTable,
+      boolean isCompactionFlow) throws IOException {
     String metaDataLocation = carbonTable.getMetaDataFilepath();
     final LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
     CarbonTablePath carbonTablePath = CarbonStorePath
@@ -206,14 +211,20 @@ public final class CarbonLoaderUtil {
    */
   public static void deleteLocalDataLoadFolderLocation(CarbonLoadModel loadModel,
       boolean isCompactionFlow, boolean isAltPartitionFlow) {
-    String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
+    deleteLocalDataLoadFolderLocation(loadModel, isCompactionFlow, isAltPartitionFlow, tableName);
+  }
+
+  public static void deleteLocalDataLoadFolderLocation(CarbonLoadModel loadModel,
+      boolean isCompactionFlow, boolean isAltPartitionFlow, String tableName) {
+    String databaseName = loadModel.getDatabaseName();
     String tempLocationKey = CarbonDataProcessorUtil
         .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
             loadModel.getTaskNo(), isCompactionFlow, isAltPartitionFlow);
     // form local store location
     final String localStoreLocations = CarbonProperties.getInstance().getProperty(tempLocationKey);
     if (localStoreLocations == null) {
+
       throw new RuntimeException("Store location not set for the key " + tempLocationKey);
     }
     // submit local folder clean up in another thread so that main thread execution is not blocked
@@ -228,12 +239,12 @@ public final class CarbonLoaderUtil {
             try {
               CarbonUtil.deleteFoldersAndFiles(new File(loc));
             } catch (IOException | InterruptedException e) {
-              LOGGER.error(e,
-                  "Failed to delete local data load folder location: " + loc);
+              LOGGER.error(e, "Failed to delete local data load folder location: " + loc);
             }
           }
-          LOGGER.info("Deleted the local store location: " + localStoreLocations
-                + " : Time taken: " + (System.currentTimeMillis() - startTime));
+          LOGGER.info(
+              "Deleted the local store location: " + localStoreLocations + " : Time taken: " + (
+                  System.currentTimeMillis() - startTime));
           return null;
         }
       });
@@ -242,7 +253,6 @@ public final class CarbonLoaderUtil {
         localFolderDeletionService.shutdown();
       }
     }
-
   }
 
   /**

@@ -30,6 +30,8 @@ import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.ListenerBus
+import org.apache.carbondata.events.AlterTableDropColumnPreEvent
 import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.spark.rdd.AlterTableDropColumnRDD
 
@@ -99,6 +101,14 @@ private[sql] case class AlterTableDropColumnCommand(
       if (keyColumnCountToBeDeleted >= totalKeyColumnInSchema) {
         sys.error(s"Alter drop operation failed. AtLeast one key column should exist after drop.")
       }
+
+      //event will be fired before dropping the columns
+      val alterTableDropColumnPreEvent: AlterTableDropColumnPreEvent = AlterTableDropColumnPreEvent(
+        carbonTable,
+        alterTableDropColumnModel,
+        sparkSession)
+      ListenerBus.getInstance().fireEvent(alterTableDropColumnPreEvent)
+
       // read the latest schema file
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)

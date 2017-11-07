@@ -23,6 +23,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
  * Contains all options for Spark data source
  */
 class CarbonOption(options: Map[String, String]) {
+
   def tableIdentifier: String = options.getOrElse("tableName", s"$dbName.$tableName")
 
   def dbName: String = options.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)

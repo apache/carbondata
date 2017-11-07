@@ -16,8 +16,10 @@
  */
 package org.apache.spark.sql.hive
 
+import org.apache.hadoop.hive.ql.exec.UDF
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.expressions.Expression
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 
@@ -52,4 +54,22 @@ object CarbonHiveMetadataUtil {
     }
   }
 
+  def transformToRemoveNI(expression: Expression): Expression = {
+    expression.transform {
+      case hiveUDF: HiveSimpleUDF if hiveUDF.function.isInstanceOf[NonIndexUDFExpression] =>
+        hiveUDF.asInstanceOf[HiveSimpleUDF].children.head
+    }
+  }
+
+  def checkNIUDF(condition: Expression): Boolean = {
+    condition match {
+      case hiveUDF: HiveSimpleUDF if (hiveUDF.function.isInstanceOf[NonIndexUDFExpression]) => true
+      case _ => false
+    }
+  }
+
+}
+
+class NonIndexUDFExpression extends UDF {
+  def evaluate(input: Any) = true
 }

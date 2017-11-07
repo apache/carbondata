@@ -39,4 +39,8 @@ public class TableMeta implements Serializable {
     this.carbonTable = carbonTable;
   }
 
+  public CarbonTable getCarbonTable() {
+    return carbonTable;
+  }
+
 }

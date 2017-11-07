@@ -22,10 +22,9 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
-import org.apache.spark.sql.hive.CarbonSessionState
+import org.apache.spark.sql.hive.{CarbonSessionState, SessionStateFactory}
 import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.util.Utils
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.util.CommonUtil
@@ -43,7 +42,9 @@ class CarbonSession(@transient val sc: SparkContext,
   }
 
   @transient
-  override lazy val sessionState: SessionState = new CarbonSessionState(this)
+  override lazy val sessionState: SessionState = SessionStateFactory
+    .getSessionState(this,
+      sc.conf.get("carbon.sessionstate.classname", "org.apache.spark.sql.hive.CarbonSessionState"))
 
   /**
    * State shared across sessions, including the `SparkContext`, cached data, listener,

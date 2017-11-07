@@ -79,6 +79,9 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public long getLoadEndTime() {
+    if (null == timestamp) {
+      return 0L;
+    }
     return convertTimeStampToLong(timestamp);
   }
 

@@ -93,6 +93,10 @@ public class CarbonTable implements Serializable {
    * table partition info
    */
   private Map<String, PartitionInfo> tablePartitionMap;
+  /**
+   * holder for extra metadata properties
+   */
+  private Map<String, Object> propertiesMap;
 
   /**
    * tableUniqueName
@@ -132,6 +136,7 @@ public class CarbonTable implements Serializable {
     this.tablePartitionMap = new HashMap<>();
     this.createOrderColumn = new HashMap<String, List<CarbonColumn>>();
     this.tablePrimitiveDimensionsMap = new HashMap<String, List<CarbonDimension>>();
+    this.propertiesMap = new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
   }
 
   /**
@@ -656,5 +661,13 @@ public class CarbonTable implements Serializable {
 
   public TableInfo getTableInfo() {
     return tableInfo;
+  }
+
+  public void setProperty(String key, Object value) {
+    propertiesMap.put(key, value);
+  }
+
+  public Object getProperty(String key) {
+    return propertiesMap.get(key);
   }
 }
