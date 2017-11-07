@@ -35,7 +35,8 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil
  */
 object UpdateDataLoad {
 
-  def DataLoadForUpdate(segId: String,
+  def DataLoadForUpdate(
+      segId: String,
       index: Int,
       iter: Iterator[Row],
       carbonLoadModel: CarbonLoadModel,

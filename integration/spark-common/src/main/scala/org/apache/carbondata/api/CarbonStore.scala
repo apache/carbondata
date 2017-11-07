@@ -28,8 +28,11 @@ import org.apache.spark.sql.types.TimestampType
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.DataManagementFunc
@@ -79,16 +82,45 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       storePath: String,
-      carbonTable: CarbonTable, forceTableClean: Boolean): Unit = {
+      carbonTable: CarbonTable, forceTableClean: Boolean
+  ): Unit = {
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
+    var carbonCleanFilesLock: ICarbonLock = null
     try {
-      DataManagementFunc.cleanFiles(dbName, tableName, storePath, carbonTable, forceTableClean)
-      LOGGER.audit(s"Clean files operation is success for $dbName.$tableName.")
+      val identifier = new CarbonTableIdentifier(dbName, tableName, "")
+      carbonCleanFilesLock =
+        CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.CLEAN_FILES_LOCK)
     } catch {
       case ex: Exception =>
         sys.error(ex.getMessage)
+      return
     }
-    Seq.empty
+    try {
+      if (carbonCleanFilesLock.lockWithRetries()) {
+        LOGGER.info("Clean files lock has been successfully acquired.")
+        if (forceTableClean) {
+          val absIdent = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
+          FileFactory.deleteAllCarbonFilesOfDir(
+            FileFactory.getCarbonFile(absIdent.getTablePath,
+              FileFactory.getFileType(absIdent.getTablePath)))
+        } else {
+          DataManagementFunc.deleteLoadsAndUpdateMetadata(dbName, tableName, storePath,
+            isForceDeletion = true, carbonTable)
+          CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
+        }
+      } else {
+        val errorMsg = "Clean files request is failed for " +
+                       s"$dbName.$tableName" +
+                       ". Not able to acquire the clean files lock due to another clean files " +
+                       "operation is running in the background."
+        LOGGER.audit(errorMsg)
+        LOGGER.error(errorMsg)
+        throw new Exception(errorMsg + " Please try after some time.")
+      }
+    } finally {
+      CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
+    }
+    LOGGER.audit(s"Clean files operation is success for $dbName.$tableName.")
   }
 
   // validates load ids
@@ -163,7 +195,7 @@ object CarbonStore {
     val validAndInvalidSegments: SegmentStatusManager.ValidAndInvalidSegmentsInfo = new
         SegmentStatusManager(
           identifier).getValidAndInvalidSegments
-    return validAndInvalidSegments.getValidSegments.contains(segmentId)
+    validAndInvalidSegments.getValidSegments.contains(segmentId)
   }
 
   private def validateTimeFormat(timestamp: String): Long = {
