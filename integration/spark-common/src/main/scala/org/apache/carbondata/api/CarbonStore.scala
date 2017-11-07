@@ -82,43 +82,32 @@ object CarbonStore {
       dbName: String,
       tableName: String,
       storePath: String,
-      carbonTable: CarbonTable, forceTableClean: Boolean
-  ): Unit = {
+      carbonTable: CarbonTable,
+      forceTableClean: Boolean): Unit = {
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     var carbonCleanFilesLock: ICarbonLock = null
+    val identifier = new CarbonTableIdentifier(dbName, tableName, "")
     try {
-      val identifier = new CarbonTableIdentifier(dbName, tableName, "")
+      val errorMsg = "Clean files request is failed for " +
+                     s"$dbName.$tableName" +
+                     ". Not able to acquire the clean files lock due to another clean files " +
+                     "operation is running in the background."
       carbonCleanFilesLock =
-        CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.CLEAN_FILES_LOCK)
-    } catch {
-      case ex: Exception =>
-        sys.error(ex.getMessage)
-      return
-    }
-    try {
-      if (carbonCleanFilesLock.lockWithRetries()) {
-        LOGGER.info("Clean files lock has been successfully acquired.")
-        if (forceTableClean) {
-          val absIdent = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
-          FileFactory.deleteAllCarbonFilesOfDir(
-            FileFactory.getCarbonFile(absIdent.getTablePath,
-              FileFactory.getFileType(absIdent.getTablePath)))
-        } else {
-          DataManagementFunc.deleteLoadsAndUpdateMetadata(dbName, tableName, storePath,
-            isForceDeletion = true, carbonTable)
-          CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
-        }
+        CarbonLockUtil.getLockObject(identifier, LockUsage.CLEAN_FILES_LOCK, errorMsg)
+      if (forceTableClean) {
+        val absIdent = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
+        FileFactory.deleteAllCarbonFilesOfDir(
+          FileFactory.getCarbonFile(absIdent.getTablePath,
+            FileFactory.getFileType(absIdent.getTablePath)))
       } else {
-        val errorMsg = "Clean files request is failed for " +
-                       s"$dbName.$tableName" +
-                       ". Not able to acquire the clean files lock due to another clean files " +
-                       "operation is running in the background."
-        LOGGER.audit(errorMsg)
-        LOGGER.error(errorMsg)
-        throw new Exception(errorMsg + " Please try after some time.")
+        DataManagementFunc.deleteLoadsAndUpdateMetadata(dbName, tableName, storePath,
+          isForceDeletion = true, carbonTable)
+        CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
       }
     } finally {
-      CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
+      if (carbonCleanFilesLock != null) {
+        CarbonLockUtil.fileUnlock(carbonCleanFilesLock, LockUsage.CLEAN_FILES_LOCK)
+      }
     }
     LOGGER.audit(s"Clean files operation is success for $dbName.$tableName.")
   }

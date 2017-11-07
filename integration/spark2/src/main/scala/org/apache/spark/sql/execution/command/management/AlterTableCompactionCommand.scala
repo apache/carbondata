@@ -104,19 +104,17 @@ case class AlterTableCompactionCommand(
     if (alterTableModel.compactionType.equalsIgnoreCase("major")) {
       compactionSize = CarbonDataMergerUtil.getCompactionSize(CompactionType.MAJOR_COMPACTION)
       compactionType = CompactionType.MAJOR_COMPACTION
-    } else if (alterTableModel.compactionType
-      .equalsIgnoreCase(CompactionType.IUD_UPDDEL_DELTA_COMPACTION.toString)) {
+    } else if (alterTableModel.compactionType.equalsIgnoreCase(
+      CompactionType.IUD_UPDDEL_DELTA_COMPACTION.toString)) {
       compactionType = CompactionType.IUD_UPDDEL_DELTA_COMPACTION
-      if (alterTableModel.segmentUpdateStatusManager.get != None) {
-        carbonLoadModel
-          .setSegmentUpdateStatusManager(alterTableModel.segmentUpdateStatusManager.get)
-
-        carbonLoadModel
-          .setLoadMetadataDetails(alterTableModel.segmentUpdateStatusManager.get
-            .getLoadMetadataDetails.toList.asJava)
+      if (alterTableModel.segmentUpdateStatusManager.isDefined) {
+        carbonLoadModel.setSegmentUpdateStatusManager(
+          alterTableModel.segmentUpdateStatusManager.get)
+        carbonLoadModel.setLoadMetadataDetails(
+          alterTableModel.segmentUpdateStatusManager.get.getLoadMetadataDetails.toList.asJava)
       }
-    } else if (alterTableModel.compactionType.
-      equalsIgnoreCase(CompactionType.SEGMENT_INDEX_COMPACTION.toString)) {
+    } else if (alterTableModel.compactionType.equalsIgnoreCase(
+      CompactionType.SEGMENT_INDEX_COMPACTION.toString)) {
       compactionType = CompactionType.SEGMENT_INDEX_COMPACTION
     } else {
       compactionType = CompactionType.MINOR_COMPACTION
