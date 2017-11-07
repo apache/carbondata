@@ -52,6 +52,7 @@ import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.{LoadTablePostExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.csvinput.BlockDetails
@@ -267,6 +268,7 @@ object CarbonDataRDDFactory {
       updateModel: Option[UpdateTableModel] = None
   ): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    val operationContext = new OperationContext
     // for handling of the segment Merging.
 
     LOGGER.audit(s"Data load request has been received for table" +
@@ -475,6 +477,13 @@ object CarbonDataRDDFactory {
         throw new Exception("No Data to load")
       }
       writeDictionary(carbonLoadModel, result, writeAll = false)
+      // Register a handler here for executing tasks required before committing
+      // the load operation to a table status file
+      val loadTablePostExecutionEvent: LoadTablePostExecutionEvent =
+      LoadTablePostExecutionEvent(sqlContext.sparkSession,
+        carbonTable.getCarbonTableIdentifier,
+        carbonLoadModel)
+      OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
       updateTableStatus(status, carbonLoadModel, loadStatus, overwriteTable)
 
       if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS.equals(loadStatus)) {

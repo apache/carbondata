@@ -42,6 +42,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.ThriftWriter
+import org.apache.carbondata.events.{LookupRelationPostEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.processing.merger.TableMeta
 import org.apache.carbondata.spark.util.CarbonSparkUtil
@@ -129,6 +130,14 @@ class CarbonFileMetastore extends CarbonMetaStore {
         carbonDatasourceHadoopRelation.carbonRelation
       case _ => throw new NoSuchTableException(database, tableIdentifier.table)
     }
+
+    // fire post event after lookup relation
+    val operationContext = new OperationContext
+    val lookupRelationPostEvent: LookupRelationPostEvent =
+      LookupRelationPostEvent(
+        relation.tableMeta.carbonTable,
+        sparkSession)
+    OperationListenerBus.getInstance.fireEvent(lookupRelationPostEvent, operationContext)
     relation
   }
 

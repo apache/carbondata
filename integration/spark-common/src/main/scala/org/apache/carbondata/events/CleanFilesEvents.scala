@@ -14,22 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.events;
+package org.apache.carbondata.events
+
+import org.apache.spark.sql.SparkSession
+
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
- * Change event for any updates in store.
+ *
+ * @param carbonTable
+ * @param sparkSession
  */
-public interface ChangeEvent<T> {
-
-  EventType getEventType();
-
-  T getEventData();
-
-  void setEventData(T data);
-
-  enum EventType {
-    INSERT,DELETE,UPDATE,REFRESH
-  }
-}
+case class CleanFilesPreEvent(carbonTable: CarbonTable, sparkSession: SparkSession)
+  extends Event with CleanFilesEventInfo
 
 
+/**
+ *
+ * @param carbonTable
+ * @param sparkSession
+ */
+case class CleanFilesPostEvent(carbonTable: CarbonTable, sparkSession: SparkSession)
+  extends Event with CleanFilesEventInfo
+
+/**
+ *
+ * @param carbonTable
+ * @param sparkSession
+ */
+case class CleanFilesAbortEvent(carbonTable: CarbonTable, sparkSession: SparkSession)
+  extends Event with CleanFilesEventInfo
