@@ -14,12 +14,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.events;
+package org.apache.carbondata.events;
 
 /**
- * Event listener
+ * Event listener interface which describes the possible events
  */
 public interface EventListener {
 
-  void fireEvent(ChangeEvent event);
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   */
+  void onEvent(Event event);
 }

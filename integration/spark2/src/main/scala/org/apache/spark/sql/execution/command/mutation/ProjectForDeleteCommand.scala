@@ -25,6 +25,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.events.{DeleteFromTablePreEvent, ListenerBus}
 import org.apache.carbondata.processing.loading.FailureCauses
 
 /**
@@ -51,6 +52,12 @@ private[sql] case class ProjectForDeleteCommand(
       .lookupRelation(DeleteExecution.getTableIdentifier(identifier))(sparkSession).
       asInstanceOf[CarbonRelation]
     val carbonTable = relation.tableMeta.carbonTable
+
+    //trigger event for Delete from table
+    val deleteFromTablePreEvent: DeleteFromTablePreEvent =
+      DeleteFromTablePreEvent(carbonTable)
+    ListenerBus.getInstance.fireEvent(deleteFromTablePreEvent)
+
     val metadataLock = CarbonLockFactory
       .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
         LockUsage.METADATA_LOCK)

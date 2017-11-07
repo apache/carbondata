@@ -22,6 +22,8 @@ import org.apache.spark.sql.execution.command.{Checker, DataProcessCommand, Runn
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.events.ListenerBus
+import org.apache.carbondata.events.CleanFilesPostEvent
 
 case class CleanFilesCommand(
     databaseNameOp: Option[String],
@@ -52,6 +54,11 @@ case class CleanFilesCommand(
         relation.asInstanceOf[CarbonRelation].tableMeta.storePath,
         carbonTable,
         forceTableClean)
+
+      val cleanFilesPostEvent: CleanFilesPostEvent =
+        CleanFilesPostEvent(carbonTable,
+          sparkSession)
+      ListenerBus.getInstance.fireEvent(cleanFilesPostEvent)
     }
     Seq.empty
   }

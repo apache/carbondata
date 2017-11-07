@@ -21,6 +21,7 @@ import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -28,6 +29,8 @@ import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.ListenerBus
+import org.apache.carbondata.events.DropTablePreEvent
 
 case class CarbonDropTableCommand(
     ifExistsSet: Boolean,
@@ -58,6 +61,18 @@ case class CarbonDropTableCommand(
         lock => carbonLocks += CarbonLockUtil.getLockObject(carbonTableIdentifier, lock)
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
+
+      //fires the event before dropping main table
+      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val carbonTable = metastore
+        .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
+        .tableMeta.carbonTable
+      val dropTablePostEvent: DropTablePreEvent =
+        DropTablePreEvent(
+          carbonTable,
+          ifExistsSet,
+          sparkSession)
+      ListenerBus.getInstance.fireEvent(dropTablePostEvent)
 
       CarbonEnv.getInstance(sparkSession).carbonMetastore
         .dropTable(tableIdentifier.getTablePath, identifier)(sparkSession)

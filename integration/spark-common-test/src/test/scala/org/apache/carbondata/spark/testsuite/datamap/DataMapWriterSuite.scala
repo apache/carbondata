@@ -28,18 +28,18 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory, DataMapWriter}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
 import org.apache.carbondata.core.datastore.page.ColumnPage
-import org.apache.carbondata.core.events.ChangeEvent
 import org.apache.carbondata.core.indexstore.schema.FilterType
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.events.Event
 
 class C2DataMapFactory() extends DataMapFactory {
 
   override def init(identifier: AbsoluteTableIdentifier,
       dataMapName: String): Unit = {}
 
-  override def fireEvent(event: ChangeEvent[_]): Unit = ???
+  override def fireEvent(event: Event): Unit = ???
 
   override def clear(segmentId: String): Unit = {}
 

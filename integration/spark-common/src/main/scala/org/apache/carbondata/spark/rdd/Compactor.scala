@@ -25,6 +25,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.events.{AlterTableCompactionPreEvent, AlterTableDropColumnPreEvent, ListenerBus, LoadTablePostExecutionEvent}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.MergeResultImpl
 import org.apache.carbondata.spark.util.CommonUtil
@@ -110,6 +111,12 @@ object Compactor {
     if (finalMergeStatus) {
       val mergedLoadNumber = CarbonDataMergerUtil.getLoadNumberFromLoadName(mergedLoadName)
       CommonUtil.mergeIndexFiles(sc.sparkContext, Seq(mergedLoadNumber), storePath, carbonTable)
+
+      //trigger event for compaction
+      val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
+        AlterTableCompactionPreEvent(carbonTable,carbonLoadModel,mergedLoadName,sc)
+      ListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent)
+
       val endTime = System.nanoTime()
       logger.info(s"time taken to merge $mergedLoadName is ${ endTime - startTime }")
       val statusFileUpdation =
