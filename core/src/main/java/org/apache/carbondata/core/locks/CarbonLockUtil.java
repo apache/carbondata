@@ -85,7 +85,7 @@ public class CarbonLockUtil {
   public static ICarbonLock getLockObject(CarbonTableIdentifier identifier, String lockType) {
     return getLockObject(identifier,
         lockType,
-        "Table is locked after retry, please try after some time");
+        "Acquire table lock failed after retry, please try after some time");
   }
 
 }
