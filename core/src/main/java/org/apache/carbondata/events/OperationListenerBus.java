@@ -50,10 +50,13 @@ public class OperationListenerBus {
   /**
    * Add a listener to listen events. This method is thread-safe and can be called in any thread.
    *
-   * @param eventType
+   * @param eventClass
    * @param operationEventListener
    */
-  public void addListener(String eventType, OperationEventListener operationEventListener) {
+  public void addListener(Class<? extends Event> eventClass,
+      OperationEventListener operationEventListener) {
+
+    String eventType = eventClass.getName();
     List<OperationEventListener> operationEventListeners = eventMap.get(eventType);
     if (null == operationEventListeners) {
       operationEventListeners = new CopyOnWriteArrayList<>();
@@ -88,16 +91,29 @@ public class OperationListenerBus {
 
   /**
    * Notify all registered listeners on occurrence of an event
+   * Should be used for stateless events which cannot be mapped to a operation
    *
    * @param event
+   */
+  public void fireEvent(Event event) throws Exception {
+    fireEvent(event, new OperationContext());
+  }
+
+  /**
+   * Notify all registered listeners on occurrence of an event
+   *
+   * @param event
+   * @param operationContext
    */
   public void fireEvent(Event event, OperationContext operationContext) throws Exception {
     if (operationContext == null) {
       throw new Exception("OperationContext cannot be null");
     }
     List<OperationEventListener> operationEventListeners = eventMap.get(event.getEventType());
-    for (OperationEventListener operationEventListener : operationEventListeners) {
-      operationEventListener.onEvent(event, operationContext);
+    if (null != operationEventListeners) {
+      for (OperationEventListener operationEventListener : operationEventListeners) {
+        operationEventListener.onEvent(event, operationContext);
+      }
     }
   }
 }

@@ -22,8 +22,7 @@ import org.apache.spark.sql.execution.command.{Checker, DataProcessCommand, Runn
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.api.CarbonStore
-import org.apache.carbondata.events.ListenerBus
-import org.apache.carbondata.events.DeleteSegmentByDatePostEvent
+import org.apache.carbondata.events.{DeleteSegmentByDatePostEvent, DeleteSegmentByDatePreEvent, OperationContext, OperationListenerBus}
 
 case class DeleteLoadByLoadDateCommand(
     databaseNameOp: Option[String],
@@ -41,6 +40,13 @@ case class DeleteLoadByLoadDateCommand(
     val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
       lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
       tableMeta.carbonTable
+    val operationContext = new OperationContext
+    val deleteSegmentByDatePreEvent: DeleteSegmentByDatePreEvent =
+      DeleteSegmentByDatePreEvent(carbonTable,
+        loadDate,
+        sparkSession)
+    OperationListenerBus.getInstance.fireEvent(deleteSegmentByDatePreEvent, operationContext)
+
     CarbonStore.deleteLoadByDate(
       loadDate,
       GetDB.getDatabaseName(databaseNameOp, sparkSession),
@@ -52,7 +58,7 @@ case class DeleteLoadByLoadDateCommand(
       DeleteSegmentByDatePostEvent(carbonTable,
         loadDate,
         sparkSession)
-    ListenerBus.getInstance.fireEvent(deleteSegmentPostEvent)
+    OperationListenerBus.getInstance.fireEvent(deleteSegmentByDatePreEvent, operationContext)
 
     Seq.empty
   }

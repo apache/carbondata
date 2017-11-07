@@ -26,6 +26,7 @@ import org.apache.spark.sql.internal.CarbonSQLConf
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
+import org.apache.carbondata.events.{CarbonEnvInitPreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
@@ -70,6 +71,11 @@ class CarbonEnv {
           properties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
         }
         LOGGER.info(s"carbon env initial: $storePath")
+        // trigger event for CarbonEnv init
+        val carbonEnvInitPreEvent: CarbonEnvInitPreEvent =
+          CarbonEnvInitPreEvent(sparkSession, storePath)
+        OperationListenerBus.getInstance.fireEvent(carbonEnvInitPreEvent)
+
         CarbonMetaStoreFactory.createCarbonMetaStore(sparkSession.conf)
       }
       CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")

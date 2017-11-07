@@ -23,42 +23,24 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
 /**
-  * Class for handling operations before start of a load process.
-  * Example usage: For validation purpose
-  */
+ * Class for handling operations before start of a load process.
+ * Example usage: For validation purpose
+ */
 case class LoadTablePreExecutionEvent(sparkSession: SparkSession,
-                                      carbonTableIdentifier: CarbonTableIdentifier,
-                                      carbonLoadModel: CarbonLoadModel) extends LoadEvent {
-  override def getEventType: String = LoadTablePreExecutionEvent.eventType
-}
+    carbonTableIdentifier: CarbonTableIdentifier,
+    carbonLoadModel: CarbonLoadModel) extends Event with LoadEventInfo
 
 /**
-  * Class for handling operations after data load completion and before final
-  * commit of load operation. Example usage: For loading pre-aggregate tables
-  */
+ * Class for handling operations after data load completion and before final
+ * commit of load operation. Example usage: For loading pre-aggregate tables
+ */
 case class LoadTablePostExecutionEvent(sparkSession: SparkSession,
-                                       carbonTableIdentifier: CarbonTableIdentifier,
-                                       carbonLoadModel: CarbonLoadModel) extends LoadEvent {
-  override def getEventType: String = LoadTablePostExecutionEvent.eventType
-}
+    carbonTableIdentifier: CarbonTableIdentifier,
+    carbonLoadModel: CarbonLoadModel) extends Event with LoadEventInfo
 
 /**
-  * Class for handling clean up in case of any failure and abort the operation.
-  */
+ * Class for handling clean up in case of any failure and abort the operation.
+ */
 case class LoadTableAbortExecutionEvent(sparkSession: SparkSession,
-                                        carbonTableIdentifier: CarbonTableIdentifier,
-                                        carbonLoadModel: CarbonLoadModel) extends LoadEvent {
-  override def getEventType: String = LoadTableAbortExecutionEvent.eventType
-}
-
-object LoadTablePreExecutionEvent {
-  val eventType = LoadTablePreExecutionEvent.getClass.getName
-}
-
-object LoadTablePostExecutionEvent {
-  val eventType = LoadTablePostExecutionEvent.getClass.getName
-}
-
-object LoadTableAbortExecutionEvent {
-  val eventType = LoadTableAbortExecutionEvent.getClass.getName
-}
+    carbonTableIdentifier: CarbonTableIdentifier,
+    carbonLoadModel: CarbonLoadModel) extends Event with LoadEventInfo

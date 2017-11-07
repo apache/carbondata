@@ -14,30 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.carbondata.events
 
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier
-import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.spark.sql.SparkSession
 
 /**
- * event for database operations
+ *
+ * @param sparkSession
+ * @param storePath
  */
-trait DatabaseEvent extends Event {
-  val databaseName: String
-}
+case class CarbonEnvInitPreEvent(
+    sparkSession: SparkSession, storePath: String)
+  extends Event with SessionEventInfo
+
 
 /**
- * event for table related operations
+ *
+ * @param sparkSession
+ * @param storePath
  */
-trait TableEvent extends DatabaseEvent {
-  val carbonTableIdentifier: CarbonTableIdentifier
-  override lazy val databaseName: String = carbonTableIdentifier.getDatabaseName
-}
-
-/**
- * event for load operations
- */
-trait LoadEvent extends TableEvent {
-  val carbonLoadModel: CarbonLoadModel
-}
+case class CarbonEnvInitPostEvent(
+    sparkSession: SparkSession, storePath: String)
+  extends Event with SessionEventInfo

@@ -20,12 +20,12 @@ package org.apache.carbondata.events;
 /**
  * Event class which will be used for retrieving the type of interface
  */
-public interface Event {
+public abstract class Event {
 
   /**
    * Method for getting the event type. Used for invoking all listeners registered for an event
    *
    * @return
    */
-  String getEventType();
+  String getEventType() { return this.getClass().getName(); }
 }

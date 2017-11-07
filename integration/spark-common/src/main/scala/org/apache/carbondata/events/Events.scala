@@ -17,119 +17,115 @@
 
 package org.apache.carbondata.events
 
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.command.{AlterTableDropColumnModel, AlterTableRenameModel}
 
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.events.Event
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
 /**
-  * event for database operations
-  */
-trait DatabaseEvent extends Event {
+ * event for database operations
+ */
+trait DatabaseEventInfo {
   val databaseName: String
 }
 
 /**
-  * event for table related operations
-  */
-trait TableEvent extends DatabaseEvent {
+ * event for table related operations
+ */
+trait TableEventInfo {
   val carbonTableIdentifier: CarbonTableIdentifier
-  override lazy val databaseName: String = carbonTableIdentifier.getDatabaseName
 }
 
 /**
-  * event for load operations
-  */
-trait LoadEvent extends TableEvent {
+ * event for load operations
+ */
+trait LoadEventInfo {
   val carbonLoadModel: CarbonLoadModel
 }
 
 /**
-  * event for lookup
-  */
-trait LookupRelationEvent extends TableEvent {
+ * event for lookup
+ */
+trait LookupRelationEventInfo {
   val carbonTable: CarbonTable
-  override val carbonTableIdentifier = carbonTable.getCarbonTableIdentifier
 }
 
 
 /**
-  * event for drop table
-  */
-trait DropTableEvent extends TableEvent {
+ * event for drop table
+ */
+trait DropTableEventInfo {
   val carbonTable: CarbonTable
   val ifExistsSet: Boolean
-  override val carbonTableIdentifier = carbonTable.getCarbonTableIdentifier
 }
 
 /**
-  * event for alter_table_drop_column
-  */
-trait AlterTableDropColumnEvent extends TableEvent {
+ * event for alter_table_drop_column
+ */
+trait AlterTableDropColumnEventInfo {
   val carbonTable: CarbonTable
   val alterTableDropColumnModel: AlterTableDropColumnModel
-  override val carbonTableIdentifier = carbonTable.getCarbonTableIdentifier
 }
 
 /**
-  * event for alter_table_rename
-  */
-trait AlterTableRenameEvent extends TableEvent {
+ * event for alter_table_rename
+ */
+trait AlterTableRenameEventInfo {
   val carbonTable: CarbonTable
   val alterTableRenameModel: AlterTableRenameModel
-  override val carbonTableIdentifier: CarbonTableIdentifier = carbonTable.getCarbonTableIdentifier
 }
 
 /**
-  * event for alter_table_rename
-  */
-trait AlterTableCompactionEvent extends TableEvent {
+ * event for alter_table_rename
+ */
+trait AlterTableCompactionEventInfo {
   val carbonTable: CarbonTable
   val carbonLoadModel: CarbonLoadModel
   val mergedLoadName: String
-  override val carbonTableIdentifier: CarbonTableIdentifier = carbonTable.getCarbonTableIdentifier
 }
 
 /**
-  * event for DeleteSegmentById
-  */
-trait DeleteSegmentbyIdEvent extends TableEvent {
+ * event for DeleteSegmentById
+ */
+trait DeleteSegmentbyIdEventInfo {
   val carbonTable: CarbonTable
   val loadIds: Seq[String]
-  override val carbonTableIdentifier: CarbonTableIdentifier = carbonTable.getCarbonTableIdentifier
 }
 
 /**
-  * event for DeleteSegmentByDate
-  */
-trait DeleteSegmentbyDateEvent extends TableEvent {
+ * event for DeleteSegmentByDate
+ */
+trait DeleteSegmentbyDateEventInfo {
   val carbonTable: CarbonTable
   val loadDates: String
-  override val carbonTableIdentifier: CarbonTableIdentifier = carbonTable.getCarbonTableIdentifier
 }
 
 /**
-  * event for Clean Files
-  */
-trait CleanFilesEvent extends TableEvent {
+ * event for Clean Files
+ */
+trait CleanFilesEventInfo {
   val carbonTable: CarbonTable
-  override val carbonTableIdentifier: CarbonTableIdentifier = carbonTable.getCarbonTableIdentifier
 }
 
 /**
-  * event for update table
-  */
-trait UpdateTableEvent extends TableEvent {
+ * event for update table
+ */
+trait UpdateTableEventInfo {
   val carbonTable: CarbonTable
-  override val carbonTableIdentifier: CarbonTableIdentifier = carbonTable.getCarbonTableIdentifier
 }
 
 /**
-  * event for delete from table
-  */
-trait DeleteFromTableEvent extends TableEvent {
+ * event for delete from table
+ */
+trait DeleteFromTableEventInfo {
   val carbonTable: CarbonTable
-  override val carbonTableIdentifier: CarbonTableIdentifier = carbonTable.getCarbonTableIdentifier
+}
+
+/**
+ * event to initiate CarbonEnv
+ */
+trait SessionEventInfo {
+  val sparkSession: SparkSession
 }

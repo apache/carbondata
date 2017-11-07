@@ -52,8 +52,7 @@ import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.events.ListenerBus
-import org.apache.carbondata.events.LoadTablePostExecutionEvent
+import org.apache.carbondata.events.{LoadTablePostExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.csvinput.BlockDetails
@@ -484,7 +483,7 @@ object CarbonDataRDDFactory {
       LoadTablePostExecutionEvent(sqlContext.sparkSession,
         carbonTable.getCarbonTableIdentifier,
         carbonLoadModel)
-      ListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
+      OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
       updateTableStatus(status, carbonLoadModel, loadStatus, overwriteTable)
 
       if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS.equals(loadStatus)) {

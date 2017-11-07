@@ -31,7 +31,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, Lock
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.events.{ListenerBus, UpdateTablePreEvent}
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus, UpdateTablePostEvent, UpdateTablePreEvent}
 import org.apache.carbondata.processing.loading.FailureCauses
 
 private[sql] case class ProjectForUpdateCommand(
@@ -59,10 +59,11 @@ private[sql] case class ProjectForUpdateCommand(
       asInstanceOf[CarbonRelation]
     val carbonTable = relation.tableMeta.carbonTable
 
-    //trigger event for Update table
+    // trigger event for Update table
+    val operationContext = new OperationContext
     val updateTablePreEvent: UpdateTablePreEvent =
       UpdateTablePreEvent(carbonTable)
-    ListenerBus.getInstance.fireEvent(updateTablePreEvent)
+    OperationListenerBus.getInstance.fireEvent(updateTablePreEvent, operationContext)
 
     val metadataLock = CarbonLockFactory
       .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
@@ -117,6 +118,11 @@ private[sql] case class ProjectForUpdateCommand(
 
       // Do IUD Compaction.
       HorizontalCompaction.tryHorizontalCompaction(sparkSession, relation, isUpdateOperation = true)
+
+      // trigger event for Update table
+      val updateTablePostEvent: UpdateTablePostEvent =
+        UpdateTablePostEvent(carbonTable)
+      OperationListenerBus.getInstance.fireEvent(updateTablePostEvent, operationContext)
     } catch {
       case e: HorizontalCompactionException =>
         LOGGER.error(

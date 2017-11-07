@@ -26,11 +26,10 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.events.ListenerBus
-import org.apache.carbondata.events.DropTablePreEvent
+import org.apache.carbondata.events.{DropTablePostEvent, DropTablePreEvent, OperationContext, OperationListenerBus}
 
 case class CarbonDropTableCommand(
     ifExistsSet: Boolean,
@@ -62,20 +61,26 @@ case class CarbonDropTableCommand(
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
 
-      //fires the event before dropping main table
-      val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      val carbonTable = metastore
-        .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
-        .tableMeta.carbonTable
-      val dropTablePostEvent: DropTablePreEvent =
+      // fires the event before dropping main table
+      val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
+      val operationContext = new OperationContext
+      val dropTablePreEvent: DropTablePreEvent =
         DropTablePreEvent(
           carbonTable,
           ifExistsSet,
           sparkSession)
-      ListenerBus.getInstance.fireEvent(dropTablePostEvent)
+      OperationListenerBus.getInstance.fireEvent(dropTablePreEvent, operationContext)
 
       CarbonEnv.getInstance(sparkSession).carbonMetastore
         .dropTable(tableIdentifier.getTablePath, identifier)(sparkSession)
+
+      val dropTablePostEvent: DropTablePostEvent =
+        DropTablePostEvent(
+          carbonTable,
+          ifExistsSet,
+          sparkSession)
+      OperationListenerBus.getInstance.fireEvent(dropTablePreEvent, operationContext)
+
       LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
     } catch {
       case ex: Exception =>
