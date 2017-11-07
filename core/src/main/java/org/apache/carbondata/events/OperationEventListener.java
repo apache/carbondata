@@ -19,12 +19,13 @@ package org.apache.carbondata.events;
 /**
  * Event listener interface which describes the possible events
  */
-public interface EventListener {
+public interface OperationEventListener {
 
   /**
    * Called on a specified event occurrence
    *
    * @param event
+   * @param operationContext
    */
-  void onEvent(Event event);
+  void onEvent(Event event, OperationContext operationContext) throws Exception;
 }

@@ -50,15 +50,3 @@ case class LoadTableAbortExecutionEvent(sparkSession: SparkSession,
     carbonLoadModel: CarbonLoadModel) extends LoadEvent {
   override def getEventType: String = LoadTableAbortExecutionEvent.eventType
 }
-
-object LoadTablePreExecutionEvent {
-  val eventType = LoadTablePreExecutionEvent.getClass.getName
-}
-
-object LoadTablePostExecutionEvent {
-  val eventType = LoadTablePostExecutionEvent.getClass.getName
-}
-
-object LoadTableAbortExecutionEvent {
-  val eventType = LoadTableAbortExecutionEvent.getClass.getName
-}

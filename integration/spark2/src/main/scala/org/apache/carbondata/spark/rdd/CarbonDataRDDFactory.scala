@@ -269,6 +269,7 @@ object CarbonDataRDDFactory {
       updateModel: Option[UpdateTableModel] = None
   ): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    val operationContext = new OperationContext
     // for handling of the segment Merging.
 
     LOGGER.audit(s"Data load request has been received for table" +
@@ -483,7 +484,7 @@ object CarbonDataRDDFactory {
       LoadTablePostExecutionEvent(sqlContext.sparkSession,
         carbonTable.getCarbonTableIdentifier,
         carbonLoadModel)
-      ListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent)
+      ListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
       updateTableStatus(status, carbonLoadModel, loadStatus, overwriteTable)
 
       if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS.equals(loadStatus)) {

@@ -16,18 +16,26 @@
  */
 package org.apache.carbondata.events;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
- * Change event for any updates in store.
+ * One OperationContext per one operation.
+ * OperationContext active till operation execution completes
  */
-public interface ChangeEvent<T> extends Event {
+public class OperationContext {
 
-  T getEventData();
+  private Map<String, Object> operationProperties = new HashMap<String, Object>();
 
-  void setEventData(T data);
+  public Map<String, Object> getProperties() {
+    return operationProperties;
+  }
 
-  enum EventType {
-    INSERT,DELETE,UPDATE,REFRESH
+  public void setProperty(String key, Object value) {
+    this.operationProperties.put(key, value);
+  }
+
+  public Object getProperty(String key) {
+    return this.operationProperties.get(key);
   }
 }
-
-
