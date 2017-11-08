@@ -31,8 +31,6 @@ public abstract class AbstractRawColumnChunk {
 
   protected ByteBuffer rawData;
 
-  private int[] offsets;
-
   private int[] rowCount;
 
   protected int pagesCount;
@@ -70,14 +68,6 @@ public abstract class AbstractRawColumnChunk {
 
   public ByteBuffer getRawData() {
     return rawData;
-  }
-
-  public int[] getOffsets() {
-    return offsets;
-  }
-
-  public void setOffsets(int[] offsets) {
-    this.offsets = offsets;
   }
 
   public int getPagesCount() {

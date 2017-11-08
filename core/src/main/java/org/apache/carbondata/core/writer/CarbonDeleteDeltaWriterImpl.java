@@ -59,34 +59,6 @@ public class CarbonDeleteDeltaWriterImpl implements CarbonDeleteDeltaWriter {
   }
 
   /**
-   * This method will write the deleted records data in to disk.
-   *
-   * @param value deleted records
-   * @throws IOException if an I/O error occurs
-   */
-  @Override public void write(String value) throws IOException {
-    BufferedWriter brWriter = null;
-    try {
-      FileFactory.createNewFile(filePath, fileType);
-      dataOutStream = FileFactory.getDataOutputStream(filePath, fileType);
-      brWriter = new BufferedWriter(new OutputStreamWriter(dataOutStream,
-          CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
-      brWriter.write(value);
-    } catch (IOException ioe) {
-      LOGGER.error("Error message: " + ioe.getLocalizedMessage());
-    } finally {
-      if (null != brWriter) {
-        brWriter.flush();
-      }
-      if (null != dataOutStream) {
-        dataOutStream.flush();
-      }
-      CarbonUtil.closeStreams(brWriter, dataOutStream);
-    }
-
-  }
-
-  /**
    * This method will write the deleted records data in the json format.
    * @param deleteDeltaBlockDetails
    * @throws IOException

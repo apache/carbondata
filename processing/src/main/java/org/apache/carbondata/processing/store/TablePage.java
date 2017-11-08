@@ -145,7 +145,7 @@ public class TablePage {
     // convert each column category, update key and stats
     byte[] mdk = WriteStepRowUtil.getMdk(row, model.getMDKeyGenerator());
     convertToColumnarAndAddToPages(rowId, row, mdk);
-    key.update(rowId, row, mdk);
+    key.update(rowId, row);
   }
 
   // convert the input row object to columnar data and add to column pages

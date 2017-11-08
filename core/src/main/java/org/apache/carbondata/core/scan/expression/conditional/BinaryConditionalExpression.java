@@ -23,9 +23,6 @@ import org.apache.carbondata.core.scan.expression.logical.BinaryLogicalExpressio
 public abstract class BinaryConditionalExpression extends BinaryLogicalExpression
     implements ConditionalExpression {
 
-  /**
-   *
-   */
   private static final long serialVersionUID = 1L;
   public boolean isNull;
   public BinaryConditionalExpression(Expression left, Expression right) {

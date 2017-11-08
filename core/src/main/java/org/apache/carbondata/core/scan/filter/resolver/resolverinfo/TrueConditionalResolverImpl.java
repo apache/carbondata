@@ -47,16 +47,4 @@ public class TrueConditionalResolverImpl extends ConditionalFilterResolverImpl {
     return FilterExecuterType.TRUE;
   }
 
-  /**
-   * Method will the read filter expression corresponding to the resolver.
-   * This method is required in row level executer inorder to evaluate the filter
-   * expression against spark, as mentioned above row level is a special type
-   * filter resolver.
-   *
-   * @return Expression
-   */
-  public Expression getFilterExpresion() {
-    return exp;
-  }
-
 }

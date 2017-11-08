@@ -37,11 +37,7 @@ public class TableTaskInfo implements Distributable {
     return taskId;
   }
 
-  public List<TableBlockInfo> getTableBlockInfoList() {
-    return tableBlockInfoList;
-  }
-
-  public TableTaskInfo(String taskId, List<TableBlockInfo> tableBlockInfoList) {
+  TableTaskInfo(String taskId, List<TableBlockInfo> tableBlockInfoList) {
     this.taskId = taskId;
     this.tableBlockInfoList = tableBlockInfoList;
   }

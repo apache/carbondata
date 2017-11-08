@@ -27,10 +27,6 @@ public interface CarbonDeleteDeltaWriter {
 
   /**
    * write method that accepts comma seperated deleted records
-   *
-   * @param value delete record details
-   * @throws IOException if an I/O error occurs
    */
-  void write(String value) throws IOException;
   void write(DeleteDeltaBlockDetails deleteBlockDetails) throws IOException;
 }

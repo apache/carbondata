@@ -53,7 +53,7 @@ public class HighCardDictDimensionIndexCodec  extends IndexStorageCodec {
         if (isInvertedIndex) {
           indexStorage = new BlockIndexerStorageForShort(data, false, true, isSort);
         } else {
-          indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data, true);
+          indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data);
         }
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         super.compressedDataPage = compressor.compressByte(flattened);

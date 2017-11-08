@@ -76,11 +76,6 @@ public class ColumnPageWrapper implements DimensionColumnDataChunk {
   }
 
   @Override
-  public int getColumnValueSize() {
-    return columnValueSize;
-  }
-
-  @Override
   public boolean isExplicitSorted() {
     return false;
   }

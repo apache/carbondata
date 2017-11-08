@@ -53,38 +53,6 @@ public interface KeyGenerator extends Serializable, Comparator<byte[]> {
   long[] getKeyArray(byte[] key);
 
   /**
-   * It gets array of keys out of single key aka byte array
-   *
-   * @param key
-   * @param offset
-   * @return array of keys.
-   */
-  long[] getKeyArray(byte[] key, int offset);
-
-  /**
-   * It gets array of keys out of single key aka byte array
-   *
-   * @param key
-   * @param maskedByteRanges
-   * @return array of keys
-   */
-  long[] getKeyArray(byte[] key, int[] maskedByteRanges);
-
-  /**
-   * It gets the key in the specified index from the single key aka byte array
-   *
-   * @param key
-   * @param index of key.
-   * @return key
-   */
-  long getKey(byte[] key, int index);
-
-  /**
-   * Set any extra properties if required.
-   */
-  void setProperty(Object key, Object value);
-
-  /**
    * Gives the key size in number of bytes.
    */
   int getKeySizeInBytes();
@@ -97,8 +65,6 @@ public interface KeyGenerator extends Serializable, Comparator<byte[]> {
    * @return
    */
   int[] getKeyByteOffsets(int index);
-
-  int compare(byte[] key1, int offset1, int length1, byte[] key2, int offset2, int length2);
 
   /**
    * returns the dimension count

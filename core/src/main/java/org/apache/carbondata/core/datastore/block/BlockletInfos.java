@@ -38,7 +38,7 @@ public class BlockletInfos implements Serializable {
   /**
    * default constructor
    */
-  public BlockletInfos() {
+  BlockletInfos() {
   }
   /**
    * constructor to initialize the blockletinfo
@@ -80,30 +80,12 @@ public class BlockletInfos implements Serializable {
   }
 
   /**
-   * set start blocklet number
-   *
-   * @param startBlockletNumber
-   */
-  public void setStartBlockletNumber(int startBlockletNumber) {
-    this.startBlockletNumber = startBlockletNumber;
-  }
-
-  /**
    * returns end blocklet number
    *
    * @return
    */
   public int getNumberOfBlockletToScan() {
     return numberOfBlockletToScan;
-  }
-
-  /**
-   * set end blocklet number to be scaned
-   *
-   * @param numberOfBlockletToScan
-   */
-  public void setNumberOfBlockletToScan(int numberOfBlockletToScan) {
-    this.numberOfBlockletToScan = numberOfBlockletToScan;
   }
 
 }

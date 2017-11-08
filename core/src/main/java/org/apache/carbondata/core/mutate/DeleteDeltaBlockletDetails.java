@@ -27,13 +27,13 @@ import java.util.TreeSet;
 public class DeleteDeltaBlockletDetails implements Serializable {
 
   private static final long serialVersionUID = 1206104914911491724L;
-  private String id;
+  private String blockletId;
   private Integer pageId;
 
   private Set<Integer> deletedRows;
 
-  public DeleteDeltaBlockletDetails(String id, Integer pageId) {
-    this.id = id;
+  public DeleteDeltaBlockletDetails(String blockletId, Integer pageId) {
+    this.blockletId = blockletId;
     deletedRows = new TreeSet<Integer>();
     this.pageId = pageId;
   }
@@ -46,12 +46,12 @@ public class DeleteDeltaBlockletDetails implements Serializable {
     return deletedRows.add(row);
   }
 
-  public String getId() {
-    return id;
+  public String getBlockletId() {
+    return blockletId;
   }
 
-  public void setId(String id) {
-    this.id = id;
+  public void setBlockletId(String blockletId) {
+    this.blockletId = blockletId;
   }
 
   public Integer getPageId() {
@@ -73,15 +73,15 @@ public class DeleteDeltaBlockletDetails implements Serializable {
     if (null == pageId || null == that.pageId) {
       return false;
     }
-    return id.equals(that.id) && (pageId.intValue() == that.pageId.intValue());
+    return blockletId.equals(that.blockletId) && (pageId.intValue() == that.pageId.intValue());
   }
 
   @Override public int hashCode() {
-    return id.hashCode() + pageId.hashCode();
+    return blockletId.hashCode() + pageId.hashCode();
   }
 
   public String getBlockletKey() {
-    return this.id + '_' + this.pageId;
+    return this.blockletId + '_' + this.pageId;
   }
 
 }

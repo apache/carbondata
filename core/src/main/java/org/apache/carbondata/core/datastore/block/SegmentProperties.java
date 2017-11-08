@@ -806,16 +806,6 @@ public class SegmentProperties {
   }
 
   /**
-   * It returns no of column availble in given column group
-   *
-   * @param colGrpId
-   * @return no of column in given column group
-   */
-  public int getNoOfColumnsInColumnGroup(int colGrpId) {
-    return columnGroupOrdinalToMdkeymapping.get(colGrpId).size();
-  }
-
-  /**
    * @param blockIndex
    * @return It returns all dimension present in given block index
    */

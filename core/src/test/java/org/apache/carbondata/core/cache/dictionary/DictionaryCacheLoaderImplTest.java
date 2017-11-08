@@ -86,7 +86,7 @@ public class DictionaryCacheLoaderImplTest {
         return 9999;
       }
     };
-    dictionaryCacheLoader.load(dictionaryInfo, columnIdentifier, 0L, 2L, true);
+    dictionaryCacheLoader.load(dictionaryInfo, 0L, 2L, true);
     assertEquals(dictionaryInfo.getDictionaryChunks().getSize(), 4);
   }
 
@@ -96,7 +96,7 @@ public class DictionaryCacheLoaderImplTest {
         return 10000;
       }
     };
-    dictionaryCacheLoader.load(dictionaryInfo, columnIdentifier, 0L, 2L, true);
+    dictionaryCacheLoader.load(dictionaryInfo, 0L, 2L, true);
     assertEquals(dictionaryInfo.getDictionaryChunks().getSize(), 2);
   }
 }

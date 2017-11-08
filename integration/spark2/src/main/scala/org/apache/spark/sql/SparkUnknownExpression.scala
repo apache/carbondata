@@ -123,9 +123,6 @@ class SparkUnknownExpression(var sparkExp: SparkExpression)
     }
   }
 
-
-
-
   def getAllColumnListFromExpressionTree(sparkCurrentExp: SparkExpression,
       list: List[ColumnExpression]): List[ColumnExpression] = {
     sparkCurrentExp match {

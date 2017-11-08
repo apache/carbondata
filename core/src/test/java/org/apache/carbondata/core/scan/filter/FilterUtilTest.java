@@ -25,9 +25,7 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -328,7 +326,7 @@ public class FilterUtilTest extends AbstractDictionaryCacheTest {
         return "test";
       }
     };
-    assertTrue(FilterUtil.getFilterListForRS(expression, columnExpression, defaultValues,
+    assertTrue(FilterUtil.getFilterListForRS(expression, defaultValues,
         defaultSurrogate) instanceof ColumnFilterInfo);
   }
 

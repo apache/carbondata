@@ -48,10 +48,6 @@ public class RangeExpressionEvaluator {
   private static final LogService LOG =
       LogServiceFactory.getLogService(RangeExpressionEvaluator.class.getName());
   private Expression expr;
-  private Expression srcNode;
-  private Expression srcParentNode;
-  private Expression tarNode;
-  private Expression tarParentNode;
 
   public RangeExpressionEvaluator(Expression expr) {
     this.expr = expr;
@@ -59,22 +55,6 @@ public class RangeExpressionEvaluator {
 
   public Expression getExpr() {
     return expr;
-  }
-
-  public void setExpr(Expression expr) {
-    this.expr = expr;
-  }
-
-  public Expression getSrcNode() {
-    return srcNode;
-  }
-
-  public void setTarNode(Expression expr) {
-    this.tarNode = expr;
-  }
-
-  public void setTarParentNode(Expression expr) {
-    this.tarParentNode = expr;
   }
 
   /**
@@ -107,7 +87,7 @@ public class RangeExpressionEvaluator {
     filterExpressionMap.clear();
   }
 
-  public void replaceWithRangeExpression(
+  private void replaceWithRangeExpression(
       Map<String, List<FilterModificationNode>> filterExpressionMap) {
 
     List<FilterModificationNode> deleteExp = new ArrayList<>();
@@ -243,7 +223,7 @@ public class RangeExpressionEvaluator {
     ExpressionType expType = getExpressionType(currentNode);
 
     FilterModificationNode filterExpression =
-        new FilterModificationNode(currentNode, parentNode, expType, dataType, literalVal, colName);
+        new FilterModificationNode(currentNode, parentNode, expType);
 
     if (null == filterExpressionMap.get(colName)) {
       filterExpressionMap.put(colName, new ArrayList<FilterModificationNode>());
@@ -277,7 +257,7 @@ public class RangeExpressionEvaluator {
   private boolean eligibleForRangeExpConv(Expression expChild) {
     for (Expression exp : expChild.getChildren()) {
       if (exp instanceof ColumnExpression) {
-        if (((ColumnExpression) exp).isDimension() == false) {
+        if (!((ColumnExpression) exp).isDimension()) {
           return false;
         }
         if ((((ColumnExpression) exp).getDimension().getDataType() == DataTypes.ARRAY) || (
@@ -391,50 +371,6 @@ public class RangeExpressionEvaluator {
     } else {
       return false;
     }
-  }
-
-  /**
-   * This Method Traverses the Expression Tree to find the corresponding node of the Range
-   * Expression. If one node of Range Expression is LessThan then a corresponding GreaterThan
-   * will be choosen or vice versa.
-   *
-   * @param currentNode
-   * @param parentNode
-   * @return
-   */
-  private Expression traverseTree(Expression currentNode, Expression parentNode) {
-    Expression result = null;
-
-    if (null == parentNode) {
-      currentNode = this.getExpr();
-      parentNode = currentNode;
-    }
-
-    if (!this.getSrcNode().equals(currentNode) && isLessThanGreaterThanExp(currentNode)) {
-      String srcColumnName = getColumnName(this.getSrcNode());
-      String tarColumnName = getColumnName(currentNode);
-      ExpressionType srcExpType = getExpressionType(this.getSrcNode());
-      ExpressionType tarExpType = getExpressionType(currentNode);
-
-      if ((null != srcColumnName) && (null != tarColumnName) && (srcColumnName
-          .equals(tarColumnName)) && (srcExpType != ExpressionType.FALSE) && (tarExpType
-          != ExpressionType.FALSE) && ((matchExpType(srcExpType, tarExpType)) && checkLiteralValue(
-          this.getSrcNode(), currentNode))) {
-        this.setTarNode(currentNode);
-        this.setTarParentNode(parentNode);
-        return parentNode;
-      }
-    }
-
-    for (Expression exp : currentNode.getChildren()) {
-      if (null != exp && !(exp instanceof RangeExpression)) {
-        result = traverseTree(exp, currentNode);
-        if (null != result) {
-          return result;
-        }
-      }
-    }
-    return null;
   }
 
   /**

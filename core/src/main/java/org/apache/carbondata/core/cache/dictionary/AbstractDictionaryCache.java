@@ -283,8 +283,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
         new DictionaryCacheLoaderImpl(dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
             carbonStorePath, dictionaryColumnUniqueIdentifier);
     dictionaryCacheLoader
-        .load(dictionaryInfo, dictionaryColumnUniqueIdentifier.getColumnIdentifier(),
-            dictionaryChunkStartOffset, dictionaryChunkEndOffset, loadSortIndex);
+        .load(dictionaryInfo, dictionaryChunkStartOffset, dictionaryChunkEndOffset, loadSortIndex);
   }
 
   /**

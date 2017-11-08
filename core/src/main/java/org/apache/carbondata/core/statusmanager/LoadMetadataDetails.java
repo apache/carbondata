@@ -33,7 +33,6 @@ public class LoadMetadataDetails implements Serializable {
   private String loadStatus;
   private String loadName;
   private String partitionCount;
-  private String isDeleted = CarbonCommonConstants.KEYWORD_FALSE;
 
   // update delta end timestamp
   private String updateDeltaEndTimestamp = "";
@@ -266,24 +265,6 @@ public class LoadMetadataDetails implements Serializable {
    */
   public void setMajorCompacted(String majorCompacted) {
     this.majorCompacted = majorCompacted;
-  }
-
-  /**
-   * To get isDeleted property.
-   *
-   * @return isDeleted
-   */
-  public String getIsDeleted() {
-    return isDeleted;
-  }
-
-  /**
-   * To set isDeleted property.
-   *
-   * @param isDeleted
-   */
-  public void setIsDeleted(String isDeleted) {
-    this.isDeleted = isDeleted;
   }
 
   /**

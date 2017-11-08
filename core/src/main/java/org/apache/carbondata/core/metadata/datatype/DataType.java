@@ -72,7 +72,6 @@ public class DataType implements Serializable {
   public static final char TIMESTAMP_CHAR = 't';
   public static final char DATE_CHAR = 'x';
   public static final char BYTE_ARRAY_CHAR = 'y';
-  public static final char BYTE_VALUE_MEASURE_CHAR = 'c';
   public static final char BIG_DECIMAL_MEASURE_CHAR = 'b';
   public static final char BIG_INT_MEASURE_CHAR = 'd';
 

@@ -32,8 +32,6 @@ import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 import org.apache.carbondata.format.Encoding;
 
-import org.apache.commons.lang.ArrayUtils;
-
 /**
  * Measure column V3 Reader class which will be used to read and uncompress
  * V3 format data
@@ -114,8 +112,6 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
     rawColumnChunk.setMaxValues(maxValueOfEachPage);
     rawColumnChunk.setMinValues(minValueOfEachPage);
     rawColumnChunk.setRowCount(eachPageLength);
-    rawColumnChunk.setOffsets(ArrayUtils
-        .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
     return rawColumnChunk;
   }
 
@@ -181,8 +177,6 @@ public class CompressedMeasureChunkFileBasedReaderV3 extends AbstractMeasureChun
       measureRawColumnChunk.setMaxValues(maxValueOfEachPage);
       measureRawColumnChunk.setMinValues(minValueOfEachPage);
       measureRawColumnChunk.setRowCount(eachPageLength);
-      measureRawColumnChunk.setOffsets(ArrayUtils
-          .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
       measureDataChunk[index] = measureRawColumnChunk;
       runningLength += currentLength;
       index++;

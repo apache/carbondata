@@ -21,10 +21,7 @@ import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.StringWriter;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
@@ -39,21 +36,7 @@ import com.google.gson.Gson;
  */
 public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileReader {
 
-  /**
-   * LOGGER
-   */
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(CarbonDeleteDeltaFileReaderImpl.class.getName());
-
   private String filePath;
-
-  private FileFactory.FileType fileType;
-
-  private DataInputStream dataInputStream = null;
-
-  private InputStreamReader inputStream = null;
-
-  private static final int DEFAULT_BUFFER_SIZE = 258;
 
   /**
    * @param filePath
@@ -61,31 +44,6 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
    */
   public CarbonDeleteDeltaFileReaderImpl(String filePath, FileFactory.FileType fileType) {
     this.filePath = filePath;
-
-    this.fileType = fileType;
-  }
-
-  /**
-   * This method will be used to read complete delete delta file.
-   * scenario:
-   * Whenever a query is executed then read the delete delta file
-   * to exclude the deleted data.
-   *
-   * @return All deleted records for the specified block
-   * @throws IOException if an I/O error occurs
-   */
-  @Override public String read() throws IOException {
-    // Configure Buffer based on our requirement
-    char[] buffer = new char[DEFAULT_BUFFER_SIZE];
-    StringWriter sw = new StringWriter();
-    dataInputStream = FileFactory.getDataInputStream(filePath, fileType);
-    inputStream = new InputStreamReader(dataInputStream,
-        CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT);
-    int n = 0;
-    while (-1 != (n = inputStream.read(buffer))) {
-      sw.write(buffer, 0, n);
-    }
-    return sw.toString();
   }
 
   /**

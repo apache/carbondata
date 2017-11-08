@@ -90,11 +90,6 @@ public interface DimensionColumnDataChunk {
   boolean isNoDicitionaryColumn();
 
   /**
-   * @return length of each column
-   */
-  int getColumnValueSize();
-
-  /**
    * @return whether columns where explictly sorted or not
    */
   boolean isExplicitSorted();

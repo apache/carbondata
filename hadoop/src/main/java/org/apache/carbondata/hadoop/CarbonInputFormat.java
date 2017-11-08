@@ -531,8 +531,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
             } else {
               // apply filter and get matching blocks
               filterredBlocks = filterExpressionProcessor
-                  .getFilterredBlocks(abstractIndex.getDataRefNode(), resolver, abstractIndex,
-                      absoluteTableIdentifier);
+                  .getFilterredBlocks(abstractIndex.getDataRefNode(), resolver, abstractIndex);
             }
             resultFilterredBlocks.addAll(filterredBlocks);
           }

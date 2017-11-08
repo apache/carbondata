@@ -39,8 +39,6 @@ import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 import org.apache.carbondata.format.Encoding;
 
-import org.apache.commons.lang.ArrayUtils;
-
 /**
  * Dimension column V3 Reader class which will be used to read and uncompress
  * V3 format data
@@ -123,8 +121,6 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     rawColumnChunk.setMaxValues(maxValueOfEachPage);
     rawColumnChunk.setMinValues(minValueOfEachPage);
     rawColumnChunk.setRowCount(eachPageLength);
-    rawColumnChunk.setOffsets(ArrayUtils
-        .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
     return rawColumnChunk;
   }
 
@@ -187,8 +183,6 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       dimensionDataChunks[index].setMaxValues(maxValueOfEachPage);
       dimensionDataChunks[index].setMinValues(minValueOfEachPage);
       dimensionDataChunks[index].setRowCount(eachPageLength);
-      dimensionDataChunks[index].setOffsets(ArrayUtils
-          .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
       runningLength += currentLength;
       index++;
     }
