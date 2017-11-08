@@ -23,7 +23,7 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command.{AlterTableRenameCommand, ExecutedCommandExec}
 import org.apache.spark.sql.execution.command.mutation.{DeleteExecution, ProjectForDeleteCommand, ProjectForUpdateCommand}
-import org.apache.spark.sql.execution.command.schema.{AlterTableAddColumnCommand, AlterTableDataTypeChangeCommand, AlterTableDropColumnCommand}
+import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -35,36 +35,36 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
-      case update@ProjectForUpdateCommand(_, tableIdentifier) =>
+      case ProjectForUpdateCommand(_, tableIdentifier) =>
         rejectIfStreamingTable(
           DeleteExecution.getTableIdentifier(tableIdentifier),
           "Data update")
-        ExecutedCommandExec(update) :: Nil
-      case delete@ProjectForDeleteCommand(_, tableIdentifier, _) =>
+        Nil
+      case ProjectForDeleteCommand(_, tableIdentifier, _) =>
         rejectIfStreamingTable(
           DeleteExecution.getTableIdentifier(tableIdentifier),
           "Date delete")
-        ExecutedCommandExec(delete) :: Nil
-      case alter@AlterTableAddColumnCommand(model) =>
+        Nil
+      case CarbonAlterTableAddColumnCommand(model) =>
         rejectIfStreamingTable(
           new TableIdentifier(model.tableName, model.databaseName),
           "Alter table add column")
-        ExecutedCommandExec(alter) :: Nil
-      case alter@AlterTableDropColumnCommand(model) =>
+        Nil
+      case CarbonAlterTableDropColumnCommand(model) =>
         rejectIfStreamingTable(
           new TableIdentifier(model.tableName, model.databaseName),
           "Alter table drop column")
-        ExecutedCommandExec(alter) :: Nil
-      case alter@AlterTableDataTypeChangeCommand(model) =>
+        Nil
+      case CarbonAlterTableDataTypeChangeCommand(model) =>
         rejectIfStreamingTable(
           new TableIdentifier(model.tableName, model.databaseName),
           "Alter table change datatype")
-        ExecutedCommandExec(alter) :: Nil
-      case alter@AlterTableRenameCommand(oldTableIdentifier, _, _) =>
+        Nil
+      case AlterTableRenameCommand(oldTableIdentifier, _, _) =>
         rejectIfStreamingTable(
           oldTableIdentifier,
           "Alter rename table")
-        ExecutedCommandExec(alter) :: Nil
+        Nil
       case _ => Nil
     }
   }

@@ -33,7 +33,7 @@ import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.spark.rdd.AlterTableDropColumnRDD
 
-private[sql] case class AlterTableDropColumnCommand(
+private[sql] case class CarbonAlterTableDropColumnCommand(
     alterTableDropColumnModel: AlterTableDropColumnModel)
   extends RunnableCommand {
 

@@ -31,7 +31,7 @@ import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil}
 
-private[sql] case class AlterTableDataTypeChangeCommand(
+private[sql] case class CarbonAlterTableDataTypeChangeCommand(
     alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel)
   extends RunnableCommand {
 
