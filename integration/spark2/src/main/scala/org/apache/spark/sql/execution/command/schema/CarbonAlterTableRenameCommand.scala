@@ -34,7 +34,7 @@ import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
-private[sql] case class AlterTableRenameTableCommand(
+private[sql] case class CarbonAlterTableRenameCommand(
     alterTableRenameModel: AlterTableRenameModel)
   extends RunnableCommand {
 

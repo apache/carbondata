@@ -51,7 +51,7 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test to revert table name on failure") {
-    intercept[RuntimeException] {
+    val exception = intercept[RuntimeException] {
       new File(TestQueryExecutor.warehouse + "/reverttest_fail").mkdir()
       sql("alter table reverttest rename to reverttest_fail")
       new File(TestQueryExecutor.warehouse + "/reverttest_fail").delete()
