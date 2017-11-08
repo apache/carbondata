@@ -80,6 +80,21 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test blocking alter table operation on streaming table") {
+    intercept[MalformedCarbonCommandException] {
+      sql("""ALTER TABLE source ADD COLUMNS (c6 string)""").show()
+    }
+    intercept[MalformedCarbonCommandException] {
+      sql("""ALTER TABLE source DROP COLUMNS (c1)""").show()
+    }
+    intercept[MalformedCarbonCommandException] {
+      sql("""ALTER TABLE source RENAME to t""").show()
+    }
+    intercept[MalformedCarbonCommandException] {
+      sql("""ALTER TABLE source CHANGE c1 c1 int""").show()
+    }
+  }
+
   override def afterAll {
     sql("USE default")
     sql("DROP DATABASE IF EXISTS streaming CASCADE")
