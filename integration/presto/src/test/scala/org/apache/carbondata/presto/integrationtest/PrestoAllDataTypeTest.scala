@@ -402,4 +402,11 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
 
     assert(actualResult.equals(expectedResult))
   }
+
+  test("test timestamp datatype using cast operator") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT NAME AS RESULT FROM TESTDB.TESTTABLE WHERE DOB = CAST('2016-04-14 15:00:09' AS TIMESTAMP)")
+    val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> "jatin"))
+    assert(actualResult.equals(expectedResult))
+  }
 }
