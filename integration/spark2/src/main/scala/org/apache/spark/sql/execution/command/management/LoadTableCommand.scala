@@ -85,42 +85,24 @@ case class LoadTableCommand(
     val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
     carbonProperty.addProperty("zookeeper.enable.lock", "false")
 
+    // get the value of 'spark.executor.cores' from spark conf, default value is 1
+    val sparkExecutorCores = sparkSession.sparkContext.conf.get("spark.executor.cores", "1")
+    // get the value of 'carbon.number.of.cores.while.loading' from carbon properties,
+    // default value is the value of 'spark.executor.cores'
     val numCoresLoading =
       try {
-        Integer.parseInt(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
-                CarbonCommonConstants.NUM_CORES_MAX_VAL.toString()))
+        CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.NUM_CORES_LOADING, sparkExecutorCores)
       } catch {
         case exc: NumberFormatException =>
           LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_LOADING
-              + " is wrong. ")
-          CarbonCommonConstants.NUM_CORES_MAX_VAL
-      }
-
-    val newNumCoresLoading =
-      if (sparkSession.sparkContext.conf.contains("spark.executor.cores")) {
-        // If running on yarn,
-        // get the minimum value of 'spark.executor.cores' and NUM_CORES_LOADING,
-        // If user set the NUM_CORES_LOADING, it can't exceed the value of 'spark.executor.cores';
-        // If user doesn't set the NUM_CORES_LOADING, it will use the value of
-        // 'spark.executor.cores', but the value can't exceed the value of NUM_CORES_MAX_VAL,
-        // NUM_CORES_LOADING's default value is NUM_CORES_MAX_VAL;
-        Math.min(
-          sparkSession.sparkContext.conf.getInt("spark.executor.cores", 1),
-          numCoresLoading
-        )
-      } else {
-        // If running on local mode,
-        // get the minimum value of NUM_CORES_DEFAULT_VAL and NUM_CORES_LOADING,
-        Math.min(
-          Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL),
-          numCoresLoading
-        )
+              + " is wrong. Falling back to the default value "
+              + sparkExecutorCores)
+          sparkExecutorCores
       }
 
     // update the property with new value
-    carbonProperty.addProperty(CarbonCommonConstants.NUM_CORES_LOADING,
-        newNumCoresLoading.toString())
+    carbonProperty.addProperty(CarbonCommonConstants.NUM_CORES_LOADING, numCoresLoading)
 
     val optionsFinal = DataLoadingUtil.getDataLoadingOptions(carbonProperty, options)
 
