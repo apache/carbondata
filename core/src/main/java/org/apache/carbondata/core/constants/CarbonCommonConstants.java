@@ -1374,6 +1374,11 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String BITSET_PIPE_LINE = "carbon.use.bitset.pipe.line";
 
+  /**
+   * this will be used to provide comment for table
+   */
+  public static final String TABLE_COMMENT = "comment";
+
   public static final String BITSET_PIPE_LINE_DEFAULT = "true";
 
   /**

@@ -24,7 +24,7 @@ import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.{AlterTableCompactionCommand, CarbonShowLoadsCommand, LoadTableByInsertCommand, LoadTableCommand}
 import org.apache.spark.sql.execution.command.partition.ShowCarbonPartitionsCommand
-import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand, CarbonAlterTableRenameCommand}
+import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 
 import org.apache.carbondata.core.util.CarbonUtil
@@ -156,6 +156,16 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         val cmd =
           CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists = mode == SaveMode.Ignore)
         ExecutedCommandExec(cmd) :: Nil
+      case AlterTableSetPropertiesCommand(tableName, properties, isView)
+        if (CarbonEnv.getInstance(sparkSession).carbonMetastore
+        .tableExists(tableName)(sparkSession)) => {
+        ExecutedCommandExec(AlterTableSetCommand(tableName, properties, isView)) :: Nil
+      }
+      case AlterTableUnsetPropertiesCommand(tableName, propKeys, ifExists, isView)
+        if (CarbonEnv.getInstance(sparkSession).carbonMetastore
+        .tableExists(tableName)(sparkSession)) => {
+        ExecutedCommandExec(AlterTableUnsetCommand(tableName, propKeys, ifExists, isView)) :: Nil
+      }
       case _ => Nil
     }
   }
