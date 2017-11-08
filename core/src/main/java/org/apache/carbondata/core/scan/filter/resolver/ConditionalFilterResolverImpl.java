@@ -42,12 +42,11 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
 
   private static final long serialVersionUID = 1838955268462201691L;
   protected Expression exp;
-  protected boolean isExpressionResolve;
+  private boolean isExpressionResolve;
   protected boolean isIncludeFilter;
   private DimColumnResolvedFilterInfo dimColResolvedFilterInfo;
   private MeasureColumnResolvedFilterInfo msrColResolvedFilterInfo;
   private AbsoluteTableIdentifier tableIdentifier;
-  private boolean isMeasure;
 
   public ConditionalFilterResolverImpl(Expression exp, boolean isExpressionResolve,
       boolean isIncludeFilter, AbsoluteTableIdentifier tableIdentifier, boolean isMeasure) {
@@ -55,11 +54,10 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     this.isExpressionResolve = isExpressionResolve;
     this.isIncludeFilter = isIncludeFilter;
     this.tableIdentifier = tableIdentifier;
-    this.isMeasure = isMeasure;
-    if (isMeasure == false) {
-      this.dimColResolvedFilterInfo = new DimColumnResolvedFilterInfo();
-    } else {
+    if (isMeasure) {
       this.msrColResolvedFilterInfo = new MeasureColumnResolvedFilterInfo();
+    } else {
+      this.dimColResolvedFilterInfo = new DimColumnResolvedFilterInfo();
     }
   }
 

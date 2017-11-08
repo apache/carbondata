@@ -103,8 +103,7 @@ public class FilterExpressionProcessor implements FilterProcessor {
    *
    */
   public List<DataRefNode> getFilterredBlocks(DataRefNode btreeNode,
-      FilterResolverIntf filterResolver, AbstractIndex tableSegment,
-      AbsoluteTableIdentifier tableIdentifier) {
+      FilterResolverIntf filterResolver, AbstractIndex tableSegment) {
     // Need to get the current dimension tables
     List<DataRefNode> listOfDataBlocksToScan = new ArrayList<DataRefNode>();
     // getting the start and end index key based on filter for hitting the

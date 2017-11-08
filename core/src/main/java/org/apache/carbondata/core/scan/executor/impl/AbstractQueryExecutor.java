@@ -45,7 +45,6 @@ import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.blockletindex.IndexWrapper;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -252,7 +251,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     BlockExecutionInfo blockExecutionInfo = new BlockExecutionInfo();
     SegmentProperties segmentProperties = blockIndex.getSegmentProperties();
     List<CarbonDimension> tableBlockDimensions = segmentProperties.getDimensions();
-    KeyGenerator blockKeyGenerator = segmentProperties.getDimensionKeyGenerator();
 
     // below is to get only those dimension in query which is present in the
     // table block
@@ -276,7 +274,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     blockExecutionInfo.setQueryMeasures(
         currentBlockQueryMeasures.toArray(new QueryMeasure[currentBlockQueryMeasures.size()]));
     blockExecutionInfo.setDataBlock(blockIndex);
-    blockExecutionInfo.setBlockKeyGenerator(blockKeyGenerator);
     // setting whether raw record query or not
     blockExecutionInfo.setRawRecordDetailQuery(queryModel.isForcedDetailRawQuery());
     // total number dimension
@@ -284,7 +281,6 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .setTotalNumberDimensionBlock(segmentProperties.getDimensionOrdinalToBlockMapping().size());
     blockExecutionInfo
         .setTotalNumberOfMeasureBlock(segmentProperties.getMeasuresOrdinalToBlockMapping().size());
-    blockExecutionInfo.setAbsoluteTableIdentifier(queryModel.getAbsoluteTableIdentifier());
     blockExecutionInfo.setComplexDimensionInfoMap(QueryUtil
         .getComplexDimensionsMap(currentBlockQueryDimensions,
             segmentProperties.getDimensionOrdinalToBlockMapping(),

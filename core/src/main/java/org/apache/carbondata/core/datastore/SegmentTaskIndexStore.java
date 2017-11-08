@@ -44,7 +44,6 @@ import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ObjectSizeCalculator;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath.DataFileUtil;
 
 /**
@@ -55,10 +54,7 @@ public class SegmentTaskIndexStore
     implements Cache<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper> {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(SegmentTaskIndexStore.class.getName());
-  /**
-   * carbon store path
-   */
-  protected String carbonStorePath;
+
   /**
    * CarbonLRU cache
    */
@@ -78,11 +74,9 @@ public class SegmentTaskIndexStore
   /**
    * constructor to initialize the SegmentTaskIndexStore
    *
-   * @param carbonStorePath
    * @param lruCache
    */
-  public SegmentTaskIndexStore(String carbonStorePath, CarbonLRUCache lruCache) {
-    this.carbonStorePath = carbonStorePath;
+  public SegmentTaskIndexStore(CarbonLRUCache lruCache) {
     this.lruCache = lruCache;
     segmentLockMap = new ConcurrentHashMap<String, Object>();
   }
@@ -144,22 +138,6 @@ public class SegmentTaskIndexStore
    */
   @Override public void invalidate(TableSegmentUniqueIdentifier tableSegmentUniqueIdentifier) {
     lruCache.remove(tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier());
-  }
-
-  /**
-   * returns block timestamp value from the given task
-   * @param taskKey
-   * @param listOfUpdatedFactFiles
-   * @return
-   */
-  private String getTimeStampValueFromBlock(String taskKey, List<String> listOfUpdatedFactFiles) {
-    for (String blockName : listOfUpdatedFactFiles) {
-      if (taskKey.equals(CarbonTablePath.DataFileUtil.getTaskNo(blockName))) {
-        blockName = blockName.substring(blockName.lastIndexOf('-') + 1, blockName.lastIndexOf('.'));
-        return blockName;
-      }
-    }
-    return null;
   }
 
   /**

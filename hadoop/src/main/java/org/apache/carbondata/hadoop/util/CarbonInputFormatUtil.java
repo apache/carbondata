@@ -28,7 +28,6 @@ import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.TableProvider;
 import org.apache.carbondata.core.scan.filter.intf.FilterOptimizer;
-import org.apache.carbondata.core.scan.filter.intf.FilterOptimizerBasic;
 import org.apache.carbondata.core.scan.filter.optimizer.RangeFilterOptmizer;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
@@ -119,7 +118,7 @@ public class CarbonInputFormatUtil {
     if (null != filterExpression) {
       // Optimize Filter Expression and fit RANGE filters is conditions apply.
       FilterOptimizer rangeFilterOptimizer =
-          new RangeFilterOptmizer(new FilterOptimizerBasic(), filterExpression);
+          new RangeFilterOptmizer(filterExpression);
       rangeFilterOptimizer.optimizeFilter();
     }
   }

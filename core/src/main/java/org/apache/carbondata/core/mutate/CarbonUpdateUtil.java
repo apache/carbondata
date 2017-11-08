@@ -127,8 +127,6 @@ public class CarbonUpdateUtil {
       lockStatus = updateLock.lockWithRetries();
       if (lockStatus) {
 
-        AbsoluteTableIdentifier absoluteTableIdentifier = table.getAbsoluteTableIdentifier();
-
         // read the existing file if present and update the same.
         SegmentUpdateDetails[] oldDetails = segmentUpdateStatusManager
                 .getUpdateStatusDetails();
@@ -140,7 +138,7 @@ public class CarbonUpdateUtil {
           if (index != -1) {
             // update the element in existing list.
             SegmentUpdateDetails blockDetail = oldList.get(index);
-            if (blockDetail.getDeleteDeltaStartTimestamp().isEmpty() || (isCompaction == true)) {
+            if (blockDetail.getDeleteDeltaStartTimestamp().isEmpty() || (isCompaction)) {
               blockDetail
                   .setDeleteDeltaStartTimestamp(newBlockEntry.getDeleteDeltaStartTimestamp());
             }
@@ -233,7 +231,6 @@ public class CarbonUpdateUtil {
               // if this call is coming from the delete delta flow then the time stamp
               // String will come empty then no need to write into table status file.
               if (isTimestampUpdationRequired) {
-                loadMetadata.setIsDeleted(CarbonCommonConstants.KEYWORD_TRUE);
                 // if in case of update flow.
                 if (loadMetadata.getUpdateDeltaStartTimestamp().isEmpty()) {
                   // this means for first time it is getting updated .
@@ -567,7 +564,7 @@ public class CarbonUpdateUtil {
           // case 1
           if (CarbonUpdateUtil.isBlockInvalid(block.getStatus())) {
             completeListOfDeleteDeltaFiles = updateStatusManager
-                    .getDeleteDeltaInvalidFilesList(segment.getLoadName(), block, true,
+                    .getDeleteDeltaInvalidFilesList(block, true,
                             allSegmentFiles);
             for (CarbonFile invalidFile : completeListOfDeleteDeltaFiles) {
 
@@ -575,7 +572,7 @@ public class CarbonUpdateUtil {
             }
 
             CarbonFile[] blockRelatedFiles = updateStatusManager
-                    .getAllBlockRelatedFiles(block.getBlockName(), allSegmentFiles,
+                    .getAllBlockRelatedFiles(allSegmentFiles,
                             block.getActualBlockName());
 
             // now for each invalid index file need to check the query execution time out
@@ -589,7 +586,7 @@ public class CarbonUpdateUtil {
 
           } else {
             invalidDeleteDeltaFiles = updateStatusManager
-                    .getDeleteDeltaInvalidFilesList(segment.getLoadName(), block, false,
+                    .getDeleteDeltaInvalidFilesList(block, false,
                             allSegmentFiles);
             for (CarbonFile invalidFile : invalidDeleteDeltaFiles) {
 

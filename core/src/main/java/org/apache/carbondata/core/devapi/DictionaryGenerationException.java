@@ -40,25 +40,6 @@ public class DictionaryGenerationException extends Exception {
   }
 
   /**
-   * Constructor
-   *
-   * @param msg The error message for this exception.
-   */
-  public DictionaryGenerationException(String msg, Throwable t) {
-    super(msg, t);
-    this.msg = msg;
-  }
-
-  /**
-   * Constructor
-   *
-   * @param t
-   */
-  public DictionaryGenerationException(Throwable t) {
-    super(t);
-  }
-
-  /**
    * This method is used to get the localized message.
    *
    * @param locale - A Locale object represents a specific geographical,

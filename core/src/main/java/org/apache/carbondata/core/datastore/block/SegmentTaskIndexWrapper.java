@@ -36,12 +36,12 @@ public class SegmentTaskIndexWrapper implements Cacheable {
   /**
    * atomic integer to maintain the access count for a column access
    */
-  protected AtomicInteger accessCount = new AtomicInteger();
+  private AtomicInteger accessCount = new AtomicInteger();
 
   /**
    * Table block meta size.
    */
-  protected AtomicLong memorySize = new AtomicLong();
+  private AtomicLong memorySize = new AtomicLong();
 
   private Long refreshedTimeStamp;
   public SegmentTaskIndexWrapper(
@@ -51,11 +51,6 @@ public class SegmentTaskIndexWrapper implements Cacheable {
 
   public Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getTaskIdToTableSegmentMap() {
     return taskIdToTableSegmentMap;
-  }
-
-  public void setTaskIdToTableSegmentMap(
-      Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> taskIdToTableSegmentMap) {
-    this.taskIdToTableSegmentMap = taskIdToTableSegmentMap;
   }
 
   /**

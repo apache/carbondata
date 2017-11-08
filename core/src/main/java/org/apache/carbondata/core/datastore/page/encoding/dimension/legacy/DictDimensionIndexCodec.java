@@ -51,7 +51,7 @@ public class DictDimensionIndexCodec extends IndexStorageCodec {
         if (isInvertedIndex) {
           indexStorage = new BlockIndexerStorageForShort(data, true, false, isSort);
         } else {
-          indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data, false);
+          indexStorage = new BlockIndexerStorageForNoInvertedIndexForShort(data);
         }
         byte[] flattened = ByteUtil.flatten(indexStorage.getDataPage());
         super.compressedDataPage = compressor.compressByte(flattened);

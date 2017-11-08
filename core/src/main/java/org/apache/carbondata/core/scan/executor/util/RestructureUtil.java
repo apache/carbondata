@@ -245,39 +245,6 @@ public class RestructureUtil {
   }
 
   /**
-   * Below method is to add dimension children for complex type dimension as
-   * internally we are creating dimension column for each each complex
-   * dimension so when complex query dimension request will come in the query,
-   * we need to add its children as it is hidden from the user For example if
-   * complex dimension is of Array of String[2] so we are storing 3 dimension
-   * and when user will query for complex type i.e. array type we need to add
-   * its children and then we will read respective block and create a tuple
-   * based on all three dimension
-   *
-   * @param queryDimensions      current query dimensions
-   * @param tableBlockDimensions dimensions which is present in the table block
-   * @return updated dimension(after adding complex type children)
-   */
-  public static List<CarbonDimension> addChildrenForComplexTypeDimension(
-      List<CarbonDimension> queryDimensions, List<CarbonDimension> tableBlockDimensions) {
-    List<CarbonDimension> updatedQueryDimension = new ArrayList<CarbonDimension>();
-    int numberOfChildren = 0;
-    for (CarbonDimension queryDimension : queryDimensions) {
-      // if number of child is zero, then it is not a complex dimension
-      // so directly add it query dimension
-      if (queryDimension.getNumberOfChild() == 0) {
-        updatedQueryDimension.add(queryDimension);
-      }
-      // if number of child is more than 1 then add all its children
-      numberOfChildren = queryDimension.getOrdinal() + queryDimension.getNumberOfChild();
-      for (int j = queryDimension.getOrdinal(); j < numberOfChildren; j++) {
-        updatedQueryDimension.add(tableBlockDimensions.get(j));
-      }
-    }
-    return updatedQueryDimension;
-  }
-
-  /**
    * Method for computing measure default value based on the data type
    *
    * @param columnSchema

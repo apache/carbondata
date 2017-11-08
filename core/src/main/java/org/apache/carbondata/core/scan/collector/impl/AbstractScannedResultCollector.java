@@ -19,8 +19,6 @@ package org.apache.carbondata.core.scan.collector.impl;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -38,9 +36,6 @@ import org.apache.carbondata.core.util.DataTypeUtil;
  * It is not a collector it is just a scanned result holder.
  */
 public abstract class AbstractScannedResultCollector implements ScannedResultCollector {
-
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(AbstractScannedResultCollector.class.getName());
 
   /**
    * table block execution infos

@@ -45,10 +45,6 @@ public class BlockletLevelDeleteDeltaDataCache {
     this.timeStamp = timeStamp;
   }
 
-  public boolean contains(int key, Integer pageId) {
-    return deleteDelataDataCache.get(pageId).contains(key);
-  }
-
   public String getCacheTimeStamp() {
     return timeStamp;
   }

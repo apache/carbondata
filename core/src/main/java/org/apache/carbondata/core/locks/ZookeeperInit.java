@@ -66,10 +66,6 @@ public class ZookeeperInit {
 
   }
 
-  public static ZookeeperInit getInstance() {
-    return zooKeeperInit;
-  }
-
   public ZooKeeper getZookeeper() {
     return zk;
   }

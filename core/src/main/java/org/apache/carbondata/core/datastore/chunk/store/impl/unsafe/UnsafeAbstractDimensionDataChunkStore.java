@@ -66,13 +66,10 @@ public abstract class UnsafeAbstractDimensionDataChunkStore implements Dimension
 
   /**
    * Constructor
-   *
-   * @param totalSize      total size of the data to be kept
+   *  @param totalSize      total size of the data to be kept
    * @param isInvertedIdex is inverted index present
-   * @param numberOfRows   total number of rows
    */
-  public UnsafeAbstractDimensionDataChunkStore(long totalSize, boolean isInvertedIdex,
-      int numberOfRows) {
+  public UnsafeAbstractDimensionDataChunkStore(long totalSize, boolean isInvertedIdex) {
     try {
       // allocating the data page
       this.dataPageMemoryBlock = UnsafeMemoryManager.allocateMemoryWithRetry(taskId, totalSize);

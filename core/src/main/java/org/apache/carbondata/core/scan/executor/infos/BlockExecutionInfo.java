@@ -22,7 +22,6 @@ import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
 import org.apache.carbondata.core.scan.filter.GenericQueryType;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
@@ -39,14 +38,6 @@ public class BlockExecutionInfo {
    * block on which query will be executed
    */
   private AbstractIndex blockIndex;
-
-  /**
-   * each segment key size can be different and in that case we need to update
-   * the fixed key with latest segment key generator. so this property will
-   * tell whether this is required or not if key size is same then it is not
-   * required
-   */
-  private boolean isFixedKeyUpdateRequired;
 
   /**
    * below to store all the information required for measures during query
@@ -214,43 +205,17 @@ public class BlockExecutionInfo {
   private boolean isRestructuredBlock;
 
   /**
-   * absolute table identifier
-   */
-  private AbsoluteTableIdentifier absoluteTableIdentifier;
-
-  /**
    * delete delta file path
    */
   private String[] deleteDeltaFilePath;
 
   private Map<String, DeleteDeltaVo> deletedRecordsMap;
-  public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
-    return absoluteTableIdentifier;
-  }
-
-  public void setAbsoluteTableIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier) {
-    this.absoluteTableIdentifier = absoluteTableIdentifier;
-  }
 
   /**
    * @param blockIndex the tableBlock to set
    */
   public void setDataBlock(AbstractIndex blockIndex) {
     this.blockIndex = blockIndex;
-  }
-
-  /**
-   * @return the isFixedKeyUpdateRequired
-   */
-  public boolean isFixedKeyUpdateRequired() {
-    return isFixedKeyUpdateRequired;
-  }
-
-  /**
-   * @param isFixedKeyUpdateRequired the isFixedKeyUpdateRequired to set
-   */
-  public void setFixedKeyUpdateRequired(boolean isFixedKeyUpdateRequired) {
-    this.isFixedKeyUpdateRequired = isFixedKeyUpdateRequired;
   }
 
   /**
@@ -405,20 +370,6 @@ public class BlockExecutionInfo {
    */
   public void setFilterExecuterTree(FilterExecuter filterExecuterTree) {
     this.filterExecuterTree = filterExecuterTree;
-  }
-
-  /**
-   * @return the tableBlockKeyGenerator
-   */
-  public KeyGenerator getBlockKeyGenerator() {
-    return blockKeyGenerator;
-  }
-
-  /**
-   * @param tableBlockKeyGenerator the tableBlockKeyGenerator to set
-   */
-  public void setBlockKeyGenerator(KeyGenerator tableBlockKeyGenerator) {
-    this.blockKeyGenerator = tableBlockKeyGenerator;
   }
 
   /**

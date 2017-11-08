@@ -17,8 +17,6 @@
 package org.apache.carbondata.core.scan.result.iterator;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.scan.result.BatchResult;
 
 public class PartitionSpliterRawResultIterator extends CarbonIterator<Object[]> {
@@ -26,9 +24,6 @@ public class PartitionSpliterRawResultIterator extends CarbonIterator<Object[]> 
   private CarbonIterator<BatchResult> iterator;
   private BatchResult batch;
   private int counter;
-
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(PartitionSpliterRawResultIterator.class.getName());
 
   public PartitionSpliterRawResultIterator(CarbonIterator<BatchResult> iterator) {
     this.iterator = iterator;

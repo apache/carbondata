@@ -25,8 +25,6 @@ import org.apache.carbondata.core.util.ByteUtil;
 
 public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
 
-  private boolean alreadySorted;
-
   private short[] rowIdPage;
 
   private short[] rowIdRlePage;
@@ -34,8 +32,6 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
   private byte[][] dataPage;
 
   private short[] dataRlePage;
-
-  private int totalSize;
 
   public BlockIndexerStorageForShort(byte[][] dataPage, boolean rleOnData,
       boolean isNoDictionary, boolean isSortRequired) {
@@ -128,9 +124,6 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     } else {
       rowIdRlePage = convertToArray(map);
     }
-    if (rowIdPage.length == 2 && rowIdRlePage.length == 1) {
-      alreadySorted = true;
-    }
   }
 
   private short[] convertToArray(List<Short> list) {
@@ -139,13 +132,6 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
       shortArray[i] = list.get(i);
     }
     return shortArray;
-  }
-
-  /**
-   * @return the alreadySorted
-   */
-  public boolean isAlreadySorted() {
-    return alreadySorted;
   }
 
   /**
@@ -224,7 +210,6 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     byte[][] shortArray = new byte[indexes.length][];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = indexes[i].getColumn();
-      totalSize += shortArray[i].length;
     }
     return shortArray;
   }
@@ -233,7 +218,6 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     byte[][] shortArray = new byte[list.size()][];
     for (int i = 0; i < shortArray.length; i++) {
       shortArray[i] = list.get(i).getColumn();
-      totalSize += shortArray[i].length;
     }
     return shortArray;
   }
@@ -249,18 +233,6 @@ public class BlockIndexerStorageForShort implements IndexStorage<short[]> {
     } else {
       return 0;
     }
-  }
-
-  @Override public int getTotalSize() {
-    return totalSize;
-  }
-
-  @Override public byte[] getMin() {
-    return dataPage[0];
-  }
-
-  @Override public byte[] getMax() {
-    return dataPage[dataPage.length - 1];
   }
 
 }

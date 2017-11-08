@@ -120,8 +120,6 @@ public abstract class AbstractScannedResult {
    */
   private String blockletId;
 
-  private long rowId;
-
   /**
    * parent block indexes
    */
@@ -422,20 +420,6 @@ public abstract class AbstractScannedResult {
   }
 
   /**
-   * @return blockletId
-   */
-  public long getRowId() {
-    return rowId;
-  }
-
-  /**
-   * @param rowId
-   */
-  public void setRowId(long rowId) {
-    this.rowId = rowId;
-  }
-
-  /**
    * Below method will be used to get the complex type keys array based
    * on row id for all the complex type dimension selected in query
    *
@@ -599,14 +583,6 @@ public abstract class AbstractScannedResult {
    * @return no dictionary key array for all the no dictionary dimension
    */
   public abstract byte[][] getNoDictionaryKeyArray();
-
-  /**
-   * Below method will be used to get the no dictionary key
-   * array in string array format for all the no dictionary dimension selected in query
-   *
-   * @return no dictionary key array for all the no dictionary dimension
-   */
-  public abstract String[] getNoDictionaryKeyStringArray();
 
   /**
    * Mark the filtered rows in columnar batch. These rows will not be added to vector batches later.

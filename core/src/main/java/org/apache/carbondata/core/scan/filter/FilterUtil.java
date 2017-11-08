@@ -154,10 +154,8 @@ public final class FilterUtil {
                   segmentProperties);
         case RANGE:
           return new RangeValueFilterExecuterImpl(
-              ((ConditionalFilterResolverImpl) filterExpressionResolverTree)
-                  .getDimColResolvedFilterInfo(),
-              null, filterExpressionResolverTree.getFilterExpression(),
-              ((ConditionalFilterResolverImpl) filterExpressionResolverTree).getTableIdentifier(),
+              filterExpressionResolverTree.getDimColResolvedFilterInfo(),
+              filterExpressionResolverTree.getFilterExpression(),
               ((ConditionalFilterResolverImpl) filterExpressionResolverTree)
                   .getFilterRangeValues(segmentProperties), segmentProperties);
         case TRUE:
@@ -307,7 +305,7 @@ public final class FilterUtil {
    *
    * @return
    */
-  public static boolean checkIfLeftExpressionRequireEvaluation(Expression expression) {
+  static boolean checkIfLeftExpressionRequireEvaluation(Expression expression) {
     if (expression.getFilterExpressionType() == ExpressionType.UNKNOWN
         || !(expression instanceof ColumnExpression)) {
       return true;
@@ -639,14 +637,13 @@ public final class FilterUtil {
    * expression value to its respective surrogates in the scenario of restructure.
    *
    * @param expression
-   * @param columnExpression
    * @param defaultValues
    * @param defaultSurrogate
    * @return
    * @throws FilterUnsupportedException
    */
-  public static ColumnFilterInfo getFilterListForRS(Expression expression,
-      ColumnExpression columnExpression, String defaultValues, int defaultSurrogate)
+  static ColumnFilterInfo getFilterListForRS(Expression expression, String defaultValues,
+      int defaultSurrogate)
       throws FilterUnsupportedException {
     List<Integer> filterValuesList = new ArrayList<Integer>(20);
     ColumnFilterInfo columnFilterInfo = null;
@@ -1266,7 +1263,7 @@ public final class FilterUtil {
     return startIndexKey;
   }
 
-  public static byte[] getNoDictionaryDefaultStartKey(SegmentProperties segmentProperties) {
+  static byte[] getNoDictionaryDefaultStartKey(SegmentProperties segmentProperties) {
 
     int numberOfNoDictionaryDimension = segmentProperties.getNumberOfNoDictSortColumns();
     // in case of non filter query when no dictionary columns are present we
@@ -1293,7 +1290,7 @@ public final class FilterUtil {
     return noDictionaryStartKeyBuffer.array();
   }
 
-  public static int compareFilterKeyBasedOnDataType(String dictionaryVal, String memberVal,
+  static int compareFilterKeyBasedOnDataType(String dictionaryVal, String memberVal,
       DataType dataType) {
     try {
       if (dataType == DataTypes.BOOLEAN) {

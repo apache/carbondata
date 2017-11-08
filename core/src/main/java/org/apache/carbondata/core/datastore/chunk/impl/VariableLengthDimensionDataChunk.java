@@ -85,13 +85,6 @@ public class VariableLengthDimensionDataChunk extends AbstractDimensionDataChunk
   }
 
   /**
-   * @return length of each column
-   */
-  @Override public int getColumnValueSize() {
-    return -1;
-  }
-
-  /**
    * Fill the data to vector
    *
    * @param vectorInfo

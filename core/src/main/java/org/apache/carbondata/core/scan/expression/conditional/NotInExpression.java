@@ -31,8 +31,8 @@ import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 
 public class NotInExpression extends BinaryConditionalExpression {
   private static final long serialVersionUID = -6835841923752118034L;
-  protected transient Set<ExpressionResult> setOfExprResult;
-  protected transient ExpressionResult nullValuePresent = null;
+  private transient Set<ExpressionResult> setOfExprResult;
+  private transient ExpressionResult nullValuePresent = null;
 
   public NotInExpression(Expression left, Expression right) {
     super(left, right);

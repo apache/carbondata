@@ -25,8 +25,6 @@ import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.logging.LogService;
-import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.scan.collector.ResultCollectorFactory;
@@ -45,9 +43,6 @@ import org.apache.carbondata.core.util.TaskMetricsMap;
  * Block iterator.
  */
 public abstract class AbstractDataBlockIterator extends CarbonIterator<List<Object[]>> {
-
-  private static final LogService LOGGER =
-      LogServiceFactory.getLogService(AbstractDataBlockIterator.class.getName());
 
   /**
    * iterator which will be used to iterate over data blocks

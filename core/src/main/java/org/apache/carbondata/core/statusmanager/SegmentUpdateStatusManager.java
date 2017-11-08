@@ -140,14 +140,6 @@ public class SegmentUpdateStatusManager {
   }
 
   /**
-   *
-   * @param loadMetadataDetails
-   */
-  public void setLoadMetadataDetails(LoadMetadataDetails[] loadMetadataDetails) {
-    this.segmentDetails = loadMetadataDetails;
-  }
-
-  /**
    * Returns the UpdateStatus Details.
    * @return
    */
@@ -172,18 +164,6 @@ public class SegmentUpdateStatusManager {
     return CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
         LockUsage.TABLE_UPDATE_STATUS_LOCK);
   }
-
-  /**
-   * Returns all delete delta files of specified block
-   *
-   * @param tupleId
-   * @return
-   * @throws Exception
-   */
-  public List<String> getDeleteDeltaFiles(String tupleId) throws Exception {
-    return getDeltaFiles(tupleId, CarbonCommonConstants.DELETE_DELTA_FILE_EXT);
-  }
-
 
   /**
    * Returns all update delta files of specified Segment.
@@ -928,14 +908,12 @@ public class SegmentUpdateStatusManager {
   }
   /**
    *
-   * @param segmentId
    * @param block
    * @param needCompleteList
    * @return
    */
-  public CarbonFile[] getDeleteDeltaInvalidFilesList(final String segmentId,
-      final SegmentUpdateDetails block, final boolean needCompleteList,
-      CarbonFile[] allSegmentFiles) {
+  public CarbonFile[] getDeleteDeltaInvalidFilesList(final SegmentUpdateDetails block,
+      final boolean needCompleteList, CarbonFile[] allSegmentFiles) {
 
     final long deltaStartTimestamp =
         getStartTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
@@ -969,12 +947,11 @@ public class SegmentUpdateStatusManager {
 
   /**
    *
-   * @param blockName
    * @param allSegmentFiles
    * @return
    */
-  public CarbonFile[] getAllBlockRelatedFiles(String blockName, CarbonFile[] allSegmentFiles,
-                                              String actualBlockName) {
+  public CarbonFile[] getAllBlockRelatedFiles(CarbonFile[] allSegmentFiles,
+      String actualBlockName) {
     List<CarbonFile> files = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     for (CarbonFile eachFile : allSegmentFiles) {

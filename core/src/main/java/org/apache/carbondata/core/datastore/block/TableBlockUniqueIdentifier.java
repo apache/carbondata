@@ -45,16 +45,8 @@ public class TableBlockUniqueIdentifier {
     return absoluteTableIdentifier;
   }
 
-  public void setAbsoluteTableIdentifier(AbsoluteTableIdentifier absoluteTableIdentifier) {
-    this.absoluteTableIdentifier = absoluteTableIdentifier;
-  }
-
   public TableBlockInfo getTableBlockInfo() {
     return tableBlockInfo;
-  }
-
-  public void setTableBlockInfo(TableBlockInfo tableBlockInfo) {
-    this.tableBlockInfo = tableBlockInfo;
   }
 
   @Override public int hashCode() {

@@ -113,7 +113,7 @@ object DeleteExecution {
       return true
     }
 
-    val blockMappingVO = carbonInputFormat.getBlockRowCount(job, absoluteTableIdentifier)
+    val blockMappingVO = carbonInputFormat.getBlockRowCount(absoluteTableIdentifier)
     val segmentUpdateStatusMngr = new SegmentUpdateStatusManager(absoluteTableIdentifier)
     CarbonUpdateUtil
       .createBlockDetailsMap(blockMappingVO, segmentUpdateStatusMngr)

@@ -63,7 +63,7 @@ public class TablePageKey {
   }
 
   /** update all keys based on the input row */
-  public void update(int rowId, CarbonRow row, byte[] mdk) throws KeyGenException {
+  public void update(int rowId, CarbonRow row) throws KeyGenException {
     if (hasNoDictionary) {
       currentNoDictionaryKey = WriteStepRowUtil.getNoDictAndComplexDimension(row);
     }
@@ -76,10 +76,6 @@ public class TablePageKey {
       endKey = WriteStepRowUtil.getMdk(row, mdkGenerator);
       finalizeKeys();
     }
-  }
-
-  public Object getKey() {
-    return this;
   }
 
   /** update all keys if SORT_COLUMNS option is used when creating table */
@@ -135,24 +131,12 @@ public class TablePageKey {
     }
   }
 
-  public byte[] getStartKey() {
-    return startKey;
-  }
-
-  public byte[] getEndKey() {
-    return endKey;
-  }
-
-  public byte[] getNoDictStartKey() {
+  private byte[] getNoDictStartKey() {
     return packedNoDictStartKey;
   }
 
-  public byte[] getNoDictEndKey() {
+  private byte[] getNoDictEndKey() {
     return packedNoDictEndKey;
-  }
-
-  public int getPageSize() {
-    return pageSize;
   }
 
   public byte[] serializeStartKey() {

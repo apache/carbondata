@@ -52,16 +52,6 @@ public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
     return bits.getKeyArray(key, 0);
   }
 
-  @Override public long[] getKeyArray(byte[] key, int offset) {
-
-    return bits.getKeyArray(key, offset);
-  }
-
-  @Override public long getKey(byte[] key, int index) {
-
-    return bits.getKeyArray(key, 0)[index];
-  }
-
   public int getKeySizeInBytes() {
     return bits.getByteSize();
   }
@@ -86,10 +76,6 @@ public class MultiDimKeyVarLengthGenerator extends AbstractKeyGenerator {
 
   @Override public int hashCode() {
     return bits.hashCode();
-  }
-
-  @Override public long[] getKeyArray(byte[] key, int[] maskedByteRanges) {
-    return bits.getKeyArray(key, maskedByteRanges);
   }
 
 }

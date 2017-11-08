@@ -24,7 +24,6 @@ import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.reader.CarbonDictionaryReader;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
@@ -64,7 +63,6 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    *
    * @param dictionaryInfo             dictionary info object which will hold the required data
    *                                   for a given column
-   * @param columnIdentifier           column unique identifier
    * @param dictionaryChunkStartOffset start offset from where dictionary file has to
    *                                   be read
    * @param dictionaryChunkEndOffset   end offset till where dictionary file has to
@@ -73,8 +71,8 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
    *                                   read in memory after dictionary loading
    * @throws IOException
    */
-  @Override public void load(DictionaryInfo dictionaryInfo, ColumnIdentifier columnIdentifier,
-      long dictionaryChunkStartOffset, long dictionaryChunkEndOffset, boolean loadSortIndex)
+  @Override public void load(DictionaryInfo dictionaryInfo, long dictionaryChunkStartOffset,
+      long dictionaryChunkEndOffset, boolean loadSortIndex)
       throws IOException {
     Iterator<byte[]> columnDictionaryChunkWrapper =
         load(dictionaryColumnUniqueIdentifier, dictionaryChunkStartOffset,

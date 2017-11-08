@@ -49,7 +49,7 @@ public class TableDictionaryGenerator
    */
   private Map<String, DictionaryGenerator<Integer, String>> columnMap = new ConcurrentHashMap<>();
 
-  public TableDictionaryGenerator(CarbonTable carbonTable) {
+  TableDictionaryGenerator(CarbonTable carbonTable) {
     this.carbonTable = carbonTable;
   }
 
@@ -96,7 +96,7 @@ public class TableDictionaryGenerator
             (System.currentTimeMillis() - start));
   }
 
-  public void updateGenerator(DictionaryMessage key) {
+  void updateGenerator(DictionaryMessage key) {
     CarbonDimension dimension = carbonTable
         .getPrimitiveDimensionByName(key.getColumnName());
     if (null == columnMap.get(dimension.getColumnId())) {
@@ -112,7 +112,7 @@ public class TableDictionaryGenerator
   private static class WriteDictionaryDataRunnable implements Runnable {
     private final DictionaryGenerator generator;
 
-    public WriteDictionaryDataRunnable(DictionaryGenerator generator) {
+    WriteDictionaryDataRunnable(DictionaryGenerator generator) {
       this.generator = generator;
     }
 
@@ -123,9 +123,6 @@ public class TableDictionaryGenerator
         throw new RuntimeException(e);
       }
     }
-  }
-  public String getTableUniqueName() {
-    return carbonTable.getTableUniqueName();
   }
 
 }

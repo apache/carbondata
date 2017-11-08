@@ -29,11 +29,6 @@ public class ColumnFilterInfo implements Serializable {
   private List<Integer> filterList;
 
   /**
-   * Implicit column filter values to be used for block and blocklet pruning
-   */
-  private List<String> implicitColumnFilterList;
-  private List<Integer> excludeFilterList;
-  /**
    * maintain the no dictionary filter values list.
    */
   private List<byte[]> noDictionaryFilterValuesList;
@@ -62,20 +57,6 @@ public class ColumnFilterInfo implements Serializable {
 
   public void setFilterListForNoDictionaryCols(List<byte[]> noDictionaryFilterValuesList) {
     this.noDictionaryFilterValuesList = noDictionaryFilterValuesList;
-  }
-
-  public List<Integer> getExcludeFilterList() {
-    return excludeFilterList;
-  }
-  public void setExcludeFilterList(List<Integer> excludeFilterList) {
-    this.excludeFilterList = excludeFilterList;
-  }
-  public List<String> getImplicitColumnFilterList() {
-    return implicitColumnFilterList;
-  }
-
-  public void setImplicitColumnFilterList(List<String> implicitColumnFilterList) {
-    this.implicitColumnFilterList = implicitColumnFilterList;
   }
 
   public List<Object> getMeasuresFilterValuesList() {

@@ -69,15 +69,6 @@ public class BlockInfo implements Serializable {
   }
 
   /**
-   * To set the table block info
-   *
-   * @param info
-   */
-  public void setTableBlockInfo(TableBlockInfo info) {
-    this.info = info;
-  }
-
-  /**
    * method to get the hash code
    */
   @Override public int hashCode() {
