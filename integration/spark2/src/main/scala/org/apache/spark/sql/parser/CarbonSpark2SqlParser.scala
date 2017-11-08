@@ -456,7 +456,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
   }
 
-  def getBucketFields(properties: mutable.Map[String, String],
+  def getBucketFields(
+      properties: mutable.Map[String, String],
       fields: Seq[Field],
       options: CarbonOption): Option[BucketFields] = {
     if (!CommonUtil.validateTblProperties(properties,

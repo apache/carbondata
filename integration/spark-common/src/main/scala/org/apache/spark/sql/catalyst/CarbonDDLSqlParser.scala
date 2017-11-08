@@ -242,11 +242,15 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @param tableProperties
    * @return
    */
-  def prepareTableModel(ifNotExistPresent: Boolean, dbName: Option[String]
-      , tableName: String, fields: Seq[Field],
+  def prepareTableModel(
+      ifNotExistPresent: Boolean,
+      dbName: Option[String],
+      tableName: String,
+      fields: Seq[Field],
       partitionCols: Seq[PartitionerField],
       tableProperties: mutable.Map[String, String],
-      bucketFields: Option[BucketFields], isAlterFlow: Boolean = false,
+      bucketFields: Option[BucketFields],
+      isAlterFlow: Boolean = false,
       tableComment: Option[String] = None): TableModel = {
 
     fields.zipWithIndex.foreach { case (field, index) =>

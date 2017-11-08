@@ -17,6 +17,7 @@
 
 package org.apache.spark.carbondata
 
+import org.apache.spark.sql.catalyst.parser.ParseException
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -31,7 +32,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("USE streaming")
     sql(
       """
-        | create table source(
+        | CREATE TABLE source(
         |    c1 string,
         |    c2 int,
         |    c3 string,
@@ -42,6 +43,33 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO TABLE source""")
   }
 
+  test("validate streaming property") {
+    sql(
+      """
+        | CREATE TABLE correct(
+        |    c1 string
+        | ) STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES ('streaming' = 'true')
+      """.stripMargin)
+    sql("DROP TABLE correct")
+    sql(
+      """
+        | CREATE TABLE correct(
+        |    c1 string
+        | ) STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES ('streaming' = 'false')
+      """.stripMargin)
+    sql("DROP TABLE correct")
+    intercept[MalformedCarbonCommandException] {
+      sql(
+        """
+          | create table wrong(
+          |    c1 string
+          | ) STORED BY 'org.apache.carbondata.format'
+          | TBLPROPERTIES ('streaming' = 'invalid')
+        """.stripMargin)
+    }
+  }
 
   test("test blocking update and delete operation on streaming table") {
     intercept[MalformedCarbonCommandException] {
