@@ -22,7 +22,6 @@ import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.util.List;
 
-import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 
@@ -71,10 +70,6 @@ public class CarbondataRecordCursor implements RecordCursor {
     this.columnHandles = columnHandles;
     this.readSupport = readSupport;
     this.totalBytes = 0;
-  }
-
-  @Override public long getTotalBytes() {
-    return totalBytes;
   }
 
   @Override public long getCompletedBytes() {
