@@ -84,6 +84,26 @@ case class LoadTableCommand(
 
     val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
     carbonProperty.addProperty("zookeeper.enable.lock", "false")
+
+    // get the value of 'spark.executor.cores' from spark conf, default value is 1
+    val sparkExecutorCores = sparkSession.sparkContext.conf.get("spark.executor.cores", "1")
+    // get the value of 'carbon.number.of.cores.while.loading' from carbon properties,
+    // default value is the value of 'spark.executor.cores'
+    val numCoresLoading =
+      try {
+        CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.NUM_CORES_LOADING, sparkExecutorCores)
+      } catch {
+        case exc: NumberFormatException =>
+          LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_LOADING
+              + " is wrong. Falling back to the default value "
+              + sparkExecutorCores)
+          sparkExecutorCores
+      }
+
+    // update the property with new value
+    carbonProperty.addProperty(CarbonCommonConstants.NUM_CORES_LOADING, numCoresLoading)
+
     val optionsFinal = DataLoadingUtil.getDataLoadingOptions(carbonProperty, options)
 
     val tableProperties = relation.tableMeta.carbonTable.getTableInfo
