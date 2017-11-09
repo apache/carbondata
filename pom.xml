@@ -108,6 +108,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <snappy.version>1.1.2.6</snappy.version>
     <hadoop.version>2.7.2</hadoop.version>
+    <scala.binary.version>2.11</scala.binary.version>
+    <scala.version>2.11.8</scala.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
@@ -427,8 +429,6 @@
       <id>build-all</id>
       <properties>
         <spark.version>2.1.0</spark.version>
-        <scala.binary.version>2.11</scala.binary.version>
-        <scala.version>2.11.8</scala.version>
         <maven.test.skip>true</maven.test.skip>
       </properties>
       <modules>
@@ -503,6 +503,8 @@
                 <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/presto/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>
