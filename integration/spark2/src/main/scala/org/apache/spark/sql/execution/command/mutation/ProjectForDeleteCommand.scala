@@ -42,6 +42,7 @@ private[sql] case class ProjectForDeleteCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+      IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)
     val dataFrame = Dataset.ofRows(sparkSession, plan)
     //    dataFrame.show(truncate = false)
     //    dataFrame.collect().foreach(println)
