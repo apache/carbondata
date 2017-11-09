@@ -78,10 +78,6 @@ class CarbondataPageSource implements ConnectorPageSource {
     this.readers = createStreamReaders();
   }
 
-  @Override public long getTotalBytes() {
-    return sizeOfData;
-  }
-
   @Override public long getCompletedBytes() {
     return sizeOfData;
   }

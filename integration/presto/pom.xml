@@ -31,7 +31,7 @@
   <packaging>presto-plugin</packaging>
 
   <properties>
-    <presto.version>0.166</presto.version>
+    <presto.version>0.186</presto.version>
     <dev.path>${basedir}/../../dev</dev.path>
   </properties>
 
@@ -143,7 +143,6 @@
           <groupId>io.dropwizard.metrics</groupId>
           <artifactId>metrics-graphite</artifactId>
         </exclusion>
-
         <exclusion>
           <groupId>com.google.code.findbugs</groupId>
           <artifactId>jsr305</artifactId>
@@ -413,7 +412,7 @@
     <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>slice</artifactId>
-      <version>0.27</version>
+      <version>0.31</version>
       <scope>provided</scope>
       <exclusions>
         <exclusion>
@@ -441,6 +440,34 @@
       <scope>test</scope>
       <version>2.1.0</version>
     </dependency>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>3.0.2</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.google.code.findbugs</groupId>
+      <artifactId>jsr305</artifactId>
+      <version>3.0.2</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.hk2</groupId>
+      <artifactId>hk2-api</artifactId>
+      <version>2.5.0-b42</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.hk2</groupId>
+      <artifactId>hk2-locator</artifactId>
+      <version>2.5.0-b42</version>
+    </dependency>
+    <dependency>
+      <groupId>org.glassfish.hk2</groupId>
+      <artifactId>hk2-utils</artifactId>
+      <version>2.5.0-b42</version>
+    </dependency>
+
   </dependencies>
 
   <build>
@@ -516,14 +543,6 @@
           </execution>
         </executions>
       </plugin>
-      <plugin>
-        <artifactId>maven-compiler-plugin</artifactId>
-        <configuration>
-          <source>1.8</source>
-          <target>1.8</target>
-        </configuration>
-      </plugin>
-
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-enforcer-plugin</artifactId>

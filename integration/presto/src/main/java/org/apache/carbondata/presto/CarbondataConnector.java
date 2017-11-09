@@ -51,7 +51,7 @@ public class CarbondataConnector implements Connector {
   @Override public ConnectorTransactionHandle beginTransaction(IsolationLevel isolationLevel,
       boolean readOnly) {
     checkConnectorSupports(READ_COMMITTED, isolationLevel);
-    return CarbondataTransactionHandle.INSTANCE;
+    return new CarbondataTransactionHandle();
   }
 
   @Override public ConnectorMetadata getMetadata(ConnectorTransactionHandle transactionHandle) {
