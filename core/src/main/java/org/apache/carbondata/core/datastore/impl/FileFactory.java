@@ -26,6 +26,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.channels.FileChannel;
 import java.util.zip.GZIPInputStream;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -81,11 +82,9 @@ public final class FileFactory {
   public static FileType getFileType(String path) {
     if (path.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
       return FileType.HDFS;
-    }
-    else if (path.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
+    } else if (path.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
       return FileType.ALLUXIO;
-    }
-    else if (path.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
+    } else if (path.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
       return FileType.VIEWFS;
     }
     return FileType.LOCAL;
@@ -434,6 +433,48 @@ public final class FileFactory {
         return fs.append(pt);
       default:
         return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+    }
+  }
+
+  /**
+   * this method will truncate the file to the new size.
+   * @param path
+   * @param fileType
+   * @param newSize
+   * @throws IOException
+   */
+  public static void truncateFile(String path, FileType fileType, long newSize) throws IOException {
+    path = path.replace("\\", "/");
+    FileChannel fileChannel = null;
+    switch (fileType) {
+      case LOCAL:
+        path = getUpdatedFilePath(path, fileType);
+        fileChannel = new FileOutputStream(path, true).getChannel();
+        try {
+          fileChannel.truncate(newSize);
+        } finally {
+          if (fileChannel != null) {
+            fileChannel.close();
+          }
+        }
+        return;
+      case HDFS:
+      case ALLUXIO:
+      case VIEWFS:
+        Path pt = new Path(path);
+        FileSystem fs = pt.getFileSystem(configuration);
+        fs.truncate(pt, newSize);
+        return;
+      default:
+        fileChannel = new FileOutputStream(path, true).getChannel();
+        try {
+          fileChannel.truncate(newSize);
+        } finally {
+          if (fileChannel != null) {
+            fileChannel.close();
+          }
+        }
+        return;
     }
   }
 

@@ -100,9 +100,10 @@ public class SegmentStatusManager {
   public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments() throws IOException {
 
     // @TODO: move reading LoadStatus file to separate class
-    List<String> listOfValidSegments = new ArrayList<String>(10);
-    List<String> listOfValidUpdatedSegments = new ArrayList<String>(10);
-    List<String> listOfInvalidSegments = new ArrayList<String>(10);
+    List<String> listOfValidSegments = new ArrayList<>(10);
+    List<String> listOfValidUpdatedSegments = new ArrayList<>(10);
+    List<String> listOfInvalidSegments = new ArrayList<>(10);
+    List<String> listOfStreamSegments = new ArrayList<>(10);
     CarbonTablePath carbonTablePath = CarbonStorePath
             .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
                     absoluteTableIdentifier.getCarbonTableIdentifier());
@@ -125,6 +126,10 @@ public class SegmentStatusManager {
                   || CarbonCommonConstants.MARKED_FOR_UPDATE
                   .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
                   || CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+                  .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
+                  || CarbonCommonConstants.STORE_LOADSTATUS_STREAMING
+                  .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
+                  || CarbonCommonConstants.STORE_LOADSTATUS_STREAMING_FINISH
                   .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
             // check for merged loads.
             if (null != loadMetadataDetails.getMergedLoadName()) {
@@ -143,6 +148,13 @@ public class SegmentStatusManager {
                     .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
 
               listOfValidUpdatedSegments.add(loadMetadataDetails.getLoadName());
+            }
+            if (CarbonCommonConstants.STORE_LOADSTATUS_STREAMING
+                .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
+                || CarbonCommonConstants.STORE_LOADSTATUS_STREAMING_FINISH
+                .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
+              listOfStreamSegments.add(loadMetadataDetails.getLoadName());
+              continue;
             }
             listOfValidSegments.add(loadMetadataDetails.getLoadName());
           } else if ((CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
@@ -169,7 +181,7 @@ public class SegmentStatusManager {
       }
     }
     return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
-            listOfInvalidSegments);
+            listOfInvalidSegments, listOfStreamSegments);
   }
 
   /**
@@ -642,18 +654,25 @@ public class SegmentStatusManager {
     private final List<String> listOfValidSegments;
     private final List<String> listOfValidUpdatedSegments;
     private final List<String> listOfInvalidSegments;
+    private final List<String> listOfStreamSegments;
 
     private ValidAndInvalidSegmentsInfo(List<String> listOfValidSegments,
-        List<String> listOfValidUpdatedSegments, List<String> listOfInvalidUpdatedSegments) {
+        List<String> listOfValidUpdatedSegments, List<String> listOfInvalidUpdatedSegments,
+        List<String> listOfStreamSegments) {
       this.listOfValidSegments = listOfValidSegments;
       this.listOfValidUpdatedSegments = listOfValidUpdatedSegments;
       this.listOfInvalidSegments = listOfInvalidUpdatedSegments;
+      this.listOfStreamSegments = listOfStreamSegments;
     }
     public List<String> getInvalidSegments() {
       return listOfInvalidSegments;
     }
     public List<String> getValidSegments() {
       return listOfValidSegments;
+    }
+
+    public List<String> getStreamSegments() {
+      return listOfStreamSegments;
     }
   }
 }

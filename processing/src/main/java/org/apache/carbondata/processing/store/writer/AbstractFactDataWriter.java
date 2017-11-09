@@ -392,7 +392,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
   protected abstract void fillBlockIndexInfoDetails(long numberOfRows, String carbonDataFileName,
       long currentPosition);
 
-  protected List<org.apache.carbondata.format.ColumnSchema> getColumnSchemaListAndCardinality(
+  public static List<org.apache.carbondata.format.ColumnSchema> getColumnSchemaListAndCardinality(
       List<Integer> cardinality, int[] dictionaryColumnCardinality,
       List<ColumnSchema> wrapperColumnSchemaList) {
     List<org.apache.carbondata.format.ColumnSchema> columnSchemaList =

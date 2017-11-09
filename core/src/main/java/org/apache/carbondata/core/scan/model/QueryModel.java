@@ -109,6 +109,9 @@ public class QueryModel implements Serializable {
   private Map<String, UpdateVO> invalidSegmentBlockIdMap =
       new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
+  private boolean[] isFilterDimensions;
+  private boolean[] isFilterMeasures;
+
   public QueryModel() {
     tableBlockInfos = new ArrayList<TableBlockInfo>();
     queryDimension = new ArrayList<QueryDimension>();
@@ -136,9 +139,14 @@ public class QueryModel implements Serializable {
     queryModel.setQueryDimension(queryPlan.getDimensions());
     queryModel.setQueryMeasures(queryPlan.getMeasures());
     if (null != queryPlan.getFilterExpression()) {
+      boolean[] isFilterDimensions = new boolean[carbonTable.getDimensionOrdinalMax()];
+      boolean[] isFilterMeasures =
+          new boolean[carbonTable.getNumberOfMeasures(carbonTable.getFactTableName())];
       processFilterExpression(queryPlan.getFilterExpression(),
           carbonTable.getDimensionByTableName(factTableName),
-          carbonTable.getMeasureByTableName(factTableName));
+          carbonTable.getMeasureByTableName(factTableName), isFilterDimensions, isFilterMeasures);
+      queryModel.setIsFilterDimensions(isFilterDimensions);
+      queryModel.setIsFilterMeasures(isFilterMeasures);
     }
     //TODO need to remove this code, and executor will load the table
     // from file metadata
@@ -146,28 +154,32 @@ public class QueryModel implements Serializable {
   }
 
   public static void processFilterExpression(Expression filterExpression,
-      List<CarbonDimension> dimensions, List<CarbonMeasure> measures) {
+      List<CarbonDimension> dimensions, List<CarbonMeasure> measures,
+      final boolean[] isFilterDimensions, final boolean[] isFilterMeasures) {
     if (null != filterExpression) {
       if (null != filterExpression.getChildren() && filterExpression.getChildren().size() == 0) {
         if (filterExpression instanceof ConditionalExpression) {
           List<ColumnExpression> listOfCol =
               ((ConditionalExpression) filterExpression).getColumnList();
           for (ColumnExpression expression : listOfCol) {
-            setDimAndMsrColumnNode(dimensions, measures, expression);
+            setDimAndMsrColumnNode(dimensions, measures, expression, isFilterDimensions,
+                isFilterMeasures);
           }
         }
       }
       for (Expression expression : filterExpression.getChildren()) {
         if (expression instanceof ColumnExpression) {
-          setDimAndMsrColumnNode(dimensions, measures, (ColumnExpression) expression);
+          setDimAndMsrColumnNode(dimensions, measures, (ColumnExpression) expression,
+              isFilterDimensions, isFilterMeasures);
         } else if (expression instanceof UnknownExpression) {
           UnknownExpression exp = ((UnknownExpression) expression);
           List<ColumnExpression> listOfColExpression = exp.getAllColumnList();
           for (ColumnExpression col : listOfColExpression) {
-            setDimAndMsrColumnNode(dimensions, measures, col);
+            setDimAndMsrColumnNode(dimensions, measures, col, isFilterDimensions, isFilterMeasures);
           }
         } else {
-          processFilterExpression(expression, dimensions, measures);
+          processFilterExpression(expression, dimensions, measures, isFilterDimensions,
+              isFilterMeasures);
         }
       }
     }
@@ -184,7 +196,8 @@ public class QueryModel implements Serializable {
   }
 
   private static void setDimAndMsrColumnNode(List<CarbonDimension> dimensions,
-      List<CarbonMeasure> measures, ColumnExpression col) {
+      List<CarbonMeasure> measures, ColumnExpression col, boolean[] isFilterDimensions,
+      boolean[] isFilterMeasures) {
     CarbonDimension dim;
     CarbonMeasure msr;
     String columnName;
@@ -199,10 +212,16 @@ public class QueryModel implements Serializable {
       col.setCarbonColumn(dim);
       col.setDimension(dim);
       col.setDimension(true);
+      if (null != isFilterDimensions) {
+        isFilterDimensions[dim.getOrdinal()] = true;
+      }
     } else {
       col.setCarbonColumn(msr);
       col.setMeasure(msr);
       col.setMeasure(true);
+      if (null != isFilterMeasures) {
+        isFilterMeasures[msr.getOrdinal()] = true;
+      }
     }
   }
 
@@ -377,5 +396,21 @@ public class QueryModel implements Serializable {
 
   public void setConverter(DataTypeConverter converter) {
     this.converter = converter;
+  }
+
+  public boolean[] getIsFilterDimensions() {
+    return isFilterDimensions;
+  }
+
+  public void setIsFilterDimensions(boolean[] isFilterDimensions) {
+    this.isFilterDimensions = isFilterDimensions;
+  }
+
+  public boolean[] getIsFilterMeasures() {
+    return isFilterMeasures;
+  }
+
+  public void setIsFilterMeasures(boolean[] isFilterMeasures) {
+    this.isFilterMeasures = isFilterMeasures;
   }
 }

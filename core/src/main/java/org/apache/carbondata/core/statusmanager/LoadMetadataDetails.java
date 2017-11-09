@@ -70,6 +70,11 @@ public class LoadMetadataDetails implements Serializable {
    */
   private String majorCompacted;
 
+  /**
+   * the file format of this segment
+   */
+  private FileFormat fileFormat = FileFormat.carbondata;
+
   public String getPartitionCount() {
     return partitionCount;
   }
@@ -338,5 +343,13 @@ public class LoadMetadataDetails implements Serializable {
    */
   public void setUpdateStatusFileName(String updateStatusFileName) {
     this.updateStatusFileName = updateStatusFileName;
+  }
+
+  public FileFormat getFileFormat() {
+    return fileFormat;
+  }
+
+  public void setFileFormat(FileFormat fileFormat) {
+    this.fileFormat = fileFormat;
   }
 }
