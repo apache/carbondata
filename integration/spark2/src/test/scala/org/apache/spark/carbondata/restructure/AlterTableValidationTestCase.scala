@@ -446,6 +446,30 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("alter table Default.uniqdata rename to uniqdata1")
     checkAnswer(sql("select * from Default.uniqdata1"), Row(1,"hello"))
   }
+
+  // test query before&after renaming, see CARBONDATA-1690
+  test("RenameTable_query_before_and_after_renaming") {
+    try {
+      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test2 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx1',1""").collect
+      sql(s"""insert into test2 select 'xx2',2""").collect
+      // query before rename
+      checkAnswer(sql(s"""select * from test1"""), Seq(Row("xx1", 1)))
+      sql(s"""alter table test1 RENAME TO test3""").collect
+      sql(s"""alter table test2 RENAME TO test1""").collect
+      // query after rename
+      checkAnswer(sql(s"""select * from test1"""), Seq(Row("xx2", 2)))
+    } catch {
+      case e: Exception =>
+        assert(false)
+    } finally {
+      sql(s"""drop table if exists test1""").collect
+      sql(s"""drop table if exists test3""").collect
+      sql(s"""drop table if exists test2""").collect
+    }
+  }
+
   test("describe formatted for default sort_columns pre and post alter") {
     sql("CREATE TABLE defaultSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' " +
         "tblproperties('DICTIONARY_INCLUDE'='empno','DICTIONARY_EXCLUDE'='role')")
