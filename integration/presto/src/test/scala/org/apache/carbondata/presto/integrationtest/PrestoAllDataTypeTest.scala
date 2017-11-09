@@ -403,6 +403,24 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     assert(actualResult.equals(expectedResult))
   }
 
+  test("test longDecimal type of presto") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery(
+        "SELECT ID from testdb.testtable WHERE bonus = DECIMAL '1234.5555'")
+    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 2))
+
+    assert(actualResult.equals(expectedResult))
+  }
+
+  test("test shortDecimal type of presto") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery(
+        "SELECT ID from testdb.testtable WHERE monthlyBonus = 15.13")
+    val expectedResult: List[Map[String, Any]] = List(Map("ID" -> 2))
+
+    assert(actualResult.equals(expectedResult))
+  }
+
   test("test timestamp datatype using cast operator") {
     val actualResult: List[Map[String, Any]] = PrestoServer
       .executeQuery("SELECT NAME AS RESULT FROM TESTDB.TESTTABLE WHERE DOB = CAST('2016-04-14 15:00:09' AS TIMESTAMP)")

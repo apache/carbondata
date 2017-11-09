@@ -124,7 +124,7 @@ object CarbonDataStoreCreator {
         "true")
       loadModel.setMaxColumns("15")
       loadModel.setCsvHeader(
-        "ID,date,country,name,phonetype,serialname,salary,bonus,dob,shortField")
+        "ID,date,country,name,phonetype,serialname,salary,bonus,monthlyBonus,dob,shortField")
       loadModel.setCsvHeaderColumns(loadModel.getCsvHeader.split(","))
       loadModel.setTaskNo("0")
       loadModel.setSegmentId("0")
@@ -244,6 +244,19 @@ object CarbonDataStoreCreator {
     bonus.setColumnGroup(8)
     bonus.setColumnReferenceId(bonus.getColumnUniqueId)
     columnSchemas.add(bonus)
+
+    val monthlyBonus: ColumnSchema = new ColumnSchema()
+    monthlyBonus.setColumnName("monthlyBonus")
+    monthlyBonus.setColumnar(true)
+    monthlyBonus.setDataType(DataTypes.createDecimalType(18, 4))
+    monthlyBonus.setPrecision(18)
+    monthlyBonus.setScale(4)
+    monthlyBonus.setEncodingList(encodings)
+    monthlyBonus.setColumnUniqueId(UUID.randomUUID().toString)
+    monthlyBonus.setDimensionColumn(false)
+    monthlyBonus.setColumnGroup(8)
+    monthlyBonus.setColumnReferenceId(monthlyBonus.getColumnUniqueId)
+    columnSchemas.add(monthlyBonus)
 
     val dob: ColumnSchema = new ColumnSchema()
     dob.setColumnName("dob")
