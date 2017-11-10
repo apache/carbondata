@@ -75,6 +75,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
 
   // parser and converter
   private RowParser rowParser;
+  private BadRecordsLogger badRecordLogger;
   private RowConverter converter;
   private CarbonRow currentRow = new CarbonRow(null);
 
@@ -106,6 +107,8 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
       throw new IOException(
           "CarbonStreamRecordWriter require configuration: mapreduce.output.carbon.load.model");
     }
+    String segmentId = CarbonStreamOutputFormat.getSegmentId(hadoopConf);
+    carbonLoadModel.setSegmentId(segmentId);
     carbonTable = carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable();
     int taskNo = TaskID.forName(hadoopConf.get("mapred.tip.id")).getId();
     carbonLoadModel.setTaskNo("" + taskNo);
@@ -117,7 +120,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
 
     CarbonTablePath tablePath =
         CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
-    segmentDir = tablePath.getSegmentDir("0", carbonLoadModel.getSegmentId());
+    segmentDir = tablePath.getSegmentDir("0", segmentId);
     fileName = CarbonTablePath.getCarbonDataFileName(0, taskNo, 0, 0, "0");
   }
 
@@ -138,8 +141,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
 
     // initialize parser and converter
     rowParser = new RowParserImpl(dataFields, configuration);
-    BadRecordsLogger badRecordLogger =
-        DataConverterProcessorStepImpl.createBadRecordLogger(configuration);
+    badRecordLogger = DataConverterProcessorStepImpl.createBadRecordLogger(configuration);
     converter = new RowConverterImpl(configuration.getDataFields(), configuration, badRecordLogger);
     configuration.setCardinalityFinder(converter);
     converter.initialize();
@@ -285,14 +287,19 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
   @Override public void close(TaskAttemptContext context) throws IOException, InterruptedException {
     try {
       // append remain buffer data
-      if (!hasException) {
+      if (!hasException && !isFirstRow) {
         appendBlockletToDataFile();
         converter.finish();
       }
     } finally {
       // close resource
       CarbonUtil.closeStreams(outputStream);
-      output.close();
+      if (output != null) {
+        output.close();
+      }
+      if (badRecordLogger != null) {
+        badRecordLogger.closeStreams();
+      }
     }
   }
 

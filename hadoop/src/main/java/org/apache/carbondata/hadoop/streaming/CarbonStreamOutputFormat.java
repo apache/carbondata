@@ -51,6 +51,24 @@ public class CarbonStreamOutputFormat extends FileOutputFormat<Void, Object> {
 
   private static final String LOAD_Model = "mapreduce.output.carbon.load.model";
 
+  private static final String SEGMENT_ID = "carbon.segment.id";
+
+  /**
+   * if the byte size of streaming segment reach this value,
+   * the system will create a new stream segment
+   */
+  public static final String HANDOFF_SIZE = "carbon.handoff.size";
+
+  /**
+   * the min handoff size of streaming segment, the unit is byte
+   */
+  public static final long HANDOFF_SIZE_MIN = 1024L * 1024 * 64;
+
+  /**
+   * the default handoff size of streaming segment, the unit is byte
+   */
+  public static final long HANDOFF_SIZE_DEFAULT = 1024L * 1024 * 1024;
+
   @Override public RecordWriter<Void, Object> getRecordWriter(TaskAttemptContext job)
       throws IOException, InterruptedException {
     return new CarbonStreamRecordWriter(job);
@@ -70,6 +88,16 @@ public class CarbonStreamOutputFormat extends FileOutputFormat<Void, Object> {
     } else {
       return (CarbonLoadModel) ObjectSerializationUtil.convertStringToObject(value);
     }
+  }
+
+  public static void setSegmentId(Configuration hadoopConf, String segmentId) throws IOException {
+    if (segmentId != null) {
+      hadoopConf.set(SEGMENT_ID, segmentId);
+    }
+  }
+
+  public static String getSegmentId(Configuration hadoopConf) throws IOException {
+    return hadoopConf.get(SEGMENT_ID);
   }
 
 }
