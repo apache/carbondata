@@ -41,8 +41,8 @@ object DataTypeConverterUtil {
       case FIXED_DECIMAL(_, _) => DataTypes.createDefaultDecimalType
       case "timestamp" => DataTypes.TIMESTAMP
       case "date" => DataTypes.DATE
-      case "array" => DataTypes.ARRAY
-      case "struct" => DataTypes.STRUCT
+      case "array" => DataTypes.createDefaultArrayType
+      case "struct" => DataTypes.createDefaultStructType
       case _ => convertToCarbonTypeForSpark2(dataType)
     }
   }
@@ -66,9 +66,9 @@ object DataTypeConverterUtil {
       case "datetype" => DataTypes.DATE
       case others =>
         if (others != null && others.startsWith("arraytype")) {
-          DataTypes.ARRAY
+          DataTypes.createDefaultArrayType()
         } else if (others != null && others.startsWith("structtype")) {
-          DataTypes.STRUCT
+          DataTypes.createDefaultStructType()
         } else if (others != null && others.startsWith("char")) {
           DataTypes.STRING
         } else if (others != null && others.startsWith("varchar")) {
@@ -82,6 +82,10 @@ object DataTypeConverterUtil {
   def convertToString(dataType: DataType): String = {
     if (DataTypes.isDecimal(dataType)) {
       "decimal"
+    } else if (DataTypes.isArrayType(dataType)) {
+      "array"
+    } else if (DataTypes.isStructType(dataType)) {
+      "struct"
     } else {
       dataType match {
         case DataTypes.BOOLEAN => "boolean"
@@ -93,8 +97,6 @@ object DataTypeConverterUtil {
         case DataTypes.FLOAT => "double"
         case DataTypes.TIMESTAMP => "timestamp"
         case DataTypes.DATE => "date"
-        case DataTypes.ARRAY => "array"
-        case DataTypes.STRUCT => "struct"
       }
     }
   }

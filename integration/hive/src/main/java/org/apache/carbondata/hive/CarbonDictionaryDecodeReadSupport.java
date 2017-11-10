@@ -137,9 +137,9 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
    */
   private Writable createWritableObject(Object obj, CarbonColumn carbonColumn) throws IOException {
     DataType dataType = carbonColumn.getDataType();
-    if (dataType == DataTypes.STRUCT) {
+    if (DataTypes.isStructType(dataType)) {
       return createStruct(obj, carbonColumn);
-    } else if (dataType == DataTypes.ARRAY) {
+    } else if (DataTypes.isArrayType(dataType)) {
       return createArray(obj, carbonColumn);
     } else {
       return createWritablePrimitive(obj, carbonColumn);

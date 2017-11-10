@@ -17,21 +17,23 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class StructType extends DataType {
+import java.util.List;
 
-  public static final DataType STRUCT = new StructType(DataTypes.STRUCT_TYPE_ID, 10, "STRUCT", -1);
+class StructType extends DataType {
 
-  private StructType(int id, int precedenceOrder, String name, int sizeInBytes) {
-    super(id, precedenceOrder, name, sizeInBytes);
-  }
+  private List<StructField> fields;
 
-  // this function is needed to ensure singleton pattern while supporting java serialization
-  private Object readResolve() {
-    return DataTypes.STRUCT;
+  StructType(List<StructField> fields) {
+    super(DataTypes.STRUCT_TYPE_ID, 10, "STRUCT", -1);
+    this.fields = fields;
   }
 
   @Override
   public boolean isComplexType() {
     return true;
+  }
+
+  public List<StructField> getFields() {
+    return fields;
   }
 }

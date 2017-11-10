@@ -19,15 +19,11 @@ package org.apache.carbondata.core.metadata.datatype;
 
 public class ArrayType extends DataType {
 
-  public static final DataType ARRAY = new ArrayType(DataTypes.ARRAY_TYPE_ID, 9, "ARRAY", -1);
+  private DataType elementType;
 
-  private ArrayType(int id, int precedenceOrder, String name, int sizeInBytes) {
-    super(id, precedenceOrder, name, sizeInBytes);
-  }
-
-  // this function is needed to ensure singleton pattern while supporting java serialization
-  private Object readResolve() {
-    return DataTypes.ARRAY;
+  ArrayType(DataType elementType) {
+    super(DataTypes.ARRAY_TYPE_ID, 9, "ARRAY", -1);
+    this.elementType = elementType;
   }
 
   @Override

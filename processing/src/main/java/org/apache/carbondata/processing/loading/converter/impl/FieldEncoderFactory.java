@@ -111,7 +111,7 @@ public class FieldEncoderFactory {
       CarbonTableIdentifier carbonTableIdentifier, DictionaryClient client, Boolean useOnePass,
       String storePath, Map<Object, Integer> localCache) {
     DataType dataType = carbonColumn.getDataType();
-    if (dataType == DataTypes.ARRAY) {
+    if (DataTypes.isArrayType(dataType)) {
       List<CarbonDimension> listOfChildDimensions =
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create array parser with complex delimiter
@@ -123,7 +123,7 @@ public class FieldEncoderFactory {
                 client, useOnePass, storePath, localCache));
       }
       return arrayDataType;
-    } else if (dataType == DataTypes.STRUCT) {
+    } else if (DataTypes.isStructType(dataType)) {
       List<CarbonDimension> dimensions =
           ((CarbonDimension) carbonColumn).getListOfChildDimensions();
       // Create struct parser with complex delimiter
@@ -135,7 +135,7 @@ public class FieldEncoderFactory {
                 client, useOnePass, storePath, localCache));
       }
       return structDataType;
-    } else if (dataType == DataTypes.MAP) {
+    } else if (DataTypes.isMapType(dataType)) {
       throw new UnsupportedOperationException("Complex type Map is not supported yet");
     } else {
       return new PrimitiveDataType(carbonColumn.getColName(), parentName,

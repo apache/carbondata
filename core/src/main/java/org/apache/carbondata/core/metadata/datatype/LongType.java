@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class LongType extends DataType {
+class LongType extends DataType {
 
-  public static final DataType LONG = new LongType(DataTypes.LONG_TYPE_ID, 5, "LONG", 8);
+  static final DataType LONG = new LongType(DataTypes.LONG_TYPE_ID, 5, "LONG", 8);
 
   private LongType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);

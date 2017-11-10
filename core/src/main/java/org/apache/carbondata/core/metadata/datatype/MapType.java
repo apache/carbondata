@@ -19,15 +19,13 @@ package org.apache.carbondata.core.metadata.datatype;
 
 public class MapType extends DataType {
 
-  public static final DataType MAP = new MapType(DataTypes.MAP_TYPE_ID, 11, "MAP", -1);
+  private DataType keyType;
+  private DataType valueType;
 
-  private MapType(int id, int precedenceOrder, String name, int sizeInBytes) {
-    super(id, precedenceOrder, name, sizeInBytes);
-  }
-
-  // this function is needed to ensure singleton pattern while supporting java serialization
-  private Object readResolve() {
-    return DataTypes.MAP;
+  MapType(DataType keyType, DataType valueType) {
+    super(DataTypes.MAP_TYPE_ID, 11, "MAP", -1);
+    this.keyType = keyType;
+    this.valueType = valueType;
   }
 
   @Override

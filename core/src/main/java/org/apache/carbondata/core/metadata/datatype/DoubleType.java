@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class DoubleType extends DataType {
+class DoubleType extends DataType {
 
-  public static final DataType DOUBLE = new DoubleType(DataTypes.DOUBLE_TYPE_ID, 6, "DOUBLE", 8);
+  static final DataType DOUBLE = new DoubleType(DataTypes.DOUBLE_TYPE_ID, 6, "DOUBLE", 8);
 
   private DoubleType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);

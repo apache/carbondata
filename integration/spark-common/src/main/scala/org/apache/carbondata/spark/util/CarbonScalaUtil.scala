@@ -19,13 +19,14 @@ package org.apache.carbondata.spark.util
 
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
+import java.util
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.DataTypeInfo
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType}
+import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, StructField => CarbonStructField}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 
 object CarbonScalaUtil {
@@ -40,8 +41,17 @@ object CarbonScalaUtil {
       case DateType => CarbonDataTypes.DATE
       case BooleanType => CarbonDataTypes.BOOLEAN
       case TimestampType => CarbonDataTypes.TIMESTAMP
-      case ArrayType(_, _) => CarbonDataTypes.ARRAY
-      case StructType(_) => CarbonDataTypes.STRUCT
+      case ArrayType(elementType, _) =>
+        CarbonDataTypes.createArrayType(CarbonScalaUtil.convertSparkToCarbonDataType(elementType))
+      case StructType(fields) =>
+        val carbonFields = new util.ArrayList[CarbonStructField]
+        fields.map { field =>
+          carbonFields.add(
+            new CarbonStructField(
+              field.name,
+              CarbonScalaUtil.convertSparkToCarbonDataType(field.dataType)))
+        }
+        CarbonDataTypes.createStructType(carbonFields)
       case NullType => CarbonDataTypes.NULL
       case decimal: DecimalType =>
         CarbonDataTypes.createDecimalType(decimal.precision, decimal.scale)

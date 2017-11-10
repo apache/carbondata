@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class ShortIntType extends DataType {
+class ShortIntType extends DataType {
 
-  public static final DataType SHORT_INT =
+  static final DataType SHORT_INT =
       new ShortIntType(DataTypes.SHORT_INT_TYPE_ID, 14, "SHORT_INT", 3);
 
   private ShortIntType(int id, int precedenceOrder, String name, int sizeInBytes) {

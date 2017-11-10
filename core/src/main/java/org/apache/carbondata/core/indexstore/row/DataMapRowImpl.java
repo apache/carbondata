@@ -99,7 +99,7 @@ public class DataMapRowImpl extends DataMapRow {
   }
 
   @Override public void setRow(DataMapRow row, int ordinal) {
-    assert (schemas[ordinal].getDataType() == DataTypes.STRUCT);
+    assert (DataTypes.isStructType(schemas[ordinal].getDataType()));
     data[ordinal] = row;
   }
 

@@ -392,6 +392,12 @@ object CarbonDictionaryDecoder {
       } else {
         DecimalType(precision, scale)
       }
+    } else if (CarbonDataTypes.isArrayType(carbonDimension.getDataType)) {
+      CarbonMetastoreTypes
+        .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
+    } else if (CarbonDataTypes.isStructType(carbonDimension.getDataType)) {
+      CarbonMetastoreTypes
+        .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
     } else {
       carbonDimension.getDataType match {
         case CarbonDataTypes.STRING => StringType
@@ -402,12 +408,6 @@ object CarbonDictionaryDecoder {
         case CarbonDataTypes.BOOLEAN => BooleanType
         case CarbonDataTypes.TIMESTAMP => TimestampType
         case CarbonDataTypes.DATE => DateType
-        case CarbonDataTypes.STRUCT =>
-          CarbonMetastoreTypes
-            .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
-        case CarbonDataTypes.ARRAY =>
-          CarbonMetastoreTypes
-            .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
       }
     }
   }
