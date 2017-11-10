@@ -14,12 +14,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.core.events;
+
+package org.apache.carbondata.events
+
+import org.apache.spark.sql.SparkSession
+
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
- * Event listener
+ *
+ * @param carbonTable
+ * @param sparkSession
  */
-public interface EventListener {
+case class LookupRelationPreEvent(
+    carbonTable: CarbonTable,
+    sparkSession: SparkSession) extends Event with LookupRelationEventInfo
 
-  void fireEvent(ChangeEvent event);
-}
+
+/**
+ *
+ * @param carbonTable
+ * @param sparkSession
+ */
+case class LookupRelationPostEvent(
+    carbonTable: CarbonTable,
+    sparkSession: SparkSession) extends Event with LookupRelationEventInfo
+
+
+/**
+ *
+ * @param carbonTable
+ * @param sparkSession
+ */
+case class LookupRelationAbortEvent(
+    carbonTable: CarbonTable,
+    sparkSession: SparkSession) extends Event with LookupRelationEventInfo
