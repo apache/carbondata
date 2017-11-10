@@ -22,7 +22,9 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.command._
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
   extends RunnableCommand {
@@ -60,6 +62,16 @@ case class CarbonSetCommand(command: SetCommand)
         val isCarbonProperty: Boolean = CarbonProperties.getInstance().isCarbonProperty(key)
         if (isCarbonProperty) {
           sessionParms.addProperty(key, value)
+        }
+        else if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
+          if (key.split("\\.").length == 5) {
+            sessionParms.addProperty(key.toLowerCase(), value)
+          }
+          else {
+            throw new MalformedCarbonCommandException(
+              "property should be in \" carbon.input.segments.<database_name>" +
+              ".<table_name>=<seg_id list> \" format.")
+          }
         }
       case _ =>
 

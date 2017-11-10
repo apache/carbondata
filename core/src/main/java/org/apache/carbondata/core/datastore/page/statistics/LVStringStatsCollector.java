@@ -119,13 +119,6 @@ public class LVStringStatsCollector implements ColumnPageStatsCollector {
         return DataTypes.STRING;
       }
 
-      @Override public int getScale() {
-        return 0;
-      }
-
-      @Override public int getPrecision() {
-        return 0;
-      }
     };
   }
 }

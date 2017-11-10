@@ -59,5 +59,7 @@ class CarbonOption(options: Map[String, String]) {
   def isBucketingEnabled: Boolean = options.contains("bucketcolumns") &&
                                     options.contains("bucketnumber")
 
+  def isStreaming: Boolean = options.getOrElse("streaming", "false").toBoolean
+
   def toMap: Map[String, String] = options
 }

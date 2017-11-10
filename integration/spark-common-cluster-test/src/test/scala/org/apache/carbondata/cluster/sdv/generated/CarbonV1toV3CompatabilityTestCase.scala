@@ -81,6 +81,12 @@ class CarbonV1toV3CompatabilityTestCase extends QueryTest with BeforeAndAfterAll
     checkAnswer(dataFrame, Seq(Row(9281064)))
   }
 
+  test("test v1 to v3 compatabilty filter on measure with double dimension") {
+    val dataFrame = localspark
+      .sql(s"SELECT sum(salary1) FROM t3 where salary1 > 15408")
+    checkAnswer(dataFrame, Seq(Row(9281064)))
+  }
+
   override def afterAll {
     localspark.stop()
   }

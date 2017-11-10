@@ -44,30 +44,28 @@ public class DataTypes {
   // Only for internal use for backward compatability. It is only used for V1 version
   public static final DataType LEGACY_LONG = LegacyLongType.LEGACY_LONG;
 
-  public static final DataType DECIMAL = DecimalType.DECIMAL;
   public static final DataType ARRAY = ArrayType.ARRAY;
   public static final DataType STRUCT = StructType.STRUCT;
   public static final DataType MAP = MapType.MAP;
 
-  // these IDs are used within this package only
-  static final int STRING_TYPE_ID = 0;
-  static final int DATE_TYPE_ID = 1;
-  static final int TIMESTAMP_TYPE_ID = 2;
-  static final int BOOLEAN_TYPE_ID = 3;
-  static final int SHORT_TYPE_ID = 4;
-  static final int INT_TYPE_ID = 5;
-  static final int FLOAT_TYPE_ID = 6;
-  static final int LONG_TYPE_ID = 7;
-  static final int DOUBLE_TYPE_ID = 8;
-  static final int NULL_TYPE_ID = 9;
-  static final int BYTE_TYPE_ID = 10;
-  static final int BYTE_ARRAY_TYPE_ID = 11;
-  static final int SHORT_INT_TYPE_ID = 12;
-  static final int LEGACY_LONG_TYPE_ID = 13;
-  static final int DECIMAL_TYPE_ID = 20;
-  static final int ARRAY_TYPE_ID = 21;
-  static final int STRUCT_TYPE_ID = 22;
-  static final int MAP_TYPE_ID = 23;
+  public static final int STRING_TYPE_ID = 0;
+  public static final int DATE_TYPE_ID = 1;
+  public static final int TIMESTAMP_TYPE_ID = 2;
+  public static final int BOOLEAN_TYPE_ID = 3;
+  public static final int SHORT_TYPE_ID = 4;
+  public static final int INT_TYPE_ID = 5;
+  public static final int FLOAT_TYPE_ID = 6;
+  public static final int LONG_TYPE_ID = 7;
+  public static final int DOUBLE_TYPE_ID = 8;
+  public static final int NULL_TYPE_ID = 9;
+  public static final int BYTE_TYPE_ID = 10;
+  public static final int BYTE_ARRAY_TYPE_ID = 11;
+  public static final int SHORT_INT_TYPE_ID = 12;
+  public static final int LEGACY_LONG_TYPE_ID = 13;
+  public static final int DECIMAL_TYPE_ID = 20;
+  public static final int ARRAY_TYPE_ID = 21;
+  public static final int STRUCT_TYPE_ID = 22;
+  public static final int MAP_TYPE_ID = 23;
 
   /**
    * create a DataType instance from uniqueId of the DataType
@@ -99,8 +97,8 @@ public class DataTypes {
       return DOUBLE;
     } else if (id == NULL.getId()) {
       return NULL;
-    } else if (id == DECIMAL.getId()) {
-      return DECIMAL;
+    } else if (id == DECIMAL_TYPE_ID) {
+      return createDefaultDecimalType();
     } else if (id == ARRAY.getId()) {
       return ARRAY;
     } else if (id == STRUCT.getId()) {
@@ -112,6 +110,24 @@ public class DataTypes {
     } else {
       throw new RuntimeException("create DataType with invalid id: " + id);
     }
+  }
+
+  /**
+   * create a decimal type object with specified precision and scale
+   */
+  public static DecimalType createDecimalType(int precision, int scale) {
+    return new DecimalType(precision, scale);
+  }
+
+  /**
+   * create a decimal type object with default precision = 10 and scale = 2
+   */
+  public static DecimalType createDefaultDecimalType() {
+    return new DecimalType(10, 2);
+  }
+
+  public static boolean isDecimal(DataType dataType) {
+    return dataType.getId() == DECIMAL_TYPE_ID;
   }
 
 }

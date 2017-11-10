@@ -239,7 +239,7 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       return new TimestampWritable(new Timestamp((long) obj / 1000));
     } else if (dataType == DataTypes.STRING) {
       return new Text(obj.toString());
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return new HiveDecimalWritable(HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
     } else {
       throw new IOException("unsupported data type:" + dataType);

@@ -54,6 +54,7 @@ import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -78,6 +79,7 @@ import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
+import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 
@@ -389,7 +391,9 @@ public final class CarbonUtil {
 
   public static void deleteFiles(File[] intermediateFiles) throws IOException {
     for (int i = 0; i < intermediateFiles.length; i++) {
-      if (!intermediateFiles[i].delete()) {
+      // ignore deleting for index file since it is inside merged file.
+      if (!intermediateFiles[i].delete() && !intermediateFiles[i].getName()
+          .endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
         throw new IOException("Problem while deleting intermediate file");
       }
     }
@@ -1356,6 +1360,13 @@ public final class CarbonUtil {
     return thriftByteArray;
   }
 
+  public static BlockletHeader readBlockletHeader(byte[] data) throws IOException {
+    return (BlockletHeader) read(data, new ThriftReader.TBaseCreator() {
+      @Override public TBase create() {
+        return new BlockletHeader();
+      }
+    }, 0, data.length);
+  }
 
   public static DataChunk3 readDataChunk3(ByteBuffer dataChunkBuffer, int offset, int length)
       throws IOException {
@@ -1846,6 +1857,7 @@ public final class CarbonUtil {
     return map;
   }
 
+  // TODO: move this to carbon store API as it is related to TableInfo creation
   public static TableInfo convertGsonToTableInfo(Map<String, String> properties) {
     Gson gson = new Gson();
     String partsNo = properties.get("carbonSchemaPartsNo");
@@ -1862,7 +1874,33 @@ public final class CarbonUtil {
       builder.append(part);
     }
     TableInfo tableInfo = gson.fromJson(builder.toString(), TableInfo.class);
+
+    // The tableInfo is deserialized from GSON string, need to update the scale and
+    // precision if there are any decimal field, because DecimalType is added in Carbon 1.3,
+    // If it is not updated, read compactibility will be break for table generated before Carbon 1.3
+    updateDecimalType(tableInfo);
     return tableInfo;
+  }
+
+  // Update decimal type inside `tableInfo` to set scale and precision, if there are any decimal
+  private static void updateDecimalType(TableInfo tableInfo) {
+    List<ColumnSchema> deserializedColumns = tableInfo.getFactTable().getListOfColumns();
+    for (ColumnSchema column : deserializedColumns) {
+      DataType dataType = column.getDataType();
+      if (DataTypes.isDecimal(dataType)) {
+        column.setDataType(DataTypes.createDecimalType(column.getPrecision(), column.getScale()));
+      }
+    }
+    if (tableInfo.getFactTable().getPartitionInfo() != null) {
+      List<ColumnSchema> partitionColumns =
+          tableInfo.getFactTable().getPartitionInfo().getColumnSchemaList();
+      for (ColumnSchema column : partitionColumns) {
+        DataType dataType = column.getDataType();
+        if (DataTypes.isDecimal(dataType)) {
+          column.setDataType(DataTypes.createDecimalType(column.getPrecision(), column.getScale()));
+        }
+      }
+    }
   }
 
   /**
@@ -1962,7 +2000,7 @@ public final class CarbonUtil {
       b.putDouble((double) value);
       b.flip();
       return b.array();
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       return (byte[]) value;
@@ -1974,6 +2012,30 @@ public final class CarbonUtil {
     }
   }
 
+  public static boolean validateRangeOfSegmentList(String segmentId)
+      throws InvalidConfigurationException {
+    String[] values = segmentId.split(",");
+    try {
+      if (values.length == 0) {
+        throw new InvalidConfigurationException(
+            "carbon.input.segments.<database_name>.<table_name> value can't be empty.");
+      }
+      for (String value : values) {
+        if (!value.equalsIgnoreCase("*")) {
+          Float aFloatValue = Float.parseFloat(value);
+          if (aFloatValue < 0 || aFloatValue > Float.MAX_VALUE) {
+            throw new InvalidConfigurationException(
+                "carbon.input.segments.<database_name>.<table_name> value range should be greater "
+                    + "than 0 and less than " + Float.MAX_VALUE);
+          }
+        }
+      }
+    } catch (NumberFormatException nfe) {
+      throw new InvalidConfigurationException(
+          "carbon.input.segments.<database_name>.<table_name> value range is not valid");
+    }
+    return true;
+  }
   /**
    * Below method will be used to check whether bitset applied on previous filter
    * can be used to apply on next column filter

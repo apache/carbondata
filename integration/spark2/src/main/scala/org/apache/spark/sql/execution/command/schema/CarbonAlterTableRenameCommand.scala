@@ -31,10 +31,11 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.{AlterTableRenamePostEvent, AlterTableRenamePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
-private[sql] case class AlterTableRenameTableCommand(
+private[sql] case class CarbonAlterTableRenameCommand(
     alterTableRenameModel: AlterTableRenameModel)
   extends RunnableCommand {
 
@@ -110,6 +111,14 @@ private[sql] case class AlterTableRenameTableCommand(
         tableInfo,
         schemaEvolutionEntry,
         tableMeta.tablePath)(sparkSession)
+      val operationContext = new OperationContext
+      val alterTableRenamePreEvent: AlterTableRenamePreEvent = AlterTableRenamePreEvent(
+        carbonTable,
+        alterTableRenameModel,
+        newTablePath,
+        sparkSession)
+      OperationListenerBus.getInstance().fireEvent(alterTableRenamePreEvent, operationContext)
+
       metastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
       sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
         .runSqlHive(
@@ -119,6 +128,13 @@ private[sql] case class AlterTableRenameTableCommand(
           s"ALTER TABLE $oldDatabaseName.$newTableName SET SERDEPROPERTIES" +
           s"('tableName'='$newTableName', " +
           s"'dbName'='$oldDatabaseName', 'tablePath'='$newTablePath')")
+      val alterTableRenamePostEvent: AlterTableRenamePostEvent = AlterTableRenamePostEvent(
+        carbonTable,
+        alterTableRenameModel,
+        newTablePath,
+        sparkSession)
+      OperationListenerBus.getInstance().fireEvent(alterTableRenamePreEvent, operationContext)
+
       sparkSession.catalog.refreshTable(TableIdentifier(newTableName,
         Some(oldDatabaseName)).quotedString)
       LOGGER.audit(s"Table $oldTableName has been successfully renamed to $newTableName")

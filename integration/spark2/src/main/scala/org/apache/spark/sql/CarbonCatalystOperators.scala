@@ -17,7 +17,6 @@
 
 package org.apache.spark.sql
 
-import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.catalyst.plans.logical.{UnaryNode, _}
@@ -86,7 +85,8 @@ case class ShowLoadsCommand(
     Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
       AttributeReference("Status", StringType, nullable = false)(),
       AttributeReference("Load Start Time", TimestampType, nullable = false)(),
-      AttributeReference("Load End Time", TimestampType, nullable = false)())
+      AttributeReference("Load End Time", TimestampType, nullable = false)(),
+      AttributeReference("Merged To", StringType, nullable = false)())
   }
 }
 

@@ -116,6 +116,45 @@ public class StoreCreator {
     return absoluteTableIdentifier;
   }
 
+  public static CarbonLoadModel buildCarbonLoadModel(CarbonTable table, String factFilePath) {
+    CarbonDataLoadSchema schema = new CarbonDataLoadSchema(table);
+    CarbonLoadModel loadModel = new CarbonLoadModel();
+    loadModel.setCarbonDataLoadSchema(schema);
+    loadModel.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
+    loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
+    loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
+    loadModel.setFactFilePath(factFilePath);
+    loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
+    loadModel.setStorePath(absoluteTableIdentifier.getStorePath());
+    loadModel.setDateFormat(null);
+    loadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS));
+    loadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
+    loadModel
+        .setSerializationNullFormat(
+            TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName() + "," + "\\N");
+    loadModel
+        .setBadRecordsLoggerEnable(
+            TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName() + "," + "false");
+    loadModel
+        .setBadRecordsAction(
+            TableOptionConstant.BAD_RECORDS_ACTION.getName() + "," + "FORCE");
+    loadModel
+        .setIsEmptyDataBadRecord(
+            DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," + "false");
+    loadModel.setCsvHeader("ID,date,country,name,phonetype,serialname,salary");
+    loadModel.setCsvHeaderColumns(loadModel.getCsvHeader().split(","));
+    loadModel.setTaskNo("0");
+    loadModel.setSegmentId("0");
+    loadModel.setPartitionId("0");
+    loadModel.setFactTimeStamp(System.currentTimeMillis());
+    loadModel.setMaxColumns("10");
+    return loadModel;
+  }
+
   /**
    * Create store without any restructure
    */
@@ -131,42 +170,7 @@ public class StoreCreator {
 
       CarbonTable table = createTable();
       writeDictionary(factFilePath, table);
-      CarbonDataLoadSchema schema = new CarbonDataLoadSchema(table);
-      CarbonLoadModel loadModel = new CarbonLoadModel();
-      String partitionId = "0";
-      loadModel.setCarbonDataLoadSchema(schema);
-      loadModel.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
-      loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
-      loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
-      loadModel.setFactFilePath(factFilePath);
-      loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
-      loadModel.setStorePath(absoluteTableIdentifier.getStorePath());
-      loadModel.setDateFormat(null);
-      loadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS));
-      loadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_DATE_FORMAT,
-          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
-      loadModel
-          .setSerializationNullFormat(
-              TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName() + "," + "\\N");
-      loadModel
-          .setBadRecordsLoggerEnable(
-              TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName() + "," + "false");
-      loadModel
-          .setBadRecordsAction(
-              TableOptionConstant.BAD_RECORDS_ACTION.getName() + "," + "FORCE");
-      loadModel
-          .setIsEmptyDataBadRecord(
-              DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," + "false");
-      loadModel.setCsvHeader("ID,date,country,name,phonetype,serialname,salary");
-      loadModel.setCsvHeaderColumns(loadModel.getCsvHeader().split(","));
-      loadModel.setTaskNo("0");
-      loadModel.setSegmentId("0");
-      loadModel.setPartitionId("0");
-      loadModel.setFactTimeStamp(System.currentTimeMillis());
-      loadModel.setMaxColumns("10");
+      CarbonLoadModel loadModel = buildCarbonLoadModel(table, factFilePath);
 
       executeGraph(loadModel, absoluteTableIdentifier.getStorePath());
 
@@ -176,7 +180,7 @@ public class StoreCreator {
 
   }
 
-  private static CarbonTable createTable() throws IOException {
+  public static CarbonTable createTable() throws IOException {
     TableInfo tableInfo = new TableInfo();
     tableInfo.setStorePath(absoluteTableIdentifier.getStorePath());
     tableInfo.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());

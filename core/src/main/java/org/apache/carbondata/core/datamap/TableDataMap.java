@@ -22,19 +22,20 @@ import java.util.List;
 
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
-import org.apache.carbondata.core.events.ChangeEvent;
-import org.apache.carbondata.core.events.EventListener;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.events.Event;
+import org.apache.carbondata.events.OperationContext;
+import org.apache.carbondata.events.OperationEventListener;
 
 /**
  * DataMap at the table level, user can add any number of datamaps for one table. Depends
  * on the filter condition it can prune the blocklets.
  */
-public final class TableDataMap implements EventListener {
+public final class TableDataMap implements OperationEventListener {
 
   private AbsoluteTableIdentifier identifier;
 
@@ -118,7 +119,11 @@ public final class TableDataMap implements EventListener {
   public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
       FilterResolverIntf filterExp) throws IOException {
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>();
-    List<Blocklet> blocklets = dataMapFactory.getDataMap(distributable).prune(filterExp);
+    List<Blocklet> blocklets = new ArrayList<>();
+    List<DataMap> dataMaps = dataMapFactory.getDataMaps(distributable);
+    for (DataMap dataMap : dataMaps) {
+      blocklets.addAll(dataMap.prune(filterExp));
+    }
     for (Blocklet blocklet: blocklets) {
       ExtendedBlocklet detailedBlocklet =
           blockletDetailsFetcher.getExtendedBlocklet(blocklet, distributable.getSegmentId());
@@ -126,10 +131,6 @@ public final class TableDataMap implements EventListener {
       detailedBlocklets.add(detailedBlocklet);
     }
     return detailedBlocklets;
-  }
-
-  @Override public void fireEvent(ChangeEvent event) {
-    dataMapFactory.fireEvent(event);
   }
 
   /**
@@ -159,5 +160,9 @@ public final class TableDataMap implements EventListener {
 
   public DataMapFactory getDataMapFactory() {
     return dataMapFactory;
+  }
+
+  @Override public void onEvent(Event event, OperationContext opContext) {
+    dataMapFactory.fireEvent(event);
   }
 }

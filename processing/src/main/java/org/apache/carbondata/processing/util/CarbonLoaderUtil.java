@@ -186,7 +186,7 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  private static void deleteStorePath(String path) {
+  public static void deleteStorePath(String path) {
     try {
       FileType fileType = FileFactory.getFileType(path);
       if (FileFactory.isFileExist(path, fileType)) {

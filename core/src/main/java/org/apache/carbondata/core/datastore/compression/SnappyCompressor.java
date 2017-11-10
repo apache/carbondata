@@ -63,6 +63,15 @@ public class SnappyCompressor implements Compressor {
     }
   }
 
+  @Override public byte[] compressByte(byte[] unCompInput, int byteSize) {
+    try {
+      return Snappy.rawCompress(unCompInput, byteSize);
+    } catch (IOException e) {
+      LOGGER.error(e, e.getMessage());
+      return null;
+    }
+  }
+
   @Override public byte[] unCompressByte(byte[] compInput) {
     try {
       return Snappy.uncompress(compInput);
@@ -226,6 +235,10 @@ public class SnappyCompressor implements Compressor {
   @Override
   public long rawCompress(long inputAddress, int inputSize, long outputAddress) throws IOException {
     return snappyNative.rawCompress(inputAddress, inputSize, outputAddress);
+  }
+
+  public long rawUncompress(byte[] input, byte[] output) throws IOException {
+    return snappyNative.rawUncompress(input, 0, input.length, output, 0);
   }
 
   @Override

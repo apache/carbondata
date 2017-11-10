@@ -66,7 +66,7 @@ public class PartitionUtil {
         return dateFormatter.parse(data).getTime();
       } else if (actualDataType == DataTypes.TIMESTAMP) {
         return timestampFormatter.parse(data).getTime();
-      } else if (actualDataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(actualDataType)) {
         return new BigDecimal(data);
       } else {
         return data;
@@ -102,7 +102,7 @@ public class PartitionUtil {
         return Long.parseLong(data);
       } else if (actualDataType == DataTypes.DATE || actualDataType == DataTypes.TIMESTAMP) {
         return Long.parseLong(data) / 1000;
-      } else if (actualDataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(actualDataType)) {
         return new BigDecimal(data);
       } else {
         return data;

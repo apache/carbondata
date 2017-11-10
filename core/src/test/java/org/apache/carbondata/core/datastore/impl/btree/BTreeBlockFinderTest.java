@@ -197,7 +197,7 @@ public class BTreeBlockFinderTest extends TestCase {
         buffer1.put((byte) 1);
         buffer1.putInt(i + 10);
         buffer1.array();
-        byte[] noDictionaryEndKey = buffer.array();
+        byte[] noDictionaryEndKey = buffer1.array();
         DataFileFooter footer =
             getFileFooter(startKey, endKey, noDictionaryStartKey, noDictionaryEndKey);
         list.add(footer);
@@ -232,7 +232,7 @@ public class BTreeBlockFinderTest extends TestCase {
         buffer1.putShort((short) 2);
         buffer1.putInt(i + 10);
         buffer1.array();
-        byte[] noDictionaryEndKey = buffer.array();
+        byte[] noDictionaryEndKey = buffer1.array();
         DataFileFooter footer =
             getFileMatadataWithOnlyNoDictionaryKey(startKey, endKey, noDictionaryStartKey,
                 noDictionaryEndKey);
@@ -268,7 +268,7 @@ public class BTreeBlockFinderTest extends TestCase {
         buffer1.put((byte) 1);
         buffer1.putInt(i + 10);
         buffer1.array();
-        byte[] noDictionaryEndKey = buffer.array();
+        byte[] noDictionaryEndKey = buffer1.array();
         DataFileFooter footer =
             getFileFooterWithOnlyDictionaryKey(startKey, endKey, noDictionaryStartKey,
                 noDictionaryEndKey);

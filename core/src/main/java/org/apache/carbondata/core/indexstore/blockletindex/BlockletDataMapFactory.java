@@ -31,15 +31,14 @@ import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapWriter;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.events.ChangeEvent;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.events.Event;
 
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
@@ -78,15 +77,16 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
   }
 
   private List<TableBlockIndexUniqueIdentifier> getTableBlockIndexUniqueIdentifiers(
-      String segmentId) {
+      String segmentId) throws IOException {
     List<TableBlockIndexUniqueIdentifier> tableBlockIndexUniqueIdentifiers =
         segmentMap.get(segmentId);
     if (tableBlockIndexUniqueIdentifiers == null) {
       tableBlockIndexUniqueIdentifiers = new ArrayList<>();
-      CarbonFile[] listFiles = getCarbonIndexFiles(segmentId);
-      for (int i = 0; i < listFiles.length; i++) {
+      String path = CarbonTablePath.getSegmentPath(identifier.getTablePath(), segmentId);
+      List<String> indexFiles = new SegmentIndexFileStore().getIndexFilesFromSegment(path);
+      for (int i = 0; i < indexFiles.size(); i++) {
         tableBlockIndexUniqueIdentifiers.add(
-            new TableBlockIndexUniqueIdentifier(identifier, segmentId, listFiles[i].getName()));
+            new TableBlockIndexUniqueIdentifier(identifier, segmentId, indexFiles.get(i)));
       }
       segmentMap.put(segmentId, tableBlockIndexUniqueIdentifiers);
     }
@@ -141,19 +141,10 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
     throw new IOException("Blocklet with blockid " + blocklet.getPath() + " not found ");
   }
 
-  private CarbonFile[] getCarbonIndexFiles(String segmentId) {
-    String path = identifier.getTablePath() + "/Fact/Part0/Segment_" + segmentId;
-    CarbonFile carbonFile = FileFactory.getCarbonFile(path);
-    return carbonFile.listFiles(new CarbonFileFilter() {
-      @Override public boolean accept(CarbonFile file) {
-        return file.getName().endsWith(".carbonindex");
-      }
-    });
-  }
 
   @Override
   public List<DataMapDistributable> toDistributable(String segmentId) {
-    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(segmentId);
+    CarbonFile[] carbonIndexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentId);
     List<DataMapDistributable> distributables = new ArrayList<>();
     for (int i = 0; i < carbonIndexFiles.length; i++) {
       Path path = new Path(carbonIndexFiles[i].getPath());
@@ -171,6 +162,10 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
       }
     }
     return distributables;
+  }
+
+  @Override public void fireEvent(Event event) {
+
   }
 
   @Override
@@ -195,23 +190,30 @@ public class BlockletDataMapFactory implements DataMapFactory, BlockletDetailsFe
   }
 
   @Override
-  public DataMap getDataMap(DataMapDistributable distributable) {
+  public List<DataMap> getDataMaps(DataMapDistributable distributable) throws IOException {
     BlockletDataMapDistributable mapDistributable = (BlockletDataMapDistributable) distributable;
-    TableBlockIndexUniqueIdentifier uniqueIdentifier =
-        new TableBlockIndexUniqueIdentifier(identifier, distributable.getSegmentId(),
-            mapDistributable.getFilePath());
-    DataMap dataMap;
+    List<TableBlockIndexUniqueIdentifier> identifiers = new ArrayList<>();
+    if (mapDistributable.getFilePath().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+      identifiers.add(new TableBlockIndexUniqueIdentifier(identifier, distributable.getSegmentId(),
+          mapDistributable.getFilePath()));
+    } else if (mapDistributable.getFilePath().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+      SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
+      List<String> indexFiles = fileStore.getIndexFilesFromMergeFile(
+          CarbonTablePath.getSegmentPath(identifier.getTablePath(), mapDistributable.getSegmentId())
+              + "/" + mapDistributable.getFilePath());
+      for (String indexFile : indexFiles) {
+        identifiers.add(
+            new TableBlockIndexUniqueIdentifier(identifier, distributable.getSegmentId(),
+                indexFile));
+      }
+    }
+    List<DataMap> dataMaps;
     try {
-      dataMap = cache.get(uniqueIdentifier);
+      dataMaps = cache.getAll(identifiers);
     } catch (IOException e) {
       throw new RuntimeException(e);
     }
-    return dataMap;
-  }
-
-  @Override
-  public void fireEvent(ChangeEvent event) {
-
+    return dataMaps;
   }
 
   @Override

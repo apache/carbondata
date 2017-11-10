@@ -79,9 +79,6 @@ public class TableInfo implements Serializable, Writable {
   // this idenifier is a lazy field which will be created when it is used first time
   private AbsoluteTableIdentifier identifier;
 
-  public TableInfo() {
-  }
-
   /**
    * @return the factTable
    */

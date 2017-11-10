@@ -50,6 +50,12 @@ public final class CarbonCommonConstants {
    * measure meta data file name
    */
   public static final String MEASURE_METADATA_FILE_NAME = "/msrMetaData_";
+
+  /**
+   * set the segment ids to query from the table
+   */
+  public static final String CARBON_INPUT_SEGMENTS = "carbon.input.segments.";
+
   /**
    * location of the carbon member, hierarchy and fact files
    */
@@ -532,6 +538,16 @@ public final class CarbonCommonConstants {
    * LOAD_STATUS PARTIAL_SUCCESS
    */
   public static final String STORE_LOADSTATUS_PARTIAL_SUCCESS = "Partial Success";
+
+  /**
+   * STORE_LOADSTATUS_STREAMING
+   */
+  public static final String STORE_LOADSTATUS_STREAMING = "Streaming";
+
+  /**
+   * STORE_LOADSTATUS_STREAMING
+   */
+  public static final String STORE_LOADSTATUS_STREAMING_FINISH = "Streaming Finish";
   /**
    * LOAD_STATUS
    */
@@ -1374,7 +1390,20 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String BITSET_PIPE_LINE = "carbon.use.bitset.pipe.line";
 
+  /**
+   * this will be used to provide comment for table
+   */
+  public static final String TABLE_COMMENT = "comment";
+
   public static final String BITSET_PIPE_LINE_DEFAULT = "true";
+
+  /**
+   * It is internal configuration and used only for test purpose.
+   * It will merge the carbon index files with in the segment to single segment.
+   */
+  public static final String CARBON_MERGE_INDEX_IN_SEGMENT = "carbon.merge.index.in.segment";
+
+  public static final String CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT = "true";
 
   private CarbonCommonConstants() {
   }

@@ -1,21 +1,19 @@
-<!--
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
-
-      http://www.apache.org/licenses/LICENSE-2.0
-
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
--->
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 <img src="/docs/images/CarbonData_logo.png" width="200" height="40">
 
@@ -28,9 +26,7 @@ You can find the latest CarbonData document and learn more at:
 
 ## Status
 Spark2.1:
-[![Build Status](https://builds.apache.org/buildStatus/icon?job=carbondata-master-spark-2.1)](https://builds.apache.org/view/CarbonData/job/carbondata-master-spark-2.1/)
-Spark1.6:
-[![Build Status](https://builds.apache.org/buildStatus/icon?job=carbondata-master-spark-1.6)](https://builds.apache.org/view/CarbonData/job/carbondata-master-spark-1.6/)
+[![Build Status](https://builds.apache.org/buildStatus/icon?job=carbondata-master-spark-2.1)](https://builds.apache.org/view/A-D/view/CarbonData/job/carbondata-master-spark-2.1/badge/icon)
 
 ## Features
 CarbonData file format is a columnar store in HDFS, it has many features that a modern columnar format has, such as splittable, compression schema ,complex data type etc, and CarbonData has following unique features:

@@ -30,10 +30,11 @@ import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.{AlterTableDropColumnPostEvent, AlterTableDropColumnPreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.spark.rdd.AlterTableDropColumnRDD
 
-private[sql] case class AlterTableDropColumnCommand(
+private[sql] case class CarbonAlterTableDropColumnCommand(
     alterTableDropColumnModel: AlterTableDropColumnModel)
   extends RunnableCommand {
 
@@ -99,6 +100,15 @@ private[sql] case class AlterTableDropColumnCommand(
       if (keyColumnCountToBeDeleted >= totalKeyColumnInSchema) {
         sys.error(s"Alter drop operation failed. AtLeast one key column should exist after drop.")
       }
+
+      val operationContext = new OperationContext
+      // event will be fired before dropping the columns
+      val alterTableDropColumnPreEvent: AlterTableDropColumnPreEvent = AlterTableDropColumnPreEvent(
+        carbonTable,
+        alterTableDropColumnModel,
+        sparkSession)
+      OperationListenerBus.getInstance().fireEvent(alterTableDropColumnPreEvent, operationContext)
+
       // read the latest schema file
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
         carbonTable.getCarbonTableIdentifier)
@@ -130,6 +140,15 @@ private[sql] case class AlterTableDropColumnCommand(
         dictionaryColumns,
         carbonTable.getCarbonTableIdentifier,
         carbonTable.getStorePath).collect()
+
+      // event will be fired before dropping the columns
+      val alterTableDropColumnPostEvent: AlterTableDropColumnPostEvent =
+        AlterTableDropColumnPostEvent(
+        carbonTable,
+        alterTableDropColumnModel,
+        sparkSession)
+      OperationListenerBus.getInstance().fireEvent(alterTableDropColumnPostEvent, operationContext)
+
       LOGGER.info(s"Alter table for drop columns is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for drop columns is successful for table $dbName.$tableName")
     } catch {

@@ -25,6 +25,7 @@ import org.apache.carbondata.common.constants.LoggerAction;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheProvider;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
@@ -144,8 +145,15 @@ public class SessionParams implements Serializable {
         isValid = true;
         break;
       default:
-        throw new InvalidConfigurationException(
-            "The key " + key + " not supported for dynamic configuration.");
+        if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
+          isValid = CarbonUtil.validateRangeOfSegmentList(value);
+          if (!isValid) {
+            throw new InvalidConfigurationException("Invalid CARBON_INPUT_SEGMENT_IDs");
+          }
+        } else {
+          throw new InvalidConfigurationException(
+              "The key " + key + " not supported for dynamic configuration.");
+        }
     }
     return isValid;
   }

@@ -40,7 +40,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.fileoperations.{AtomicFileOperations, AtomicFileOperationsImpl, FileWriteOperation}
 import org.apache.carbondata.core.metadata.converter.{SchemaConverter, ThriftWrapperSchemaConverterImpl}
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, CarbonDimension, CarbonMeasure, ColumnSchema}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
@@ -118,14 +118,13 @@ object CarbonDataStoreCreator {
       loadModel.setBadRecordsAction(
         TableOptionConstant.BAD_RECORDS_ACTION.getName + "," +
         "force")
-      loadModel.setDirectLoad(true)
       loadModel.setIsEmptyDataBadRecord(
         DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD +
         "," +
         "true")
       loadModel.setMaxColumns("15")
       loadModel.setCsvHeader(
-        "ID,date,country,name,phonetype,serialname,salary,bonus,dob,shortField")
+        "ID,date,country,name,phonetype,serialname,salary,bonus,monthlyBonus,dob,shortField")
       loadModel.setCsvHeaderColumns(loadModel.getCsvHeader.split(","))
       loadModel.setTaskNo("0")
       loadModel.setSegmentId("0")
@@ -236,7 +235,7 @@ object CarbonDataStoreCreator {
     val bonus: ColumnSchema = new ColumnSchema()
     bonus.setColumnName("bonus")
     bonus.setColumnar(true)
-    bonus.setDataType(DataTypes.DECIMAL)
+    bonus.setDataType(DataTypes.createDecimalType(10, 4))
     bonus.setPrecision(10)
     bonus.setScale(4)
     bonus.setEncodingList(encodings)
@@ -245,6 +244,19 @@ object CarbonDataStoreCreator {
     bonus.setColumnGroup(8)
     bonus.setColumnReferenceId(bonus.getColumnUniqueId)
     columnSchemas.add(bonus)
+
+    val monthlyBonus: ColumnSchema = new ColumnSchema()
+    monthlyBonus.setColumnName("monthlyBonus")
+    monthlyBonus.setColumnar(true)
+    monthlyBonus.setDataType(DataTypes.createDecimalType(18, 4))
+    monthlyBonus.setPrecision(18)
+    monthlyBonus.setScale(4)
+    monthlyBonus.setEncodingList(encodings)
+    monthlyBonus.setColumnUniqueId(UUID.randomUUID().toString)
+    monthlyBonus.setDimensionColumn(false)
+    monthlyBonus.setColumnGroup(8)
+    monthlyBonus.setColumnReferenceId(monthlyBonus.getColumnUniqueId)
+    columnSchemas.add(monthlyBonus)
 
     val dob: ColumnSchema = new ColumnSchema()
     dob.setColumnName("dob")

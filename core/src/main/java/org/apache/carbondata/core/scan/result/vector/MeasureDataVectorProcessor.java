@@ -372,7 +372,7 @@ public class MeasureDataVectorProcessor {
         return new IntegralMeasureVectorFiller();
       } else if (dataType == DataTypes.LONG) {
         return new LongMeasureVectorFiller();
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         return new DecimalMeasureVectorFiller();
       } else {
         return new DefaultMeasureVectorFiller();

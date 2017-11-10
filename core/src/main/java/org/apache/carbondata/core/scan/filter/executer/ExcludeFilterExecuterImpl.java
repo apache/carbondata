@@ -27,10 +27,12 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.util.BitSetGroup;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.comparator.Comparator;
@@ -45,6 +47,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   protected SegmentProperties segmentProperties;
   protected boolean isDimensionPresentInCurrentBlock = false;
   protected boolean isMeasurePresentInCurrentBlock = false;
+  private SerializableComparator comparator;
   /**
    * is dimension column data is natural sorted
    */
@@ -71,6 +74,9 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
           .prepareKeysFromSurrogates(msrColumnEvaluatorInfo.getFilterValues(), segmentProperties,
               null, null, msrColumnEvaluatorInfo.getMeasure(), msrColumnExecutorInfo);
       isMeasurePresentInCurrentBlock = true;
+
+      DataType msrType = getMeasureDataType(msrColumnEvaluatorInfo);
+      comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
     }
 
   }
@@ -113,14 +119,46 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       DataType msrType = getMeasureDataType(msrColumnEvaluatorInfo);
       for (int i = 0; i < ColumnPages.length; i++) {
         BitSet bitSet =
-            getFilteredIndexesForMeasure(measureRawColumnChunk.convertToColumnPage(i),
-                measureRawColumnChunk.getRowCount()[i], useBitsetPipeLine,
-                blockChunkHolder.getBitSetGroup(), i, msrType);;
+            getFilteredIndexesForMeasure(
+                measureRawColumnChunk.convertToColumnPage(i),
+                measureRawColumnChunk.getRowCount()[i],
+                useBitsetPipeLine,
+                blockChunkHolder.getBitSetGroup(),
+                i,
+                msrType);
         bitSetGroup.setBitSet(bitSet, i);
       }
       return bitSetGroup;
     }
     return null;
+  }
+
+  @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
+    if (isDimensionPresentInCurrentBlock) {
+      byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+      byte[] col = (byte[])value.getVal(dimColEvaluatorInfo.getDimension().getOrdinal());
+      for (int i = 0; i < filterValues.length; i++) {
+        if (0 == ByteUtil.UnsafeComparer.INSTANCE.compareTo(col, 0, col.length,
+            filterValues[i], 0, filterValues[i].length)) {
+          return false;
+        }
+      }
+    } else if (isMeasurePresentInCurrentBlock) {
+      Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
+      Object col = value.getVal(msrColumnEvaluatorInfo.getMeasure().getOrdinal() + dimOrdinalMax);
+      for (int i = 0; i < filterValues.length; i++) {
+        if (filterValues[i] == null) {
+          if (null == col) {
+            return false;
+          }
+          continue;
+        }
+        if (comparator.compare(col, filterValues[i]) == 0) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
 
   private DataType getMeasureDataType(MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo) {
@@ -132,15 +170,14 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       return DataTypes.INT;
     } else if (msrColumnEvaluatorInfo.getType() == DataTypes.LONG) {
       return DataTypes.LONG;
-    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.DECIMAL) {
-      return DataTypes.DECIMAL;
+    } else if (DataTypes.isDecimal(msrColumnEvaluatorInfo.getType())) {
+      return DataTypes.createDefaultDecimalType();
     } else {
       return DataTypes.DOUBLE;
     }
   }
 
-  protected BitSet getFilteredIndexes(ColumnPage columnPage,
-      int numerOfRows, DataType msrType) {
+  private BitSet getFilteredIndexes(ColumnPage columnPage, int numerOfRows, DataType msrType) {
     // Here the algorithm is
     // Get the measure values from the chunk. compare sequentially with the
     // the filter values. The one that matches sets it Bitset.
@@ -311,6 +348,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     }
     return bitSet;
   }
+
   private BitSet setFilterdIndexToBitSetWithColumnIndex(
       DimensionColumnDataChunk dimensionColumnDataChunk, int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
@@ -383,14 +421,14 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   }
 
   @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
-    if (isDimensionPresentInCurrentBlock == true) {
+    if (isDimensionPresentInCurrentBlock) {
       int blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping()
           .get(dimColEvaluatorInfo.getColumnIndex());
       if (null == blockChunkHolder.getDimensionRawDataChunk()[blockIndex]) {
         blockChunkHolder.getDimensionRawDataChunk()[blockIndex] = blockChunkHolder.getDataBlock()
             .getDimensionChunk(blockChunkHolder.getFileReader(), blockIndex);
       }
-    } else if (isMeasurePresentInCurrentBlock == true) {
+    } else if (isMeasurePresentInCurrentBlock) {
       int blockIndex = segmentProperties.getMeasuresOrdinalToBlockMapping()
           .get(msrColumnEvaluatorInfo.getColumnIndex());
       if (null == blockChunkHolder.getMeasureRawDataChunk()[blockIndex]) {

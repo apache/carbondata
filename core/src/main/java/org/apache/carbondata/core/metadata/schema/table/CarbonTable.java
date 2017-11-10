@@ -124,6 +124,8 @@ public class CarbonTable implements Serializable {
    */
   private int numberOfNoDictSortColumns;
 
+  private int dimensionOrdinalMax;
+
   private CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -259,6 +261,8 @@ public class CarbonTable implements Serializable {
     fillVisibleDimensions(tableSchema.getTableName());
     fillVisibleMeasures(tableSchema.getTableName());
     addImplicitDimension(dimensionOrdinal, implicitDimensions);
+
+    dimensionOrdinalMax = dimensionOrdinal;
   }
 
   /**
@@ -428,6 +432,30 @@ public class CarbonTable implements Serializable {
    */
   public List<CarbonColumn> getCreateOrderColumn(String tableName) {
     return createOrderColumn.get(tableName);
+  }
+
+  /**
+   * This method will give storage order column list
+   */
+  public List<CarbonColumn> getStreamStorageOrderColumn(String tableName) {
+    List<CarbonDimension> dimensions = tableDimensionsMap.get(tableName);
+    List<CarbonMeasure> measures = tableMeasuresMap.get(tableName);
+    List<CarbonColumn> columnList = new ArrayList<>(dimensions.size() + measures.size());
+    List<CarbonColumn> complexdimensionList = new ArrayList<>(dimensions.size());
+    for (CarbonColumn column : dimensions) {
+      if (column.isComplex()) {
+        complexdimensionList.add(column);
+      } else {
+        columnList.add(column);
+      }
+    }
+    columnList.addAll(complexdimensionList);
+    for (CarbonColumn column : measures) {
+      if (!(column.getColName().equals("default_dummy_measure"))) {
+        columnList.add(column);
+      }
+    }
+    return columnList;
   }
 
   /**
@@ -657,4 +685,21 @@ public class CarbonTable implements Serializable {
   public TableInfo getTableInfo() {
     return tableInfo;
   }
+
+  /**
+   * Return true if this is a streaming table (table with property "streaming"="true")
+   */
+  public boolean isStreamingTable() {
+    String streaming = getTableInfo().getFactTable().getTableProperties().get("streaming");
+    return streaming != null && streaming.equalsIgnoreCase("true");
+  }
+
+  public int getDimensionOrdinalMax() {
+    return dimensionOrdinalMax;
+  }
+
+  public void setDimensionOrdinalMax(int dimensionOrdinalMax) {
+    this.dimensionOrdinalMax = dimensionOrdinalMax;
+  }
+
 }

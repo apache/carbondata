@@ -80,6 +80,16 @@ public class CarbonIndexFileReader {
   }
 
   /**
+   * Open the thrift reader
+   *
+   * @param fileData
+   * @throws IOException
+   */
+  public void openThriftReader(byte[] fileData) throws IOException {
+    thriftReader = new ThriftReader(fileData);
+  }
+
+  /**
    * check if any more object is present
    *
    * @return true if any more object can be read

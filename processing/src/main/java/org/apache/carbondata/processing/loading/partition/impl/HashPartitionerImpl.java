@@ -42,7 +42,7 @@ public class HashPartitionerImpl implements Partitioner<Object[]> {
       if (dataType == DataTypes.SHORT || dataType == DataTypes.INT || dataType == DataTypes.LONG) {
         hashes[i] = new IntegralHash(indexes.get(i));
       } else if (dataType == DataTypes.DOUBLE || dataType == DataTypes.FLOAT ||
-          dataType == DataTypes.DECIMAL) {
+          DataTypes.isDecimal(dataType)) {
         hashes[i] = new DecimalHash(indexes.get(i));
       } else {
         hashes[i] = new StringHash(indexes.get(i));

@@ -81,7 +81,7 @@ public class EqualToExpression extends BinaryConditionalExpression {
       result = val1.getTime().equals(val2.getTime());
     } else if (dataType == DataTypes.LONG) {
       result = val1.getLong().equals(val2.getLong());
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       result = val1.getDecimal().compareTo(val2.getDecimal()) == 0;
     } else {
       throw new FilterUnsupportedException(

@@ -76,8 +76,10 @@ public class CarbondataColumnHandle implements ColumnHandle {
     return columnUniqueId;
   }
 
-  @JsonCreator public CarbondataColumnHandle(@JsonProperty("connectorId") String connectorId,
-      @JsonProperty("columnName") String columnName, @JsonProperty("columnType") Type columnType,
+  @JsonCreator public CarbondataColumnHandle(
+      @JsonProperty("connectorId") String connectorId,
+      @JsonProperty("columnName") String columnName,
+      @JsonProperty("columnType") Type columnType,
       @JsonProperty("ordinalPosition") int ordinalPosition,
       @JsonProperty("keyOrdinal") int keyOrdinal,
       @JsonProperty("columnGroupOrdinal") int columnGroupOrdinal,

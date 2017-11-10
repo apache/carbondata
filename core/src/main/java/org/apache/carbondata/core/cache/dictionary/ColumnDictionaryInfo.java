@@ -291,7 +291,7 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
         dateToStr = parser.parse(memberVal);
         dictionaryDate = parser.parse(dictionaryVal);
         return dictionaryDate.compareTo(dateToStr);
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         java.math.BigDecimal javaDecValForDictVal = new java.math.BigDecimal(dictionaryVal);
         java.math.BigDecimal javaDecValForMemberVal = new java.math.BigDecimal(memberVal);
         return javaDecValForDictVal.compareTo(javaDecValForMemberVal);

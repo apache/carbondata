@@ -22,6 +22,7 @@ import org.apache.spark.sql.execution.command.{Checker, DataProcessCommand, Runn
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.events.{DeleteSegmentByIdPostEvent, DeleteSegmentByIdPreEvent, OperationContext, OperationListenerBus}
 
 case class DeleteLoadByIdCommand(
     loadIds: Seq[String],
@@ -37,12 +38,26 @@ case class DeleteLoadByIdCommand(
     val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
       lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
       tableMeta.carbonTable
+    val operationContext = new OperationContext
+
+    val deleteSegmentByIdPreEvent: DeleteSegmentByIdPreEvent =
+      DeleteSegmentByIdPreEvent(carbonTable,
+        loadIds,
+        sparkSession)
+    OperationListenerBus.getInstance.fireEvent(deleteSegmentByIdPreEvent, operationContext)
+
     CarbonStore.deleteLoadById(
       loadIds,
       GetDB.getDatabaseName(databaseNameOp, sparkSession),
       tableName,
       carbonTable
     )
+
+    val deleteSegmentPostEvent: DeleteSegmentByIdPostEvent =
+      DeleteSegmentByIdPostEvent(carbonTable,
+        loadIds,
+        sparkSession)
+    OperationListenerBus.getInstance.fireEvent(deleteSegmentByIdPreEvent, operationContext)
     Seq.empty
   }
 }

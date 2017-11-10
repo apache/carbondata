@@ -24,6 +24,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -84,8 +85,7 @@ public class TableSpec {
   private void addMeasures(List<CarbonMeasure> measures) {
     for (int i = 0; i < measures.size(); i++) {
       CarbonMeasure measure = measures.get(i);
-      measureSpec[i] = new MeasureSpec(measure.getColName(), measure.getDataType(), measure
-          .getScale(), measure.getPrecision());
+      measureSpec[i] = new MeasureSpec(measure.getColName(), measure.getDataType());
     }
   }
 
@@ -122,27 +122,29 @@ public class TableSpec {
     // dimension type of this dimension
     private ColumnType columnType;
 
-    // scale and precision is for decimal column only
-    // TODO: make DataType a class instead of enum
-    private int scale;
-    private int precision;
-
     public ColumnSpec() {
     }
 
-    public ColumnSpec(String fieldName, DataType schemaDataType, ColumnType columnType) {
-      // for backward compatibility as the precision and scale is not stored, the values should be
-      // initialized with -1 for both precision and scale
-      this(fieldName, schemaDataType, columnType, -1, -1);
-    }
-
-    public ColumnSpec(String fieldName, DataType schemaDataType, ColumnType columnType,
-        int scale, int precision) {
+    private ColumnSpec(String fieldName, DataType schemaDataType, ColumnType columnType) {
       this.fieldName = fieldName;
       this.schemaDataType = schemaDataType;
       this.columnType = columnType;
-      this.scale = scale;
-      this.precision = precision;
+    }
+
+    public static ColumnSpec newInstance(String fieldName, DataType schemaDataType,
+        ColumnType columnType) {
+      return new ColumnSpec(fieldName, schemaDataType, columnType);
+    }
+
+    public static ColumnSpec newInstanceLegacy(String fieldName, DataType schemaDataType,
+        ColumnType columnType) {
+      // for backward compatibility as the precision and scale is not stored, the values should be
+      // initialized with -1 for both precision and scale
+      if (schemaDataType instanceof DecimalType) {
+        ((DecimalType) schemaDataType).setPrecision(-1);
+        ((DecimalType) schemaDataType).setScale(-1);
+      }
+      return new ColumnSpec(fieldName, schemaDataType, columnType);
     }
 
     public DataType getSchemaDataType() {
@@ -158,11 +160,21 @@ public class TableSpec {
     }
 
     public int getScale() {
-      return scale;
+      if (DataTypes.isDecimal(schemaDataType)) {
+        return ((DecimalType) schemaDataType).getScale();
+      } else if (schemaDataType == DataTypes.BYTE_ARRAY) {
+        return -1;
+      }
+      throw new UnsupportedOperationException();
     }
 
     public int getPrecision() {
-      return precision;
+      if (DataTypes.isDecimal(schemaDataType)) {
+        return ((DecimalType) schemaDataType).getPrecision();
+      } else if (schemaDataType == DataTypes.BYTE_ARRAY) {
+        return -1;
+      }
+      throw new UnsupportedOperationException();
     }
 
     @Override
@@ -170,8 +182,14 @@ public class TableSpec {
       out.writeUTF(fieldName);
       out.writeByte(schemaDataType.getId());
       out.writeByte(columnType.ordinal());
-      out.writeInt(scale);
-      out.writeInt(precision);
+      if (DataTypes.isDecimal(schemaDataType)) {
+        DecimalType decimalType = (DecimalType) schemaDataType;
+        out.writeInt(decimalType.getScale());
+        out.writeInt(decimalType.getPrecision());
+      } else {
+        out.writeInt(-1);
+        out.writeInt(-1);
+      }
     }
 
     @Override
@@ -179,8 +197,13 @@ public class TableSpec {
       this.fieldName = in.readUTF();
       this.schemaDataType = DataTypes.valueOf(in.readByte());
       this.columnType = ColumnType.valueOf(in.readByte());
-      this.scale = in.readInt();
-      this.precision = in.readInt();
+      int scale = in.readInt();
+      int precision = in.readInt();
+      if (DataTypes.isDecimal(this.schemaDataType)) {
+        DecimalType decimalType = (DecimalType) this.schemaDataType;
+        decimalType.setPrecision(precision);
+        decimalType.setScale(scale);
+      }
     }
   }
 
@@ -193,7 +216,7 @@ public class TableSpec {
     private boolean doInvertedIndex;
 
     DimensionSpec(ColumnType columnType, CarbonDimension dimension) {
-      super(dimension.getColName(), dimension.getDataType(), columnType, 0, 0);
+      super(dimension.getColName(), dimension.getDataType(), columnType);
       this.inSortColumns = dimension.isSortColumn();
       this.doInvertedIndex = dimension.isUseInvertedIndex();
     }
@@ -219,8 +242,8 @@ public class TableSpec {
 
   public class MeasureSpec extends ColumnSpec implements Writable {
 
-    MeasureSpec(String fieldName, DataType dataType, int scale, int precision) {
-      super(fieldName, dataType, ColumnType.MEASURE, scale, precision);
+    MeasureSpec(String fieldName, DataType dataType) {
+      super(fieldName, dataType, ColumnType.MEASURE);
     }
 
     @Override

@@ -221,15 +221,6 @@ public class QueryUtilTest extends TestCase {
     assertArrayEquals(expectedValue, actualValue);
   }
 
-  @Test public void testGetActualTypeIndex() {
-    List<String> dummyList = new ArrayList<>();
-    dummyList.add("test1");
-    dummyList.add("test2");
-    int[] actualValue = QueryUtil.getActualTypeIndex(dummyList);
-    int[] expectedValue = { 0, 1 };
-    assertArrayEquals(expectedValue, actualValue);
-  }
-
   @AfterClass public void tearDown() {
     segmentProperties = null;
   }

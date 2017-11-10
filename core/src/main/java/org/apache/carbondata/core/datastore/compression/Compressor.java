@@ -25,6 +25,8 @@ public interface Compressor {
 
   byte[] compressByte(byte[] unCompInput);
 
+  byte[] compressByte(byte[] unCompInput, int byteSize);
+
   byte[] unCompressByte(byte[] compInput);
 
   byte[] unCompressByte(byte[] compInput, int offset, int length);
@@ -60,6 +62,8 @@ public interface Compressor {
   double[] unCompressDouble(byte[] compInput, int offset, int length);
 
   long rawCompress(long inputAddress, int inputSize, long outputAddress) throws IOException;
+
+  long rawUncompress(byte[] input, byte[] output) throws IOException;
 
   int maxCompressedLength(int inputSize);
 }

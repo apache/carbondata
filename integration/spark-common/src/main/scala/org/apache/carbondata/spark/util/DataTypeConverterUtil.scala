@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.util
 
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.format.{DataType => ThriftDataType}
 
 object DataTypeConverterUtil {
@@ -37,8 +37,8 @@ object DataTypeConverterUtil {
       case "numeric" => DataTypes.DOUBLE
       case "double" => DataTypes.DOUBLE
       case "float" => DataTypes.DOUBLE
-      case "decimal" => DataTypes.DECIMAL
-      case FIXED_DECIMAL(_, _) => DataTypes.DECIMAL
+      case "decimal" => DataTypes.createDefaultDecimalType
+      case FIXED_DECIMAL(_, _) => DataTypes.createDefaultDecimalType
       case "timestamp" => DataTypes.TIMESTAMP
       case "date" => DataTypes.DATE
       case "array" => DataTypes.ARRAY
@@ -60,8 +60,8 @@ object DataTypeConverterUtil {
       case "numerictype" => DataTypes.DOUBLE
       case "doubletype" => DataTypes.DOUBLE
       case "floattype" => DataTypes.DOUBLE
-      case "decimaltype" => DataTypes.DECIMAL
-      case FIXED_DECIMALTYPE(_, _) => DataTypes.DECIMAL
+      case "decimaltype" => DataTypes.createDefaultDecimalType
+      case FIXED_DECIMALTYPE(_, _) => DataTypes.createDefaultDecimalType
       case "timestamptype" => DataTypes.TIMESTAMP
       case "datetype" => DataTypes.DATE
       case others =>
@@ -80,19 +80,22 @@ object DataTypeConverterUtil {
   }
 
   def convertToString(dataType: DataType): String = {
-    dataType match {
-      case DataTypes.BOOLEAN => "boolean"
+    if (DataTypes.isDecimal(dataType)) {
+      "decimal"
+    } else {
+      dataType match {
+        case DataTypes.BOOLEAN => "boolean"
       case DataTypes.STRING => "string"
-      case DataTypes.SHORT => "smallint"
-      case DataTypes.INT => "int"
-      case DataTypes.LONG => "bigint"
-      case DataTypes.DOUBLE => "double"
-      case DataTypes.FLOAT => "double"
-      case DataTypes.DECIMAL => "decimal"
-      case DataTypes.TIMESTAMP => "timestamp"
-      case DataTypes.DATE => "date"
-      case DataTypes.ARRAY => "array"
-      case DataTypes.STRUCT => "struct"
+        case DataTypes.SHORT => "smallint"
+        case DataTypes.INT => "int"
+        case DataTypes.LONG => "bigint"
+        case DataTypes.DOUBLE => "double"
+        case DataTypes.FLOAT => "double"
+        case DataTypes.TIMESTAMP => "timestamp"
+        case DataTypes.DATE => "date"
+        case DataTypes.ARRAY => "array"
+        case DataTypes.STRUCT => "struct"
+      }
     }
   }
 

@@ -57,6 +57,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
@@ -1318,7 +1319,7 @@ public final class FilterUtil {
         dateToStr = parser.parse(memberVal);
         dictionaryDate = parser.parse(dictionaryVal);
         return dictionaryDate.compareTo(dateToStr);
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         java.math.BigDecimal javaDecValForDictVal = new java.math.BigDecimal(dictionaryVal);
         java.math.BigDecimal javaDecValForMemberVal = new java.math.BigDecimal(memberVal);
         return javaDecValForDictVal.compareTo(javaDecValForMemberVal);
@@ -1430,7 +1431,7 @@ public final class FilterUtil {
         Double d1 = Double.parseDouble(filterMember1);
         Double d2 = Double.parseDouble(filterMember2);
         return d1.compareTo(d2);
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(filterMember1)) {
           return 1;
         }
@@ -1635,6 +1636,27 @@ public final class FilterUtil {
       for (int i = bitSet.nextSetBit(0); i >= 0; i = bitSet.nextSetBit(i + 1)) {
         if (dimensionColumnDataChunk.compareTo(i, defaultValue) == 0) {
           bitSet.flip(i);
+        }
+      }
+    }
+  }
+
+  public static void updateIndexOfColumnExpression(Expression exp, int dimOridnalMax) {
+    if (exp.getChildren() == null || exp.getChildren().size() == 0) {
+      if (exp instanceof ColumnExpression) {
+        ColumnExpression ce = (ColumnExpression) exp;
+        CarbonColumn column = ce.getCarbonColumn();
+        if (column.isDimension()) {
+          ce.setColIndex(column.getOrdinal());
+        } else {
+          ce.setColIndex(dimOridnalMax + column.getOrdinal());
+        }
+      }
+    } else {
+      if (exp.getChildren().size() > 0) {
+        List<Expression> children = exp.getChildren();
+        for (int i = 0; i < children.size(); i++) {
+          updateIndexOfColumnExpression(children.get(i), dimOridnalMax);
         }
       }
     }
