@@ -18,17 +18,20 @@ package org.apache.spark.sql
 
 import java.io.File
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
 import org.apache.spark.sql.execution.streaming.CarbonStreamingQueryListener
 import org.apache.spark.sql.hive.CarbonSessionState
+import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
 import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.util.Utils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
@@ -189,4 +192,30 @@ object CarbonSession {
     }
   }
 
+  def threadSet(key: String, value: String): Unit = {
+    var currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (currentThreadSessionInfo == null) {
+      currentThreadSessionInfo = new CarbonSessionInfo()
+    }
+    else {
+      currentThreadSessionInfo = currentThreadSessionInfo.clone()
+    }
+    val threadParams = currentThreadSessionInfo.getThreadParams
+    CarbonSetCommand.validateAndSetValue(threadParams, key, value)
+    ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
+  }
+
+  private[spark] def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
+    val carbonSessionInfo = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.clone()
+    val currentThreadSessionInfoOrig = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (currentThreadSessionInfoOrig != null) {
+      val currentThreadSessionInfo = currentThreadSessionInfoOrig.clone()
+      // copy all the thread parameters to apply to session parameters
+      currentThreadSessionInfo.getThreadParams.getAll.asScala
+        .foreach(entry => carbonSessionInfo.getSessionParams.addProperty(entry._1, entry._2))
+      carbonSessionInfo.setThreadParams(currentThreadSessionInfo.getThreadParams)
+    }
+    // preserve thread parameters across call
+    ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+  }
 }

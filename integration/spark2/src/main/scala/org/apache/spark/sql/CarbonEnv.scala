@@ -53,8 +53,13 @@ class CarbonEnv {
   def init(sparkSession: SparkSession): Unit = {
     sparkSession.udf.register("getTupleId", () => "")
     if (!initialized) {
+      // update carbon session parameters , preserve thread parameters
+      val currentThreadSesssionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
       carbonSessionInfo = new CarbonSessionInfo()
-      sessionParams = new SessionParams()
+      sessionParams = carbonSessionInfo.getSessionParams
+      if (currentThreadSesssionInfo != null) {
+        carbonSessionInfo.setThreadParams(currentThreadSesssionInfo.getThreadParams)
+      }
       carbonSessionInfo.setSessionParams(sessionParams)
       ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
       val config = new CarbonSQLConf(sparkSession)

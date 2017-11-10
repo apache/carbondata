@@ -81,6 +81,28 @@ public class SessionParams implements Serializable {
     return this;
   }
 
+  /**
+   * This method will be used to add a new property
+   *
+   * @param key
+   * @return properties value
+   */
+  public SessionParams addProperty(String key, String value, Boolean doAuditing)
+      throws InvalidConfigurationException {
+    boolean isValidConf = validateKeyValue(key, value);
+    if (isValidConf) {
+      if (doAuditing) {
+        LOGGER.audit("The key " + key + " with value " + value + " added in the session param");
+      }
+      sProps.put(key, value);
+    }
+    return this;
+  }
+
+  public Map<String, String> getAll() {
+    return sProps;
+  }
+
   public SessionParams addProps(Map<String, String> addedProps) {
     this.addedProps.putAll(addedProps);
     return this;
