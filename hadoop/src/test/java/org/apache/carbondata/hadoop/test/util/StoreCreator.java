@@ -49,7 +49,6 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
@@ -116,7 +115,8 @@ public class StoreCreator {
     return absoluteTableIdentifier;
   }
 
-  public static CarbonLoadModel buildCarbonLoadModel(CarbonTable table, String factFilePath) {
+  public static CarbonLoadModel buildCarbonLoadModel(CarbonTable table, String factFilePath,
+      AbsoluteTableIdentifier absoluteTableIdentifier) {
     CarbonDataLoadSchema schema = new CarbonDataLoadSchema(table);
     CarbonLoadModel loadModel = new CarbonLoadModel();
     loadModel.setCarbonDataLoadSchema(schema);
@@ -159,28 +159,28 @@ public class StoreCreator {
    * Create store without any restructure
    */
   public static void createCarbonStore() {
-
     try {
-
-      String factFilePath = new File("../hadoop/src/test/resources/data.csv").getCanonicalPath();
+      String factFilePath =
+          new File("../hadoop/src/test/resources/data.csv").getCanonicalPath();
       File storeDir = new File(absoluteTableIdentifier.getStorePath());
       CarbonUtil.deleteFoldersAndFiles(storeDir);
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS,
           absoluteTableIdentifier.getStorePath());
 
-      CarbonTable table = createTable();
+      CarbonTable table = createTable(absoluteTableIdentifier);
       writeDictionary(factFilePath, table);
-      CarbonLoadModel loadModel = buildCarbonLoadModel(table, factFilePath);
+      CarbonLoadModel loadModel =
+          buildCarbonLoadModel(table, factFilePath, absoluteTableIdentifier);
 
       executeGraph(loadModel, absoluteTableIdentifier.getStorePath());
 
     } catch (Exception e) {
       e.printStackTrace();
     }
-
   }
 
-  public static CarbonTable createTable() throws IOException {
+  public static CarbonTable createTable(
+      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
     TableInfo tableInfo = new TableInfo();
     tableInfo.setStorePath(absoluteTableIdentifier.getStorePath());
     tableInfo.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());

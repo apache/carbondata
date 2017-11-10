@@ -53,8 +53,6 @@ public class StreamSegment {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(StreamSegment.class.getName());
 
-  public static final long STREAM_SEGMENT_MAX_SIZE = 1024L * 1024 * 1024;
-
   /**
    * get stream segment or create new stream segment if not exists
    */
@@ -136,7 +134,8 @@ public class StreamSegment {
             "Acquired lock for table" + table.getDatabaseName() + "." + table.getFactTableName()
                 + " for stream table finish segment");
 
-        LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(tablePath.getPath());
+        LoadMetadataDetails[] details =
+            SegmentStatusManager.readLoadMetadata(tablePath.getMetadataDirectoryPath());
         for (LoadMetadataDetails detail : details) {
           if (segmentId.equals(detail.getLoadName())) {
             detail.setLoadEndTime(System.currentTimeMillis());
@@ -187,7 +186,7 @@ public class StreamSegment {
       TaskAttemptContext job) throws Exception {
     CarbonStreamRecordWriter writer = null;
     try {
-      writer = (CarbonStreamRecordWriter)new CarbonStreamOutputFormat().getRecordWriter(job);
+      writer = (CarbonStreamRecordWriter) new CarbonStreamOutputFormat().getRecordWriter(job);
       // at the begin of each task, should recover file if necessary
       // here can reuse some information of record writer
       recoverFileIfRequired(
@@ -199,6 +198,12 @@ public class StreamSegment {
         writer.write(null, inputIterators.next());
       }
       inputIterators.close();
+    } catch (Exception ex) {
+      if (writer != null) {
+        LOGGER.error(ex, "Failed to append batch data to stream segment: " +
+            writer.getSegmentDir());
+      }
+      throw ex;
     } finally {
       if (writer != null) {
         writer.close(job);

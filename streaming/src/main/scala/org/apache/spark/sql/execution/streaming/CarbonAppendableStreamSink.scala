@@ -68,6 +68,10 @@ class CarbonAppendableStreamSink(
     }
     conf
   }
+  // segment max size(byte)
+  private val segmentMaxSize = hadoopConf.getLong(
+    CarbonStreamOutputFormat.HANDOFF_SIZE,
+    CarbonStreamOutputFormat.HANDOFF_SIZE_DEFAULT)
 
   override def addBatch(batchId: Long, data: DataFrame): Unit = {
     if (batchId <= fileLog.getLatest().map(_._1).getOrElse(-1L)) {
@@ -107,8 +111,7 @@ class CarbonAppendableStreamSink(
   private def checkOrHandOffSegment(): Unit = {
     val segmentDir = carbonTablePath.getSegmentDir("0", currentSegmentId)
     val fileType = FileFactory.getFileType(segmentDir)
-    if (StreamSegment.STREAM_SEGMENT_MAX_SIZE <=
-        StreamSegment.size(segmentDir)) {
+    if (segmentMaxSize <= StreamSegment.size(segmentDir)) {
       val newSegmentId =
         StreamSegment.close(carbonTable, currentSegmentId)
       currentSegmentId = newSegmentId
@@ -238,6 +241,7 @@ object CarbonAppendableStreamSink {
     val taskAttemptContext: TaskAttemptContext = {
       // Set up the configuration object
       val hadoopConf = description.serializableHadoopConf.value
+      CarbonStreamOutputFormat.setSegmentId(hadoopConf, description.segmentId)
       hadoopConf.set("mapred.job.id", jobId.toString)
       hadoopConf.set("mapred.tip.id", taskAttemptId.getTaskID.toString)
       hadoopConf.set("mapred.task.id", taskAttemptId.toString)

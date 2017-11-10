@@ -84,6 +84,9 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public long getLoadEndTime() {
+    if (timestamp == null) {
+      return CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT;
+    }
     return convertTimeStampToLong(timestamp);
   }
 
@@ -161,6 +164,9 @@ public class LoadMetadataDetails implements Serializable {
    * @return the startLoadTime
    */
   public long getLoadStartTime() {
+    if (loadStartTime == null) {
+      return CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT;
+    }
     return convertTimeStampToLong(loadStartTime);
   }
 
