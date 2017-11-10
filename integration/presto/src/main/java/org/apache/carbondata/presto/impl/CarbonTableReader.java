@@ -28,6 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -41,6 +42,8 @@ import org.apache.carbondata.core.reader.ThriftReader;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.service.impl.PathFactory;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.events.OperationEventListener;
+import org.apache.carbondata.events.OperationListenerBus;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 
@@ -109,10 +112,11 @@ public class CarbonTableReader {
    * @return
    */
   public CarbonTableCacheModel getCarbonCache(SchemaTableName table) {
+
     if (!cc.containsKey(table) || cc.get(table) == null) {
-      // if this table is not cached, try to read the metadata of the table and cache it.
+// if this table is not cached, try to read the metadata of the table and cache it.
       try (ThreadContextClassLoader ignored = new ThreadContextClassLoader(
-          FileFactory.class.getClassLoader())) {
+              FileFactory.class.getClassLoader())) {
         if (carbonFileList == null) {
           fileType = FileFactory.getFileType(config.getStorePath());
           try {
@@ -125,12 +129,17 @@ public class CarbonTableReader {
       updateSchemaTables(table);
       parseCarbonMetadata(table);
     }
-
     if (cc.containsKey(table)) {
       return cc.get(table);
     } else {
       return null;
     }
+  }
+
+  private void removeTableFromCache(SchemaTableName table) {
+    DataMapStoreManager.getInstance().clearDataMap(cc.get(table).carbonTable.getAbsoluteTableIdentifier());
+    cc.remove(table);
+    tableList.remove(table);
   }
 
   /**
@@ -225,10 +234,22 @@ public class CarbonTableReader {
    * is called, it clears this.tableList and populate the list by reading the files.
    */
   private void updateSchemaTables(SchemaTableName schemaTableName) {
-    // update logic determine later
+// update logic determine later
+    boolean isKeyExists = cc.containsKey(schemaTableName);
+
     if (carbonFileList == null) {
       updateSchemaList();
     }
+    try {
+      if(isKeyExists && !FileFactory.isFileExist(cc.get(schemaTableName).carbonTablePath.getSchemaFilePath(),fileType)){
+        removeTableFromCache(schemaTableName);
+        throw new TableNotFoundException(schemaTableName);
+      }
+    } catch (IOException e) {
+      e.printStackTrace();
+      throw new RuntimeException();
+    }
+
     if(!tableList.contains(schemaTableName)) {
       for (CarbonFile cf : carbonFileList.listFiles()) {
         if (!cf.getName().endsWith(".mdt")) {
@@ -239,6 +260,7 @@ public class CarbonTableReader {
       }
     }
   }
+
 
   /**
    * Find the table with the given name and build a CarbonTable instance for it.
@@ -297,6 +319,7 @@ public class CarbonTableReader {
       org.apache.carbondata.format.TableInfo tableInfo =
           (org.apache.carbondata.format.TableInfo) thriftReader.read();
       thriftReader.close();
+
 
       // Step 3: convert format level TableInfo to code level TableInfo
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
