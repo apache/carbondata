@@ -81,7 +81,7 @@ object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
 
 case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
-  private val parser = new SparkSqlParser(sparkSession.sessionState.conf)
+  private lazy val parser = new SparkSqlParser(sparkSession.sessionState.conf)
 
   private def processUpdateQuery(
       table: UnresolvedRelation,
