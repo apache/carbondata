@@ -21,8 +21,11 @@ import java.io.File
 import java.math.{BigDecimal, RoundingMode}
 import java.sql.Timestamp
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.common.util.Spark2QueryTest
+import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
+import org.apache.spark.sql.test.Spark2TestQueryExecutor
+import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -461,6 +464,22 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("alter table specifiedSortColumnsWithAlter add columns (designation12 String)")
     checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"SORT_COLUMNS")
     checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"empno,empname,role,doj")
+  }
+
+  test("test to check if new parent table name is reflected in pre-aggregate tables") {
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists preaggmain_new")
+    sql("drop table if exists preagg1")
+    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
+    sql(
+      "create table preagg1 stored BY 'carbondata' tblproperties('parent'='PreAggMain') as select" +
+      " a,sum(b) from PreAggMain group by a")
+    intercept[RuntimeException] {
+      sql("alter table preagg1 rename to preagg2")
+    }.getMessage.contains("Rename operation for pre-aggregate table is not supported.")
+    intercept[RuntimeException] {
+      sql("alter table preaggmain rename to preaggmain_new")
+    }.getMessage.contains("Rename operation is not supported for table with pre-aggregate tables")
   }
 
   override def afterAll {

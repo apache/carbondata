@@ -51,14 +51,12 @@ case class DeleteLoadByLoadDateCommand(
       loadDate,
       GetDB.getDatabaseName(databaseNameOp, sparkSession),
       tableName,
-      carbonTable
-    )
-
+      carbonTable)
     val deleteSegmentPostEvent: DeleteSegmentByDatePostEvent =
       DeleteSegmentByDatePostEvent(carbonTable,
         loadDate,
         sparkSession)
-    OperationListenerBus.getInstance.fireEvent(deleteSegmentByDatePreEvent, operationContext)
+    OperationListenerBus.getInstance.fireEvent(deleteSegmentPostEvent, operationContext)
 
     Seq.empty
   }

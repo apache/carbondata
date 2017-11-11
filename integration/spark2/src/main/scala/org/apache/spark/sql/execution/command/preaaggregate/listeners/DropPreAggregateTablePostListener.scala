@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.command.preaaggregate
+package org.apache.spark.sql.execution.command.preaaggregate.listeners
 
 import scala.collection.JavaConverters._
 
@@ -24,7 +24,7 @@ import org.apache.spark.sql.execution.command.CarbonDropTableCommand
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.events.{DropTablePostEvent, Event, OperationContext, OperationEventListener}
 
-class DropPreAggregateTablePostListener extends OperationEventListener {
+object DropPreAggregateTablePostListener extends OperationEventListener {
 
   /**
    * Called on a specified event occurrence
