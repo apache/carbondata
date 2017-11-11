@@ -55,39 +55,41 @@ class CarbonEnv {
     // added for handling preaggregate table creation. when user will fire create ddl for
     // create table we are adding a udf so no need to apply PreAggregate rules.
     sparkSession.udf.register("preAgg", () => "")
-    if (!initialized) {
-      // update carbon session parameters , preserve thread parameters
-      val currentThreadSesssionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
-      carbonSessionInfo = new CarbonSessionInfo()
-      sessionParams = carbonSessionInfo.getSessionParams
-      if (currentThreadSesssionInfo != null) {
-        carbonSessionInfo.setThreadParams(currentThreadSesssionInfo.getThreadParams)
-      }
-      carbonSessionInfo.setSessionParams(sessionParams)
-      ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
-      val config = new CarbonSQLConf(sparkSession)
-      if(sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT) == None) {
-        config.addDefaultCarbonParams()
-      }
-      // add session params after adding DefaultCarbonParams
-      config.addDefaultCarbonSessionParams()
-      carbonMetastore = {
-        val properties = CarbonProperties.getInstance()
-        storePath = properties.getProperty(CarbonCommonConstants.STORE_LOCATION)
-        if (storePath == null) {
-          storePath = sparkSession.conf.get("spark.sql.warehouse.dir")
-          properties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+    synchronized {
+      if (!initialized) {
+        // update carbon session parameters , preserve thread parameters
+        val currentThreadSesssionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+        carbonSessionInfo = new CarbonSessionInfo()
+        sessionParams = carbonSessionInfo.getSessionParams
+        if (currentThreadSesssionInfo != null) {
+          carbonSessionInfo.setThreadParams(currentThreadSesssionInfo.getThreadParams)
         }
-        LOGGER.info(s"carbon env initial: $storePath")
-        // trigger event for CarbonEnv init
-        val carbonEnvInitPreEvent: CarbonEnvInitPreEvent =
-          CarbonEnvInitPreEvent(sparkSession, storePath)
-        OperationListenerBus.getInstance.fireEvent(carbonEnvInitPreEvent)
+        carbonSessionInfo.setSessionParams(sessionParams)
+        ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+        val config = new CarbonSQLConf(sparkSession)
+        if (sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT) == None) {
+          config.addDefaultCarbonParams()
+        }
+        // add session params after adding DefaultCarbonParams
+        config.addDefaultCarbonSessionParams()
+        carbonMetastore = {
+          val properties = CarbonProperties.getInstance()
+          storePath = properties.getProperty(CarbonCommonConstants.STORE_LOCATION)
+          if (storePath == null) {
+            storePath = sparkSession.conf.get("spark.sql.warehouse.dir")
+            properties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+          }
+          LOGGER.info(s"carbon env initial: $storePath")
+          // trigger event for CarbonEnv init
+          val carbonEnvInitPreEvent: CarbonEnvInitPreEvent =
+            CarbonEnvInitPreEvent(sparkSession, storePath)
+          OperationListenerBus.getInstance.fireEvent(carbonEnvInitPreEvent)
 
-        CarbonMetaStoreFactory.createCarbonMetaStore(sparkSession.conf)
+          CarbonMetaStoreFactory.createCarbonMetaStore(sparkSession.conf)
+        }
+        CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
+        initialized = true
       }
-      CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
-      initialized = true
     }
   }
 }
