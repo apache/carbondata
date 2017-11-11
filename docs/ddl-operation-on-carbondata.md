@@ -62,14 +62,14 @@ The following DDL operations are supported in CarbonData :
 
    - **Dictionary Encoding Configuration**
 
-       Dictionary encoding is enabled by default for all String columns, and disabled for non-String columns. You can include and exclude columns for dictionary encoding.
+       Dictionary encoding is turned off for all columns by default. You can include and exclude columns for dictionary encoding.
 
 ```
        TBLPROPERTIES ('DICTIONARY_EXCLUDE'='column1, column2')
        TBLPROPERTIES ('DICTIONARY_INCLUDE'='column1, column2')
 ```
 
-   Here, DICTIONARY_EXCLUDE will exclude dictionary creation. This is applicable for high-cardinality columns and is an optional parameter. DICTIONARY_INCLUDE will generate dictionary for the columns specified in the list.
+   Here, DICTIONARY_INCLUDE will improve the performance for low cardinality dimensions, considerably for string. DICTIONARY_INCLUDE will generate dictionary for the columns specified.
 
 
 
@@ -129,7 +129,7 @@ The following DDL operations are supported in CarbonData :
 
    - **SORT_COLUMNS**
 
-    This table property specifies the order of the sort column.
+      This table property specifies the order of the sort column.
 
 ```
     TBLPROPERTIES('SORT_COLUMNS'='column1, column3')
@@ -140,6 +140,31 @@ The following DDL operations are supported in CarbonData :
    - If this property is not specified, then by default SORT_COLUMNS consist of all dimension (exclude Complex Column).
 
    - If this property is specified but with empty argument, then the table will be loaded without sort. For example, ('SORT_COLUMNS'='')
+   
+   - **SORT_SCOPE**
+      This option specifies the scope of the sort during data load. Following are the types of sort scope.
+     * BATCH_SORT: it will increase the load performance but decreases the query performance if identified blocks > parallelism.
+```
+    OPTIONS ('SORT_SCOPE'='BATCH_SORT')
+```
+      You can also specify the sort size option for sort scope.
+```
+    OPTIONS ('SORT_SCOPE'='BATCH_SORT', 'batch_sort_size_inmb'='7')
+```
+     * GLOBAL_SORT: it increases the query performance, especially point query.
+```
+    OPTIONS ('SORT_SCOPE'= GLOBAL_SORT ')
+```
+	 You can also specify the number of partitions to use when shuffling data for sort. If it is not configured, or configured less than 1, then it uses the number of map tasks as reduce tasks. It is recommended that each reduce task deal with 512MB - 1GB data.
+```
+    OPTIONS( 'SORT_SCOPE'='GLOBAL_SORT', 'GLOBAL_SORT_PARTITIONS'='2')
+```
+   NOTE:
+   - Increasing number of partitions might require increasing spark.driver.maxResultSize as sampling data collected at driver increases with increasing partitions.
+   - Increasing number of partitions might increase the number of Btree.
+     * LOCAL_SORT: it is the default sort scope.
+	 * NO_SORT: it will load the data in unsorted manner.
+	 
 
 ## SHOW TABLE
 
