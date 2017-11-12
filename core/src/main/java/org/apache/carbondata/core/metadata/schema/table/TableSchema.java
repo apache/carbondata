@@ -255,21 +255,15 @@ public class TableSchema implements Serializable, Writable {
    * Below method will be used to build child schema object which will be stored in
    * parent table
    *
-   * @param className
-   * @param databaseName
-   * @param queryString
-   * @param queryType
-   *
-   * @return datamap schema
    */
-  public DataMapSchema buildChildSchema(String className, String databaseName, String queryString,
-      String queryType) {
+  public DataMapSchema buildChildSchema(String dataMapName, String className, String databaseName,
+      String queryString, String queryType) {
     RelationIdentifier relationIdentifier =
         new RelationIdentifier(databaseName, tableName, tableId);
     Map<String, String> properties = new HashMap<>();
     properties.put("CHILD_SELECT QUERY", queryString);
     properties.put("QUERYTYPE", queryType);
-    DataMapSchema dataMapSchema = new DataMapSchema(className);
+    DataMapSchema dataMapSchema = new DataMapSchema(dataMapName, className);
     dataMapSchema.setChildSchema(this);
     dataMapSchema.setProperties(properties);
     dataMapSchema.setRelationIdentifier(relationIdentifier);

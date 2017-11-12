@@ -41,9 +41,11 @@ object DropPreAggregateTablePostListener extends OperationEventListener {
         !carbonTable.get.getTableInfo.getDataMapSchemaList.isEmpty) {
       val childSchemas = carbonTable.get.getTableInfo.getDataMapSchemaList
       for (childSchema: DataMapSchema <- childSchemas.asScala) {
-        CarbonDropTableCommand(ifExistsSet = true,
-          Some(childSchema.getRelationIdentifier.getDatabaseName),
-          childSchema.getRelationIdentifier.getTableName).run(sparkSession)
+        if (childSchema.getRelationIdentifier != null) {
+          CarbonDropTableCommand(ifExistsSet = true,
+            Some(childSchema.getRelationIdentifier.getDatabaseName),
+            childSchema.getRelationIdentifier.getTableName).run(sparkSession)
+        }
       }
     }
 

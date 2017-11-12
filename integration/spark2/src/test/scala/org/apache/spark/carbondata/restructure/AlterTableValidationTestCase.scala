@@ -493,13 +493,13 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   test("test to check if new parent table name is reflected in pre-aggregate tables") {
     sql("drop table if exists preaggMain")
     sql("drop table if exists preaggmain_new")
-    sql("drop table if exists preagg1")
+    sql("drop table if exists preaggMain_preagg1")
     sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
     sql(
-      "create table preagg1 stored BY 'carbondata' tblproperties('parent'='PreAggMain') as select" +
+      "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
       " a,sum(b) from PreAggMain group by a")
     intercept[RuntimeException] {
-      sql("alter table preagg1 rename to preagg2")
+      sql("alter table PreAggMain_preagg1 rename to preagg2")
     }.getMessage.contains("Rename operation for pre-aggregate table is not supported.")
     intercept[RuntimeException] {
       sql("alter table preaggmain rename to preaggmain_new")

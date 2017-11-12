@@ -465,8 +465,9 @@ class CarbonFileMetastore extends CarbonMetaStore {
         }
         val childSchemaIterator = childSchemas.iterator()
         while (childSchemaIterator.hasNext) {
-          val childSchema = childSchemaIterator.next()
-          if (childSchema.getChildSchema.equals(childCarbonTable.getTableInfo.getFactTable)) {
+          val childSchema = childSchemaIterator.next().getChildSchema
+          if (childSchema != null &&
+              childSchema.equals(childCarbonTable.getTableInfo.getFactTable)) {
             childSchemaIterator.remove()
           }
         }

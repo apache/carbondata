@@ -515,17 +515,17 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test if update is unsupported for pre-aggregate tables") {
     sql("drop table if exists preaggMain")
-    sql("drop table if exists preagg1")
+    sql("drop table if exists preaggMain_preagg1")
     sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
-    sql("create table preagg1 stored BY 'carbondata' tblproperties('parent'='PreAggMain') as select a,sum(b) from PreAggMain group by a")
+    sql("create datamap preagg1 on table PreAggMain using 'preaggregate' as select a,sum(b) from PreAggMain group by a")
     intercept[RuntimeException] {
       sql("update preaggmain set (a)=('a')").show
     }.getMessage.contains("Update operation is not supported for tables")
     intercept[RuntimeException] {
-      sql("update preagg1 set (a)=('a')").show
+      sql("update preaggMain_preagg1 set (a)=('a')").show
     }.getMessage.contains("Update operation is not supported for pre-aggregate table")
     sql("drop table if exists preaggMain")
-    sql("drop table if exists preagg1")
+    sql("drop table if exists preaggMain_preagg1")
   }
 
   override def afterAll {

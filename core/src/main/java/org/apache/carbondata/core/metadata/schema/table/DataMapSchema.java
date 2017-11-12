@@ -30,6 +30,8 @@ public class DataMapSchema implements Serializable, Writable {
 
   private static final long serialVersionUID = 6577149126264181553L;
 
+  private String dataMapName;
+
   private String className;
 
   private RelationIdentifier relationIdentifier;
@@ -43,7 +45,11 @@ public class DataMapSchema implements Serializable, Writable {
    */
   private Map<String, String> properties;
 
-  public DataMapSchema(String className) {
+  public DataMapSchema() {
+  }
+
+  public DataMapSchema(String dataMapName, String className) {
+    this.dataMapName = dataMapName;
     this.className = className;
   }
 
@@ -75,7 +81,12 @@ public class DataMapSchema implements Serializable, Writable {
     this.properties = properties;
   }
 
+  public String getDataMapName() {
+    return dataMapName;
+  }
+
   @Override public void write(DataOutput out) throws IOException {
+    out.writeUTF(dataMapName);
     out.writeUTF(className);
     boolean isRelationIdentifierExists = null != relationIdentifier;
     out.writeBoolean(isRelationIdentifierExists);
@@ -99,6 +110,7 @@ public class DataMapSchema implements Serializable, Writable {
   }
 
   @Override public void readFields(DataInput in) throws IOException {
+    this.dataMapName = in.readUTF();
     this.className = in.readUTF();
     boolean isRelationIdnentifierExists = in.readBoolean();
     if (isRelationIdnentifierExists) {

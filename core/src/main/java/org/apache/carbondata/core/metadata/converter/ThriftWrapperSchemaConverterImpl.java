@@ -322,17 +322,22 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     for (DataMapSchema wrapperChildSchema : wrapperChildSchemaList) {
       org.apache.carbondata.format.DataMapSchema thriftChildSchema =
           new org.apache.carbondata.format.DataMapSchema();
-      org.apache.carbondata.format.RelationIdentifier relationIdentifier =
-          new org.apache.carbondata.format.RelationIdentifier();
-      relationIdentifier
-          .setDatabaseName(wrapperChildSchema.getRelationIdentifier().getDatabaseName());
-      relationIdentifier.setTableName(wrapperChildSchema.getRelationIdentifier().getTableName());
-      relationIdentifier.setTableId(wrapperChildSchema.getRelationIdentifier().getTableId());
-      thriftChildSchema.setRelationIdentifire(relationIdentifier);
+      if (wrapperChildSchema.getRelationIdentifier() != null) {
+        org.apache.carbondata.format.RelationIdentifier relationIdentifier =
+            new org.apache.carbondata.format.RelationIdentifier();
+        relationIdentifier.setDatabaseName(
+            wrapperChildSchema.getRelationIdentifier().getDatabaseName());
+        relationIdentifier.setTableName(wrapperChildSchema.getRelationIdentifier().getTableName());
+        relationIdentifier.setTableId(wrapperChildSchema.getRelationIdentifier().getTableId());
+        thriftChildSchema.setRelationIdentifire(relationIdentifier);
+      }
       thriftChildSchema.setProperties(wrapperChildSchema.getProperties());
       thriftChildSchema.setClassName(wrapperChildSchema.getClassName());
-      thriftChildSchema.setChildTableSchema(
-          fromWrapperToExternalTableSchema(wrapperChildSchema.getChildSchema()));
+      thriftChildSchema.setDataMapName(wrapperChildSchema.getDataMapName());
+      if (wrapperChildSchema.getChildSchema() != null) {
+        thriftChildSchema.setChildTableSchema(
+            fromWrapperToExternalTableSchema(wrapperChildSchema.getChildSchema()));
+      }
       thriftChildSchemas.add(thriftChildSchema);
     }
     return thriftChildSchemas;
@@ -623,16 +628,19 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
 
   @Override public DataMapSchema fromExternalToWrapperDataMapSchema(
       org.apache.carbondata.format.DataMapSchema thriftDataMapSchema) {
-    RelationIdentifier relationIdentifier =
-        new RelationIdentifier(thriftDataMapSchema.getRelationIdentifire().getDatabaseName(),
-            thriftDataMapSchema.getRelationIdentifire().getTableName(),
-            thriftDataMapSchema.getRelationIdentifire().getTableId());
-    DataMapSchema childSchema = new DataMapSchema(thriftDataMapSchema.getClassName());
+    DataMapSchema childSchema =
+        new DataMapSchema(thriftDataMapSchema.getDataMapName(), thriftDataMapSchema.getClassName());
     childSchema.setProperties(thriftDataMapSchema.getProperties());
-    childSchema.setChildSchema(
-        fromExternalToWrapperTableSchema(thriftDataMapSchema.getChildTableSchema(),
-            relationIdentifier.getTableName()));
-    childSchema.setRelationIdentifier(relationIdentifier);
+    if (thriftDataMapSchema.getRelationIdentifire() != null) {
+      RelationIdentifier relationIdentifier =
+          new RelationIdentifier(thriftDataMapSchema.getRelationIdentifire().getDatabaseName(),
+              thriftDataMapSchema.getRelationIdentifire().getTableName(),
+              thriftDataMapSchema.getRelationIdentifire().getTableId());
+      childSchema.setRelationIdentifier(relationIdentifier);
+      childSchema.setChildSchema(
+          fromExternalToWrapperTableSchema(thriftDataMapSchema.getChildTableSchema(),
+              relationIdentifier.getTableName()));
+    }
     return childSchema;
   }
 
