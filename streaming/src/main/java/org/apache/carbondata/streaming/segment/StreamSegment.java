@@ -34,6 +34,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -73,7 +74,7 @@ public class StreamSegment {
         LoadMetadataDetails streamSegment = null;
         for (LoadMetadataDetails detail : details) {
           if (FileFormat.rowformat == detail.getFileFormat()) {
-            if (CarbonCommonConstants.STORE_LOADSTATUS_STREAMING.equals(detail.getLoadStatus())) {
+            if (SegmentStatus.STREAMING == detail.getSegmentStatus()) {
               streamSegment = detail;
               break;
             }
@@ -86,7 +87,7 @@ public class StreamSegment {
           newDetail.setLoadName("" + segmentId);
           newDetail.setFileFormat(FileFormat.rowformat);
           newDetail.setLoadStartTime(System.currentTimeMillis());
-          newDetail.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_STREAMING);
+          newDetail.setSegmentStatus(SegmentStatus.STREAMING);
 
           LoadMetadataDetails[] newDetails = new LoadMetadataDetails[details.length + 1];
           int i = 0;
@@ -139,7 +140,7 @@ public class StreamSegment {
         for (LoadMetadataDetails detail : details) {
           if (segmentId.equals(detail.getLoadName())) {
             detail.setLoadEndTime(System.currentTimeMillis());
-            detail.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_STREAMING_FINISH);
+            detail.setSegmentStatus(SegmentStatus.STREAMING_FINISH);
             break;
           }
         }
@@ -150,7 +151,7 @@ public class StreamSegment {
         newDetail.setLoadName("" + newSegmentId);
         newDetail.setFileFormat(FileFormat.rowformat);
         newDetail.setLoadStartTime(System.currentTimeMillis());
-        newDetail.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_STREAMING);
+        newDetail.setSegmentStatus(SegmentStatus.STREAMING);
 
         LoadMetadataDetails[] newDetails = new LoadMetadataDetails[details.length + 1];
         int i = 0;

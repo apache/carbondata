@@ -41,7 +41,7 @@ import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses}
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
@@ -212,7 +212,7 @@ class NewCarbonDataLoadRDD[K, V](
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
         loadMetadataDetails.setPartitionCount(partitionID)
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+        loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
 
         val preFetch = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
           .USE_PREFETCH_WHILE_LOADING, CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING_DEFAULT)
@@ -233,12 +233,12 @@ class NewCarbonDataLoadRDD[K, V](
           recordReaders)
       } catch {
         case e: NoRetryException =>
-          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+          loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
           logInfo("Bad Record Found")
         case e: Exception =>
-          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
+          loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
           logInfo("DataLoad failure", e)
           LOGGER.error(e)
           throw e
@@ -247,8 +247,7 @@ class NewCarbonDataLoadRDD[K, V](
         CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
-        if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          .equals(loadMetadataDetails.getLoadStatus)) {
+        if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {
           CarbonTimeStatisticsFactory.getLoadStatisticsInstance
             .printStatisticsInfo(model.getPartitionId)
         }
@@ -346,7 +345,7 @@ class NewDataFrameLoaderRDD[K, V](
       try {
 
         loadMetadataDetails.setPartitionCount(partitionID)
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+        loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
         carbonLoadModel.setPartitionId(partitionID)
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         carbonLoadModel.setPreFetch(false)
@@ -376,12 +375,12 @@ class NewDataFrameLoaderRDD[K, V](
         executor.execute(model, loader.storeLocation, recordReaders.toArray)
       } catch {
         case e: NoRetryException =>
-          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+          loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
           logInfo("Bad Record Found")
         case e: Exception =>
-          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
+          loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
           logInfo("DataLoad failure", e)
           LOGGER.error(e)
           throw e
@@ -390,8 +389,7 @@ class NewDataFrameLoaderRDD[K, V](
         CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
-        if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          .equals(loadMetadataDetails.getLoadStatus)) {
+        if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {
           CarbonTimeStatisticsFactory.getLoadStatisticsInstance
             .printStatisticsInfo(model.getPartitionId)
         }
@@ -540,7 +538,7 @@ class PartitionTableDataLoaderRDD[K, V](
       try {
 
         loadMetadataDetails.setPartitionCount(partitionID)
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+        loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
         carbonLoadModel.setPartitionId(partitionID)
         carbonLoadModel.setTaskNo(String.valueOf(partitionInfo.getPartitionId(theSplit.index)))
         carbonLoadModel.setPreFetch(false)
@@ -561,12 +559,12 @@ class PartitionTableDataLoaderRDD[K, V](
         executor.execute(model, loader.storeLocation, recordReaders)
       } catch {
         case e: NoRetryException =>
-          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+          loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
           logInfo("Bad Record Found")
         case e: Exception =>
-          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
+          loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
           logInfo("DataLoad For Partition Table failure", e)
           LOGGER.error(e)
           throw e
@@ -575,8 +573,7 @@ class PartitionTableDataLoaderRDD[K, V](
         CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
-        if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          .equals(loadMetadataDetails.getLoadStatus)) {
+        if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {
           CarbonTimeStatisticsFactory.getLoadStatisticsInstance
             .printStatisticsInfo(model.getPartitionId)
         }

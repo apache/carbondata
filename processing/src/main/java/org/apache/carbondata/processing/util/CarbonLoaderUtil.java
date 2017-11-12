@@ -53,7 +53,6 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
-import org.apache.carbondata.core.datastore.row.LoadStatusType;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
@@ -65,6 +64,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
@@ -292,11 +292,10 @@ public final class CarbonLoaderUtil {
           // 2. If load or insert into operation is in progress and insert overwrite operation
           // is triggered
           for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
-            if (entry.getLoadStatus().equals(LoadStatusType.INSERT_OVERWRITE.getMessage())) {
+            if (entry.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
               throw new RuntimeException("Already insert overwrite is in progress");
-            } else if (
-                newMetaEntry.getLoadStatus().equals(LoadStatusType.INSERT_OVERWRITE.getMessage())
-                    && entry.getLoadStatus().equals(LoadStatusType.IN_PROGRESS.getMessage())) {
+            } else if (newMetaEntry.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
+                && entry.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS) {
               throw new RuntimeException("Already insert into or load is in progress");
             }
           }
@@ -313,14 +312,14 @@ public final class CarbonLoaderUtil {
             }
             indexToOverwriteNewMetaEntry++;
           }
-          if (listOfLoadFolderDetails.get(indexToOverwriteNewMetaEntry).getLoadStatus()
-              .equals(CarbonCommonConstants.MARKED_FOR_DELETE)) {
+          if (listOfLoadFolderDetails.get(indexToOverwriteNewMetaEntry).getSegmentStatus() ==
+              SegmentStatus.MARKED_FOR_DELETE) {
             throw new RuntimeException("It seems insert overwrite has been issued during load");
           }
           if (insertOverwrite) {
             for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
-              if (!entry.getLoadStatus().equals(LoadStatusType.INSERT_OVERWRITE.getMessage())) {
-                entry.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
+              if (entry.getSegmentStatus() != SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+                entry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
                 // For insert overwrite, we will delete the old segment folder immediately
                 // So collect the old segments here
                 String path = carbonTablePath.getCarbonDataDirectoryPath("0", entry.getLoadName());
@@ -374,12 +373,12 @@ public final class CarbonLoaderUtil {
    * @param addLoadEndTime
    */
   public static void populateNewLoadMetaEntry(LoadMetadataDetails loadMetadataDetails,
-      String loadStatus, long loadStartTime, boolean addLoadEndTime) {
+      SegmentStatus loadStatus, long loadStartTime, boolean addLoadEndTime) {
     if (addLoadEndTime) {
       long loadEndDate = CarbonUpdateUtil.readCurrentTime();
       loadMetadataDetails.setLoadEndTime(loadEndDate);
     }
-    loadMetadataDetails.setLoadStatus(loadStatus);
+    loadMetadataDetails.setSegmentStatus(loadStatus);
     loadMetadataDetails.setLoadStartTime(loadStartTime);
   }
 

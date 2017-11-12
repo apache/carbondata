@@ -40,6 +40,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.data.BlockMappingVO;
 import org.apache.carbondata.core.mutate.data.RowCountDetailsVO;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -145,7 +146,7 @@ public class CarbonUpdateUtil {
                   .setDeleteDeltaStartTimestamp(newBlockEntry.getDeleteDeltaStartTimestamp());
             }
             blockDetail.setDeleteDeltaEndTimestamp(newBlockEntry.getDeleteDeltaEndTimestamp());
-            blockDetail.setStatus(newBlockEntry.getStatus());
+            blockDetail.setSegmentStatus(newBlockEntry.getSegmentStatus());
             blockDetail.setDeletedRowsInBlock(newBlockEntry.getDeletedRowsInBlock());
           } else {
             // add the new details to the list.
@@ -224,7 +225,7 @@ public class CarbonUpdateUtil {
 
             // if the segments is in the list of marked for delete then update the status.
             if (segmentsToBeDeleted.contains(loadMetadata.getLoadName())) {
-              loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
+              loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
               loadMetadata.setModificationOrdeletionTimesStamp(Long.parseLong(updatedTimeStamp));
             }
           }
@@ -508,9 +509,8 @@ public class CarbonUpdateUtil {
       // if this segment is valid then only we will go for delta file deletion.
       // if the segment is mark for delete or compacted then any way it will get deleted.
 
-      if (segment.getLoadStatus().equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
-              || segment.getLoadStatus()
-              .equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)) {
+      if (segment.getSegmentStatus() == SegmentStatus.SUCCESS
+              || segment.getSegmentStatus() == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
 
         // take the list of files from this segment.
         String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", segment.getLoadName());
@@ -565,7 +565,7 @@ public class CarbonUpdateUtil {
           }
 
           // case 1
-          if (CarbonUpdateUtil.isBlockInvalid(block.getStatus())) {
+          if (CarbonUpdateUtil.isBlockInvalid(block.getSegmentStatus())) {
             completeListOfDeleteDeltaFiles = updateStatusManager
                     .getDeleteDeltaInvalidFilesList(segment.getLoadName(), block, true,
                             allSegmentFiles);
@@ -687,17 +687,8 @@ public class CarbonUpdateUtil {
     }
   }
 
-  /**
-   *
-   * @param blockStatus
-   * @return
-   */
-  public static boolean isBlockInvalid(String blockStatus) {
-    if (blockStatus.equalsIgnoreCase(CarbonCommonConstants.COMPACTED) || blockStatus
-            .equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_DELETE)) {
-      return true;
-    }
-    return false;
+  public static boolean isBlockInvalid(SegmentStatus blockStatus) {
+    return blockStatus == SegmentStatus.COMPACTED || blockStatus == SegmentStatus.MARKED_FOR_DELETE;
   }
 
   /**

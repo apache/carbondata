@@ -321,12 +321,10 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     List<String> streamSegments = null;
     List<String> filteredSegmentToAccess = new ArrayList<>();
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
-
       String[] segmentsToAccess = getSegmentsToAccess(job);
       Set<String> segmentToAccessSet = new HashSet<>();
-      for (String segmentToAccess : segmentsToAccess) {
-        segmentToAccessSet.add(segmentToAccess);
-      }
+      segmentToAccessSet.addAll(Arrays.asList(segmentsToAccess));
+
       // get all valid segments and set them into the configuration
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
       SegmentStatusManager.ValidAndInvalidSegmentsInfo segments =
@@ -903,7 +901,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       // if block is invalid then dont add the count
       SegmentUpdateDetails details = updateStatusManager.getDetailsForABlock(key);
 
-      if (null == details || !CarbonUpdateUtil.isBlockInvalid(details.getStatus())) {
+      if (null == details || !CarbonUpdateUtil.isBlockInvalid(details.getSegmentStatus())) {
         Long blockCount = blockRowCountMapping.get(key);
         if (blockCount == null) {
           blockCount = 0L;

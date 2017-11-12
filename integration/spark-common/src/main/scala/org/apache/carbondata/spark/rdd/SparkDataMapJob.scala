@@ -27,8 +27,6 @@ import org.apache.hadoop.mapreduce.{InputSplit, Job, TaskAttemptID, TaskType}
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark.{Partition, SparkContext, TaskContext, TaskKilledException}
 
-import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf
 import org.apache.carbondata.hadoop.api.{DataMapJob, DistributableDataMapFormat}
@@ -69,8 +67,6 @@ class DataMapPruneRDD(sc: SparkContext,
 
   override def internalCompute(split: Partition,
       context: TaskContext): Iterator[ExtendedBlocklet] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
     val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, split.index, 0)
     val attemptContext = new TaskAttemptContextImpl(new Configuration(), attemptId)
     val inputSplit = split.asInstanceOf[DataMapRDDPartition].inputSplit

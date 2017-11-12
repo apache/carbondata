@@ -49,7 +49,7 @@ import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{LoadTablePostExecutionEvent, OperationContext, OperationListenerBus}
@@ -261,7 +261,7 @@ object CarbonDataRDDFactory {
       carbonLoadModel: CarbonLoadModel,
       storePath: String,
       columnar: Boolean,
-      partitionStatus: String = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS,
+      partitionStatus: SegmentStatus = SegmentStatus.SUCCESS,
       result: Option[DictionaryServer],
       overwriteTable: Boolean,
       dataFrame: Option[DataFrame] = None,
@@ -283,7 +283,7 @@ object CarbonDataRDDFactory {
       CarbonLoaderUtil.checkAndCreateCarbonDataLocation(storePath,
         carbonLoadModel.getSegmentId, carbonTable)
     }
-    var loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+    var loadStatus = SegmentStatus.SUCCESS
     var errorMessage: String = "DataLoad failure"
     var executorMessage: String = ""
     val isSortTable = carbonTable.getNumberOfSortColumns > 0
@@ -298,18 +298,17 @@ object CarbonDataRDDFactory {
           carbonTable)
         res.foreach { resultOfSeg =>
           resultOfSeg.foreach { resultOfBlock =>
-            if (resultOfBlock._2._1.getLoadStatus.equalsIgnoreCase(
-              CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)) {
-              loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+            if (resultOfBlock._2._1.getSegmentStatus == SegmentStatus.LOAD_FAILURE) {
+              loadStatus = SegmentStatus.LOAD_FAILURE
               if (resultOfBlock._2._2.failureCauses == FailureCauses.NONE) {
                 updateModel.get.executorErrors.failureCauses = FailureCauses.EXECUTOR_FAILURE
                 updateModel.get.executorErrors.errorMsg = "Failure in the Executor."
               } else {
                 updateModel.get.executorErrors = resultOfBlock._2._2
               }
-            } else if (resultOfBlock._2._1.getLoadStatus.equalsIgnoreCase(
-              CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)) {
-              loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+            } else if (resultOfBlock._2._1.getSegmentStatus ==
+                       SegmentStatus.LOAD_PARTIAL_SUCCESS) {
+              loadStatus = SegmentStatus.LOAD_PARTIAL_SUCCESS
               updateModel.get.executorErrors.failureCauses = resultOfBlock._2._2.failureCauses
               updateModel.get.executorErrors.errorMsg = resultOfBlock._2._2.errorMsg
             }
@@ -328,43 +327,43 @@ object CarbonDataRDDFactory {
         }
         CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
           Seq(carbonLoadModel.getSegmentId), storePath, carbonTable)
-        val newStatusMap = scala.collection.mutable.Map.empty[String, String]
+        val newStatusMap = scala.collection.mutable.Map.empty[String, SegmentStatus]
         if (status.nonEmpty) {
           status.foreach { eachLoadStatus =>
             val state = newStatusMap.get(eachLoadStatus._1)
             state match {
-              case Some(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) =>
-                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getLoadStatus)
-              case Some(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
-                if eachLoadStatus._2._1.getLoadStatus ==
-                   CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS =>
-                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getLoadStatus)
+              case Some(SegmentStatus.LOAD_FAILURE) =>
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
+              case Some(SegmentStatus.LOAD_PARTIAL_SUCCESS)
+                if eachLoadStatus._2._1.getSegmentStatus ==
+                   SegmentStatus.SUCCESS =>
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
               case _ =>
-                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getLoadStatus)
+                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
             }
           }
 
           newStatusMap.foreach {
             case (key, value) =>
-              if (value == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
-                loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-              } else if (value == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
-                  !loadStatus.equals(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)) {
-                loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
+              if (value == SegmentStatus.LOAD_FAILURE) {
+                loadStatus = SegmentStatus.LOAD_FAILURE
+              } else if (value == SegmentStatus.LOAD_PARTIAL_SUCCESS &&
+                         loadStatus!= SegmentStatus.LOAD_FAILURE) {
+                loadStatus = SegmentStatus.LOAD_PARTIAL_SUCCESS
               }
           }
         } else {
-          loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+          loadStatus = SegmentStatus.LOAD_FAILURE
         }
 
-        if (loadStatus != CarbonCommonConstants.STORE_LOADSTATUS_FAILURE &&
-            partitionStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) {
+        if (loadStatus != SegmentStatus.LOAD_FAILURE &&
+            partitionStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
           loadStatus = partitionStatus
         }
       }
     } catch {
       case ex: Throwable =>
-        loadStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+        loadStatus = SegmentStatus.LOAD_FAILURE
         ex match {
           case sparkException: SparkException =>
             if (sparkException.getCause.isInstanceOf[DataLoadingException] ||
@@ -383,7 +382,7 @@ object CarbonDataRDDFactory {
     }
     // handle the status file updation for the update cmd.
     if (updateModel.isDefined) {
-      if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
+      if (loadStatus == SegmentStatus.LOAD_FAILURE) {
         if (updateModel.get.executorErrors.failureCauses == FailureCauses.NONE) {
           updateModel.get.executorErrors.failureCauses = FailureCauses.EXECUTOR_FAILURE
           if (null != executorMessage && !executorMessage.isEmpty) {
@@ -393,7 +392,7 @@ object CarbonDataRDDFactory {
           }
         }
         return
-      } else if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
+      } else if (loadStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS &&
                  updateModel.get.executorErrors.failureCauses == FailureCauses.BAD_RECORDS &&
                  carbonLoadModel.getBadRecordsAction.split(",")(1) == LoggerAction.FAIL.name) {
         return
@@ -437,7 +436,7 @@ object CarbonDataRDDFactory {
       }
       return
     }
-    if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_FAILURE) {
+    if (loadStatus == SegmentStatus.LOAD_FAILURE) {
       // update the load entry in table status file for changing the status to failure
       CommonUtil.updateTableStatusForFailure(carbonLoadModel)
       LOGGER.info("********starting clean up**********")
@@ -450,7 +449,7 @@ object CarbonDataRDDFactory {
     } else {
       // check if data load fails due to bad record and throw data load failure due to
       // bad record exception
-      if (loadStatus == CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS &&
+      if (loadStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS &&
           status(0)._2._2.failureCauses == FailureCauses.BAD_RECORDS &&
           carbonLoadModel.getBadRecordsAction.split(",")(1) == LoggerAction.FAIL.name) {
         // update the load entry in table status file for changing the status to failure
@@ -486,7 +485,7 @@ object CarbonDataRDDFactory {
       OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
       updateTableStatus(status, carbonLoadModel, loadStatus, overwriteTable)
 
-      if (CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS.equals(loadStatus)) {
+      if (SegmentStatus.LOAD_PARTIAL_SUCCESS == loadStatus) {
         LOGGER.audit("Data load is partially successful for " +
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       } else {
@@ -592,13 +591,13 @@ object CarbonDataRDDFactory {
 
         loadMetadataDetails.setPartitionCount(partitionID)
         loadMetadataDetails.setLoadName(segId)
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
+        loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
         carbonLoadModel.setPartitionId(partitionID)
         carbonLoadModel.setSegmentId(segId)
         carbonLoadModel.setTaskNo(String.valueOf(index))
         carbonLoadModel.setFactTimeStamp(updateModel.get.updatedTimeStamp)
 
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+        loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
         UpdateDataLoad.DataLoadForUpdate(segId,
           index,
           iter,
@@ -607,7 +606,7 @@ object CarbonDataRDDFactory {
       } catch {
         case e: NoRetryException =>
           loadMetadataDetails
-            .setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+            .setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
           LOGGER.info("Bad Record Found")
@@ -733,7 +732,7 @@ object CarbonDataRDDFactory {
   private def updateTableStatus(
       status: Array[(String, (LoadMetadataDetails, ExecutionErrors))],
       carbonLoadModel: CarbonLoadModel,
-      loadStatus: String,
+      loadStatus: SegmentStatus,
       overwriteTable: Boolean
   ): Unit = {
     val metadataDetails = if (status != null && status(0) != null) {

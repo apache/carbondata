@@ -34,6 +34,7 @@ import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
+import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format
@@ -164,7 +165,7 @@ case class LoadTableCommand(
         if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
           FileFactory.mkdirs(metadataDirectoryPath, fileType)
         }
-        val partitionStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+        val partitionStatus = SegmentStatus.SUCCESS
         val columnar = sparkSession.conf.get("carbon.is.columnar.storage", "true").toBoolean
         if (carbonLoadModel.getUseOnePass) {
           loadDataUsingOnePass(
@@ -225,7 +226,7 @@ case class LoadTableCommand(
       carbonProperty: CarbonProperties,
       carbonLoadModel: CarbonLoadModel,
       columnar: Boolean,
-      partitionStatus: String): Unit = {
+      partitionStatus: SegmentStatus): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       .getCarbonTableIdentifier
@@ -301,7 +302,7 @@ case class LoadTableCommand(
       sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
       columnar: Boolean,
-      partitionStatus: String): Unit = {
+      partitionStatus: SegmentStatus): Unit = {
     val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
       val fields = dataFrame.get.schema.fields
       import org.apache.spark.sql.functions.udf

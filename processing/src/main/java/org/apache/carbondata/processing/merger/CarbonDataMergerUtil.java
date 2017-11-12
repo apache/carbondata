@@ -46,6 +46,7 @@ import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.reader.CarbonDeleteFilesDataReader;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -216,10 +217,9 @@ public final class CarbonDataMergerUtil {
             // Check is the compactedBlocks name matches with oldDetails
             for (int i = 0; i < updateLists.length; i++) {
               if (updateLists[i].getBlockName().equalsIgnoreCase(compactedBlocks)
-                  && !CarbonCommonConstants.COMPACTED.equalsIgnoreCase(updateLists[i].getStatus())
-                  && !CarbonCommonConstants.MARKED_FOR_DELETE
-                  .equalsIgnoreCase(updateLists[i].getStatus())) {
-                updateLists[i].setStatus(CarbonCommonConstants.COMPACTED);
+                  && updateLists[i].getSegmentStatus() != SegmentStatus.COMPACTED
+                  && updateLists[i].getSegmentStatus() != SegmentStatus.MARKED_FOR_DELETE) {
+                updateLists[i].setSegmentStatus(SegmentStatus.COMPACTED);
               }
             }
           }
@@ -311,13 +311,12 @@ public final class CarbonDataMergerUtil {
           if (loadsToMerge.contains(loadDetail)) {
             // if the compacted load is deleted after the start of the compaction process,
             // then need to discard the compaction process and treat it as failed compaction.
-            if (loadDetail.getLoadStatus()
-                .equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_DELETE)) {
+            if (loadDetail.getSegmentStatus() == SegmentStatus.MARKED_FOR_DELETE) {
               LOGGER.error("Compaction is aborted as the segment " + loadDetail.getLoadName()
                   + " is deleted after the compaction is started.");
               return false;
             }
-            loadDetail.setLoadStatus(CarbonCommonConstants.COMPACTED);
+            loadDetail.setSegmentStatus(SegmentStatus.COMPACTED);
             loadDetail.setModificationOrdeletionTimesStamp(modificationOrDeletionTimeStamp);
             loadDetail.setMergedLoadName(mergedLoadNumber);
           }
@@ -326,7 +325,7 @@ public final class CarbonDataMergerUtil {
         // create entry for merged one.
         LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
         loadMetadataDetails.setPartitionCount(carbonLoadModel.getPartitionId());
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS);
+        loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS);
         long loadEnddate = CarbonUpdateUtil.readCurrentTime();
         loadMetadataDetails.setLoadEndTime(loadEnddate);
         loadMetadataDetails.setLoadName(mergedLoadNumber);
@@ -479,9 +478,8 @@ public final class CarbonDataMergerUtil {
       SimpleDateFormat sdf = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
       for (LoadMetadataDetails segment : listOfSegmentsBelowThresholdSize) {
         // compaction should skip streaming segments
-        if (CarbonCommonConstants.STORE_LOADSTATUS_STREAMING.equals(segment.getLoadStatus()) ||
-            CarbonCommonConstants.STORE_LOADSTATUS_STREAMING_FINISH.equals(
-                segment.getLoadStatus())) {
+        if (segment.getSegmentStatus() == SegmentStatus.STREAMING ||
+            segment.getSegmentStatus() == SegmentStatus.STREAMING_FINISH) {
           continue;
         }
 
@@ -514,9 +512,8 @@ public final class CarbonDataMergerUtil {
     } else {
       for (LoadMetadataDetails segment : listOfSegmentsBelowThresholdSize) {
         // compaction should skip streaming segments
-        if (CarbonCommonConstants.STORE_LOADSTATUS_STREAMING.equals(segment.getLoadStatus()) ||
-            CarbonCommonConstants.STORE_LOADSTATUS_STREAMING_FINISH.equals(
-                segment.getLoadStatus())) {
+        if (segment.getSegmentStatus() == SegmentStatus.STREAMING ||
+            segment.getSegmentStatus() == SegmentStatus.STREAMING_FINISH) {
           continue;
         }
         loadsOfSameDate.add(segment);
@@ -598,8 +595,8 @@ public final class CarbonDataMergerUtil {
     // check size of each segment , sum it up across partitions
     for (LoadMetadataDetails segment : listOfSegmentsAfterPreserve) {
       // compaction should skip streaming segments
-      if (CarbonCommonConstants.STORE_LOADSTATUS_STREAMING.equals(segment.getLoadStatus()) ||
-          CarbonCommonConstants.STORE_LOADSTATUS_STREAMING_FINISH.equals(segment.getLoadStatus())) {
+      if (segment.getSegmentStatus() == SegmentStatus.STREAMING ||
+          segment.getSegmentStatus() == SegmentStatus.STREAMING_FINISH) {
         continue;
       }
 
@@ -708,8 +705,8 @@ public final class CarbonDataMergerUtil {
     // check size of each segment , sum it up across partitions
     for (LoadMetadataDetails segment : listOfSegmentsAfterPreserve) {
       // compaction should skip streaming segments
-      if (CarbonCommonConstants.STORE_LOADSTATUS_STREAMING.equals(segment.getLoadStatus()) ||
-          CarbonCommonConstants.STORE_LOADSTATUS_STREAMING_FINISH.equals(segment.getLoadStatus())) {
+      if (segment.getSegmentStatus() == SegmentStatus.STREAMING ||
+          segment.getSegmentStatus() == SegmentStatus.STREAMING_FINISH) {
         continue;
       }
       String segName = segment.getLoadName();
@@ -911,10 +908,9 @@ public final class CarbonDataMergerUtil {
   }
 
   private static boolean isSegmentValid(LoadMetadataDetails seg) {
-    return seg.getLoadStatus().equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
-            || seg.getLoadStatus()
-            .equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS) || seg
-            .getLoadStatus().equalsIgnoreCase(CarbonCommonConstants.MARKED_FOR_UPDATE);
+    return seg.getSegmentStatus() == SegmentStatus.SUCCESS ||
+        seg.getSegmentStatus() == SegmentStatus.LOAD_PARTIAL_SUCCESS ||
+        seg.getSegmentStatus() == SegmentStatus.MARKED_FOR_UPDATE;
   }
 
   /**
@@ -1238,7 +1234,7 @@ public final class CarbonDataMergerUtil {
                   .equalsIgnoreCase(carbonDataMergerUtilResult.getSegmentName())) {
 
             tempSegmentUpdateDetails.setDeletedRowsInBlock(origDetails.getDeletedRowsInBlock());
-            tempSegmentUpdateDetails.setStatus(origDetails.getStatus());
+            tempSegmentUpdateDetails.setSegmentStatus(origDetails.getSegmentStatus());
             break;
           }
         }

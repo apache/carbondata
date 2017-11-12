@@ -30,9 +30,16 @@ public class LoadMetadataDetails implements Serializable {
 
   private static final long serialVersionUID = 1106104914918491724L;
   private String timestamp;
-  private String loadStatus;
+
+  // For backward compatibility, this member is required to read from JSON in the table_status file
+  private SegmentStatus loadStatus;
+
+  // name of the segment
   private String loadName;
+
+  // partition count of this segment
   private String partitionCount;
+
   private String isDeleted = CarbonCommonConstants.KEYWORD_FALSE;
 
   // update delta end timestamp
@@ -94,12 +101,12 @@ public class LoadMetadataDetails implements Serializable {
     this.timestamp = getTimeStampConvertion(timestamp);;
   }
 
-  public String getLoadStatus() {
+  public SegmentStatus getSegmentStatus() {
     return loadStatus;
   }
 
-  public void setLoadStatus(String loadStatus) {
-    this.loadStatus = loadStatus;
+  public void setSegmentStatus(SegmentStatus segmentStatus) {
+    this.loadStatus = segmentStatus;
   }
 
   public String getLoadName() {

@@ -18,7 +18,6 @@
 package org.apache.carbondata.api
 
 import java.lang.Long
-import java.text.SimpleDateFormat
 
 import scala.collection.JavaConverters._
 
@@ -29,7 +28,7 @@ import org.apache.spark.sql.types.TimestampType
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, ICarbonLock, LockUsage}
+import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
@@ -47,7 +46,6 @@ object CarbonStore {
       tableFolderPath: String): Seq[Row] = {
     val loadMetadataDetailsArray = SegmentStatusManager.readLoadMetadata(tableFolderPath)
     if (loadMetadataDetailsArray.nonEmpty) {
-      val parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP)
       var loadMetadataDetailsSortedArray = loadMetadataDetailsArray.sortWith { (l1, l2) =>
         java.lang.Double.parseDouble(l1.getLoadName) > java.lang.Double.parseDouble(l2.getLoadName)
       }
@@ -66,11 +64,12 @@ object CarbonStore {
       loadMetadataDetailsSortedArray
         .filter(_.getVisibility.equalsIgnoreCase("true"))
         .map { load =>
-          val mergedTo = if (load.getMergedLoadName != null) {
-            load.getMergedLoadName
-          } else {
-            ""
-          }
+          val mergedTo =
+            if (load.getMergedLoadName != null) {
+              load.getMergedLoadName
+            } else {
+              "NA"
+            }
 
           val startTime =
             if (load.getLoadStartTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
@@ -88,11 +87,10 @@ object CarbonStore {
 
           Row(
             load.getLoadName,
-            load.getLoadStatus,
+            load.getSegmentStatus.getMessage,
             startTime,
             endTime,
-            mergedTo
-          )
+            mergedTo)
         }.toSeq
     } else {
       Seq.empty
