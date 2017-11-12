@@ -39,7 +39,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.datastore.row.LoadStatusType
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
@@ -48,7 +47,7 @@ import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.comparator.Comparator
 import org.apache.carbondata.core.util.path.CarbonStorePath
@@ -518,11 +517,12 @@ object CommonUtil {
       storePath: String,
       insertOverwrite: Boolean): Unit = {
     val newLoadMetaEntry = new LoadMetadataDetails
-    val status: String = if (insertOverwrite) {
-      LoadStatusType.INSERT_OVERWRITE.getMessage
+    val status = if (insertOverwrite) {
+      SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
     } else {
-      LoadStatusType.IN_PROGRESS.getMessage
+      SegmentStatus.INSERT_IN_PROGRESS
     }
+
     // reading the start time of data load.
     val loadStartTime = CarbonUpdateUtil.readCurrentTime
     model.setFactTimeStamp(loadStartTime)
@@ -548,7 +548,7 @@ object CommonUtil {
       model: CarbonLoadModel): Unit = {
     // in case if failure the load status should be "Marked for delete" so that it will be taken
     // care during clean up
-    val loadStatus = CarbonCommonConstants.MARKED_FOR_DELETE
+    val loadStatus = SegmentStatus.MARKED_FOR_DELETE
     // always the last entry in the load metadata details will be the current load entry
     val loadMetaEntry = model.getLoadMetadataDetails.get(model.getLoadMetadataDetails.size - 1)
     CarbonLoaderUtil
@@ -799,9 +799,9 @@ object CommonUtil {
                       var loadInprogressExist = false
                       val staleFolders: Seq[CarbonFile] = Seq()
                       listOfLoadFolderDetailsArray.foreach { load =>
-                        if (load.getLoadStatus.equals(LoadStatusType.IN_PROGRESS.getMessage) ||
-                            load.getLoadStatus.equals(LoadStatusType.INSERT_OVERWRITE.getMessage)) {
-                          load.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE)
+                        if (load.getSegmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
+                            load.getSegmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+                          load.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE)
                           staleFolders :+ FileFactory.getCarbonFile(
                             carbonTablePath.getCarbonDataDirectoryPath("0", load.getLoadName))
                           loadInprogressExist = true

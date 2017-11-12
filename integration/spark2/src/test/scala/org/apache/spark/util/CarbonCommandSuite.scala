@@ -95,9 +95,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
 
   private lazy val location =
     CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
-  test("show segment") {
-    ShowSegments.main(Array(s"${location}", "carbon_table"))
-  }
+
 
   test("delete segment by id") {
     DeleteSegmentById.main(Array(s"${location}", "carbon_table", "0"))
@@ -115,11 +113,8 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   test("clean files") {
     val table = "carbon_table3"
     createAndLoadTestTable(table, "csv_table")
-    ShowSegments.main(Array(s"${location}", table))
     DeleteSegmentById.main(Array(s"${location}", table, "0"))
-    ShowSegments.main(Array(s"${location}", table))
     CleanFiles.main(Array(s"${location}", table))
-    ShowSegments.main(Array(s"${location}", table))
     val tablePath = s"${location}${File.separator}default${File.separator}$table"
     val f = new File(s"$tablePath/Fact/Part0")
     assert(f.isDirectory)

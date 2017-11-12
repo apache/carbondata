@@ -39,7 +39,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, DeleteDeltaBlockDetails, SegmentUpdateDetails, TupleIdEnum}
 import org.apache.carbondata.core.mutate.data.RowCountDetailsVO
-import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
 import org.apache.carbondata.hadoop.CarbonInputFormat
@@ -63,11 +63,13 @@ object DeleteExecution {
       identifier: Seq[String],
       sparkSession: SparkSession,
       dataRdd: RDD[Row],
-      timestamp: String, relation: CarbonRelation, isUpdateOperation: Boolean,
+      timestamp: String,
+      relation: CarbonRelation,
+      isUpdateOperation: Boolean,
       executorErrors: ExecutionErrors
   ): Boolean = {
 
-    var res: Array[List[(String, (SegmentUpdateDetails, ExecutionErrors))]] = null
+    var res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]] = null
     val tableName = getTableIdentifier(identifier).table
     val database = GetDB.getDatabaseName(getTableIdentifier(identifier).database, sparkSession)
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
@@ -126,9 +128,9 @@ object DeleteExecution {
     val rdd = rowContRdd.join(keyRdd)
     res = rdd.mapPartitionsWithIndex(
       (index: Int, records: Iterator[((String), (RowCountDetailsVO, Iterable[Row]))]) =>
-        Iterator[List[(String, (SegmentUpdateDetails, ExecutionErrors))]] {
+        Iterator[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]] {
 
-          var result = List[(String, (SegmentUpdateDetails, ExecutionErrors))]()
+          var result = List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]()
           while (records.hasNext) {
             val ((key), (rowCountDetailsVO, groupedRows)) = records.next
             result = result ++
@@ -156,11 +158,11 @@ object DeleteExecution {
       val segmentDetails = new util.HashSet[String]()
       res.foreach(resultOfSeg => resultOfSeg.foreach(
         resultOfBlock => {
-          if (resultOfBlock._1.equalsIgnoreCase(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)) {
+          if (resultOfBlock._1 == SegmentStatus.SUCCESS) {
             blockUpdateDetailsList.add(resultOfBlock._2._1)
             segmentDetails.add(resultOfBlock._2._1.getSegmentName)
             // if this block is invalid then decrement block count in map.
-            if (CarbonUpdateUtil.isBlockInvalid(resultOfBlock._2._1.getStatus)) {
+            if (CarbonUpdateUtil.isBlockInvalid(resultOfBlock._2._1.getSegmentStatus)) {
               CarbonUpdateUtil.decrementDeletedBlockCount(resultOfBlock._2._1,
                 blockMappingVO.getSegmentNumberOfBlockMapping)
             }
@@ -225,10 +227,10 @@ object DeleteExecution {
         iter: Iterator[Row],
         timestamp: String,
         rowCountDetailsVO: RowCountDetailsVO
-    ): Iterator[(String, (SegmentUpdateDetails, ExecutionErrors))] = {
+    ): Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))] = {
 
       val result = new DeleteDelataResultImpl()
-      var deleteStatus = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+      var deleteStatus = SegmentStatus.LOAD_FAILURE
       val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
       // here key = segment/blockName
       val blockName = CarbonUpdateUtil
@@ -236,7 +238,7 @@ object DeleteExecution {
           CarbonTablePath.addDataPartPrefix(key.split(CarbonCommonConstants.FILE_SEPARATOR)(1)))
       val segmentId = key.split(CarbonCommonConstants.FILE_SEPARATOR)(0)
       val deleteDeltaBlockDetails: DeleteDeltaBlockDetails = new DeleteDeltaBlockDetails(blockName)
-      val resultIter = new Iterator[(String, (SegmentUpdateDetails, ExecutionErrors))] {
+      val resultIter = new Iterator[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))] {
         val segmentUpdateDetails = new SegmentUpdateDetails()
         var TID = ""
         var countOfRows = 0
@@ -281,14 +283,14 @@ object DeleteExecution {
           val totalDeletedRows: Long = alreadyDeletedRows + countOfRows
           segmentUpdateDetails.setDeletedRowsInBlock(totalDeletedRows.toString)
           if (totalDeletedRows == rowCountDetailsVO.getTotalNumberOfRows) {
-            segmentUpdateDetails.setStatus(CarbonCommonConstants.MARKED_FOR_DELETE)
+            segmentUpdateDetails.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE)
           }
           else {
             // write the delta file
             carbonDeleteWriter.write(deleteDeltaBlockDetails)
           }
 
-          deleteStatus = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
+          deleteStatus = SegmentStatus.SUCCESS
         } catch {
           case e : MultipleMatchingException =>
             LOGGER.audit(e.getMessage)
@@ -314,7 +316,7 @@ object DeleteExecution {
           }
         }
 
-        override def next(): (String, (SegmentUpdateDetails, ExecutionErrors)) = {
+        override def next(): (SegmentStatus, (SegmentUpdateDetails, ExecutionErrors)) = {
           finished = true
           result.getKey(deleteStatus, (segmentUpdateDetails, executorErrors))
         }

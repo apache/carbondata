@@ -325,7 +325,7 @@ public class SegmentUpdateStatusManager {
     List<String> blockNames = new ArrayList<String>();
     for (SegmentUpdateDetails block : updateDetails) {
       if (block.getSegmentName().equalsIgnoreCase(segmentName) && !CarbonUpdateUtil
-          .isBlockInvalid(block.getStatus())) {
+          .isBlockInvalid(block.getSegmentStatus())) {
         blockNames.add(block.getBlockName());
       }
     }
@@ -343,11 +343,8 @@ public class SegmentUpdateStatusManager {
 
     SegmentUpdateDetails details = getDetailsForABlock(segName, blockName);
 
-    if (details == null || !CarbonUpdateUtil.isBlockInvalid(details.getStatus())) {
-      return true;
-    }
+    return details == null || !CarbonUpdateUtil.isBlockInvalid(details.getSegmentStatus());
 
-    return false;
   }
   /**
    * Returns all delta file paths of specified block
@@ -363,8 +360,9 @@ public class SegmentUpdateStatusManager {
       String segment) {
     List<String> deleteFileList = new ArrayList<>();
     for (SegmentUpdateDetails block : updateDetails) {
-      if (block.getBlockName().equalsIgnoreCase(blockNameFromTuple) && block.getSegmentName()
-          .equalsIgnoreCase(segment) && !CarbonUpdateUtil.isBlockInvalid(block.getStatus())) {
+      if (block.getBlockName().equalsIgnoreCase(blockNameFromTuple) &&
+          block.getSegmentName().equalsIgnoreCase(segment) &&
+          !CarbonUpdateUtil.isBlockInvalid(block.getSegmentStatus())) {
         final long deltaStartTimestamp = getStartTimeOfDeltaFile(extension, block);
         // If there is no delete delete file , then return null
         if (deltaStartTimestamp == 0) {
@@ -434,7 +432,7 @@ public class SegmentUpdateStatusManager {
     for (SegmentUpdateDetails block : updateDetails) {
       if ((block.getBlockName().equalsIgnoreCase(blockName)) &&
           (block.getSegmentName().equalsIgnoreCase(segmentId))
-          && !CarbonUpdateUtil.isBlockInvalid((block.getStatus()))) {
+          && !CarbonUpdateUtil.isBlockInvalid((block.getSegmentStatus()))) {
         final long deltaStartTimestamp =
             getStartTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
         final long deltaEndTimeStamp =
@@ -605,7 +603,7 @@ public class SegmentUpdateStatusManager {
 
             for (SegmentUpdateDetails blockDetails : getUpdateStatusDetails()) {
               if (blockDetails.getActualBlockName().equalsIgnoreCase(eachFile.getName())
-                  && CarbonUpdateUtil.isBlockInvalid(blockDetails.getStatus())) {
+                  && CarbonUpdateUtil.isBlockInvalid(blockDetails.getSegmentStatus())) {
                 validBlock = false;
               }
             }
@@ -699,7 +697,7 @@ public class SegmentUpdateStatusManager {
       }
       dataInputStream = fileOperation.openForRead();
       inStream = new InputStreamReader(dataInputStream,
-          CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT);
+          CarbonCommonConstants.DEFAULT_CHARSET);
       buffReader = new BufferedReader(inStream);
       listOfSegmentUpdateDetailsArray =
           gsonObjectToRead.fromJson(buffReader, SegmentUpdateDetails[].class);
@@ -755,7 +753,7 @@ public class SegmentUpdateStatusManager {
     try {
       dataOutputStream = fileWrite.openForWrite(FileWriteOperation.OVERWRITE);
       brWriter = new BufferedWriter(new OutputStreamWriter(dataOutputStream,
-          CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT));
+          CarbonCommonConstants.DEFAULT_CHARSET));
 
       String metadataInstance = gsonObjectToWrite.toJson(listOfSegmentUpdateDetailsArray);
       brWriter.write(metadataInstance);
@@ -792,8 +790,9 @@ public class SegmentUpdateStatusManager {
     SegmentUpdateDetails[] listOfSegmentUpdateDetailsArray =
         readLoadMetadata();
     for (SegmentUpdateDetails block : listOfSegmentUpdateDetailsArray) {
-      if (segmentId.equalsIgnoreCase(block.getSegmentName()) && block.getBlockName()
-          .equalsIgnoreCase(blockName) && !CarbonUpdateUtil.isBlockInvalid(block.getStatus())) {
+      if (segmentId.equalsIgnoreCase(block.getSegmentName()) &&
+          block.getBlockName().equalsIgnoreCase(blockName) &&
+          !CarbonUpdateUtil.isBlockInvalid(block.getSegmentStatus())) {
         long deleteTimestampFromStatusFile = block.getDeleteDeltaEndTimeAsLong();
         if (Long.compare(deleteTimestampFromStatusFile, cacheTimestamp) == 0) {
           return null;

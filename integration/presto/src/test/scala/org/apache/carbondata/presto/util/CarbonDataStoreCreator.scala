@@ -25,7 +25,7 @@ import java.util.{ArrayList, Date, List, UUID}
 
 import scala.collection.JavaConversions._
 
-import com.google.gson.Gson
+import com.google.gson.{Gson, GsonBuilder}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
@@ -46,7 +46,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, Ca
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo, TableSchema}
 import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolutionEntry}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier, ColumnIdentifier}
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
@@ -523,7 +523,7 @@ object CarbonDataStoreCreator {
     try {
       val loadMetadataDetails: LoadMetadataDetails = new LoadMetadataDetails()
       loadMetadataDetails.setLoadEndTime(System.currentTimeMillis())
-      loadMetadataDetails.setLoadStatus("SUCCESS")
+      loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
       loadMetadataDetails.setLoadName(String.valueOf(0))
       loadMetadataDetails.setLoadStartTime(
         loadMetadataDetails.getTimeStamp(readCurrentTime()))
