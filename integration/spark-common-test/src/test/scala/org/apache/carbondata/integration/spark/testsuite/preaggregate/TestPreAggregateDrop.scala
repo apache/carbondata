@@ -24,44 +24,44 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists maintable")
-    sql("drop table if exists preagg1")
-    sql("drop table if exists preagg2")
+    sql("drop table if exists maintable_preagg1")
+    sql("drop table if exists maintable_preagg2")
     sql("create table maintable (a string, b string, c string) stored by 'carbondata'")
   }
 
   test("create and drop preaggregate table") {
     sql(
-      "create table preagg1 stored BY 'carbondata' tblproperties('parent'='maintable') as select" +
+      "create datamap preagg1 on table maintable using 'preaggregate' as select" +
       " a,sum(b) from maintable group by a")
-    sql("drop table if exists preagg1")
-    checkExistence(sql("show tables"), false, "preagg1")
+    sql("drop table if exists maintable_preagg1")
+    checkExistence(sql("show tables"), false, "maintable_preagg1")
   }
 
   test("dropping 1 aggregate table should not drop others") {
     sql(
-      "create table preagg1 stored BY 'carbondata' tblproperties('parent'='maintable') as select" +
+      "create datamap preagg1 on table maintable using 'preaggregate' as select" +
       " a,sum(b) from maintable group by a")
     sql(
-      "create table preagg2 stored BY 'carbondata' tblproperties('parent'='maintable') as select" +
+      "create datamap preagg2 on table maintable using 'preaggregate'  as select" +
       " a,sum(c) from maintable group by a")
-    sql("drop table if exists preagg2")
+    sql("drop table if exists maintable_preagg2")
     val showTables = sql("show tables")
-    checkExistence(showTables, false, "preagg2")
-    checkExistence(showTables, true, "preagg1")
+    checkExistence(showTables, false, "maintable_preagg2")
+    checkExistence(showTables, true, "maintable_preagg1")
   }
   
   test("drop main table and check if preaggreagte is deleted") {
     sql(
-      "create table preagg2 stored BY 'carbondata' tblproperties('parent'='maintable') as select" +
+      "create datamap preagg2 on table maintable using 'preaggregate' as select" +
       " a,sum(c) from maintable group by a")
     sql("drop table if exists maintable")
-    checkExistence(sql("show tables"), false, "preagg1", "maintable", "preagg2")
+    checkExistence(sql("show tables"), false, "maintable_preagg1", "maintable", "maintable_preagg2")
   }
 
   override def afterAll() {
     sql("drop table if exists maintable")
-    sql("drop table if exists preagg1")
-    sql("drop table if exists preagg2")
+    sql("drop table if exists maintable_preagg1")
+    sql("drop table if exists maintable_preagg2")
   }
   
 }

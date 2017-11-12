@@ -131,17 +131,17 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
 
   test("test if delete is unsupported for pre-aggregate tables") {
     sql("drop table if exists preaggMain")
-    sql("drop table if exists preagg1")
+    sql("drop table if exists preaggmain_preagg1")
     sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
-    sql("create table preagg1 stored BY 'carbondata' tblproperties('parent'='PreAggMain') as select a,sum(b) from PreAggMain group by a")
+    sql("create datamap preagg1 on table PreAggMain USING 'preaggregate' as select a,sum(b) from PreAggMain group by a")
     intercept[RuntimeException] {
       sql("delete from preaggmain where a = 'abc'").show()
     }.getMessage.contains("Delete operation is not supported for tables")
     intercept[RuntimeException] {
-      sql("delete from preagg1 where preaggmain_a = 'abc'").show()
+      sql("delete from preaggmain_preagg1 where preaggmain_a = 'abc'").show()
     }.getMessage.contains("Delete operation is not supported for pre-aggregate table")
     sql("drop table if exists preaggMain")
-    sql("drop table if exists preagg1")
+    sql("drop table if exists preaggmain_preagg1")
   }
 
 

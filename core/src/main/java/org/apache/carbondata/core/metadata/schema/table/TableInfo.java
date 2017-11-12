@@ -293,7 +293,7 @@ public class TableInfo implements Serializable, Writable {
     if (isChildSchemaExists) {
       short numberOfChildTable = in.readShort();
       for (int i = 0; i < numberOfChildTable; i++) {
-        DataMapSchema childSchema = new DataMapSchema(null);
+        DataMapSchema childSchema = new DataMapSchema();
         childSchema.readFields(in);
         dataMapSchemaList.add(childSchema);
       }
