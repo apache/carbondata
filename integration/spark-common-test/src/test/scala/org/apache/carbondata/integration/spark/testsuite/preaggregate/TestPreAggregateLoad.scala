@@ -23,33 +23,28 @@ import org.scalatest.{BeforeAndAfterAll, Ignore}
 
 @Ignore
 class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
-  
+
   val testData = s"$resourcesPath/sample.csv"
-  
+
   override def beforeAll(): Unit = {
     sql("DROP TABLE IF EXISTS maintable")
   }
 
   private def createAllAggregateTables(parentTableName: String): Unit = {
     sql(
-      s"""create table ${ parentTableName }_preagg_sum stored BY 'carbondata' tblproperties
-         |('parent'='$parentTableName') as select id,sum(age) from $parentTableName group by id"""
+      s"""create datamap ${ parentTableName }_preagg_sum on table $parentTableName using 'preaggregate' as select id,sum(age) from $parentTableName group by id"""
         .stripMargin)
     sql(
-      s"""create table ${ parentTableName }_preagg_avg stored BY 'carbondata' tblproperties
-         |('parent'='$parentTableName') as select id,avg(age) from $parentTableName group by id"""
+      s"""create datamap ${ parentTableName }_preagg_avg on table $parentTableName using 'preaggregate' as select id,avg(age) from $parentTableName group by id"""
         .stripMargin)
     sql(
-      s"""create table ${ parentTableName }_preagg_count stored BY 'carbondata' tblproperties
-         |('parent'='$parentTableName') as select id,count(age) from $parentTableName group by id"""
+      s"""create datamap ${ parentTableName }_preagg_count on table $parentTableName using 'preaggregate' as select id,count(age) from $parentTableName group by id"""
         .stripMargin)
     sql(
-      s"""create table ${ parentTableName }_preagg_min stored BY 'carbondata' tblproperties
-         |('parent'='$parentTableName') as select id,min(age) from $parentTableName group by id"""
+      s"""create datamap ${ parentTableName }_preagg_min on table $parentTableName using 'preaggregate' as select id,min(age) from $parentTableName group by id"""
         .stripMargin)
     sql(
-      s"""create table ${ parentTableName }_preagg_max stored BY 'carbondata' tblproperties
-         |('parent'='$parentTableName') as select id,max(age) from $parentTableName group by id"""
+      s"""create datamap ${ parentTableName }_preagg_max on table $parentTableName using 'preaggregate' as select id,max(age) from $parentTableName group by id"""
         .stripMargin)
   }
 

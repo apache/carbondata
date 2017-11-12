@@ -187,15 +187,17 @@ struct ParentColumnTableRelation {
 }
 
 struct DataMapSchema  {
+    // DataMap name
+    1: required string dataMapName;
     // class name
-    1: required string className;
+    2: required string className;
     // relation indentifier
-    2: optional RelationIdentifier relationIdentifire;
+    3: optional RelationIdentifier relationIdentifire;
     // in case of preaggregate it will be used to maintain the child schema
     // which will be usefull in case of query and data load
-    3: optional TableSchema childTableSchema;
+    4: optional TableSchema childTableSchema;
     // to maintain properties like select query, query type like groupby, join
-    4: optional map<string, string> properties;
+    5: optional map<string, string> properties;
 }
 
 struct TableInfo{

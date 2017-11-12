@@ -170,6 +170,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val CHANGE = carbonKeyWord("CHANGE")
   protected val TBLPROPERTIES = carbonKeyWord("TBLPROPERTIES")
   protected val ID = carbonKeyWord("ID")
+  protected val DATAMAP = carbonKeyWord("DATAMAP")
+  protected val ON = carbonKeyWord("ON")
+  protected val DMPROPERTIES = carbonKeyWord("DMPROPERTIES")
 
   protected val doubleQuotedString = "\"([^\"]+)\"".r
   protected val singleQuotedString = "'([^']+)'".r
@@ -750,7 +753,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @param dbName
    * @return Option of String
    */
-  protected def convertDbNameToLowerCase(dbName: Option[String]): Option[String] = {
+  def convertDbNameToLowerCase(dbName: Option[String]): Option[String] = {
     dbName match {
       case Some(databaseName) => Some(convertDbNameToLowerCase(databaseName))
       case None => dbName

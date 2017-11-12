@@ -17,6 +17,7 @@
 package org.apache.spark.sql.execution.command.preaaggregate
 
 import scala.collection.mutable.ListBuffer
+import scala.collection.JavaConverters._
 
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
@@ -259,7 +260,7 @@ object PreAggregateUtil {
         precision = precision,
         scale = scale,
         rawSchema = rawSchema), dataMapField)
-    } else {
+} else {
       (Field(column = actualColumnName,
         dataType = Some(dataType.typeName),
         name = Some(actualColumnName),
@@ -303,6 +304,10 @@ object PreAggregateUtil {
           tableName,
           carbonTable.getStorePath)
       numberOfCurrentChild = wrapperTableInfo.getDataMapSchemaList.size
+      if (wrapperTableInfo.getDataMapSchemaList.asScala.
+        exists(f => f.getDataMapName.equalsIgnoreCase(childSchema.getDataMapName))) {
+        throw new Exception("Duplicate datamap")
+      }
       wrapperTableInfo.getDataMapSchemaList.add(childSchema)
       val thriftTable = schemaConverter
         .fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
@@ -446,7 +451,6 @@ object PreAggregateUtil {
   }
 
   def checkMainTableLoad(carbonTable: CarbonTable): Boolean = {
-    SegmentStatusManager.readLoadMetadata(
-      carbonTable.getMetaDataFilepath).nonEmpty
+    SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath).nonEmpty
   }
 }

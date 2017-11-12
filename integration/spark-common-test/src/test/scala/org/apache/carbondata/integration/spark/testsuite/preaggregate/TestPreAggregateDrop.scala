@@ -31,7 +31,7 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
 
   test("create and drop preaggregate table") {
     sql(
-      "create table preagg1 stored BY 'carbondata' tblproperties('parent'='maintable') as select" +
+      "create datamap preagg1 on table maintable using 'preaggregate' as select" +
       " a,sum(b) from maintable group by a")
     sql("drop table if exists preagg1")
     checkExistence(sql("show tables"), false, "preagg1")
@@ -39,10 +39,10 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
 
   test("dropping 1 aggregate table should not drop others") {
     sql(
-      "create table preagg1 stored BY 'carbondata' tblproperties('parent'='maintable') as select" +
+      "create datamap preagg1 on table maintable using 'preaggregate' as select" +
       " a,sum(b) from maintable group by a")
     sql(
-      "create table preagg2 stored BY 'carbondata' tblproperties('parent'='maintable') as select" +
+      "create datamap preagg2 on table maintable using 'preaggregate'  as select" +
       " a,sum(c) from maintable group by a")
     sql("drop table if exists preagg2")
     val showTables = sql("show tables")
@@ -52,7 +52,7 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
   
   test("drop main table and check if preaggreagte is deleted") {
     sql(
-      "create table preagg2 stored BY 'carbondata' tblproperties('parent'='maintable') as select" +
+      "create datamap preagg2 on table maintable using 'preaggregate' as select" +
       " a,sum(c) from maintable group by a")
     sql("drop table if exists maintable")
     checkExistence(sql("show tables"), false, "preagg1", "maintable", "preagg2")

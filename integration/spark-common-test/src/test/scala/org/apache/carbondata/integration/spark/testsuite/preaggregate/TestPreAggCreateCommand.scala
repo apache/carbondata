@@ -16,28 +16,28 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
 
 
   test("test pre agg create table One") {
-    sql("create table preagg1 stored BY 'carbondata' tblproperties('parent'='PreAggMain') as select a,sum(b) from PreAggMain group by a")
+    sql("create datamap preagg1 on table PreAggMain using 'preaggregate' as select a,sum(b) from PreAggMain group by a")
     checkExistence(sql("DESCRIBE FORMATTED preagg1"), true, "preaggmain_a")
     checkExistence(sql("DESCRIBE FORMATTED preagg1"), true, "preaggmain_b_sum")
     sql("drop table preagg1")
   }
 
   test("test pre agg create table Two") {
-    sql("create table preagg2 stored BY 'carbondata' tblproperties('parent'='PreAggMain') as select a as a1,sum(b) from PreAggMain group by a")
+    sql("create datamap preagg2 on table PreAggMain using 'preaggregate' as select a as a1,sum(b) from PreAggMain group by a")
     checkExistence(sql("DESCRIBE FORMATTED preagg2"), true, "preaggmain_a")
     checkExistence(sql("DESCRIBE FORMATTED preagg2"), true, "preaggmain_b_sum")
     sql("drop table preagg2")
   }
 
   test("test pre agg create table Three") {
-    sql("create table preagg3 stored BY 'carbondata' tblproperties('parent'='PreAggMain') as select a,sum(b) as sum from PreAggMain group by a")
+    sql("create datamap preagg3 on table PreAggMain using 'preaggregate' as select a,sum(b) as sum from PreAggMain group by a")
     checkExistence(sql("DESCRIBE FORMATTED preagg3"), true, "preaggmain_a")
     checkExistence(sql("DESCRIBE FORMATTED preagg3"), true, "preaggmain_b_sum")
     sql("drop table preagg3")
   }
 
   test("test pre agg create table four") {
-    sql("create table preagg4 stored BY 'carbondata' tblproperties('parent'='PreAggMain') as select a as a1,sum(b) as sum from PreAggMain group by a")
+    sql("create datamap preagg4 on table PreAggMain using 'preaggregate' as select a as a1,sum(b) as sum from PreAggMain group by a")
     checkExistence(sql("DESCRIBE FORMATTED preagg4"), true, "preaggmain_a")
     checkExistence(sql("DESCRIBE FORMATTED preagg4"), true, "preaggmain_b_sum")
     sql("drop table preagg4")
@@ -45,7 +45,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
 
 
   test("test pre agg create table five") {
-    sql("create table preagg11 stored BY 'carbondata' tblproperties('parent'='PreAggMain1') as select a,sum(b) from PreAggMain1 group by a")
+    sql("create datamap preagg11 on table PreAggMain1 using 'preaggregate'as select a,sum(b) from PreAggMain1 group by a")
     checkExistence(sql("DESCRIBE FORMATTED preagg11"), true, "preaggmain1_a")
     checkExistence(sql("DESCRIBE FORMATTED preagg11"), true, "preaggmain1_b_sum")
     checkExistence(sql("DESCRIBE FORMATTED preagg11"), true, "DICTIONARY")
@@ -53,7 +53,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test pre agg create table six") {
-    sql("create table preagg12 stored BY 'carbondata' tblproperties('parent'='PreAggMain1') as select a as a1,sum(b) from PreAggMain1 group by a")
+    sql("create datamap preagg12 on table PreAggMain1 using 'preaggregate' as select a as a1,sum(b) from PreAggMain1 group by a")
     checkExistence(sql("DESCRIBE FORMATTED preagg12"), true, "preaggmain1_a")
     checkExistence(sql("DESCRIBE FORMATTED preagg12"), true, "preaggmain1_b_sum")
     checkExistence(sql("DESCRIBE FORMATTED preagg12"), true, "DICTIONARY")
@@ -61,7 +61,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test pre agg create table seven") {
-    sql("create table preagg13 stored BY 'carbondata' tblproperties('parent'='PreAggMain1') as select a,sum(b) as sum from PreAggMain1 group by a")
+    sql("create datamap preagg13 on table PreAggMain1 using 'preaggregate' as select a,sum(b) as sum from PreAggMain1 group by a")
     checkExistence(sql("DESCRIBE FORMATTED preagg13"), true, "preaggmain1_a")
     checkExistence(sql("DESCRIBE FORMATTED preagg13"), true, "preaggmain1_b_sum")
     checkExistence(sql("DESCRIBE FORMATTED preagg13"), true, "DICTIONARY")
@@ -69,7 +69,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test pre agg create table eight") {
-    sql("create table preagg14 stored BY 'carbondata' tblproperties('parent'='PreAggMain1') as select a as a1,sum(b) as sum from PreAggMain1 group by a")
+    sql("create datamap preagg14 on table PreAggMain1 using 'preaggregate' as select a as a1,sum(b) as sum from PreAggMain1 group by a")
     checkExistence(sql("DESCRIBE FORMATTED preagg14"), true, "preaggmain1_a")
     checkExistence(sql("DESCRIBE FORMATTED preagg14"), true, "preaggmain1_b_sum")
     checkExistence(sql("DESCRIBE FORMATTED preagg14"), true, "DICTIONARY")
@@ -78,7 +78,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
 
 
   test("test pre agg create table nine") {
-    sql("create table preagg15 stored BY 'carbondata' tblproperties('parent'='PreAggMain2') as select a,avg(b) from PreAggMain2 group by a")
+    sql("create datamap preagg15 on table PreAggMain2 using 'preaggregate' as select a,avg(b) from PreAggMain2 group by a")
     checkExistence(sql("DESCRIBE FORMATTED preagg15"), true, "preaggmain2_a")
     checkExistence(sql("DESCRIBE FORMATTED preagg15"), true, "preaggmain2_b_sum")
     checkExistence(sql("DESCRIBE FORMATTED preagg15"), true, "preaggmain2_b_count")
@@ -86,21 +86,21 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test pre agg create table ten") {
-    sql("create table preagg16 stored BY 'carbondata' tblproperties('parent'='PreAggMain2') as select a as a1,max(b) from PreAggMain2 group by a")
+    sql("create datamap preagg16 on table PreAggMain2 using 'preaggregate' as select a as a1,max(b) from PreAggMain2 group by a")
     checkExistence(sql("DESCRIBE FORMATTED preagg16"), true, "preaggmain2_a")
     checkExistence(sql("DESCRIBE FORMATTED preagg16"), true, "preaggmain2_b_max")
     sql("drop table preagg16")
   }
 
   test("test pre agg create table eleven") {
-    sql("create table preagg17 stored BY 'carbondata' tblproperties('parent'='PreAggMain2') as select a,min(b) from PreAggMain2 group by a")
+    sql("create datamap preagg17 on table PreAggMain2 using 'preaggregate' as select a,min(b) from PreAggMain2 group by a")
     checkExistence(sql("DESCRIBE FORMATTED preagg17"), true, "preaggmain2_a")
     checkExistence(sql("DESCRIBE FORMATTED preagg17"), true, "preaggmain2_b_min")
     sql("drop table preagg17")
   }
 
   test("test pre agg create table twelve") {
-    sql("create table preagg18 stored BY 'carbondata' tblproperties('parent'='PreAggMain2') as select a as a1,count(b) from PreAggMain2 group by a")
+    sql("create datamap preagg18 on table PreAggMain2 using 'preaggregate' as select a as a1,count(b) from PreAggMain2 group by a")
     checkExistence(sql("DESCRIBE FORMATTED preagg18"), true, "preaggmain2_a")
     checkExistence(sql("DESCRIBE FORMATTED preagg18"), true, "preaggmain2_b_count")
     sql("drop table preagg18")
@@ -109,7 +109,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   test("test pre agg create table thirteen") {
     try {
       sql(
-        "create table preagg19 stored BY 'carbondata' tblproperties('parent'='PreAggMain2') as select a as a1,count(distinct b) from PreAggMain2 group by a")
+        "create datamap preagg19 on table PreAggMain2 using 'preaggregate' as select a as a1,count(distinct b) from PreAggMain2 group by a")
       assert(false)
     } catch {
       case _: Exception =>
@@ -120,7 +120,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   test("test pre agg create table fourteen") {
     try {
       sql(
-        "create table preagg20 stored BY 'carbondata' tblproperties('parent'='PreAggMain2') as select a as a1,sum(distinct b) from PreAggMain2 group by a")
+        "create datamap preagg20 on table PreAggMain2 using 'preaggregate' as select a as a1,sum(distinct b) from PreAggMain2 group by a")
       assert(false)
     } catch {
       case _: Exception =>
@@ -131,7 +131,7 @@ class TestPreAggCreateCommand extends QueryTest with BeforeAndAfterAll {
   test("test pre agg create table fifteen") {
     try {
       sql(
-        "create table preagg21 stored BY 'carbondata' tblproperties('parent'='PreAggMain2') as select a as a1,sum(b) from PreAggMain2 where a='vishal' group by a")
+        "create datamap preagg21 on table PreAggMain2 using 'preaggregate' as select a as a1,sum(b) from PreAggMain2 where a='vishal' group by a")
       assert(false)
     } catch {
       case _: Exception =>
