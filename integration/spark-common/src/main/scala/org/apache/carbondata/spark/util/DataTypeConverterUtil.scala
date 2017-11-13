@@ -17,8 +17,12 @@
 
 package org.apache.carbondata.spark.util
 
+import java.nio.charset.Charset
+import java.text.SimpleDateFormat
+
 import org.apache.spark.sql.util.CarbonException
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.format.{DataType => ThriftDataType}
 
@@ -127,6 +131,66 @@ object DataTypeConverterUtil {
       case "array" => ThriftDataType.ARRAY
       case "struct" => ThriftDataType.STRUCT
       case _ => ThriftDataType.STRING
+    }
+  }
+
+  /**
+   * Return string representation for input `value`. This is used to convert CSV fields
+   * before loading.
+   *
+   * TODO: remove this and convert the CSV fields to primitive directly
+   */
+  def getString(
+      value: Any,
+      serializationNullFormat: String,
+      delimiterLevel1: String,
+      delimiterLevel2: String,
+      timeStampFormat: SimpleDateFormat,
+      dateFormat: SimpleDateFormat,
+      level: Int = 1): String = {
+    if (value == null) {
+      serializationNullFormat
+    } else {
+      value match {
+        case s: String => s
+        case d: java.math.BigDecimal => d.toPlainString
+        case i: java.lang.Integer => i.toString
+        case d: java.lang.Double => d.toString
+        case t: java.sql.Timestamp => timeStampFormat format t
+        case d: java.sql.Date => dateFormat format d
+        case b: java.lang.Boolean => b.toString
+        case s: java.lang.Short => s.toString
+        case f: java.lang.Float => f.toString
+        case bs: Array[Byte] => new String(bs,
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET))
+        case s: scala.collection.Seq[Any] =>
+          val delimiter = if (level == 1) {
+            delimiterLevel1
+          } else {
+            delimiterLevel2
+          }
+          val builder = new StringBuilder()
+          s.foreach { x =>
+            builder.append(getString(x, serializationNullFormat, delimiterLevel1,
+              delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
+          }
+          builder.substring(0, builder.length - 1)
+        case m: scala.collection.Map[Any, Any] =>
+          throw new Exception("Unsupported data type: Map")
+        case r: org.apache.spark.sql.Row =>
+          val delimiter = if (level == 1) {
+            delimiterLevel1
+          } else {
+            delimiterLevel2
+          }
+          val builder = new StringBuilder()
+          for (i <- 0 until r.length) {
+            builder.append(getString(r(i), serializationNullFormat, delimiterLevel1,
+              delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
+          }
+          builder.substring(0, builder.length - 1)
+        case other => other.toString
+      }
     }
   }
 }

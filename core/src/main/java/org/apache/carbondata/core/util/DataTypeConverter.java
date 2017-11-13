@@ -20,8 +20,12 @@ package org.apache.carbondata.core.util;
 public interface DataTypeConverter {
 
   Object convertToDecimal(Object data);
+  Object convertToBigDecimal(Object data);
   Object convertFromByteToUTF8String(Object data);
+  byte[] convertFromByteToUTF8Bytes(byte[] data);
   byte[] convertFromStringToByte(Object data);
   Object convertFromStringToUTF8String(Object Data);
+  Object wrapWithGenericArrayData(Object data);
+  Object wrapWithGenericRow(Object[] fields);
 
 }

@@ -27,6 +27,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -849,4 +851,60 @@ public final class DataTypeUtil {
     return value;
   }
 
+  /**
+   * Return string representation for input `value`. This is used to convert CSV fields
+   * before loading.
+   *
+   * TODO: remove this and convert the CSV fields to primitive directly
+   */
+  public static String getDataTypeString(
+      Object value,
+      String serializationNullFormat,
+      String delimiterLevel1,
+      String delimiterLevel2,
+      SimpleDateFormat timeStampFormat,
+      SimpleDateFormat dateFormat,
+      int level) { // default is 1
+    if (value == null) {
+      return serializationNullFormat;
+    } else {
+      if (value instanceof String) {
+        return (String) value;
+      } else if (value instanceof java.math.BigDecimal) {
+        return ((BigDecimal) value).toPlainString();
+      } else if (value instanceof Integer) {
+        return ((Integer) value).toString();
+      } else if (value instanceof Double) {
+        return ((Double) value).toString();
+      } else if (value instanceof java.sql.Timestamp) {
+        return timeStampFormat.format(value);
+      } else if (value instanceof java.sql.Date) {
+        return dateFormat.format(value);
+      } else if (value instanceof Boolean) {
+        return ((Boolean) value).toString();
+      } else if (value instanceof Short) {
+        return ((Short) value).toString();
+      } else if (value instanceof Float) {
+        return ((Float) value).toString();
+      } else if (value instanceof byte[]) {
+        return new String((byte[])value, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+      } else if (value instanceof List || value instanceof Map) {
+        // following code is for List
+        //        val delimiter = if (level == 1) {
+        //          delimiterLevel1
+        //        } else {
+        //          delimiterLevel2
+        //        }
+        //        val builder = new StringBuilder()
+        //        s.foreach { x =>
+        //          builder.append(getString(x, serializationNullFormat, delimiterLevel1,
+        //              delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
+        //        }
+        //        builder.substring(0, builder.length - 1)
+        throw new UnsupportedOperationException("Unsupported data type");
+      } else {
+        return value.toString();
+      }
+    }
+  }
 }
