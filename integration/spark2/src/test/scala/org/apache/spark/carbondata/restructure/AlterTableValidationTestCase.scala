@@ -498,12 +498,12 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql(
       "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
       " a,sum(b) from PreAggMain group by a")
-    intercept[RuntimeException] {
-      sql("alter table PreAggMain_preagg1 rename to preagg2")
-    }.getMessage.contains("Rename operation for pre-aggregate table is not supported.")
-    intercept[RuntimeException] {
+    assert(intercept[RuntimeException] {
+      sql("alter table preAggmain_preagg1 rename to preagg2")
+    }.getMessage.contains("Rename operation for pre-aggregate table is not supported."))
+    assert(intercept[RuntimeException] {
       sql("alter table preaggmain rename to preaggmain_new")
-    }.getMessage.contains("Rename operation is not supported for table with pre-aggregate tables")
+    }.getMessage.contains("Rename operation is not supported for table with pre-aggregate tables"))
   }
 
   override def afterAll {

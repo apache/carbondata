@@ -83,6 +83,14 @@ trait AlterTableRenameEventInfo {
 }
 
 /**
+ * event for alter_add_column
+ */
+trait AlterTableAddColumnEventInfo {
+  val carbonTable: CarbonTable
+  val alterTableAddColumnsModel: AlterTableAddColumnsModel
+}
+
+/**
  * event for alter_table_rename
  */
 trait AlterTableCompactionEventInfo {

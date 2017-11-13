@@ -620,6 +620,20 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   }
 
+  test("test if adding column in pre-aggregate table throws exception") {
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists preagg1")
+    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
+    sql(
+      "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
+      " a,sum(b) from PreAggMain group by a")
+    assert(intercept[RuntimeException] {
+      sql("alter table preaggmain_preagg1 add columns(d string)")
+    }.getMessage.contains("Cannot add columns"))
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists preagg1")
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("DROP TABLE IF EXISTS hivetable")

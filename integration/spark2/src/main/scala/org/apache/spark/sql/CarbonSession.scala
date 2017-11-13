@@ -24,6 +24,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
+import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.streaming.CarbonStreamingQueryListener
 import org.apache.spark.sql.hive.CarbonSessionState
 import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
@@ -32,6 +33,7 @@ import org.apache.spark.util.Utils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
+import org.apache.carbondata.events._
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
@@ -60,6 +62,10 @@ class CarbonSession(@transient val sc: SparkContext,
 
   override def newSession(): SparkSession = {
     new CarbonSession(sparkContext, Some(sharedState))
+  }
+
+  if (existingSharedState.isEmpty) {
+    CarbonSession.initListeners
   }
 
 }
@@ -217,5 +223,20 @@ object CarbonSession {
     }
     // preserve thread parameters across call
     ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+  }
+
+  def initListeners(): Unit = {
+    OperationListenerBus.getInstance()
+      .addListener(classOf[DropTablePostEvent], DropPreAggregateTablePostListener)
+      .addListener(classOf[LoadTablePostExecutionEvent], LoadPostAggregateListener)
+      .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
+      .addListener(classOf[DeleteSegmentByDatePreEvent], PreAggregateDeleteSegmentByDatePreListener)
+      .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
+      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+      .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
+      .addListener(classOf[AlterTableRenamePreEvent], PreAggregateRenameTablePreListener)
+      .addListener(classOf[AlterTableDataTypeChangePreEvent], PreAggregateDataTypeChangePreListener)
+      .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
   }
 }

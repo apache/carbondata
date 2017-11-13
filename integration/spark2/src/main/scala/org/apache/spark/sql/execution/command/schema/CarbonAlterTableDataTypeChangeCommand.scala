@@ -28,6 +28,7 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.{AlterTableAddColumnPreEvent, AlterTableDataTypeChangePreEvent, OperationListenerBus}
 import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil}
 
@@ -53,6 +54,9 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       carbonTable = metastore
         .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
         .tableMeta.carbonTable
+      val alterTableDataTypeChangeListener = AlterTableDataTypeChangePreEvent(carbonTable,
+        alterTableDataTypeChangeModel)
+      OperationListenerBus.getInstance().fireEvent(alterTableDataTypeChangeListener)
       val columnName = alterTableDataTypeChangeModel.columnName
       val carbonColumns = carbonTable.getCreateOrderColumn(tableName).asScala.filter(!_.isInvisible)
       if (!carbonColumns.exists(_.getColName.equalsIgnoreCase(columnName))) {

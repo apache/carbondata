@@ -18,7 +18,7 @@ package org.apache.carbondata.events
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.SQLContext
-import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel}
+import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel}
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -76,6 +76,15 @@ case class AlterTableDropColumnAbortEvent(carbonTable: CarbonTable,
 case class AlterTableRenamePreEvent(carbonTable: CarbonTable,
     alterTableRenameModel: AlterTableRenameModel, newTablePath: String,
     sparkSession: SparkSession) extends Event with AlterTableRenameEventInfo
+
+/**
+ *
+ * @param carbonTable
+ * @param alterTableAddColumnsModel
+ */
+case class AlterTableAddColumnPreEvent(carbonTable: CarbonTable,
+    alterTableAddColumnsModel: AlterTableAddColumnsModel)
+  extends Event with AlterTableAddColumnEventInfo
 
 
 /**

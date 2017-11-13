@@ -105,11 +105,11 @@ class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql(
       "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
       " a,sum(b) from PreAggMain group by a")
-    sql("alter table preaggmain drop columns(c)").show
+    sql("alter table preaggmain drop columns(c)")
     checkExistence(sql("desc table preaggmain"), false, "c")
-    intercept[RuntimeException] {
-      sql("alter table preaggmain drop columns(a)").show
-    }.getMessage.contains("cannot be dropped")
+    assert(intercept[RuntimeException] {
+      sql("alter table preaggmain_preagg1 drop columns(preaggmain_b_sum)").show
+    }.getMessage.contains("Cannot drop columns in pre-aggreagate table"))
     sql("drop table if exists preaggMain")
     sql("drop table if exists preaggMain_preagg1")
   }

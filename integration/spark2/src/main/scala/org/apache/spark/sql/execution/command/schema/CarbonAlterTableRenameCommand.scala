@@ -90,6 +90,14 @@ private[sql] case class CarbonAlterTableRenameCommand(
       // get the latest carbon table and check for column existence
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(oldTableIdentifier)
       val tableMetadataFile = carbonTablePath.getPath
+      val operationContext = new OperationContext
+      // TODO: Pass new Table Path in pre-event.
+      val alterTableRenamePreEvent: AlterTableRenamePreEvent = AlterTableRenamePreEvent(
+        carbonTable,
+        alterTableRenameModel,
+        "",
+        sparkSession)
+      OperationListenerBus.getInstance().fireEvent(alterTableRenamePreEvent, operationContext)
       val tableInfo: org.apache.carbondata.format.TableInfo =
         metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
       val schemaEvolutionEntry = new SchemaEvolutionEntry(System.currentTimeMillis)
@@ -114,13 +122,6 @@ private[sql] case class CarbonAlterTableRenameCommand(
         tableInfo,
         schemaEvolutionEntry,
         tableMeta.tablePath)(sparkSession)
-      val operationContext = new OperationContext
-      val alterTableRenamePreEvent: AlterTableRenamePreEvent = AlterTableRenamePreEvent(
-        carbonTable,
-        alterTableRenameModel,
-        newTablePath,
-        sparkSession)
-      OperationListenerBus.getInstance().fireEvent(alterTableRenamePreEvent, operationContext)
 
       metastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
       sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
