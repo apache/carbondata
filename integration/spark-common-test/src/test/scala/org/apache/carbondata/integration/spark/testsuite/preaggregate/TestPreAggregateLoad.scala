@@ -32,19 +32,19 @@ class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
 
   private def createAllAggregateTables(parentTableName: String): Unit = {
     sql(
-      s"""create datamap ${ parentTableName }_preagg_sum on table $parentTableName using 'preaggregate' as select id,sum(age) from $parentTableName group by id"""
+      s"""create datamap preagg_sum on table $parentTableName using 'preaggregate' as select id,sum(age) from $parentTableName group by id"""
         .stripMargin)
     sql(
-      s"""create datamap ${ parentTableName }_preagg_avg on table $parentTableName using 'preaggregate' as select id,avg(age) from $parentTableName group by id"""
+      s"""create datamap preagg_avg on table $parentTableName using 'preaggregate' as select id,avg(age) from $parentTableName group by id"""
         .stripMargin)
     sql(
-      s"""create datamap ${ parentTableName }_preagg_count on table $parentTableName using 'preaggregate' as select id,count(age) from $parentTableName group by id"""
+      s"""create datamap preagg_count on table $parentTableName using 'preaggregate' as select id,count(age) from $parentTableName group by id"""
         .stripMargin)
     sql(
-      s"""create datamap ${ parentTableName }_preagg_min on table $parentTableName using 'preaggregate' as select id,min(age) from $parentTableName group by id"""
+      s"""create datamap preagg_min on table $parentTableName using 'preaggregate' as select id,min(age) from $parentTableName group by id"""
         .stripMargin)
     sql(
-      s"""create datamap ${ parentTableName }_preagg_max on table $parentTableName using 'preaggregate' as select id,max(age) from $parentTableName group by id"""
+      s"""create datamap preagg_max on table $parentTableName using 'preaggregate' as select id,max(age) from $parentTableName group by id"""
         .stripMargin)
   }
 

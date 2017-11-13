@@ -32,7 +32,7 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
  *
  * @param queryString
  */
-case class CreateDataMapCommand(
+case class CarbonCreateDataMapCommand(
     dataMapName: String,
     tableIdentifier: TableIdentifier,
     dmClassName: String,
@@ -54,7 +54,6 @@ case class CreateDataMapCommand(
         dmproperties,
         queryString.get).run(sparkSession)
     } else {
-
       val dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
       dataMapSchema.setProperties(new java.util.HashMap[String, String](dmproperties.asJava))
       val dbName = GetDB.getDatabaseName(tableIdentifier.database, sparkSession)

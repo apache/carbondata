@@ -149,19 +149,19 @@ class ChangeDataTypeTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test data type change for with pre-aggregate table should throw exception") {
     sql("drop table if exists preaggMain")
-    sql("drop table if exists preagg1")
+    sql("drop table if exists PreAggMain_preagg1")
     sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
     sql(
-      "create table preagg1 stored BY 'carbondata' tblproperties('parent'='PreAggMain') as select" +
+      "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
       " a,sum(b) from PreAggMain group by a")
     intercept[RuntimeException] {
       sql("alter table preaggmain drop columns(a)").show
     }.getMessage.contains("exists in pre-aggregate table")
     intercept[RuntimeException] {
-      sql("alter table preagg1 drop columns(a)").show
+      sql("alter table PreAggMain_preagg1 drop columns(a)").show
     }.getMessage.contains("cannot be dropped")
     sql("drop table if exists preaggMain")
-    sql("drop table if exists preagg1")
+    sql("drop table if exists PreAggMain_preagg1")
   }
 
   override def afterAll {

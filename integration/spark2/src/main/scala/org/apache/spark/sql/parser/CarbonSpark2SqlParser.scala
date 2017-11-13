@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.datamap.CreateDataMapCommand
+import org.apache.spark.sql.execution.command.datamap.CarbonCreateDataMapCommand
 import org.apache.spark.sql.execution.command.management.{AlterTableCompactionCommand, CleanFilesCommand, DeleteLoadByIdCommand, DeleteLoadByLoadDateCommand, LoadTableCommand}
 import org.apache.spark.sql.execution.command.partition.{AlterTableDropCarbonPartitionCommand, AlterTableSplitCarbonPartitionCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
@@ -126,13 +126,19 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         AlterTableCompactionCommand(altertablemodel)
     }
 
+  /**
+   * The syntax of datamap creation is as follows.
+   * CREATE DATAMAP datamapName ON TABLE tableName USING 'DataMapClassName'
+   * DMPROPERTIES('KEY'='VALUE') AS SELECT COUNT(COL1) FROM tableName
+   */
   protected lazy val createDataMap: Parser[LogicalPlan] =
     CREATE ~> DATAMAP ~> ident ~ (ON ~ TABLE) ~  (ident <~ ".").? ~ ident ~
     (USING ~> stringLit) ~ (DMPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? ~
     (AS ~> restInput).? <~ opt(";")  ^^ {
       case dmname ~ ontable ~ dbName ~ tableName ~ className ~ dmprops ~ query =>
         val map = dmprops.getOrElse(List[(String, String)]()).toMap[String, String]
-        CreateDataMapCommand(dmname, TableIdentifier(tableName, dbName), className, map, query)
+        CarbonCreateDataMapCommand(dmname,
+          TableIdentifier(tableName, dbName), className, map, query)
     }
 
   protected lazy val deleteRecords: Parser[LogicalPlan] =

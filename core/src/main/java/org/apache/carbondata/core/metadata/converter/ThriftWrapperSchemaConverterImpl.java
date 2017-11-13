@@ -325,8 +325,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       if (wrapperChildSchema.getRelationIdentifier() != null) {
         org.apache.carbondata.format.RelationIdentifier relationIdentifier =
             new org.apache.carbondata.format.RelationIdentifier();
-        relationIdentifier
-            .setDatabaseName(wrapperChildSchema.getRelationIdentifier().getDatabaseName());
+        relationIdentifier.setDatabaseName(
+            wrapperChildSchema.getRelationIdentifier().getDatabaseName());
         relationIdentifier.setTableName(wrapperChildSchema.getRelationIdentifier().getTableName());
         relationIdentifier.setTableId(wrapperChildSchema.getRelationIdentifier().getTableId());
         thriftChildSchema.setRelationIdentifire(relationIdentifier);

@@ -53,7 +53,9 @@ case class CreatePreAggregateTableCommand(
     val fields = fieldRelationMap.keySet.toSeq
     val tableProperties = mutable.Map[String, String]()
     dmproperties.foreach(t => tableProperties.put(t._1, t._2))
-    val tableIdentifier = TableIdentifier(dataMapName, parentTableIdentifier.database)
+    // Create the aggregation table name with parent table name prefix
+    val tableIdentifier = TableIdentifier(
+        parentTableIdentifier.table +"_" + dataMapName, parentTableIdentifier.database)
     // prepare table model of the collected tokens
     val tableModel: TableModel = new CarbonSpark2SqlParser().prepareTableModel(false,
       new CarbonSpark2SqlParser().convertDbNameToLowerCase(tableIdentifier.database),
@@ -84,20 +86,20 @@ case class CreatePreAggregateTableCommand(
         lookupRelation(tableIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
       val tableInfo = relation.tableMeta.carbonTable.getTableInfo
       // child schema object which will be updated on parent table about the
-      val childSchema = tableInfo.getFactTable
-        .buildChildSchema(dataMapName, "", tableInfo.getDatabaseName, queryString, "AGGREGATION")
+      val childSchema = tableInfo.getFactTable.buildChildSchema(
+        dataMapName, "", tableInfo.getDatabaseName, queryString, "AGGREGATION")
       dmproperties.foreach(f => childSchema.getProperties.put(f._1, f._2))
       // updating the parent table about child table
       PreAggregateUtil.updateMainTable(parentDbName, parentTableName, childSchema, sparkSession)
       val loadAvailable = PreAggregateUtil.checkMainTableLoad(parentTable)
       if (loadAvailable) {
-        sparkSession
-          .sql(s"insert into ${ tableModel.databaseName }.${ tableModel.tableName } $queryString")
+        sparkSession.sql(
+          s"insert into ${ tableModel.databaseName }.${ tableModel.tableName } $queryString")
       }
     } catch {
       case e: Exception =>
-        sparkSession.
-          sql(s"""DROP TABLE IF EXISTS ${ tableModel.databaseName }.${ tableModel.tableName }""")
+        sparkSession.sql(
+          s"""DROP TABLE IF EXISTS ${ tableModel.databaseName }.${ tableModel.tableName }""")
         throw e
 
     }
