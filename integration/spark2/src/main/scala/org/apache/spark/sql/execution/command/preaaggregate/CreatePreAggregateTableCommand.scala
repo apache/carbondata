@@ -86,11 +86,11 @@ case class CreatePreAggregateTableCommand(
     CarbonCreateTableCommand(tableModel).run(sparkSession)
     try {
       val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore.
-        lookupRelation(tableIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
+      lookupRelation( tableIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
       val tableInfo = relation.tableMeta.carbonTable.getTableInfo
       // child schema object which will be updated on parent table about the
-      val childSchema = tableInfo.getFactTable.buildChildSchema(
-        dataMapName, CarbonCommonConstants.AGGREGATIONDATAMAPSCHEMA,
+      val childSchema = tableInfo.getFactTable
+        .buildChildSchema(dataMapName, CarbonCommonConstants.AGGREGATIONDATAMAPSCHEMA,
         tableInfo.getDatabaseName, queryString, "AGGREGATION")
       dmproperties.foreach(f => childSchema.getProperties.put(f._1, f._2))
       // updating the parent table about child table
@@ -102,8 +102,9 @@ case class CreatePreAggregateTableCommand(
       }
     } catch {
       case e: Exception =>
-        sparkSession.sql(
-          s"""DROP TABLE IF EXISTS ${ tableModel.databaseName }.${ tableModel.tableName }""")
+        CarbonDropTableCommand(
+          ifExistsSet = true,
+          Some( tableModel.databaseName ), tableModel.tableName ).run(sparkSession)
         throw e
 
     }

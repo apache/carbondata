@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.datamap.CarbonCreateDataMapCommand
+import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDropDataMapCommand}
 import org.apache.spark.sql.execution.command.management.{AlterTableCompactionCommand, CleanFilesCommand, DeleteLoadByIdCommand, DeleteLoadByLoadDateCommand, LoadTableCommand}
 import org.apache.spark.sql.execution.command.partition.{AlterTableDropCarbonPartitionCommand, AlterTableSplitCarbonPartitionCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
@@ -80,7 +80,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     alterAddPartition | alterSplitPartition | alterDropPartition
 
   protected lazy val datamapManagement: Parser[LogicalPlan] =
-    createDataMap
+    createDataMap | dropDataMap
 
   protected lazy val alterAddPartition: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> PARTITION ~>
@@ -139,6 +139,17 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         val map = dmprops.getOrElse(List[(String, String)]()).toMap[String, String]
         CarbonCreateDataMapCommand(dmname,
           TableIdentifier(tableName, dbName), className, map, query)
+    }
+
+  /**
+   * The below syntax is used to drop the datamap.
+   * DROP DATAMAP IF EXISTS datamapName ON TABLE tablename
+   */
+  protected lazy val dropDataMap: Parser[LogicalPlan] =
+    DROP ~> DATAMAP ~> opt(IF ~> EXISTS) ~ ident ~ (ON ~ TABLE) ~
+    (ident <~ ".").? ~ ident <~ opt(";")  ^^ {
+      case ifexists ~ dmname ~ ontable ~ dbName ~ tableName =>
+        CarbonDropDataMapCommand(dmname, ifexists.isDefined, dbName, tableName)
     }
 
   protected lazy val deleteRecords: Parser[LogicalPlan] =
