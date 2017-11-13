@@ -20,7 +20,7 @@ package org.apache.carbondata.spark.testsuite.dataload
 import java.math.BigDecimal
 
 import org.apache.spark.sql.test.util.QueryTest
-import org.apache.spark.sql.types.{DecimalType, DoubleType, StringType, StructField, StructType}
+import org.apache.spark.sql.types._
 import org.apache.spark.sql.{DataFrame, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
@@ -28,6 +28,7 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
   var df: DataFrame = _
   var dataFrame: DataFrame = _
   var df2: DataFrame = _
+  var booldf:DataFrame = _
 
 
   def buildTestData() = {
@@ -49,6 +50,15 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     df2 = sqlContext.sparkContext.parallelize(1 to 1000)
       .map(x => ("key_" + x, "str_" + x, x, x * 2, x * 3))
       .toDF("c1", "c2", "c3", "c4", "c5")
+
+    val boolrdd = sqlContext.sparkContext.parallelize(
+      Row("anubhav",true) ::
+        Row("prince",false) :: Nil)
+
+    val boolSchema = StructType(
+      StructField("name", StringType, nullable = false) ::
+        StructField("isCarbonEmployee",BooleanType,nullable = false)::Nil)
+    booldf = sqlContext.createDataFrame(boolrdd,boolSchema)
   }
 
   def dropTable() = {
@@ -61,6 +71,8 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon7")
     sql("DROP TABLE IF EXISTS carbon8")
     sql("DROP TABLE IF EXISTS carbon9")
+    sql("DROP TABLE IF EXISTS carbon10")
+
   }
 
 
@@ -70,7 +82,18 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     buildTestData
   }
 
-
+test("test the boolean data type"){
+  booldf.write
+    .format("carbondata")
+    .option("tableName", "carbon10")
+    .option("tempCSV", "true")
+    .option("compress", "true")
+    .mode(SaveMode.Overwrite)
+    .save()
+  checkAnswer(
+    sql("SELECT * FROM CARBON10"),
+    Seq(Row("anubhav", true), Row("prince", false)))
+}
 
   test("test load dataframe with saving compressed csv files") {
     // save dataframe to carbon file
