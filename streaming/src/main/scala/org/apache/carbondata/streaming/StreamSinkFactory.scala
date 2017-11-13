@@ -23,7 +23,6 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sink}
 
-import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
@@ -31,6 +30,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.util.DataLoadingUtil
 import org.apache.carbondata.streaming.segment.StreamSegment
@@ -76,7 +76,21 @@ object StreamSinkFactory {
   }
 
   private def validateParameters(parameters: Map[String, String]): Unit = {
-    // TODO require to validate parameters
+    val segmentSize = parameters.get(CarbonStreamOutputFormat.HANDOFF_SIZE)
+    if (segmentSize.isDefined) {
+      try {
+        val value = java.lang.Long.parseLong(segmentSize.get)
+        if (value < CarbonStreamOutputFormat.HANDOFF_SIZE_MIN) {
+          new CarbonStreamException(CarbonStreamOutputFormat.HANDOFF_SIZE +
+                                    "should be bigger than or equal " +
+                                    CarbonStreamOutputFormat.HANDOFF_SIZE_MIN)
+        }
+      } catch {
+        case ex: NumberFormatException =>
+          new CarbonStreamException(CarbonStreamOutputFormat.HANDOFF_SIZE +
+                                    s" $segmentSize is an illegal number")
+      }
+    }
   }
 
   /**

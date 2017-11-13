@@ -230,6 +230,11 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
         CarbonEnv.getInstance(sparkSession).carbonMetastore.
           createCarbonRelation(parameters, identifier, sparkSession).tableMeta.carbonTable
 
+      if (!carbonTable.isStreamingTable) {
+        throw new CarbonStreamException(s"Table ${carbonTable.getDatabaseName}." +
+                                        s"${carbonTable.getFactTableName} is not a streaming table")
+      }
+
       // create sink
       StreamSinkFactory.createStreamTableSink(
         sqlContext.sparkSession,

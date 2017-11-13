@@ -64,21 +64,36 @@ object CarbonStore {
       }
 
       loadMetadataDetailsSortedArray
-          .filter(_.getVisibility.equalsIgnoreCase("true"))
-          .map { load =>
-            val mergedTo = if (load.getMergedLoadName != null) {
-         load.getMergedLoadName
-       } else {
-         ""
-       }
-            Row(
-              load.getLoadName,
-              load.getLoadStatus,
-              new java.sql.Timestamp(load.getLoadStartTime),
-              new java.sql.Timestamp(load.getLoadEndTime),
-              mergedTo
-            )
-          }.toSeq
+        .filter(_.getVisibility.equalsIgnoreCase("true"))
+        .map { load =>
+          val mergedTo = if (load.getMergedLoadName != null) {
+            load.getMergedLoadName
+          } else {
+            ""
+          }
+
+          val startTime =
+            if (load.getLoadStartTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
+              null
+            } else {
+              new java.sql.Timestamp(load.getLoadStartTime)
+            }
+
+          val endTime =
+            if (load.getLoadEndTime == CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT) {
+              null
+            } else {
+              new java.sql.Timestamp(load.getLoadEndTime)
+            }
+
+          Row(
+            load.getLoadName,
+            load.getLoadStatus,
+            startTime,
+            endTime,
+            mergedTo
+          )
+        }.toSeq
     } else {
       Seq.empty
     }

@@ -40,7 +40,7 @@ import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.mutate.UpdateVO
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
-import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
+import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
@@ -307,7 +307,8 @@ class CarbonMergerRDD[K, V](
 
       // keep on assigning till last one is reached.
       if (null != splits && splits.size > 0) {
-        splitsOfLastSegment = splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).toList.asJava
+        splitsOfLastSegment = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
+          .filter { split => FileFormat.carbondata.equals(split.getFileFormat) }.toList.asJava
       }
 
       carbonInputSplits ++:= splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).filter(entry => {
@@ -316,9 +317,10 @@ class CarbonMergerRDD[K, V](
           entry.getLocations, entry.getLength, entry.getVersion,
           updateStatusManager.getDeleteDeltaFilePath(entry.getPath.toString)
         )
-        ((!updated) || ((updated) && (!CarbonUtil
+        (((!updated) || ((updated) && (!CarbonUtil
           .isInvalidTableBlock(blockInfo.getSegmentId, blockInfo.getFilePath,
-            updateDetails, updateStatusManager))))
+            updateDetails, updateStatusManager)))) &&
+         FileFormat.carbondata.equals(entry.getFileFormat))
       })
     }
 

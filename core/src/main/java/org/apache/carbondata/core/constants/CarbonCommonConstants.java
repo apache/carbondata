@@ -810,6 +810,11 @@ public final class CarbonCommonConstants {
   public static final String INVALID_SEGMENT_ID = "-1";
 
   /**
+   * default load time of the segment
+   */
+  public static final long SEGMENT_LOAD_TIME_DEFAULT = -1;
+
+  /**
    * Size of Major Compaction in MBs
    */
   @CarbonProperty
