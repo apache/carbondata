@@ -32,7 +32,6 @@ import org.apache.carbondata.core.scan.filter.intf.RowImpl;
 
 import mockit.Mock;
 import mockit.MockUp;
-import org.apache.spark.sql.types.Decimal;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
@@ -256,8 +255,8 @@ public class LessThanExpressionUnitTest {
     left.setColIndex(1);
     lessThanExpression = new LessThanExpression(left, right);
     RowImpl value = new RowImpl();
-    Decimal[] row = new Decimal[] { Decimal.apply(256324.0) };
-    Decimal[] row1 = new Decimal[] { Decimal.apply(123451245.0) };
+    BigDecimal[] row = new BigDecimal[] { new BigDecimal(256324.0) };
+    BigDecimal[] row1 = new BigDecimal[] { new BigDecimal(123451245.0) };
     Object objectRow[] = { row1, row };
     value.setValues(objectRow);
 

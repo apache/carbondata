@@ -47,9 +47,9 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 
-import org.apache.spark.sql.types.Decimal;
 
 /**
  * Represent a page data for all columns, we store its data in columnar layout, so that
@@ -184,7 +184,7 @@ public class TablePage {
       if (DataTypes.isDecimal(measurePages[i].getDataType()) &&
           model.isCompactionFlow() &&
           value != null) {
-        value = ((Decimal) value).toJavaBigDecimal();
+        value = DataTypeUtil.getDataTypeConverter().convertToBigDecimal(value);
       }
       measurePages[i].putData(rowId, value);
     }

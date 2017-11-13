@@ -25,19 +25,44 @@ public class DataTypeConverterImpl implements DataTypeConverter, Serializable {
 
   private static final long serialVersionUID = -1718154403432354200L;
 
+  @Override
   public Object convertToDecimal(Object data) {
     return new java.math.BigDecimal(data.toString());
   }
 
+  @Override
+  public Object convertToBigDecimal(Object data) {
+    return data;
+  }
+
+  @Override
   public Object convertFromByteToUTF8String(Object data) {
     return new String((byte[]) data, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
   }
 
+  @Override
+  public byte[] convertFromByteToUTF8Bytes(byte[] data) {
+    return data;
+  }
+
+  @Override
   public byte[] convertFromStringToByte(Object data) {
     return data.toString().getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
   }
 
+  @Override
   public Object convertFromStringToUTF8String(Object data) {
     return data.toString();
   }
+
+  @Override
+  public Object wrapWithGenericArrayData(Object data) {
+    return data;
+  }
+
+  @Override
+  public Object wrapWithGenericRow(Object[] fields) {
+    return fields;
+  }
+
 }

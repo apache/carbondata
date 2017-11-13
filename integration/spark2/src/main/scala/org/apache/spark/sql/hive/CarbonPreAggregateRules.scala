@@ -1128,9 +1128,10 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     if(null == columnSchema) {
       null
     } else {
-        new QueryColumn(columnSchema.getColumnSchema,
-          isFilterColumn,
-          timeseriesFunction.toLowerCase)
+      new QueryColumn(
+        columnSchema.getColumnSchema,
+        isFilterColumn,
+        timeseriesFunction.toLowerCase)
     }
   }
 }

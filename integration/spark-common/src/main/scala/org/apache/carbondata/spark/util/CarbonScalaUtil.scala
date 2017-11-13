@@ -36,6 +36,8 @@ import org.apache.carbondata.core.util.{ByteUtil, CarbonSessionInfo}
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 
 object CarbonScalaUtil {
+
+  // TODO: move this to spark module
   def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
     dataType match {
       case StringType => CarbonDataTypes.STRING

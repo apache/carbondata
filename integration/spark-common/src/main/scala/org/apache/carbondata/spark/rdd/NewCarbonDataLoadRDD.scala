@@ -52,7 +52,7 @@ import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.splits.TableSplit
 import org.apache.carbondata.processing.util.CarbonQueryUtil
 import org.apache.carbondata.spark.DataLoadResult
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, DataLoadingUtil, Util}
 
 class SerializableConfiguration(@transient var value: Configuration) extends Serializable {
 
@@ -472,7 +472,7 @@ class NewRddIterator(rddIter: Iterator[Row],
     val row = rddIter.next()
     val columns = new Array[AnyRef](row.length)
     for (i <- 0 until columns.length) {
-      columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
+      columns(i) = DataLoadingUtil.getString(row.get(i), serializationNullFormat,
         delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat)
     }
     columns
@@ -532,7 +532,7 @@ class LazyRddIterator(serializer: SerializerInstance,
     val row = rddIter.next()
     val columns = new Array[AnyRef](row.length)
     for (i <- 0 until columns.length) {
-      columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
+      columns(i) = DataLoadingUtil.getString(row.get(i), serializationNullFormat,
         delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat)
     }
     columns

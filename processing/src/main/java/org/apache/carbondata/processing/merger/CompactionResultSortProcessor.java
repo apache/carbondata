@@ -35,6 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
@@ -46,8 +47,6 @@ import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
-
-import org.apache.spark.sql.types.Decimal;
 
 /**
  * This class will process the query result and convert the data
@@ -280,7 +279,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private Object getConvertedMeasureValue(Object value, DataType type) {
     if (DataTypes.isDecimal(type)) {
       if (value != null) {
-        value = ((Decimal) value).toJavaBigDecimal();
+        value = DataTypeUtil.getDataTypeConverter().convertToBigDecimal(value);
       }
       return value;
     } else {

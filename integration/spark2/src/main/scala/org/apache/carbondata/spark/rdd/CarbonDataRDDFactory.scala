@@ -70,7 +70,7 @@ import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonData
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.{DataLoadResultImpl, PartitionFactory, _}
 import org.apache.carbondata.spark.load._
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, DataLoadingUtil, Util}
+import org.apache.carbondata.spark.util.{CommonUtil, DataLoadingUtil, Util}
 
 /**
  * This is the factory class which can create different RDD depends on user needs.
@@ -890,7 +890,7 @@ object CarbonDataRDDFactory {
       dataFrame.get.rdd.map { row =>
         if (null != row && row.length > partitionColumnIndex &&
             null != row.get(partitionColumnIndex)) {
-          (CarbonScalaUtil.getString(row.get(partitionColumnIndex), serializationNullFormat,
+          (DataLoadingUtil.getString(row.get(partitionColumnIndex), serializationNullFormat,
             delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat), row)
         } else {
           (null, row)
@@ -1086,5 +1086,4 @@ object CarbonDataRDDFactory {
       hadoopConf
     ).collect()
   }
-
 }
