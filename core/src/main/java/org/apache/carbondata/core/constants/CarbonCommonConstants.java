@@ -23,6 +23,10 @@ import org.apache.carbondata.core.util.CarbonProperty;
 
 public final class CarbonCommonConstants {
   /**
+   * surrogate value of null
+   */
+  public static final int DICT_VALUE_NULL = 1;
+  /**
    * integer size in bytes
    */
   public static final int INT_SIZE_IN_BYTE = 4;
