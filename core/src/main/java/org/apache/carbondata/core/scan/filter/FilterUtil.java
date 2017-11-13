@@ -60,6 +60,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
+import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
@@ -102,6 +103,9 @@ import org.apache.carbondata.core.util.comparator.SerializableComparator;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
+import org.apache.commons.lang.ArrayUtils;
+import org.roaringbitmap.RoaringBitmap;
+
 public final class FilterUtil {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(FilterUtil.class.getName());
@@ -127,6 +131,14 @@ public final class FilterUtil {
     if (null != filterExecuterType) {
       switch (filterExecuterType) {
         case INCLUDE:
+          if (null != filterExpressionResolverTree.getDimColResolvedFilterInfo()
+              && null != filterExpressionResolverTree.getDimColResolvedFilterInfo()
+              .getFilterValues() && filterExpressionResolverTree.getDimColResolvedFilterInfo()
+              .getFilterValues().isOptimized()) {
+            return getExcludeFilterExecuter(
+                filterExpressionResolverTree.getDimColResolvedFilterInfo(),
+                filterExpressionResolverTree.getMsrColResolvedFilterInfo(), segmentProperties);
+          }
           return getIncludeFilterExecuter(
               filterExpressionResolverTree.getDimColResolvedFilterInfo(),
               filterExpressionResolverTree.getMsrColResolvedFilterInfo(), segmentProperties);
@@ -507,23 +519,33 @@ public final class FilterUtil {
    * @param evaluateResultList
    * @param isIncludeFilter
    * @return
-   * @throws IOException
+   * @throws QueryExecutionException
    */
   public static ColumnFilterInfo getFilterValues(AbsoluteTableIdentifier tableIdentifier,
       ColumnExpression columnExpression, List<String> evaluateResultList, boolean isIncludeFilter,
       TableProvider tableProvider)
-      throws IOException {
+      throws QueryExecutionException, FilterUnsupportedException, IOException {
     Dictionary forwardDictionary = null;
+    ColumnFilterInfo filterInfo = null;
+    List<Integer> surrogates =
+        new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     try {
       // Reading the dictionary value from cache.
       forwardDictionary =
           getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
               tableProvider);
-      return getFilterValues(columnExpression, evaluateResultList, forwardDictionary,
-          isIncludeFilter);
+      sortFilterModelMembers(columnExpression, evaluateResultList);
+      getDictionaryValue(evaluateResultList, forwardDictionary, surrogates);
+      filterInfo =
+          getFilterValues(columnExpression, forwardDictionary, isIncludeFilter, null, surrogates);
+      if (filterInfo.isOptimized()) {
+        return getDimColumnFilterInfoAfterApplyingCBO(columnExpression,
+            forwardDictionary, filterInfo);
+      }
     } finally {
       CarbonUtil.clearDictionaryCache(forwardDictionary);
     }
+    return filterInfo;
   }
 
   /**
@@ -531,27 +553,127 @@ public final class FilterUtil {
    * expression value to its respective surrogates.
    *
    * @param columnExpression
-   * @param evaluateResultList
    * @param forwardDictionary
    * @param isIncludeFilter
+   * @param filterInfo
+   * @param surrogates
    * @return
    */
   private static ColumnFilterInfo getFilterValues(ColumnExpression columnExpression,
-      List<String> evaluateResultList, Dictionary forwardDictionary, boolean isIncludeFilter) {
-    sortFilterModelMembers(columnExpression, evaluateResultList);
-    List<Integer> surrogates =
-        new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    // Reading the dictionary value from cache.
-    getDictionaryValue(evaluateResultList, forwardDictionary, surrogates);
+      Dictionary forwardDictionary, boolean isIncludeFilter, ColumnFilterInfo filterInfo,
+      List<Integer> surrogates) throws QueryExecutionException {
+    // Default value has to be added
+    if (surrogates.isEmpty()) {
+      surrogates.add(0);
+    }
+    boolean isExcludeFilterNeedsToApply = false;
+    if (null == filterInfo && isIncludeFilter) {
+      isExcludeFilterNeedsToApply =
+          isExcludeFilterNeedsToApply(forwardDictionary, surrogates.size());
+    }
     Collections.sort(surrogates);
     ColumnFilterInfo columnFilterInfo = null;
     if (surrogates.size() > 0) {
       columnFilterInfo = new ColumnFilterInfo();
+      if (isExcludeFilterNeedsToApply) {
+        columnFilterInfo.setOptimized(true);
+      }
       columnFilterInfo.setIncludeFilter(isIncludeFilter);
-      columnFilterInfo.setFilterList(surrogates);
+      if (null != filterInfo) {
+        filterInfo.setIncludeFilter(isIncludeFilter);
+        filterInfo.setOptimized(true);
+        filterInfo.setExcludeFilterList(surrogates);
+        return filterInfo;
+      } else {
+        if (!isIncludeFilter) {
+          columnFilterInfo.setExcludeFilterList(surrogates);
+        } else {
+          columnFilterInfo.setFilterList(surrogates);
+        }
+      }
     }
     return columnFilterInfo;
   }
+
+  private static boolean isExcludeFilterNeedsToApply(Dictionary forwardDictionary,
+      int size) {
+    if ((size * 100) / forwardDictionary.getDictionaryChunks().getSize() >= 60) {
+      LOGGER.info("Applying CBO to convert include filter to exclude filter.");
+      return true;
+    }
+    return false;
+  }
+
+  private static ColumnFilterInfo getDimColumnFilterInfoAfterApplyingCBO(
+      ColumnExpression columnExpression, Dictionary forwardDictionary,
+      ColumnFilterInfo filterInfo) throws FilterUnsupportedException, QueryExecutionException {
+    List<Integer> excludeMemberSurrogates =
+        prepareExcludeFilterMembers(forwardDictionary, filterInfo.getFilterList());
+    filterInfo.setExcludeFilterList(excludeMemberSurrogates);
+    return filterInfo;
+  }
+
+  private static void prepareIncludeFilterMembers(Expression expression,
+      final ColumnExpression columnExpression, boolean isIncludeFilter,
+      Dictionary forwardDictionary, List<Integer> surrogates)
+      throws FilterUnsupportedException {
+    DictionaryChunksWrapper dictionaryWrapper;
+    dictionaryWrapper = forwardDictionary.getDictionaryChunks();
+    int surrogateCount = 0;
+    while (dictionaryWrapper.hasNext()) {
+      byte[] columnVal = dictionaryWrapper.next();
+      ++surrogateCount;
+      try {
+        RowIntf row = new RowImpl();
+        String stringValue =
+            new String(columnVal, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
+        if (stringValue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+          stringValue = null;
+        }
+        row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(stringValue,
+            columnExpression.getCarbonColumn().getDataType()) });
+        Boolean rslt = expression.evaluate(row).getBoolean();
+        if (null != rslt) {
+          if (rslt) {
+            if (null == stringValue) {
+              // this is for query like select name from table unknowexpr(name,1)
+              // != 'value' -> for null dictionary value
+              surrogates.add(CarbonCommonConstants.DICT_VALUE_NULL);
+            } else if (isIncludeFilter) {
+              // this is for query like select ** from * where unknwonexpr(*) == 'value'
+              surrogates.add(surrogateCount);
+            }
+          } else if (null != stringValue && !isIncludeFilter) {
+            // this is for isNot null or not in query( e.x select ** from t where name is not null
+            surrogates.add(surrogateCount);
+          }
+        }
+      } catch (FilterIllegalMemberException e) {
+        LOGGER.debug(e.getMessage());
+      }
+    }
+  }
+
+  private static List<Integer> prepareExcludeFilterMembers(
+      Dictionary forwardDictionary,List<Integer> includeSurrogates)
+      throws FilterUnsupportedException {
+    DictionaryChunksWrapper dictionaryWrapper;
+    RoaringBitmap bitMapOfSurrogates = RoaringBitmap.bitmapOf(
+        ArrayUtils.toPrimitive(includeSurrogates.toArray(new Integer[includeSurrogates.size()])));
+    dictionaryWrapper = forwardDictionary.getDictionaryChunks();
+    List<Integer> excludeFilterList = new ArrayList<Integer>(includeSurrogates.size());
+    int surrogateCount = 0;
+    while (dictionaryWrapper.hasNext()) {
+      dictionaryWrapper.next();
+      ++surrogateCount;
+      if (!bitMapOfSurrogates.contains(surrogateCount)) {
+        excludeFilterList.add(surrogateCount);
+      }
+    }
+    return excludeFilterList;
+  }
+
+
 
   /**
    * This API will get the Dictionary value for the respective filter member
@@ -578,45 +700,30 @@ public final class FilterUtil {
    * @throws FilterUnsupportedException
    * @throws IOException
    */
-  public static ColumnFilterInfo getFilterListForAllValues(
-      AbsoluteTableIdentifier tableIdentifier, Expression expression,
-      final ColumnExpression columnExpression, boolean isIncludeFilter, TableProvider tableProvider)
-      throws IOException, FilterUnsupportedException {
+  public static ColumnFilterInfo getFilterListForAllValues(AbsoluteTableIdentifier tableIdentifier,
+      Expression expression, final ColumnExpression columnExpression, boolean isIncludeFilter,
+      TableProvider tableProvider, boolean isExprEvalReqd)
+      throws FilterUnsupportedException, IOException {
     Dictionary forwardDictionary = null;
-    List<String> evaluateResultListFinal = new ArrayList<String>(20);
-    DictionaryChunksWrapper dictionaryWrapper = null;
+    List<Integer> surrogates = new ArrayList<Integer>(20);
     try {
       forwardDictionary =
           getForwardDictionaryCache(tableIdentifier, columnExpression.getDimension(),
               tableProvider);
-      dictionaryWrapper = forwardDictionary.getDictionaryChunks();
-      while (dictionaryWrapper.hasNext()) {
-        byte[] columnVal = dictionaryWrapper.next();
-        try {
-          RowIntf row = new RowImpl();
-          String stringValue =
-              new String(columnVal, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
-          if (stringValue.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
-            stringValue = null;
-          }
-          row.setValues(new Object[] { DataTypeUtil.getDataBasedOnDataType(stringValue,
-              columnExpression.getCarbonColumn().getDataType()) });
-          Boolean rslt = expression.evaluate(row).getBoolean();
-          if (null != rslt && rslt == isIncludeFilter) {
-            if (null == stringValue) {
-              evaluateResultListFinal.add(CarbonCommonConstants.MEMBER_DEFAULT_VAL);
-            } else {
-              evaluateResultListFinal.add(stringValue);
-            }
-          }
-        } catch (FilterIllegalMemberException e) {
-          if (LOGGER.isDebugEnabled()) {
-            LOGGER.debug(e.getMessage());
-          }
-        }
+      if (isExprEvalReqd && !isIncludeFilter) {
+        surrogates.add(CarbonCommonConstants.DICT_VALUE_NULL);
       }
-      return getFilterValues(columnExpression, evaluateResultListFinal, forwardDictionary,
-          isIncludeFilter);
+      prepareIncludeFilterMembers(expression, columnExpression, isIncludeFilter, forwardDictionary,
+          surrogates);
+      ColumnFilterInfo filterInfo =
+          getFilterValues(columnExpression, forwardDictionary, isIncludeFilter, null, surrogates);
+      if (filterInfo.isOptimized()) {
+        return getDimColumnFilterInfoAfterApplyingCBO(columnExpression, forwardDictionary,
+            filterInfo);
+      }
+      return filterInfo;
+    } catch (QueryExecutionException e) {
+      throw new FilterUnsupportedException(e.getMessage());
     } finally {
       CarbonUtil.clearDictionaryCache(forwardDictionary);
     }
@@ -745,7 +852,7 @@ public final class FilterUtil {
    * @return
    */
   public static byte[][] getKeyArray(ColumnFilterInfo columnFilterInfo,
-      CarbonDimension carbonDimension, SegmentProperties segmentProperties) {
+      CarbonDimension carbonDimension, SegmentProperties segmentProperties,  boolean isExclude) {
     if (!carbonDimension.hasEncoding(Encoding.DICTIONARY)) {
       return columnFilterInfo.getNoDictionaryFilterValuesList()
           .toArray((new byte[columnFilterInfo.getNoDictionaryFilterValuesList().size()][]));
@@ -759,20 +866,27 @@ public final class FilterUtil {
     if (null != columnFilterInfo) {
       int[] rangesForMaskedByte =
           getRangesForMaskedByte(keyOrdinalOfDimensionFromCurrentBlock, blockLevelKeyGenerator);
-      for (Integer surrogate : columnFilterInfo.getFilterList()) {
-        try {
-          if (surrogate <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
-            keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
-            filterValuesList
-                .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
-          } else {
-            break;
+      List<Integer> listOfsurrogates = null;
+      if (!isExclude && columnFilterInfo.isIncludeFilter()) {
+        listOfsurrogates = columnFilterInfo.getFilterList();
+      } else if (isExclude || !columnFilterInfo.isIncludeFilter()) {
+        listOfsurrogates = columnFilterInfo.getExcludeFilterList();
+      }
+      if (null != listOfsurrogates) {
+        for (Integer surrogate : listOfsurrogates) {
+          try {
+            if (surrogate <= dimColumnsCardinality[keyOrdinalOfDimensionFromCurrentBlock]) {
+              keys[keyOrdinalOfDimensionFromCurrentBlock] = surrogate;
+              filterValuesList
+                  .add(getMaskedKey(rangesForMaskedByte, blockLevelKeyGenerator.generateKey(keys)));
+            } else {
+              break;
+            }
+          } catch (KeyGenException e) {
+            LOGGER.error(e.getMessage());
           }
-        } catch (KeyGenException e) {
-          LOGGER.error(e.getMessage());
         }
       }
-
     }
     return filterValuesList.toArray(new byte[filterValuesList.size()][]);
 
@@ -1188,8 +1302,16 @@ public final class FilterUtil {
       }
       msrColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
     } else {
-      byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, segmentProperties);
-      dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+      if (filterValues == null) {
+        dimColumnExecuterInfo.setFilterKeys(new byte[0][]);
+      } else {
+        byte[][] keysBasedOnFilter = getKeyArray(filterValues, dimension, segmentProperties, false);
+        if (!filterValues.isIncludeFilter() || filterValues.isOptimized()) {
+          dimColumnExecuterInfo
+              .setExcludeFilterKeys(getKeyArray(filterValues, dimension, segmentProperties, true));
+        }
+        dimColumnExecuterInfo.setFilterKeys(keysBasedOnFilter);
+      }
     }
   }
 

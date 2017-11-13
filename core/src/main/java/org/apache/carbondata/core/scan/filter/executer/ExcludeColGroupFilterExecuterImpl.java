@@ -61,7 +61,7 @@ public class ExcludeColGroupFilterExecuterImpl extends ExcludeFilterExecuterImpl
     bitSet.flip(0, numerOfRows);
     try {
       KeyStructureInfo keyStructureInfo = getKeyStructureInfo();
-      byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+      byte[][] filterValues = dimColumnExecuterInfo.getExcludeFilterKeys();
       for (int i = 0; i < filterValues.length; i++) {
         byte[] filterVal = filterValues[i];
         for (int rowId = 0; rowId < numerOfRows; rowId++) {

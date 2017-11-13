@@ -62,12 +62,13 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
               evaluateResultListFinal, metadata.isIncludeFilter(),
               metadata.getColumnExpression().getDimension().getDataType());
       if (!metadata.isIncludeFilter() && null != resolvedFilterObject && !resolvedFilterObject
-          .getFilterList().contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
+          .getExcludeFilterList()
+          .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
         // Adding default surrogate key of null member inorder to not display the same while
         // displaying the report as per hive compatibility.
-        resolvedFilterObject.getFilterList()
+        resolvedFilterObject.getExcludeFilterList()
             .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
-        Collections.sort(resolvedFilterObject.getFilterList());
+        Collections.sort(resolvedFilterObject.getExcludeFilterList());
       }
       resolveDimension.setFilterValues(resolvedFilterObject);
     }
@@ -88,7 +89,11 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
     if (surrogates.size() > 0) {
       columnFilterInfo = new ColumnFilterInfo();
       columnFilterInfo.setIncludeFilter(isIncludeFilter);
-      columnFilterInfo.setFilterList(surrogates);
+      if (!isIncludeFilter) {
+        columnFilterInfo.setExcludeFilterList(surrogates);
+      } else {
+        columnFilterInfo.setFilterList(surrogates);
+      }
     }
     return columnFilterInfo;
   }

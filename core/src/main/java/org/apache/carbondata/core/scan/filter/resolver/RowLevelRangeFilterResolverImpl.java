@@ -90,7 +90,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           .getDimensionFromCurrentBlock(this.dimColEvaluatorInfoList.get(0).getDimension());
       if (null != dimensionFromCurrentBlock) {
         return FilterUtil.getKeyArray(this.dimColEvaluatorInfoList.get(0).getFilterValues(),
-            dimensionFromCurrentBlock, segmentProperties);
+            dimensionFromCurrentBlock, segmentProperties, false);
       }
     }
     return null;
@@ -243,7 +243,11 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
           dimColumnEvaluatorInfo.setDimension(columnExpression.getDimension());
           dimColumnEvaluatorInfo.setDimensionExistsInCurrentSilce(false);
           if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-            filterInfo.setFilterList(getDirectSurrogateValues(columnExpression));
+            if (!isIncludeFilter) {
+              filterInfo.setExcludeFilterList(getDirectSurrogateValues(columnExpression));
+            } else {
+              filterInfo.setFilterList(getDirectSurrogateValues(columnExpression));
+            }
           } else {
             filterInfo.setFilterListForNoDictionaryCols(getNoDictionaryRangeValues());
           }

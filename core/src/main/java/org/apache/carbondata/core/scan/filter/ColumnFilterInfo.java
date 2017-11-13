@@ -38,6 +38,16 @@ public class ColumnFilterInfo implements Serializable {
    */
   private List<byte[]> noDictionaryFilterValuesList;
 
+  public boolean isOptimized() {
+    return isOptimized;
+  }
+
+  public void setOptimized(boolean optimized) {
+    isOptimized = optimized;
+  }
+
+  private boolean isOptimized;
+
   private List<Object> measuresFilterValuesList;
 
   public List<byte[]> getNoDictionaryFilterValuesList() {
