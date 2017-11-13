@@ -86,7 +86,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
       carbonTable = tableMeta.carbonTable
       // invalid data map for the old table, see CARBON-1690
       val oldTableIdentifier = AbsoluteTableIdentifier.fromTablePath(tableMeta.tablePath)
-      DataMapStoreManager.getInstance().clearDataMap(oldTableIdentifier)
+      DataMapStoreManager.getInstance().clearDataMaps(oldTableIdentifier)
       // get the latest carbon table and check for column existence
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(oldTableIdentifier)
       val tableMetadataFile = carbonTablePath.getPath

@@ -24,8 +24,8 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists maintable")
-    sql("drop table if exists maintable_preagg1")
-    sql("drop table if exists maintable_preagg2")
+    sql("drop datamap if exists preagg1 on table maintable")
+    sql("drop datamap if exists preagg2 on table maintable")
     sql("create table maintable (a string, b string, c string) stored by 'carbondata'")
   }
 
@@ -33,7 +33,7 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
     sql(
       "create datamap preagg1 on table maintable using 'preaggregate' as select" +
       " a,sum(b) from maintable group by a")
-    sql("drop table if exists maintable_preagg1")
+    sql("drop datamap if exists preagg1 on table maintable")
     checkExistence(sql("show tables"), false, "maintable_preagg1")
   }
 
@@ -42,14 +42,54 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
       "create datamap preagg1 on table maintable using 'preaggregate' as select" +
       " a,sum(b) from maintable group by a")
     sql(
-      "create datamap preagg2 on table maintable using 'preaggregate'  as select" +
+      "create datamap preagg2 on table maintable using 'preaggregate' as select" +
       " a,sum(c) from maintable group by a")
-    sql("drop table if exists maintable_preagg2")
+    sql("drop datamap if exists preagg2 on table maintable")
     val showTables = sql("show tables")
     checkExistence(showTables, false, "maintable_preagg2")
     checkExistence(showTables, true, "maintable_preagg1")
   }
-  
+
+  test("drop datamap which is not existed") {
+    intercept[RuntimeException] {
+      sql("drop datamap newpreagg on table maintable")
+    }
+  }
+
+  test("drop datamap with same name on different tables") {
+    sql("drop table if exists maintable1")
+    sql("create datamap preagg_same on table maintable using 'preaggregate' as select" +
+    " a,sum(c) from maintable group by a")
+    sql("create table maintable1 (a string, b string, c string) stored by 'carbondata'")
+    sql("create datamap preagg_same on table maintable1 using 'preaggregate' as select" +
+    " a,sum(c) from maintable1 group by a")
+
+    sql("drop datamap preagg_same on table maintable")
+    var showTables = sql("show tables")
+    checkExistence(showTables, false, "maintable_preagg_same")
+    checkExistence(showTables, true, "maintable1_preagg_same")
+    sql("drop datamap preagg_same on table maintable1")
+    showTables = sql("show tables")
+    checkExistence(showTables, false, "maintable1_preagg_same")
+    sql("drop table if exists maintable1")
+  }
+
+  test("drop datamap and create again with same name") {
+    sql("create datamap preagg_same1 on table maintable using 'preaggregate' as select" +
+    " a,sum(c) from maintable group by a")
+
+    sql("drop datamap preagg_same1 on table maintable")
+    var showTables = sql("show tables")
+    checkExistence(showTables, false, "maintable_preagg_same1")
+    sql("create datamap preagg_same1 on table maintable using 'preaggregate' as select" +
+        " a,sum(c) from maintable group by a")
+    showTables = sql("show tables")
+    checkExistence(showTables, true, "maintable_preagg_same1")
+    sql("drop datamap preagg_same1 on table maintable")
+  }
+
+
+
   test("drop main table and check if preaggreagte is deleted") {
     sql(
       "create datamap preagg2 on table maintable using 'preaggregate' as select" +
@@ -60,8 +100,9 @@ class TestPreAggregateDrop extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll() {
     sql("drop table if exists maintable")
-    sql("drop table if exists maintable_preagg1")
-    sql("drop table if exists maintable_preagg2")
+    sql("drop table if exists maintable1")
+    sql("drop datamap if exists preagg1 on table maintable")
+    sql("drop datamap if exists preagg2 on table maintable")
   }
   
 }
