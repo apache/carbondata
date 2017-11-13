@@ -37,8 +37,7 @@ object DropPreAggregateTablePostListener extends OperationEventListener {
     val dropPostEvent = event.asInstanceOf[DropTablePostEvent]
     val carbonTable = dropPostEvent.carbonTable
     val sparkSession = dropPostEvent.sparkSession
-    if (carbonTable.isDefined && carbonTable.get.getTableInfo.getDataMapSchemaList != null &&
-        !carbonTable.get.getTableInfo.getDataMapSchemaList.isEmpty) {
+    if (carbonTable.isDefined && carbonTable.get.hasDataMapSchema) {
       val childSchemas = carbonTable.get.getTableInfo.getDataMapSchemaList
       for (childSchema: DataMapSchema <- childSchemas.asScala) {
         if (childSchema.getRelationIdentifier != null) {
@@ -63,7 +62,7 @@ object LoadPostAggregateListener extends OperationEventListener {
     val sparkSession = loadEvent.sparkSession
     val carbonLoadModel = loadEvent.carbonLoadModel
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    if (!table.getTableInfo.getDataMapSchemaList.isEmpty) {
+    if (table.hasDataMapSchema) {
       for (dataMapSchema: DataMapSchema <- table.getTableInfo.getDataMapSchemaList.asScala) {
         CarbonSession
           .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
@@ -94,23 +93,41 @@ object PreAggregateDataTypeChangePreListener extends OperationEventListener {
     val carbonTable = dataTypeChangePreListener.carbonTable
     val alterTableDataTypeChangeModel = dataTypeChangePreListener.alterTableDataTypeChangeModel
     val columnToBeAltered: String = alterTableDataTypeChangeModel.columnName
-    val dataMapSchemas = carbonTable.getTableInfo.getDataMapSchemaList
-    if (dataMapSchemas != null && !dataMapSchemas.isEmpty) {
+    if (carbonTable.hasDataMapSchema) {
+      val dataMapSchemas = carbonTable.getTableInfo.getDataMapSchemaList
       dataMapSchemas.asScala.foreach { dataMapSchema =>
-          val childColumns = dataMapSchema.getChildSchema.getListOfColumns
-          if (childColumns.asScala.exists(_.getColumnName.equalsIgnoreCase(columnToBeAltered))) {
-            throw new UnsupportedOperationException(s"Column $columnToBeAltered exists in a " +
-                                                    s"pre-aggregate table ${ dataMapSchema.toString
-                                                    }. Cannot change datatype")
-          }
+        val childColumns = dataMapSchema.getChildSchema.getListOfColumns
+        val parentColumnNames = childColumns.asScala
+          .flatMap(_.getParentColumnTableRelations.asScala.map(_.getColumnName))
+        if (parentColumnNames.contains(columnToBeAltered)) {
+          throw new UnsupportedOperationException(
+            s"Column $columnToBeAltered exists in a pre-aggregate table. Drop pre-aggregate table" +
+            "to continue")
+        }
       }
+    }
+    if (carbonTable.isChildDataMap) {
+      throw new UnsupportedOperationException(
+        s"Cannot change data type for columns in pre-aggregate table ${ carbonTable.getDatabaseName
+        }.${ carbonTable.getFactTableName }")
+    }
+  }
+}
 
-      if (carbonTable.isChildDataMap) {
-        throw new UnsupportedOperationException(s"Cannot change data type for columns in " +
-                                                s"pre-aggreagate table ${
-                                                  carbonTable.getDatabaseName
-                                                }.${ carbonTable.getFactTableName }")
-      }
+object PreAggregateAddColumnsPreListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val dataTypeChangePreListener = event.asInstanceOf[AlterTableAddColumnPreEvent]
+    val carbonTable = dataTypeChangePreListener.carbonTable
+    if (carbonTable.isChildDataMap) {
+      throw new UnsupportedOperationException(
+        s"Cannot add columns in pre-aggreagate table ${ carbonTable.getDatabaseName
+        }.${ carbonTable.getFactTableName }")
     }
   }
 }
@@ -175,25 +192,25 @@ object PreAggregateDropColumnPreListener extends OperationEventListener {
     val carbonTable = dataTypeChangePreListener.carbonTable
     val alterTableDropColumnModel = dataTypeChangePreListener.alterTableDropColumnModel
     val columnsToBeDropped = alterTableDropColumnModel.columns
-    val dataMapSchemas = carbonTable.getTableInfo.getDataMapSchemaList
-    if (dataMapSchemas != null && !dataMapSchemas.isEmpty) {
+    if (carbonTable.hasDataMapSchema) {
+      val dataMapSchemas = carbonTable.getTableInfo.getDataMapSchemaList
       dataMapSchemas.asScala.foreach { dataMapSchema =>
-          val parentColumnNames = dataMapSchema.getChildSchema.getListOfColumns.asScala
-            .flatMap(_.getParentColumnTableRelations.asScala.map(_.getColumnName))
-          val columnExistsInChild = parentColumnNames.collectFirst {
-            case parentColumnName if columnsToBeDropped.contains(parentColumnName) =>
-              parentColumnName
-          }
-          if (columnExistsInChild.isDefined) {
-            throw new UnsupportedOperationException(
-              s"Column ${ columnExistsInChild.head } cannot be dropped because it exists in a " +
-              s"pre-aggregate table ${ dataMapSchema.getRelationIdentifier.toString}")
-          }
+        val parentColumnNames = dataMapSchema.getChildSchema.getListOfColumns.asScala
+          .flatMap(_.getParentColumnTableRelations.asScala.map(_.getColumnName))
+        val columnExistsInChild = parentColumnNames.collectFirst {
+          case parentColumnName if columnsToBeDropped.contains(parentColumnName) =>
+            parentColumnName
+        }
+        if (columnExistsInChild.isDefined) {
+          throw new UnsupportedOperationException(
+            s"Column ${ columnExistsInChild.head } cannot be dropped because it exists in a " +
+            s"pre-aggregate table ${ dataMapSchema.getRelationIdentifier.toString }")
+        }
       }
-      if (carbonTable.isChildDataMap) {
-        throw new UnsupportedOperationException(s"Cannot drop columns in pre-aggreagate table ${
-          carbonTable.getDatabaseName}.${ carbonTable.getFactTableName }")
-      }
+    }
+    if (carbonTable.isChildDataMap) {
+      throw new UnsupportedOperationException(s"Cannot drop columns in pre-aggreagate table ${
+        carbonTable.getDatabaseName}.${ carbonTable.getFactTableName }")
     }
   }
 }

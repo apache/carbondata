@@ -101,4 +101,8 @@ public class RelationIdentifier implements Serializable, Writable {
     result = 31 * result + (tableId != null ? tableId.hashCode() : 0);
     return result;
   }
+
+  @Override public String toString() {
+    return databaseName + "." + tableName;
+  }
 }

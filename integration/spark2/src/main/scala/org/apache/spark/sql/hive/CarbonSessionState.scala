@@ -126,23 +126,6 @@ class CarbonSessionCatalog(
   }
 }
 
-object CarbonSessionState {
-
-  def init(): Unit = {
-    OperationListenerBus.getInstance()
-      .addListener(classOf[DropTablePostEvent], DropPreAggregateTablePostListener)
-      .addListener(classOf[LoadTablePostExecutionEvent], LoadPostAggregateListener)
-      .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
-      .addListener(classOf[DeleteSegmentByDatePreEvent], PreAggregateDeleteSegmentByDatePreListener)
-      .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
-      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
-      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
-      .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
-      .addListener(classOf[AlterTableRenamePreEvent], PreAggregateRenameTablePreListener)
-      .addListener(classOf[AlterTableDataTypeChangePreEvent], PreAggregateDataTypeChangePreListener)
-  }
-}
-
 /**
  * Session state implementation to override sql parser and adding strategies
  * @param sparkSession
@@ -158,8 +141,6 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
       new DDLStrategy(sparkSession)
     )
   experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
-
-  CarbonSessionState.init()
 
   override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)
 
