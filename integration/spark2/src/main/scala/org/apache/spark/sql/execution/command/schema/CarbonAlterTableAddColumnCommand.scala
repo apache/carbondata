@@ -29,6 +29,7 @@ import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.{AlterTableAddColumnPreEvent, OperationListenerBus}
 import org.apache.carbondata.format.TableInfo
 import org.apache.carbondata.spark.rdd.{AlterTableAddColumnRDD, AlterTableDropColumnRDD}
 
@@ -59,6 +60,9 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
       carbonTable = metastore
         .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
         .tableMeta.carbonTable
+      val alterTableAddColumnListener = AlterTableAddColumnPreEvent(carbonTable,
+        alterTableAddColumnsModel)
+      OperationListenerBus.getInstance().fireEvent(alterTableAddColumnListener)
       // get the latest carbon table and check for column existence
       // read the latest schema file
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath,
