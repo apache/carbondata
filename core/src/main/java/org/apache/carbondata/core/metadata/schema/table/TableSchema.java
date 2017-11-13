@@ -78,7 +78,7 @@ public class TableSchema implements Serializable, Writable {
 
   public TableSchema() {
     this.listOfColumns = new ArrayList<ColumnSchema>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    this.tableProperties = new HashMap<String, String>(5);
+    this.tableProperties = new HashMap<String, String>();
   }
 
   /**
