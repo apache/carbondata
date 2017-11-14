@@ -63,7 +63,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test datamap create with preagg") {
-    sql("drop table if exists datamap3")
+    sql("drop datamap if exists datamap3 on table datamaptest")
     sql(
       "create datamap datamap3 on table datamaptest using 'preaggregate' dmproperties('key'='value') as select count(a) from datamaptest")
     val table = CarbonMetadata.getInstance().getCarbonTable("default_datamaptest")
@@ -77,9 +77,19 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
 
   test("test datamap create with preagg with duplicate name") {
     intercept[Exception] {
-      sql("drop table if exists datamap2")
       sql(
         "create datamap datamap2 on table datamaptest using 'preaggregate' dmproperties('key'='value') as select count(a) from datamaptest")
+
+    }
+    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamaptest")
+    assert(table != null)
+    val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
+    assert(dataMapSchemaList.size() == 3)
+  }
+
+  test("test datamap drop with preagg") {
+    intercept[Exception] {
+      sql("drop table datamap3")
 
     }
     val table = CarbonMetadata.getInstance().getCarbonTable("default_datamaptest")

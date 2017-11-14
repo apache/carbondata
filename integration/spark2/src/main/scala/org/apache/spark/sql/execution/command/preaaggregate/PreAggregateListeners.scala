@@ -26,31 +26,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.events._
 
-object DropPreAggregateTablePostListener extends OperationEventListener {
-
-  /**
-   * Called on a specified event occurrence
-   *
-   * @param event
-   */
-  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val dropPostEvent = event.asInstanceOf[DropTablePostEvent]
-    val carbonTable = dropPostEvent.carbonTable
-    val sparkSession = dropPostEvent.sparkSession
-    if (carbonTable.isDefined && carbonTable.get.hasDataMapSchema) {
-      val childSchemas = carbonTable.get.getTableInfo.getDataMapSchemaList
-      for (childSchema: DataMapSchema <- childSchemas.asScala) {
-        if (childSchema.getRelationIdentifier != null) {
-          CarbonDropTableCommand(ifExistsSet = true,
-            Some(childSchema.getRelationIdentifier.getDatabaseName),
-            childSchema.getRelationIdentifier.getTableName).run(sparkSession)
-        }
-      }
-    }
-
-  }
-}
-
 object LoadPostAggregateListener extends OperationEventListener {
   /**
    * Called on a specified event occurrence

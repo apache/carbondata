@@ -81,17 +81,11 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
     }
     checkSchemasModifiedTimeAndReloadTables(identifier.getStorePath)
-    val parentRelations = carbonTable.getTableInfo.getParentRelationIdentifiers
-    if (parentRelations != null && !parentRelations.isEmpty) {
-      for (parentRelation: RelationIdentifier <- parentRelations.asScala) {
-        updateParentTableInfo(parentRelation, carbonTable)(sparkSession)
-      }
-    }
     removeTableFromMetadata(dbName, tableName)
     CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
     // discard cached table info in cachedDataSourceTables
     sparkSession.sessionState.catalog.refreshTable(tableIdentifier)
-    DataMapStoreManager.getInstance().clearDataMap(identifier)
+    DataMapStoreManager.getInstance().clearDataMaps(identifier)
   }
 
   override def checkSchemasModifiedTimeAndReloadTables(storePath: String) {
