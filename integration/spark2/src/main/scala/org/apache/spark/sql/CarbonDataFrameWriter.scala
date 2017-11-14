@@ -168,6 +168,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       s"${ field.name } ${ convertToCarbonType(field.dataType) }"
     }
     val property = Map(
+      "SORT_COLUMNS" -> options.sortColumns,
       "DICTIONARY_INCLUDE" -> options.dictionaryInclude,
       "DICTIONARY_EXCLUDE" -> options.dictionaryExclude,
       "TABLE_BLOCKSIZE" -> options.tableBlockSize

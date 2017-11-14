@@ -22,7 +22,7 @@ import java.math.BigDecimal
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SaveMode}
+import org.apache.spark.sql.{AnalysisException, DataFrame, DataFrameWriter, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
@@ -73,7 +73,9 @@ class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS carbon8")
     sql("DROP TABLE IF EXISTS carbon9")
     sql("DROP TABLE IF EXISTS carbon10")
-
+    sql("DROP TABLE IF EXISTS df_write_sort_column_not_specified")
+    sql("DROP TABLE IF EXISTS df_write_specify_sort_column")
+    sql("DROP TABLE IF EXISTS df_write_empty_sort_column")
   }
 
 
@@ -236,11 +238,66 @@ test("test the boolean data type"){
       sql("select count(*) from carbon10 where c3 > 500"), Row(500)
     )
     sql("drop table carbon10")
-    assert(! new File(path).exists())
+    assert(!new File(path).exists())
     assert(intercept[AnalysisException](
       sql("select count(*) from carbon10 where c3 > 500"))
       .message
       .contains("not found"))
+  }
+
+  private def getSortColumnValue(tableName: String): Array[String] = {
+    val desc = sql(s"desc formatted $tableName")
+    val sortColumnRow = desc.collect.find(r =>
+      r(0).asInstanceOf[String].trim.equalsIgnoreCase("SORT_COLUMNS")
+    )
+    assert(sortColumnRow.isDefined)
+    sortColumnRow.get.get(1).asInstanceOf[String].split(",")
+      .map(_.trim.toLowerCase).filter(_.length > 0)
+  }
+
+  private def getDefaultWriter(tableName: String): DataFrameWriter[Row] = {
+    df2.write
+      .format("carbondata")
+      .option("tableName", tableName)
+      .option("tempCSV", "false")
+      .option("single_pass", "false")
+      .option("table_blocksize", "256")
+      .option("compress", "false")
+      .mode(SaveMode.Overwrite)
+  }
+
+  test("test load dataframe with sort_columns not specified," +
+       " by default all string columns will be sort_columns") {
+    // all string column will be sort_columns by default
+    getDefaultWriter("df_write_sort_column_not_specified").save()
+    checkAnswer(
+      sql("select count(*) from df_write_sort_column_not_specified where c3 > 500"), Row(500)
+    )
+
+    val sortColumnValue = getSortColumnValue("df_write_sort_column_not_specified")
+    assert(sortColumnValue.sameElements(Array("c1", "c2")))
+  }
+
+  test("test load dataframe with sort_columns specified") {
+    // only specify c1 as sort_columns
+    getDefaultWriter("df_write_specify_sort_column").option("sort_columns", "c1").save()
+    checkAnswer(
+      sql("select count(*) from df_write_specify_sort_column where c3 > 500"), Row(500)
+    )
+
+    val sortColumnValue = getSortColumnValue("df_write_specify_sort_column")
+    assert(sortColumnValue.sameElements(Array("c1")))
+  }
+
+  test("test load dataframe with sort_columns specified empty") {
+    // specify empty sort_column
+    getDefaultWriter("df_write_empty_sort_column").option("sort_columns", "").save()
+    checkAnswer(
+      sql("select count(*) from df_write_empty_sort_column where c3 > 500"), Row(500)
+    )
+
+    val sortColumnValue = getSortColumnValue("df_write_empty_sort_column")
+    assert(sortColumnValue.isEmpty)
   }
 
   override def afterAll {

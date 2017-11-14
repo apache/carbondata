@@ -42,6 +42,8 @@ class CarbonOption(options: Map[String, String]) {
 
   def singlePass: Boolean = options.getOrElse("single_pass", "false").toBoolean
 
+  def sortColumns: Option[String] = options.get("sort_columns")
+
   def dictionaryInclude: Option[String] = options.get("dictionary_include")
 
   def dictionaryExclude: Option[String] = options.get("dictionary_exclude")
