@@ -20,8 +20,9 @@ package org.apache.spark.sql.execution.streaming
 import java.util.Date
 
 import org.apache.hadoop.conf.Configuration
-import org.apache.hadoop.mapreduce.{Job, TaskAttemptContext, TaskAttemptID, TaskID, TaskType}
+import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
+import org.apache.hadoop.mapreduce.v2.api.records.JobId
 import org.apache.spark.{SparkHadoopWriter, TaskContext}
 import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.internal.io.FileCommitProtocol.TaskCommitMessage
@@ -35,6 +36,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -77,6 +79,9 @@ class CarbonAppendableStreamSink(
     if (batchId <= fileLog.getLatest().map(_._1).getOrElse(-1L)) {
       CarbonAppendableStreamSink.LOGGER.info(s"Skipping already committed batch $batchId")
     } else {
+
+      val statistic = new QueryStatistic()
+
       checkOrHandOffSegment()
 
       // committer will record how this spark job commit its output
@@ -102,6 +107,10 @@ class CarbonAppendableStreamSink(
         committer,
         hadoopConf,
         server)
+
+      statistic.addStatistics(s"add batch: $batchId", System.currentTimeMillis())
+      CarbonAppendableStreamSink.LOGGER.info(
+        s"${statistic.getMessage}, taken time(ms): ${statistic.getTimeTaken}")
     }
   }
 
@@ -158,6 +167,8 @@ object CarbonAppendableStreamSink {
     val job = Job.getInstance(hadoopConf)
     job.setOutputKeyClass(classOf[Void])
     job.setOutputValueClass(classOf[InternalRow])
+    val jobId = SparkHadoopWriter.createJobID(new Date, batchId.toInt)
+    job.setJobID(jobId)
 
     val description = WriteDataFileJobDescription(
       serializableHadoopConf = new SerializableConfiguration(job.getConfiguration),
