@@ -733,7 +733,8 @@ public final class CarbonUtil {
     return lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || lowerPath
         .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || lowerPath
         .startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX) || lowerPath
-        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX);
+        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX) || lowerPath
+        .startsWith(CarbonCommonConstants.S3URL_PREFIX);
   }
 
   /**

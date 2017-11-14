@@ -156,6 +156,12 @@ public final class CarbonCommonConstants {
    * ALLUXIO_PREFIX
    */
   public static final String ALLUXIOURL_PREFIX = "alluxio://";
+
+  /**
+   * VIEWS3URL_PREFIX
+   */
+  public static final String S3URL_PREFIX = "s3a://";
+
   /**
    * FS_DEFAULT_FS
    */
@@ -883,6 +889,11 @@ public final class CarbonCommonConstants {
   public static final String CARBON_LOCK_TYPE_HDFS = "HDFSLOCK";
 
   /**
+   * HDFSLOCK TYPE
+   */
+  public static final String CARBON_LOCK_TYPE_S3 = "S3LOCK";
+
+  /**
    * Invalid filter member log string
    */
   public static final String FILTER_INVALID_MEMBER =
@@ -1327,7 +1338,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_UPDATE_SEGMENT_PARALLELISM =
-      "carbon.update.segment.parallelism";
+          "carbon.update.segment.parallelism";
 
   /**
    * In default we will not optimize the update
@@ -1341,6 +1352,70 @@ public final class CarbonCommonConstants {
   public static final String CARBON_USE_BLOCKLET_DISTRIBUTION = "carbon.blocklet.distribution";
 
   public static final String CARBON_USE_BLOCKLET_DISTRIBUTION_DEFAULT = "true";
+
+  /**
+   * S3 Constants
+   */
+
+  public static final String DIRECTORY_SUFFIX = "_$folder$";
+
+  public static final String S3_ACCESS_KEY = "carbon.s3.access-key";
+
+  public static final String S3_SECRET_KEY = "carbon.s3.secret-key";
+
+  public static final String S3_ENDPOINT = "carbon.s3.endpoint";
+
+  public static final String S3_SIGNER_TYPE = "carbon.s3.signer-type";
+
+  public static final String S3_SSL_ENABLED = "carbon.s3.ssl.enabled";
+
+  public static final String S3_MAX_ERROR_RETRIES = "carbon.s3.max-error-retries";
+
+  public static final String S3_MAX_CLIENT_RETRIES = "carbon.s3.max-client-retries";
+
+  public static final String S3_MAX_BACKOFF_TIME = "carbon.s3.max-backoff-time";
+
+  public static final String S3_MAX_RETRY_TIME = "carbon.s3.max-retry-time";
+
+  public static final String S3_CONNECT_TIMEOUT = "carbon.s3.connect-timeout";
+
+  public static final String S3_SOCKET_TIMEOUT = "carbon.s3.socket-timeout";
+
+  public static final String S3_MAX_CONNECTIONS = "carbon.s3.max-connections";
+
+  public static final String S3_STAGING_DIRECTORY = "carbon.s3.staging-directory";
+
+  public static final String S3_MULTIPART_MIN_FILE_SIZE = "carbon.s3.multipart.min-file-size";
+
+  public static final String S3_MULTIPART_MIN_PART_SIZE = "carbon.s3.multipart.min-part-size";
+
+  public static final String S3_USE_INSTANCE_CREDENTIALS = "carbon.s3.use-instance-credentials";
+
+  public static final String S3_PIN_CLIENT_TO_CURRENT_REGION =
+          "carbon.s3.pin-client-to-current-region";
+
+  public static final String S3_ENCRYPTION_MATERIALS_PROVIDER =
+          "carbon.s3.encryption-materials-provider";
+
+  public static final String S3_KMS_KEY_ID = "carbon.s3.kms-key-id";
+
+  public static final String S3_SSE_KMS_KEY_ID = "carbon.s3.sse.kms-key-id";
+
+  public static final String S3_SSE_ENABLED = "carbon.s3.sse.enabled";
+
+  public static final String S3_SSE_TYPE = "carbon.s3.sse.type";
+
+  public static final String S3_CREDENTIALS_PROVIDER = "carbon.s3.credentials-provider";
+
+  public static final String S3_USER_AGENT_PREFIX = "carbon.s3.user-agent-prefix";
+
+  public static final String S3_USER_AGENT_SUFFIX = "carbon";
+
+  public static final String PATH_SEPARATOR = "/";
+
+  public static final long BLOCK_SIZE = 33554432;
+
+  public static final long MAX_SKIP_SIZE = 1048576;
 
   /**
    * this will be used to pass bitset value in filter to another filter for

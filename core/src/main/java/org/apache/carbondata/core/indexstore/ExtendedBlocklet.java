@@ -18,6 +18,8 @@ package org.apache.carbondata.core.indexstore;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.CarbonS3FileSystem;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 import org.apache.hadoop.fs.FileSystem;
@@ -53,12 +55,23 @@ public class ExtendedBlocklet extends Blocklet {
   /**
    * It gets the hdfs block locations and length for this blocklet. It is used internally to get the
    * locations for allocating tasks.
+   *
    * @throws IOException
    */
   public void updateLocations() throws IOException {
     Path path = new Path(getPath());
-    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
-    RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(path);
+    FileSystem fs;
+    RemoteIterator<LocatedFileStatus> iter;
+
+    if (path.toString().startsWith(CarbonCommonConstants.S3URL_PREFIX)) {
+      fs = new CarbonS3FileSystem();
+      fs.initialize(path.toUri(), FileFactory.getConfiguration());
+      iter = fs.listLocatedStatus(path.getParent());
+    } else {
+      fs = path.getFileSystem(FileFactory.getConfiguration());
+      iter = fs.listLocatedStatus(path);
+    }
+
     LocatedFileStatus fileStatus = iter.next();
     location = fileStatus.getBlockLocations()[0].getHosts();
     length = fileStatus.getLen();

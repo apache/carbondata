@@ -62,6 +62,9 @@ public class CarbonLockFactory {
       case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
         return new HdfsFileLock(tableIdentifier, lockFile);
 
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_S3:
+        return new S3FileLock(tableIdentifier, lockFile);
+
       default:
         throw new UnsupportedOperationException("Not supported the lock type");
     }
@@ -83,6 +86,10 @@ public class CarbonLockFactory {
 
       case CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS:
         return new HdfsFileLock(locFileLocation, lockFile);
+
+      case CarbonCommonConstants.CARBON_LOCK_TYPE_S3:
+        return new S3FileLock(locFileLocation, lockFile);
+
 
       default:
         throw new UnsupportedOperationException("Not supported the lock type");
