@@ -236,27 +236,27 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
       while (low <= high) {
         int mid = (low + high) >>> 1;
         int surrogateKey = sortedSurrogates.get(mid);
-        byte[] dictionaryValue = getDictionaryBytesFromSurrogate(surrogateKey);
-        int cmp = -1;
-        //fortify fix
-        if (null == dictionaryValue) {
-          cmp = -1;
-        } else if (this.getDataType() != DataTypes.STRING) {
-          cmp = compareFilterKeyWithDictionaryKey(
-              new String(dictionaryValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
-              filterKey, this.getDataType());
-
-        } else {
-          cmp =
-              ByteUtil.UnsafeComparer.INSTANCE.compareTo(dictionaryValue, byteValueOfFilterMember);
-        }
+        int cmp =
+            compareFilterValue(surrogateKey, sortedSurrogates, byteValueOfFilterMember, filterKey);
         if (cmp < 0) {
           low = mid + 1;
         } else if (cmp > 0) {
           high = mid - 1;
         } else {
-
           surrogates.add(surrogateKey);
+          if (this.getDataType() == DataTypes.DOUBLE) {
+            int tmp_mid = mid - 1;
+            int tmp_low = low > 0 ? low + 1 : 0;
+            while (tmp_mid >= tmp_low) {
+              surrogateKey = sortedSurrogates.get(tmp_mid);
+              cmp = compareFilterValue(surrogateKey, sortedSurrogates, byteValueOfFilterMember,
+                  filterKey);
+              if (cmp == 0) {
+                surrogates.add(surrogateKey);
+              }
+              tmp_mid--;
+            }
+          }
           low = mid;
           break;
         }
@@ -266,6 +266,24 @@ public class ColumnDictionaryInfo extends AbstractColumnDictionaryInfo {
     if (surrogates.isEmpty()) {
       surrogates.add(0);
     }
+  }
+
+  private int compareFilterValue(int surrogateKey, List<Integer> sortedSurrogates,
+      byte[] byteValueOfFilterMember, String filterKey) {
+    byte[] dictionaryValue = getDictionaryBytesFromSurrogate(surrogateKey);
+    int cmp = -1;
+    //fortify fix
+    if (null == dictionaryValue) {
+      cmp = -1;
+    } else if (this.getDataType() != DataTypes.STRING) {
+      cmp = compareFilterKeyWithDictionaryKey(
+          new String(dictionaryValue, Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)),
+          filterKey, this.getDataType());
+
+    } else {
+      cmp = ByteUtil.UnsafeComparer.INSTANCE.compareTo(dictionaryValue, byteValueOfFilterMember);
+    }
+    return cmp;
   }
 
   private int compareFilterKeyWithDictionaryKey(String dictionaryVal, String memberVal,
