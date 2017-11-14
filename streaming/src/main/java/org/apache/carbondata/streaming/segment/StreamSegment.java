@@ -73,7 +73,7 @@ public class StreamSegment {
             SegmentStatusManager.readLoadMetadata(tablePath.getMetadataDirectoryPath());
         LoadMetadataDetails streamSegment = null;
         for (LoadMetadataDetails detail : details) {
-          if (FileFormat.rowformat == detail.getFileFormat()) {
+          if (FileFormat.ROW_V1 == detail.getFileFormat()) {
             if (SegmentStatus.STREAMING == detail.getSegmentStatus()) {
               streamSegment = detail;
               break;
@@ -85,7 +85,7 @@ public class StreamSegment {
           LoadMetadataDetails newDetail = new LoadMetadataDetails();
           newDetail.setPartitionCount("0");
           newDetail.setLoadName("" + segmentId);
-          newDetail.setFileFormat(FileFormat.rowformat);
+          newDetail.setFileFormat(FileFormat.ROW_V1);
           newDetail.setLoadStartTime(System.currentTimeMillis());
           newDetail.setSegmentStatus(SegmentStatus.STREAMING);
 
@@ -149,7 +149,7 @@ public class StreamSegment {
         LoadMetadataDetails newDetail = new LoadMetadataDetails();
         newDetail.setPartitionCount("0");
         newDetail.setLoadName("" + newSegmentId);
-        newDetail.setFileFormat(FileFormat.rowformat);
+        newDetail.setFileFormat(FileFormat.ROW_V1);
         newDetail.setLoadStartTime(System.currentTimeMillis());
         newDetail.setSegmentStatus(SegmentStatus.STREAMING);
 

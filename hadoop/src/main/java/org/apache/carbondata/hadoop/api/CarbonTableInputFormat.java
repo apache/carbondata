@@ -475,19 +475,19 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
                     int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
                     splits.add(makeSplit(segmentId, path, length - bytesRemaining, splitSize,
                         blkLocations[blkIndex].getHosts(),
-                        blkLocations[blkIndex].getCachedHosts(), FileFormat.rowformat));
+                        blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
                     bytesRemaining -= splitSize;
                   }
                   if (bytesRemaining != 0) {
                     int blkIndex = getBlockIndex(blkLocations, length - bytesRemaining);
                     splits.add(makeSplit(segmentId, path, length - bytesRemaining, bytesRemaining,
                         blkLocations[blkIndex].getHosts(),
-                        blkLocations[blkIndex].getCachedHosts(), FileFormat.rowformat));
+                        blkLocations[blkIndex].getCachedHosts(), FileFormat.ROW_V1));
                   }
                 } else {
                   //Create empty hosts array for zero length files
                   splits.add(makeSplit(segmentId, path, 0, length, new String[0],
-                      FileFormat.rowformat));
+                      FileFormat.ROW_V1));
                 }
               }
             } finally {
