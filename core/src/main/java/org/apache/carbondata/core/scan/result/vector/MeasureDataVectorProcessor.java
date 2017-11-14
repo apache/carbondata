@@ -23,8 +23,6 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
-import org.apache.spark.sql.types.Decimal;
-
 public class MeasureDataVectorProcessor {
 
   public interface MeasureVectorFiller {
@@ -274,8 +272,7 @@ public class MeasureDataVectorProcessor {
           if (decimal.scale() < newMeasureScale) {
             decimal = decimal.setScale(newMeasureScale);
           }
-          Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(decimal);
-          vector.putDecimal(vectorOffset, toDecimal, precision);
+          vector.putDecimal(vectorOffset, decimal, precision);
         }
         vectorOffset++;
       }
@@ -299,8 +296,7 @@ public class MeasureDataVectorProcessor {
           if (info.measure.getMeasure().getScale() > decimal.scale()) {
             decimal = decimal.setScale(info.measure.getMeasure().getScale());
           }
-          Decimal toDecimal = Decimal.apply(decimal);
-          vector.putDecimal(vectorOffset, toDecimal, precision);
+          vector.putDecimal(vectorOffset, decimal, precision);
         }
         vectorOffset++;
       }

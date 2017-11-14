@@ -38,7 +38,6 @@ import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.LazyBlock;
 import com.facebook.presto.spi.block.LazyBlockLoader;
 import com.facebook.presto.spi.type.Type;
-import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
 
 import static com.google.common.base.Preconditions.checkState;
 import static java.util.Collections.unmodifiableList;
@@ -95,15 +94,15 @@ class CarbondataPageSource implements ConnectorPageSource {
     if (nanoStart == 0) {
       nanoStart = System.nanoTime();
     }
-    ColumnarBatch columnarBatch = null;
+    CarbonVectorBatch columnarBatch = null;
     int batchSize = 0;
     try {
       batchId++;
       if(vectorReader.nextKeyValue()) {
         Object vectorBatch = vectorReader.getCurrentValue();
-        if(vectorBatch != null && vectorBatch instanceof ColumnarBatch)
+        if(vectorBatch != null && vectorBatch instanceof CarbonVectorBatch)
         {
-          columnarBatch = (ColumnarBatch) vectorBatch;
+          columnarBatch = (CarbonVectorBatch) vectorBatch;
           batchSize = columnarBatch.numRows();
           if(batchSize == 0){
             close();

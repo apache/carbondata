@@ -187,13 +187,13 @@ public class DecimalSliceStreamReader  extends AbstractStreamReader {
         builder.appendNull();
       } else {
         if (isShortDecimal(type)) {
-          BigDecimal decimalValue = columnVector.getDecimal(i, precision, scale).toJavaBigDecimal();
+          BigDecimal decimalValue = (BigDecimal)columnVector.getData(i);
           long rescaledDecimal = Decimals.rescale(decimalValue.unscaledValue().longValue(),
               decimalValue.scale(), scale);
           type.writeLong(builder, rescaledDecimal);
         } else {
           Slice slice =
-              getSlice(columnVector.getDecimal(i, precision, scale).toJavaBigDecimal(), type);
+              getSlice(columnVector.getData(i), type);
           type.writeSlice(builder, parseSlice((DecimalType) type, slice, 0, slice.length()));
         }
       }
@@ -203,7 +203,7 @@ public class DecimalSliceStreamReader  extends AbstractStreamReader {
   private void populateShortDecimalVector(Type type, int numberOfRows, BlockBuilder builder,
       int scale, int precision) {
     for (int i = 0; i < numberOfRows; i++) {
-      BigDecimal decimalValue = columnVector.getDecimal(i, precision, scale).toJavaBigDecimal();
+      BigDecimal decimalValue = (BigDecimal)columnVector.getData(i);
       long rescaledDecimal = Decimals.rescale(decimalValue.unscaledValue().longValue(),
           decimalValue.scale(), scale);
       type.writeLong(builder, rescaledDecimal);
@@ -213,7 +213,7 @@ public class DecimalSliceStreamReader  extends AbstractStreamReader {
   private void populateLongDecimalVector(Type type, int numberOfRows, BlockBuilder builder,
       int scale, int precision) {
     for (int i = 0; i < numberOfRows; i++) {
-      Slice slice = getSlice(columnVector.getDecimal(i, precision, scale).toJavaBigDecimal(), type);
+      Slice slice = getSlice((BigDecimal)columnVector.getData(i), type);
       type.writeSlice(builder, parseSlice((DecimalType) type, slice, 0, slice.length()));
     }
   }
