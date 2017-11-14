@@ -71,7 +71,8 @@ object StreamExample {
              | file struct<school:array<string>, age:int>
              | )
              | STORED BY 'carbondata'
-             | TBLPROPERTIES('sort_columns'='name', 'dictionary_include'='city')
+             | TBLPROPERTIES(
+             | 'streaming'='true', 'sort_columns'='name', 'dictionary_include'='city')
              | """.stripMargin)
       } else {
         spark.sql(
@@ -83,6 +84,8 @@ object StreamExample {
              | salary FLOAT
              | )
              | STORED BY 'carbondata'
+             | TBLPROPERTIES(
+             | 'streaming'='true', 'sort_columns'='name')
              | """.stripMargin)
       }
 
@@ -173,7 +176,8 @@ object StreamExample {
 
           qry.awaitTermination()
         } catch {
-          case _: InterruptedException =>
+          case ex =>
+            ex.printStackTrace()
             println("Done reading and writing streaming data")
         } finally {
           qry.stop()
@@ -193,14 +197,14 @@ object StreamExample {
         var index = 0
         for (_ <- 1 to 1000) {
           // write 5 records per iteration
-          for (_ <- 0 to 100) {
+          for (_ <- 0 to 1000) {
             index = index + 1
             socketWriter.println(index.toString + ",name_" + index
                                  + ",city_" + index + "," + (index * 10000.00).toString +
                                  ",school_" + index + ":school_" + index + index + "$" + index)
           }
           socketWriter.flush()
-          Thread.sleep(2000)
+          Thread.sleep(1000)
         }
         socketWriter.close()
         System.out.println("Socket closed")
