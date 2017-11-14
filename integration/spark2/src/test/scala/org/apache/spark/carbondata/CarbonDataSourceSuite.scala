@@ -17,13 +17,14 @@
 
 package org.apache.spark.carbondata
 
-import scala.collection.mutable
+import java.io.File
+import java.nio.file.{Files, Paths}
 
+import scala.collection.mutable
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.{Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.util.CarbonProperties
 
 class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
@@ -259,6 +260,9 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
     }.getMessage
     sql("drop table if exists carbon_test")
     assert(exception.eq("Table creation failed. Table name cannot contain blank space"))
+    val rootPath = new File(this.getClass.getResource("/").getPath
+      + "../../../..").getCanonicalPath
+    assert(! Files.exists(Paths.get(s"$rootPath/integration/spark-common/target/warehouse/default/carbon test")))
   }
 
 }
