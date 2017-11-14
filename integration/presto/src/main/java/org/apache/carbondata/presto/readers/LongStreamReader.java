@@ -63,14 +63,14 @@ public class LongStreamReader extends AbstractStreamReader {
       if (columnVector.isNullAt(i)) {
         builder.appendNull();
       } else {
-        type.writeLong(builder, columnVector.getLong(i));
+        type.writeLong(builder, (Long)columnVector.getData(i));
       }
     }
   }
 
   private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
     for (int i = 0; i < numberOfRows; i++) {
-      type.writeLong(builder, columnVector.getLong(i));
+      type.writeLong(builder, (Long)columnVector.getData(i));
     }
   }
 

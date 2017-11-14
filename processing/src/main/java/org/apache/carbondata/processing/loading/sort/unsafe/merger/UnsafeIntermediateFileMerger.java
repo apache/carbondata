@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.ByteBuffer;
 import java.util.AbstractQueue;
 import java.util.Arrays;
@@ -34,6 +35,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.SortTempChunkHolder;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeSortTempFileChunkHolder;
@@ -330,7 +332,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
           rowData.putDouble(size, (Double) value);
           size += 8;
         } else if (DataTypes.isDecimal(dataType)) {
-          byte[] bigDecimalInBytes = (byte[]) value;
+          byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(((BigDecimal) value));
           rowData.putShort(size, (short) bigDecimalInBytes.length);
           size += 2;
           for (int i = 0; i < bigDecimalInBytes.length; i++) {

@@ -52,7 +52,7 @@ public class ObjectStreamReader  extends AbstractStreamReader {
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
         for(int i = 0; i < numberOfRows ; i++ ){
-          type.writeObject(builder, columnVector.getByte(i));
+          type.writeObject(builder, columnVector.getData(i));
         }
       }
 
