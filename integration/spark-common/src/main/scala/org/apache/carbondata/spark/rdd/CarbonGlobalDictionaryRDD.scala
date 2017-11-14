@@ -41,6 +41,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.service.{CarbonCommonFactory, PathService}
+import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
@@ -333,17 +334,17 @@ class CarbonBlockDistinctValuesCombineRDD(
 class CarbonGlobalDictionaryGenerateRDD(
     prev: RDD[(Int, ColumnDistinctValues)],
     model: DictionaryLoadModel)
-  extends CarbonRDD[(Int, String)](prev) {
+  extends CarbonRDD[(Int, SegmentStatus)](prev) {
 
   override def getPartitions: Array[Partition] = firstParent[(Int, ColumnDistinctValues)].partitions
 
   override def internalCompute(split: Partition,
-      context: TaskContext): Iterator[(Int, String)] = {
+      context: TaskContext): Iterator[(Int, SegmentStatus)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION,
       model.hdfsLocation)
-    var status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-    val iter = new Iterator[(Int, String)] {
+    var status = SegmentStatus.SUCCESS
+    val iter = new Iterator[(Int, SegmentStatus)] {
       var dictionaryForDistinctValueLookUp: Dictionary = _
       var dictionaryForSortIndexWriting: Dictionary = _
       var dictionaryForDistinctValueLookUpCleared: Boolean = false
@@ -452,7 +453,7 @@ class CarbonGlobalDictionaryGenerateRDD(
       } catch {
         case dictionaryException: NoRetryException =>
           LOGGER.error(dictionaryException)
-          status = CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
+          status = SegmentStatus.LOAD_FAILURE
         case ex: Exception =>
           LOGGER.error(ex)
           throw ex
@@ -485,7 +486,7 @@ class CarbonGlobalDictionaryGenerateRDD(
         }
       }
 
-      override def next(): (Int, String) = {
+      override def next(): (Int, SegmentStatus) = {
         (split.index, status)
       }
     }

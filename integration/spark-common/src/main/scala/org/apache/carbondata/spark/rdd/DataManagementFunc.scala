@@ -30,10 +30,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
-import org.apache.carbondata.processing.util.{CarbonLoaderUtil, DeleteLoadFolders, LoadMetadataUtil}
+import org.apache.carbondata.processing.util.{CarbonLoaderUtil, DeleteLoadFolders}
 import org.apache.carbondata.spark.compaction.CompactionCallable
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -162,13 +162,25 @@ object DataManagementFunc {
     }
   }
 
+  private def isLoadDeletionRequired(metaDataLocation: String): Boolean = {
+    val details = SegmentStatusManager.readLoadMetadata(metaDataLocation)
+    if (details != null && details.nonEmpty) for (oneRow <- details) {
+      if ((SegmentStatus.MARKED_FOR_DELETE == oneRow.getSegmentStatus ||
+           SegmentStatus.COMPACTED == oneRow.getSegmentStatus) &&
+          oneRow.getVisibility.equalsIgnoreCase("true")) {
+        return true
+      }
+    }
+    false
+  }
+
   def deleteLoadsAndUpdateMetadata(
       dbName: String,
       tableName: String,
       storePath: String,
       isForceDeletion: Boolean,
       carbonTable: CarbonTable): Unit = {
-    if (LoadMetadataUtil.isLoadDeletionRequired(carbonTable.getMetaDataFilepath)) {
+    if (isLoadDeletionRequired(carbonTable.getMetaDataFilepath)) {
       val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath)
       val carbonTableStatusLock =
         CarbonLockFactory.getCarbonLockObj(

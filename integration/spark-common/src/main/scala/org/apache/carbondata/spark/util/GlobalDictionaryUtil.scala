@@ -48,6 +48,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
 import org.apache.carbondata.core.reader.CarbonDictionaryReader
 import org.apache.carbondata.core.service.CarbonCommonFactory
+import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter
@@ -388,12 +389,12 @@ object GlobalDictionaryUtil {
   private def checkStatus(carbonLoadModel: CarbonLoadModel,
       sqlContext: SQLContext,
       model: DictionaryLoadModel,
-      status: Array[(Int, String)]) = {
+      status: Array[(Int, SegmentStatus)]) = {
     var result = false
     val tableName = model.table.getTableName
     status.foreach { x =>
       val columnName = model.primDimensions(x._1).getColName
-      if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(x._2)) {
+      if (SegmentStatus.LOAD_FAILURE == x._2) {
         result = true
         LOGGER.error(s"table:$tableName column:$columnName generate global dictionary file failed")
       }

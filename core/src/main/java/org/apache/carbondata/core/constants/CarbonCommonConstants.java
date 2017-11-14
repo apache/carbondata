@@ -512,15 +512,6 @@ public final class CarbonCommonConstants {
    */
   public static final String ENABLE_DATA_LOADING_STATISTICS_DEFAULT = "false";
   /**
-   * IS_INT_BASED_INDEXER
-   */
-  @CarbonProperty
-  public static final String HIGH_CARDINALITY_VALUE = "high.cardinality.value";
-  /**
-   * IS_INT_BASED_INDEXER_DEFAULTVALUE
-   */
-  public static final String HIGH_CARDINALITY_VALUE_DEFAULTVALUE = "100000";
-  /**
    * CONSTANT_SIZE_TEN
    */
   public static final int CONSTANT_SIZE_TEN = 10;
@@ -528,40 +519,7 @@ public final class CarbonCommonConstants {
    * LEVEL_METADATA_FILE
    */
   public static final String LEVEL_METADATA_FILE = "levelmetadata_";
-  /**
-   * LOAD_STATUS SUCCESS
-   */
-  public static final String STORE_LOADSTATUS_SUCCESS = "Success";
-  /**
-   * LOAD_STATUS UPDATE
-   */
-  public static final String STORE_LOADSTATUS_UPDATE = "Update";
-  /**
-   * LOAD_STATUS FAILURE
-   */
-  public static final String STORE_LOADSTATUS_FAILURE = "Failure";
-  /**
-   * LOAD_STATUS PARTIAL_SUCCESS
-   */
-  public static final String STORE_LOADSTATUS_PARTIAL_SUCCESS = "Partial Success";
 
-  /**
-   * STORE_LOADSTATUS_STREAMING
-   */
-  public static final String STORE_LOADSTATUS_STREAMING = "Streaming";
-
-  /**
-   * STORE_LOADSTATUS_STREAMING
-   */
-  public static final String STORE_LOADSTATUS_STREAMING_FINISH = "Streaming Finish";
-  /**
-   * LOAD_STATUS
-   */
-  public static final String CARBON_METADATA_EXTENSION = ".metadata";
-  /**
-   * LOAD_STATUS
-   */
-  public static final String CARBON_DEFAULT_STREAM_ENCODEFORMAT = "UTF-8";
   /**
    * COMMA
    */
@@ -632,11 +590,6 @@ public final class CarbonCommonConstants {
    */
   public static final String DEFAULT_COMPRESSOR = "snappy";
 
-  /**
-   * MARKED_FOR_DELETION
-   */
-  public static final String MARKED_FOR_DELETE = "Marked for Delete";
-  public static final String MARKED_FOR_UPDATE = "Marked for Update";
   public static final String STRING_TYPE = "StringType";
   public static final String INTEGER_TYPE = "IntegerType";
   public static final String LONG_TYPE = "LongType";
@@ -913,11 +866,6 @@ public final class CarbonCommonConstants {
    * 256 mb size
    */
   public static final long CARBON_256MB = 256 * 1024 * 1024;
-
-  /**
-   * COMPACTED is property to indicate whether seg is compacted or not.
-   */
-  public static final String COMPACTED = "Compacted";
 
   /**
    * ZOOKEEPERLOCK TYPE

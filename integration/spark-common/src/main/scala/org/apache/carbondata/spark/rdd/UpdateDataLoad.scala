@@ -25,7 +25,7 @@ import org.apache.spark.sql.Row
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.loading.DataLoadExecutor
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -55,7 +55,7 @@ object UpdateDataLoad {
       // Intialize to set carbon properties
       loader.initialize()
 
-      loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+      loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
       new DataLoadExecutor().execute(carbonLoadModel,
         loader.storeLocation,
         recordReaders.toArray)

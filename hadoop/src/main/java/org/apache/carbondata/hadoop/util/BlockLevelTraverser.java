@@ -74,7 +74,7 @@ public class BlockLevelTraverser {
       // if block is invalid then dont add the count
       SegmentUpdateDetails details = updateStatusManager.getDetailsForABlock(key);
 
-      if (null == details || !CarbonUpdateUtil.isBlockInvalid(details.getStatus())) {
+      if (null == details || !CarbonUpdateUtil.isBlockInvalid(details.getSegmentStatus())) {
         blockRowMap.put(key, rowCount);
         count++;
       }

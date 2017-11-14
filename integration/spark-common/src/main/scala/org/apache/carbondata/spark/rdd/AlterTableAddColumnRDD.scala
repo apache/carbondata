@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
+import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.spark.util.GlobalDictionaryUtil
@@ -52,7 +53,7 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
     @transient newColumns: Seq[ColumnSchema],
     carbonTableIdentifier: CarbonTableIdentifier,
     carbonStorePath: String)
-  extends CarbonRDD[(Int, String)](sc, Nil) {
+  extends CarbonRDD[(Int, SegmentStatus)](sc, Nil) {
 
   val lockType: String = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOCK_TYPE,
     CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
@@ -64,10 +65,10 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
   }
 
   override def internalCompute(split: Partition,
-      context: TaskContext): Iterator[(Int, String)] = {
+      context: TaskContext): Iterator[(Int, SegmentStatus)] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
-    val status = CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-    val iter = new Iterator[(Int, String)] {
+    val status = SegmentStatus.SUCCESS
+    val iter = new Iterator[(Int, SegmentStatus)] {
       try {
         val columnSchema = split.asInstanceOf[AddColumnPartition].columnSchema
         // create dictionary file if it is a dictionary column
@@ -111,7 +112,7 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
         }
       }
 
-      override def next(): (Int, String) = {
+      override def next(): (Int, SegmentStatus) = {
         (split.index, status)
       }
     }

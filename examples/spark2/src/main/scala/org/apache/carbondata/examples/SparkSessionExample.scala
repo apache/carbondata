@@ -15,13 +15,12 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.examples
+package org.apache.carbondata.examples
 
 import java.io.File
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.util.{CleanFiles, ShowSegments}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties

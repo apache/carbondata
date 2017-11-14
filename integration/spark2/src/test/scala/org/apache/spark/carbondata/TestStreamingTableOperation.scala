@@ -32,6 +32,7 @@ import org.apache.spark.sql.types.StructType
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -558,7 +559,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     val result = sql("show segments for table streaming.stream_table_compact").collect()
     result.foreach { row =>
       if (row.getString(0).equals("1")) {
-        assert(row.getString(1).equals(CarbonCommonConstants.STORE_LOADSTATUS_STREAMING))
+        assertResult(SegmentStatus.STREAMING.getMessage)(row.getString(1))
       }
     }
   }
