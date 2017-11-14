@@ -33,13 +33,14 @@ public class AbsoluteTableIdentifierTest {
   static AbsoluteTableIdentifier absoluteTableIdentifier4;
 
   @BeforeClass public static void setup() {
-    absoluteTableIdentifier = new AbsoluteTableIdentifier("storePath",
+    absoluteTableIdentifier = new AbsoluteTableIdentifier("storePath/databaseName/tableName",
         new CarbonTableIdentifier("databaseName", "tableName", "tableId"));
     absoluteTableIdentifier1 = new AbsoluteTableIdentifier("dummy", null);
     absoluteTableIdentifier2 = new AbsoluteTableIdentifier("dumgfhmy", null);
     absoluteTableIdentifier3 =
-        new AbsoluteTableIdentifier("duhgmmy", new CarbonTableIdentifier("dummy", "dumy", "dmy"));
-    absoluteTableIdentifier4 = new AbsoluteTableIdentifier("storePath",
+        new AbsoluteTableIdentifier("duhgmmy/dumy/dmy/",
+            new CarbonTableIdentifier("dummy", "dumy", "dmy"));
+    absoluteTableIdentifier4 = new AbsoluteTableIdentifier("storePath/databaseName/tableName",
         new CarbonTableIdentifier("databaseName", "tableName", "tableId"));
   }
 
@@ -80,7 +81,7 @@ public class AbsoluteTableIdentifierTest {
 
   @Test public void hashCodeTest() {
     int res = absoluteTableIdentifier4.hashCode();
-    int expectedResult = 804398706;
+    int expectedResult = 233212069;
     assertEquals(res, expectedResult);
   }
 
@@ -91,13 +92,13 @@ public class AbsoluteTableIdentifierTest {
 
   @Test public void fromTablePathTest() {
     AbsoluteTableIdentifier absoluteTableIdentifierTest =
-        AbsoluteTableIdentifier.fromTablePath("storePath/databaseName/tableName");
-    assert (absoluteTableIdentifierTest.getStorePath()
-        .equals(absoluteTableIdentifier4.getStorePath()));
+        AbsoluteTableIdentifier.from("storePath/databaseName/tableName", "databaseName", "tableName");
+    assert (absoluteTableIdentifierTest.getTablePath()
+        .equals(absoluteTableIdentifier4.getTablePath()));
   }
 
-  @Test(expected = IllegalArgumentException.class) public void fromTablePathWithExceptionTest() {
-    AbsoluteTableIdentifier absoluteTableIdentifierTest =
-        AbsoluteTableIdentifier.fromTablePath("storePath/databaseName");
-  }
+//  @Test(expected = IllegalArgumentException.class) public void fromTablePathWithExceptionTest() {
+//    AbsoluteTableIdentifier absoluteTableIdentifierTest =
+//        AbsoluteTableIdentifier.fromTablePath("storePath/databaseName");
+//  }
 }

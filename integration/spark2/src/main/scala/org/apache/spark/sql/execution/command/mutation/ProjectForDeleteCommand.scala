@@ -60,7 +60,7 @@ private[sql] case class ProjectForDeleteCommand(
     OperationListenerBus.getInstance.fireEvent(deleteFromTablePreEvent, operationContext)
 
     val metadataLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
         LockUsage.METADATA_LOCK)
     var lockStatus = false
     try {

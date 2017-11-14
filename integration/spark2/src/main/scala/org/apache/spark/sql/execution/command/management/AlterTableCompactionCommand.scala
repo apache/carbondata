@@ -71,7 +71,7 @@ case class AlterTableCompactionCommand(
     carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
     carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
     carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
-    carbonLoadModel.setStorePath(relation.tableMeta.carbonTable.getStorePath)
+    carbonLoadModel.setTablePath(relation.tableMeta.carbonTable.getTablePath)
 
     var storeLocation = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
@@ -131,7 +131,7 @@ case class AlterTableCompactionCommand(
       // Just launch job to merge index and return
       CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
         carbonLoadModel.getLoadMetadataDetails.asScala.map(_.getLoadName),
-        carbonLoadModel.getStorePath,
+        carbonLoadModel.getTablePath,
         carbonTable)
       return
     }
@@ -172,7 +172,7 @@ case class AlterTableCompactionCommand(
     } else {
       // normal flow of compaction
       val lock = CarbonLockFactory
-        .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+        .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
           LockUsage.COMPACTION_LOCK
         )
 

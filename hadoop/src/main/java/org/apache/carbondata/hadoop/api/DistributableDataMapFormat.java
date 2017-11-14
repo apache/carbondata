@@ -99,8 +99,6 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
       public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
           throws IOException, InterruptedException {
         DataMapDistributable distributable = (DataMapDistributable)inputSplit;
-        AbsoluteTableIdentifier identifier =
-            AbsoluteTableIdentifier.fromTablePath(distributable.getTablePath());
         TableDataMap dataMap = DataMapStoreManager.getInstance()
             .getDataMap(identifier, distributable.getDataMapName(),
                 distributable.getDataMapFactoryClass());

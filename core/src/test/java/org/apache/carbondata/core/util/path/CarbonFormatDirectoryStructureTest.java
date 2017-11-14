@@ -20,6 +20,7 @@ package org.apache.carbondata.core.util.path;
 import java.io.IOException;
 import java.util.UUID;
 
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 
 import org.junit.Test;
@@ -39,7 +40,9 @@ public class CarbonFormatDirectoryStructureTest {
   @Test public void testTablePathStructure() throws IOException {
     CarbonTableIdentifier tableIdentifier = new CarbonTableIdentifier("d1", "t1", UUID.randomUUID().toString());
     CarbonStorePath carbonStorePath = new CarbonStorePath(CARBON_STORE);
-    CarbonTablePath carbonTablePath = carbonStorePath.getCarbonTablePath(tableIdentifier);
+    AbsoluteTableIdentifier absoluteTableIdentifier =
+        new AbsoluteTableIdentifier(CARBON_STORE + "/d1/t1", tableIdentifier);
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
     assertTrue(carbonTablePath.getPath().replace("\\", "/").equals(CARBON_STORE + "/d1/t1"));
     assertTrue(carbonTablePath.getSchemaFilePath().replace("\\", "/").equals(CARBON_STORE + "/d1/t1/Metadata/schema"));
     assertTrue(carbonTablePath.getTableStatusFilePath().replace("\\", "/")

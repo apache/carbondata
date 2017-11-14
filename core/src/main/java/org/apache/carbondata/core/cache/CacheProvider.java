@@ -84,12 +84,11 @@ public class CacheProvider {
    * it is not present in the map
    *
    * @param cacheType       type of cache
-   * @param carbonStorePath store path
    * @param <K>
    * @param <V>
    * @return
    */
-  public <K, V> Cache<K, V> createCache(CacheType cacheType, String carbonStorePath) {
+  public <K, V> Cache<K, V> createCache(CacheType cacheType) {
     //check if lru cache is null, if null create one
     //check if cache is null for given cache type, if null create one
     if (!dictionaryCacheAlreadyExists(cacheType)) {
@@ -98,7 +97,7 @@ public class CacheProvider {
           if (null == carbonLRUCache) {
             createLRULevelCacheInstance(cacheType);
           }
-          createDictionaryCacheForGivenType(cacheType, carbonStorePath);
+          createDictionaryCacheForGivenType(cacheType);
         }
       }
     }
@@ -109,26 +108,22 @@ public class CacheProvider {
    * This method will create the cache for given cache type
    *
    * @param cacheType       type of cache
-   * @param carbonStorePath store path
    */
-  private void createDictionaryCacheForGivenType(CacheType cacheType, String carbonStorePath) {
+  private void createDictionaryCacheForGivenType(CacheType cacheType) {
     Cache cacheObject = null;
     if (cacheType.equals(CacheType.REVERSE_DICTIONARY)) {
       cacheObject =
-          new ReverseDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonStorePath,
-              carbonLRUCache);
+          new ReverseDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonLRUCache);
     } else if (cacheType.equals(CacheType.FORWARD_DICTIONARY)) {
       cacheObject =
-          new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonStorePath,
-              carbonLRUCache);
+          new ForwardDictionaryCache<DictionaryColumnUniqueIdentifier, Dictionary>(carbonLRUCache);
     } else if (cacheType.equals(cacheType.EXECUTOR_BTREE)) {
-      cacheObject = new BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex>(carbonStorePath,
-          carbonLRUCache);
+      cacheObject = new BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex>(carbonLRUCache);
     } else if (cacheType.equals(cacheType.DRIVER_BTREE)) {
       cacheObject =
-          new SegmentTaskIndexStore(carbonStorePath, carbonLRUCache);
+          new SegmentTaskIndexStore(carbonLRUCache);
     } else if (cacheType.equals(cacheType.DRIVER_BLOCKLET_DATAMAP)) {
-      cacheObject = new BlockletDataMapIndexStore(carbonStorePath, carbonLRUCache);
+      cacheObject = new BlockletDataMapIndexStore(carbonLRUCache);
     }
     cacheTypeToCacheMap.put(cacheType, cacheObject);
   }

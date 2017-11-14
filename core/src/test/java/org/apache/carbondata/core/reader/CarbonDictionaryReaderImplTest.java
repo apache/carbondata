@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.service.impl.PathFactory;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -40,21 +41,22 @@ import org.junit.Test;
 import static org.junit.Assert.assertTrue;
 
 public class CarbonDictionaryReaderImplTest {
-  private static CarbonTableIdentifier carbonTableIdentifier = null;
+  private static AbsoluteTableIdentifier absoluteTableIdentifier = null;
   private static ColumnIdentifier columnIdentifier = null;
 
   private static CarbonDictionaryReaderImpl carbonDictionaryReaderImpl = null;
 
   @BeforeClass public static void setUp() throws Exception {
     columnIdentifier = new ColumnIdentifier("1", null, null);
-    carbonTableIdentifier =
-        new CarbonTableIdentifier("dbName", "tableName", UUID.randomUUID().toString());
+    absoluteTableIdentifier =
+        new AbsoluteTableIdentifier("storePath",
+            new CarbonTableIdentifier("dbName", "tableName", UUID.randomUUID().toString()));
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier, columnIdentifier,
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
             columnIdentifier.getDataType(),
-        CarbonStorePath.getCarbonTablePath("storePath", carbonTableIdentifier));
+        CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier));
     carbonDictionaryReaderImpl =
-        new CarbonDictionaryReaderImpl("storePath", carbonTableIdentifier, dictionaryColumnUniqueIdentifier);
+        new CarbonDictionaryReaderImpl(dictionaryColumnUniqueIdentifier);
   }
 
   @Test public void testRead() throws Exception {

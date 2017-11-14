@@ -85,7 +85,7 @@ public class ServerDictionaryGeneratorTest {
     tableInfo.setTableUniqueName("TestTable");
     tableInfo.setDatabaseName("test");
     storePath = System.getProperty("java.io.tmpdir") + "/tmp";
-    tableInfo.setStorePath(storePath);
+    tableInfo.setTablePath(storePath + "/test" + "/TestTable");
     carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
     // Add the created table to metadata
     metadata.addCarbonTable(carbonTable);

@@ -58,7 +58,7 @@ object Compaction {
     val compactionType = TableAPIUtil.escape(args(2))
     val spark = TableAPIUtil.spark(storePath, s"Compaction: $dbName.$tableName")
     CarbonEnv.getInstance(spark).carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(CarbonEnv.getInstance(spark).storePath)
+      checkSchemasModifiedTimeAndReloadTables()
     compaction(spark, dbName, tableName, compactionType)
   }
 }

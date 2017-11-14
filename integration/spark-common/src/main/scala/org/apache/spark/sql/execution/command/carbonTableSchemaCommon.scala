@@ -103,8 +103,7 @@ case class DataLoadTableFileMapping(table: String, loadPath: String)
 
 case class ExecutionErrors(var failureCauses: FailureCauses, var errorMsg: String )
 
-case class CarbonMergerMapping(storeLocation: String,
-    hdfsStoreLocation: String,
+case class CarbonMergerMapping(hdfsStoreLocation: String,
     metadataFilePath: String,
     var mergedLoadName: String,
     databaseName: String,
@@ -136,7 +135,6 @@ case class CompactionModel(compactionSize: Long,
     isDDLTrigger: Boolean)
 
 case class CompactionCallableModel(carbonLoadModel: CarbonLoadModel,
-    storeLocation: String,
     carbonTable: CarbonTable,
     loadsToMerge: util.List[LoadMetadataDetails],
     sqlContext: SQLContext,
@@ -203,7 +201,7 @@ class AlterTableColumnSchemaGenerator(
     tableInfo: TableInfo,
     carbonTablePath: CarbonTablePath,
     tableIdentifier: CarbonTableIdentifier,
-    storePath: String, sc: SparkContext) {
+    sc: SparkContext) {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
 

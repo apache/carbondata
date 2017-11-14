@@ -182,7 +182,7 @@ object DataLoadingUtil {
       carbonLoadModel: CarbonLoadModel): Unit = {
     carbonLoadModel.setTableName(table.getFactTableName)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
-    carbonLoadModel.setStorePath(table.getStorePath)
+    carbonLoadModel.setTablePath(table.getTablePath)
     carbonLoadModel.setTableName(table.getFactTableName)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     // Need to fill dimension relation

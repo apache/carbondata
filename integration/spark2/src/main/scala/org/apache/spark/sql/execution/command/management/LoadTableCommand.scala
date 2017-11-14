@@ -192,7 +192,7 @@ case class LoadTableCommand(
       } finally {
         // Once the data load is successful delete the unwanted partition files
         try {
-          val partitionLocation = table.getStorePath + "/partition/" +
+          val partitionLocation = relation.tableMeta.storePath + "/partition/" +
                                   table.getDatabaseName + "/" +
                                   table.getFactTableName + "/"
           val fileType = FileFactory.getFileType(partitionLocation)
@@ -231,7 +231,7 @@ case class LoadTableCommand(
     val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       .getCarbonTableIdentifier
     val carbonTablePath = CarbonStorePath
-      .getCarbonTablePath(carbonLoadModel.getStorePath, carbonTableIdentifier)
+      .getCarbonTablePath(carbonLoadModel.getTablePath, carbonTableIdentifier)
     val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
     val dimensions = carbonTable.getDimensionByTableName(
       carbonTable.getFactTableName).asScala.toArray
@@ -245,7 +245,7 @@ case class LoadTableCommand(
         dimensions,
         carbonLoadModel,
         sparkSession.sqlContext,
-        carbonLoadModel.getStorePath,
+        carbonLoadModel.getTablePath,
         dictFolderPath)
     }
     if (!StringUtils.isEmpty(carbonLoadModel.getAllDictPath)) {
@@ -253,7 +253,7 @@ case class LoadTableCommand(
       GlobalDictionaryUtil
         .generateDictionaryFromDictionaryFiles(sparkSession.sqlContext,
           carbonLoadModel,
-          carbonLoadModel.getStorePath,
+          carbonLoadModel.getTablePath,
           carbonTableIdentifier,
           dictFolderPath,
           dimensions,
@@ -289,7 +289,7 @@ case class LoadTableCommand(
     }
     CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
       carbonLoadModel,
-      carbonLoadModel.getStorePath,
+      carbonLoadModel.getTablePath,
       columnar,
       partitionStatus,
       server,
@@ -332,11 +332,11 @@ case class LoadTableCommand(
     GlobalDictionaryUtil.generateGlobalDictionary(
       sparkSession.sqlContext,
       carbonLoadModel,
-      carbonLoadModel.getStorePath,
+      carbonLoadModel.getTablePath,
       dictionaryDataFrame)
     CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
       carbonLoadModel,
-      carbonLoadModel.getStorePath,
+      carbonLoadModel.getTablePath,
       columnar,
       partitionStatus,
       None,
@@ -351,8 +351,7 @@ case class LoadTableCommand(
       model: DictionaryLoadModel,
       noDictDimension: Array[CarbonDimension]): Unit = {
     val sparkSession = sqlContext.sparkSession
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(model.hdfsLocation,
-      model.table)
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(model.table)
 
     val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     // read TableInfo
@@ -374,11 +373,12 @@ case class LoadTableCommand(
       tableInfo, entry, carbonTablePath.getPath)(sparkSession)
 
     // update the schema modified time
-    metastore.updateAndTouchSchemasUpdatedTime(model.hdfsLocation)
+    metastore.updateAndTouchSchemasUpdatedTime()
 
+    val identifier = model.table.getCarbonTableIdentifier
     // update CarbonDataLoadSchema
-    val carbonTable = metastore.lookupRelation(Option(model.table.getDatabaseName),
-      model.table.getTableName)(sqlContext.sparkSession).asInstanceOf[CarbonRelation].tableMeta
+    val carbonTable = metastore.lookupRelation(Option(identifier.getDatabaseName),
+      identifier.getTableName)(sqlContext.sparkSession).asInstanceOf[CarbonRelation].tableMeta
       .carbonTable
     carbonLoadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable))
   }

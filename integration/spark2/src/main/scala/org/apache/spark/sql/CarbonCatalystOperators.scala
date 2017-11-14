@@ -25,6 +25,9 @@ import org.apache.spark.sql.hive.HiveSessionCatalog
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.types.{StringType, TimestampType}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 
 case class CarbonDictionaryCatalystDecoder(
@@ -69,6 +72,40 @@ object GetDB {
   def getDatabaseName(dbName: Option[String], sparkSession: SparkSession): String = {
     dbName.getOrElse(
       sparkSession.sessionState.catalog.asInstanceOf[HiveSessionCatalog].getCurrentDatabase)
+  }
+
+  /**
+   * The method returns the database location
+   * if carbon.storeLocation does  point to spark.sql.warehouse.dir then returns
+   * the database locationUri as database location else follows the old behaviour
+   * making database location from carbon fixed store and database name.
+   *
+   * @param dbName
+   * @param sparkSession
+   * @param fixedStorePath
+   * @return
+   */
+  def getDatabaseLocation(dbName: String, sparkSession: SparkSession,
+      fixedStorePath: String): String = {
+    var databaseLocation =
+      sparkSession.sessionState.catalog.asInstanceOf[HiveSessionCatalog].getDatabaseMetadata(dbName)
+        .locationUri
+    // for default database and db ends with .db
+    // check whether the carbon store and hive store is same or different.
+    if (dbName.equals("default") || databaseLocation.endsWith(".db")) {
+      val properties = CarbonProperties.getInstance()
+      val carbonStorePath = FileFactory
+        .getUpdatedFilePath(properties.getProperty(CarbonCommonConstants.STORE_LOCATION))
+      val hiveStorePath = FileFactory
+        .getUpdatedFilePath(sparkSession.conf.get("spark.sql.warehouse.dir"))
+      // if carbon.store does not point to spark.sql.warehouse.dir then follow the old table path
+      // format
+      if (!hiveStorePath.equals(carbonStorePath)) {
+        databaseLocation = fixedStorePath + CarbonCommonConstants.FILE_SEPARATOR + dbName
+      }
+    }
+
+    return FileFactory.getUpdatedFilePath(databaseLocation)
   }
 }
 

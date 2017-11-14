@@ -96,7 +96,7 @@ public class CarbonStreamInputFormat extends FileInputFormat<Void, Object> {
         boolean isDirectDictionary =
             CarbonUtil.hasEncoding(child.getEncoder(), Encoding.DIRECT_DICTIONARY);
         DictionaryColumnUniqueIdentifier dictionarIdentifier =
-            new DictionaryColumnUniqueIdentifier(carbontable.getCarbonTableIdentifier(),
+            new DictionaryColumnUniqueIdentifier(carbontable.getAbsoluteTableIdentifier(),
                 child.getColumnIdentifier(), child.getDataType(),
                 CarbonStorePath.getCarbonTablePath(carbontable.getAbsoluteTableIdentifier()));
 

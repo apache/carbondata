@@ -38,7 +38,7 @@ import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -122,16 +122,16 @@ public class PrimitiveDataType implements GenericDataType<Object> {
    */
   public PrimitiveDataType(String name, String parentname, String columnId,
       CarbonDimension carbonDimension, Cache<DictionaryColumnUniqueIdentifier, Dictionary> cache,
-      CarbonTableIdentifier carbonTableIdentifier, DictionaryClient client, Boolean useOnePass,
-      String storePath, Map<Object, Integer> localCache) {
+      AbsoluteTableIdentifier absoluteTableIdentifier, DictionaryClient client, Boolean useOnePass,
+      Map<Object, Integer> localCache) {
     this.name = name;
     this.parentname = parentname;
     this.columnId = columnId;
     this.carbonDimension = carbonDimension;
     DictionaryColumnUniqueIdentifier identifier =
-        new DictionaryColumnUniqueIdentifier(carbonTableIdentifier,
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
             carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(),
-            CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier));
+            CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier));
     try {
       if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory
@@ -139,13 +139,14 @@ public class PrimitiveDataType implements GenericDataType<Object> {
       } else {
         Dictionary dictionary = null;
         if (useOnePass) {
-          if (CarbonUtil.isFileExistsForGivenColumn(storePath, identifier)) {
+          if (CarbonUtil.isFileExistsForGivenColumn(identifier)) {
             dictionary = cache.get(identifier);
           }
           DictionaryMessage dictionaryMessage = new DictionaryMessage();
           dictionaryMessage.setColumnName(carbonDimension.getColName());
           // for table initialization
-          dictionaryMessage.setTableUniqueId(carbonTableIdentifier.getTableId());
+          dictionaryMessage
+              .setTableUniqueId(absoluteTableIdentifier.getCarbonTableIdentifier().getTableId());
           dictionaryMessage.setData("0");
           // for generate dictionary
           dictionaryMessage.setType(DictionaryMessageType.DICT_GENERATION);

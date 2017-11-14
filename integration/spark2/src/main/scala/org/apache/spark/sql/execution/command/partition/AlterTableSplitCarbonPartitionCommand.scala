@@ -70,11 +70,11 @@ case class AlterTableSplitCarbonPartitionCommand(
     val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation]
     val carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
-    val storePath = relation.tableMeta.storePath
+    val tablePath = relation.tableMeta.tablePath
     if (relation == null) {
       sys.error(s"Table $dbName.$tableName does not exist")
     }
-    carbonMetaStore.checkSchemasModifiedTimeAndReloadTables(storePath)
+    carbonMetaStore.checkSchemasModifiedTimeAndReloadTables()
     if (null == CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)) {
       LOGGER.error(s"Alter table failed. table not found: $dbName.$tableName")
       sys.error(s"Alter table failed. table not found: $dbName.$tableName")
@@ -95,13 +95,13 @@ case class AlterTableSplitCarbonPartitionCommand(
 
     updatePartitionInfo(partitionInfo, partitionIds)
 
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(tablePath, carbonTableIdentifier)
     val schemaFilePath = carbonTablePath.getSchemaFilePath
     // read TableInfo
     val tableInfo = carbonMetaStore.getThriftTableInfo(carbonTablePath)(sparkSession)
     val schemaConverter = new ThriftWrapperSchemaConverterImpl()
     val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(tableInfo,
-      dbName, tableName, storePath)
+      dbName, tableName, tablePath)
     val tableSchema = wrapperTableInfo.getFactTable
     tableSchema.setPartitionInfo(partitionInfo)
     wrapperTableInfo.setFactTable(tableSchema)
@@ -109,10 +109,10 @@ case class AlterTableSplitCarbonPartitionCommand(
     val thriftTable =
       schemaConverter.fromWrapperToExternalTableInfo(wrapperTableInfo, dbName, tableName)
     carbonMetaStore.updateMetadataByThriftTable(schemaFilePath, thriftTable,
-      dbName, tableName, storePath)
+      dbName, tableName, tablePath)
     CarbonUtil.writeThriftTableToSchemaFile(schemaFilePath, thriftTable)
     // update the schema modified time
-    carbonMetaStore.updateAndTouchSchemasUpdatedTime(storePath)
+    carbonMetaStore.updateAndTouchSchemasUpdatedTime()
     sparkSession.sessionState.catalog.refreshTable(TableIdentifier(tableName, Option(dbName)))
     Seq.empty
   }
@@ -153,14 +153,14 @@ case class AlterTableSplitCarbonPartitionCommand(
       val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
       val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
         .asInstanceOf[CarbonRelation]
-      val storePath = relation.tableMeta.storePath
+      val tablePath = relation.tableMeta.tablePath
       val table = relation.tableMeta.carbonTable
       val carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
       carbonLoadModel.setTableName(carbonTableIdentifier.getTableName)
       carbonLoadModel.setDatabaseName(carbonTableIdentifier.getDatabaseName)
-      carbonLoadModel.setStorePath(storePath)
+      carbonLoadModel.setTablePath(tablePath)
       val loadStartTime = CarbonUpdateUtil.readCurrentTime
       carbonLoadModel.setFactTimeStamp(loadStartTime)
       alterTableSplitPartition(
@@ -232,7 +232,7 @@ case class AlterTableSplitCarbonPartitionCommand(
       threadArray.foreach {
         thread => thread.join()
       }
-      val identifier = AbsoluteTableIdentifier.from(carbonLoadModel.getStorePath,
+      val identifier = AbsoluteTableIdentifier.from(carbonLoadModel.getTablePath,
         carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
       val refresher = DataMapStoreManager.getInstance().getTableSegmentRefresher(identifier)
       refresher.refreshSegments(validSegments.asJava)

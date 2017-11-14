@@ -61,7 +61,7 @@ public class SchemaReader {
       TableInfo wrapperTableInfo = schemaConverter
           .fromExternalToWrapperTableInfo(tableInfo,
               identifier.getCarbonTableIdentifier().getDatabaseName(), tableName,
-              identifier.getStorePath());
+              identifier.getTablePath());
       wrapperTableInfo.setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath));
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
       return CarbonMetadata.getInstance().getCarbonTable(

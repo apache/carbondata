@@ -61,10 +61,10 @@ public class DictionaryDecodeReadSupport<T> implements CarbonReadSupport<T> {
           .hasEncoding(Encoding.DIRECT_DICTIONARY) && !carbonColumns[i].isComplex()) {
         CacheProvider cacheProvider = CacheProvider.getInstance();
         Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
-            .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath());
+            .createCache(CacheType.FORWARD_DICTIONARY);
         dataTypes[i] = carbonColumns[i].getDataType();
         dictionaries[i] = forwardDictionaryCache.get(new DictionaryColumnUniqueIdentifier(
-            absoluteTableIdentifier.getCarbonTableIdentifier(),
+            absoluteTableIdentifier,
             carbonColumns[i].getColumnIdentifier(), dataTypes[i],
             CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)));
       } else {

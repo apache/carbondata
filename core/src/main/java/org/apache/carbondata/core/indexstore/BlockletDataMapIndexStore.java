@@ -42,10 +42,6 @@ public class BlockletDataMapIndexStore
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BlockletDataMapIndexStore.class.getName());
   /**
-   * carbon store path
-   */
-  protected String carbonStorePath;
-  /**
    * CarbonLRU cache
    */
   protected CarbonLRUCache lruCache;
@@ -61,11 +57,9 @@ public class BlockletDataMapIndexStore
   /**
    * constructor to initialize the SegmentTaskIndexStore
    *
-   * @param carbonStorePath
    * @param lruCache
    */
-  public BlockletDataMapIndexStore(String carbonStorePath, CarbonLRUCache lruCache) {
-    this.carbonStorePath = carbonStorePath;
+  public BlockletDataMapIndexStore(CarbonLRUCache lruCache) {
     this.lruCache = lruCache;
     segmentLockMap = new ConcurrentHashMap<String, Object>();
   }

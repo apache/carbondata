@@ -18,12 +18,11 @@
 package org.apache.carbondata.spark.rdd
 
 import org.apache.spark.{Partition, SparkContext, TaskContext}
-import org.apache.spark.rdd.RDD
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.SegmentStatus
@@ -48,8 +47,7 @@ class DropColumnPartition(rddId: Int, idx: Int, schema: ColumnSchema) extends Pa
  */
 class AlterTableDropColumnRDD[K, V](sc: SparkContext,
     @transient newColumns: Seq[ColumnSchema],
-    carbonTableIdentifier: CarbonTableIdentifier,
-    carbonStorePath: String)
+    carbonTableIdentifier: AbsoluteTableIdentifier)
   extends CarbonRDD[(Int, SegmentStatus)](sc, Nil) {
 
   override def getPartitions: Array[Partition] = {
@@ -68,7 +66,7 @@ class AlterTableDropColumnRDD[K, V](sc: SparkContext,
         if (columnSchema.hasEncoding(Encoding.DICTIONARY) &&
             !columnSchema.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           ManageDictionaryAndBTree
-            .deleteDictionaryFileAndCache(columnSchema, carbonTableIdentifier, carbonStorePath)
+            .deleteDictionaryFileAndCache(columnSchema, carbonTableIdentifier)
         }
       } catch {
         case ex: Exception =>

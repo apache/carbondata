@@ -195,7 +195,7 @@ public class CarbonUpdateUtil {
     AbsoluteTableIdentifier absoluteTableIdentifier = table.getAbsoluteTableIdentifier();
 
     CarbonTablePath carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
                     absoluteTableIdentifier.getCarbonTableIdentifier());
 
     String tableStatusPath = carbonTablePath.getTableStatusFilePath();
@@ -298,7 +298,7 @@ public class CarbonUpdateUtil {
     AbsoluteTableIdentifier absoluteTableIdentifier = table.getAbsoluteTableIdentifier();
 
     CarbonTablePath carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
                     absoluteTableIdentifier.getCarbonTableIdentifier());
     // as of now considering only partition 0.
     String partitionId = "0";
@@ -492,7 +492,7 @@ public class CarbonUpdateUtil {
     SegmentStatusManager ssm = new SegmentStatusManager(table.getAbsoluteTableIdentifier());
 
     CarbonTablePath carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(table.getAbsoluteTableIdentifier().getStorePath(),
+            .getCarbonTablePath(table.getAbsoluteTableIdentifier().getTablePath(),
                     table.getAbsoluteTableIdentifier().getCarbonTableIdentifier());
 
     LoadMetadataDetails[] details = ssm.readLoadMetadata(table.getMetaDataFilepath());

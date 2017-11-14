@@ -19,7 +19,7 @@ package org.apache.carbondata.core.locks;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 
 /**
  * This class contains all carbon lock utilities
@@ -65,10 +65,14 @@ public class CarbonLockUtil {
   /**
    * Given a lock type this method will return a new lock object if not acquired by any other
    * operation
+   *
+   * @param absoluteTableIdentifier
+   * @param lockType
+   * @return
    */
-  public static ICarbonLock getLockObject(CarbonTableIdentifier identifier, String lockType,
-      String errorMsg) {
-    ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(identifier, lockType);
+  public static ICarbonLock getLockObject(AbsoluteTableIdentifier absoluteTableIdentifier,
+      String lockType, String errorMsg) {
+    ICarbonLock carbonLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier, lockType);
     LOGGER.info("Trying to acquire lock: " + carbonLock);
     if (carbonLock.lockWithRetries()) {
       LOGGER.info("Successfully acquired the lock " + carbonLock);
@@ -82,7 +86,7 @@ public class CarbonLockUtil {
   /**
    * Get and lock with default error message
    */
-  public static ICarbonLock getLockObject(CarbonTableIdentifier identifier, String lockType) {
+  public static ICarbonLock getLockObject(AbsoluteTableIdentifier identifier, String lockType) {
     return getLockObject(identifier,
         lockType,
         "Acquire table lock failed after retry, please try after some time");

@@ -368,8 +368,8 @@ public class CarbonTable implements Serializable {
   /**
    * @return storepath
    */
-  public String getStorePath() {
-    return absoluteTableIdentifier.getStorePath();
+  public String getTablePath() {
+    return absoluteTableIdentifier.getTablePath();
   }
 
   /**

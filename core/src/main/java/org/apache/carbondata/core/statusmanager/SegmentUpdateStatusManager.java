@@ -76,7 +76,7 @@ public class SegmentUpdateStatusManager {
    */
   public SegmentUpdateStatusManager(AbsoluteTableIdentifier absoluteTableIdentifier) {
     this.absoluteTableIdentifier = absoluteTableIdentifier;
-    carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+    carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
         absoluteTableIdentifier.getCarbonTableIdentifier());
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
     // current it is used only for read function scenarios, as file update always requires to work
@@ -169,7 +169,7 @@ public class SegmentUpdateStatusManager {
    * @return
    */
   public ICarbonLock getTableUpdateStatusLock() {
-    return CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
+    return CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier,
         LockUsage.TABLE_UPDATE_STATUS_LOCK);
   }
 
@@ -270,7 +270,7 @@ public class SegmentUpdateStatusManager {
    */
   public String[] getDeleteDeltaFilePath(String blockFilePath) throws Exception {
     int tableFactPathLength = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier()).getFactDir().length() + 1;
     String blockame = blockFilePath.substring(tableFactPathLength);
     String tupleId = CarbonTablePath.getShortBlockId(blockame);
@@ -289,7 +289,7 @@ public class SegmentUpdateStatusManager {
   public List<String> getDeltaFiles(String tupleId, String extension) throws Exception {
     try {
       CarbonTablePath carbonTablePath = CarbonStorePath
-          .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+          .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
               absoluteTableIdentifier.getCarbonTableIdentifier());
       String segment = CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID);
       String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath("0", segment);
@@ -421,7 +421,7 @@ public class SegmentUpdateStatusManager {
   public CarbonFile[] getDeleteDeltaFilesList(final String segmentId, final String blockName) {
 
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
 
     String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
@@ -472,7 +472,7 @@ public class SegmentUpdateStatusManager {
       CarbonFile[] allFilesOfSegment) {
 
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
     String endTimeStamp = "";
@@ -681,7 +681,7 @@ public class SegmentUpdateStatusManager {
     }
 
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
 
     String tableUpdateStatusPath =
@@ -716,7 +716,7 @@ public class SegmentUpdateStatusManager {
   private String getUpdatedStatusIdentifier() {
     SegmentStatusManager ssm = new SegmentStatusManager(absoluteTableIdentifier);
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
     LoadMetadataDetails[] loadDetails =
         ssm.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());
@@ -736,7 +736,7 @@ public class SegmentUpdateStatusManager {
       String updateStatusFileIdentifier) throws IOException {
 
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
 
     String fileLocation =
@@ -834,7 +834,7 @@ public class SegmentUpdateStatusManager {
     List<String> listOfInvalidBlocks = new ArrayList<String>();
     SegmentStatusManager ssm = new SegmentStatusManager(absoluteTableIdentifier);
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
     LoadMetadataDetails[] segmentDetails =
         ssm.readLoadMetadata(carbonTablePath.getMetadataDirectoryPath());

@@ -59,11 +59,10 @@ public class ForwardDictionaryCache<K extends
   private static final long byteArraySize = ObjectSizeCalculator.estimate(new byte[0], 16);
 
   /**
-   * @param carbonStorePath
    * @param carbonLRUCache
    */
-  public ForwardDictionaryCache(String carbonStorePath, CarbonLRUCache carbonLRUCache) {
-    super(carbonStorePath, carbonLRUCache);
+  public ForwardDictionaryCache(CarbonLRUCache carbonLRUCache) {
+    super(carbonLRUCache);
   }
 
   /**

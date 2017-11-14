@@ -58,6 +58,7 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -86,6 +87,7 @@ import org.apache.carbondata.format.DataChunk3;
 import com.google.gson.Gson;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
@@ -728,6 +730,28 @@ public final class CarbonUtil {
     return defaultFsUrl + currentPath;
   }
 
+  /**
+   * Append default file system schema if not added to the filepath
+   *
+   * @param filePath
+   */
+  public static String checkAndAppendFileSystemURIScheme(String filePath) {
+    String currentPath = filePath;
+
+    if (checkIfPrefixExists(filePath)) {
+      return currentPath;
+    }
+    if (!filePath.startsWith("/")) {
+      filePath = "/" + filePath;
+    }
+    currentPath = filePath;
+    String defaultFsUrl = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
+    if (defaultFsUrl == null) {
+      return currentPath;
+    }
+    return defaultFsUrl + currentPath;
+  }
+
   private static boolean checkIfPrefixExists(String path) {
     final String lowerPath = path.toLowerCase();
     return lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || lowerPath
@@ -1006,7 +1030,7 @@ public final class CarbonUtil {
     // it will be sinkup with block index read from file
     Collections.sort(tableBlockInfoList);
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
     // geting the index file path
     //TODO need to pass proper partition number when partiton will be supported
@@ -1249,7 +1273,7 @@ public final class CarbonUtil {
     // it will be sinkup with block index read from file
     Collections.sort(tableBlockInfoList);
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
     // geting the index file path
     //TODO need to pass proper partition number when partiton will be supported
@@ -1563,13 +1587,12 @@ public final class CarbonUtil {
    *                                         tableName and columnIdentifier
    * @return
    */
-  public static boolean isFileExistsForGivenColumn(String carbonStorePath,
+  public static boolean isFileExistsForGivenColumn(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
-        dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-        dictionaryColumnUniqueIdentifier);
-
+    CarbonTablePath carbonTablePath = pathService
+        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getAbsoluteCarbonTableIdentifier(),
+            dictionaryColumnUniqueIdentifier);
     String dictionaryFilePath = carbonTablePath.getDictionaryFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     String dictionaryMetadataFilePath = carbonTablePath.getDictionaryMetaFilePath(
@@ -2082,5 +2105,19 @@ public final class CarbonUtil {
     return -1;
   }
 
+  /**
+   * get the parent folder of old table path and returns the new tablePath by appending new
+   * tableName to the parent
+   *
+   * @param carbonTablePath       Old tablePath
+   * @param carbonTableIdentifier new carbonTableIdentifier
+   * @return the new table path
+   */
+  public static String getNewTablePath(Path carbonTablePath,
+      CarbonTableIdentifier carbonTableIdentifier) {
+    Path parentPath = carbonTablePath.getParent();
+    return parentPath.toString() + CarbonCommonConstants.FILE_SEPARATOR + carbonTableIdentifier
+        .getTableName();
+  }
 }
 

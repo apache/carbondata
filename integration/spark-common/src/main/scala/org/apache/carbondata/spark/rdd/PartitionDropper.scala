@@ -42,8 +42,7 @@ object PartitionDropper {
     val carbonTable = dropPartitionCallableModel.carbonTable
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getFactTableName
-    val identifier = carbonTable.getAbsoluteTableIdentifier
-    val carbonTableIdentifier = identifier.getCarbonTableIdentifier
+    val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val partitionInfo = carbonTable.getPartitionInfo(tableName)
     val partitioner = PartitionFactory.getPartitioner(partitionInfo)
 
@@ -68,7 +67,7 @@ object PartitionDropper {
         for (i <- 0 until bucketNumber) {
           val bucketId = i
           val rdd = new CarbonScanPartitionRDD(alterPartitionModel,
-            carbonTableIdentifier,
+            absoluteTableIdentifier,
             Seq(partitionId, targetPartitionId),
             bucketId
           ).partitionBy(partitioner).map(_._2)
@@ -77,7 +76,7 @@ object PartitionDropper {
             new AlterPartitionResultImpl(),
             Seq(partitionId),
             bucketId,
-            identifier,
+            absoluteTableIdentifier,
             rdd).collect()
 
           if (dropStatus.length == 0) {
@@ -95,7 +94,7 @@ object PartitionDropper {
 
         if (finalDropStatus) {
           try {
-            PartitionUtils.deleteOriginalCarbonFile(alterPartitionModel, identifier,
+            PartitionUtils.deleteOriginalCarbonFile(alterPartitionModel, absoluteTableIdentifier,
               Seq(partitionId, targetPartitionId).toList, dbName,
               tableName, partitionInfo)
           } catch {
@@ -111,7 +110,7 @@ object PartitionDropper {
         case e: Exception => sys.error(s"Exception in dropping partition action: ${ e.getMessage }")
       }
     } else {
-      PartitionUtils.deleteOriginalCarbonFile(alterPartitionModel, identifier,
+      PartitionUtils.deleteOriginalCarbonFile(alterPartitionModel, absoluteTableIdentifier,
         Seq(partitionId).toList, dbName, tableName, partitionInfo)
       logger.audit(s"Drop Partition request completed for table " +
                    s"${ dbName }.${ tableName }")

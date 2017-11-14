@@ -145,8 +145,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       // get the table blocks
       CacheProvider cacheProvider = CacheProvider.getInstance();
       BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache =
-          (BlockIndexStore) cacheProvider
-              .createCache(CacheType.EXECUTOR_BTREE, queryModel.getTable().getStorePath());
+          (BlockIndexStore) cacheProvider.createCache(CacheType.EXECUTOR_BTREE);
       // remove the invalid table blocks, block which is deleted or compacted
       cache.removeTableBlocks(queryModel.getInvalidSegmentIds(),
           queryModel.getAbsoluteTableIdentifier());
@@ -260,7 +259,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             queryModel.getQueryDimension(), tableBlockDimensions,
             segmentProperties.getComplexDimensions());
     int tableFactPathLength = CarbonStorePath
-        .getCarbonTablePath(queryModel.getAbsoluteTableIdentifier().getStorePath(),
+        .getCarbonTablePath(queryModel.getAbsoluteTableIdentifier().getTablePath(),
             queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier()).getFactDir()
         .length() + 1;
     blockExecutionInfo.setBlockId(filePath.substring(tableFactPathLength));

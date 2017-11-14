@@ -73,19 +73,6 @@ public class CarbonTablePath extends Path {
   }
 
   /**
-   * structure CarbonTablePath object to manage table paths
-   *
-   * @param storePath the store path of the segment
-   * @param dbName database name
-   * @param tableName table name
-   */
-  public CarbonTablePath(String storePath, String dbName, String tableName) {
-    super(storePath + File.separator + dbName + File.separator + tableName);
-    this.carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "");
-    this.tablePath = storePath + File.separator + dbName + File.separator + tableName;
-  }
-
-  /**
    * The method returns the folder path containing the carbon file.
    *
    * @param carbonFilePath

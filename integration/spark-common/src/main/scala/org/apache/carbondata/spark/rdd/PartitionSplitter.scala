@@ -39,8 +39,7 @@ object PartitionSplitter {
      val partitionId = splitPartitionCallableModel.partitionId
      val carbonLoadModel = splitPartitionCallableModel.carbonLoadModel
      val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-     val identifier = carbonTable.getAbsoluteTableIdentifier
-     val carbonTableIdentifier = identifier.getCarbonTableIdentifier
+     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
      val tableName = carbonTable.getFactTableName
      val databaseName = carbonTable.getDatabaseName
      val bucketInfo = carbonTable.getBucketingInfo(tableName)
@@ -56,7 +55,7 @@ object PartitionSplitter {
        val bucketId = i
        val rdd = new CarbonScanPartitionRDD(
          alterPartitionModel,
-         carbonTableIdentifier,
+         absoluteTableIdentifier,
          Seq(partitionId),
          bucketId
        ).partitionBy(partitioner).map(_._2)
@@ -65,7 +64,7 @@ object PartitionSplitter {
          new AlterPartitionResultImpl(),
          Seq(partitionId),
          bucketId,
-         identifier,
+         absoluteTableIdentifier,
          rdd).collect()
 
        if (splitStatus.length == 0) {
@@ -83,8 +82,8 @@ object PartitionSplitter {
      if (finalSplitStatus) {
        try {
          PartitionUtils.
-           deleteOriginalCarbonFile(alterPartitionModel, identifier, Seq(partitionId).toList
-             , databaseName, tableName, partitionInfo)
+           deleteOriginalCarbonFile(alterPartitionModel, absoluteTableIdentifier,
+             Seq(partitionId).toList, databaseName, tableName, partitionInfo)
        } catch {
          case e: IOException => sys.error(s"Exception while delete original carbon files " +
          e.getMessage)

@@ -293,14 +293,20 @@ public class CarbonTableReader {
       // If table is not previously cached, then:
 
       // Step 1: get store path of the table and cache it.
-      String storePath = config.getStorePath();
       // create table identifier. the table id is randomly generated.
       cache.carbonTableIdentifier =
               new CarbonTableIdentifier(table.getSchemaName(), table.getTableName(),
                       UUID.randomUUID().toString());
+      String storePath = config.getStorePath();
+      String tablePath = storePath + "/" + cache.carbonTableIdentifier.getDatabaseName() + "/"
+          + cache.carbonTableIdentifier.getTableName();
+
       // get the store path of the table.
+
+      AbsoluteTableIdentifier absoluteTableIdentifier =
+          new AbsoluteTableIdentifier(tablePath, cache.carbonTableIdentifier);
       cache.carbonTablePath =
-              PathFactory.getInstance().getCarbonTablePath(storePath, cache.carbonTableIdentifier, null);
+          PathFactory.getInstance().getCarbonTablePath(absoluteTableIdentifier, null);
       // cache the table
       cc.put(table, cache);
 
@@ -325,8 +331,8 @@ public class CarbonTableReader {
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
       // wrapperTableInfo is the code level information of a table in carbondata core, different from the Thrift TableInfo.
       TableInfo wrapperTableInfo = schemaConverter
-              .fromExternalToWrapperTableInfo(tableInfo, table.getSchemaName(), table.getTableName(),
-                      storePath);
+          .fromExternalToWrapperTableInfo(tableInfo, table.getSchemaName(), table.getTableName(),
+              tablePath);
       wrapperTableInfo.setMetaDataFilepath(
               CarbonTablePath.getFolderContainingFile(cache.carbonTablePath.getSchemaFilePath()));
 
@@ -354,9 +360,10 @@ public class CarbonTableReader {
     Configuration config = new Configuration();
     config.set(CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS, "");
     String carbonTablePath = PathFactory.getInstance()
-            .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier().getStorePath(),
-                    carbonTable.getCarbonTableIdentifier(), null).getPath();
+        .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier(), null).getPath();
     config.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
+    config.set(CarbonTableInputFormat.DATABASE_NAME, carbonTable.getDatabaseName());
+    config.set(CarbonTableInputFormat.TABLE_NAME, carbonTable.getFactTableName());
 
     try {
       CarbonTableInputFormat.setTableInfo(config, tableInfo);

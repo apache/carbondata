@@ -17,7 +17,6 @@
 package org.apache.carbondata.core.service.impl;
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.apache.carbondata.core.reader.CarbonDictionaryReader;
@@ -40,76 +39,56 @@ public class DictionaryFactory implements DictionaryService {
   /**
    * get dictionary writer
    *
-   * @param carbonTableIdentifier
    * @param dictionaryColumnUniqueIdentifier
-   * @param carbonStorePath
    * @return
    */
   @Override public CarbonDictionaryWriter getDictionaryWriter(
-      CarbonTableIdentifier carbonTableIdentifier,
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier, String carbonStorePath) {
-    return new CarbonDictionaryWriterImpl(carbonStorePath, carbonTableIdentifier,
-        dictionaryColumnUniqueIdentifier);
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+    return new CarbonDictionaryWriterImpl(dictionaryColumnUniqueIdentifier);
   }
 
   /**
    * get dictionary sort index writer
    *
-   * @param carbonTableIdentifier
    * @param dictionaryColumnUniqueIdentifier
-   * @param carbonStorePath
    * @return
    */
   @Override public CarbonDictionarySortIndexWriter getDictionarySortIndexWriter(
-      CarbonTableIdentifier carbonTableIdentifier,
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier, String carbonStorePath) {
-    return new CarbonDictionarySortIndexWriterImpl(carbonTableIdentifier,
-        dictionaryColumnUniqueIdentifier, carbonStorePath);
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+    return new CarbonDictionarySortIndexWriterImpl(dictionaryColumnUniqueIdentifier);
   }
 
   /**
    * get dictionary metadata reader
    *
-   * @param carbonTableIdentifier
    * @param dictionaryColumnUniqueIdentifier
-   * @param carbonStorePath
    * @return
    */
   @Override public CarbonDictionaryMetadataReader getDictionaryMetadataReader(
-      CarbonTableIdentifier carbonTableIdentifier,
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier, String carbonStorePath) {
-    return new CarbonDictionaryMetadataReaderImpl(carbonStorePath, carbonTableIdentifier,
-        dictionaryColumnUniqueIdentifier);
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+    return new CarbonDictionaryMetadataReaderImpl(dictionaryColumnUniqueIdentifier);
   }
 
   /**
    * get dictionary reader
    *
-   * @param carbonTableIdentifier
    * @param dictionaryColumnUniqueIdentifier
-   * @param carbonStorePath
    * @return
    */
   @Override public CarbonDictionaryReader getDictionaryReader(
-      CarbonTableIdentifier carbonTableIdentifier,
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier, String carbonStorePath) {
-    return new CarbonDictionaryReaderImpl(carbonStorePath, carbonTableIdentifier,
-        dictionaryColumnUniqueIdentifier);
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+    return new CarbonDictionaryReaderImpl(dictionaryColumnUniqueIdentifier);
   }
 
   /**
    * get dictionary sort index reader
    *
-   * @param carbonTableIdentifier
    * @param dictionaryColumnUniqueIdentifier
-   * @param carbonStorePath
    * @return
    */
   @Override public CarbonDictionarySortIndexReader getDictionarySortIndexReader(
-      CarbonTableIdentifier carbonTableIdentifier,
-      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier, String carbonStorePath) {
-    return new CarbonDictionarySortIndexReaderImpl(carbonTableIdentifier,
-        dictionaryColumnUniqueIdentifier, carbonStorePath);
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
+    return new CarbonDictionarySortIndexReaderImpl(dictionaryColumnUniqueIdentifier);
   }
 
   public static DictionaryService getInstance() {

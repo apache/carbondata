@@ -97,7 +97,7 @@ object HiveExample {
     statement
       .execute(
         "ALTER TABLE HIVE_CARBON_EXAMPLE SET LOCATION " +
-        s"'file:///$store/default/hive_carbon_example' ")
+        s"'file:///$store/hive_carbon_example' ")
 
     val sql = "SELECT * FROM HIVE_CARBON_EXAMPLE"
 
