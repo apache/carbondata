@@ -17,15 +17,16 @@
 
 package org.apache.carbondata.presto;
 
+import java.math.BigDecimal;
+
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 
-import org.apache.spark.sql.execution.vectorized.ColumnVector;
-import org.apache.spark.sql.types.DataType;
-import org.apache.spark.sql.types.Decimal;
+
 
 public class ColumnarVectorWrapper implements CarbonColumnVector {
 
-  private ColumnVector columnVector;
+  private CarbonColumnVectorImpl columnVector;
 
   private boolean[] filteredRows;
 
@@ -33,7 +34,7 @@ public class ColumnarVectorWrapper implements CarbonColumnVector {
 
   private boolean filteredRowsExist;
 
-  public ColumnarVectorWrapper(ColumnVector columnVector, boolean[] filteredRows) {
+  public ColumnarVectorWrapper(CarbonColumnVectorImpl columnVector, boolean[] filteredRows) {
     this.columnVector = columnVector;
     this.filteredRows = filteredRows;
   }
@@ -107,13 +108,13 @@ public class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putDecimal(int rowId, Decimal value, int precision) {
+  @Override public void putDecimal(int rowId, BigDecimal value, int precision) {
     if (!filteredRows[rowId]) {
       columnVector.putDecimal(counter++, value, precision);
     }
   }
 
-  @Override public void putDecimals(int rowId, int count, Decimal value, int precision) {
+  @Override public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
         columnVector.putDecimal(counter++, value, precision);
@@ -143,14 +144,14 @@ public class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putBytes(int rowId, byte[] value) {
     if (!filteredRows[rowId]) {
-      columnVector.putByteArray(counter++, value);
+      columnVector.putBytes(counter++, value);
     }
   }
 
   @Override public void putBytes(int rowId, int count, byte[] value) {
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
-        columnVector.putByteArray(counter++, value);
+        columnVector.putBytes(counter++, value);
       }
       rowId++;
     }
@@ -158,7 +159,7 @@ public class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public void putBytes(int rowId, int offset, int length, byte[] value) {
     if (!filteredRows[rowId]) {
-      columnVector.putByteArray(counter++, value, offset, length);
+      columnVector.putBytes(counter++, offset, length, value);
     }
   }
 
@@ -200,7 +201,7 @@ public class ColumnarVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public DataType getType() {
-    return columnVector.dataType();
+    return columnVector.getType();
   }
 
   @Override public void setFilteredRowsExist(boolean filteredRowsExist) {

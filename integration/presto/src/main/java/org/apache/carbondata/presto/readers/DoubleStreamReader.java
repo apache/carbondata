@@ -72,14 +72,14 @@ public class DoubleStreamReader extends AbstractStreamReader {
       if (columnVector.isNullAt(i)) {
         builder.appendNull();
       } else {
-        type.writeDouble(builder, columnVector.getDouble(i));
+        type.writeDouble(builder, (Double)columnVector.getData(i));
       }
     }
   }
 
   private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
     for (int i = 0; i < numberOfRows; i++) {
-      type.writeDouble(builder, columnVector.getDouble(i));
+      type.writeDouble(builder, (Double)columnVector.getData(i));
     }
   }
 

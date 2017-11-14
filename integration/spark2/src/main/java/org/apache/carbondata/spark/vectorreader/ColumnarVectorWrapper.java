@@ -17,10 +17,13 @@
 
 package org.apache.carbondata.spark.vectorreader;
 
+import java.math.BigDecimal;
+
+import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
+import org.apache.carbondata.spark.util.CarbonScalaUtil;
 
 import org.apache.spark.sql.execution.vectorized.ColumnVector;
-import org.apache.spark.sql.types.DataType;
 import org.apache.spark.sql.types.Decimal;
 
 class ColumnarVectorWrapper implements CarbonColumnVector {
@@ -107,16 +110,18 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
     }
   }
 
-  @Override public void putDecimal(int rowId, Decimal value, int precision) {
+  @Override public void putDecimal(int rowId, BigDecimal value, int precision) {
     if (!filteredRows[rowId]) {
-      columnVector.putDecimal(counter++, value, precision);
+      Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(value);
+      columnVector.putDecimal(counter++, toDecimal, precision);
     }
   }
 
-  @Override public void putDecimals(int rowId, int count, Decimal value, int precision) {
+  @Override public void putDecimals(int rowId, int count, BigDecimal value, int precision) {
     for (int i = 0; i < count; i++) {
       if (!filteredRows[rowId]) {
-        columnVector.putDecimal(counter++, value, precision);
+        Decimal toDecimal = org.apache.spark.sql.types.Decimal.apply(value);
+        columnVector.putDecimal(counter++, toDecimal, precision);
       }
       rowId++;
     }
@@ -200,7 +205,7 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
   }
 
   @Override public DataType getType() {
-    return columnVector.dataType();
+    return CarbonScalaUtil.convertSparkToCarbonDataType(columnVector.dataType());
   }
 
   @Override public void setFilteredRowsExist(boolean filteredRowsExist) {

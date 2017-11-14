@@ -31,13 +31,13 @@ public class CarbondataConnector implements Connector {
   private static final Logger log = Logger.get(CarbondataConnector.class);
 
   private final LifeCycleManager lifeCycleManager;
-  private final CarbondataMetadata metadata;
+  private final ConnectorMetadata metadata;
   private final ConnectorSplitManager splitManager;
   private final ConnectorRecordSetProvider recordSetProvider;
   private final ClassLoader classLoader;
   private final ConnectorPageSourceProvider pageSourceProvider;
 
-  public CarbondataConnector(LifeCycleManager lifeCycleManager, CarbondataMetadata metadata,
+  public CarbondataConnector(LifeCycleManager lifeCycleManager, ConnectorMetadata metadata,
       ConnectorSplitManager splitManager, ConnectorRecordSetProvider recordSetProvider,
       ClassLoader classLoader, ConnectorPageSourceProvider pageSourceProvider) {
     this.lifeCycleManager = requireNonNull(lifeCycleManager, "lifeCycleManager is null");
@@ -55,7 +55,7 @@ public class CarbondataConnector implements Connector {
   }
 
   @Override public ConnectorMetadata getMetadata(ConnectorTransactionHandle transactionHandle) {
-    metadata.putClassLoader(classLoader);
+    //metadata.putClassLoader(classLoader);
     return metadata;
   }
 

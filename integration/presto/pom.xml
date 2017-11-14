@@ -31,7 +31,7 @@
   <packaging>presto-plugin</packaging>
 
   <properties>
-    <presto.version>0.186</presto.version>
+    <presto.version>0.187</presto.version>
     <dev.path>${basedir}/../../dev</dev.path>
   </properties>
 
@@ -222,6 +222,10 @@
         <exclusion>
           <groupId>oro</groupId>
           <artifactId>oro</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>org.apache.spark</groupId>
+          <artifactId>spark-sql_2.11</artifactId>
         </exclusion>
       </exclusions>
     </dependency>
@@ -431,14 +435,27 @@
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-sql_2.11</artifactId>
+      <artifactId>spark-network-common_2.11</artifactId>
+      <scope>test</scope>
       <version>2.1.0</version>
     </dependency>
     <dependency>
       <groupId>org.apache.spark</groupId>
-      <artifactId>spark-network-common_2.11</artifactId>
+      <artifactId>spark-core_2.11</artifactId>
       <scope>test</scope>
       <version>2.1.0</version>
+      <exclusions>
+        <exclusion>
+          <groupId>org.apache.hadoop</groupId>
+          <artifactId>hadoop-client</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.antlr</groupId>
+      <artifactId>antlr4-runtime</artifactId>
+      <scope>test</scope>
+      <version>4.5.3</version>
     </dependency>
     <dependency>
       <groupId>com.google.code.findbugs</groupId>
@@ -573,7 +590,6 @@
         </configuration>
       </plugin>
       <plugin>
-
         <groupId>org.scalatest</groupId>
         <artifactId>scalatest-maven-plugin</artifactId>
         <version>1.0</version>
