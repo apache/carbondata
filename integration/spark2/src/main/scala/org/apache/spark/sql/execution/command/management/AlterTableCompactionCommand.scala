@@ -113,8 +113,7 @@ case class AlterTableCompactionCommand(
         carbonLoadModel.setLoadMetadataDetails(
           alterTableModel.segmentUpdateStatusManager.get.getLoadMetadataDetails.toList.asJava)
       }
-    } else if (alterTableModel.compactionType.equalsIgnoreCase(
-      CompactionType.SEGMENT_INDEX_COMPACTION.toString)) {
+    } else if (alterTableModel.compactionType.equalsIgnoreCase("segment_index")) {
       compactionType = CompactionType.SEGMENT_INDEX_COMPACTION
     } else {
       compactionType = CompactionType.MINOR_COMPACTION
@@ -132,7 +131,7 @@ case class AlterTableCompactionCommand(
       CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
         carbonLoadModel.getLoadMetadataDetails.asScala.map(_.getLoadName),
         carbonLoadModel.getTablePath,
-        carbonTable)
+        carbonTable, true)
       return
     }
     // reading the start time of data load.
