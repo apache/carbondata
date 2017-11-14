@@ -133,6 +133,7 @@ public class SegmentIndexFileStore {
     byte[] bytes = new byte[(int) indexFile.getSize()];
     dataInputStream.readFully(bytes);
     carbonIndexMap.put(indexFile.getName(), bytes);
+    dataInputStream.close();
   }
 
   private MergedBlockIndexHeader readMergeBlockIndexHeader(ThriftReader thriftReader)
