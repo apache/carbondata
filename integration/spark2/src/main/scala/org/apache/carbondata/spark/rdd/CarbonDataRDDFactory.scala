@@ -330,7 +330,7 @@ object CarbonDataRDDFactory {
           loadDataFile(sqlContext, carbonLoadModel)
         }
         CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
-          Seq(carbonLoadModel.getSegmentId), storePath, carbonTable)
+          Seq(carbonLoadModel.getSegmentId), storePath, carbonTable, false)
         val newStatusMap = scala.collection.mutable.Map.empty[String, SegmentStatus]
         if (status.nonEmpty) {
           status.foreach { eachLoadStatus =>

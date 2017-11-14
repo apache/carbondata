@@ -113,7 +113,8 @@ object Compactor {
 
     if (finalMergeStatus) {
       val mergedLoadNumber = CarbonDataMergerUtil.getLoadNumberFromLoadName(mergedLoadName)
-      CommonUtil.mergeIndexFiles(sc.sparkContext, Seq(mergedLoadNumber), storePath, carbonTable)
+      CommonUtil.mergeIndexFiles(
+        sc.sparkContext, Seq(mergedLoadNumber), storePath, carbonTable, false)
 
       // trigger event for compaction
       val alterTableCompactionPostEvent: AlterTableCompactionPostEvent =
