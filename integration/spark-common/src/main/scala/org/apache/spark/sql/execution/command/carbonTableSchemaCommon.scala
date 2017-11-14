@@ -304,7 +304,8 @@ class AlterTableColumnSchemaGenerator(
             }
           }
         }
-        else if (elem._1.equalsIgnoreCase("no_inverted_index")) {
+        else if (elem._1.equalsIgnoreCase("no_inverted_index") &&
+          (elem._2.split(",").contains(col.getColumnName))) {
           col.getEncodingList.remove(Encoding.INVERTED_INDEX)
         }
       }
