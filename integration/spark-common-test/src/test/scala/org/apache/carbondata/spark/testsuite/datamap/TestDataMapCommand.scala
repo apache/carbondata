@@ -26,6 +26,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("drop table if exists datamaptest")
+    sql("drop table if exists datamapshowtest")
     sql("create table datamaptest (a string, b string, c string) stored by 'carbondata'")
   }
 
@@ -98,8 +99,44 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     assert(dataMapSchemaList.size() == 3)
   }
 
+  test("test show datamap without preaggregate") {
+    sql("drop table if exists datamapshowtest")
+    sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
+    sql("create datamap datamap1 on table datamapshowtest using 'new.class' dmproperties('key'='value')")
+    sql("create datamap datamap2 on table datamapshowtest using 'new.class' dmproperties('key'='value')")
+    checkExistence(sql("show datamap on table datamapshowtest"), true, "datamap1", "datamap2", "(NA)", "new.class")
+  }
+
+  test("test show datamap with preaggregate") {
+    sql("drop table if exists datamapshowtest")
+    sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
+    sql("create datamap datamap1 on table datamapshowtest using 'preaggregate' as select count(a) from datamapshowtest")
+    sql("create datamap datamap2 on table datamapshowtest using 'new.class' dmproperties('key'='value')")
+    val frame = sql("show datamap on table datamapshowtest")
+    assert(frame.collect().length == 2)
+    checkExistence(frame, true, "datamap1", "datamap2", "(NA)", "new.class", "default.datamapshowtest_datamap1")
+  }
+
+  test("test show datamap with no datamap") {
+    sql("drop table if exists datamapshowtest")
+    sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
+    assert(sql("show datamap on table datamapshowtest").collect().length == 0)
+  }
+
+  test("test show datamap after dropping datamap") {
+    sql("drop table if exists datamapshowtest")
+    sql("create table datamapshowtest (a string, b string, c string) stored by 'carbondata'")
+    sql("create datamap datamap1 on table datamapshowtest using 'preaggregate' as select count(a) from datamapshowtest")
+    sql("create datamap datamap2 on table datamapshowtest using 'new.class' dmproperties('key'='value')")
+    sql("drop datamap datamap1 on table datamapshowtest")
+    val frame = sql("show datamap on table datamapshowtest")
+    assert(frame.collect().length == 1)
+    checkExistence(frame, true, "datamap2", "(NA)", "new.class")
+  }
+
 
   override def afterAll {
     sql("drop table if exists datamaptest")
+    sql("drop table if exists datamapshowtest")
   }
 }

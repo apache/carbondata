@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDropDataMapCommand}
+import org.apache.spark.sql.execution.command.datamap.{CarbonCreateDataMapCommand, CarbonDataMapShowCommand, CarbonDropDataMapCommand}
 import org.apache.spark.sql.execution.command.management.{AlterTableCompactionCommand, CleanFilesCommand, DeleteLoadByIdCommand, DeleteLoadByLoadDateCommand, LoadTableCommand}
 import org.apache.spark.sql.execution.command.partition.{AlterTableDropCarbonPartitionCommand, AlterTableSplitCarbonPartitionCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
@@ -80,7 +80,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     alterAddPartition | alterSplitPartition | alterDropPartition
 
   protected lazy val datamapManagement: Parser[LogicalPlan] =
-    createDataMap | dropDataMap
+    createDataMap | dropDataMap | showDataMap
 
   protected lazy val alterAddPartition: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ (ADD ~> PARTITION ~>
@@ -150,6 +150,16 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     (ident <~ ".").? ~ ident <~ opt(";")  ^^ {
       case ifexists ~ dmname ~ ontable ~ dbName ~ tableName =>
         CarbonDropDataMapCommand(dmname, ifexists.isDefined, dbName, tableName)
+    }
+
+  /**
+   * The syntax of show datamap is used to show datamaps on the table
+   * SHOW DATAMAP ON TABLE tableName
+   */
+  protected lazy val showDataMap: Parser[LogicalPlan] =
+    SHOW ~> DATAMAP ~> ON ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
+      case databaseName ~ tableName =>
+        CarbonDataMapShowCommand(convertDbNameToLowerCase(databaseName), tableName.toLowerCase())
     }
 
   protected lazy val deleteRecords: Parser[LogicalPlan] =
