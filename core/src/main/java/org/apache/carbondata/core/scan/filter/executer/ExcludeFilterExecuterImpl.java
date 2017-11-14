@@ -286,7 +286,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       int numberOfRows, boolean useBitsetPipeLine, BitSetGroup prvBitSetGroup, int pageNumber) {
     // check whether applying filtered based on previous bitset will be optimal
     if (CarbonUtil.usePreviousFilterBitsetGroup(useBitsetPipeLine, prvBitSetGroup, pageNumber,
-        dimColumnExecuterInfo.getFilterKeys().length)) {
+        dimColumnExecuterInfo.getExcludeFilterKeys().length)) {
       return getFilteredIndexesUisngPrvBitset(dimensionColumnDataChunk, prvBitSetGroup, pageNumber,
           numberOfRows);
     } else {
@@ -313,8 +313,9 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
   private BitSet getFilteredIndexesUisngPrvBitset(DimensionColumnDataChunk dimensionColumnDataChunk,
       BitSetGroup prvBitSetGroup, int pageNumber, int numberOfRows) {
     BitSet prvPageBitSet = prvBitSetGroup.getBitSet(pageNumber);
-    BitSet bitSet = new BitSet(numberOfRows);
-    byte[][] filterKeys = dimColumnExecuterInfo.getFilterKeys();
+    BitSet bitSet = new BitSet();
+    bitSet.or(prvPageBitSet);
+    byte[][] filterKeys = dimColumnExecuterInfo.getExcludeFilterKeys();
     int compareResult = 0;
     // if dimension data was natural sorted then get the index from previous bitset
     // and use the same in next column data, otherwise use the inverted index reverse
@@ -354,7 +355,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
     int startIndex = 0;
-    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+    byte[][] filterValues = dimColumnExecuterInfo.getExcludeFilterKeys();
     for (int i = 0; i < filterValues.length; i++) {
       if (startIndex >= numerOfRows) {
         break;
@@ -376,7 +377,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
       int numerOfRows) {
     BitSet bitSet = new BitSet(numerOfRows);
     bitSet.flip(0, numerOfRows);
-    byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+    byte[][] filterValues = dimColumnExecuterInfo.getExcludeFilterKeys();
     // binary search can only be applied if column is sorted
     if (isNaturalSorted) {
       int startIndex = 0;

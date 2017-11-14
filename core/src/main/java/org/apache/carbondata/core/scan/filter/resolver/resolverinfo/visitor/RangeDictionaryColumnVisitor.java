@@ -51,14 +51,17 @@ public class RangeDictionaryColumnVisitor extends DictionaryColumnVisitor
       resolvedFilterObject = FilterUtil
           .getFilterListForAllValues(metadata.getTableIdentifier(), metadata.getExpression(),
               metadata.getColumnExpression(), metadata.isIncludeFilter(),
-              metadata.getTableProvider());
+              metadata.getTableProvider(), true);
 
       if (!metadata.isIncludeFilter() && null != resolvedFilterObject) {
         // Adding default surrogate key of null member inorder to not display the same while
         // displaying the report as per hive compatibility.
-        resolvedFilterObject.getFilterList()
-            .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
-        Collections.sort(resolvedFilterObject.getFilterList());
+        if (!resolvedFilterObject.getExcludeFilterList()
+            .contains(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY)) {
+          resolvedFilterObject.getExcludeFilterList()
+              .add(CarbonCommonConstants.MEMBER_DEFAULT_VAL_SURROGATE_KEY);
+          Collections.sort(resolvedFilterObject.getFilterList());
+        }
       }
       resolveDimension.setFilterValues(resolvedFilterObject);
     }
