@@ -123,6 +123,7 @@ case class ShowLoadsCommand(
       AttributeReference("Status", StringType, nullable = false)(),
       AttributeReference("Load Start Time", TimestampType, nullable = false)(),
       AttributeReference("Load End Time", TimestampType, nullable = true)(),
+      AttributeReference("File Format", StringType, nullable = false)(),
       AttributeReference("Merged To", StringType, nullable = false)())
   }
 }

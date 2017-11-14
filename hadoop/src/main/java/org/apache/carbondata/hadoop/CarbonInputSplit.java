@@ -82,7 +82,7 @@ public class CarbonInputSplit extends FileSplit
 
   private BlockletDetailInfo detailInfo;
 
-  private FileFormat fileFormat = FileFormat.carbondata;
+  private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
 
   public CarbonInputSplit() {
     segmentId = null;
