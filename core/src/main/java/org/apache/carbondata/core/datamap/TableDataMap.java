@@ -20,12 +20,16 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.indexstore.BlockletDetailsFetcher;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
+import org.apache.carbondata.core.indexstore.FineGrainBlocklet;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -75,7 +79,12 @@ public final class TableDataMap implements OperationEventListener {
     SegmentProperties segmentProperties;
     for (String segmentId : segmentIds) {
       List<Blocklet> pruneBlocklets = new ArrayList<>();
-      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
+      List<DataMap> dataMaps;
+      if (blockletDetailsFetcher instanceof DataMapFactory && filterExp == null) {
+        dataMaps = ((DataMapFactory)blockletDetailsFetcher).getDataMaps(segmentId);
+      } else {
+        dataMaps = dataMapFactory.getDataMaps(segmentId);
+      }
       segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segmentId);
       for (DataMap dataMap : dataMaps) {
         pruneBlocklets.addAll(dataMap.prune(filterExp, segmentProperties));
@@ -133,9 +142,21 @@ public final class TableDataMap implements OperationEventListener {
       blocklets.addAll(dataMap.prune(filterExp,
           segmentPropertiesFetcher.getSegmentProperties(distributable.getSegmentId())));
     }
-    for (Blocklet blocklet: blocklets) {
+    BlockletSerializer serializer = new BlockletSerializer();
+    String writePath =
+        identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + dataMapName;
+    if (dataMapFactory.getDataMapType() == DataMapType.FG) {
+      FileFactory.mkdirs(writePath, FileFactory.getFileType(writePath));
+    }
+    for (Blocklet blocklet : blocklets) {
       ExtendedBlocklet detailedBlocklet =
           blockletDetailsFetcher.getExtendedBlocklet(blocklet, distributable.getSegmentId());
+      if (dataMapFactory.getDataMapType() == DataMapType.FG) {
+        String blockletwritePath =
+            writePath + CarbonCommonConstants.FILE_SEPARATOR + System.nanoTime();
+        serializer.serializeBlocklet((FineGrainBlocklet) blocklet, blockletwritePath);
+        detailedBlocklet.setDataMapWriterPath(blockletwritePath);
+      }
       detailedBlocklet.setSegmentId(distributable.getSegmentId());
       detailedBlocklets.add(detailedBlocklet);
     }

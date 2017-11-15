@@ -50,11 +50,6 @@ public class BlocksChunkHolder {
 
   private BitSetGroup bitSetGroup;
 
-  public BlocksChunkHolder(int numberOfDimensionBlock, int numberOfMeasureBlock) {
-    dimensionRawDataChunk = new DimensionRawColumnChunk[numberOfDimensionBlock];
-    measureRawDataChunk = new MeasureRawColumnChunk[numberOfMeasureBlock];
-  }
-
   public BlocksChunkHolder(int numberOfDimensionBlock, int numberOfMeasureBlock,
       FileHolder fileReader) {
     dimensionRawDataChunk = new DimensionRawColumnChunk[numberOfDimensionBlock];

@@ -38,8 +38,13 @@ public class ExtendedBlocklet extends Blocklet {
 
   private String[] location;
 
+  private String path;
+
+  private String dataMapWriterPath;
+
   public ExtendedBlocklet(String path, String blockletId) {
     super(path, blockletId);
+    this.path = path;
   }
 
   public BlockletDetailInfo getDetailInfo() {
@@ -56,7 +61,7 @@ public class ExtendedBlocklet extends Blocklet {
    * @throws IOException
    */
   public void updateLocations() throws IOException {
-    Path path = new Path(getPath());
+    Path path = new Path(this.path);
     FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
     RemoteIterator<LocatedFileStatus> iter = fs.listLocatedStatus(path);
     LocatedFileStatus fileStatus = iter.next();
@@ -78,5 +83,17 @@ public class ExtendedBlocklet extends Blocklet {
 
   public void setSegmentId(String segmentId) {
     this.segmentId = segmentId;
+  }
+
+  public String getPath() {
+    return path;
+  }
+
+  public String getDataMapWriterPath() {
+    return dataMapWriterPath;
+  }
+
+  public void setDataMapWriterPath(String dataMapWriterPath) {
+    this.dataMapWriterPath = dataMapWriterPath;
   }
 }
