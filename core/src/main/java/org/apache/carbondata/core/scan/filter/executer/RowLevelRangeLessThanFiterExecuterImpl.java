@@ -269,7 +269,7 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       DirectDictionaryGenerator directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
           .getDirectDictionaryGenerator(
               dimColEvaluatorInfoList.get(0).getDimension().getDataType());
-      int key = directDictionaryGenerator.generateDirectSurrogateKey(null) + 1;
+      int key = directDictionaryGenerator.generateDirectSurrogateKey(null);
       CarbonDimension currentBlockDimension =
           segmentProperties.getDimensions().get(dimensionBlocksIndex[0]);
       if (currentBlockDimension.isSortColumn()) {
@@ -319,7 +319,7 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
     if (null != defaultValue) {
       start = CarbonUtil
           .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex, numerOfRows - 1,
-              defaultValue, false);
+              defaultValue, true);
       if (start < 0) {
         skip = -(start + 1);
         // end of block
@@ -327,7 +327,9 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
           return bitSet;
         }
       } else {
-        skip = start;
+        // as start will be last index of null value inclusive
+        // so adding 1 to skip last null value
+        skip = start + 1;
       }
       startIndex = skip;
     }
@@ -395,7 +397,7 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       if (null != defaultValue) {
         start = CarbonUtil
             .getFirstIndexUsingBinarySearch(dimensionColumnDataChunk, startIndex,
-                numerOfRows - 1, defaultValue, false);
+                numerOfRows - 1, defaultValue, true);
         if (start < 0) {
           skip = -(start + 1);
           // end of block
@@ -403,7 +405,9 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
             return bitSet;
           }
         } else {
-          skip = start;
+          // as start will be last index of null value inclusive
+          // so adding 1 to skip last null value
+          skip = start + 1;
         }
         startIndex = skip;
       }
