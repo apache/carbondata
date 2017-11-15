@@ -159,6 +159,7 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
   }
 
 
+
   @Override
   public List<DataMapDistributable> toDistributable(Segment segment) {
     List<DataMapDistributable> distributables = new ArrayList<>();
@@ -207,7 +208,6 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
     List<TableBlockIndexUniqueIdentifier> blockIndexes = segmentMap.remove(segment.getSegmentNo());
 =======
   public void clear(String segmentId) {
-    segmentPropertiesMap.remove(segmentId);
     List<TableBlockIndexUniqueIdentifier> blockIndexes = segmentMap.remove(segmentId);
 >>>>>>> [CARBONDATA-1480]Min Max Index Example for DataMap
     if (blockIndexes != null) {
