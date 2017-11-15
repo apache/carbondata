@@ -46,6 +46,8 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     sql("create datamap agg6 on table mainTable using 'preaggregate' as select name,min(age) from mainTable group by name")
     sql("create datamap agg7 on table mainTable using 'preaggregate' as select name,max(age) from mainTable group by name")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table mainTable")
+    sql("create table if not exists lineitem(L_SHIPDATE string,L_SHIPMODE string,L_SHIPINSTRUCT string,L_RETURNFLAG string,L_RECEIPTDATE string,L_ORDERKEY string,L_PARTKEY string,L_SUPPKEY string,L_LINENUMBER int,L_QUANTITY double,L_EXTENDEDPRICE double,L_DISCOUNT double,L_TAX double,L_LINESTATUS string,L_COMMITDATE string,L_COMMENT string) STORED BY 'org.apache.carbondata.format'TBLPROPERTIES ('table_blocksize'='128','NO_INVERTED_INDEX'='L_SHIPDATE,L_SHIPMODE,L_SHIPINSTRUCT,L_RETURNFLAG,L_RECEIPTDATE,L_ORDERKEY,L_PARTKEY,L_SUPPKEY','sort_columns'='')")
+    sql("create datamap agr_lineitem ON TABLE lineitem USING 'preaggregate' as select L_RETURNFLAG,L_LINESTATUS,sum (L_QUANTITY),sum(L_EXTENDEDPRICE) from lineitem group by L_RETURNFLAG, L_LINESTATUS")
   }
 
 
@@ -137,6 +139,11 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
   test("test PreAggregate table selection 18") {
     val df = sql("select count(id) from mainTable")
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg3")
+  }
+
+  test("test PreAggregate table selection 19") {
+    val df = sql("select L_RETURNFLAG,L_LINESTATUS,sum(L_QUANTITY),sum(L_EXTENDEDPRICE) from lineitem group by L_RETURNFLAG, L_LINESTATUS")
+    preAggTableValidator(df.queryExecution.analyzed, "lineitem_agr_lineitem")
   }
 
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit ={

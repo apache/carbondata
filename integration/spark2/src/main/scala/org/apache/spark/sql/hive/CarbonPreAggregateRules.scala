@@ -228,14 +228,15 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       aggFunction: String = ""): AttributeReference = {
     val aggregationDataMapSchema = dataMapSchema.asInstanceOf[AggregationDataMapSchema];
     val columnSchema = if (aggFunction.isEmpty) {
-      aggregationDataMapSchema.getChildColByParentColName(attributeReference.name)
+      aggregationDataMapSchema.getChildColByParentColName(attributeReference.name.toLowerCase)
     } else {
-      aggregationDataMapSchema.getAggChildColByParent(attributeReference.name, aggFunction)
+      aggregationDataMapSchema.getAggChildColByParent(attributeReference.name.toLowerCase,
+        aggFunction.toLowerCase)
     }
     // here column schema cannot be null, if it is null then aggregate table selection
     // logic has some problem
     if (null == columnSchema) {
-      throw new AnalysisException("Column doesnot exists in Pre Aggregate table")
+      throw new AnalysisException("Column does not exists in Pre Aggregate table")
     }
     // finding the child attribute from child logical relation
     childCarbonRelation.attributeMap.find(p => p._2.name.equals(columnSchema.getColumnName)).get._2
@@ -724,13 +725,15 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       dataType: String = "",
       isChangedDataType: Boolean = false,
       isFilterColumn: Boolean = false): QueryColumn = {
-    val columnSchema = carbonTable.getColumnByName(tableName, columnName).getColumnSchema
+    val columnSchema = carbonTable.getColumnByName(tableName,
+      columnName.toLowerCase).getColumnSchema
     if (isChangedDataType) {
-      new QueryColumn(columnSchema, columnSchema.getDataType.getName, aggFunction, isFilterColumn)
+      new QueryColumn(columnSchema, columnSchema.getDataType.getName,
+        aggFunction.toLowerCase, isFilterColumn)
     } else {
       new QueryColumn(columnSchema,
         CarbonScalaUtil.convertSparkToCarbonSchemaDataType(dataType),
-        aggFunction, isFilterColumn)
+        aggFunction.toLowerCase, isFilterColumn)
     }
   }
 }
