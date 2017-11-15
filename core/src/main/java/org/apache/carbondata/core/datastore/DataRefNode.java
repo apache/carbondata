@@ -21,6 +21,7 @@ import java.io.IOException;
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.util.BitSetGroup;
 
 /**
  * Interface data block reference
@@ -122,6 +123,12 @@ public interface DataRefNode {
    * @return
    */
   BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache();
+
+  /**
+   * Return the indexed data if it has any from disk which was stored by FG datamap.
+   * @return
+   */
+  BitSetGroup getIndexedData();
 
   /**
    * number of pages in blocklet
