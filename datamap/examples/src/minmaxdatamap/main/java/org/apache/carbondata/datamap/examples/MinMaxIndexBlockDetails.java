@@ -33,11 +33,6 @@ public class MinMaxIndexBlockDetails implements Serializable {
   private byte[][] maxValues;
 
   /**
-   * filePath pointing to the block.
-   */
-  private String filePath;
-
-  /**
    * BlockletID of the block.
    */
   private Integer BlockletId;
@@ -57,14 +52,6 @@ public class MinMaxIndexBlockDetails implements Serializable {
 
   public void setMaxValues(byte[][] maxValues) {
     this.maxValues = maxValues;
-  }
-
-  public String getFilePath() {
-    return filePath;
-  }
-
-  public void setFilePath(String filePath) {
-    this.filePath = filePath;
   }
 
   public Integer getBlockletId() {
