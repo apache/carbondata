@@ -439,6 +439,7 @@
         <module>integration/hive</module>
         <module>integration/presto</module>
         <module>examples/flink</module>
+        <module>datamap/lucene</module>
         <module>streaming</module>
       </modules>
       <build>

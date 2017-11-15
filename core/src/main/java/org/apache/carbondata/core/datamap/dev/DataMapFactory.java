@@ -33,7 +33,7 @@ public interface DataMapFactory<T extends DataMap> {
   /**
    * Initialization of Datamap factory with the identifier and datamap name
    */
-  void init(AbsoluteTableIdentifier identifier, String dataMapName);
+  void init(AbsoluteTableIdentifier identifier, String dataMapName) throws IOException;
 
   /**
    * Return a new write for this datamap
