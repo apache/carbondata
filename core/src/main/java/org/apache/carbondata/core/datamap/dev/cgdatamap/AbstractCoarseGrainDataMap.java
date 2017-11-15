@@ -14,29 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.carbondata.core.datamap.dev.cgdatamap;
 
-package org.apache.carbondata.core.datamap;
+import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.indexstore.Blocklet;
 
-import java.util.List;
+public abstract class AbstractCoarseGrainDataMap implements DataMap<Blocklet> {
 
-import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
-
-public class DataMapMeta {
-
-  private List<String> indexedColumns;
-
-  private List<ExpressionType> optimizedOperation;
-
-  public DataMapMeta(List<String> indexedColumns, List<ExpressionType> optimizedOperation) {
-    this.indexedColumns = indexedColumns;
-    this.optimizedOperation = optimizedOperation;
-  }
-
-  public List<String> getIndexedColumns() {
-    return indexedColumns;
-  }
-
-  public List<ExpressionType> getOptimizedOperation() {
-    return optimizedOperation;
-  }
 }

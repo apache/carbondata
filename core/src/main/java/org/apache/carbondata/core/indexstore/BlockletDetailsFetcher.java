@@ -44,4 +44,12 @@ public interface BlockletDetailsFetcher {
    * @throws IOException
    */
   ExtendedBlocklet getExtendedBlocklet(Blocklet blocklet, String segmentId) throws IOException;
+
+  /**
+   * Get all the blocklets in a segment
+   *
+   * @param segmentId
+   * @return
+   */
+  List<Blocklet> getAllBlocklets(String segmentId, List<String> partitions) throws IOException;
 }

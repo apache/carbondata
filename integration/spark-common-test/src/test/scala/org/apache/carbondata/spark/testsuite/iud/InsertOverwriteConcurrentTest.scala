@@ -28,14 +28,14 @@ import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory, DataMapWriter}
+import org.apache.carbondata.core.datamap.dev.cgdatamap.{AbstractCoarseGrainDataMap, AbstractCoarseGrainDataMapFactory}
+import org.apache.carbondata.core.datamap.dev.{AbstractDataMapWriter, DataMap}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
 import org.apache.carbondata.core.datastore.page.ColumnPage
-import org.apache.carbondata.core.indexstore.schema.FilterType
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.scan.filter.intf.ExpressionType
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.Event
-import org.apache.carbondata.spark.testsuite.datamap.C2DataMapFactory
 
 class InsertOverwriteConcurrentTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   private val executorService: ExecutorService = Executors.newFixedThreadPool(10)
@@ -164,7 +164,7 @@ object Global {
   var overwriteRunning = false
 }
 
-class WaitingDataMap() extends DataMapFactory {
+class WaitingDataMap() extends AbstractCoarseGrainDataMapFactory {
 
   override def init(identifier: AbsoluteTableIdentifier, dataMapName: String): Unit = { }
 
@@ -174,12 +174,12 @@ class WaitingDataMap() extends DataMapFactory {
 
   override def clear(): Unit = {}
 
-  override def getDataMaps(distributable: DataMapDistributable): java.util.List[DataMap] = ???
+  override def getDataMaps(distributable: DataMapDistributable): java.util.List[AbstractCoarseGrainDataMap] = ???
 
-  override def getDataMaps(segmentId: String): util.List[DataMap] = ???
+  override def getDataMaps(segmentId: String): util.List[AbstractCoarseGrainDataMap] = ???
 
-  override def createWriter(segmentId: String): DataMapWriter = {
-    new DataMapWriter {
+  override def createWriter(segmentId: String, writerPath: String): AbstractDataMapWriter = {
+    new AbstractDataMapWriter(null, segmentId, writerPath) {
       override def onPageAdded(blockletId: Int, pageId: Int, pages: Array[ColumnPage]): Unit = { }
 
       override def onBlockletEnd(blockletId: Int): Unit = { }
@@ -195,10 +195,14 @@ class WaitingDataMap() extends DataMapFactory {
         // wait for 1 second to let second SQL to finish
         Thread.sleep(1000)
       }
+
+      override def finish(): Unit = {
+
+      }
     }
   }
 
-  override def getMeta: DataMapMeta = new DataMapMeta(List("o_country").asJava, FilterType.EQUALTO)
+  override def getMeta: DataMapMeta = new DataMapMeta(List("o_country").asJava, Seq(ExpressionType.EQUALS).asJava)
 
   override def toDistributable(segmentId: String): util.List[DataMapDistributable] = ???
 }
