@@ -20,6 +20,7 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
+import org.apache.carbondata.core.util.BitSetGroup;
 
 /**
  * Interface data block reference
@@ -119,4 +120,9 @@ public interface DataRefNode {
    */
   MeasureRawColumnChunk readMeasureChunk(FileReader fileReader, int columnIndex) throws IOException;
 
+  /**
+   * Return the indexed data if it has any from disk which was stored by FG datamap.
+   * @return
+   */
+  BitSetGroup getIndexedData();
 }

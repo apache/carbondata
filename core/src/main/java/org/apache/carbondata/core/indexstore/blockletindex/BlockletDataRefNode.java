@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.constants.CarbonVersionConstants;
+import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.FileReader;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -30,7 +31,9 @@ import org.apache.carbondata.core.datastore.chunk.reader.CarbonDataReaderFactory
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
+import org.apache.carbondata.core.indexstore.FineGrainBlocklet;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 
 /**
@@ -43,6 +46,8 @@ public class BlockletDataRefNode implements DataRefNode {
   private int index;
 
   private int[] dimensionLens;
+
+  private BlockletSerializer blockletSerializer;
 
   BlockletDataRefNode(List<TableBlockInfo> blockInfos, int index, int[] dimensionLens) {
     this.blockInfos = blockInfos;
@@ -76,6 +81,7 @@ public class BlockletDataRefNode implements DataRefNode {
     }
     this.index = index;
     this.dimensionLens = dimensionLens;
+    this.blockletSerializer = new BlockletSerializer();
   }
 
   @Override public DataRefNode getNextDataRefNode() {
@@ -209,11 +215,28 @@ public class BlockletDataRefNode implements DataRefNode {
     }
   }
 
-  @Override public int numberOfPages() {
+  @Override
+  public int numberOfPages() {
     return blockInfos.get(index).getDetailInfo().getPagesCount();
   }
 
-  @Override public int getPageRowCount(int pageNumber) {
+  @Override
+  public BitSetGroup getIndexedData() {
+    String dataMapWriterPath = blockInfos.get(index).getDataMapWriterPath();
+    if (dataMapWriterPath != null) {
+      try {
+        FineGrainBlocklet blocklet = blockletSerializer.deserializeBlocklet(dataMapWriterPath);
+        return blocklet.getBitSetGroup(numberOfPages());
+      } catch (IOException e) {
+        return null;
+      }
+    } else {
+      return null;
+    }
+  }
+
+  @Override
+  public int getPageRowCount(int pageNumber) {
     return blockInfos.get(index).getDetailInfo().getBlockletInfo()
         .getNumberOfRowsPerPage()[pageNumber];
   }
