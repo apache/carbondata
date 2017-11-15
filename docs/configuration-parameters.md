@@ -60,6 +60,11 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.options.is.empty.data.bad.record | false | If false, then empty ("" or '' or ,,) data will not be considered as bad record and vice versa. | |
 | carbon.options.bad.record.path |  | Specifies the HDFS path where bad records are stored. By default the value is Null. This path must to be configured by the user if bad record logger is enabled or bad record action redirect. | |
 | carbon.enable.vector.reader | true | This parameter increases the performance of select queries as it fetch columnar batch of size 4*1024 rows instead of fetching data row by row. | |
+| sort.inmemory.size.inmb | 1024 MB | Memory size in MB available for in-memory sort. | |
+| carbon.load.sort.scope | LOCAL_SORT | This property can have four possible values BATCH_SORT, LOCAL_SORT, GLOBAL_SORT and NO_SORT. If set to BATCH_SORT, the sorting scope is smaller and more index tree will be created,thus loading is faster but query maybe slower. It is based on memory size and carbon will create one index tree for each batch. If set to LOCAL_SORT, the sorting scope is bigger and one index tree will be created for whole cluster, thus loading is slower but query is faster. If set to GLOBAL_SORT, the sorting scope is bigger and one index tree per task will be created, thus loading is slower but query is faster. If set to NO_SORT data will be loaded in unsorted manner. | |
+| carbon.load.batch.sort.size.inmb | 0 | Size of batch data to keep in memory, as a thumb rule it supposed to be less than 45% of sort.inmemory.size.inmb otherwise it may spill intermediate data to disk. | |
+
+
 
 * **Compaction Configuration**
   
