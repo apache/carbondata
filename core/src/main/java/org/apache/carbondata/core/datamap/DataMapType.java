@@ -14,24 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.carbondata.core.datamap;
 
-package org.apache.carbondata.core.indexstore;
-
-import java.io.IOException;
-
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
-
-/**
- * Fetches the detailed segmentProperties which has more information to execute the query
- */
-public interface SegmentPropertiesFetcher {
-
-  /**
-   * get the Segment properties based on the SegmentID.
-   * @param segmentId
-   * @return
-   * @throws IOException
-   */
-  SegmentProperties getSegmentProperties(Segment segment) throws IOException;
+public enum DataMapType {
+  CG,FG;
 }
