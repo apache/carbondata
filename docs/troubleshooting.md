@@ -219,14 +219,30 @@ Note :  Refrain from using "mvn clean package" without specifying the profile.
    Table is locked for updation.
    ```
 
-  **Possible Cause**
+  **Possible Causes**
 
-  Concurrency not supported.
-
+   - Incorrect Lock Type
+   - Path of the carbon.properties must be specified for both driver and executors and must be copied on all the nodes
+ 
   **Procedure**
+  
+   - For Incorrect Lock Type : based on your scenario set these properties in carbon.properties
+    
+     **Local mode** 
+       carbon.lock.type=LOCALLOCK
+     
+     **Cluster mode**
+       carbon.lock.type=HDFSLOCK      
+                           
+   - For setting up path of carbon.properties for executors and drivers, set the properties as below :
+     
+     * spark.executor.extraJavaOptions -Dcarbon.properties.filepath=/home/hduser/spark-2.1.0-bin-hadoop2.7/conf/carbon.properties
+     
+     * spark.driver.extraJavaOptions       -Dcarbon.properties.filepath=/home/hduser/spark-2.1.0-bin-hadoop2.7/conf/carbon.properties
+     
+     If you still have the problem simply delete temp/default/yourtablename
 
-  Worker must wait for the query execution to complete and the table to release the lock for another query execution to succeed.
-
+ 
 ## Failed to create a table with a single numeric column.
 
   **Symptom**
