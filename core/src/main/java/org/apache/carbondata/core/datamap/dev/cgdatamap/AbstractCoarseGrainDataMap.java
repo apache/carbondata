@@ -14,24 +14,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.carbondata.core.datamap.dev.cgdatamap;
 
-package org.apache.carbondata.core.indexstore;
+import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.indexstore.Blocklet;
 
-import java.io.IOException;
+public abstract class AbstractCoarseGrainDataMap implements DataMap<Blocklet> {
 
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
-
-/**
- * Fetches the detailed segmentProperties which has more information to execute the query
- */
-public interface SegmentPropertiesFetcher {
-
-  /**
-   * get the Segment properties based on the SegmentID.
-   * @param segmentId
-   * @return
-   * @throws IOException
-   */
-  SegmentProperties getSegmentProperties(Segment segment) throws IOException;
 }

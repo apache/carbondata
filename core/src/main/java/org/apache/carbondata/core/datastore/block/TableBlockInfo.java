@@ -96,6 +96,8 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   private BlockletDetailInfo detailInfo;
 
+  private String dataMapWriterPath;
+
   public TableBlockInfo(String filePath, long blockOffset, String segmentId,
       String[] locations, long blockLength, ColumnarFormatVersion version,
       String[] deletedDeltaFilePath) {
@@ -423,5 +425,13 @@ public class TableBlockInfo implements Distributable, Serializable {
 
   public void setDataBlockFromOldStore(boolean dataBlockFromOldStore) {
     isDataBlockFromOldStore = dataBlockFromOldStore;
+  }
+
+  public String getDataMapWriterPath() {
+    return dataMapWriterPath;
+  }
+
+  public void setDataMapWriterPath(String dataMapWriterPath) {
+    this.dataMapWriterPath = dataMapWriterPath;
   }
 }

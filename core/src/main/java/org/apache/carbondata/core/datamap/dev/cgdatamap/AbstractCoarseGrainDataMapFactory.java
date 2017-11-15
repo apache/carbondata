@@ -14,24 +14,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.carbondata.core.datamap.dev.cgdatamap;
 
-package org.apache.carbondata.core.indexstore;
-
-import java.io.IOException;
-
-import org.apache.carbondata.core.datamap.Segment;
-import org.apache.carbondata.core.datastore.block.SegmentProperties;
+import org.apache.carbondata.core.datamap.DataMapType;
+import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 
 /**
- * Fetches the detailed segmentProperties which has more information to execute the query
+ *  1. Any filter query which hits the table with datamap will call prune method of CGdatamap.
+ *  2. The prune method of CGDatamap return list Blocklet , these blocklets contain the
+ *     information of block and blocklet.
+ *  3. Based on the splits scanrdd schedule the tasks.
  */
-public interface SegmentPropertiesFetcher {
+public abstract class AbstractCoarseGrainDataMapFactory
+    implements DataMapFactory<AbstractCoarseGrainDataMap> {
 
-  /**
-   * get the Segment properties based on the SegmentID.
-   * @param segmentId
-   * @return
-   * @throws IOException
-   */
-  SegmentProperties getSegmentProperties(Segment segment) throws IOException;
+  @Override public DataMapType getDataMapType() {
+    return DataMapType.CG;
+  }
 }
