@@ -120,6 +120,10 @@ public class SegmentStatusManager {
         BufferedReader buffReader =
             new BufferedReader(new InputStreamReader(dataInputStream, "UTF-8"));
         loadFolderDetailsArray = gson.fromJson(buffReader, LoadMetadataDetails[].class);
+        //if loadFolderDetailsArray is null, return empty array
+        if (null == loadFolderDetailsArray){
+          loadFolderDetailsArray = new LoadMetadataDetails[0];
+        }
         //just directly iterate Array
         for (LoadMetadataDetails segment : loadFolderDetailsArray) {
           if (SegmentStatus.SUCCESS == segment.getSegmentStatus() ||
