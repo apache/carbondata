@@ -58,8 +58,7 @@ import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.csvinput.BlockDetails
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable
-import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
-import org.apache.carbondata.processing.loading.exception.NoRetryException
+import org.apache.carbondata.processing.loading.exception.{CarbonDataLoadingException, NoRetryException, UpdateTablestatusException}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
@@ -448,7 +447,7 @@ object CarbonDataRDDFactory {
           case ex =>
             // catch exceptions and throw InterruptedException
             LOGGER.error(ex)
-            throw new InterruptedException("update fail status failed")
+            throw new UpdateTablestatusException("update fail status failed")
         }
       }
       LOGGER.audit(s"Data load is failed for " +

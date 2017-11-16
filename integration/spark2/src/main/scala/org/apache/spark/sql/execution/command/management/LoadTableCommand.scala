@@ -39,7 +39,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format
 import org.apache.carbondata.processing.exception.DataLoadingException
-import org.apache.carbondata.processing.loading.exception.NoRetryException
+import org.apache.carbondata.processing.loading.exception.{NoRetryException, UpdateTablestatusException}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
@@ -186,8 +186,7 @@ case class LoadTableCommand(
           LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")
           throw new RuntimeException(s"Dataload failure for $dbName.$tableName, ${ex.getMessage}")
         case ex: Exception =>
-          if (ex.isInstanceOf[InterruptedException] &&
-              ex.getMessage.contains("update fail status")) {
+          if (ex.isInstanceOf[UpdateTablestatusException]) {
             if (Thread.currentThread().isInterrupted) {
               CommonUtil.cleanSegmentForInterrupt(carbonLoadModel)
             }
