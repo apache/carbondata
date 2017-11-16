@@ -147,19 +147,21 @@ public final class CarbonCommonConstants {
    * Load Folder Name
    */
   public static final String LOAD_FOLDER = "Segment_";
-  /**
-   * HDFSURL_PREFIX
-   */
+
   public static final String HDFSURL_PREFIX = "hdfs://";
-  /**
-   * VIEWFSURL_PREFIX
-   */
+
+  public static final String LOCAL_FILE_PREFIX = "file://";
+
   public static final String VIEWFSURL_PREFIX = "viewfs://";
 
-  /**
-   * ALLUXIO_PREFIX
-   */
   public static final String ALLUXIOURL_PREFIX = "alluxio://";
+
+  public static final String S3_PREFIX = "s3://";
+
+  public static final String S3N_PREFIX = "s3n://";
+
+  public static final String S3A_PREFIX = "s3a://";
+
   /**
    * FS_DEFAULT_FS
    */
@@ -1261,7 +1263,6 @@ public final class CarbonCommonConstants {
 
   public static final String MAJOR = "major";
 
-  public static final String LOCAL_FILE_PREFIX = "file://";
   @CarbonProperty
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION = "carbon.custom.block.distribution";
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT = "false";
