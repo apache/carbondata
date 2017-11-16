@@ -67,6 +67,12 @@ public final class CarbonCommonConstants {
   public static final String VALIDATE_CARBON_INPUT_SEGMENTS = "validate.carbon.input.segments.";
 
   /**
+   * Whether load/insert command is fired internally or by the user.
+   * Used to block load/insert on pre-aggregate if fired by user
+   */
+  public static final String IS_INTERNAL_LOAD_CALL = "is.internal.load.call";
+
+  /**
    * location of the carbon member, hierarchy and fact files
    */
   @CarbonProperty

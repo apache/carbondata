@@ -162,7 +162,12 @@ class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
         Row(2, 27),
         Row(3, 35),
         Row(4, 29)))
-    sql("drop table if exists maintable")
+  }
+
+  test("test to check if exception is thrown for direct load on pre-aggregate table") {
+    assert(intercept[RuntimeException] {
+      sql(s"insert into maintable_preagg_sum values(1, 30)")
+    }.getMessage.equalsIgnoreCase("Cannot insert/load data directly into pre-aggregate table"))
   }
 
 }

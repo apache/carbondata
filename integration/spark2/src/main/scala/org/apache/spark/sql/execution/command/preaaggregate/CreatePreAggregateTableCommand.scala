@@ -17,11 +17,13 @@
 
 package org.apache.spark.sql.execution.command.preaaggregate
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
@@ -114,17 +116,27 @@ case class CreatePreAggregateTableCommand(
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     // load child table if parent table has existing segments
     val dbName = CarbonEnv.getDatabaseName(parentTableIdentifier.database)(sparkSession)
-    val tableName = tableIdentifier.table
-    val metastorePath = CarbonTablePath.getMetadataPath(
-      CarbonEnv.getTablePath(
-        parentTableIdentifier.database,
-        parentTableIdentifier.table)(sparkSession))
+    val parentCarbonTable = CarbonEnv.getCarbonTable(Some(dbName),
+      parentTableIdentifier.table)(sparkSession)
     // This will be used to check if the parent table has any segments or not. If not then no
     // need to fire load for pre-aggregate table. Therefore reading the load details for PARENT
     // table.
-    val loadAvailable = SegmentStatusManager.readLoadMetadata(metastorePath).nonEmpty
+    val loadAvailable = SegmentStatusManager.readLoadMetadata(parentCarbonTable.getMetaDataFilepath)
+      .nonEmpty
     if (loadAvailable) {
-      sparkSession.sql(s"insert into $dbName.$tableName $queryString")
+      val headers = parentCarbonTable.getTableInfo.getFactTable.getListOfColumns.
+        asScala.map(_.getColumnName).mkString(",")
+      val childDataFrame = sparkSession.sql(
+        new CarbonSpark2SqlParser().addPreAggLoadFunction(queryString))
+      CarbonLoadDataCommand(tableIdentifier.database,
+        tableIdentifier.table,
+        null,
+        Nil,
+        Map("fileheader" -> headers),
+        isOverwriteTable = false,
+        dataFrame = Some(childDataFrame),
+        internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true")).
+        run(sparkSession)
     }
     Seq.empty
   }
