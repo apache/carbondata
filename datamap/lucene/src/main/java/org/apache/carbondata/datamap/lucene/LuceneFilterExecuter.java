@@ -2,6 +2,7 @@ package org.apache.carbondata.datamap.lucene;
 
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.util.BitSetGroup;
 
@@ -9,6 +10,8 @@ import java.io.IOException;
 import java.util.BitSet;
 
 public class LuceneFilterExecuter implements FilterExecuter {
+
+
     /**
      * API will apply filter based on resolver instance
      *
@@ -19,6 +22,10 @@ public class LuceneFilterExecuter implements FilterExecuter {
      */
     public BitSetGroup applyFilter(BlocksChunkHolder blocksChunkHolder, boolean useBitsetPipeLine) throws FilterUnsupportedException, IOException {
         return null;
+    }
+
+    public boolean applyFilter(RowIntf value, int dimOrdinalMax) throws FilterUnsupportedException, IOException {
+        return false;
     }
 
     /**

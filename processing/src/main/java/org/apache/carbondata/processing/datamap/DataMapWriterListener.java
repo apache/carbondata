@@ -84,7 +84,7 @@ public class DataMapWriterListener {
     LOG.info("AbstractDataMapWriter " + writer + " added");
   }
 
-  public void onBlockStart(String blockId, String blockPath) {
+  public void onBlockStart(String blockId, String blockPath) throws IOException {
     for (List<AbstractDataMapWriter> writers : registry.values()) {
       for (AbstractDataMapWriter writer : writers) {
         writer.onBlockStart(blockId);
@@ -92,8 +92,8 @@ public class DataMapWriterListener {
     }
   }
 
-  public void onBlockEnd(String blockId) {
-    for (List<AbstractDataMapWriter> writers : registry.values()) {
+  public void onBlockEnd(String blockId) throws IOException {
+    for (List<AbstractDataMapWriter> writers : registry.values())  {
       for (AbstractDataMapWriter writer : writers) {
         writer.onBlockEnd(blockId);
       }

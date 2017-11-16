@@ -54,6 +54,8 @@ class LuceneDataMapScalaTest extends TestCase  with AssertionsForJUnit{
   }
 
   @Test def testLuceneDatamap(): Unit = {
+
+    carbonSession.sql("use default")
     carbonSession
       .sql("create table if not exists test_table(id long, name string, city string, age int) stored by 'carbondata'")
     val options = Map("tableName" -> "test_table")
@@ -87,7 +89,7 @@ class LuceneDataMapScalaTest extends TestCase  with AssertionsForJUnit{
     val luceneWriter = classOf[LuceneDataMapWriter].cast(Writer)
     val lucenePath = luceneWriter.getIndexPath("0");
 
-    assert(new File(lucenePath).exists() == true, "lucene data not exists");
+    assert(new File(lucenePath).exists(), "lucene data not exists");
 
     /**
       *  query lucene data

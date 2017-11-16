@@ -227,13 +227,27 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
 
   private void notifyDataMapBlockStart() {
     if (listener != null) {
-      listener.onBlockStart(carbonDataFileName, constructFactFileFullPath());
+      try {
+        listener.onBlockStart(carbonDataFileName, constructFactFileFullPath());
+      } catch (IOException e) {
+        /**
+         * only record it
+         */
+        LOGGER.error("failed to notify data map on block starting" + e.getMessage());
+      }
     }
   }
 
   private void notifyDataMapBlockEnd() {
     if (listener != null) {
-      listener.onBlockEnd(carbonDataFileName);
+      try {
+        listener.onBlockEnd(carbonDataFileName);
+      } catch (IOException e) {
+        /**
+         * only record it
+         */
+        LOGGER.error("failed to notify data map on block ending" + e.getMessage());
+      }
     }
     blockletId = 0;
   }
