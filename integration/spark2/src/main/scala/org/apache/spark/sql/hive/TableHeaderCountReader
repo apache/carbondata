@@ -47,7 +47,7 @@ import org.apache.spark.util.{SerializableConfiguration, Utils}
 /**
  * A trait for subclasses that handle table scans.
  */
-private[hive] sealed trait TableHeadCountReader {
+private[hive] sealed trait TableHeaderCountReader {
   def makeRDDForTable(hiveTable: HiveTable): RDD[InternalRow]
 
   def makeRDDForPartitionedTable(partitions: Seq[HivePartition]): RDD[InternalRow]
@@ -59,12 +59,12 @@ private[hive] sealed trait TableHeadCountReader {
  * data warehouse directory.
  */
 private[hive]
-class HadoopTableHeadCountReader(
+class HadoopTableHeaderCountReader(
     @transient private val attributes: Seq[Attribute],
     @transient private val relation: MetastoreRelation,
     @transient private val sparkSession: SparkSession,
     hadoopConf: Configuration)
-  extends TableHeadCountReader with Logging {
+  extends TableHeaderCountReader with Logging {
 
   // Hadoop honors "mapred.map.tasks" as hint, but will ignore when mapred.job.tracker is "local".
   // https://hadoop.apache.org/docs/r1.0.4/mapred-default.html
@@ -347,7 +347,7 @@ private[hive] object HiveTableUtil {
   }
 }
 
-private[hive] object FFCSHadoopTableReader extends HiveInspectors with Logging {
+private[hive] object HadoopTableHeaderCountReader extends HiveInspectors with Logging {
   /**
    * Curried. After given an argument for 'path', the resulting JobConf => Unit closure is used to
    * instantiate a HadoopRDD.
