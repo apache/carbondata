@@ -65,6 +65,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
     val dims = relation.metaData.dims.map(x => x.toLowerCase)
     var results: Seq[(String, String, String)] = child.schema.fields.map { field =>
       val fieldName = field.name.toLowerCase
+      val colComment = field.getComment().getOrElse("null")
       val comment = if (dims.contains(fieldName)) {
         val dimension = relation.metaData.carbonTable.getDimensionByName(
           relation.tableMeta.carbonTableIdentifier.getTableName, fieldName)
@@ -76,20 +77,21 @@ private[sql] case class CarbonDescribeFormattedCommand(
         if (dimension.hasEncoding(Encoding.DICTIONARY) &&
             !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           "DICTIONARY, KEY COLUMN" + (if (dimension.hasEncoding(Encoding.INVERTED_INDEX)) {
-            ""
+            "".concat(",").concat(colComment)
           } else {
-            ",NOINVERTEDINDEX"
+            ",NOINVERTEDINDEX".concat(",").concat(colComment)
           })
         } else {
           "KEY COLUMN" + (if (dimension.hasEncoding(Encoding.INVERTED_INDEX)) {
-            ""
+            "".concat(",").concat(colComment)
           } else {
-            ",NOINVERTEDINDEX"
+            ",NOINVERTEDINDEX".concat(",").concat(colComment)
           })
         }
       } else {
-        "MEASURE"
+        "MEASURE".concat(",").concat(colComment)
       }
+
       (field.name, field.dataType.simpleString, comment)
     }
     val colPropStr = if (colProps.toString().trim().length() > 0) {
@@ -130,8 +132,11 @@ private[sql] case class CarbonDescribeFormattedCommand(
       Seq(("Partition Columns: ", carbonTable.getPartitionInfo(carbonTable.getFactTableName)
         .getColumnSchemaList.asScala.map(_.getColumnName).mkString(","), ""))
     }
-    results.map { case (name, dataType, comment) =>
-      Row(f"$name%-36s", f"$dataType%-80s", f"$comment%-72s")
+    results.map {
+      case (name, dataType, null) =>
+        Row(f"$name%-36s", f"$dataType%-80s", null)
+      case (name, dataType, comment) =>
+        Row(f"$name%-36s", f"$dataType%-80s", f"$comment%-72s")
     }
   }
 }
