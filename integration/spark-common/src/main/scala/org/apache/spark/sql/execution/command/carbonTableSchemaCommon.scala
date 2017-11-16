@@ -454,7 +454,7 @@ class TableNewProcessor(cm: TableModel) {
       val field = cm.dimCols.find(keyDim equals _.column).get
       val encoders = if (cm.parentTable.isDefined && cm.dataMapRelation.get.get(field).isDefined) {
         cm.parentTable.get.getColumnByName(
-          cm.parentTable.get.getFactTableName,
+          cm.parentTable.get.getTableName,
           cm.dataMapRelation.get.get(field).get.columnTableRelation.get.parentColumnName).getEncoder
       } else {
         val encoders = new java.util.ArrayList[Encoding]()
@@ -479,7 +479,7 @@ class TableNewProcessor(cm: TableModel) {
         val encoders = if (cm.parentTable.isDefined &&
                            cm.dataMapRelation.get.get(field).isDefined) {
           cm.parentTable.get.getColumnByName(
-            cm.parentTable.get.getFactTableName,
+            cm.parentTable.get.getTableName,
             cm.dataMapRelation.get.get(field).get.
               columnTableRelation.get.parentColumnName).getEncoder
         } else {

@@ -34,6 +34,7 @@ import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events._
 
 
@@ -60,12 +61,11 @@ case class CarbonDropDataMapCommand(
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = GetDB.getDatabaseName(databaseNameOp, sparkSession)
     val identifier = TableIdentifier(tableName, Option(dbName))
-    val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK)
     val carbonEnv = CarbonEnv.getInstance(sparkSession)
     val catalog = carbonEnv.carbonMetastore
     val databaseLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
-      CarbonEnv.getInstance(sparkSession).storePath)
+      CarbonProperties.getStorePath)
     val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName.toLowerCase
     val tableIdentifier =
       AbsoluteTableIdentifier.from(tablePath, dbName.toLowerCase, tableName.toLowerCase)
@@ -76,20 +76,19 @@ case class CarbonDropDataMapCommand(
         lock => carbonLocks += CarbonLockUtil.getLockObject(tableIdentifier, lock)
       }
       LOGGER.audit(s"Deleting datamap [$dataMapName] under table [$tableName]")
-      val carbonTable: Option[CarbonTable] =
-        catalog.getTableFromMetadataCache(dbName, tableName) match {
-          case Some(tableMeta) => Some(tableMeta.carbonTable)
-          case None => try {
-            Some(catalog.lookupRelation(identifier)(sparkSession)
-              .asInstanceOf[CarbonRelation].metaData.carbonTable)
-          } catch {
-            case ex: NoSuchTableException =>
-              if (!ifExistsSet) {
-                throw ex
-              }
-              None
-          }
+      var carbonTable: Option[CarbonTable] =
+        catalog.getTableFromMetadataCache(dbName, tableName)
+      if (carbonTable.isEmpty) {
+        try {
+          carbonTable = Some(catalog.lookupRelation(identifier)(sparkSession)
+            .asInstanceOf[CarbonRelation].metaData.carbonTable)
+        } catch {
+          case ex: NoSuchTableException =>
+            if (!ifExistsSet) {
+              throw ex
+            }
         }
+      }
       if (carbonTable.isDefined && carbonTable.get.getTableInfo.getDataMapSchemaList.size() > 0) {
         val dataMapSchema = carbonTable.get.getTableInfo.getDataMapSchemaList.asScala.zipWithIndex.
           find(_._1.getDataMapName.equalsIgnoreCase(dataMapName))
@@ -144,7 +143,7 @@ case class CarbonDropDataMapCommand(
     // delete the table folder
     val dbName = GetDB.getDatabaseName(databaseNameOp, sparkSession)
     val databaseLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
-      CarbonEnv.getInstance(sparkSession).storePath)
+      CarbonProperties.getStorePath)
     val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName.toLowerCase
     val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
     DataMapStoreManager.getInstance().clearDataMap(tableIdentifier, dataMapName)

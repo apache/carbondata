@@ -51,7 +51,7 @@ private[sql] case class ProjectForDeleteCommand(
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(DeleteExecution.getTableIdentifier(identifier))(sparkSession).
       asInstanceOf[CarbonRelation]
-    val carbonTable = relation.tableMeta.carbonTable
+    val carbonTable = relation.carbonTable
 
     // trigger event for Delete from table
     val operationContext = new OperationContext
@@ -77,9 +77,8 @@ private[sql] case class ProjectForDeleteCommand(
       // handle the clean up of IUD.
       CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
-      if (DeleteExecution
-        .deleteDeltaExecution(identifier, sparkSession, dataRdd, timestamp, relation,
-          isUpdateOperation = false, executorErrors)) {
+      if (DeleteExecution.deleteDeltaExecution(identifier, sparkSession, dataRdd, timestamp,
+        isUpdateOperation = false, executorErrors)) {
         // call IUD Compaction.
         HorizontalCompaction.tryHorizontalCompaction(sparkSession, relation,
           isUpdateOperation = false)

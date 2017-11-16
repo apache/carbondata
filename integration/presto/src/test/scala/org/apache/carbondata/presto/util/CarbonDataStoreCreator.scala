@@ -333,10 +333,10 @@ object CarbonDataStoreCreator {
     val split: Array[String] = header.split(",")
     val allCols: util.List[CarbonColumn] = new util.ArrayList[CarbonColumn]()
     val dims: util.List[CarbonDimension] =
-      table.getDimensionByTableName(table.getFactTableName)
+      table.getDimensionByTableName(table.getTableName)
     allCols.addAll(dims)
     val msrs: List[CarbonMeasure] =
-      table.getMeasureByTableName(table.getFactTableName)
+      table.getMeasureByTableName(table.getTableName)
     allCols.addAll(msrs)
     val set: Array[util.Set[String]] = Array.ofDim[util.Set[String]](dims.size)
     for (i <- set.indices) {

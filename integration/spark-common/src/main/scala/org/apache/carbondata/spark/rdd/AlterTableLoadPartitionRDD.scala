@@ -46,7 +46,7 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
     val oldPartitionIds = alterPartitionModel.oldPartitionIds
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val databaseName = carbonTable.getDatabaseName
-    val factTableName = carbonTable.getFactTableName
+    val factTableName = carbonTable.getTableName
     val partitionInfo = carbonTable.getPartitionInfo(factTableName)
 
     override protected def getPartitions: Array[Partition] = {

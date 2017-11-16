@@ -165,7 +165,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       } else {
         CarbonEnv.getInstance(sparkSession).carbonMetastore
           .lookupRelation(Option(dbName), tableName)(sparkSession)
-        (CarbonEnv.getInstance(sparkSession).storePath + s"/$dbName/$tableName", parameters)
+        (CarbonProperties.getStorePath + s"/$dbName/$tableName", parameters)
       }
     } catch {
       case ex: NoSuchTableException =>
@@ -199,11 +199,10 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       if (parameters.contains("tablePath")) {
         (parameters("tablePath"), parameters)
       } else if (!sparkSession.isInstanceOf[CarbonSession]) {
-        (CarbonEnv.getInstance(sparkSession).storePath + "/" + dbName + "/" + tableName, parameters)
+        (CarbonProperties.getStorePath + "/" + dbName + "/" + tableName, parameters)
       } else {
-        val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
-          .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
-        (relation.tableMeta.tablePath, parameters)
+        val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+        (carbonTable.getTablePath, parameters)
       }
     } catch {
       case ex: Exception =>
@@ -235,15 +234,11 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
     }
     if (tablePathOption.isDefined) {
       val sparkSession = sqlContext.sparkSession
-      val identifier: AbsoluteTableIdentifier =
-        AbsoluteTableIdentifier.from(tablePathOption.get, dbName, tableName)
-      val carbonTable =
-        CarbonEnv.getInstance(sparkSession).carbonMetastore.
-          createCarbonRelation(parameters, identifier, sparkSession).tableMeta.carbonTable
+      val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
 
       if (!carbonTable.isStreamingTable) {
         throw new CarbonStreamException(s"Table ${carbonTable.getDatabaseName}." +
-                                        s"${carbonTable.getFactTableName} is not a streaming table")
+                                        s"${carbonTable.getTableName} is not a streaming table")
       }
 
       // create sink
@@ -314,8 +309,7 @@ object CarbonSource {
     val tableName: String = properties.getOrElse("tableName", "").toLowerCase
     val model = createTableInfoFromParams(properties, dataSchema, dbName, tableName)
     val tableInfo: TableInfo = TableNewProcessor(model)
-    val dbLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
-      CarbonEnv.getInstance(sparkSession).storePath)
+    val dbLocation = GetDB.getDatabaseLocation(dbName, sparkSession, CarbonProperties.getStorePath)
     val tablePath = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
     val schemaEvolutionEntry = new SchemaEvolutionEntry
     schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)

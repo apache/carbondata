@@ -51,8 +51,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         val dbOption = oldTableIdentifier.database.map(_.toLowerCase)
         val tableIdentifier = TableIdentifier(oldTableIdentifier.table.toLowerCase(), dbOption)
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
-          .tableExists(tableIdentifier)(
-            sparkSession)
+          .tableExists(tableIdentifier)(sparkSession)
         if (isCarbonTable) {
           val renameModel = AlterTableRenameModel(tableIdentifier, newTableIdentifier)
           ExecutedCommandExec(CarbonAlterTableRenameCommand(renameModel)) :: Nil
@@ -155,13 +154,13 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists = mode == SaveMode.Ignore)
         ExecutedCommandExec(cmd) :: Nil
       case AlterTableSetPropertiesCommand(tableName, properties, isView)
-        if (CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .tableExists(tableName)(sparkSession)) => {
+        if CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(tableName)(sparkSession) => {
         ExecutedCommandExec(AlterTableSetCommand(tableName, properties, isView)) :: Nil
       }
       case AlterTableUnsetPropertiesCommand(tableName, propKeys, ifExists, isView)
-        if (CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .tableExists(tableName)(sparkSession)) => {
+        if CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(tableName)(sparkSession) => {
         ExecutedCommandExec(AlterTableUnsetCommand(tableName, propKeys, ifExists, isView)) :: Nil
       }
       case _ => Nil

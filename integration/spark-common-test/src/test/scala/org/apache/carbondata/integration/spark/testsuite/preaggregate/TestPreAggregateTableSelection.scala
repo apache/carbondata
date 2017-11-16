@@ -147,7 +147,7 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
       case logicalRelation:LogicalRelation =>
         if(logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) {
           val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-          if(relation.carbonTable.getFactTableName.equalsIgnoreCase(actualTableName)) {
+          if(relation.carbonTable.getTableName.equalsIgnoreCase(actualTableName)) {
             isValidPlan = true
           }
         }

@@ -32,6 +32,7 @@ import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOp
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.statusmanager.SegmentStatus
@@ -54,7 +55,8 @@ case class LoadTableCommand(
     isOverwriteTable: Boolean,
     var inputSqlString: String = null,
     dataFrame: Option[DataFrame] = None,
-    updateModel: Option[UpdateTableModel] = None)
+    updateModel: Option[UpdateTableModel] = None,
+    var tableInfoOp: Option[TableInfo] = None)
   extends RunnableCommand with DataProcessCommand {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
@@ -72,16 +74,6 @@ case class LoadTableCommand(
     }
 
     val dbName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
-    val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
-    if (relation == null) {
-      sys.error(s"Table $dbName.$tableName does not exist")
-    }
-    if (null == relation.tableMeta.carbonTable) {
-      LOGGER.error(s"Data loading failed. table not found: $dbName.$tableName")
-      LOGGER.audit(s"Data loading failed. table not found: $dbName.$tableName")
-      sys.error(s"Data loading failed. table not found: $dbName.$tableName")
-    }
 
     val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
     carbonProperty.addProperty("zookeeper.enable.lock", "false")
@@ -105,18 +97,30 @@ case class LoadTableCommand(
     // update the property with new value
     carbonProperty.addProperty(CarbonCommonConstants.NUM_CORES_LOADING, numCoresLoading)
 
-    val optionsFinal = DataLoadingUtil.getDataLoadingOptions(carbonProperty, options)
-
-    val tableProperties = relation.tableMeta.carbonTable.getTableInfo
-      .getFactTable.getTableProperties
-
-    optionsFinal.put("sort_scope", tableProperties.getOrDefault("sort_scope",
-      carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
-        carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
-
     try {
-      val table = relation.tableMeta.carbonTable
+      val table = if (tableInfoOp.isDefined) {
+        CarbonTable.buildFromTableInfo(tableInfoOp.get)
+      } else {
+        val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
+        if (relation == null) {
+          sys.error(s"Table $dbName.$tableName does not exist")
+        }
+        if (null == relation.carbonTable) {
+          LOGGER.error(s"Data loading failed. table not found: $dbName.$tableName")
+          LOGGER.audit(s"Data loading failed. table not found: $dbName.$tableName")
+          sys.error(s"Data loading failed. table not found: $dbName.$tableName")
+        }
+        relation.carbonTable
+      }
+
+      val tableProperties = table.getTableInfo.getFactTable.getTableProperties
+      val optionsFinal = DataLoadingUtil.getDataLoadingOptions(carbonProperty, options)
+      optionsFinal.put("sort_scope", tableProperties.getOrDefault("sort_scope",
+        carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
+          carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
+            CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
+
       val carbonLoadModel = new CarbonLoadModel()
       val factPath = if (dataFrame.isDefined) {
         ""
@@ -137,11 +141,9 @@ case class LoadTableCommand(
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
         GlobalDictionaryUtil.updateTableMetadataFunc = updateTableMetadata
-        val storePath = relation.tableMeta.storePath
         // add the start entry for the new load in the table status file
         if (updateModel.isEmpty) {
-          CommonUtil.
-            readAndUpdateLoadProgressInTableMeta(carbonLoadModel, storePath, isOverwriteTable)
+          CommonUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, isOverwriteTable)
         }
         if (isOverwriteTable) {
           LOGGER.info(s"Overwrite of carbon table with $dbName.$tableName is in progress")
@@ -158,8 +160,7 @@ case class LoadTableCommand(
           carbonLoadModel.setUseOnePass(false)
         }
         // Create table and metadata folders if not exist
-        val carbonTablePath = CarbonStorePath
-          .getCarbonTablePath(storePath, table.getCarbonTableIdentifier)
+        val carbonTablePath = CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier)
         val metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath
         val fileType = FileFactory.getFileType(metadataDirectoryPath)
         if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
@@ -192,9 +193,9 @@ case class LoadTableCommand(
       } finally {
         // Once the data load is successful delete the unwanted partition files
         try {
-          val partitionLocation = relation.tableMeta.storePath + "/partition/" +
+          val partitionLocation = CarbonProperties.getStorePath + "/partition/" +
                                   table.getDatabaseName + "/" +
-                                  table.getFactTableName + "/"
+                                  table.getTableName + "/"
           val fileType = FileFactory.getFileType(partitionLocation)
           if (FileFactory.isFileExist(partitionLocation, fileType)) {
             val file = FileFactory
@@ -234,7 +235,7 @@ case class LoadTableCommand(
       .getCarbonTablePath(carbonLoadModel.getTablePath, carbonTableIdentifier)
     val dictFolderPath = carbonTablePath.getMetadataDirectoryPath
     val dimensions = carbonTable.getDimensionByTableName(
-      carbonTable.getFactTableName).asScala.toArray
+      carbonTable.getTableName).asScala.toArray
     val colDictFilePath = carbonLoadModel.getColDictFilePath
     if (!StringUtils.isEmpty(colDictFilePath)) {
       carbonLoadModel.initPredefDictMap()
@@ -378,8 +379,7 @@ case class LoadTableCommand(
     val identifier = model.table.getCarbonTableIdentifier
     // update CarbonDataLoadSchema
     val carbonTable = metastore.lookupRelation(Option(identifier.getDatabaseName),
-      identifier.getTableName)(sqlContext.sparkSession).asInstanceOf[CarbonRelation].tableMeta
-      .carbonTable
+      identifier.getTableName)(sqlContext.sparkSession).asInstanceOf[CarbonRelation].carbonTable
     carbonLoadModel.setCarbonDataLoadSchema(new CarbonDataLoadSchema(carbonTable))
   }
 }

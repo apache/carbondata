@@ -20,7 +20,6 @@ package org.apache.spark.sql.hive
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
-import scala.collection.JavaConverters._
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, SparkSession}
@@ -44,13 +43,12 @@ import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.ThriftWriter
 import org.apache.carbondata.events.{LookupRelationPostEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.processing.merger.TableMeta
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
-case class MetaData(var tablesMeta: ArrayBuffer[TableMeta]) {
+case class MetaData(var carbonTables: ArrayBuffer[CarbonTable]) {
   // clear the metadata
   def clear(): Unit = {
-    tablesMeta.clear()
+    carbonTables.clear()
   }
 }
 
@@ -80,7 +78,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     System.nanoTime() + ""
   }
 
-  val metadata = MetaData(new ArrayBuffer[TableMeta]())
+  val metadata = MetaData(new ArrayBuffer[CarbonTable]())
 
 
   /**
@@ -98,13 +96,12 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val tables = getTableFromMetadataCache(database, tableName)
     tables match {
       case Some(t) =>
-        CarbonRelation(database, tableName,
-          CarbonSparkUtil.createSparkMeta(t.carbonTable), t)
+        CarbonRelation(database, tableName, CarbonSparkUtil.createSparkMeta(t), t)
       case None =>
         readCarbonSchema(absIdentifier) match {
           case Some(meta) =>
             CarbonRelation(database, tableName,
-              CarbonSparkUtil.createSparkMeta(meta.carbonTable), meta)
+              CarbonSparkUtil.createSparkMeta(meta), meta)
           case None =>
             throw new NoSuchTableException(database, tableName)
         }
@@ -151,7 +148,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val operationContext = new OperationContext
     val lookupRelationPostEvent: LookupRelationPostEvent =
       LookupRelationPostEvent(
-        relation.tableMeta.carbonTable,
+        relation.carbonTable,
         sparkSession)
     OperationListenerBus.getInstance.fireEvent(lookupRelationPostEvent, operationContext)
     relation
@@ -164,10 +161,10 @@ class CarbonFileMetastore extends CarbonMetaStore {
    * @param tableName
    * @return
    */
-  def getTableFromMetadataCache(database: String, tableName: String): Option[TableMeta] = {
-    metadata.tablesMeta
-      .find(c => c.carbonTableIdentifier.getDatabaseName.equalsIgnoreCase(database) &&
-        c.carbonTableIdentifier.getTableName.equalsIgnoreCase(tableName))
+  def getTableFromMetadataCache(database: String, tableName: String): Option[CarbonTable] = {
+    metadata.carbonTables
+      .find(table => table.getDatabaseName.equalsIgnoreCase(database) &&
+        table.getTableName.equalsIgnoreCase(tableName))
   }
 
   def tableExists(
@@ -187,7 +184,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     true
   }
 
-  private def readCarbonSchema(identifier: AbsoluteTableIdentifier): Option[TableMeta] = {
+  private def readCarbonSchema(identifier: AbsoluteTableIdentifier): Option[CarbonTable] = {
     val dbName = identifier.getCarbonTableIdentifier.getDatabaseName
     val tableName = identifier.getCarbonTableIdentifier.getTableName
     val tablePath = identifier.getTablePath
@@ -210,12 +207,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
         .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
       val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
-      val tableMeta = new TableMeta(carbonTable.getCarbonTableIdentifier,
-        identifier.getTablePath,
-        identifier.getTablePath,
-        carbonTable)
-      metadata.tablesMeta += tableMeta
-      Some(tableMeta)
+      metadata.carbonTables += carbonTable
+      Some(carbonTable)
     } else {
       None
     }
@@ -378,10 +371,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
     CarbonMetadata.getInstance.removeTable(tableInfo.getTableUniqueName)
     removeTableFromMetadata(identifier.getDatabaseName, identifier.getTableName)
     CarbonMetadata.getInstance().loadTableMetadata(tableInfo)
-    val tableMeta = new TableMeta(identifier, absoluteTableIdentifier.getTablePath,
-      absoluteTableIdentifier.getTablePath,
-      CarbonMetadata.getInstance().getCarbonTable(identifier.getTableUniqueName))
-    metadata.tablesMeta += tableMeta
+    metadata.carbonTables +=
+      CarbonMetadata.getInstance().getCarbonTable(identifier.getTableUniqueName)
   }
 
   /**
@@ -391,10 +382,10 @@ class CarbonFileMetastore extends CarbonMetaStore {
    * @param tableName
    */
   def removeTableFromMetadata(dbName: String, tableName: String): Unit = {
-    val metadataToBeRemoved: Option[TableMeta] = getTableFromMetadataCache(dbName, tableName)
-    metadataToBeRemoved match {
-      case Some(tableMeta) =>
-        metadata.tablesMeta -= tableMeta
+    val carbonTableToBeRemoved: Option[CarbonTable] = getTableFromMetadataCache(dbName, tableName)
+    carbonTableToBeRemoved match {
+      case Some(carbonTable) =>
+        metadata.carbonTables -= carbonTable
         CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
       case None =>
         if (LOGGER.isDebugEnabled) {
@@ -409,10 +400,10 @@ class CarbonFileMetastore extends CarbonMetaStore {
     CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
       wrapperTableInfo.getTableUniqueName)
-    for (i <- metadata.tablesMeta.indices) {
+    for (i <- metadata.carbonTables.indices) {
       if (wrapperTableInfo.getTableUniqueName.equals(
-        metadata.tablesMeta(i).carbonTableIdentifier.getTableUniqueName)) {
-        metadata.tablesMeta(i).carbonTable = carbonTable
+        metadata.carbonTables(i).getTableUniqueName)) {
+        metadata.carbonTables(i) = carbonTable
       }
     }
   }
@@ -434,8 +425,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
 
   def isTablePathExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean = {
     try {
-      val tablePath = lookupRelation(tableIdentifier)(sparkSession).
-        asInstanceOf[CarbonRelation].tableMeta.tablePath
+      val tablePath = lookupRelation(tableIdentifier)(sparkSession)
+        .asInstanceOf[CarbonRelation].carbonTable.getTablePath
       val fileType = FileFactory.getFileType(tablePath)
       FileFactory.isFileExist(tablePath, fileType)
     } catch {
@@ -531,13 +522,13 @@ class CarbonFileMetastore extends CarbonMetaStore {
   }
 
   private def refreshCache() {
-    metadata.tablesMeta.clear()
+    metadata.carbonTables.clear()
   }
 
   override def isReadFromHiveMetaStore: Boolean = false
 
   override def listAllTables(sparkSession: SparkSession): Seq[CarbonTable] =
-    metadata.tablesMeta.map(_.carbonTable)
+    metadata.carbonTables
 
   override def getThriftTableInfo(tablePath: CarbonTablePath)
     (sparkSession: SparkSession): TableInfo = {

@@ -363,7 +363,7 @@ public class CarbonTableReader {
         .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier(), null).getPath();
     config.set(CarbonTableInputFormat.INPUT_DIR, carbonTablePath);
     config.set(CarbonTableInputFormat.DATABASE_NAME, carbonTable.getDatabaseName());
-    config.set(CarbonTableInputFormat.TABLE_NAME, carbonTable.getFactTableName());
+    config.set(CarbonTableInputFormat.TABLE_NAME, carbonTable.getTableName());
 
     try {
       CarbonTableInputFormat.setTableInfo(config, tableInfo);

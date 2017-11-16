@@ -153,13 +153,13 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     }
     carbonTable = model.getTable();
     List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     dimensionCount = dimensions.size();
     List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+        carbonTable.getMeasureByTableName(carbonTable.getTableName());
     measureCount = measures.size();
     List<CarbonColumn> carbonColumnList =
-        carbonTable.getStreamStorageOrderColumn(carbonTable.getFactTableName());
+        carbonTable.getStreamStorageOrderColumn(carbonTable.getTableName());
     storageColumns = carbonColumnList.toArray(new CarbonColumn[carbonColumnList.size()]);
     isNoDictColumn = CarbonDataProcessorUtil.getNoDictionaryMapping(storageColumns);
     directDictionaryGenerators = new DirectDictionaryGenerator[storageColumns.length];
@@ -224,8 +224,8 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
   private void initializeFilter() {
 
     List<ColumnSchema> wrapperColumnSchemaList = CarbonUtil
-        .getColumnSchemaList(carbonTable.getDimensionByTableName(carbonTable.getFactTableName()),
-            carbonTable.getMeasureByTableName(carbonTable.getFactTableName()));
+        .getColumnSchemaList(carbonTable.getDimensionByTableName(carbonTable.getTableName()),
+            carbonTable.getMeasureByTableName(carbonTable.getTableName()));
     int[] dimLensWithComplex = new int[wrapperColumnSchemaList.size()];
     for (int i = 0; i < dimLensWithComplex.length; i++) {
       dimLensWithComplex[i] = Integer.MAX_VALUE;

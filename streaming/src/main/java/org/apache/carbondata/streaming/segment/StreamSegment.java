@@ -66,7 +66,7 @@ public class StreamSegment {
     try {
       if (carbonLock.lockWithRetries()) {
         LOGGER.info(
-            "Acquired lock for table" + table.getDatabaseName() + "." + table.getFactTableName()
+            "Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
                 + " for stream table get or create segment");
 
         LoadMetadataDetails[] details =
@@ -104,17 +104,17 @@ public class StreamSegment {
       } else {
         LOGGER.error(
             "Not able to acquire the lock for stream table get or create segment for table " + table
-                .getDatabaseName() + "." + table.getFactTableName());
+                .getDatabaseName() + "." + table.getTableName());
         throw new IOException("Failed to get stream segment");
       }
     } finally {
       if (carbonLock.unlock()) {
         LOGGER.info("Table unlocked successfully after stream table get or create segment" + table
-            .getDatabaseName() + "." + table.getFactTableName());
+            .getDatabaseName() + "." + table.getTableName());
       } else {
         LOGGER.error(
             "Unable to unlock table lock for stream table" + table.getDatabaseName() + "." + table
-                .getFactTableName() + " during stream table get or create segment");
+                .getTableName() + " during stream table get or create segment");
       }
     }
   }
@@ -132,7 +132,7 @@ public class StreamSegment {
     try {
       if (carbonLock.lockWithRetries()) {
         LOGGER.info(
-            "Acquired lock for table" + table.getDatabaseName() + "." + table.getFactTableName()
+            "Acquired lock for table" + table.getDatabaseName() + "." + table.getTableName()
                 + " for stream table finish segment");
 
         LoadMetadataDetails[] details =
@@ -165,17 +165,17 @@ public class StreamSegment {
       } else {
         LOGGER.error(
             "Not able to acquire the lock for stream table status updation for table " + table
-                .getDatabaseName() + "." + table.getFactTableName());
+                .getDatabaseName() + "." + table.getTableName());
         throw new IOException("Failed to get stream segment");
       }
     } finally {
       if (carbonLock.unlock()) {
         LOGGER.info(
             "Table unlocked successfully after table status updation" + table.getDatabaseName()
-                + "." + table.getFactTableName());
+                + "." + table.getTableName());
       } else {
         LOGGER.error("Unable to unlock Table lock for table" + table.getDatabaseName() + "." + table
-            .getFactTableName() + " during table status updation");
+            .getTableName() + " during table status updation");
       }
     }
   }

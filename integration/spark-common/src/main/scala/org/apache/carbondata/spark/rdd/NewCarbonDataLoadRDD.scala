@@ -532,7 +532,7 @@ class PartitionTableDataLoaderRDD[K, V](
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
       val model: CarbonLoadModel = carbonLoadModel
       val carbonTable = model.getCarbonDataLoadSchema.getCarbonTable
-      val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+      val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
       val uniqueLoadStatusId =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {

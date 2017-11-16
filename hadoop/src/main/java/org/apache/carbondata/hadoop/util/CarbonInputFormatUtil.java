@@ -52,7 +52,7 @@ public class CarbonInputFormatUtil {
     if (columnString != null) {
       columns = columnString.split(",");
     }
-    String factTableName = carbonTable.getFactTableName();
+    String factTableName = carbonTable.getTableName();
     CarbonQueryPlan plan = new CarbonQueryPlan(carbonTable.getDatabaseName(), factTableName);
     // fill dimensions
     // If columns are null, set all dimensions and measures
@@ -120,9 +120,9 @@ public class CarbonInputFormatUtil {
   public static void processFilterExpression(Expression filterExpression, CarbonTable carbonTable,
       boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
     List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+        carbonTable.getMeasureByTableName(carbonTable.getTableName());
     QueryModel.processFilterExpression(filterExpression, dimensions, measures,
         isFilterDimensions, isFilterMeasures);
 

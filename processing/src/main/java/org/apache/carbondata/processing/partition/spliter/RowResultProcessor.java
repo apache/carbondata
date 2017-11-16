@@ -46,7 +46,7 @@ public class RowResultProcessor {
       SegmentProperties segProp, String[] tempStoreLocation, Integer bucketId) {
     CarbonDataProcessorUtil.createLocations(tempStoreLocation);
     this.segmentProperties = segProp;
-    String tableName = carbonTable.getFactTableName();
+    String tableName = carbonTable.getTableName();
     CarbonFactDataHandlerModel carbonFactDataHandlerModel =
         CarbonFactDataHandlerModel.getCarbonFactDataHandlerModel(loadModel, carbonTable,
             segProp, tableName, tempStoreLocation);

@@ -84,7 +84,7 @@ object PreAggregateDataTypeChangePreListener extends OperationEventListener {
     if (carbonTable.isChildDataMap) {
       throw new UnsupportedOperationException(
         s"Cannot change data type for columns in pre-aggregate table ${ carbonTable.getDatabaseName
-        }.${ carbonTable.getFactTableName }")
+        }.${ carbonTable.getTableName }")
     }
   }
 }
@@ -102,7 +102,7 @@ object PreAggregateAddColumnsPreListener extends OperationEventListener {
     if (carbonTable.isChildDataMap) {
       throw new UnsupportedOperationException(
         s"Cannot add columns in pre-aggreagate table ${ carbonTable.getDatabaseName
-        }.${ carbonTable.getFactTableName }")
+        }.${ carbonTable.getTableName }")
     }
   }
 }
@@ -185,7 +185,7 @@ object PreAggregateDropColumnPreListener extends OperationEventListener {
     }
     if (carbonTable.isChildDataMap) {
       throw new UnsupportedOperationException(s"Cannot drop columns in pre-aggreagate table ${
-        carbonTable.getDatabaseName}.${ carbonTable.getFactTableName }")
+        carbonTable.getDatabaseName}.${ carbonTable.getTableName }")
     }
   }
 }

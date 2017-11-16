@@ -182,9 +182,9 @@ public final class DataLoadProcessBuilder {
         loadModel.getBadRecordsLocation());
     CarbonMetadata.getInstance().addCarbonTable(carbonTable);
     List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+        carbonTable.getMeasureByTableName(carbonTable.getTableName());
     Map<String, String> dateFormatMap =
         CarbonDataProcessorUtil.getDateFormatMap(loadModel.getDateFormat());
     List<DataField> dataFields = new ArrayList<>();
@@ -209,7 +209,7 @@ public final class DataLoadProcessBuilder {
       }
     }
     configuration.setDataFields(dataFields.toArray(new DataField[dataFields.size()]));
-    configuration.setBucketingInfo(carbonTable.getBucketingInfo(carbonTable.getFactTableName()));
+    configuration.setBucketingInfo(carbonTable.getBucketingInfo(carbonTable.getTableName()));
     // configuration for one pass load: dictionary server info
     configuration.setUseOnePass(loadModel.getUseOnePass());
     configuration.setDictionaryServerHost(loadModel.getDictionaryServerHost());

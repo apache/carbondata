@@ -122,7 +122,7 @@ public class QueryModel implements Serializable {
   public static QueryModel createModel(AbsoluteTableIdentifier absoluteTableIdentifier,
       CarbonQueryPlan queryPlan, CarbonTable carbonTable, DataTypeConverter converter) {
     QueryModel queryModel = new QueryModel();
-    String factTableName = carbonTable.getFactTableName();
+    String factTableName = carbonTable.getTableName();
     queryModel.setAbsoluteTableIdentifier(absoluteTableIdentifier);
 
     fillQueryModel(queryPlan, carbonTable, queryModel, factTableName);
@@ -141,7 +141,7 @@ public class QueryModel implements Serializable {
     if (null != queryPlan.getFilterExpression()) {
       boolean[] isFilterDimensions = new boolean[carbonTable.getDimensionOrdinalMax()];
       boolean[] isFilterMeasures =
-          new boolean[carbonTable.getNumberOfMeasures(carbonTable.getFactTableName())];
+          new boolean[carbonTable.getNumberOfMeasures(carbonTable.getTableName())];
       processFilterExpression(queryPlan.getFilterExpression(),
           carbonTable.getDimensionByTableName(factTableName),
           carbonTable.getMeasureByTableName(factTableName), isFilterDimensions, isFilterMeasures);

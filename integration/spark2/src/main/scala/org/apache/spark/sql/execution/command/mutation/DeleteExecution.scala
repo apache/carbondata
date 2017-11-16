@@ -31,7 +31,6 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.ExecutionErrors
-import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -64,24 +63,18 @@ object DeleteExecution {
       sparkSession: SparkSession,
       dataRdd: RDD[Row],
       timestamp: String,
-      relation: CarbonRelation,
       isUpdateOperation: Boolean,
-      executorErrors: ExecutionErrors
-  ): Boolean = {
+      executorErrors: ExecutionErrors): Boolean = {
 
     var res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]] = null
     val tableName = getTableIdentifier(identifier).table
     val database = GetDB.getDatabaseName(getTableIdentifier(identifier).database, sparkSession)
-    val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(DeleteExecution.getTableIdentifier(identifier))(sparkSession).
-      asInstanceOf[CarbonRelation]
-
-    val absoluteTableIdentifier = relation.tableMeta.carbonTable.getAbsoluteTableIdentifier
+    val carbonTable = CarbonEnv.getCarbonTable(Some(database), tableName)(sparkSession)
+    val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val carbonTablePath = CarbonStorePath
       .getCarbonTablePath(absoluteTableIdentifier)
     val factPath = carbonTablePath.getFactDir
 
-    val carbonTable = relation.tableMeta.carbonTable
     var deleteStatus = true
     val deleteRdd = if (isUpdateOperation) {
       val schema =

@@ -57,21 +57,21 @@ case class AlterTableCompactionCommand(
     if (relation == null) {
       sys.error(s"Table $databaseName.$tableName does not exist")
     }
-    if (null == relation.tableMeta.carbonTable) {
+    if (null == relation.carbonTable) {
       LOGGER.error(s"alter table failed. table not found: $databaseName.$tableName")
       sys.error(s"alter table failed. table not found: $databaseName.$tableName")
     }
 
     val carbonLoadModel = new CarbonLoadModel()
 
-    val table = relation.tableMeta.carbonTable
-    carbonLoadModel.setTableName(table.getFactTableName)
+    val table = relation.carbonTable
+    carbonLoadModel.setTableName(table.getTableName)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     // Need to fill dimension relation
     carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
-    carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
-    carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
-    carbonLoadModel.setTablePath(relation.tableMeta.carbonTable.getTablePath)
+    carbonLoadModel.setTableName(relation.carbonTable.getTableName)
+    carbonLoadModel.setDatabaseName(relation.carbonTable.getDatabaseName)
+    carbonLoadModel.setTablePath(relation.carbonTable.getTablePath)
 
     var storeLocation = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,

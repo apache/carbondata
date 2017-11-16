@@ -364,7 +364,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       TableProvider tableProvider = new SingleTableProvider(carbonTable);
       CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
       BitSet matchedPartitions = null;
-      PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
+      PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
       if (partitionInfo != null) {
         // prune partitions for filter query on partition table
         matchedPartitions = setMatchedPartitions(null, carbonTable, filter, partitionInfo);

@@ -42,14 +42,14 @@ class CarbonStreamingQueryListener(spark: SparkSession) extends StreamingQueryLi
         LockUsage.STREAMING_LOCK)
       if (lock.lockWithRetries()) {
         LOGGER.info("Acquired the lock for stream table: " + carbonTable.getDatabaseName + "." +
-                    carbonTable.getFactTableName)
+                    carbonTable.getTableName)
         cache.put(event.id, lock)
       } else {
         LOGGER.error("Not able to acquire the lock for stream table:" +
-                     carbonTable.getDatabaseName + "." + carbonTable.getFactTableName)
+                     carbonTable.getDatabaseName + "." + carbonTable.getTableName)
         throw new InterruptedException(
           "Not able to acquire the lock for stream table: " + carbonTable.getDatabaseName + "." +
-          carbonTable.getFactTableName)
+          carbonTable.getTableName)
       }
     }
   }

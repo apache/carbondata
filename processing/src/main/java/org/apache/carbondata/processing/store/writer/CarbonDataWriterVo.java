@@ -22,7 +22,6 @@ import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
 import org.apache.carbondata.processing.store.CarbonDataFileAttributes;
-import org.apache.carbondata.processing.store.file.IFileManagerComposite;
 
 /**
  * Value object for writing the data
@@ -35,12 +34,6 @@ public class CarbonDataWriterVo {
 
   private String tableName;
 
-  private IFileManagerComposite fileManager;
-
-  private boolean[] rleEncodingForDictDim;
-
-  private boolean[] isComplexType;
-
   private int NoDictionaryCount;
 
   private CarbonDataFileAttributes carbonDataFileAttributes;
@@ -48,8 +41,6 @@ public class CarbonDataWriterVo {
   private String databaseName;
 
   private List<ColumnSchema> wrapperColumnSchemaList;
-
-  private boolean[] isDictionaryColumn;
 
   private String carbonDataDirectoryPath;
 
@@ -110,48 +101,6 @@ public class CarbonDataWriterVo {
   }
 
   /**
-   * @return the fileManager
-   */
-  public IFileManagerComposite getFileManager() {
-    return fileManager;
-  }
-
-  /**
-   * @param fileManager the fileManager to set
-   */
-  public void setFileManager(IFileManagerComposite fileManager) {
-    this.fileManager = fileManager;
-  }
-
-  /**
-   * @return the rleEncodingForDictDim
-   */
-  public boolean[] getRleEncodingForDictDim() {
-    return rleEncodingForDictDim;
-  }
-
-  /**
-   * @param rleEncodingForDictDim the rleEncodingForDictDim to set
-   */
-  public void setRleEncodingForDictDim(boolean[] rleEncodingForDictDim) {
-    this.rleEncodingForDictDim = rleEncodingForDictDim;
-  }
-
-  /**
-   * @return the isComplexType
-   */
-  public boolean[] getIsComplexType() {
-    return isComplexType;
-  }
-
-  /**
-   * @param isComplexType the isComplexType to set
-   */
-  public void setIsComplexType(boolean[] isComplexType) {
-    this.isComplexType = isComplexType;
-  }
-
-  /**
    * @return the noDictionaryCount
    */
   public int getNoDictionaryCount() {
@@ -205,20 +154,6 @@ public class CarbonDataWriterVo {
    */
   public void setWrapperColumnSchemaList(List<ColumnSchema> wrapperColumnSchemaList) {
     this.wrapperColumnSchemaList = wrapperColumnSchemaList;
-  }
-
-  /**
-   * @return the isDictionaryColumn
-   */
-  public boolean[] getIsDictionaryColumn() {
-    return isDictionaryColumn;
-  }
-
-  /**
-   * @param isDictionaryColumn the isDictionaryColumn to set
-   */
-  public void setIsDictionaryColumn(boolean[] isDictionaryColumn) {
-    this.isDictionaryColumn = isDictionaryColumn;
   }
 
   /**

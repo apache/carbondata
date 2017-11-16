@@ -36,6 +36,7 @@ import org.apache.spark.sql.parser.CarbonSparkSqlParser
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events._
 
 /**
@@ -106,15 +107,15 @@ class CarbonSessionCatalog(
       alias: Option[String],
       carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): Boolean = {
     var isRefreshed = false
-    val storePath = CarbonEnv.getInstance(sparkSession).storePath
+    val storePath = CarbonProperties.getStorePath
     carbonEnv.carbonMetastore.
       checkSchemasModifiedTimeAndReloadTables()
 
-    val tableMeta = carbonEnv.carbonMetastore
-      .getTableFromMetadataCache(carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
-        carbonDatasourceHadoopRelation.carbonTable.getFactTableName)
-    if (tableMeta.isEmpty || (tableMeta.isDefined &&
-        tableMeta.get.carbonTable.getTableLastUpdatedTime !=
+    val table = carbonEnv.carbonMetastore.getTableFromMetadataCache(
+      carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
+      carbonDatasourceHadoopRelation.carbonTable.getTableName)
+    if (table.isEmpty || (table.isDefined &&
+        table.get.getTableLastUpdatedTime !=
           carbonDatasourceHadoopRelation.carbonTable.getTableLastUpdatedTime)) {
       refreshTable(identifier)
       DataMapStoreManager.getInstance().

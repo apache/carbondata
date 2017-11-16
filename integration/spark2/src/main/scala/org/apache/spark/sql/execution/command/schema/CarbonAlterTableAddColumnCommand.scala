@@ -57,9 +57,7 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
       // older carbon table and this can lead to inconsistent state in the system. Therefor look
       // up relation should be called after acquiring the lock
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      carbonTable = metastore
-        .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
-        .tableMeta.carbonTable
+      carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
       val alterTableAddColumnListener = AlterTableAddColumnPreEvent(carbonTable,
         alterTableAddColumnsModel)
       OperationListenerBus.getInstance().fireEvent(alterTableAddColumnListener)

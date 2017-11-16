@@ -20,13 +20,15 @@ package org.apache.spark.sql
 import java.util.Map
 import java.util.concurrent.ConcurrentHashMap
 
-import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonMetaStoreFactory, CarbonSessionCatalog}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonMetaStoreFactory, CarbonRelation, CarbonSessionCatalog}
 import org.apache.spark.sql.internal.CarbonSQLConf
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
-import org.apache.carbondata.events.{CarbonEnvInitPreEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{CarbonEnvInitPreEvent, OperationListenerBus}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
@@ -40,8 +42,6 @@ class CarbonEnv {
   var sessionParams: SessionParams = _
 
   var carbonSessionInfo: CarbonSessionInfo = _
-
-  var storePath: String = _
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
@@ -74,7 +74,7 @@ class CarbonEnv {
         config.addDefaultCarbonSessionParams()
         carbonMetastore = {
           val properties = CarbonProperties.getInstance()
-          storePath = properties.getProperty(CarbonCommonConstants.STORE_LOCATION)
+          var storePath = properties.getProperty(CarbonCommonConstants.STORE_LOCATION)
           if (storePath == null) {
             storePath = sparkSession.conf.get("spark.sql.warehouse.dir")
             properties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
@@ -112,6 +112,30 @@ object CarbonEnv {
       carbonEnv
     }
   }
+
+  /**
+   * Return carbon table instance by looking up relation in `sparkSession`
+   */
+  def getCarbonTable(
+      databaseNameOp: Option[String],
+      tableName: String)
+    (sparkSession: SparkSession): CarbonTable = {
+    CarbonEnv
+      .getInstance(sparkSession)
+      .carbonMetastore
+      .lookupRelation(databaseNameOp, tableName)(sparkSession)
+      .asInstanceOf[CarbonRelation]
+      .carbonTable
+  }
+
+  def getCarbonTable(
+      tableIdentifier: TableIdentifier)
+    (sparkSession: SparkSession): CarbonTable = {
+    CarbonEnv
+      .getInstance(sparkSession)
+      .carbonMetastore
+      .lookupRelation(tableIdentifier)(sparkSession)
+      .asInstanceOf[CarbonRelation]
+      .carbonTable
+  }
 }
-
-

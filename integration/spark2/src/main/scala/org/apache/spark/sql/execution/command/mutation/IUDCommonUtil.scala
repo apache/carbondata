@@ -60,7 +60,7 @@ object IUDCommonUtil {
           logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
             .getDatabaseName + "." +
           logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
-            .getFactTableName
+            .getTableName
         val sementProperty = carbonProperties
           .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbAndTb, "")
         if (!(sementProperty.equals("") || sementProperty.trim.equals("*"))) {

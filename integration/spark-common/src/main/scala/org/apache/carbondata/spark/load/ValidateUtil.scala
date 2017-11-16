@@ -51,8 +51,8 @@ object ValidateUtil {
   def validateSortScope(carbonTable: CarbonTable, sortScope: String): Unit = {
     if (sortScope != null) {
       // Don't support use global sort on partitioned table.
-      if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null &&
-        sortScope.equalsIgnoreCase(SortScopeOptions.SortScope.GLOBAL_SORT.toString)) {
+      if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null &&
+          sortScope.equalsIgnoreCase(SortScopeOptions.SortScope.GLOBAL_SORT.toString)) {
         throw new MalformedCarbonCommandException("Don't support use global sort on partitioned " +
           "table.")
       }

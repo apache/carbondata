@@ -245,7 +245,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
   test("Alter table add partition: List Partition") {
     sql("""ALTER TABLE list_table_area ADD PARTITION ('OutSpace', 'Hi')""".stripMargin)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_list_table_area")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val list_info = partitionInfo.getListInfo
     assert(partitionIds == List(0, 1, 2, 3, 4, 5).map(Integer.valueOf(_)).asJava)
@@ -286,7 +286,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     
     sql("""ALTER TABLE list_table_area DROP PARTITION(2) WITH DATA""")
     val carbonTable2 = CarbonMetadata.getInstance().getCarbonTable("default_list_table_area")
-    val partitionInfo2 = carbonTable2.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo2 = carbonTable2.getPartitionInfo(carbonTable.getTableName)
     val partitionIds2 = partitionInfo2.getPartitionIds
     val list_info2 = partitionInfo2.getListInfo
     assert(partitionIds2 == List(0, 1, 3, 4, 5).map(Integer.valueOf(_)).asJava)
@@ -304,7 +304,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
   test("Alter table add partition: Range Partition") {
     sql("""ALTER TABLE range_table_logdate ADD PARTITION ('2017/01/01', '2018/01/01')""")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_range_table_logdate")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val range_info = partitionInfo.getRangeInfo
     assert(partitionIds == List(0, 1, 2, 3, 4, 5).map(Integer.valueOf(_)).asJava)
@@ -342,7 +342,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
     sql("""ALTER TABLE range_table_logdate DROP PARTITION(3) WITH DATA;""")
     val carbonTable1 = CarbonMetadata.getInstance().getCarbonTable("default_range_table_logdate")
-    val partitionInfo1 = carbonTable1.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo1 = carbonTable1.getPartitionInfo(carbonTable.getTableName)
     val partitionIds1 = partitionInfo1.getPartitionIds
     val range_info1 = partitionInfo1.getRangeInfo
     assert(partitionIds1 == List(0, 1, 2, 4, 5).map(Integer.valueOf(_)).asJava)
@@ -373,7 +373,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
   test("Alter table split partition: List Partition") {
     sql("""ALTER TABLE list_table_country SPLIT PARTITION(4) INTO ('Canada', 'Russia', '(Good, NotGood)')""".stripMargin)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_list_table_country")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val list_info = partitionInfo.getListInfo
     assert(partitionIds == List(0, 1, 2, 3, 6, 7, 8, 5).map(Integer.valueOf(_)).asJava)
@@ -415,7 +415,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
     sql("""ALTER TABLE list_table_country DROP PARTITION(8)""")
     val carbonTable1 = CarbonMetadata.getInstance().getCarbonTable("default_list_table_country")
-    val partitionInfo1 = carbonTable1.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo1 = carbonTable1.getPartitionInfo(carbonTable.getTableName)
     val partitionIds1 = partitionInfo1.getPartitionIds
     val list_info1 = partitionInfo1.getListInfo
     assert(partitionIds1 == List(0, 1, 2, 3, 6, 7, 5).map(Integer.valueOf(_)).asJava)
@@ -438,7 +438,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     sql("""ALTER TABLE list_table_country ADD PARTITION ('(Part1, Part2, Part3, Part4)')""".stripMargin)
     sql("""ALTER TABLE list_table_country SPLIT PARTITION(9) INTO ('Part4', 'Part2', '(Part1, Part3)')""".stripMargin)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_list_table_country")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val list_info = partitionInfo.getListInfo
     assert(partitionIds == List(0, 1, 2, 3, 6, 7, 5, 10, 11, 12).map(Integer.valueOf(_)).asJava)
@@ -485,7 +485,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     sql("""ALTER TABLE list_table_area ADD PARTITION ('(One,Two, Three, Four)')""".stripMargin)
     sql("""ALTER TABLE list_table_area SPLIT PARTITION(6) INTO ('One', '(Two, Three )', 'Four')""".stripMargin)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_list_table_area")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val list_info = partitionInfo.getListInfo
     assert(partitionIds == List(0, 1, 3, 4, 5, 7, 8, 9).map(Integer.valueOf(_)).asJava)
@@ -528,7 +528,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
   test("Alter table split partition: Range Partition") {
     sql("""ALTER TABLE range_table_logdate_split SPLIT PARTITION(4) INTO ('2017/01/01', '2018/01/01')""")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_range_table_logdate_split")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val rangeInfo = partitionInfo.getRangeInfo
     assert(partitionIds == List(0, 1, 2, 3, 5, 6).map(Integer.valueOf(_)).asJava)
@@ -566,7 +566,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
     sql("""ALTER TABLE range_table_logdate_split DROP PARTITION(6)""")
     val carbonTable1 = CarbonMetadata.getInstance().getCarbonTable("default_range_table_logdate_split")
-    val partitionInfo1 = carbonTable1.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo1 = carbonTable1.getPartitionInfo(carbonTable.getTableName)
     val partitionIds1 = partitionInfo1.getPartitionIds
     val rangeInfo1 = partitionInfo1.getRangeInfo
     assert(partitionIds1 == List(0, 1, 2, 3, 5).map(Integer.valueOf(_)).asJava)
@@ -586,7 +586,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
   test("Alter table split partition: Range Partition + Bucket") {
     sql("""ALTER TABLE range_table_bucket SPLIT PARTITION(4) INTO ('2017/01/01', '2018/01/01')""")
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_range_table_bucket")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val rangeInfo = partitionInfo.getRangeInfo
     assert(partitionIds == List(0, 1, 2, 3, 5, 6).map(Integer.valueOf(_)).asJava)
@@ -624,7 +624,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
     sql("""ALTER TABLE range_table_bucket DROP PARTITION(6) WITH DATA""")
     val carbonTable1 = CarbonMetadata.getInstance().getCarbonTable("default_range_table_bucket")
-    val partitionInfo1 = carbonTable1.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo1 = carbonTable1.getPartitionInfo(carbonTable.getTableName)
     val partitionIds1 = partitionInfo1.getPartitionIds
     val rangeInfo1 = partitionInfo1.getRangeInfo
     assert(partitionIds1 == List(0, 1, 2, 3, 5).map(Integer.valueOf(_)).asJava)
@@ -642,7 +642,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
     sql("""ALTER TABLE range_table_bucket DROP PARTITION(3)""")
     val carbonTable2 = CarbonMetadata.getInstance().getCarbonTable("default_range_table_bucket")
-    val partitionInfo2 = carbonTable2.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo2 = carbonTable2.getPartitionInfo(carbonTable.getTableName)
     val partitionIds2 = partitionInfo2.getPartitionIds
     val rangeInfo2 = partitionInfo2.getRangeInfo
     assert(partitionIds2 == List(0, 1, 2, 5).map(Integer.valueOf(_)).asJava)
@@ -659,7 +659,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
     sql("""ALTER TABLE range_table_bucket DROP PARTITION(5)""")
     val carbonTable3 = CarbonMetadata.getInstance().getCarbonTable("default_range_table_bucket")
-    val partitionInfo3 = carbonTable3.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo3 = carbonTable3.getPartitionInfo(carbonTable.getTableName)
     val partitionIds3 = partitionInfo3.getPartitionIds
     val rangeInfo3 = partitionInfo3.getRangeInfo
     assert(partitionIds3 == List(0, 1, 2).map(Integer.valueOf(_)).asJava)
@@ -789,7 +789,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     sql("ALTER TABLE carbon_table_default_db ADD PARTITION ('2017')")
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_carbon_table_default_db")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionIds = partitionInfo.getPartitionIds
     val range_info = partitionInfo.getRangeInfo
     assert(partitionIds == List(0, 1, 2, 3).map(Integer.valueOf(_)).asJava)
@@ -809,7 +809,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     sql("ALTER TABLE carbondb.carbontable ADD PARTITION ('2017')")
 
     val carbonTable1 = CarbonMetadata.getInstance().getCarbonTable("carbondb_carbontable")
-    val partitionInfo1 = carbonTable1.getPartitionInfo(carbonTable1.getFactTableName)
+    val partitionInfo1 = carbonTable1.getPartitionInfo(carbonTable1.getTableName)
     val partitionIds1 = partitionInfo1.getPartitionIds
     val range_info1 = partitionInfo1.getRangeInfo
     assert(partitionIds1 == List(0, 1, 2, 3).map(Integer.valueOf(_)).asJava)

@@ -47,7 +47,7 @@ case class LoadTableByInsertCommand(
       Some(df)).run(sparkSession)
     // updating relation metadata. This is in case of auto detect high cardinality
     relation.carbonRelation.metaData =
-      CarbonSparkUtil.createSparkMeta(relation.carbonRelation.tableMeta.carbonTable)
+      CarbonSparkUtil.createSparkMeta(relation.carbonRelation.carbonTable)
     load
   }
 }

@@ -41,7 +41,7 @@ object PartitionDropper {
     val dropWithData = dropPartitionCallableModel.dropWithData
     val carbonTable = dropPartitionCallableModel.carbonTable
     val dbName = carbonTable.getDatabaseName
-    val tableName = carbonTable.getFactTableName
+    val tableName = carbonTable.getTableName
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val partitionInfo = carbonTable.getPartitionInfo(tableName)
     val partitioner = PartitionFactory.getPartitioner(partitionInfo)

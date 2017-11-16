@@ -120,7 +120,7 @@ public final class CarbonMetadata {
   public CarbonDimension getCarbonDimensionBasedOnColIdentifier(CarbonTable carbonTable,
       String columnIdentifier) {
     List<CarbonDimension> listOfCarbonDims =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     for (CarbonDimension dimension : listOfCarbonDims) {
       if (dimension.getColumnId().equals(columnIdentifier)) {
         return dimension;

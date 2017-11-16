@@ -112,7 +112,7 @@ public class ManageDictionaryAndBTree {
     }
     // clear dictionary cache from LRU cache
     List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     for (CarbonDimension dimension : dimensions) {
       removeDictionaryColumnFromCache(carbonTable.getAbsoluteTableIdentifier(),
           dimension.getColumnId());
