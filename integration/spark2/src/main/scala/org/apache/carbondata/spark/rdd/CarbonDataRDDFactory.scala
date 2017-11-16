@@ -487,8 +487,17 @@ object CarbonDataRDDFactory {
         carbonTable.getCarbonTableIdentifier,
         carbonLoadModel)
       OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
-      updateTableStatus(status, carbonLoadModel, loadStatus, overwriteTable)
-
+      val done = updateTableStatus(status, carbonLoadModel, loadStatus, overwriteTable)
+      if (!done) {
+        CommonUtil.updateTableStatusForFailure(carbonLoadModel)
+        LOGGER.info("********starting clean up**********")
+        CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+        LOGGER.info("********clean up done**********")
+        LOGGER.audit("Data load is failed for " +
+                     s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
+        LOGGER.error("Data load failed due to failure in table status updation.")
+        throw new Exception("Data load failed due to failure in table status updation.")
+      }
       if (SegmentStatus.LOAD_PARTIAL_SUCCESS == loadStatus) {
         LOGGER.audit("Data load is partially successful for " +
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
@@ -738,7 +747,7 @@ object CarbonDataRDDFactory {
       carbonLoadModel: CarbonLoadModel,
       loadStatus: SegmentStatus,
       overwriteTable: Boolean
-  ): Unit = {
+  ): Boolean = {
     val metadataDetails = if (status != null && status(0) != null) {
       status(0)._2._1
     } else {
@@ -749,9 +758,9 @@ object CarbonDataRDDFactory {
       loadStatus,
       carbonLoadModel.getFactTimeStamp,
       true)
-    val success = CarbonLoaderUtil.recordLoadMetadata(metadataDetails, carbonLoadModel, false,
+    val done = CarbonLoaderUtil.recordLoadMetadata(metadataDetails, carbonLoadModel, false,
       overwriteTable)
-    if (!success) {
+    if (!done) {
       val errorMessage = "Dataload failed due to failure in table status updation."
       LOGGER.audit("Data load is failed for " +
                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
@@ -761,6 +770,7 @@ object CarbonDataRDDFactory {
       // TODO : Handle it
       LOGGER.info("********Database updated**********")
     }
+    done
   }
 
 
