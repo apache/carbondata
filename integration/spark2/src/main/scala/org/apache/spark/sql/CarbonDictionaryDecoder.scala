@@ -72,7 +72,7 @@ case class CarbonDictionaryDecoder(
     attachTree(this, "execute") {
       val absoluteTableIdentifiers = relations.map { relation =>
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
-        (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
+        (carbonTable.getTableName, carbonTable.getAbsoluteTableIdentifier)
       }.toMap
 
       if (CarbonDictionaryDecoder.isRequiredToDecode(getDictionaryColumnIds)) {
@@ -125,7 +125,7 @@ case class CarbonDictionaryDecoder(
 
     val absoluteTableIdentifiers = relations.map { relation =>
       val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
-      (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
+      (carbonTable.getTableName, carbonTable.getAbsoluteTableIdentifier)
     }.toMap
 
     if (CarbonDictionaryDecoder.isRequiredToDecode(getDictionaryColumnIds)) {
@@ -323,7 +323,7 @@ object CarbonDictionaryDecoder {
       if (relation.isDefined && canBeDecoded(attr, profile)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension = carbonTable
-          .getDimensionByName(carbonTable.getFactTableName, attr.name)
+          .getDimensionByName(carbonTable.getTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
@@ -355,7 +355,7 @@ object CarbonDictionaryDecoder {
       if (relation.isDefined) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension = carbonTable
-          .getDimensionByName(carbonTable.getFactTableName, attr.name)
+          .getDimensionByName(carbonTable.getTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
@@ -432,12 +432,12 @@ object CarbonDictionaryDecoder {
       if (relation.isDefined && CarbonDictionaryDecoder.canBeDecoded(attr, profile)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension =
-          carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
+          carbonTable.getDimensionByName(carbonTable.getTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
             !carbonDimension.isComplex) {
-          (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
+          (carbonTable.getTableName, carbonDimension.getColumnIdentifier,
             carbonDimension)
         } else {
           (null, null, null)
@@ -485,12 +485,12 @@ class CarbonDecoderRDD(
       if (relation.isDefined && canBeDecoded(attr)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension =
-          carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
+          carbonTable.getDimensionByName(carbonTable.getTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
             !carbonDimension.isComplex()) {
-          (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
+          (carbonTable.getTableName, carbonDimension.getColumnIdentifier,
             carbonDimension)
         } else {
           (null, null, null)

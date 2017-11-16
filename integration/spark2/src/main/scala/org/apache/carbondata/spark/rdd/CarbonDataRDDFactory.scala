@@ -179,7 +179,7 @@ object CarbonDataRDDFactory {
             while (null != tableForCompaction) {
               LOGGER.info("Compaction request has been identified for table " +
                   s"${ tableForCompaction.getDatabaseName }." +
-                  s"${ tableForCompaction.getFactTableName}")
+                  s"${ tableForCompaction.getTableName}")
               val table: CarbonTable = tableForCompaction
               val metadataPath = table.getMetaDataFilepath
               val compactionType = CarbonCompactionUtil.determineCompactionType(metadataPath)
@@ -204,7 +204,7 @@ object CarbonDataRDDFactory {
                 case e: Exception =>
                   LOGGER.error("Exception in compaction thread for table " +
                       s"${ tableForCompaction.getDatabaseName }." +
-                      s"${ tableForCompaction.getFactTableName }")
+                      s"${ tableForCompaction.getTableName }")
                 // not handling the exception. only logging as this is not the table triggered
                 // by user.
               } finally {
@@ -216,7 +216,7 @@ object CarbonDataRDDFactory {
                   skipCompactionTables.+=:(tableForCompaction.getCarbonTableIdentifier)
                   LOGGER.error("Compaction request file can not be deleted for table " +
                       s"${ tableForCompaction.getDatabaseName }." +
-                      s"${ tableForCompaction.getFactTableName }")
+                      s"${ tableForCompaction.getTableName }")
                 }
               }
               // ********* check again for all the tables.
@@ -248,7 +248,7 @@ object CarbonDataRDDFactory {
       table: CarbonTable
   ): CarbonLoadModel = {
     val loadModel = new CarbonLoadModel
-    loadModel.setTableName(table.getFactTableName)
+    loadModel.setTableName(table.getTableName)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     // Need to fill dimension relation
     loadModel.setCarbonDataLoadSchema(dataLoadSchema)
@@ -319,7 +319,7 @@ object CarbonDataRDDFactory {
           }
         }
       } else {
-        status = if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null) {
+        status = if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
           loadDataForPartitionTable(sqlContext, dataFrame, carbonLoadModel)
         } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
           DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkContext,
@@ -782,7 +782,7 @@ object CarbonDataRDDFactory {
       dataFrame: Option[DataFrame],
       carbonLoadModel: CarbonLoadModel): RDD[Row] = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionColumn = partitionInfo.getColumnSchemaList.get(0).getColumnName
     val partitionColumnDataType = partitionInfo.getColumnSchemaList.get(0).getDataType
     val columns = carbonLoadModel.getCsvHeaderColumns

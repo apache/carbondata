@@ -347,7 +347,7 @@ public class CarbonTable implements Serializable {
   /**
    * @return the tabelName
    */
-  public String getFactTableName() {
+  public String getTableName() {
     return absoluteTableIdentifier.getCarbonTableIdentifier().getTableName();
   }
 
@@ -569,7 +569,7 @@ public class CarbonTable implements Serializable {
   }
 
   public boolean isPartitionTable() {
-    return null != tablePartitionMap.get(getFactTableName());
+    return null != tablePartitionMap.get(getTableName());
   }
 
   /**

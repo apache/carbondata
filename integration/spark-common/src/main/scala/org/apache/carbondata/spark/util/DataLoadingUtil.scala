@@ -180,10 +180,10 @@ object DataLoadingUtil {
       options: immutable.Map[String, String],
       optionsFinal: mutable.Map[String, String],
       carbonLoadModel: CarbonLoadModel): Unit = {
-    carbonLoadModel.setTableName(table.getFactTableName)
+    carbonLoadModel.setTableName(table.getTableName)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTablePath(table.getTablePath)
-    carbonLoadModel.setTableName(table.getFactTableName)
+    carbonLoadModel.setTableName(table.getTableName)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     // Need to fill dimension relation
     carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
@@ -199,7 +199,7 @@ object DataLoadingUtil {
     val complex_delimeter_level2 = optionsFinal("complex_delimiter_level_2")
     val all_dictionary_path = optionsFinal("all_dictionary_path")
     val column_dict = optionsFinal("columndict")
-    ValidateUtil.validateDateFormat(dateFormat, table, table.getFactTableName)
+    ValidateUtil.validateDateFormat(dateFormat, table, table.getTableName)
     ValidateUtil.validateSortScope(table, sort_scope)
 
     if (bad_records_logger_enable.toBoolean ||
@@ -236,7 +236,7 @@ object DataLoadingUtil {
         }
       } else {
         if (fileHeader.isEmpty) {
-          fileHeader = table.getCreateOrderColumn(table.getFactTableName)
+          fileHeader = table.getCreateOrderColumn(table.getTableName)
             .asScala.map(_.getColName).mkString(",")
         }
       }

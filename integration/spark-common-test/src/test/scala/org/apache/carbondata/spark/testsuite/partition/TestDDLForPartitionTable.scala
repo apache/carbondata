@@ -51,7 +51,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_hashTable")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("empno"))
     assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.INT)
@@ -74,7 +74,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
       """.stripMargin)
 
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_rangeTable")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("doj"))
     assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.TIMESTAMP)
@@ -101,7 +101,7 @@ class TestDDLForPartitionTable  extends QueryTest with BeforeAndAfterAll {
         |  'LIST_INFO'='0, 1, (2, 3)')
       """.stripMargin)
     val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_listTable")
-    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     assert(partitionInfo != null)
     assert(partitionInfo.getColumnSchemaList.get(0).getColumnName.equalsIgnoreCase("workgroupcategory"))
     assert(partitionInfo.getColumnSchemaList.get(0).getDataType == DataTypes.STRING)

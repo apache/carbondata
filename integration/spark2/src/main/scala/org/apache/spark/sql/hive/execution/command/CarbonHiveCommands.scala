@@ -42,11 +42,11 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
     var databaseLocation = ""
     try {
       databaseLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
-        CarbonEnv.getInstance(sparkSession).storePath)
+        CarbonProperties.getStorePath)
     } catch {
       case e: NoSuchDatabaseException =>
         // ignore the exception as exception will be handled by hive command.run
-      databaseLocation = CarbonEnv.getInstance(sparkSession).storePath
+      databaseLocation = CarbonProperties.getStorePath
     }
     // DropHiveDB command will fail if cascade is false and one or more table exists in database
     if (command.cascade && tablesInDB != null) {

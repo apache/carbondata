@@ -69,8 +69,7 @@ case class AlterTableSplitCarbonPartitionCommand(
     val tableName = splitPartitionModel.tableName
     val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation]
-    val carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
-    val tablePath = relation.tableMeta.tablePath
+    val tablePath = relation.carbonTable.getTablePath
     if (relation == null) {
       sys.error(s"Table $dbName.$tableName does not exist")
     }
@@ -79,7 +78,7 @@ case class AlterTableSplitCarbonPartitionCommand(
       LOGGER.error(s"Alter table failed. table not found: $dbName.$tableName")
       sys.error(s"Alter table failed. table not found: $dbName.$tableName")
     }
-    val table = relation.tableMeta.carbonTable
+    val table = relation.carbonTable
     val partitionInfo = table.getPartitionInfo(tableName)
     val partitionIds = partitionInfo.getPartitionIds.asScala.map(_.asInstanceOf[Int]).toList
     // keep a copy of partitionIdList before update partitionInfo.
@@ -95,7 +94,7 @@ case class AlterTableSplitCarbonPartitionCommand(
 
     updatePartitionInfo(partitionInfo, partitionIds)
 
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(tablePath, carbonTableIdentifier)
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier)
     val schemaFilePath = carbonTablePath.getSchemaFilePath
     // read TableInfo
     val tableInfo = carbonMetaStore.getThriftTableInfo(carbonTablePath)(sparkSession)
@@ -150,16 +149,12 @@ case class AlterTableSplitCarbonPartitionCommand(
       locks = AlterTableUtil.validateTableAndAcquireLock(dbName, tableName,
         locksToBeAcquired)(sparkSession)
       val carbonLoadModel = new CarbonLoadModel()
-      val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
-        .asInstanceOf[CarbonRelation]
-      val tablePath = relation.tableMeta.tablePath
-      val table = relation.tableMeta.carbonTable
-      val carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
+      val table = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
+      val tablePath = table.getTablePath
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
-      carbonLoadModel.setTableName(carbonTableIdentifier.getTableName)
-      carbonLoadModel.setDatabaseName(carbonTableIdentifier.getDatabaseName)
+      carbonLoadModel.setTableName(table.getTableName)
+      carbonLoadModel.setDatabaseName(table.getDatabaseName)
       carbonLoadModel.setTablePath(tablePath)
       val loadStartTime = CarbonUpdateUtil.readCurrentTime
       carbonLoadModel.setFactTimeStamp(loadStartTime)

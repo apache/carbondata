@@ -30,7 +30,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, UpdateTablePostEvent, UpdateTablePreEvent}
 import org.apache.carbondata.processing.loading.FailureCauses
 
@@ -58,7 +57,7 @@ private[sql] case class ProjectForUpdateCommand(
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(DeleteExecution.getTableIdentifier(tableIdentifier))(sparkSession).
       asInstanceOf[CarbonRelation]
-    val carbonTable = relation.tableMeta.carbonTable
+    val carbonTable = relation.carbonTable
 
     // trigger event for Update table
     val operationContext = new OperationContext
@@ -74,7 +73,7 @@ private[sql] case class ProjectForUpdateCommand(
     val currentTime = CarbonUpdateUtil.readCurrentTime
     //    var dataFrame: DataFrame = null
     var dataSet: DataFrame = null
-    val isPersistEnabled = CarbonProperties.getInstance.isPersistUpdateDataset()
+    val isPersistEnabled = CarbonProperties.getInstance.isPersistUpdateDataset
     try {
       lockStatus = metadataLock.lockWithRetries()
       if (lockStatus) {
@@ -83,7 +82,6 @@ private[sql] case class ProjectForUpdateCommand(
       else {
         throw new Exception("Table is locked for updation. Please try after some time")
       }
-      val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
       // Get RDD.
 
       dataSet = if (isPersistEnabled) {
@@ -93,7 +91,7 @@ private[sql] case class ProjectForUpdateCommand(
       else {
         Dataset.ofRows(sparkSession, plan)
       }
-      var executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
+      val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
 
 
       // handle the clean up of IUD.
@@ -101,8 +99,7 @@ private[sql] case class ProjectForUpdateCommand(
 
       // do delete operation.
       DeleteExecution.deleteDeltaExecution(tableIdentifier, sparkSession, dataSet.rdd,
-        currentTime + "",
-        relation, isUpdateOperation = true, executionErrors)
+        currentTime + "", isUpdateOperation = true, executionErrors)
 
       if(executionErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executionErrors.errorMsg)

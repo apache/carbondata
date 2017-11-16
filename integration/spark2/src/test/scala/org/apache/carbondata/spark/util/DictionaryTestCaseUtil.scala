@@ -38,9 +38,9 @@ object DictionaryTestCaseUtil {
    * @param value  a value of column
    */
   def checkDictionary(relation: CarbonRelation, columnName: String, value: String) {
-    val table = relation.tableMeta.carbonTable
-    val dimension = table.getDimensionByName(table.getFactTableName, columnName)
-    val tableIdentifier = new CarbonTableIdentifier(table.getDatabaseName, table.getFactTableName, "uniqueid")
+    val table = relation.carbonTable
+    val dimension = table.getDimensionByName(table.getTableName, columnName)
+    val tableIdentifier = new CarbonTableIdentifier(table.getDatabaseName, table.getTableName, "uniqueid")
     val  absoluteTableIdentifier = new AbsoluteTableIdentifier(table.getTablePath, tableIdentifier)
     val columnIdentifier = new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
       dimension.getColumnIdentifier, dimension.getDataType,

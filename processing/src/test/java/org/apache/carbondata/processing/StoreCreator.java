@@ -297,9 +297,9 @@ public class StoreCreator {
     String header = reader.readLine();
     String[] split = header.split(",");
     List<CarbonColumn> allCols = new ArrayList<CarbonColumn>();
-    List<CarbonDimension> dims = table.getDimensionByTableName(table.getFactTableName());
+    List<CarbonDimension> dims = table.getDimensionByTableName(table.getTableName());
     allCols.addAll(dims);
-    List<CarbonMeasure> msrs = table.getMeasureByTableName(table.getFactTableName());
+    List<CarbonMeasure> msrs = table.getMeasureByTableName(table.getTableName());
     allCols.addAll(msrs);
     Set<String>[] set = new HashSet[dims.size()];
     for (int i = 0; i < set.length; i++) {

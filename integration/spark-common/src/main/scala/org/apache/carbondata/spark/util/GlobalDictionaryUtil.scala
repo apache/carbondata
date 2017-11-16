@@ -676,17 +676,17 @@ object GlobalDictionaryUtil {
    */
   def generateGlobalDictionary(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      storePath: String,
+      tablePath: String,
       dataFrame: Option[DataFrame] = None): Unit = {
     try {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
       val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier
       // create dictionary folder if not exists
-      val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(tablePath, carbonTableIdentifier)
       val dictfolderPath = carbonTablePath.getMetadataDirectoryPath
       // columns which need to generate global dictionary file
       val dimensions = carbonTable.getDimensionByTableName(
-        carbonTable.getFactTableName).asScala.toArray
+        carbonTable.getTableName).asScala.toArray
       // generate global dict from pre defined column dict file
       carbonLoadModel.initPredefDictMap()
 
@@ -701,7 +701,7 @@ object GlobalDictionaryUtil {
         if (colDictFilePath != null) {
           // generate predefined dictionary
           generatePredefinedColDictionary(colDictFilePath, carbonTableIdentifier,
-            dimensions, carbonLoadModel, sqlContext, storePath, dictfolderPath)
+            dimensions, carbonLoadModel, sqlContext, tablePath, dictfolderPath)
         }
         if (headers.length > df.columns.length) {
           val msg = "The number of columns in the file header do not match the " +
@@ -717,7 +717,7 @@ object GlobalDictionaryUtil {
           // select column to push down pruning
           df = df.select(requireColumnNames.head, requireColumnNames.tail: _*)
           val model = createDictionaryLoadModel(carbonLoadModel, carbonTableIdentifier,
-            requireDimension, storePath, dictfolderPath, false)
+            requireDimension, tablePath, dictfolderPath, false)
           // combine distinct value in a block and partition by column
           val inputRDD = new CarbonBlockDistinctValuesCombineRDD(df.rdd, model)
             .partitionBy(new ColumnPartitioner(model.primDimensions.length))
@@ -731,7 +731,7 @@ object GlobalDictionaryUtil {
       } else {
         generateDictionaryFromDictionaryFiles(sqlContext,
           carbonLoadModel,
-          storePath,
+          tablePath,
           carbonTableIdentifier,
           dictfolderPath,
           dimensions,

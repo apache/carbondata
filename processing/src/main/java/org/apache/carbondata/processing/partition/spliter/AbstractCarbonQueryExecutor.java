@@ -78,7 +78,7 @@ public abstract class AbstractCarbonQueryExecutor {
     List<QueryDimension> dims = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     for (CarbonDimension dim : dimensions) {
       // check if dimension is deleted
       QueryDimension queryDimension = new QueryDimension(dim.getColName());
@@ -89,7 +89,7 @@ public abstract class AbstractCarbonQueryExecutor {
 
     List<QueryMeasure> msrs = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+        carbonTable.getMeasureByTableName(carbonTable.getTableName());
     for (CarbonMeasure carbonMeasure : measures) {
       // check if measure is deleted
       QueryMeasure queryMeasure = new QueryMeasure(carbonMeasure.getColName());

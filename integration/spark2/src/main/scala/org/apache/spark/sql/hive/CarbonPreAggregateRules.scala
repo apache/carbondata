@@ -761,7 +761,7 @@ object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
           .DEFAULT_MAX_NUMBER_OF_COLUMNS
         )
     }
-    val isAggregateTable = !relation.carbonRelation.tableMeta.carbonTable.getTableInfo
+    val isAggregateTable = !relation.carbonRelation.carbonTable.getTableInfo
       .getParentRelationIdentifiers.isEmpty
     // transform logical plan if the load is for aggregate table.
     val childPlan = if (isAggregateTable) {

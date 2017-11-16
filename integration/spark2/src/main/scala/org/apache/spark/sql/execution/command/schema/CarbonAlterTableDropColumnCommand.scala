@@ -53,9 +53,7 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       locks = AlterTableUtil
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      carbonTable = metastore
-        .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
-        .tableMeta.carbonTable
+      carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
       val partitionInfo = carbonTable.getPartitionInfo(tableName)
       if (partitionInfo != null) {
         val partitionColumnSchemaList = partitionInfo.getColumnSchemaList.asScala

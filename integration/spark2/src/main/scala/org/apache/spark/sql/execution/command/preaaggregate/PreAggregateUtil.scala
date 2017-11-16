@@ -326,21 +326,19 @@ object PreAggregateUtil {
     var numberOfCurrentChild: Int = 0
     try {
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      carbonTable = metastore
-        .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
-        .tableMeta.carbonTable
+      carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
       locks = acquireLock(dbName, tableName, locksToBeAcquired, carbonTable)
       // get the latest carbon table and check for column existence
       // read the latest schema file
-      val carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(
+        carbonTable.getAbsoluteTableIdentifier)
       val thriftTableInfo: TableInfo = metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
       val schemaConverter = new ThriftWrapperSchemaConverterImpl()
-      val wrapperTableInfo = schemaConverter
-        .fromExternalToWrapperTableInfo(thriftTableInfo,
-          dbName,
-          tableName,
-          carbonTable.getTablePath)
+      val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
+        thriftTableInfo,
+        dbName,
+        tableName,
+        carbonTable.getTablePath)
       numberOfCurrentChild = wrapperTableInfo.getDataMapSchemaList.size
       if (wrapperTableInfo.getDataMapSchemaList.asScala.
         exists(f => f.getDataMapName.equalsIgnoreCase(childSchema.getDataMapName))) {
@@ -374,7 +372,7 @@ object PreAggregateUtil {
   def updateSchemaInfo(carbonTable: CarbonTable,
       thriftTable: TableInfo)(sparkSession: SparkSession): Unit = {
     val dbName = carbonTable.getDatabaseName
-    val tableName = carbonTable.getFactTableName
+    val tableName = carbonTable.getTableName
     CarbonEnv.getInstance(sparkSession).carbonMetastore
       .updateTableSchemaForDataMap(carbonTable.getCarbonTableIdentifier,
         carbonTable.getCarbonTableIdentifier,
@@ -435,31 +433,30 @@ object PreAggregateUtil {
   def revertMainTableChanges(dbName: String, tableName: String, numberOfChildSchema: Int)
     (sparkSession: SparkSession): Unit = {
     val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-    val carbonTable = metastore
-      .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation].tableMeta
-      .carbonTable
+    val carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
     carbonTable.getTableLastUpdatedTime
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
     val thriftTable: TableInfo = metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
     if (thriftTable.dataMapSchemas.size > numberOfChildSchema) {
-      metastore
-        .revertTableSchemaForPreAggCreationFailure(carbonTable.getAbsoluteTableIdentifier,
-          thriftTable)(sparkSession)
+      metastore.revertTableSchemaForPreAggCreationFailure(
+        carbonTable.getAbsoluteTableIdentifier, thriftTable)(sparkSession)
     }
   }
 
   def getChildCarbonTable(databaseName: String, tableName: String)
     (sparkSession: SparkSession): Option[CarbonTable] = {
     val metaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-    metaStore.getTableFromMetadataCache(databaseName, tableName) match {
-      case Some(tableMeta) => Some(tableMeta.carbonTable)
-      case None => try {
+    val carbonTable = metaStore.getTableFromMetadataCache(databaseName, tableName)
+    if (carbonTable.isEmpty) {
+      try {
         Some(metaStore.lookupRelation(Some(databaseName), tableName)(sparkSession)
           .asInstanceOf[CarbonRelation].metaData.carbonTable)
       } catch {
         case _: Exception =>
           None
       }
+    } else {
+      carbonTable
     }
   }
 

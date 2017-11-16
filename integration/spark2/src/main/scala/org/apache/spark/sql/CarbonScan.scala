@@ -65,11 +65,11 @@ case class CarbonScan(
       attributesRaw = attributeOut
     }
 
-    val columns = carbonTable.getCreateOrderColumn(carbonTable.getFactTableName)
+    val columns = carbonTable.getCreateOrderColumn(carbonTable.getTableName)
     val colAttr = new Array[Attribute](columns.size())
     attributesRaw.foreach { attr =>
     val column =
-        carbonTable.getColumnByName(carbonTable.getFactTableName, attr.name)
+        carbonTable.getColumnByName(carbonTable.getTableName, attr.name)
       if(column != null) {
         colAttr(columns.indexOf(column)) = attr
        }
@@ -78,7 +78,7 @@ case class CarbonScan(
 
     var queryOrder: Integer = 0
     attributesRaw.foreach { attr =>
-      val carbonColumn = carbonTable.getColumnByName(carbonTable.getFactTableName, attr.name)
+      val carbonColumn = carbonTable.getColumnByName(carbonTable.getTableName, attr.name)
       if (carbonColumn != null) {
         if (carbonColumn.isDimension()) {
           val dim = new QueryDimension(attr.name)

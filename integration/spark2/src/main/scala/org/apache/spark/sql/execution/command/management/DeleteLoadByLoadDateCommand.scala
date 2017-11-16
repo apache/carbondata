@@ -37,9 +37,7 @@ case class DeleteLoadByLoadDateCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
-      tableMeta.carbonTable
+    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     val operationContext = new OperationContext
     val deleteSegmentByDatePreEvent: DeleteSegmentByDatePreEvent =
       DeleteSegmentByDatePreEvent(carbonTable,

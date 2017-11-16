@@ -54,7 +54,7 @@ object HorizontalCompaction {
     }
 
     var compactionTypeIUD = CompactionType.IUD_UPDDEL_DELTA_COMPACTION
-    val carbonTable = carbonRelation.tableMeta.carbonTable
+    val carbonTable = carbonRelation.carbonTable
     val absTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val updateTimeStamp = System.currentTimeMillis()
     // To make sure that update and delete timestamps are not same,
@@ -116,7 +116,7 @@ object HorizontalCompaction {
       factTimeStamp: Long,
       segLists: util.List[String]): Unit = {
     val db = carbonTable.getDatabaseName
-    val table = carbonTable.getFactTableName
+    val table = carbonTable.getTableName
     // get the valid segments qualified for update compaction.
     val validSegList = CarbonDataMergerUtil.getSegListIUDCompactionQualified(segLists,
       absTableIdentifier,
@@ -133,7 +133,7 @@ object HorizontalCompaction {
     try {
       // Update Compaction.
       val alterTableModel = AlterTableModel(Option(carbonTable.getDatabaseName),
-        carbonTable.getFactTableName,
+        carbonTable.getTableName,
         Some(segmentUpdateStatusManager),
         CompactionType.IUD_UPDDEL_DELTA_COMPACTION.toString,
         Some(factTimeStamp),
@@ -167,7 +167,7 @@ object HorizontalCompaction {
       segLists: util.List[String]): Unit = {
 
     val db = carbonTable.getDatabaseName
-    val table = carbonTable.getFactTableName
+    val table = carbonTable.getTableName
     val deletedBlocksList = CarbonDataMergerUtil.getSegListIUDCompactionQualified(segLists,
       absTableIdentifier,
       segmentUpdateStatusManager,

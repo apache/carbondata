@@ -22,6 +22,7 @@ import org.apache.spark.sql.execution.command.{Checker, DataProcessCommand, Runn
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{CleanFilesPostEvent, CleanFilesPreEvent, OperationContext, OperationListenerBus}
 
 case class CleanFilesCommand(
@@ -38,7 +39,7 @@ case class CleanFilesCommand(
     if (forceTableClean) {
       val dbName = GetDB.getDatabaseName(databaseNameOp, sparkSession)
       val databaseLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
-        CarbonEnv.getInstance(sparkSession).storePath)
+        CarbonProperties.getStorePath)
       // TODO: TAABLEPATH
       CarbonStore.cleanFiles(
         dbName,
@@ -47,10 +48,7 @@ case class CleanFilesCommand(
         null,
         forceTableClean)
     } else {
-      val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      val relation = catalog
-        .lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation]
-      val carbonTable = relation.tableMeta.carbonTable
+      val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
       val cleanFilesPreEvent: CleanFilesPreEvent =
         CleanFilesPreEvent(carbonTable,
           sparkSession)
@@ -59,7 +57,7 @@ case class CleanFilesCommand(
       CarbonStore.cleanFiles(
         GetDB.getDatabaseName(databaseNameOp, sparkSession),
         tableName,
-        relation.asInstanceOf[CarbonRelation].tableMeta.storePath,
+        CarbonProperties.getStorePath,
         carbonTable,
         forceTableClean)
 

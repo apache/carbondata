@@ -60,7 +60,6 @@ import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.IndexHeader;
 import org.apache.carbondata.processing.datamap.DataMapWriterListener;
-import org.apache.carbondata.processing.store.file.FileData;
 
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.hadoop.io.IOUtils;
@@ -317,9 +316,6 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         .getCarbonDataFileName(fileCount, dataWriterVo.getCarbonDataFileAttributes().getTaskId(),
             dataWriterVo.getBucketNumber(), dataWriterVo.getTaskExtension(),
             "" + dataWriterVo.getCarbonDataFileAttributes().getFactTimeStamp());
-    String actualFileNameVal = carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
-    FileData fileData = new FileData(actualFileNameVal, chosenTempLocation);
-    dataWriterVo.getFileManager().add(fileData);
     this.carbonDataFileTempPath = chosenTempLocation + File.separator
         + carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
     this.fileCount++;

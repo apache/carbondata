@@ -65,8 +65,7 @@ case class AlterTableDropCarbonPartitionCommand(
     val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation]
-    val carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
-    val tablePath = relation.tableMeta.tablePath
+    val tablePath = relation.carbonTable.getTablePath
     carbonMetaStore.checkSchemasModifiedTimeAndReloadTables()
     if (relation == null) {
       sys.error(s"Table $dbName.$tableName does not exist")
@@ -75,7 +74,7 @@ case class AlterTableDropCarbonPartitionCommand(
       LOGGER.error(s"Alter table failed. table not found: $dbName.$tableName")
       sys.error(s"Alter table failed. table not found: $dbName.$tableName")
     }
-    val table = relation.tableMeta.carbonTable
+    val table = relation.carbonTable
     val partitionInfo = table.getPartitionInfo(tableName)
     if (partitionInfo == null) {
       sys.error(s"Table $tableName is not a partition table.")
@@ -101,7 +100,7 @@ case class AlterTableDropCarbonPartitionCommand(
         sys.error(s"Dropping range interval partition isn't support yet!")
     }
     partitionInfo.dropPartition(partitionIndex)
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(tablePath, carbonTableIdentifier)
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier)
     val schemaFilePath = carbonTablePath.getSchemaFilePath
     // read TableInfo
     val tableInfo = carbonMetaStore.getThriftTableInfo(carbonTablePath)(sparkSession)
@@ -142,17 +141,13 @@ case class AlterTableDropCarbonPartitionCommand(
       locks = AlterTableUtil.validateTableAndAcquireLock(dbName, tableName,
         locksToBeAcquired)(sparkSession)
       val carbonLoadModel = new CarbonLoadModel()
-      val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
-        .asInstanceOf[CarbonRelation]
-      val carbonTableIdentifier = relation.tableMeta.carbonTableIdentifier
-      val table = relation.tableMeta.carbonTable
+      val table = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
       val dataLoadSchema = new CarbonDataLoadSchema(table)
       // Need to fill dimension relation
       carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
-      carbonLoadModel.setTableName(carbonTableIdentifier.getTableName)
-      carbonLoadModel.setDatabaseName(carbonTableIdentifier.getDatabaseName)
-      carbonLoadModel.setTablePath(relation.tableMeta.tablePath)
+      carbonLoadModel.setTableName(table.getTableName)
+      carbonLoadModel.setDatabaseName(table.getDatabaseName)
+      carbonLoadModel.setTablePath(table.getTablePath)
       val loadStartTime = CarbonUpdateUtil.readCurrentTime
       carbonLoadModel.setFactTimeStamp(loadStartTime)
       alterTableDropPartition(

@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
@@ -94,7 +93,7 @@ public class CarbonMetadataTest {
 
   @Test public void testGetCarbonTableReturingProperTableWithProperFactTableName() {
     String expectedResult = "carbonTestTable";
-    assertEquals(expectedResult, carbonMetadata.getCarbonTable(tableUniqueName).getFactTableName());
+    assertEquals(expectedResult, carbonMetadata.getCarbonTable(tableUniqueName).getTableName());
   }
 
   @Test public void testGetCarbonTableReturingProperTableWithProperTableUniqueName() {
@@ -171,7 +170,7 @@ public class CarbonMetadataTest {
     carbonDimensions.add(new CarbonDimension(colSchema1, 1, 1, 2, 1));
     carbonDimensions.add(new CarbonDimension(colSchema2, 2, 2, 2, 2));
     new MockUp<CarbonTable>() {
-      @Mock public String getFactTableName() {
+      @Mock public String getTableName() {
         return "carbonTestTable";
       }
 
@@ -200,7 +199,7 @@ public class CarbonMetadataTest {
     colSchema2.setColumnUniqueId("2");
     carbonChildDimensions.add(new CarbonDimension(colSchema3, 1, 1, 2, 1));
     new MockUp<CarbonTable>() {
-      @Mock public String getFactTableName() {
+      @Mock public String getTableName() {
         return "carbonTestTable";
       }
 
@@ -242,7 +241,7 @@ public class CarbonMetadataTest {
     carbonChildDimensions.add(new CarbonDimension(colSchema2, 1, 1, 2, 1));
 
     new MockUp<CarbonTable>() {
-      @Mock public String getFactTableName() {
+      @Mock public String getTableName() {
         return "carbonTestTable";
       }
 

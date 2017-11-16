@@ -51,9 +51,7 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       locks = AlterTableUtil
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      carbonTable = metastore
-        .lookupRelation(Some(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
-        .tableMeta.carbonTable
+      carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
       val alterTableDataTypeChangeListener = AlterTableDataTypeChangePreEvent(carbonTable,
         alterTableDataTypeChangeModel)
       OperationListenerBus.getInstance().fireEvent(alterTableDataTypeChangeListener)

@@ -393,7 +393,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     Expression filter = getFilterPredicates(job.getConfiguration());
     TableProvider tableProvider = new SingleTableProvider(carbonTable);
     // this will be null in case of corrupt schema file.
-    PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName());
+    PartitionInfo partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName());
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
 
     // prune partitions for filter query on partition table
@@ -787,7 +787,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     Expression filter = getFilterPredicates(configuration);
     boolean[] isFilterDimensions = new boolean[carbonTable.getDimensionOrdinalMax()];
     boolean[] isFilterMeasures =
-        new boolean[carbonTable.getNumberOfMeasures(carbonTable.getFactTableName())];
+        new boolean[carbonTable.getNumberOfMeasures(carbonTable.getTableName())];
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, isFilterDimensions,
         isFilterMeasures);
     queryModel.setIsFilterDimensions(isFilterDimensions);

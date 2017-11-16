@@ -89,9 +89,7 @@ object StreamExample {
              | """.stripMargin)
       }
 
-      val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.
-        lookupRelation(Some("default"), streamTableName)(spark).asInstanceOf[CarbonRelation].
-        tableMeta.carbonTable
+      val carbonTable = CarbonEnv.getCarbonTable(Some("default"), streamTableName)(spark)
       val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
       // batch load
       val path = s"$rootPath/examples/spark2/src/main/resources/streamSample.csv"

@@ -41,10 +41,9 @@ private[sql] case class ShowCarbonPartitionsCommand(
 
   override def processSchema(sparkSession: SparkSession): Seq[Row] = {
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(tableIdentifier)(sparkSession).
-      asInstanceOf[CarbonRelation]
-    val carbonTable = relation.tableMeta.carbonTable
-    val tableName = carbonTable.getFactTableName
+      .lookupRelation(tableIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
+    val carbonTable = relation.carbonTable
+    val tableName = carbonTable.getTableName
     val partitionInfo = carbonTable.getPartitionInfo(
       carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
     if (partitionInfo == null) {

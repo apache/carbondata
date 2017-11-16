@@ -47,9 +47,7 @@ case class CarbonDataMapShowCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
-    val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      lookupRelation(databaseNameOp, tableName)(sparkSession).asInstanceOf[CarbonRelation].
-      tableMeta.carbonTable
+    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     val schemaList = carbonTable.getTableInfo.getDataMapSchemaList
     if (schemaList != null && schemaList.size() > 0) {
       schemaList.asScala.map { s =>

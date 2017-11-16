@@ -73,7 +73,7 @@ case class CreatePreAggregateTableCommand(
     // getting the parent table
     val parentTable = PreAggregateUtil.getParentCarbonTable(df.logicalPlan)
     // getting the table name
-    val parentTableName = parentTable.getFactTableName
+    val parentTableName = parentTable.getTableName
     // getting the db name of parent table
     val parentDbName = parentTable.getDatabaseName
 
@@ -85,9 +85,8 @@ case class CreatePreAggregateTableCommand(
     tableModel.dataMapRelation = Some(fieldRelationMap)
     CarbonCreateTableCommand(tableModel).run(sparkSession)
     try {
-      val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      lookupRelation( tableIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
-      val tableInfo = relation.tableMeta.carbonTable.getTableInfo
+      val table = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
+      val tableInfo = table.getTableInfo
       // child schema object which will be updated on parent table about the
       val childSchema = tableInfo.getFactTable
         .buildChildSchema(dataMapName, CarbonCommonConstants.AGGREGATIONDATAMAPSCHEMA,

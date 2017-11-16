@@ -30,7 +30,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events._
 
@@ -50,12 +50,11 @@ case class CarbonDropTableCommand(
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = GetDB.getDatabaseName(databaseNameOp, sparkSession)
     val identifier = TableIdentifier(tableName, Option(dbName))
-    val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.DROP_TABLE_LOCK)
     val carbonEnv = CarbonEnv.getInstance(sparkSession)
     val catalog = carbonEnv.carbonMetastore
     val databaseLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
-      CarbonEnv.getInstance(sparkSession).storePath)
+      CarbonProperties.getStorePath)
     val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName.toLowerCase
     val absoluteTableIdentifier = AbsoluteTableIdentifier
       .from(tablePath, dbName.toLowerCase, tableName.toLowerCase)
@@ -68,7 +67,7 @@ case class CarbonDropTableCommand(
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
       val carbonTable: Option[CarbonTable] =
         catalog.getTableFromMetadataCache(dbName, tableName) match {
-          case Some(tableMeta) => Some(tableMeta.carbonTable)
+          case Some(carbonTable) => Some(carbonTable)
           case None => try {
             Some(catalog.lookupRelation(identifier)(sparkSession)
               .asInstanceOf[CarbonRelation].metaData.carbonTable)
@@ -131,7 +130,7 @@ case class CarbonDropTableCommand(
     // delete the table folder
     val dbName = GetDB.getDatabaseName(databaseNameOp, sparkSession)
     val databaseLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
-      CarbonEnv.getInstance(sparkSession).storePath)
+      CarbonProperties.getStorePath)
     val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName.toLowerCase
     val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
     val metadataFilePath =

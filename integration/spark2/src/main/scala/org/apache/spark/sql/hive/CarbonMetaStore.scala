@@ -27,7 +27,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.processing.merger.TableMeta
+
 
 /**
  * Interface for Carbonmetastore
@@ -140,7 +140,7 @@ trait CarbonMetaStore {
 
   def getThriftTableInfo(tablePath: CarbonTablePath)(sparkSession: SparkSession): TableInfo
 
-  def getTableFromMetadataCache(database: String, tableName: String): Option[TableMeta]
+  def getTableFromMetadataCache(database: String, tableName: String): Option[CarbonTable]
 
 }
 

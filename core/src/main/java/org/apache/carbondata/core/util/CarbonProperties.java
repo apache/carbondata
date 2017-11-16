@@ -482,6 +482,13 @@ public final class CarbonProperties {
   }
 
   /**
+   * Return the store path
+   */
+  public static String getStorePath() {
+    return getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION);
+  }
+
+  /**
    * This method will be used to get the properties value
    *
    * @param key

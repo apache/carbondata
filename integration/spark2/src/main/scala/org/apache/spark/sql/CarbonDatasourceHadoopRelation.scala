@@ -50,7 +50,7 @@ case class CarbonDatasourceHadoopRelation(
   lazy val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(paths.head,
     parameters("dbname"), parameters("tablename"))
   lazy val databaseName: String = carbonTable.getDatabaseName
-  lazy val tableName: String = carbonTable.getFactTableName
+  lazy val tableName: String = carbonTable.getTableName
   CarbonSession.updateSessionInfoToCurrentThread(sparkSession)
 
   @transient lazy val carbonRelation: CarbonRelation =
@@ -58,7 +58,7 @@ case class CarbonDatasourceHadoopRelation(
     createCarbonRelation(parameters, identifier, sparkSession)
 
 
-  @transient lazy val carbonTable: CarbonTable = carbonRelation.tableMeta.carbonTable
+  @transient lazy val carbonTable: CarbonTable = carbonRelation.carbonTable
 
   override def sqlContext: SQLContext = sparkSession.sqlContext
 

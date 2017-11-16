@@ -43,12 +43,12 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     header: String,
     allDictFilePath: String): CarbonLoadModel = {
     val carbonLoadModel = new CarbonLoadModel
-    carbonLoadModel.setTableName(relation.tableMeta.carbonTableIdentifier.getDatabaseName)
-    carbonLoadModel.setDatabaseName(relation.tableMeta.carbonTableIdentifier.getTableName)
-    val table = relation.tableMeta.carbonTable
+    carbonLoadModel.setTableName(relation.carbonTable.getDatabaseName)
+    carbonLoadModel.setDatabaseName(relation.carbonTable.getTableName)
+    val table = relation.carbonTable
     val carbonSchema = new CarbonDataLoadSchema(table)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
-    carbonLoadModel.setTableName(table.getFactTableName)
+    carbonLoadModel.setTableName(table.getTableName)
     carbonLoadModel.setCarbonDataLoadSchema(carbonSchema)
     carbonLoadModel.setFactFilePath(filePath)
     carbonLoadModel.setCsvHeader(header)
@@ -141,10 +141,8 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   test("Support generate global dictionary from all dictionary files") {
     val header = "id,name,city,age"
     val carbonLoadModel = buildCarbonLoadModel(sampleRelation, null, header, sampleAllDictionaryFile)
-    GlobalDictionaryUtil
-      .generateGlobalDictionary(sqlContext,
-        carbonLoadModel,
-        sampleRelation.tableMeta.storePath)
+    GlobalDictionaryUtil.generateGlobalDictionary(
+      sqlContext, carbonLoadModel, sampleRelation.carbonTable.getTablePath)
 
     DictionaryTestCaseUtil.
       checkDictionary(sampleRelation, "city", "shenzhen")
@@ -156,7 +154,7 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     GlobalDictionaryUtil
       .generateGlobalDictionary(sqlContext,
       carbonLoadModel,
-      complexRelation.tableMeta.storePath)
+      complexRelation.carbonTable.getTablePath)
 
     DictionaryTestCaseUtil.
       checkDictionary(complexRelation, "channelsId", "1650")

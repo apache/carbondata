@@ -21,20 +21,17 @@ import scala.collection.JavaConverters._
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.datamap.DataMapStoreManager
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, RelationIdentifier}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.format
 import org.apache.carbondata.format.SchemaEvolutionEntry
-import org.apache.carbondata.processing.merger.TableMeta
-import org.apache.carbondata.spark.util.{CarbonSparkUtil, CommonUtil}
+import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 /**
  * Metastore to store carbonschema in hive
@@ -56,10 +53,8 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     val info = CarbonUtil.convertGsonToTableInfo(parameters.asJava)
     if (info != null) {
       val table = CarbonTable.buildFromTableInfo(info)
-      val meta = new TableMeta(table.getCarbonTableIdentifier,
-        absIdentifier.getTablePath, absIdentifier.getTablePath, table)
       CarbonRelation(info.getDatabaseName, info.getFactTable.getTableName,
-        CarbonSparkUtil.createSparkMeta(table), meta)
+        CarbonSparkUtil.createSparkMeta(table), table)
     } else {
       super.createCarbonRelation(parameters, absIdentifier, sparkSession)
     }
@@ -107,7 +102,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     schemaConverter.fromWrapperToExternalTableInfo(carbonTable.getTableInfo,
       carbonTable.getDatabaseName,
-      carbonTable.getFactTableName)
+      carbonTable.getTableName)
   }
 
 
