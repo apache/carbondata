@@ -263,6 +263,15 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("test range filter for less than filter"){
+    sql("drop table if exists timestampTable")
+    sql("create table timestampTable (timestampCol timestamp) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='timestampCol')")
+    sql(s"load data local inpath '$resourcesPath/timestamp.csv' into table timestampTable")
+    checkAnswer(sql("select * from timestampTable where timestampCol='1970-01-01 05:30:00'"),
+      sql("select * from timestampTable where timestampCol<='1970-01-01 05:30:00'"))
+    sql("drop table if exists timestampTable")
+  }
+
   test("test range filter for direct dictionary not equality"){
     checkAnswer(
       sql("select doj from directDictionaryTable where doj != '2016-03-14 15:00:16'"),
