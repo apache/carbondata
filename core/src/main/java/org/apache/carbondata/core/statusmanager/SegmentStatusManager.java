@@ -120,6 +120,10 @@ public class SegmentStatusManager {
         BufferedReader buffReader =
             new BufferedReader(new InputStreamReader(dataInputStream, "UTF-8"));
         loadFolderDetailsArray = gson.fromJson(buffReader, LoadMetadataDetails[].class);
+        // if loadFolderDetailsArray is null, assign a empty array
+        if (null == loadFolderDetailsArray) {
+          loadFolderDetailsArray = new LoadMetadataDetails[0];
+        }
         //just directly iterate Array
         for (LoadMetadataDetails segment : loadFolderDetailsArray) {
           if (SegmentStatus.SUCCESS == segment.getSegmentStatus() ||
@@ -287,7 +291,7 @@ public class SegmentStatusManager {
         }
         // read existing metadata details in load metadata.
         listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath);
-        if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
+        if (listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatus(loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
           if (invalidLoadIds.isEmpty()) {
             // All or None , if anything fails then dont write
@@ -371,7 +375,7 @@ public class SegmentStatusManager {
         }
         // read existing metadata details in load metadata.
         listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath);
-        if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
+        if (listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatus(loadDate, listOfLoadFolderDetailsArray, invalidLoadTimestamps,
               loadStartTime);
           if (invalidLoadTimestamps.isEmpty()) {

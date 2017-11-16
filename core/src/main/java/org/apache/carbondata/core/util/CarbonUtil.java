@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -753,7 +754,7 @@ public final class CarbonUtil {
   }
 
   private static boolean checkIfPrefixExists(String path) {
-    final String lowerPath = path.toLowerCase();
+    final String lowerPath = path.toLowerCase(Locale.getDefault());
     return lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) ||
         lowerPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) ||
         lowerPath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX) ||
