@@ -264,11 +264,13 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
       if (csvParser == null) {
         return false;
       }
-      columns = csvParser.parseNext();
-      if (columns == null) {
-        value = null;
-        return false;
-      }
+      do {
+        columns = csvParser.parseNext();
+        if (columns == null) {
+          value = null;
+          return false;
+        }
+      } while (columns.length == 0);
       if (value == null) {
         value = new StringArrayWritable();
       }
