@@ -57,6 +57,10 @@ class CarbonEnv {
     // added for handling preaggregate table creation. when user will fire create ddl for
     // create table we are adding a udf so no need to apply PreAggregate rules.
     sparkSession.udf.register("preAgg", () => "")
+    // added to apply proper rules for loading data into pre-agg table. If this UDF is present
+    // only then the CarbonPreAggregateDataLoadingRules would be applied to split the average
+    // column to sum and count.
+    sparkSession.udf.register("preAggLoad", () => "")
     synchronized {
       if (!initialized) {
         // update carbon session parameters , preserve thread parameters

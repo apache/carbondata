@@ -27,7 +27,6 @@ import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeRef
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CarbonException
@@ -77,6 +76,9 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       // first check if any preAgg scala function is applied it is present is in plan
       // then call is from create preaggregate table class so no need to transform the query plan
       case al@Alias(udf: ScalaUDF, name) if name.equalsIgnoreCase("preAgg") =>
+        needAnalysis = false
+        al
+      case al@Alias(udf: ScalaUDF, name) if name.equalsIgnoreCase("preAggLoad") =>
         needAnalysis = false
         al
       // in case of query if any unresolve alias is present then wait for plan to be resolved
@@ -752,6 +754,80 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
   }
 }
 
+object CarbonPreAggregateDataLoadingRules extends Rule[LogicalPlan] {
+
+  override def apply(plan: LogicalPlan): LogicalPlan = {
+    val validExpressionsMap = scala.collection.mutable.LinkedHashMap.empty[String, NamedExpression]
+    plan transform {
+      case aggregate@Aggregate(_, aExp, _) if validateAggregateExpressions(aExp) =>
+        aExp.foreach {
+          case alias: Alias =>
+            validExpressionsMap ++= validateAggregateFunctionAndGetAlias(alias)
+          case _: UnresolvedAlias =>
+          case namedExpr: NamedExpression => validExpressionsMap.put(namedExpr.name, namedExpr)
+        }
+        aggregate.copy(aggregateExpressions = validExpressionsMap.values.toSeq)
+      case plan: LogicalPlan => plan
+    }
+  }
+
+    /**
+     * This method will split the avg column into sum and count and will return a sequence of tuple
+     * of unique name, alias
+     *
+     */
+    private def validateAggregateFunctionAndGetAlias(alias: Alias): Seq[(String,
+      NamedExpression)] = {
+      alias match {
+        case udf@Alias(_: ScalaUDF, name) =>
+          Seq((name, udf))
+        case alias@Alias(attrExpression: AggregateExpression, _) =>
+          attrExpression.aggregateFunction match {
+            case Sum(attr: AttributeReference) =>
+              (attr.name + "_sum", alias) :: Nil
+            case Sum(MatchCast(attr: AttributeReference, _)) =>
+              (attr.name + "_sum", alias) :: Nil
+            case Count(Seq(attr: AttributeReference)) =>
+              (attr.name + "_count", alias) :: Nil
+            case Count(Seq(MatchCast(attr: AttributeReference, _))) =>
+              (attr.name + "_count", alias) :: Nil
+            case Average(attr: AttributeReference) =>
+              Seq((attr.name + "_sum", Alias(attrExpression.
+                copy(aggregateFunction = Sum(attr),
+                  resultId = NamedExpression.newExprId), attr.name + "_sum")()),
+                (attr.name, Alias(attrExpression.
+                  copy(aggregateFunction = Count(attr),
+                    resultId = NamedExpression.newExprId), attr.name + "_count")()))
+            case Average(cast@MatchCast(attr: AttributeReference, _)) =>
+              Seq((attr.name + "_sum", Alias(attrExpression.
+                copy(aggregateFunction = Sum(cast),
+                  resultId = NamedExpression.newExprId),
+                attr.name + "_sum")()),
+                (attr.name, Alias(attrExpression.
+                  copy(aggregateFunction = Count(cast), resultId =
+                    NamedExpression.newExprId), attr.name + "_count")()))
+            case _ => Seq(("", alias))
+          }
+
+      }
+    }
+
+  /**
+   * Called by PreAggregateLoadingRules to validate if plan is valid for applying rules or not.
+   * If the plan has PreAggLoad i.e Loading UDF and does not have PreAgg i.e Query UDF then it is
+   * valid.
+   *
+   * @param namedExpression
+   * @return
+   */
+  private def validateAggregateExpressions(namedExpression: Seq[NamedExpression]): Boolean = {
+    val filteredExpressions = namedExpression.filterNot(_.isInstanceOf[UnresolvedAlias])
+    filteredExpressions.exists { expr =>
+          !expr.name.equalsIgnoreCase("PreAgg") && expr.name.equalsIgnoreCase("preAggLoad")
+      }
+  }
+}
+
 /**
  * Insert into carbon table from other source
  */
@@ -769,23 +845,14 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
 
   def castChildOutput(p: InsertIntoTable,
       relation: CarbonDatasourceHadoopRelation,
-      child: LogicalPlan)
-  : LogicalPlan = {
+      child: LogicalPlan): LogicalPlan = {
     if (relation.carbonRelation.output.size > CarbonCommonConstants
       .DEFAULT_MAX_NUMBER_OF_COLUMNS) {
       CarbonException.analysisException("Maximum number of columns supported:" +
         s"${CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS}")
     }
-    val isAggregateTable = !relation.carbonRelation.carbonTable.getTableInfo
-      .getParentRelationIdentifiers.isEmpty
-    // transform logical plan if the load is for aggregate table.
-    val childPlan = if (isAggregateTable) {
-      transformAggregatePlan(child)
-    } else {
-      child
-    }
-    if (childPlan.output.size >= relation.carbonRelation.output.size) {
-      val newChildOutput = childPlan.output.zipWithIndex.map { columnWithIndex =>
+    if (child.output.size >= relation.carbonRelation.output.size) {
+      val newChildOutput = child.output.zipWithIndex.map { columnWithIndex =>
         columnWithIndex._1 match {
           case attr: Alias =>
             Alias(attr.child, s"col${ columnWithIndex._2 }")(attr.exprId)
@@ -795,7 +862,7 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
         }
       }
       val version = sparkSession.version
-      val newChild: LogicalPlan = if (newChildOutput == childPlan.output) {
+      val newChild: LogicalPlan = if (newChildOutput == child.output) {
         if (version.startsWith("2.1")) {
           CarbonReflectionUtils.getField("child", p).asInstanceOf[LogicalPlan]
         } else if (version.startsWith("2.2")) {
@@ -804,7 +871,7 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
           throw new UnsupportedOperationException(s"Spark version $version is not supported")
         }
       } else {
-        Project(newChildOutput, childPlan)
+        Project(newChildOutput, child)
       }
 
       val overwrite = CarbonReflectionUtils.getOverWriteOption("overwrite", p)
@@ -813,64 +880,6 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
     } else {
       CarbonException.analysisException(
         "Cannot insert into target table because number of columns mismatch")
-    }
-  }
-
-  /**
-   * Transform the logical plan with average(col1) aggregation type to sum(col1) and count(col1).
-   *
-   * @param logicalPlan
-   * @return
-   */
-  private def transformAggregatePlan(logicalPlan: LogicalPlan): LogicalPlan = {
-    val validExpressionsMap = scala.collection.mutable.LinkedHashMap.empty[String, NamedExpression]
-    logicalPlan transform {
-      case aggregate@Aggregate(_, aExp, _) =>
-        aExp.foreach {
-          case alias: Alias =>
-            validExpressionsMap ++= validateAggregateFunctionAndGetAlias(alias)
-          case namedExpr: NamedExpression => validExpressionsMap.put(namedExpr.name, namedExpr)
-        }
-        aggregate.copy(aggregateExpressions = validExpressionsMap.values.toSeq)
-      case plan: LogicalPlan => plan
-    }
-  }
-
-  /**
-   * This method will split the avg column into sum and count and will return a sequence of tuple
-   * of unique name, alias
-   *
-   */
-  def validateAggregateFunctionAndGetAlias(alias: Alias): Seq[(String, NamedExpression)] = {
-    alias match {
-      case alias@Alias(attrExpression: AggregateExpression, _) =>
-        attrExpression.aggregateFunction match {
-          case Sum(attr: AttributeReference) =>
-            (attr.name + "_sum", alias) :: Nil
-          case Sum(Cast(attr: AttributeReference, _)) =>
-            (attr.name + "_sum", alias) :: Nil
-          case Count(Seq(attr: AttributeReference)) =>
-            (attr.name + "_count", alias) :: Nil
-          case Count(Seq(Cast(attr: AttributeReference, _))) =>
-            (attr.name + "_count", alias) :: Nil
-          case Average(attr: AttributeReference) =>
-            Seq((attr.name + "_sum", Alias(attrExpression
-              .copy(aggregateFunction = Sum(attr),
-                resultId = NamedExpression.newExprId), attr.name + "_sum")()),
-              (attr.name, Alias(attrExpression
-                .copy(aggregateFunction = Count(attr),
-                  resultId = NamedExpression.newExprId), attr.name + "_count")()))
-          case Average(cast@Cast(attr: AttributeReference, _)) =>
-            Seq((attr.name + "_sum", Alias(attrExpression
-              .copy(aggregateFunction = Sum(cast),
-                resultId = NamedExpression.newExprId),
-              attr.name + "_sum")()),
-              (attr.name, Alias(attrExpression
-                .copy(aggregateFunction = Count(cast),
-                  resultId = NamedExpression.newExprId), attr.name + "_count")()))
-          case _ => Seq(("", alias))
-        }
-
     }
   }
 

@@ -19,8 +19,9 @@ package org.apache.spark.sql.execution.command.preaaggregate
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.CarbonSession
-import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
+import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
@@ -39,19 +40,61 @@ object LoadPostAggregateListener extends OperationEventListener {
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     if (table.hasDataMapSchema) {
       for (dataMapSchema: DataMapSchema <- table.getTableInfo.getDataMapSchemaList.asScala) {
-        CarbonSession
-          .threadSet(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-                     carbonLoadModel.getDatabaseName + "." +
-                     carbonLoadModel.getTableName,
-            carbonLoadModel.getSegmentId)
-        CarbonSession.threadSet(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-                                carbonLoadModel.getDatabaseName + "." +
-                                carbonLoadModel.getTableName, "false")
+        CarbonSession.threadSet(
+          CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+          carbonLoadModel.getDatabaseName + "." +
+          carbonLoadModel.getTableName,
+          carbonLoadModel.getSegmentId)
+        CarbonSession.threadSet(
+          CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+          carbonLoadModel.getDatabaseName + "." +
+          carbonLoadModel.getTableName, "false")
         val childTableName = dataMapSchema.getRelationIdentifier.getTableName
         val childDatabaseName = dataMapSchema.getRelationIdentifier.getDatabaseName
-        val selectQuery = dataMapSchema.getProperties.get("CHILD_SELECT QUERY")
-        sparkSession.sql(s"insert into $childDatabaseName.$childTableName $selectQuery")
+        val childDataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
+          s"${ dataMapSchema.getProperties.get("CHILD_SELECT QUERY") } ")).drop("preAggLoad")
+        val headers = dataMapSchema.getChildSchema.getListOfColumns.
+          asScala.map(_.getColumnName).mkString(",")
+        try {
+          CarbonLoadDataCommand(Some(childDatabaseName),
+            childTableName,
+            null,
+            Nil,
+            Map("fileheader" -> headers),
+            isOverwriteTable = false,
+            dataFrame = Some(childDataFrame),
+            internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true")).
+            run(sparkSession)
+        } finally {
+          CarbonSession.threadUnset(
+            CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+            carbonLoadModel.getDatabaseName + "." +
+            carbonLoadModel.getTableName)
+          CarbonSession.threadUnset(
+            CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+            carbonLoadModel.getDatabaseName + "." +
+            carbonLoadModel.getTableName)
+        }
       }
+    }
+  }
+}
+
+object LoadPreAggregateTablePreListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val loadEvent = event.asInstanceOf[LoadTablePreExecutionEvent]
+    val carbonLoadModel = loadEvent.carbonLoadModel
+    val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    val isInternalLoadCall = carbonLoadModel.isAggLoadRequest
+    if (table.isChildDataMap && !isInternalLoadCall) {
+      throw new UnsupportedOperationException(
+        "Cannot insert/load data directly into pre-aggregate table")
     }
   }
 }

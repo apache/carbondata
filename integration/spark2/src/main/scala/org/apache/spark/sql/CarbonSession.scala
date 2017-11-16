@@ -232,6 +232,16 @@ object CarbonSession {
     ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfo)
   }
 
+  def threadUnset(key: String): Unit = {
+    val currentThreadSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (currentThreadSessionInfo != null) {
+      val currentThreadSessionInfoClone = currentThreadSessionInfo.clone()
+      val threadParams = currentThreadSessionInfoClone.getThreadParams
+      CarbonSetCommand.unsetValue(threadParams, key)
+      ThreadLocalSessionInfo.setCarbonSessionInfo(currentThreadSessionInfoClone)
+    }
+  }
+
   private[spark] def updateSessionInfoToCurrentThread(sparkSession: SparkSession): Unit = {
     val carbonSessionInfo = CarbonEnv.getInstance(sparkSession).carbonSessionInfo.clone()
     val currentThreadSessionInfoOrig = ThreadLocalSessionInfo.getCarbonSessionInfo
@@ -260,5 +270,6 @@ object CarbonSession {
       .addListener(classOf[AlterTableDataTypeChangePreEvent], PreAggregateDataTypeChangePreListener)
       .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
       .addListener(classOf[DropDataMapPostEvent], DropDataMapPostListener)
+      .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
   }
 }

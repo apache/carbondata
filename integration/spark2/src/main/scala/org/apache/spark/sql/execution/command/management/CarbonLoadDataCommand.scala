@@ -39,7 +39,8 @@ import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.events.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{LoadTablePostExecutionEvent, OperationContext}
+import org.apache.carbondata.events.{LoadTablePreExecutionEvent, OperationListenerBus}
 import org.apache.carbondata.format
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.exception.NoRetryException
@@ -58,8 +59,8 @@ case class CarbonLoadDataCommand(
     var inputSqlString: String = null,
     dataFrame: Option[DataFrame] = None,
     updateModel: Option[UpdateTableModel] = None,
-    var tableInfoOp: Option[TableInfo] = None)
-  extends DataCommand {
+    var tableInfoOp: Option[TableInfo] = None,
+    internalOptions: Map[String, String] = Map.empty) extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -127,6 +128,8 @@ case class CarbonLoadDataCommand(
           CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser), hadoopConf)
       }
       carbonLoadModel.setFactFilePath(factPath)
+      carbonLoadModel.setAggLoadRequest(internalOptions
+          .getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL, "false").toBoolean)
       DataLoadingUtil.buildCarbonLoadModel(
         table,
         carbonProperty,
@@ -135,17 +138,18 @@ case class CarbonLoadDataCommand(
         carbonLoadModel,
         hadoopConf
       )
-      val operationContext = new OperationContext
-      val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =
-        new LoadTablePreExecutionEvent(sparkSession,
-          null,
-          carbonLoadModel,
-          factPath,
-          dataFrame.isDefined,
-          optionsFinal)
-      OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
 
-      try{
+
+      try {
+        val operationContext = new OperationContext
+        val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =
+          LoadTablePreExecutionEvent(sparkSession,
+            table.getCarbonTableIdentifier,
+            carbonLoadModel,
+            factPath,
+            dataFrame.isDefined,
+            optionsFinal)
+        OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
         GlobalDictionaryUtil.updateTableMetadataFunc = updateTableMetadata
@@ -345,14 +349,14 @@ case class CarbonLoadDataCommand(
     } else {
       (dataFrame, dataFrame)
     }
-
-    GlobalDictionaryUtil.generateGlobalDictionary(
-      sparkSession.sqlContext,
-      carbonLoadModel,
-      hadoopConf,
-      dictionaryDataFrame)
-    CarbonDataRDDFactory.loadCarbonData(
-      sparkSession.sqlContext,
+    if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap) {
+      GlobalDictionaryUtil.generateGlobalDictionary(
+        sparkSession.sqlContext,
+        carbonLoadModel,
+        hadoopConf,
+        dictionaryDataFrame)
+    }
+    CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
       carbonLoadModel,
       carbonLoadModel.getTablePath,
       columnar,
