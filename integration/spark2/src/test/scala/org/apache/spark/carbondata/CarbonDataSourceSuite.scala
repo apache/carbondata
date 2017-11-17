@@ -18,12 +18,10 @@
 package org.apache.spark.carbondata
 
 import scala.collection.mutable
-
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{Row, SaveMode}
+import org.apache.spark.sql.{AnalysisException, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
-
 import org.apache.carbondata.core.util.CarbonProperties
 
 class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
@@ -227,7 +225,7 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test create table without tableName in options") {
     sql("drop table if exists carbon_test")
-    val exception = intercept[RuntimeException] {
+    val exception = intercept[AnalysisException] {
       sql(
         s"""
            | CREATE TABLE carbon_test(
@@ -240,12 +238,12 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
       )
     }.getMessage
     sql("drop table if exists carbon_test")
-    assert(exception.eq("Table creation failed. Table name is not specified"))
+    assert(exception.contains("Table creation failed. Table name is not specified"))
   }
 
   test("test create table with space in tableName") {
     sql("drop table if exists carbon_test")
-    val exception = intercept[RuntimeException] {
+    val exception = intercept[AnalysisException] {
       sql(
         s"""
            | CREATE TABLE carbon_test(
@@ -258,7 +256,6 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
       )
     }.getMessage
     sql("drop table if exists carbon_test")
-    assert(exception.eq("Table creation failed. Table name cannot contain blank space"))
+    assert(exception.contains("Table creation failed. Table name cannot contain blank space"))
   }
-
 }

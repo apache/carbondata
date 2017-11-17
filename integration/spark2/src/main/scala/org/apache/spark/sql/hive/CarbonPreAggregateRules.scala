@@ -28,6 +28,7 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema}
@@ -756,10 +757,8 @@ object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
   : LogicalPlan = {
     if (relation.carbonRelation.output.size > CarbonCommonConstants
       .DEFAULT_MAX_NUMBER_OF_COLUMNS) {
-      sys
-        .error("Maximum supported column by carbon is:" + CarbonCommonConstants
-          .DEFAULT_MAX_NUMBER_OF_COLUMNS
-        )
+      CarbonException.analysisException("Maximum number of columns supported:" +
+        s"${CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS}")
     }
     val isAggregateTable = !relation.carbonRelation.carbonTable.getTableInfo
       .getParentRelationIdentifiers.isEmpty
@@ -786,7 +785,8 @@ object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
       }
       InsertIntoCarbonTable(relation, p.partition, newChild, p.overwrite, p.ifNotExists)
     } else {
-      sys.error("Cannot insert into target table because column number are different")
+      CarbonException.analysisException(
+        "Cannot insert into target table because number of columns mismatch")
     }
   }
 

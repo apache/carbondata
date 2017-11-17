@@ -19,7 +19,11 @@ package org.apache.spark.sql.execution.command
 
 import scala.collection.JavaConverters._
 
+import org.apache.spark.sql._
 import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
+import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
+import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -61,7 +65,7 @@ case class CarbonCreateTableCommand(
     }
 
     if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
-      sys.error("No Dimensions found. Table should have at least one dimesnion !")
+      CarbonException.analysisException("Table should have at least one column.")
     }
 
     if (sparkSession.sessionState.catalog.listTables(dbName)
@@ -70,7 +74,7 @@ case class CarbonCreateTableCommand(
         LOGGER.audit(
           s"Table creation with Database name [$dbName] and Table name [$tbName] failed. " +
           s"Table [$tbName] already exists under database [$dbName]")
-        sys.error(s"Table [$tbName] already exists under database [$dbName]")
+        throw new TableAlreadyExistsException(dbName, dbName)
       }
     } else {
       val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tbName)
@@ -83,6 +87,7 @@ case class CarbonCreateTableCommand(
           cm.dimCols.foreach(f => fields(f.schemaOrdinal) = f)
           cm.msrCols.foreach(f => fields(f.schemaOrdinal) = f)
 
+          sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
           sparkSession.sql(
             s"""CREATE TABLE $dbName.$tbName
                |(${ fields.map(f => f.rawSchema).mkString(",") })
@@ -90,14 +95,16 @@ case class CarbonCreateTableCommand(
             s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath """.stripMargin +
             s""""$tablePath"$carbonSchemaString) """)
         } catch {
+          case e: AnalysisException => throw e
           case e: Exception =>
             // call the drop table to delete the created table.
             CarbonEnv.getInstance(sparkSession).carbonMetastore
               .dropTable(tableIdentifier)(sparkSession)
 
-            LOGGER.audit(s"Table creation with Database name [$dbName] " +
-                         s"and Table name [$tbName] failed")
-            throw e
+            val msg = s"Create table'$tbName' in database '$dbName' failed."
+            LOGGER.audit(msg)
+            LOGGER.error(e, msg)
+            CarbonException.analysisException(msg)
         }
       }
 

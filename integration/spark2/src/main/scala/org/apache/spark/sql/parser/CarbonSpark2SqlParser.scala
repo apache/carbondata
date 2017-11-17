@@ -20,7 +20,7 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-import org.apache.spark.sql.{DeleteRecords, ShowLoadsCommand, UpdateTable}
+import org.apache.spark.sql.{AnalysisException, DeleteRecords, ShowLoadsCommand, UpdateTable}
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
@@ -31,6 +31,7 @@ import org.apache.spark.sql.execution.command.management.{AlterTableCompactionCo
 import org.apache.spark.sql.execution.command.partition.{AlterTableDropCarbonPartitionCommand, AlterTableSplitCarbonPartitionCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
 import org.apache.spark.sql.types.StructField
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.spark.CarbonOption
@@ -58,7 +59,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           case logicalPlan => logicalPlan
         }
         case failureOrError =>
-          sys.error(failureOrError.toString)
+          CarbonException.analysisException(failureOrError.toString)
       }
     }
   }

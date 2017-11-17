@@ -22,6 +22,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -222,7 +223,7 @@ object DataLoadingUtil {
     if (bad_records_logger_enable.toBoolean ||
         LoggerAction.REDIRECT.name().equalsIgnoreCase(bad_records_action)) {
       if (!CarbonUtil.isValidBadStorePath(bad_record_path)) {
-        sys.error("Invalid bad records location.")
+        CarbonException.analysisException("Invalid bad records location.")
       }
     }
     carbonLoadModel.setBadRecordsLocation(bad_record_path)
@@ -293,7 +294,7 @@ object DataLoadingUtil {
     if (delimeter.equalsIgnoreCase(complex_delimeter_level1) ||
         complex_delimeter_level1.equalsIgnoreCase(complex_delimeter_level2) ||
         delimeter.equalsIgnoreCase(complex_delimeter_level2)) {
-      sys.error(s"Field Delimiter & Complex types delimiter are same")
+      CarbonException.analysisException(s"Field Delimiter and Complex types delimiter are same")
     } else {
       carbonLoadModel.setComplexDelimiterLevel1(
         CarbonUtil.delimiterConverter(complex_delimeter_level1))

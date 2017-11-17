@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.command.management
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, DataProcessCommand, RunnableCommand}
 import org.apache.spark.sql.hive.CarbonRelation
 
@@ -62,11 +63,11 @@ case class AlterTableCompactionCommand(
           .lookupRelation(Option(databaseName), tableName)(sparkSession)
           .asInstanceOf[CarbonRelation]
       if (relation == null) {
-        sys.error(s"Table $databaseName.$tableName does not exist")
+        throw new NoSuchTableException(databaseName, tableName)
       }
       if (null == relation.carbonTable) {
         LOGGER.error(s"alter table failed. table not found: $databaseName.$tableName")
-        sys.error(s"alter table failed. table not found: $databaseName.$tableName")
+        throw new NoSuchTableException(databaseName, tableName)
       }
       relation.carbonTable
     }
@@ -94,8 +95,10 @@ case class AlterTableCompactionCommand(
     } catch {
       case e: Exception =>
         if (null != e.getMessage) {
+          // TODO: We should modify it when we support compaction later.
           sys.error(s"Compaction failed. Please check logs for more info. ${ e.getMessage }")
         } else {
+          // TODO: We should modify it when we support compaction later.
           sys.error("Exception in compaction. Please check logs for more info.")
         }
     }

@@ -33,6 +33,7 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.sources._
 import org.apache.spark.sql.streaming.OutputMode
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -93,7 +94,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       .exists(tablePath)
     val (doSave, doAppend) = (mode, isExists) match {
       case (SaveMode.ErrorIfExists, true) =>
-        sys.error(s"ErrorIfExists mode, path $storePath already exists.")
+        CarbonException.analysisException(s"path $storePath already exists.")
       case (SaveMode.Overwrite, true) =>
         sqlContext.sparkSession
           .sql(s"DROP TABLE IF EXISTS ${ options.dbName }.${ options.tableName }")
@@ -127,11 +128,12 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       CarbonCommonConstants.DATABASE_DEFAULT_NAME).toLowerCase
     val tableOption: Option[String] = parameters.get("tableName")
     if (tableOption.isEmpty) {
-      sys.error("Table creation failed. Table name is not specified")
+      CarbonException.analysisException("Table creation failed. Table name is not specified")
     }
     val tableName = tableOption.get.toLowerCase()
     if (tableName.contains(" ")) {
-      sys.error("Table creation failed. Table name cannot contain blank space")
+      CarbonException.analysisException(
+        "Table creation failed. Table name cannot contain blank space")
     }
     val (path, updatedParams) = if (sqlContext.sparkSession.sessionState.catalog.listTables(dbName)
       .exists(_.table.equalsIgnoreCase(tableName))) {
