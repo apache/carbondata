@@ -103,7 +103,8 @@ case class DataLoadTableFileMapping(table: String, loadPath: String)
 
 case class ExecutionErrors(var failureCauses: FailureCauses, var errorMsg: String )
 
-case class CarbonMergerMapping(hdfsStoreLocation: String,
+case class CarbonMergerMapping(
+    hdfsStoreLocation: String,
     metadataFilePath: String,
     var mergedLoadName: String,
     databaseName: String,
@@ -118,16 +119,18 @@ case class CarbonMergerMapping(hdfsStoreLocation: String,
 
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
-case class AlterTableModel(dbName: Option[String],
-                           tableName: String,
-                           segmentUpdateStatusManager: Option[SegmentUpdateStatusManager],
-                           compactionType: String,
-                           factTimeStamp: Option[Long],
-                           var alterSql: String)
+case class AlterTableModel(
+    dbName: Option[String],
+    tableName: String,
+    segmentUpdateStatusManager: Option[SegmentUpdateStatusManager],
+    compactionType: String,
+    factTimeStamp: Option[Long],
+    var alterSql: String)
 
-case class UpdateTableModel(isUpdate: Boolean,
-                            updatedTimeStamp: Long,
-                            var executorErrors: ExecutionErrors)
+case class UpdateTableModel(
+    isUpdate: Boolean,
+    updatedTimeStamp: Long,
+    var executorErrors: ExecutionErrors)
 
 case class CompactionModel(compactionSize: Long,
     compactionType: CompactionType,
