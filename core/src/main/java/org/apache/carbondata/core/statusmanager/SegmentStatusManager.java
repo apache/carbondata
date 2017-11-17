@@ -201,9 +201,15 @@ public class SegmentStatusManager {
       listOfLoadFolderDetailsArray =
           gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
     } catch (IOException e) {
+      LOG.error(e, "Failed to read metadata of load");
       return new LoadMetadataDetails[0];
     } finally {
       closeStreams(buffReader, inStream, dataInputStream);
+    }
+
+    // if listOfLoadFolderDetailsArray is null, return empty array
+    if (null == listOfLoadFolderDetailsArray) {
+      return new LoadMetadataDetails[0];
     }
 
     return listOfLoadFolderDetailsArray;
