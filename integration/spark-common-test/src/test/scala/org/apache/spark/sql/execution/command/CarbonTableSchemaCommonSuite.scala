@@ -33,7 +33,6 @@ class CarbonTableSchemaCommonSuite extends QueryTest with BeforeAndAfterAll {
            | BB INT, bb char(10)
            | )
            | STORED BY 'carbondata'
-
        """.stripMargin)
     } catch {
       case ex: AnalysisException => Assert.assertTrue(true)
