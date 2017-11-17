@@ -462,39 +462,8 @@ public final class FileFactory {
    * @throws IOException
    */
   public static void truncateFile(String path, FileType fileType, long newSize) throws IOException {
-    path = path.replace("\\", "/");
-    FileChannel fileChannel = null;
-    switch (fileType) {
-      case LOCAL:
-        path = getUpdatedFilePath(path, fileType);
-        fileChannel = new FileOutputStream(path, true).getChannel();
-        try {
-          fileChannel.truncate(newSize);
-        } finally {
-          if (fileChannel != null) {
-            fileChannel.close();
-          }
-        }
-        return;
-      case HDFS:
-      case ALLUXIO:
-      case VIEWFS:
-      case S3:
-        Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
-        fs.truncate(pt, newSize);
-        return;
-      default:
-        fileChannel = new FileOutputStream(path, true).getChannel();
-        try {
-          fileChannel.truncate(newSize);
-        } finally {
-          if (fileChannel != null) {
-            fileChannel.close();
-          }
-        }
-        return;
-    }
+    CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
+    carbonFile.truncate(path, newSize);
   }
 
   /**
