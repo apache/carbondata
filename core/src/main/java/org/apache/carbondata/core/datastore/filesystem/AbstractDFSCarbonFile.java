@@ -160,11 +160,13 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
       // if hadoop version >= 2.7, it can call method 'truncate' to truncate file,
       // this method was new in hadoop 2.7
       FileSystem fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
-      Method truncateMethod = fs.getClass().getDeclaredMethod("truncate", new Class[]{Path.class, long.class});
-      fileTruncatedSuccessfully = (boolean)truncateMethod.invoke(fs, new Object[]{fileStatus.getPath(), validDataEndOffset});
+      Method truncateMethod = fs.getClass().getDeclaredMethod("truncate",
+          new Class[]{Path.class, long.class});
+      fileTruncatedSuccessfully = (boolean)truncateMethod.invoke(fs,
+          new Object[]{fileStatus.getPath(), validDataEndOffset});
     } catch (NoSuchMethodException e) {
-      LOGGER.error("there is no 'truncate' method in FileSystem, the version of hadoop is below 2.7 ."
-          + "It needs to implement truncate file by other way.");
+      LOGGER.error("there is no 'truncate' method in FileSystem, the version of hadoop is"
+          + " below 2.7, It needs to implement truncate file by other way.");
       DataOutputStream dataOutputStream = null;
       DataInputStream dataInputStream = null;
       // if bytes to read less than 1024 then buffer size should be equal to the given offset
