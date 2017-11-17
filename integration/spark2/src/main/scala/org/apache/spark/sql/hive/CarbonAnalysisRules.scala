@@ -26,6 +26,7 @@ import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
 import org.apache.spark.sql.execution.SparkSqlParser
 import org.apache.spark.sql.execution.command.mutation.ProjectForDeleteCommand
+import org.apache.spark.sql.util.CarbonException
 
 case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
@@ -55,7 +56,8 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       case Project(projectList, child) if !includedDestColumns =>
         includedDestColumns = true
         if (projectList.size != columns.size) {
-          sys.error("Number of source and destination columns are not matching")
+          CarbonException.analysisException(
+            "The number of columns in source table and destination table columns mismatch")
         }
         val renamedProjectList = projectList.zip(columns).map{ case(attr, col) =>
           attr match {

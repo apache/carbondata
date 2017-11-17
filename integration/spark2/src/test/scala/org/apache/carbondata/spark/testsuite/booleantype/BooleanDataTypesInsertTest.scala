@@ -431,7 +431,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
            """.stripMargin)
       sql("insert into boolean_table2 select * from boolean_table")
     }
-    assert(exception_insert.getMessage.contains("Cannot insert into target table because column number are different"))
+    assert(exception_insert.getMessage.contains("Cannot insert into target table because number of columns mismatch"))
   }
 
   test("Inserting into Hive table from carbon table: support boolean data type and other format") {

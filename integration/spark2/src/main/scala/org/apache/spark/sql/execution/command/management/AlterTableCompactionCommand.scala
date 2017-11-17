@@ -20,8 +20,10 @@ package org.apache.spark.sql.execution.command.management
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, DataProcessCommand, RunnableCommand}
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -62,11 +64,11 @@ case class AlterTableCompactionCommand(
           .lookupRelation(Option(databaseName), tableName)(sparkSession)
           .asInstanceOf[CarbonRelation]
       if (relation == null) {
-        sys.error(s"Table $databaseName.$tableName does not exist")
+        throw new NoSuchTableException(databaseName, tableName)
       }
       if (null == relation.carbonTable) {
         LOGGER.error(s"alter table failed. table not found: $databaseName.$tableName")
-        sys.error(s"alter table failed. table not found: $databaseName.$tableName")
+        throw new NoSuchTableException(databaseName, tableName)
       }
       relation.carbonTable
     }
@@ -94,9 +96,11 @@ case class AlterTableCompactionCommand(
     } catch {
       case e: Exception =>
         if (null != e.getMessage) {
-          sys.error(s"Compaction failed. Please check logs for more info. ${ e.getMessage }")
+          CarbonException.analysisException(
+            s"Compaction failed. Please check logs for more info. ${ e.getMessage }")
         } else {
-          sys.error("Exception in compaction. Please check logs for more info.")
+          CarbonException.analysisException(
+            "Exception in compaction. Please check logs for more info.")
         }
     }
     Seq.empty
@@ -205,7 +209,8 @@ case class AlterTableCompactionCommand(
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         LOGGER.error(s"Not able to acquire the compaction lock for table" +
                      s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
-        sys.error("Table is already locked for compaction. Please try after some time.")
+        CarbonException.analysisException(
+          "Table is already locked for compaction. Please try after some time.")
       }
     }
   }

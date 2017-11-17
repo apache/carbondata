@@ -27,6 +27,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.sources.{BaseRelation, Filter, InsertableRelation}
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -89,13 +90,14 @@ case class CarbonDatasourceHadoopRelation(
 
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
     if (carbonRelation.output.size > CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS) {
-      sys.error("Maximum supported column by carbon is: " +
-          CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS)
+      CarbonException.analysisException("Maximum supported column by carbon is: " +
+        CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS)
     }
     if (data.logicalPlan.output.size >= carbonRelation.output.size) {
       LoadTableByInsertCommand(this, data.logicalPlan, overwrite).run(sparkSession)
     } else {
-      sys.error("Cannot insert into target table because column number are different")
+      CarbonException.analysisException(
+        "Cannot insert into target table because number of columns mismatch")
     }
   }
 
