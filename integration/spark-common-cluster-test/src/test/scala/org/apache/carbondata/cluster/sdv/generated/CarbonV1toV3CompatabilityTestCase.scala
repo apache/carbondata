@@ -47,7 +47,7 @@ class CarbonV1toV3CompatabilityTestCase extends QueryTest with BeforeAndAfterAll
       .appName("CarbonV1toV3CompatabilityTestCase")
       .config("spark.driver.host", "localhost")
       .getOrCreateCarbonSession(storeLocation, metaLocation).asInstanceOf[CarbonSession]
-    println("store path from env : " + CarbonEnv.getInstance(localspark).storePath)
+    println("store path : " + CarbonProperties.getStorePath)
     localspark.sparkContext.setLogLevel("WARN")
     localspark.sessionState.asInstanceOf[CarbonSessionState].metadataHive
       .runSqlHive(
