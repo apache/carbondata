@@ -28,6 +28,7 @@ import scala.util.matching.Regex
 
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
+import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.util.PartitionUtils
@@ -781,7 +782,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
 
     if (remainingNodes.nonEmpty) {
-      sys.error(
+      throw new AnalysisException(
         s"""Unhandled clauses:
             |You are likely trying to use an unsupported carbon feature."""".stripMargin)
     }

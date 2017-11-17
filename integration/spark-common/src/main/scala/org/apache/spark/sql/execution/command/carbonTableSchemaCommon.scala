@@ -24,7 +24,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.Map
 
 import org.apache.spark.SparkContext
-import org.apache.spark.sql.SQLContext
+import org.apache.spark.sql.{AnalysisException, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -530,7 +530,7 @@ class TableNewProcessor(cm: TableModel) {
           s"Validation failed for Create/Alter Table Operation " +
           s"for ${ cm.databaseName }.${ cm.tableName }" +
           s"Duplicate column found with name: $name")
-        sys.error(s"Duplicate dimensions found with name: $name")
+        throw new AnalysisException(s"Duplicate dimensions found with name: $name")
       }
     }
 
@@ -600,12 +600,12 @@ class TableNewProcessor(cm: TableModel) {
             } else {
               LOGGER.error(s"Bucket field must be dimension column and " +
                            s"should not be measure or complex column: ${colSchema.getColumnName}")
-              sys.error(s"Bucket field must be dimension column and " +
+              throw new AnalysisException(s"Bucket field must be dimension column and " +
                         s"should not be measure or complex column: ${colSchema.getColumnName}")
             }
           case _ =>
             LOGGER.error(s"Bucket field is not present in table columns")
-            sys.error(s"Bucket field is not present in table columns")
+            throw new AnalysisException(s"Bucket field is not present in table columns")
         }
       }
       tableSchema.setBucketingInfo(
@@ -653,7 +653,7 @@ class TableNewProcessor(cm: TableModel) {
           })
 
           if (!found) {
-            sys.error(s"column $colForGrouping is not present in Field list")
+            throw new AnalysisException(s"column $colForGrouping is not present in Field list")
           }
         })
       })

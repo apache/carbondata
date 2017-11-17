@@ -33,6 +33,7 @@ import org.apache.spark.sql.{Row, RowFactory}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
 import org.apache.spark.sql.types.{MetadataBuilder, StringType}
+import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -662,16 +663,18 @@ object CommonUtil {
     val maxColumnsInt = getMaxColumnValue(maxColumns)
     if (maxColumnsInt != null) {
       if (columnCountInSchema >= maxColumnsInt) {
-        sys.error(s"csv headers should be less than the max columns: $maxColumnsInt")
+        CarbonException.analysisException(
+          s"csv headers should be less than the max columns: $maxColumnsInt")
       } else if (maxColumnsInt > CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
-        sys.error(s"max columns cannot be greater than the threshold value: ${
-          CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING
-        }")
+        CarbonException.analysisException(
+          s"max columns cannot be greater than the threshold value: ${
+            CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING
+          }")
       } else {
         maxNumberOfColumnsForParsing = maxColumnsInt
       }
     } else if (columnCountInSchema >= CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
-      sys.error(s"csv header columns should be less than max threashold: ${
+      CarbonException.analysisException(s"csv header columns should be less than max threashold: ${
         CSVInputFormat
           .THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING
       }")
