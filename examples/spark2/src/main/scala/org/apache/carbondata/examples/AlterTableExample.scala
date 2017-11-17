@@ -37,7 +37,6 @@ object AlterTableExample {
 
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val metastoredb = s"$rootPath/examples/spark2/target/metastore_db"
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
@@ -49,7 +48,7 @@ object AlterTableExample {
       .master("local")
       .appName("AlterTableExample")
       .config("spark.sql.warehouse.dir", warehouse)
-      .getOrCreateCarbonSession(storeLocation, metastoredb)
+      .getOrCreateCarbonSession(storeLocation)
 
     spark.sparkContext.setLogLevel("WARN")
 
