@@ -319,7 +319,7 @@ public final class DataTypeUtil {
       Date dateToStr = null;
       DateFormat dateFormatter = null;
       try {
-        if (null != dateFormat) {
+        if (null != dateFormat && !dateFormat.trim().isEmpty()) {
           dateFormatter = new SimpleDateFormat(dateFormat);
         } else {
           dateFormatter = timeStampformatter.get();

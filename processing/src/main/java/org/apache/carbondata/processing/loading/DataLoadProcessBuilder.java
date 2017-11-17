@@ -20,7 +20,6 @@ package org.apache.carbondata.processing.loading;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -28,6 +27,7 @@ import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -185,8 +185,6 @@ public final class DataLoadProcessBuilder {
         carbonTable.getDimensionByTableName(carbonTable.getTableName());
     List<CarbonMeasure> measures =
         carbonTable.getMeasureByTableName(carbonTable.getTableName());
-    Map<String, String> dateFormatMap =
-        CarbonDataProcessorUtil.getDateFormatMap(loadModel.getDateFormat());
     List<DataField> dataFields = new ArrayList<>();
     List<DataField> complexDataFields = new ArrayList<>();
 
@@ -194,7 +192,11 @@ public final class DataLoadProcessBuilder {
     // And then add complex data types and measures.
     for (CarbonColumn column : dimensions) {
       DataField dataField = new DataField(column);
-      dataField.setDateFormat(dateFormatMap.get(column.getColName()));
+      if (column.getDataType() == DataTypes.DATE) {
+        dataField.setDateFormat(loadModel.getDateFormat());
+      } else if (column.getDataType() == DataTypes.TIMESTAMP) {
+        dataField.setTimestampFormat(loadModel.getTimestampformat());
+      }
       if (column.isComplex()) {
         complexDataFields.add(dataField);
       } else {

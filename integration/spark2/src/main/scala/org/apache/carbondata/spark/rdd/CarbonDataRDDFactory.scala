@@ -799,18 +799,20 @@ object CarbonDataRDDFactory {
       throw new DataLoadingException("Partition column not found.")
     }
 
-    val dateFormatMap = CarbonDataProcessorUtil.getDateFormatMap(carbonLoadModel.getDateFormat)
-    val specificFormat = Option(dateFormatMap.get(partitionColumn.toLowerCase))
-    val timeStampFormat = if (specificFormat.isDefined) {
-      new SimpleDateFormat(specificFormat.get)
-    } else {
-      val timestampFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-        .CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
-      new SimpleDateFormat(timestampFormatString)
-    }
+    val specificTimestampFormat = carbonLoadModel.getTimestampformat
+    val specificDateFormat = carbonLoadModel.getDateFormat
+    val timeStampFormat =
+      if (specificTimestampFormat != null && !specificTimestampFormat.trim.isEmpty) {
+        new SimpleDateFormat(specificTimestampFormat)
+      } else {
+        val timestampFormatString = CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+        new SimpleDateFormat(timestampFormatString)
+      }
 
-    val dateFormat = if (specificFormat.isDefined) {
-      new SimpleDateFormat(specificFormat.get)
+    val dateFormat = if (specificDateFormat != null && !specificDateFormat.trim.isEmpty) {
+      new SimpleDateFormat(specificDateFormat)
     } else {
       val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
         .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
