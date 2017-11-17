@@ -28,71 +28,73 @@ class TestTimeseriesTableSelection extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
     sql("drop table if exists mainTable")
-    sql("CREATE TABLE mainTable(dataTime timestamp, name string, city string, age int) STORED BY 'org.apache.carbondata.format'")
-    sql("create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='dataTime', 'timeseries.hierarchy'='second=1,minute=1,hour=1,day=1,month=1,year=1') as select dataTime, sum(age) from mainTable group by dataTime")
+    sql("CREATE TABLE mainTable(mytime timestamp, name string, age int) STORED BY 'org.apache.carbondata.format'")
+    sql("create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='mytime', 'timeseries.hierarchy'='second=1,minute=1,hour=1,day=1,month=1,year=1') as select mytime, sum(age) from mainTable group by mytime")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
   }
+
   test("test PreAggregate table selection 1") {
-    val df = sql("select dataTime from mainTable group by dataTime")
+    val df = sql("select mytime from mainTable group by mytime")
     preAggTableValidator(df.queryExecution.analyzed, "maintable")
   }
 
   test("test PreAggregate table selection 2") {
-    val df = sql("select timeseries(dataTime,'hour') from mainTable group by timeseries(dataTime,'hour')")
+    val df = sql("select timeseries(mytime,'hour') from mainTable group by timeseries(mytime,'hour')")
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0_hour")
   }
 
   test("test PreAggregate table selection 3") {
-    val df = sql("select timeseries(dataTime,'milli') from mainTable group by timeseries(dataTime,'milli')")
+    val df = sql("select timeseries(mytime,'milli') from mainTable group by timeseries(mytime,'milli')")
     preAggTableValidator(df.queryExecution.analyzed, "maintable")
   }
 
   test("test PreAggregate table selection 4") {
-    val df = sql("select timeseries(dataTime,'year') from mainTable group by timeseries(dataTime,'year')")
+    val df = sql("select timeseries(mytime,'year') from mainTable group by timeseries(mytime,'year')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable_agg0_year")
   }
 
   test("test PreAggregate table selection 5") {
-    val df = sql("select timeseries(dataTime,'day') from mainTable group by timeseries(dataTime,'day')")
+    val df = sql("select timeseries(mytime,'day') from mainTable group by timeseries(mytime,'day')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable_agg0_day")
   }
 
   test("test PreAggregate table selection 6") {
-    val df = sql("select timeseries(dataTime,'month') from mainTable group by timeseries(dataTime,'month')")
+    val df = sql("select timeseries(mytime,'month') from mainTable group by timeseries(mytime,'month')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable_agg0_month")
   }
 
   test("test PreAggregate table selection 7") {
-    val df = sql("select timeseries(dataTime,'minute') from mainTable group by timeseries(dataTime,'minute')")
+    val df = sql("select timeseries(mytime,'minute') from mainTable group by timeseries(mytime,'minute')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable_agg0_minute")
   }
 
   test("test PreAggregate table selection 8") {
-    val df = sql("select timeseries(dataTime,'second') from mainTable group by timeseries(dataTime,'second')")
+    val df = sql("select timeseries(mytime,'second') from mainTable group by timeseries(mytime,'second')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable_agg0_second")
   }
 
   test("test PreAggregate table selection 9") {
-    val df = sql("select timeseries(dataTime,'hour') from mainTable where timeseries(dataTime,'hour')='x' group by timeseries(dataTime,'hour')")
+    val df = sql("select timeseries(mytime,'hour') from mainTable where timeseries(mytime,'hour')='x' group by timeseries(mytime,'hour')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable_agg0_hour")
   }
 
   test("test PreAggregate table selection 10") {
-    val df = sql("select timeseries(dataTime,'hour') from mainTable where timeseries(dataTime,'hour')='x' group by timeseries(dataTime,'hour') order by timeseries(dataTime,'hour')")
+    val df = sql("select timeseries(mytime,'hour') from mainTable where timeseries(mytime,'hour')='x' group by timeseries(mytime,'hour') order by timeseries(mytime,'hour')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable_agg0_hour")
   }
 
   test("test PreAggregate table selection 11") {
-    val df = sql("select timeseries(dataTime,'hour'),sum(age) from mainTable where timeseries(dataTime,'hour')='x' group by timeseries(dataTime,'hour') order by timeseries(dataTime,'hour')")
+    val df = sql("select timeseries(mytime,'hour'),sum(age) from mainTable where timeseries(mytime,'hour')='x' group by timeseries(mytime,'hour') order by timeseries(mytime,'hour')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable_agg0_hour")
   }
 
   test("test PreAggregate table selection 12") {
-    val df = sql("select timeseries(dataTime,'hour')as hourlevel,sum(age) as sum from mainTable where timeseries(dataTime,'hour')='x' group by timeseries(dataTime,'hour') order by timeseries(dataTime,'hour')")
+    val df = sql("select timeseries(mytime,'hour')as hourlevel,sum(age) as sum from mainTable where timeseries(mytime,'hour')='x' group by timeseries(mytime,'hour') order by timeseries(mytime,'hour')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable_agg0_hour")
   }
 
   test("test PreAggregate table selection 13") {
-    val df = sql("select timeseries(dataTime,'hour')as hourlevel,sum(age) as sum from mainTable where timeseries(dataTime,'hour')='x' and name='vishal' group by timeseries(dataTime,'hour') order by timeseries(dataTime,'hour')")
+    val df = sql("select timeseries(mytime,'hour')as hourlevel,sum(age) as sum from mainTable where timeseries(mytime,'hour')='x' and name='vishal' group by timeseries(mytime,'hour') order by timeseries(mytime,'hour')")
     preAggTableValidator(df.queryExecution.analyzed,"maintable")
   }
 

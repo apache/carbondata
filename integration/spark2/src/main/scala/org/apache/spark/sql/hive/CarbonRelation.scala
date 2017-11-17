@@ -22,6 +22,7 @@ import scala.Array.canBuildFrom
 import scala.collection.JavaConverters._
 import scala.util.parsing.combinator.RegexParsers
 
+import org.apache.spark.sql.CarbonEnv
 import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Statistics}
@@ -205,12 +206,18 @@ case class CarbonRelation(
       carbonTable.getAbsoluteTableIdentifier)
 
     if (tableStatusLastUpdateTime != tableStatusNewLastUpdatedTime) {
-      val tablePath = CarbonStorePath.getCarbonTablePath(
-        carbonTable.getAbsoluteTableIdentifier).getPath
-      val fileType = FileFactory.getFileType(tablePath)
-      if(FileFactory.isFileExist(tablePath, fileType)) {
-        tableStatusLastUpdateTime = tableStatusNewLastUpdatedTime
-        sizeInBytesLocalValue = FileFactory.getDirectorySize(tablePath)
+      if (new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier)
+        .getValidAndInvalidSegments.getValidSegments.isEmpty) {
+        sizeInBytesLocalValue = 0L
+      } else {
+        val tablePath = CarbonStorePath.getCarbonTablePath(
+          carbonTable.getTablePath,
+          carbonTable.getCarbonTableIdentifier).getPath
+        val fileType = FileFactory.getFileType(tablePath)
+        if (FileFactory.isFileExist(tablePath, fileType)) {
+          tableStatusLastUpdateTime = tableStatusNewLastUpdatedTime
+          sizeInBytesLocalValue = FileFactory.getDirectorySize(tablePath)
+        }
       }
     }
     sizeInBytesLocalValue
