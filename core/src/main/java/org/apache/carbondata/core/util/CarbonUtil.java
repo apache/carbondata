@@ -764,6 +764,23 @@ public final class CarbonUtil {
         lowerPath.startsWith(CarbonCommonConstants.S3A_PREFIX);
   }
 
+  public static String removeAKSK(String filePath) {
+    if (null == filePath) {
+      return "";
+    }
+    String lowerPath = filePath.toLowerCase(Locale.getDefault());
+    if (lowerPath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3A_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      int prefixLength = filePath.indexOf(":", 0) + 3;
+      int pathOffset = filePath.indexOf("@");
+      if (pathOffset > 0) {
+        return filePath.substring(0, prefixLength) + filePath.substring(pathOffset + 1);
+      }
+    }
+    return filePath;
+  }
+
   /**
    * This method will check the existence of a file at a given path
    */
@@ -774,7 +791,7 @@ public final class CarbonUtil {
         return true;
       }
     } catch (IOException e) {
-      LOGGER.error("@@@@@@  File not found at a given location @@@@@@ : " + fileName);
+      LOGGER.error("@@@@@@  File not found at a given location @@@@@@ : " + removeAKSK(fileName));
     }
     return false;
   }
