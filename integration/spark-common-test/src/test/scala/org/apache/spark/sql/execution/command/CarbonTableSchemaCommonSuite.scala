@@ -36,8 +36,8 @@ class CarbonTableSchemaCommonSuite extends QueryTest with BeforeAndAfterAll {
        """.stripMargin)
       Assert.assertTrue(false)
     } catch {
-      case ex: AnalysisException => Assert.assertTrue(true)
-      case ex: Exception => Assert.assertTrue(false)
+      case _: AnalysisException => Assert.assertTrue(true)
+      case _: Exception => Assert.assertTrue(false)
     } finally {
       sql("DROP TABLE IF EXISTS carbon_table")
     }
@@ -62,8 +62,8 @@ class CarbonTableSchemaCommonSuite extends QueryTest with BeforeAndAfterAll {
        """.stripMargin)
       Assert.assertTrue(false)
     } catch {
-      case ex: RuntimeException => Assert.assertTrue(true)
-      case ex: Exception => Assert.assertTrue(false)
+      case _: RuntimeException => Assert.assertTrue(true)
+      case _: Exception => Assert.assertTrue(false)
     } finally {
       sql("DROP TABLE IF EXISTS carbon_table")
     }
