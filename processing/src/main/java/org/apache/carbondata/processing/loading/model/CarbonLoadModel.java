@@ -127,6 +127,11 @@ public class CarbonLoadModel implements Serializable {
   private String isEmptyDataBadRecord;
 
   /**
+   * defines the string to specify whether to skip empty line
+   */
+  private String skipEmptyLine;
+
+  /**
    * Use one pass to generate dictionary
    */
   private boolean useOnePass;
@@ -363,6 +368,7 @@ public class CarbonLoadModel implements Serializable {
     copy.dictionaryServerPort = dictionaryServerPort;
     copy.preFetch = preFetch;
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
+    copy.skipEmptyLine = skipEmptyLine;
     copy.sortScope = sortScope;
     copy.batchSortSizeInMb = batchSortSizeInMb;
     copy.badRecordsLocation = badRecordsLocation;
@@ -412,6 +418,7 @@ public class CarbonLoadModel implements Serializable {
     copy.dictionaryServerPort = dictionaryServerPort;
     copy.preFetch = preFetch;
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
+    copy.skipEmptyLine = skipEmptyLine;
     copy.sortScope = sortScope;
     copy.batchSortSizeInMb = batchSortSizeInMb;
     copy.isAggLoadRequest = isAggLoadRequest;
@@ -463,6 +470,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.dictionaryServerPort = dictionaryServerPort;
     copyObj.preFetch = preFetch;
     copyObj.isEmptyDataBadRecord = isEmptyDataBadRecord;
+    copyObj.skipEmptyLine = skipEmptyLine;
     copyObj.sortScope = sortScope;
     copyObj.batchSortSizeInMb = batchSortSizeInMb;
     copyObj.badRecordsLocation = badRecordsLocation;
@@ -775,5 +783,12 @@ public class CarbonLoadModel implements Serializable {
 
   public void setTimestampformat(String timestampformat) {
     this.timestampformat = timestampformat;
+  }
+  public String getSkipEmptyLine() {
+    return skipEmptyLine;
+  }
+
+  public void setSkipEmptyLine(String skipEmptyLine) {
+    this.skipEmptyLine = skipEmptyLine;
   }
 }
