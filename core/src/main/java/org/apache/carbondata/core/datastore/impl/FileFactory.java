@@ -541,7 +541,7 @@ public final class FileFactory {
    * @param fileType
    * @return updated file path without url for local
    */
-  private static String getUpdatedFilePath(String filePath, FileType fileType) {
+  public static String getUpdatedFilePath(String filePath, FileType fileType) {
     switch (fileType) {
       case HDFS:
       case ALLUXIO:
