@@ -58,8 +58,7 @@ import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.csvinput.BlockDetails
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable
-import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
-import org.apache.carbondata.processing.loading.exception.NoRetryException
+import org.apache.carbondata.processing.loading.exception.{CarbonDataLoadingException, NoRetryException, UpdateTablestatusException}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions
 import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonDataMergerUtil, CompactionType}
@@ -441,11 +440,20 @@ object CarbonDataRDDFactory {
       return
     }
     if (loadStatus == SegmentStatus.LOAD_FAILURE) {
-      // update the load entry in table status file for changing the status to failure
-      CommonUtil.updateTableStatusForFailure(carbonLoadModel)
-      LOGGER.info("********starting clean up**********")
-      CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
-      LOGGER.info("********clean up done**********")
+      if (!Thread.currentThread().isInterrupted) {
+        try {
+          // update the load entry in table status file for changing the status to failure
+          CommonUtil.updateTableStatusForFailure(carbonLoadModel)
+          LOGGER.info("********starting clean up**********")
+          CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
+          LOGGER.info("********clean up done**********")
+        } catch {
+          case ex =>
+            // catch exceptions and throw InterruptedException
+            LOGGER.error(ex)
+            throw new UpdateTablestatusException("update fail status failed")
+        }
+      }
       LOGGER.audit(s"Data load is failed for " +
                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       LOGGER.warn("Cannot write load metadata file as data load failed")
