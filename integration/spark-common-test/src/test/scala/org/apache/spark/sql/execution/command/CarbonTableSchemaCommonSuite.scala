@@ -34,11 +34,13 @@ class CarbonTableSchemaCommonSuite extends QueryTest with BeforeAndAfterAll {
            | )
            | STORED BY 'carbondata'
        """.stripMargin)
+      Assert.assertTrue(false)
     } catch {
       case ex: AnalysisException => Assert.assertTrue(true)
       case ex: Exception => Assert.assertTrue(false)
+    } finally {
+      sql("DROP TABLE IF EXISTS carbon_table")
     }
-    sql("DROP TABLE IF EXISTS carbon_table")
   }
 
   test("Altering table: Duplicate column found with name, it should throw RuntimeException") {
@@ -57,13 +59,14 @@ class CarbonTableSchemaCommonSuite extends QueryTest with BeforeAndAfterAll {
            | alter TABLE carbon_table add columns(
            | bb char(10)
             )
-
        """.stripMargin)
+      Assert.assertTrue(false)
     } catch {
       case ex: RuntimeException => Assert.assertTrue(true)
       case ex: Exception => Assert.assertTrue(false)
+    } finally {
+      sql("DROP TABLE IF EXISTS carbon_table")
     }
-    sql("DROP TABLE IF EXISTS carbon_table")
   }
 
 }
