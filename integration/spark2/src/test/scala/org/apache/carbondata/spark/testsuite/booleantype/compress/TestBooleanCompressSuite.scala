@@ -46,7 +46,6 @@ class TestBooleanCompressSuite extends QueryTest with BeforeAndAfterEach with Be
     assert(BooleanFile.createBooleanFileRandom(randomBoolean, trueNum, 0.5))
     CarbonProperties.getInstance()
       .addProperty("carbon.storelocation", s"$rootPath/target/warehouse/")
-
   }
 
   test("test boolean compress rate: random file") {
