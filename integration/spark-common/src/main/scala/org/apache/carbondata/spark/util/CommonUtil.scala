@@ -845,13 +845,31 @@ object CommonUtil {
   def mergeIndexFiles(sparkContext: SparkContext,
       segmentIds: Seq[String],
       tablePath: String,
-      carbonTable: CarbonTable): Unit = {
-    if (CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
-      CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
+      carbonTable: CarbonTable,
+      mergeIndexProperty: Boolean): Unit = {
+    if (mergeIndexProperty) {
       new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(tablePath,
         carbonTable.getDatabaseName, carbonTable.getTableName).getTablePath,
         segmentIds).collect()
+    } else {
+      try {
+        CarbonProperties.getInstance()
+          .getProperty(CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT).toBoolean
+        if (CarbonProperties.getInstance().getProperty(
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+          CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
+          new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(tablePath,
+            carbonTable.getDatabaseName, carbonTable.getFactTableName).getTablePath,
+            segmentIds).collect()
+        }
+      } catch {
+        case _: Exception =>
+          if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT.toBoolean) {
+            new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(tablePath,
+              carbonTable.getDatabaseName, carbonTable.getFactTableName).getTablePath,
+              segmentIds).collect()
+          }
+      }
     }
   }
 
