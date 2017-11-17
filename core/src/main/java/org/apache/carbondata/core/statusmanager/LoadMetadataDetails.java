@@ -98,7 +98,7 @@ public class LoadMetadataDetails implements Serializable {
   /**
    * the file format of this segment
    */
-  private FileFormat fileFormat = FileFormat.carbondata;
+  private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
 
   public String getPartitionCount() {
     return partitionCount;

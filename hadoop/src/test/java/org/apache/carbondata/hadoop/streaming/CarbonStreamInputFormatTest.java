@@ -73,7 +73,7 @@ public class CarbonStreamInputFormatTest extends TestCase {
     List<CarbonInputSplit> splitList = new ArrayList<>();
     splitList.add(carbonInputSplit);
     return new CarbonMultiBlockSplit(identifier, splitList, new String[] { "localhost" },
-        FileFormat.rowformat);
+        FileFormat.ROW_V1);
   }
 
   @Test public void testCreateRecordReader() {

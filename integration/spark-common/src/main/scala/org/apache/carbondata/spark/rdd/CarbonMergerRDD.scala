@@ -306,10 +306,10 @@ class CarbonMergerRDD[K, V](
       val splits = format.getSplits(job)
 
       // keep on assigning till last one is reached.
-      if (null != splits && splits.size > 0) {
-        splitsOfLastSegment = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
-          .filter { split => FileFormat.carbondata.equals(split.getFileFormat) }.toList.asJava
-      }
+      if (null != splits && splits.size > 0) splitsOfLastSegment =
+        splits.asScala
+          .map(_.asInstanceOf[CarbonInputSplit])
+          .filter { split => FileFormat.COLUMNAR_V3.equals(split.getFileFormat) }.toList.asJava
 
       carbonInputSplits ++:= splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).filter(entry => {
         val blockInfo = new TableBlockInfo(entry.getPath.toString,
@@ -317,10 +317,10 @@ class CarbonMergerRDD[K, V](
           entry.getLocations, entry.getLength, entry.getVersion,
           updateStatusManager.getDeleteDeltaFilePath(entry.getPath.toString)
         )
-        (((!updated) || ((updated) && (!CarbonUtil
+        ((!updated) || (updated && (!CarbonUtil
           .isInvalidTableBlock(blockInfo.getSegmentId, blockInfo.getFilePath,
             updateDetails, updateStatusManager)))) &&
-         FileFormat.carbondata.equals(entry.getFileFormat))
+        FileFormat.COLUMNAR_V3.equals(entry.getFileFormat)
       })
     }
 

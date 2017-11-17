@@ -45,7 +45,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
    */
   private String[] locations;
 
-  private FileFormat fileFormat = FileFormat.carbondata;
+  private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
 
   public CarbonMultiBlockSplit() {
     splitList = null;

@@ -94,7 +94,7 @@ class CarbonScanRDD(
     val streamSplits = new ArrayBuffer[InputSplit]()
     splits.asScala.foreach { split =>
       val carbonInputSplit = split.asInstanceOf[CarbonInputSplit]
-      if (FileFormat.rowformat == carbonInputSplit.getFileFormat) {
+      if (FileFormat.ROW_V1 == carbonInputSplit.getFileFormat) {
         streamSplits += split
       } else {
         columnarSplits.add(split)
@@ -111,7 +111,7 @@ class CarbonScanRDD(
             new CarbonMultiBlockSplit(identifier,
               Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
               splitWithIndex._1.getLocations,
-              FileFormat.rowformat)
+              FileFormat.ROW_V1)
           new CarbonSparkPartition(id, splitWithIndex._2 + index, multiBlockSplit)
         }
       if (batchPartitions.isEmpty) {
@@ -250,7 +250,7 @@ class CarbonScanRDD(
       val model = format.getQueryModel(inputSplit, attemptContext)
       // get RecordReader by FileFormat
       val reader: RecordReader[Void, Object] = inputSplit.getFileFormat match {
-        case FileFormat.rowformat =>
+        case FileFormat.ROW_V1 =>
           // create record reader for row format
           DataTypeUtil.setDataTypeConverter(new SparkDataTypeConverterImpl)
           val inputFormat = new CarbonStreamInputFormat

@@ -32,8 +32,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types.StructType
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.statusmanager.SegmentStatus
+import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -561,11 +560,13 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     }
 
     sql("alter table streaming.stream_table_compact compact 'minor'")
+    sql("show segments for table streaming.stream_table_compact").show
 
     val result = sql("show segments for table streaming.stream_table_compact").collect()
     result.foreach { row =>
       if (row.getString(0).equals("1")) {
         assertResult(SegmentStatus.STREAMING.getMessage)(row.getString(1))
+        assertResult(FileFormat.ROW_V1.toString)(row.getString(4))
       }
     }
   }
@@ -583,7 +584,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       badRecordAction = "force",
       handoffSize = 1024L * 200
     )
-    assert(sql("show segments for table streaming.stream_table_new").count() == 4)
+    assert(sql("show segments for table streaming.stream_table_new").count() > 1)
 
     checkAnswer(
       sql("select count(*) from streaming.stream_table_new"),
