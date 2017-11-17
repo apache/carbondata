@@ -62,6 +62,7 @@ public class AbsoluteTableIdentifier implements Serializable {
     CarbonTableIdentifier identifier = new CarbonTableIdentifier(dbName, tableName, "");
     return new AbsoluteTableIdentifier(tablePath, identifier);
   }
+
   public String getTablePath() {
     return tablePath;
   }
