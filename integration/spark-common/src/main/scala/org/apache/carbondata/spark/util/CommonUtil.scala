@@ -859,14 +859,14 @@ object CommonUtil {
           CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
           CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
           new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(tablePath,
-            carbonTable.getDatabaseName, carbonTable.getFactTableName).getTablePath,
+            carbonTable.getDatabaseName, carbonTable.getTableName).getTablePath,
             segmentIds).collect()
         }
       } catch {
         case _: Exception =>
           if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT.toBoolean) {
             new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(tablePath,
-              carbonTable.getDatabaseName, carbonTable.getFactTableName).getTablePath,
+              carbonTable.getDatabaseName, carbonTable.getTableName).getTablePath,
               segmentIds).collect()
           }
       }
