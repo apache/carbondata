@@ -296,21 +296,31 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         val selectedDataMapSchemas = aggregateTableSelector.selectPreAggDataMapSchema()
         // if it does not match with any pre aggregate table return the same plan
         if (!selectedDataMapSchemas.isEmpty) {
-          // sort the selected child schema based on size to select smallest pre aggregate table
+          // filter the selected child schema based on size to select the pre-aggregate tables
+          // that are nonEmpty
           val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
-          val (aggDataMapSchema, carbonRelation, relation) =
-            selectedDataMapSchemas.asScala.map { selectedDataMapSchema =>
-              val identifier = TableIdentifier(
-                selectedDataMapSchema.getRelationIdentifier.getTableName,
-                Some(selectedDataMapSchema.getRelationIdentifier.getDatabaseName))
-              val carbonRelation =
-                catalog.lookupRelation(identifier)(sparkSession).asInstanceOf[CarbonRelation]
-              val relation = sparkSession.sessionState.catalog.lookupRelation(identifier)
-              (selectedDataMapSchema, carbonRelation, relation)
-            }.minBy(f => f._2.sizeInBytes)
-          val newRelation = new FindDataSourceTable(sparkSession).apply(relation)
-          // transform the query plan based on selected child schema
-          transformPreAggQueryPlan(plan, aggDataMapSchema, newRelation)
+          val relationBuffer = selectedDataMapSchemas.asScala.map { selectedDataMapSchema =>
+            val identifier = TableIdentifier(
+              selectedDataMapSchema.getRelationIdentifier.getTableName,
+              Some(selectedDataMapSchema.getRelationIdentifier.getDatabaseName))
+            val carbonRelation =
+              catalog.lookupRelation(identifier)(sparkSession).asInstanceOf[CarbonRelation]
+            val relation = sparkSession.sessionState.catalog.lookupRelation(identifier)
+            (selectedDataMapSchema, carbonRelation, relation)
+          }.filter(_._2.sizeInBytes != 0L)
+          if (relationBuffer.isEmpty) {
+            // If the size of relation Buffer is 0 then it means that none of the pre-aggregate
+            // tables have date yet.
+            // In this case we would return the original plan so that the query hits the parent
+            // table.
+            plan
+          } else {
+            // If the relationBuffer is nonEmpty then find the table with the minimum size.
+            val (aggDataMapSchema, _, relation) = relationBuffer.minBy(_._2.sizeInBytes)
+            val newRelation = new FindDataSourceTable(sparkSession).apply(relation)
+            // transform the query plan based on selected child schema
+            transformPreAggQueryPlan(plan, aggDataMapSchema, newRelation)
+          }
         } else {
           plan
         }
