@@ -453,9 +453,9 @@
       </build>
     </profile>
     <profile>
-      <id>hadoop-2.7.2</id>
+      <id>hadoop-2.2.0</id>
       <properties>
-        <hadoop.version>2.7.2</hadoop.version>
+        <hadoop.version>2.2.0</hadoop.version>
       </properties>
     </profile>
     <profile>
