@@ -21,6 +21,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.processing.exception.DataLoadingException
 
 object FileUtils {
@@ -38,11 +39,11 @@ object FileUtils {
       val fileName = carbonFile.getName
       if (carbonFile.getSize == 0) {
         LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-            .warn(s"skip empty input file: $path")
+            .warn(s"skip empty input file: ${CarbonUtil.removeAKSK(path)}")
       } else if (fileName.startsWith(CarbonCommonConstants.UNDERSCORE) ||
                  fileName.startsWith(CarbonCommonConstants.POINT)) {
         LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-            .warn(s"skip invisible input file: $path")
+            .warn(s"skip invisible input file: ${CarbonUtil.removeAKSK(path)}")
       } else {
         stringBuild.append(path.replace('\\', '/')).append(CarbonCommonConstants.COMMA)
       }
@@ -63,7 +64,8 @@ object FileUtils {
         val fileType = FileFactory.getFileType(filePaths(i))
         val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
         if (!carbonFile.exists()) {
-          throw new DataLoadingException(s"The input file does not exist: ${filePaths(i)}" )
+          throw new DataLoadingException(
+            s"The input file does not exist: ${CarbonUtil.removeAKSK(filePaths(i))}" )
         }
         getPathsFromCarbonFile(carbonFile, stringBuild)
       }
