@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -428,24 +427,6 @@ public final class CarbonDataProcessorUtil {
       type[i] = measureFields[i].getColumn().getDataType();
     }
     return type;
-  }
-
-  /**
-   * Creates map for columns which dateformats mentioned while loading the data.
-   * @param dataFormatString
-   * @return
-   */
-  public static Map<String, String> getDateFormatMap(String dataFormatString) {
-    Map<String, String> dateformatsHashMap = new HashMap<>();
-    if (dataFormatString != null && !dataFormatString.isEmpty()) {
-      String[] dateformats = dataFormatString.split(CarbonCommonConstants.COMMA);
-      for (String dateFormat : dateformats) {
-        String[] dateFormatSplits = dateFormat.split(":", 2);
-        dateformatsHashMap
-            .put(dateFormatSplits[0].toLowerCase().trim(), dateFormatSplits[1].trim());
-      }
-    }
-    return dateformatsHashMap;
   }
 
   /**

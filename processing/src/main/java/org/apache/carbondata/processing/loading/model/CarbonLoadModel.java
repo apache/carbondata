@@ -93,6 +93,8 @@ public class CarbonLoadModel implements Serializable {
    */
   private String commentChar;
 
+  private String timestampformat;
+
   private String dateFormat;
 
   private String defaultTimestampFormat;
@@ -351,6 +353,7 @@ public class CarbonLoadModel implements Serializable {
     copy.escapeChar = escapeChar;
     copy.quoteChar = quoteChar;
     copy.commentChar = commentChar;
+    copy.timestampformat = timestampformat;
     copy.dateFormat = dateFormat;
     copy.defaultTimestampFormat = defaultTimestampFormat;
     copy.maxColumns = maxColumns;
@@ -399,6 +402,7 @@ public class CarbonLoadModel implements Serializable {
     copy.escapeChar = escapeChar;
     copy.quoteChar = quoteChar;
     copy.commentChar = commentChar;
+    copy.timestampformat = timestampformat;
     copy.dateFormat = dateFormat;
     copy.defaultTimestampFormat = defaultTimestampFormat;
     copy.maxColumns = maxColumns;
@@ -449,6 +453,7 @@ public class CarbonLoadModel implements Serializable {
     copyObj.escapeChar = escapeChar;
     copyObj.quoteChar = quoteChar;
     copyObj.commentChar = commentChar;
+    copyObj.timestampformat = timestampformat;
     copyObj.dateFormat = dateFormat;
     copyObj.defaultTimestampFormat = defaultTimestampFormat;
     copyObj.maxColumns = maxColumns;
@@ -762,5 +767,13 @@ public class CarbonLoadModel implements Serializable {
 
   public void setBadRecordsLocation(String badRecordsLocation) {
     this.badRecordsLocation = badRecordsLocation;
+  }
+
+  public String getTimestampformat() {
+    return timestampformat;
+  }
+
+  public void setTimestampformat(String timestampformat) {
+    this.timestampformat = timestampformat;
   }
 }

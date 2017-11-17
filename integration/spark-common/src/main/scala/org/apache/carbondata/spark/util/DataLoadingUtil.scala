@@ -104,6 +104,14 @@ object DataLoadingUtil {
           CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)))
 
     optionsFinal.put(
+      "timestampformat",
+      options.getOrElse(
+        "timestampformat",
+        carbonProperty.getProperty(
+          CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
+          CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT)))
+
+    optionsFinal.put(
       "global_sort_partitions",
       options.getOrElse(
         "global_sort_partitions",
@@ -193,13 +201,15 @@ object DataLoadingUtil {
     val bad_records_action = optionsFinal("bad_records_action")
     val bad_record_path = optionsFinal("bad_record_path")
     val global_sort_partitions = optionsFinal("global_sort_partitions")
+    val timestampformat = optionsFinal("timestampformat")
     val dateFormat = optionsFinal("dateformat")
     val delimeter = optionsFinal("delimiter")
     val complex_delimeter_level1 = optionsFinal("complex_delimiter_level_1")
     val complex_delimeter_level2 = optionsFinal("complex_delimiter_level_2")
     val all_dictionary_path = optionsFinal("all_dictionary_path")
     val column_dict = optionsFinal("columndict")
-    ValidateUtil.validateDateFormat(dateFormat, table, table.getTableName)
+    ValidateUtil.validateDateTimeFormat(timestampformat, "TimestampFormat")
+    ValidateUtil.validateDateTimeFormat(dateFormat, "DateFormat")
     ValidateUtil.validateSortScope(table, sort_scope)
 
     if (bad_records_logger_enable.toBoolean ||
@@ -242,6 +252,7 @@ object DataLoadingUtil {
       }
     }
 
+    carbonLoadModel.setTimestampformat(timestampformat)
     carbonLoadModel.setDateFormat(dateFormat)
     carbonLoadModel.setDefaultTimestampFormat(carbonProperty.getProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,

@@ -17,35 +17,31 @@
 
 package org.apache.carbondata.spark.load
 
-import scala.collection.JavaConverters._
+import java.text.SimpleDateFormat
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object ValidateUtil {
-  def validateDateFormat(dateFormat: String, table: CarbonTable, tableName: String): Unit = {
-    val dimensions = table.getDimensionByTableName(tableName).asScala
+
+  /**
+   * validates both timestamp and date for illegal values
+   *
+   * @param dateTimeLoadFormat
+   * @param dateTimeLoadOption
+   */
+  def validateDateTimeFormat(dateTimeLoadFormat: String, dateTimeLoadOption: String): Unit = {
     // allowing empty value to be configured for dateformat option.
-    if (dateFormat != null && dateFormat.trim != "") {
-        val dateFormats: Array[String] = dateFormat.split(CarbonCommonConstants.COMMA)
-        for (singleDateFormat <- dateFormats) {
-          val dateFormatSplits: Array[String] = singleDateFormat.split(":", 2)
-          val columnName = dateFormatSplits(0).trim.toLowerCase
-          if (!dimensions.exists(_.getColName.equals(columnName))) {
-            throw new MalformedCarbonCommandException("Error: Wrong Column Name " +
-              dateFormatSplits(0) +
-              " is provided in Option DateFormat.")
-          }
-          if (dateFormatSplits.length < 2 || dateFormatSplits(1).trim.isEmpty) {
-            throw new MalformedCarbonCommandException("Error: Option DateFormat is not provided " +
-              "for " + "Column " + dateFormatSplits(0) +
-              ".")
-          }
-        }
+    if (dateTimeLoadFormat != null && dateTimeLoadFormat.trim != "") {
+      try {
+        new SimpleDateFormat(dateTimeLoadFormat)
+      } catch {
+        case _: IllegalArgumentException =>
+          throw new MalformedCarbonCommandException(s"Error: Wrong option: $dateTimeLoadFormat is" +
+                                                    s" provided for option $dateTimeLoadOption")
       }
+    }
   }
 
   def validateSortScope(carbonTable: CarbonTable, sortScope: String): Unit = {
