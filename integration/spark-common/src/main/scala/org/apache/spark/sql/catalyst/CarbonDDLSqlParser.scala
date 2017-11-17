@@ -93,6 +93,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val BAD_RECORDS_ACTION = carbonKeyWord("BAD_RECORDS_ACTION")
   protected val IS_EMPTY_DATA_BAD_RECORD = carbonKeyWord("IS_EMPTY_DATA_BAD_RECORD")
   protected val IS_EMPTY_COMMA_DATA_BAD_RECORD = carbonKeyWord("IS_NULL_DATA_BAD_RECORD")
+  protected val SKIP_EMPTY_LINE = carbonKeyWord("SKIP_EMPTY_LINE")
   protected val FILES = carbonKeyWord("FILES")
   protected val FROM = carbonKeyWord("FROM")
   protected val HIERARCHIES = carbonKeyWord("HIERARCHIES")
@@ -854,7 +855,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       "SERIALIZATION_NULL_FORMAT", "BAD_RECORDS_LOGGER_ENABLE", "BAD_RECORDS_ACTION",
       "ALL_DICTIONARY_PATH", "MAXCOLUMNS", "COMMENTCHAR", "DATEFORMAT", "BAD_RECORD_PATH",
       "BATCH_SORT_SIZE_INMB", "GLOBAL_SORT_PARTITIONS", "SINGLE_PASS",
-      "IS_EMPTY_DATA_BAD_RECORD", "HEADER", "TIMESTAMPFORMAT"
+      "IS_EMPTY_DATA_BAD_RECORD", "HEADER", "TIMESTAMPFORMAT", "SKIP_EMPTY_LINE"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder
@@ -908,6 +909,14 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           "option IS_EMPTY_DATA_BAD_RECORD can have option either true or false")
       }
     }
+
+      if (options.exists(_._1.equalsIgnoreCase("SKIP_EMPTY_LINE"))) {
+        val optionValue: String = options.get("skip_empty_line").get.head._2
+        if (!("true".equalsIgnoreCase(optionValue) || "false".equalsIgnoreCase(optionValue))) {
+          throw new MalformedCarbonCommandException(
+            "option SKIP_EMPTY_LINE can have option either true or false")
+        }
+      }
 
     // check for duplicate options
     val duplicateOptions = options filter {

@@ -85,6 +85,13 @@ object DataLoadingUtil {
           CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
           CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT)))
 
+    optionsFinal.put(
+      "skip_empty_line",
+      options.getOrElse(
+        "skip_empty_line",
+        carbonProperty.getProperty(
+          CarbonLoadOptionConstants.CARBON_OPTIONS_SKIP_EMPTY_LINE)))
+
     optionsFinal.put("all_dictionary_path", options.getOrElse("all_dictionary_path", ""))
 
     optionsFinal.put(
@@ -275,6 +282,8 @@ object DataLoadingUtil {
     carbonLoadModel.setIsEmptyDataBadRecord(
         DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," +
         optionsFinal("is_empty_data_bad_record"))
+
+    carbonLoadModel.setSkipEmptyLine(optionsFinal("skip_empty_line"))
 
     carbonLoadModel.setSortScope(sort_scope)
     carbonLoadModel.setBatchSortSizeInMb(optionsFinal("batch_sort_size_inmb"))

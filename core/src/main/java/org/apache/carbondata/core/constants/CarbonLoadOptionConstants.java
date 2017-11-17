@@ -46,6 +46,12 @@ public final class CarbonLoadOptionConstants {
   public static final String CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT = "false";
 
   /**
+   * option to specify whether to skip empty lines in load
+   */
+  @CarbonProperty public static final String CARBON_OPTIONS_SKIP_EMPTY_LINE =
+      "carbon.options.is.empty.data.bad.record";
+
+  /**
    * option to specify the dateFormat in load option for all date columns in table
    */
   @CarbonProperty

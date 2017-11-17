@@ -570,6 +570,7 @@ object CommonUtil {
       carbonLoadModel: CarbonLoadModel): Unit = {
     CSVInputFormat.setCommentCharacter(configuration, carbonLoadModel.getCommentChar)
     CSVInputFormat.setCSVDelimiter(configuration, carbonLoadModel.getCsvDelimiter)
+    CSVInputFormat.setSkipEmptyLine(configuration, carbonLoadModel.getSkipEmptyLine)
     CSVInputFormat.setEscapeCharacter(configuration, carbonLoadModel.getEscapeChar)
     CSVInputFormat.setMaxColumns(configuration, carbonLoadModel.getMaxColumns)
     CSVInputFormat.setNumberOfColumns(configuration, carbonLoadModel.getCsvHeaderColumns.length
