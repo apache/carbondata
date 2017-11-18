@@ -63,7 +63,6 @@ class CarbonAppendableStreamSink(
   // prepare configuration
   private val hadoopConf = {
     val conf = sparkSession.sessionState.newHadoopConf()
-    CarbonStreamOutputFormat.setCarbonLoadModel(conf, carbonLoadModel)
     // put all parameters into hadoopConf
     parameters.foreach { entry =>
       conf.set(entry._1, entry._2)
@@ -106,6 +105,7 @@ class CarbonAppendableStreamSink(
         data.queryExecution,
         committer,
         hadoopConf,
+        carbonLoadModel,
         server)
 
       statistic.addStatistics(s"add batch: $batchId", System.currentTimeMillis())
@@ -161,6 +161,7 @@ object CarbonAppendableStreamSink {
       queryExecution: QueryExecution,
       committer: FileCommitProtocol,
       hadoopConf: Configuration,
+      carbonLoadModel: CarbonLoadModel,
       server: Option[DictionaryServer]): Unit = {
 
     // create job
@@ -191,6 +192,7 @@ object CarbonAppendableStreamSink {
           (taskContext: TaskContext, iterator: Iterator[InternalRow]) => {
             writeDataFileTask(
               description,
+              carbonLoadModel,
               sparkStageId = taskContext.stageId(),
               sparkPartitionId = taskContext.partitionId(),
               sparkAttemptNumber = taskContext.attemptNumber(),
@@ -237,6 +239,7 @@ object CarbonAppendableStreamSink {
    */
   def writeDataFileTask(
       description: WriteDataFileJobDescription,
+      carbonLoadModel: CarbonLoadModel,
       sparkStageId: Int,
       sparkPartitionId: Int,
       sparkAttemptNumber: Int,
@@ -275,7 +278,7 @@ object CarbonAppendableStreamSink {
         streamParser.initialize(taskAttemptContext.getConfiguration)
 
         StreamSegment.appendBatchData(new InputIterator(iterator, streamParser),
-          taskAttemptContext)
+          taskAttemptContext, carbonLoadModel)
       })(catchBlock = {
         committer.abortTask(taskAttemptContext)
         LOGGER.error(s"Job $jobId aborted.")

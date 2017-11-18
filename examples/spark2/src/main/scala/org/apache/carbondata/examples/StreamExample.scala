@@ -170,6 +170,7 @@ object StreamExample {
             .trigger(ProcessingTime("5 seconds"))
             .option("checkpointLocation", tablePath.getStreamingCheckpointDir)
             .option("tablePath", tablePath.getPath)
+            .option("tableName", "stream_table")
             .start()
 
           qry.awaitTermination()

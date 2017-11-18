@@ -266,7 +266,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
 
     Path file = fileSplit.getPath();
 
-    byte[] syncMarker = getSyncMarker(file.toUri().getPath());
+    byte[] syncMarker = getSyncMarker(file.toString());
 
     FileSystem fs = file.getFileSystem(hadoopConf);
 
