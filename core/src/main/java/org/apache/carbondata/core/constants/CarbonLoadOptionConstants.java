@@ -46,12 +46,20 @@ public final class CarbonLoadOptionConstants {
   public static final String CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT = "false";
 
   /**
-   * option to specify the load option
+   * option to specify the dateFormat in load option for all date columns in table
    */
   @CarbonProperty
   public static final String CARBON_OPTIONS_DATEFORMAT =
       "carbon.options.dateformat";
   public static final String CARBON_OPTIONS_DATEFORMAT_DEFAULT = "";
+
+  /**
+   * option to specify the timestampFormat in load option for all timestamp columns in table
+   */
+  @CarbonProperty
+  public static final String CARBON_OPTIONS_TIMESTAMPFORMAT =
+          "carbon.options.timestampformat";
+  public static final String CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT = "";
   /**
    * option to specify the sort_scope
    */

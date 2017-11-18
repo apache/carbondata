@@ -60,10 +60,16 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
     } else if (dimensionValue == null || dimensionValue.equals(nullformat)) {
       updateWithNullValue(row);
     } else {
+      String dateFormat = null;
+      if (dataType == DataTypes.DATE) {
+        dateFormat = dataField.getDateFormat();
+      } else if (dataType == DataTypes.TIMESTAMP) {
+        dateFormat = dataField.getTimestampFormat();
+      }
       try {
         row.update(DataTypeUtil
             .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType,
-                dataField.getDateFormat()), index);
+                dateFormat), index);
       } catch (Throwable ex) {
         if (dimensionValue.length() > 0 || (dimensionValue.length() == 0 && isEmptyBadRecord)) {
           String message = logHolder.getColumnMessageMap().get(column.getColName());
