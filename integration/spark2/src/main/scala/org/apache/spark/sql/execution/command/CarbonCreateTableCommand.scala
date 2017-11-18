@@ -18,7 +18,6 @@
 package org.apache.spark.sql.execution.command
 
 import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
