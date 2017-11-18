@@ -411,7 +411,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       }
       carbonSplits.add(CarbonInputSplit.from(segmentId, fileSplit,
           ColumnarFormatVersion.valueOf(
-              CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION)));
+              CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION), null));
     }
     return carbonSplits;
   }

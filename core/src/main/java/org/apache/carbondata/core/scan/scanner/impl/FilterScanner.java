@@ -153,6 +153,8 @@ public class FilterScanner extends AbstractBlockletScanner {
         .get(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM);
     totalBlockletStatistic.addCountStatistic(QueryStatisticsConstants.TOTAL_BLOCKLET_NUM,
         totalBlockletStatistic.getCount() + 1);
+    // set the indexed data if it has any during fgdatamap pruning.
+    blocksChunkHolder.setBitSetGroup(blocksChunkHolder.getDataBlock().getIndexedData());
     // apply filter on actual data
     BitSetGroup bitSetGroup = this.filterExecuter.applyFilter(blocksChunkHolder, useBitSetPipeLine);
     // if indexes is empty then return with empty result

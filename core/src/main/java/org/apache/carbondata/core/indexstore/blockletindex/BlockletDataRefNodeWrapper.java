@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.List;
 
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
+import org.apache.carbondata.core.datamap.dev.BlockletSerializer;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -29,7 +30,9 @@ import org.apache.carbondata.core.datastore.chunk.reader.CarbonDataReaderFactory
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
 import org.apache.carbondata.core.datastore.chunk.reader.MeasureColumnChunkReader;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
+import org.apache.carbondata.core.indexstore.FineGrainBlocklet;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+import org.apache.carbondata.core.util.BitSetGroup;
 
 /**
  * wrapper for blocklet data map data
@@ -44,6 +47,8 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
 
   private BlockletLevelDeleteDeltaDataCache deleteDeltaDataCache;
 
+  private BlockletSerializer blockletSerializer;
+
   public BlockletDataRefNodeWrapper(List<TableBlockInfo> blockInfos, int index,
       int[] dimensionLens) {
     this.blockInfos = blockInfos;
@@ -55,6 +60,7 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
     }
     this.index = index;
     this.dimensionLens = dimensionLens;
+    this.blockletSerializer = new BlockletSerializer();
   }
 
   @Override public DataRefNode getNextDataRefNode() {
@@ -130,12 +136,29 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
     this.deleteDeltaDataCache = deleteDeltaDataCache;
   }
 
-  @Override public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
+  @Override
+  public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
     return deleteDeltaDataCache;
   }
 
-  @Override public int numberOfPages() {
+  @Override
+  public int numberOfPages() {
     return blockInfos.get(index).getDetailInfo().getPagesCount();
+  }
+
+  @Override
+  public BitSetGroup getIndexedData() {
+    String dataMapWriterPath = blockInfos.get(index).getDataMapWriterPath();
+    if (dataMapWriterPath != null) {
+      try {
+        FineGrainBlocklet blocklet = blockletSerializer.deserializeBlocklet(dataMapWriterPath);
+        return blocklet.getBitSetGroup(numberOfPages());
+      } catch (IOException e) {
+        return null;
+      }
+    } else {
+      return null;
+    }
   }
 
   public int numberOfNodes() {
