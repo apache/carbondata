@@ -54,7 +54,7 @@ class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
    * Initialization of Datamap factory with the identifier and datamap name
    */
   override def init(identifier: AbsoluteTableIdentifier,
-      dataMapName: String) = {
+      dataMapName: String): Unit = {
     this.identifier = identifier
     this.dataMapName = dataMapName
   }
@@ -62,15 +62,16 @@ class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
   /**
    * Return a new write for this datamap
    */
-  override def createWriter(segmentId: String, dataWritePath: String) = {
+  override def createWriter(segmentId: String, dataWritePath: String): AbstractDataMapWriter = {
     new CGDataMapWriter(identifier, segmentId, dataWritePath, dataMapName)
   }
 
   /**
    * Get the datamap for segmentid
    */
-  override def getDataMaps(segmentId: String) = {
-    val file = FileFactory.getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segmentId))
+  override def getDataMaps(segmentId: String): java.util.List[AbstractCoarseGrainDataMap] = {
+    val file = FileFactory.getCarbonFile(
+      CarbonTablePath.getSegmentPath(identifier.getTablePath, segmentId))
 
     val files = file.listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
@@ -86,7 +87,8 @@ class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
   /**
    * Get datamaps for distributable object.
    */
-  override def getDataMaps(distributable: DataMapDistributable) = {
+  override def getDataMaps(
+      distributable: DataMapDistributable): java.util.List[AbstractCoarseGrainDataMap] = {
     val mapDistributable = distributable.asInstanceOf[BlockletDataMapDistributable]
     val dataMap: AbstractCoarseGrainDataMap = new CGDataMap()
     dataMap.init(new DataMapModel(mapDistributable.getFilePath))
@@ -97,7 +99,7 @@ class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
    *
    * @param event
    */
-  override def fireEvent(event: Event) = {
+  override def fireEvent(event: Event): Unit = {
     ???
   }
 
@@ -106,8 +108,9 @@ class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
    *
    * @return
    */
-  override def toDistributable(segmentId: String) = {
-    val file = FileFactory.getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segmentId))
+  override def toDistributable(segmentId: String): java.util.List[DataMapDistributable] = {
+    val file = FileFactory.getCarbonFile(
+      CarbonTablePath.getSegmentPath(identifier.getTablePath, segmentId))
 
     val files = file.listFiles(new CarbonFileFilter {
       override def accept(file: CarbonFile): Boolean = file.getName.endsWith(".datamap")
@@ -122,21 +125,21 @@ class CGDataMapFactory extends AbstractCoarseGrainDataMapFactory {
   /**
    * Clears datamap of the segment
    */
-  override def clear(segmentId: String) = {
+  override def clear(segmentId: String): Unit = {
 
   }
 
   /**
    * Clear all datamaps from memory
    */
-  override def clear() = {
+  override def clear(): Unit = {
 
   }
 
   /**
    * Return metadata of this datamap
    */
-  override def getMeta = {
+  override def getMeta: DataMapMeta = {
     new DataMapMeta(Seq("name").toList.asJava, new ArrayBuffer[ExpressionType]().toList.asJava)
   }
 }
@@ -151,7 +154,7 @@ class CGDataMap extends AbstractCoarseGrainDataMap {
   /**
    * It is called to load the data map to memory or to initialize it.
    */
-  override def init(dataMapModel: DataMapModel) = {
+  override def init(dataMapModel: DataMapModel): Unit = {
     this.filePath = dataMapModel.getFilePath
     val size = FileFactory.getCarbonFile(filePath).getSize
     fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
@@ -169,7 +172,8 @@ class CGDataMap extends AbstractCoarseGrainDataMap {
    * @param filterExp
    * @return
    */
-  override def prune(filterExp: FilterResolverIntf, segmentProperties: SegmentProperties) = {
+  override def prune(filterExp: FilterResolverIntf,
+      segmentProperties: SegmentProperties): java.util.List[Blocklet] = {
     val buffer: ArrayBuffer[Expression] = new ArrayBuffer[Expression]()
     val expression = filterExp.getFilterExpression
     getEqualToExpression(expression, buffer)
@@ -183,7 +187,7 @@ class CGDataMap extends AbstractCoarseGrainDataMap {
   }
 
 
-  def findMeta(value: Array[Byte]) = {
+  private def findMeta(value: Array[Byte]) = {
     val tuples = maxMin.filter { f =>
       ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._1) <= 0 &&
       ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._2) >= 0
@@ -191,7 +195,7 @@ class CGDataMap extends AbstractCoarseGrainDataMap {
     tuples
   }
 
-  def getEqualToExpression(expression: Expression, buffer: ArrayBuffer[Expression]): Unit = {
+  private def getEqualToExpression(expression: Expression, buffer: ArrayBuffer[Expression]): Unit = {
     if (expression.getChildren != null) {
       expression.getChildren.asScala.map { f =>
         if (f.isInstanceOf[EqualToExpression]) {
@@ -230,14 +234,14 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockId file name of the carbondata file
    */
-  override def onBlockStart(blockId: String) = {
+  override def onBlockStart(blockId: String): Unit = {
     currentBlockId = blockId
   }
 
   /**
    * End of block notification
    */
-  override def onBlockEnd(blockId: String) = {
+  override def onBlockEnd(blockId: String): Unit = {
 
   }
 
@@ -246,7 +250,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockletId sequence number of blocklet in the block
    */
-  override def onBlockletStart(blockletId: Int) = {
+  override def onBlockletStart(blockletId: Int): Unit = {
 
   }
 
@@ -255,7 +259,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockletId sequence number of blocklet in the block
    */
-  override def onBlockletEnd(blockletId: Int) = {
+  override def onBlockletEnd(blockletId: Int): Unit = {
     val sorted = blockletList
       .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l, r) <= 0)
     maxMin +=
@@ -272,7 +276,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    */
   override def onPageAdded(blockletId: Int,
       pageId: Int,
-      pages: Array[ColumnPage]) = {
+      pages: Array[ColumnPage]): Unit = {
     val size = pages(0).getPageSize
     val list = new ArrayBuffer[Array[Byte]]()
     var i = 0
@@ -295,7 +299,7 @@ class CGDataMapWriter(identifier: AbsoluteTableIdentifier,
    * This is called during closing of writer.So after this call no more data will be sent to this
    * class.
    */
-  override def finish() = {
+  override def finish(): Unit = {
     val out = new ByteOutputStream()
     val outStream = new ObjectOutputStream(out)
     outStream.writeObject(maxMin)

@@ -237,4 +237,13 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
     BlockletDataMap dataMap = (BlockletDataMap) coarseGrainDataMap;
     return dataMap.getSegmentProperties();
   }
+
+  @Override public List<Blocklet> getAllBlocklets(String segmentId) throws IOException {
+    List<Blocklet> blocklets = new ArrayList<>();
+    List<AbstractCoarseGrainDataMap> dataMaps = getDataMaps(segmentId);
+    for (AbstractCoarseGrainDataMap dataMap : dataMaps) {
+      blocklets.addAll(dataMap.prune(null, null));
+    }
+    return blocklets;
+  }
 }

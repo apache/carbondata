@@ -54,7 +54,7 @@ class FGDataMapFactory extends AbstractFineGrainDataMapFactory {
    * Initialization of Datamap factory with the identifier and datamap name
    */
   override def init(identifier: AbsoluteTableIdentifier,
-      dataMapName: String) = {
+      dataMapName: String): Unit = {
     this.identifier = identifier
     this.dataMapName = dataMapName
   }
@@ -62,14 +62,14 @@ class FGDataMapFactory extends AbstractFineGrainDataMapFactory {
   /**
    * Return a new write for this datamap
    */
-  override def createWriter(segmentId: String, dataWritePath: String) = {
+  override def createWriter(segmentId: String, dataWritePath: String): AbstractDataMapWriter = {
     new FGDataMapWriter(identifier, segmentId, dataWritePath, dataMapName)
   }
 
   /**
    * Get the datamap for segmentid
    */
-  override def getDataMaps(segmentId: String) = {
+  override def getDataMaps(segmentId: String): java.util.List[AbstractFineGrainDataMap] = {
     val file = FileFactory
       .getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segmentId))
 
@@ -86,7 +86,8 @@ class FGDataMapFactory extends AbstractFineGrainDataMapFactory {
   /**
    * Get datamap for distributable object.
    */
-  override def getDataMaps(distributable: DataMapDistributable) = {
+  override def getDataMaps(
+      distributable: DataMapDistributable): java.util.List[AbstractFineGrainDataMap]= {
     val mapDistributable = distributable.asInstanceOf[BlockletDataMapDistributable]
     val dataMap: AbstractFineGrainDataMap = new FGDataMap()
     dataMap.init(new DataMapModel(mapDistributable.getFilePath))
@@ -98,7 +99,7 @@ class FGDataMapFactory extends AbstractFineGrainDataMapFactory {
    *
    * @return
    */
-  override def toDistributable(segmentId: String) = {
+  override def toDistributable(segmentId: String): java.util.List[DataMapDistributable] = {
     val file = FileFactory
       .getCarbonFile(CarbonTablePath.getSegmentPath(identifier.getTablePath, segmentId))
 
@@ -116,26 +117,26 @@ class FGDataMapFactory extends AbstractFineGrainDataMapFactory {
    *
    * @param event
    */
-  override def fireEvent(event: Event) = {
+  override def fireEvent(event: Event):Unit = {
     ???
   }
 
   /**
    * Clears datamap of the segment
    */
-  override def clear(segmentId: String) = {
+  override def clear(segmentId: String): Unit = {
   }
 
   /**
    * Clear all datamaps from memory
    */
-  override def clear() = {
+  override def clear(): Unit = {
   }
 
   /**
    * Return metadata of this datamap
    */
-  override def getMeta = {
+  override def getMeta: DataMapMeta = {
     new DataMapMeta(Seq("name").toList.asJava, new ArrayBuffer[ExpressionType]().toList.asJava)
   }
 }
@@ -150,7 +151,7 @@ class FGDataMap extends AbstractFineGrainDataMap {
   /**
    * It is called to load the data map to memory or to initialize it.
    */
-  override def init(dataMapModel: DataMapModel) = {
+  override def init(dataMapModel: DataMapModel): Unit = {
     this.filePath = dataMapModel.getFilePath
     val size = FileFactory.getCarbonFile(filePath).getSize
     fileHolder = FileFactory.getFileHolder(FileFactory.getFileType(filePath))
@@ -169,7 +170,8 @@ class FGDataMap extends AbstractFineGrainDataMap {
    * @param filterExp
    * @return
    */
-  override def prune(filterExp: FilterResolverIntf, segmentProperties: SegmentProperties) = {
+  override def prune(filterExp: FilterResolverIntf,
+      segmentProperties: SegmentProperties): java.util.List[FineGrainBlocklet] = {
     val buffer: ArrayBuffer[Expression] = new ArrayBuffer[Expression]()
     val expression = filterExp.getFilterExpression
     getEqualToExpression(expression, buffer)
@@ -182,7 +184,7 @@ class FGDataMap extends AbstractFineGrainDataMap {
     }.filter(_.isDefined).map(_.get).asJava
   }
 
-  def readAndFindData(meta: (String, Int, (Array[Byte], Array[Byte]), Long, Int),
+  private def readAndFindData(meta: (String, Int, (Array[Byte], Array[Byte]), Long, Int),
       value: Array[Byte]): Option[FineGrainBlocklet] = {
     val bytes = fileHolder.readByteArray(filePath, meta._4, meta._5)
     val outputStream = new ByteArrayInputStream(compressor.unCompressByte(bytes))
@@ -215,7 +217,7 @@ class FGDataMap extends AbstractFineGrainDataMap {
 
   }
 
-  def findMeta(value: Array[Byte]) = {
+  private def findMeta(value: Array[Byte]) = {
     val tuples = maxMin.filter { f =>
       ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._1) >= 0 &&
       ByteUtil.UnsafeComparer.INSTANCE.compareTo(value, f._3._2) <= 0
@@ -237,7 +239,7 @@ class FGDataMap extends AbstractFineGrainDataMap {
   /**
    * Clear complete index table and release memory.
    */
-  override def clear() = {
+  override def clear():Unit = {
     ???
   }
 }
@@ -260,14 +262,14 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockId file name of the carbondata file
    */
-  override def onBlockStart(blockId: String) = {
+  override def onBlockStart(blockId: String): Unit = {
     currentBlockId = blockId
   }
 
   /**
    * End of block notification
    */
-  override def onBlockEnd(blockId: String) = {
+  override def onBlockEnd(blockId: String): Unit = {
 
   }
 
@@ -276,7 +278,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockletId sequence number of blocklet in the block
    */
-  override def onBlockletStart(blockletId: Int) = {
+  override def onBlockletStart(blockletId: Int): Unit = {
 
   }
 
@@ -285,7 +287,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    *
    * @param blockletId sequence number of blocklet in the block
    */
-  override def onBlockletEnd(blockletId: Int) = {
+  override def onBlockletEnd(blockletId: Int): Unit = {
     val sorted = blockletList
       .sortWith((l, r) => ByteUtil.UnsafeComparer.INSTANCE.compareTo(l._1, r._1) <= 0)
     var oldValue: (Array[Byte], Seq[Seq[Int]], Seq[Int]) = null
@@ -333,7 +335,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    */
   override def onPageAdded(blockletId: Int,
       pageId: Int,
-      pages: Array[ColumnPage]) = {
+      pages: Array[ColumnPage]): Unit = {
     val size = pages(0).getPageSize
     val list = new ArrayBuffer[(Array[Byte], Int)]()
     var i = 0
@@ -375,7 +377,7 @@ class FGDataMapWriter(identifier: AbsoluteTableIdentifier,
    * This is called during closing of writer.So after this call no more data will be sent to this
    * class.
    */
-  override def finish() = {
+  override def finish(): Unit = {
     val out = new ByteOutputStream()
     val outStream = new ObjectOutputStream(out)
     outStream.writeObject(maxMin)

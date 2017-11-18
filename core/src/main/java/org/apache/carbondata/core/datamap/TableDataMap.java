@@ -79,15 +79,15 @@ public final class TableDataMap implements OperationEventListener {
     SegmentProperties segmentProperties;
     for (String segmentId : segmentIds) {
       List<Blocklet> pruneBlocklets = new ArrayList<>();
-      List<DataMap> dataMaps;
-      if (blockletDetailsFetcher instanceof DataMapFactory && filterExp == null) {
-        dataMaps = ((DataMapFactory)blockletDetailsFetcher).getDataMaps(segmentId);
+      // if filter is not passed then return all the blocklets
+      if (filterExp == null) {
+        pruneBlocklets = blockletDetailsFetcher.getAllBlocklets(segmentId);
       } else {
-        dataMaps = dataMapFactory.getDataMaps(segmentId);
-      }
-      segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segmentId);
-      for (DataMap dataMap : dataMaps) {
-        pruneBlocklets.addAll(dataMap.prune(filterExp, segmentProperties));
+        List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
+        segmentProperties = segmentPropertiesFetcher.getSegmentProperties(segmentId);
+        for (DataMap dataMap : dataMaps) {
+          pruneBlocklets.addAll(dataMap.prune(filterExp, segmentProperties));
+        }
       }
       blocklets.addAll(addSegmentId(blockletDetailsFetcher
           .getExtendedBlocklets(pruneBlocklets, segmentId), segmentId));
@@ -154,8 +154,8 @@ public final class TableDataMap implements OperationEventListener {
       if (dataMapFactory.getDataMapType() == DataMapType.FG) {
         String blockletwritePath =
             writePath + CarbonCommonConstants.FILE_SEPARATOR + System.nanoTime();
-        serializer.serializeBlocklet((FineGrainBlocklet) blocklet, blockletwritePath);
         detailedBlocklet.setDataMapWriterPath(blockletwritePath);
+        serializer.serializeBlocklet((FineGrainBlocklet) blocklet, blockletwritePath);
       }
       detailedBlocklet.setSegmentId(distributable.getSegmentId());
       detailedBlocklets.add(detailedBlocklet);

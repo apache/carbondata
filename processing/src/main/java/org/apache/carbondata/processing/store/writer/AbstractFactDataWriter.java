@@ -429,20 +429,12 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     try {
       listener.finish();
       executorService.shutdown();
-      try {
-        executorService.awaitTermination(2, TimeUnit.HOURS);
-      } catch (InterruptedException e) {
-        throw new CarbonDataWriterException(e.getMessage());
-      }
+      executorService.awaitTermination(2, TimeUnit.HOURS);
       for (int i = 0; i < executorServiceSubmitList.size(); i++) {
         executorServiceSubmitList.get(i).get();
       }
-    } catch (InterruptedException e) {
-      throw new CarbonDataWriterException(e.getMessage());
-    } catch (ExecutionException e) {
-      throw new CarbonDataWriterException(e.getMessage());
-    } catch (IOException e) {
-      LOGGER.error(e, "Error while writing datamap");
+    } catch (InterruptedException | ExecutionException | IOException e) {
+      LOGGER.error(e, "Error while finishing writer");
       throw new CarbonDataWriterException(e.getMessage());
     }
   }

@@ -19,6 +19,12 @@ package org.apache.carbondata.core.datamap.dev.cgdatamap;
 import org.apache.carbondata.core.datamap.DataMapType;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 
+/**
+ *  1. Any filter query which hits the table with datamap will call prune method of CGdatamap.
+ *  2. The prune method of CGDatamap return list Blocklet , these blocklets contain the
+ *     information of block and blocklet.
+ *  3. Based on the splits scanrdd schedule the tasks.
+ */
 public abstract class AbstractCoarseGrainDataMapFactory
     implements DataMapFactory<AbstractCoarseGrainDataMap> {
 
