@@ -41,8 +41,8 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileWriter;
 import org.apache.carbondata.format.BlockIndex;
 import org.apache.carbondata.format.BlockletIndex;
-import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat;
 import org.apache.carbondata.hadoop.streaming.CarbonStreamRecordWriter;
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
@@ -184,10 +184,10 @@ public class StreamSegment {
    * invoke CarbonStreamOutputFormat to append batch data to existing carbondata file
    */
   public static void appendBatchData(CarbonIterator<Object[]> inputIterators,
-      TaskAttemptContext job) throws Exception {
+      TaskAttemptContext job, CarbonLoadModel carbonLoadModel) throws Exception {
     CarbonStreamRecordWriter writer = null;
     try {
-      writer = (CarbonStreamRecordWriter) new CarbonStreamOutputFormat().getRecordWriter(job);
+      writer = new CarbonStreamRecordWriter(job, carbonLoadModel);
       // at the begin of each task, should recover file if necessary
       // here can reuse some information of record writer
       recoverFileIfRequired(

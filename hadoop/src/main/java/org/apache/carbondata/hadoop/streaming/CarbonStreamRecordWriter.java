@@ -68,6 +68,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
 
   // basic info
   private Configuration hadoopConf;
+  private CarbonLoadModel carbonLoadModel;
   private CarbonDataLoadConfiguration configuration;
   private CarbonTable carbonTable;
   private int maxRowNums;
@@ -99,13 +100,21 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     initialize(job);
   }
 
+  public CarbonStreamRecordWriter(TaskAttemptContext job, CarbonLoadModel carbonLoadModel)
+      throws IOException {
+    this.carbonLoadModel = carbonLoadModel;
+    initialize(job);
+  }
+
   private void initialize(TaskAttemptContext job) throws IOException {
     // set basic information
     hadoopConf = job.getConfiguration();
-    CarbonLoadModel carbonLoadModel = CarbonStreamOutputFormat.getCarbonLoadModel(hadoopConf);
     if (carbonLoadModel == null) {
-      throw new IOException(
-          "CarbonStreamRecordWriter require configuration: mapreduce.output.carbon.load.model");
+      carbonLoadModel = CarbonStreamOutputFormat.getCarbonLoadModel(hadoopConf);
+      if (carbonLoadModel == null) {
+        throw new IOException(
+            "CarbonStreamRecordWriter require configuration: mapreduce.output.carbon.load.model");
+      }
     }
     String segmentId = CarbonStreamOutputFormat.getSegmentId(hadoopConf);
     carbonLoadModel.setSegmentId(segmentId);
