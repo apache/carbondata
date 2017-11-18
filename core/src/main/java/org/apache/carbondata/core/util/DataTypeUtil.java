@@ -307,8 +307,6 @@ public final class DataTypeUtil {
       return ByteUtil.toBytes(BooleanConvert.parseBoolean(dimensionValue));
     } else if (actualDataType == DataTypes.STRING) {
       return ByteUtil.toBytes(dimensionValue);
-    } else if (actualDataType == DataTypes.BOOLEAN) {
-      return ByteUtil.toBytes(Boolean.parseBoolean(dimensionValue));
     } else if (actualDataType == DataTypes.SHORT) {
       return ByteUtil.toBytes(Short.parseShort(dimensionValue));
     } else if (actualDataType == DataTypes.INT) {
@@ -354,8 +352,6 @@ public final class DataTypeUtil {
         return ByteUtil.toBoolean(dataInBytes);
       } else if (actualDataType == DataTypes.STRING) {
         return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
-      } else if (actualDataType == DataTypes.BOOLEAN) {
-        return ByteUtil.toBoolean(dataInBytes);
       } else if (actualDataType == DataTypes.SHORT) {
         return ByteUtil.toShort(dataInBytes, 0, dataInBytes.length);
       } else if (actualDataType == DataTypes.INT) {
