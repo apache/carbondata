@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.util
 
+import org.apache.spark.sql.util.CarbonException
+
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.format.{DataType => ThriftDataType}
 
@@ -75,7 +77,7 @@ object DataTypeConverterUtil {
         } else if (others != null && others.startsWith("varchar")) {
           DataTypes.STRING
         } else {
-          sys.error(s"Unsupported data type: $dataType")
+          CarbonException.analysisException(s"Unsupported data type: $dataType")
         }
     }
   }

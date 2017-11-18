@@ -24,6 +24,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.{Cast, Literal}
 import org.apache.spark.sql.types.TimestampType
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -57,7 +58,8 @@ object CarbonStore {
           val lim = Integer.parseInt(limitLoads)
           loadMetadataDetailsSortedArray = loadMetadataDetailsSortedArray.slice(0, lim)
         } catch {
-          case _: NumberFormatException => sys.error(s" Entered limit is not a valid Number")
+          case _: NumberFormatException =>
+            CarbonException.analysisException("Entered limit is not a valid Number")
         }
       }
 

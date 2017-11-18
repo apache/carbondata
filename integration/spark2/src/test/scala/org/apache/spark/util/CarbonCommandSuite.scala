@@ -100,7 +100,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("delete segment by id") {
     DeleteSegmentById.main(Array(s"${location}", "carbon_table", "0"))
-    assert(!CarbonStore.isSegmentValid("default", "carbon_table",location,  "0"))
+    assert(!CarbonStore.isSegmentValid("default", "carbon_table", location, "0"))
   }
 
   test("delete segment by date") {
