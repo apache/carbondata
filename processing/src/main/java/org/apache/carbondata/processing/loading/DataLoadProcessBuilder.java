@@ -170,6 +170,8 @@ public final class DataLoadProcessBuilder {
         loadModel.getBadRecordsAction().split(",")[1]);
     configuration.setDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD,
         loadModel.getIsEmptyDataBadRecord().split(",")[1]);
+    configuration.setDataLoadProperty(DataLoadProcessorConstants.SKIP_EMPTY_LINE,
+        loadModel.getSkipEmptyLine());
     configuration.setDataLoadProperty(DataLoadProcessorConstants.FACT_FILE_PATH,
         loadModel.getFactFilePath());
     configuration

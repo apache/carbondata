@@ -25,9 +25,11 @@ import java.nio.charset.Charset;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonProperties;
 
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
+import org.apache.commons.lang.BooleanUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
@@ -66,6 +68,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   public static final String ESCAPE_DEFAULT = "\\";
   public static final String HEADER_PRESENT = "carbon.csvinputformat.header.present";
   public static final boolean HEADER_PRESENT_DEFAULT = false;
+  public static final String SKIP_EMPTY_LINE = "carbon.csvinputformat.skip.empty.line";
   public static final String READ_BUFFER_SIZE = "carbon.csvinputformat.read.buffer.size";
   public static final String READ_BUFFER_SIZE_DEFAULT = "65536";
   public static final String MAX_COLUMNS = "carbon.csvinputformat.max.columns";
@@ -115,6 +118,27 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
   public static void setCSVDelimiter(Configuration configuration, String delimiter) {
     if (delimiter != null && !delimiter.isEmpty()) {
       configuration.set(DELIMITER, delimiter);
+    }
+  }
+
+  /**
+   * Sets the skipEmptyLine to configuration. Default it is false
+   *
+   * @param configuration
+   * @param skipEmptyLine
+   */
+  public static void setSkipEmptyLine(Configuration configuration, String skipEmptyLine) {
+    if (skipEmptyLine != null && !skipEmptyLine.isEmpty()) {
+      configuration.set(SKIP_EMPTY_LINE, skipEmptyLine);
+    } else {
+      try {
+        BooleanUtils.toBoolean(CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE),"true", "false");
+        configuration.set(SKIP_EMPTY_LINE, CarbonProperties.getInstance()
+            .getProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE));
+      } catch (Exception e) {
+        configuration.set(SKIP_EMPTY_LINE, CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT);
+      }
     }
   }
 
@@ -180,7 +204,9 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     parserSettings.setEmptyValue("");
     parserSettings.setIgnoreLeadingWhitespaces(false);
     parserSettings.setIgnoreTrailingWhitespaces(false);
-    parserSettings.setSkipEmptyLines(false);
+    parserSettings.setSkipEmptyLines(
+        Boolean.valueOf(job.get(SKIP_EMPTY_LINE,
+            CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT)));
     parserSettings.setMaxCharsPerColumn(MAX_CHARS_PER_COLUMN_DEFAULT);
     String maxColumns = job.get(MAX_COLUMNS, "" + DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING);
     parserSettings.setMaxColumns(Integer.parseInt(maxColumns));
