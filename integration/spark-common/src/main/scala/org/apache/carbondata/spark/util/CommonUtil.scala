@@ -667,17 +667,15 @@ object CommonUtil {
           s"csv headers should be less than the max columns: $maxColumnsInt")
       } else if (maxColumnsInt > CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
         CarbonException.analysisException(
-          s"max columns cannot be greater than the threshold value: ${
-            CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING
-          }")
+          s"max columns cannot be greater than the threshold value: " +
+            s"${CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING}")
       } else {
         maxNumberOfColumnsForParsing = maxColumnsInt
       }
     } else if (columnCountInSchema >= CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
-      CarbonException.analysisException(s"csv header columns should be less than max threashold: ${
-        CSVInputFormat
-          .THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING
-      }")
+      CarbonException.analysisException(
+        s"csv header columns should be less than max threashold: " +
+          s"${CSVInputFormat.THRESHOLD_MAX_NUMBER_OF_COLUMNS_FOR_PARSING}")
     } else if (columnCountInSchema >= CSVInputFormat.DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING) {
       maxNumberOfColumnsForParsing = columnCountInSchema + 1
     } else {
