@@ -23,11 +23,9 @@ import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.management.LoadTableByInsertCommand
-import org.apache.spark.sql.execution.streaming.Sink
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.optimizer.CarbonFilters
-import org.apache.spark.sql.sources.{BaseRelation, Filter, InsertableRelation, StreamSinkProvider}
-import org.apache.spark.sql.streaming.OutputMode
+import org.apache.spark.sql.sources.{BaseRelation, Filter, InsertableRelation}
 import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -37,7 +35,6 @@ import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
-import org.apache.carbondata.streaming.StreamSinkFactory
 
 case class CarbonDatasourceHadoopRelation(
     sparkSession: SparkSession,
