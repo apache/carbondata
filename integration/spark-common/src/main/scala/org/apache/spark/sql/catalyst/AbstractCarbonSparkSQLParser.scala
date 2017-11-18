@@ -23,8 +23,8 @@ import scala.util.parsing.combinator.syntactical.StandardTokenParsers
 import scala.util.parsing.combinator.PackratParsers
 import scala.util.parsing.input.CharArrayReader.EofCh
 
-import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.plans.logical._
+import org.apache.spark.sql.util.CarbonException
 
 private[sql] abstract class AbstractCarbonSparkSQLParser
   extends StandardTokenParsers with PackratParsers {
@@ -34,7 +34,7 @@ private[sql] abstract class AbstractCarbonSparkSQLParser
     initLexical
     phrase(start)(new lexical.Scanner(input)) match {
       case Success(plan, _) => plan
-      case failureOrError => throw new AnalysisException(failureOrError.toString)
+      case failureOrError => CarbonException.analysisException(failureOrError.toString)
     }
   }
   /* One time initialization of lexical.This avoid reinitialization of  lexical in parse method */
