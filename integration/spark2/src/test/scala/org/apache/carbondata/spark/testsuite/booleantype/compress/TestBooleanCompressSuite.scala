@@ -75,5 +75,3 @@ class TestBooleanCompressSuite extends QueryTest with BeforeAndAfterEach with Be
   }
 
 }
-
-
