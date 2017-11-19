@@ -141,7 +141,20 @@ public class CarbonInputMapperTest extends TestCase {
     return 0;
   }
 
-  public static class Map extends Mapper<Void, Object[], Text, Text> {
+  @Override public void tearDown() throws Exception {
+    super.tearDown();
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true");
+  }
+
+  @Override public void setUp() throws Exception {
+    super.setUp();
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false");
+    StoreCreator.createCarbonStore();
+  }
+
+ public static class Map extends Mapper<Void, Object[], Text, Text> {
 
     private BufferedWriter fileWriter;
 

@@ -128,6 +128,8 @@ public class CSVInputFormatTest extends TestCase {
   @Test public void testReadCSVFiles() throws Exception{
     Configuration conf = new Configuration();
     prepareConf(conf);
+    File output = new File("target/output_CSVInputFormatTest");
+    conf.set("mapreduce.cluster.local.dir", output.getCanonicalPath());
     Job job = Job.getInstance(conf, "CSVInputFormat_normal");
     job.setJarByClass(CSVInputFormatTest.class);
     job.setMapperClass(CSVCheckMapper.class);
@@ -141,7 +143,6 @@ public class CSVInputFormatTest extends TestCase {
     // FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv.lz4"));
     // FileInputFormat.addInputPath(job, new Path(inputFolder + File.separator + "data.csv.snappy"));
 
-    File output = new File("target/output_CSVInputFormatTest");
     deleteOutput(output);
     FileOutputFormat.setOutputPath(job, new Path(output.getCanonicalPath()));
 

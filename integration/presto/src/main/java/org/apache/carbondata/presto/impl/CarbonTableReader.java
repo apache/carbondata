@@ -287,7 +287,10 @@ public class CarbonTableReader {
   private CarbonTable parseCarbonMetadata(SchemaTableName table) {
     CarbonTable result = null;
     try {
-      CarbonTableCacheModel cache = cc.getOrDefault(table, new CarbonTableCacheModel());
+      CarbonTableCacheModel cache = cc.get(table);
+      if (cache == null) {
+        cache = new CarbonTableCacheModel();
+      }
       if (cache.isValid()) return cache.carbonTable;
 
       // If table is not previously cached, then:

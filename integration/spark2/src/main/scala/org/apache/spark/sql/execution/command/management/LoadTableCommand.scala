@@ -116,7 +116,7 @@ case class LoadTableCommand(
 
       val tableProperties = table.getTableInfo.getFactTable.getTableProperties
       val optionsFinal = DataLoadingUtil.getDataLoadingOptions(carbonProperty, options)
-      optionsFinal.put("sort_scope", tableProperties.getOrDefault("sort_scope",
+      optionsFinal.put("sort_scope", tableProperties.asScala.getOrElse("sort_scope",
         carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
           carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
             CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
