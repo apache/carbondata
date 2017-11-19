@@ -49,6 +49,7 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
   }
   
   test("test drop database cascade command") {
+    sql("drop database if exists testdb cascade")
     sql("create database testdb")
     sql("use testdb")
     sql("CREATE TABLE IF NOT EXISTS testtable(empno Int, empname string, utilization Int,salary Int)"

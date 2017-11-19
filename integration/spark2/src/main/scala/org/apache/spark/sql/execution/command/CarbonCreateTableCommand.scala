@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.execution.command
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -50,8 +52,8 @@ case class CarbonCreateTableCommand(
     val tableInfo: TableInfo = TableNewProcessor(cm)
 
     // Add validation for sort scope when create table
-    val sortScope = tableInfo.getFactTable.getTableProperties
-      .getOrDefault("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+    val sortScope = tableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
     if (!CarbonUtil.isValidSortOption(sortScope)) {
       throw new InvalidConfigurationException(
         s"Passing invalid SORT_SCOPE '$sortScope', valid SORT_SCOPE are 'NO_SORT', 'BATCH_SORT'," +

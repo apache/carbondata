@@ -109,8 +109,8 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("CARBON Store Path: ", CarbonProperties.getStorePath, ""))
     val carbonTable = relation.carbonTable
     // Carbon table support table comment
-    val tableComment = carbonTable.getTableInfo.getFactTable.getTableProperties
-      .getOrDefault(CarbonCommonConstants.TABLE_COMMENT, "")
+    val tableComment = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse(CarbonCommonConstants.TABLE_COMMENT, "")
     results ++= Seq(("Comment: ", tableComment, ""))
     results ++= Seq(("Table Block Size : ", carbonTable.getBlockSizeInMB + " MB", ""))
     val dataIndexSize = CarbonUtil.calculateDataIndexSize(carbonTable)
@@ -123,7 +123,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
         dataIndexSize.get(CarbonCommonConstants.LAST_UPDATE_TIME).toString, ""))
     }
     results ++= Seq(("SORT_SCOPE", carbonTable.getTableInfo.getFactTable
-      .getTableProperties.getOrDefault("sort_scope", CarbonCommonConstants
+      .getTableProperties.asScala.getOrElse("sort_scope", CarbonCommonConstants
       .LOAD_SORT_SCOPE_DEFAULT), CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {

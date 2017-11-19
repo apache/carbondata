@@ -88,6 +88,7 @@ public class CacheProviderTest {
       throws IOException, NoSuchFieldException, IllegalAccessException {
     // get cache provider instance
     CacheProvider cacheProvider = CacheProvider.getInstance();
+    cacheProvider.dropAllCache();
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true");
     Cache<TableSegmentUniqueIdentifier, SegmentTaskIndexStore> driverCache =
         cacheProvider.createCache(CacheType.DRIVER_BTREE);
