@@ -26,6 +26,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -37,41 +38,47 @@ import org.apache.carbondata.spark.util.CommonUtil
  * Command for the compaction in alter table command
  */
 case class AlterTableCompactionCommand(
-    alterTableModel: AlterTableModel)
+    alterTableModel: AlterTableModel,
+    tableInfoOp: Option[TableInfo] = None)
   extends RunnableCommand with DataProcessCommand {
-
-  private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     processData(sparkSession)
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-
+    val LOGGER: LogService =
+    LogServiceFactory.getLogService(this.getClass.getName)
     val tableName = alterTableModel.tableName.toLowerCase
     val databaseName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
-    val relation =
-      CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .lookupRelation(Option(databaseName), tableName)(sparkSession)
-        .asInstanceOf[CarbonRelation]
-    if (relation == null) {
-      sys.error(s"Table $databaseName.$tableName does not exist")
-    }
-    if (null == relation.carbonTable) {
-      LOGGER.error(s"alter table failed. table not found: $databaseName.$tableName")
-      sys.error(s"alter table failed. table not found: $databaseName.$tableName")
+
+    val table = if (tableInfoOp.isDefined) {
+      val tableInfo = tableInfoOp.get
+      //   To DO: CarbonEnv.updateStorePath
+      CarbonTable.buildFromTableInfo(tableInfo)
+    } else {
+      val relation =
+        CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .lookupRelation(Option(databaseName), tableName)(sparkSession)
+          .asInstanceOf[CarbonRelation]
+      if (relation == null) {
+        sys.error(s"Table $databaseName.$tableName does not exist")
+      }
+      if (null == relation.carbonTable) {
+        LOGGER.error(s"alter table failed. table not found: $databaseName.$tableName")
+        sys.error(s"alter table failed. table not found: $databaseName.$tableName")
+      }
+      relation.carbonTable
     }
 
     val carbonLoadModel = new CarbonLoadModel()
-
-    val table = relation.carbonTable
     carbonLoadModel.setTableName(table.getTableName)
     val dataLoadSchema = new CarbonDataLoadSchema(table)
     // Need to fill dimension relation
     carbonLoadModel.setCarbonDataLoadSchema(dataLoadSchema)
-    carbonLoadModel.setTableName(relation.carbonTable.getTableName)
-    carbonLoadModel.setDatabaseName(relation.carbonTable.getDatabaseName)
-    carbonLoadModel.setTablePath(relation.carbonTable.getTablePath)
+    carbonLoadModel.setTableName(table.getTableName)
+    carbonLoadModel.setDatabaseName(table.getDatabaseName)
+    carbonLoadModel.setTablePath(table.getTablePath)
 
     var storeLocation = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
@@ -99,6 +106,8 @@ case class AlterTableCompactionCommand(
       alterTableModel: AlterTableModel,
       carbonLoadModel: CarbonLoadModel,
       storeLocation: String): Unit = {
+    val LOGGER: LogService =
+    LogServiceFactory.getLogService(this.getClass.getName)
     var compactionSize: Long = 0
     var compactionType: CompactionType = CompactionType.MINOR_COMPACTION
     if (alterTableModel.compactionType.equalsIgnoreCase("major")) {
