@@ -129,7 +129,7 @@ case class AlterTableCompactionCommand(
     if (compactionType == CompactionType.SEGMENT_INDEX_COMPACTION) {
       // Just launch job to merge index and return
       CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
-        carbonLoadModel.getLoadMetadataDetails.asScala.map(_.getLoadName),
+        CarbonDataMergerUtil.getValidSegmentList(carbonTable.getAbsoluteTableIdentifier).asScala,
         carbonLoadModel.getTablePath,
         carbonTable, true)
       return
