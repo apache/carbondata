@@ -93,7 +93,8 @@ public class AggregationDataMapSchema extends DataMapSchema {
     for (ColumnSchema columnSchema : listOfColumns) {
       List<ParentColumnTableRelation> parentColumnTableRelations =
           columnSchema.getParentColumnTableRelations();
-      if (parentColumnTableRelations.get(0).getColumnName().equals(columName)) {
+      if (null != parentColumnTableRelations && parentColumnTableRelations.size() == 1
+          && parentColumnTableRelations.get(0).getColumnName().equals(columName)) {
         return columnSchema;
       }
     }
