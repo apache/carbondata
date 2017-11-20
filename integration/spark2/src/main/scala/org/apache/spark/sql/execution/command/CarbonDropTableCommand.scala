@@ -23,6 +23,7 @@ import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -113,7 +114,8 @@ case class CarbonDropTableCommand(
     } catch {
       case ex: Exception =>
         LOGGER.error(ex, s"Dropping table $dbName.$tableName failed")
-        sys.error(s"Dropping table $dbName.$tableName failed: ${ ex.getMessage }")
+        CarbonException.analysisException(
+          s"Dropping table $dbName.$tableName failed: ${ ex.getMessage }")
     }
     finally {
       if (carbonLocks.nonEmpty) {

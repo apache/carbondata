@@ -115,7 +115,7 @@ object CarbonDataRDDFactory {
           s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       CarbonCompactionUtil
           .createCompactionRequiredFile(carbonTable.getMetaDataFilepath, compactionType)
-      // do sys error only in case of DDL trigger.
+      // throw exception only in case of DDL trigger.
       if (compactionModel.isDDLTrigger) {
         CarbonException.analysisException(
           s"Compaction is in progress, compaction request for table " +
