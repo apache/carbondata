@@ -494,7 +494,7 @@ public final class FileFactory {
           Path pt = new Path(path);
           FileSystem fs = pt.getFileSystem(configuration);
           Method truncateMethod = fs.getClass().getDeclaredMethod("truncate",
-            new Class[]{Path.class, long.class});
+              new Class[]{Path.class, long.class});
           truncateMethod.invoke(fs, new Object[]{pt, newSize});
         } catch (NoSuchMethodException e) {
           LOGGER.error("the version of hadoop is below 2.7, there is no 'truncate'"
