@@ -440,8 +440,8 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
     assert(getIndexFileCount("compaction_globalsort", "0.1") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(72)))
-    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
-      sql("SELECT * FROM carbon_localsort"))
+    checkAnswer(sql("SELECT * FROM compaction_globalsort order by name, id"),
+      sql("SELECT * FROM carbon_localsort order by name, id"))
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Success")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
   }
@@ -455,8 +455,8 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
     assert(getIndexFileCount("compaction_globalsort", "0.1") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(72)))
-    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
-      sql("SELECT * FROM carbon_localsort"))
+    checkAnswer(sql("SELECT * FROM compaction_globalsort order by name, id"),
+      sql("SELECT * FROM carbon_localsort order by name, id"))
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Success")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
   }
