@@ -31,38 +31,6 @@ private[hive] class CarbonHiveSessionState(sparkSession: SparkSession)
 
   self =>
 
-
-  /**
-   * Internal catalog for managing table and database states.
-   */
-  override lazy val catalog = {
-    new HiveSessionCatalog(
-      sparkSession.sharedState.externalCatalog.asInstanceOf[HiveExternalCatalog],
-      sparkSession.sharedState.globalTempViewManager,
-      sparkSession,
-      functionResourceLoader,
-      functionRegistry,
-      conf,
-      newHadoopConf())
-  }
-
-  /**
-   * An analyzer that uses the Hive metastore.
-   */
-  override lazy val analyzer: Analyzer = {
-    new Analyzer(catalog, conf) {
-      override val extendedResolutionRules =
-        catalog.ParquetConversions ::
-        catalog.OrcConversions ::
-        AnalyzeCreateTable(sparkSession) ::
-        PreprocessTableInsertion(conf) ::
-        DataSourceAnalysis(conf) ::
-        (if (conf.runSQLonFile) new ResolveDataSource(sparkSession) :: Nil else Nil)
-
-      override val extendedCheckRules = Seq(PreWriteCheck(conf, catalog))
-    }
-  }
-
   /**
    * Planner that takes into account Hive-specific strategies.
    */
@@ -94,27 +62,5 @@ private[hive] class CarbonHiveSessionState(sparkSession: SparkSession)
         )
       }
     }
-  }
-
-
-  // ------------------------------------------------------
-  //  Helper methods, partially leftover from pre-2.0 days
-  // ------------------------------------------------------
-
-  override def addJar(path: String): Unit = {
-    metadataHive.addJar(path)
-    super.addJar(path)
-  }
-
-
-
-  private var userName = System.getProperty("user.name")
-
-  def setUser(user: String): Unit = {
-    userName = user
-  }
-
-  def getUser(): String = {
-    userName
   }
 }
