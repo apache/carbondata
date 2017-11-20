@@ -20,7 +20,6 @@ package org.apache.carbondata.core.datastore.filesystem;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Method;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -155,68 +154,52 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
    * This method will delete the data in file data from a given offset
    */
   @Override public boolean truncate(String fileName, long validDataEndOffset) {
+    DataOutputStream dataOutputStream = null;
+    DataInputStream dataInputStream = null;
     boolean fileTruncatedSuccessfully = false;
+    // if bytes to read less than 1024 then buffer size should be equal to the given offset
+    int bufferSize = validDataEndOffset > CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR ?
+        CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR :
+        (int) validDataEndOffset;
+    // temporary file name
+    String tempWriteFilePath = fileName + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
+    FileFactory.FileType fileType = FileFactory.getFileType(fileName);
     try {
-      // if hadoop version >= 2.7, it can call method 'truncate' to truncate file,
-      // this method was new in hadoop 2.7
-      FileSystem fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
-      Method truncateMethod = fs.getClass().getDeclaredMethod("truncate",
-          new Class[]{Path.class, long.class});
-      fileTruncatedSuccessfully = (boolean)truncateMethod.invoke(fs,
-          new Object[]{fileStatus.getPath(), validDataEndOffset});
-    } catch (NoSuchMethodException e) {
-      LOGGER.error("there is no 'truncate' method in FileSystem, the version of hadoop is"
-          + " below 2.7, It needs to implement truncate file by other way.");
-      DataOutputStream dataOutputStream = null;
-      DataInputStream dataInputStream = null;
-      // if bytes to read less than 1024 then buffer size should be equal to the given offset
-      int bufferSize = validDataEndOffset > CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR ?
-          CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR :
-          (int) validDataEndOffset;
-      // temporary file name
-      String tempWriteFilePath = fileName + CarbonCommonConstants.TEMPWRITEFILEEXTENSION;
-      FileFactory.FileType fileType = FileFactory.getFileType(fileName);
-      try {
-        CarbonFile tempFile;
-        // delete temporary file if it already exists at a given path
-        if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
-          tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
-          tempFile.delete();
-        }
-        // create new temporary file
-        FileFactory.createNewFile(tempWriteFilePath, fileType);
+      CarbonFile tempFile;
+      // delete temporary file if it already exists at a given path
+      if (FileFactory.isFileExist(tempWriteFilePath, fileType)) {
         tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
-        byte[] buff = new byte[bufferSize];
-        dataInputStream = FileFactory.getDataInputStream(fileName, fileType);
-        // read the data
-        int read = dataInputStream.read(buff, 0, buff.length);
-        dataOutputStream = FileFactory.getDataOutputStream(tempWriteFilePath, fileType);
-        dataOutputStream.write(buff, 0, read);
-        long remaining = validDataEndOffset - read;
-        // anytime we should not cross the offset to be read
-        while (remaining > 0) {
-          if (remaining > bufferSize) {
-            buff = new byte[bufferSize];
-          } else {
-            buff = new byte[(int) remaining];
-          }
-          read = dataInputStream.read(buff, 0, buff.length);
-          dataOutputStream.write(buff, 0, read);
-          remaining = remaining - read;
-        }
-        CarbonUtil.closeStreams(dataInputStream, dataOutputStream);
-        // rename the temp file to original file
-        tempFile.renameForce(fileName);
-        fileTruncatedSuccessfully = true;
-      } catch (IOException ioe) {
-        LOGGER.error("IOException occurred while truncating the file " + ioe.getMessage());
-      } finally {
-        CarbonUtil.closeStreams(dataOutputStream, dataInputStream);
+        tempFile.delete();
       }
+      // create new temporary file
+      FileFactory.createNewFile(tempWriteFilePath, fileType);
+      tempFile = FileFactory.getCarbonFile(tempWriteFilePath, fileType);
+      byte[] buff = new byte[bufferSize];
+      dataInputStream = FileFactory.getDataInputStream(fileName, fileType);
+      // read the data
+      int read = dataInputStream.read(buff, 0, buff.length);
+      dataOutputStream = FileFactory.getDataOutputStream(tempWriteFilePath, fileType);
+      dataOutputStream.write(buff, 0, read);
+      long remaining = validDataEndOffset - read;
+      // anytime we should not cross the offset to be read
+      while (remaining > 0) {
+        if (remaining > bufferSize) {
+          buff = new byte[bufferSize];
+        } else {
+          buff = new byte[(int) remaining];
+        }
+        read = dataInputStream.read(buff, 0, buff.length);
+        dataOutputStream.write(buff, 0, read);
+        remaining = remaining - read;
+      }
+      CarbonUtil.closeStreams(dataInputStream, dataOutputStream);
+      // rename the temp file to original file
+      tempFile.renameForce(fileName);
+      fileTruncatedSuccessfully = true;
     } catch (IOException e) {
-      LOGGER.error("IOException occurred while truncating the file " + e.getMessage());
-    } catch (Exception e) {
-      LOGGER.error("Other exception occurred while truncating the file " + e.getMessage());
+      LOGGER.error("Exception occurred while truncating the file " + e.getMessage());
+    } finally {
+      CarbonUtil.closeStreams(dataOutputStream, dataInputStream);
     }
     return fileTruncatedSuccessfully;
   }

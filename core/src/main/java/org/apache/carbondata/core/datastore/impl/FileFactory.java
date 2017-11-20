@@ -26,8 +26,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.nio.channels.FileChannel;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.filesystem.AlluxioCarbonFile;
@@ -36,7 +40,6 @@ import org.apache.carbondata.core.datastore.filesystem.HDFSCarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.LocalCarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.ViewFSCarbonFile;
 import org.apache.carbondata.core.util.CarbonUtil;
-
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -50,6 +53,11 @@ import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.GzipCodec;
 
 public final class FileFactory {
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(FileFactory.class.getName());
   private static Configuration configuration = null;
 
   static {
@@ -461,8 +469,52 @@ public final class FileFactory {
    * @throws IOException
    */
   public static void truncateFile(String path, FileType fileType, long newSize) throws IOException {
-    CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
-    carbonFile.truncate(path, newSize);
+    path = path.replace("\\", "/");
+    FileChannel fileChannel = null;
+    switch (fileType) {
+      case LOCAL:
+        path = getUpdatedFilePath(path, fileType);
+        fileChannel = new FileOutputStream(path, true).getChannel();
+        try {
+          fileChannel.truncate(newSize);
+        } finally {
+          if (fileChannel != null) {
+            fileChannel.close();
+          }
+        }
+        return;
+      case HDFS:
+      case ALLUXIO:
+      case VIEWFS:
+      case S3:
+        // if hadoop version >= 2.7, it can call method 'FileSystem.truncate' to truncate file,
+        // this method was new in hadoop 2.7, otherwise use CarbonFile.truncate to do this.
+        try {
+          Path pt = new Path(path);
+          FileSystem fs = pt.getFileSystem(configuration);
+          Method truncateMethod = fs.getClass().getDeclaredMethod("truncate",
+            new Class[]{Path.class, long.class});
+          truncateMethod.invoke(fs, new Object[]{pt, newSize});
+        } catch (NoSuchMethodException e) {
+          LOGGER.error("the version of hadoop is below 2.7, there is no 'truncate'"
+              + " method in FileSystem, It needs to use 'CarbonFile.truncate'.");
+          CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
+          carbonFile.truncate(path, newSize);
+        } catch (Exception e) {
+          LOGGER.error("Other exception occurred while truncating the file " + e.getMessage());
+        }
+        return;
+      default:
+        fileChannel = new FileOutputStream(path, true).getChannel();
+        try {
+          fileChannel.truncate(newSize);
+        } finally {
+          if (fileChannel != null) {
+            fileChannel.close();
+          }
+        }
+        return;
+    }
   }
 
   /**
