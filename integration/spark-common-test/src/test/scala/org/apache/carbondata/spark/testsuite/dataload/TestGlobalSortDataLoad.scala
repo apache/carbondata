@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import java.io.{File, FilenameFilter}
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
