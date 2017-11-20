@@ -78,6 +78,7 @@ public class TableSchema implements Serializable, Writable {
 
   public TableSchema() {
     this.listOfColumns = new ArrayList<ColumnSchema>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    this.tableProperties = new HashMap<String, String>();
   }
 
   /**
@@ -212,6 +213,12 @@ public class TableSchema implements Serializable, Writable {
       column.write(out);
     }
 
+    out.writeInt(tableProperties.size());
+    for (Map.Entry<String, String> entry : tableProperties.entrySet()) {
+      out.writeUTF(entry.getKey());
+      out.writeUTF(entry.getValue());
+    }
+
     if (null != partitionInfo) {
       out.writeBoolean(true);
       partitionInfo.write(out);
@@ -236,6 +243,14 @@ public class TableSchema implements Serializable, Writable {
       ColumnSchema schema = new ColumnSchema();
       schema.readFields(in);
       this.listOfColumns.add(schema);
+    }
+
+    int propertySize = in.readInt();
+    this.tableProperties = new HashMap<String, String>(propertySize);
+    for (int i = 0; i < propertySize; i++) {
+      String key = in.readUTF();
+      String value = in.readUTF();
+      this.tableProperties.put(key, value);
     }
 
     boolean partitionExists = in.readBoolean();
