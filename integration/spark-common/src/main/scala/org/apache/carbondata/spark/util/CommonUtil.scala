@@ -607,7 +607,9 @@ object CommonUtil {
     }
   }
 
-  def getCsvHeaderColumns(carbonLoadModel: CarbonLoadModel): Array[String] = {
+  def getCsvHeaderColumns(
+      carbonLoadModel: CarbonLoadModel,
+      hadoopConf: Configuration): Array[String] = {
     val delimiter = if (StringUtils.isEmpty(carbonLoadModel.getCsvDelimiter)) {
       CarbonCommonConstants.COMMA
     } else {
@@ -618,7 +620,7 @@ object CommonUtil {
     val csvColumns = if (StringUtils.isBlank(csvHeader)) {
       // read header from csv file
       csvFile = carbonLoadModel.getFactFilePath.split(",")(0)
-      csvHeader = CarbonUtil.readHeader(csvFile)
+      csvHeader = CarbonUtil.readHeader(csvFile, hadoopConf)
       if (StringUtils.isBlank(csvHeader)) {
         throw new CarbonDataLoadingException("First line of the csv is not valid.")
       }
@@ -638,10 +640,10 @@ object CommonUtil {
       } else {
         LOGGER.error(
           "CSV header in input file is not proper. Column names in schema and csv header are not "
-          + "the same. Input file : " + csvFile)
+          + "the same. Input file : " + CarbonUtil.removeAKSK(csvFile))
         throw new CarbonDataLoadingException(
           "CSV header in input file is not proper. Column names in schema and csv header are not "
-          + "the same. Input file : " + csvFile)
+          + "the same. Input file : " + CarbonUtil.removeAKSK(csvFile))
       }
     }
     csvColumns

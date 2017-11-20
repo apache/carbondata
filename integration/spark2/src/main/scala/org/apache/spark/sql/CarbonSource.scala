@@ -246,6 +246,7 @@ class CarbonSource extends CreatableRelationProvider with RelationProvider
       // create sink
       StreamSinkFactory.createStreamTableSink(
         sqlContext.sparkSession,
+        sqlContext.sparkSession.sessionState.newHadoopConf(),
         carbonTable,
         parameters)
     } else {

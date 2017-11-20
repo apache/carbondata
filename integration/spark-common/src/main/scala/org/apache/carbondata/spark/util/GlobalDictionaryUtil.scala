@@ -352,10 +352,10 @@ object GlobalDictionaryUtil {
    * @param carbonLoadModel carbon data load model
    */
   def loadDataFrame(sqlContext: SQLContext,
-      carbonLoadModel: CarbonLoadModel): DataFrame = {
-    val hadoopConfiguration = new Configuration()
-    CommonUtil.configureCSVInputFormat(hadoopConfiguration, carbonLoadModel)
-    hadoopConfiguration.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
+      carbonLoadModel: CarbonLoadModel,
+      hadoopConf: Configuration): DataFrame = {
+    CommonUtil.configureCSVInputFormat(hadoopConf, carbonLoadModel)
+    hadoopConf.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
     val columnNames = carbonLoadModel.getCsvHeaderColumns
     val schema = StructType(columnNames.map[StructField, Array[StructField]] { column =>
       StructField(column, StringType)
@@ -367,7 +367,7 @@ object GlobalDictionaryUtil {
       classOf[CSVInputFormat],
       classOf[NullWritable],
       classOf[StringArrayWritable],
-      hadoopConfiguration).setName("global dictionary").map[Row] { currentRow =>
+      hadoopConf).setName("global dictionary").map[Row] { currentRow =>
       row.setValues(currentRow._2.get())
     }
     sqlContext.createDataFrame(rdd, schema)
@@ -677,6 +677,7 @@ object GlobalDictionaryUtil {
   def generateGlobalDictionary(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       tablePath: String,
+      hadoopConf: Configuration,
       dataFrame: Option[DataFrame] = None): Unit = {
     try {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -694,7 +695,7 @@ object GlobalDictionaryUtil {
       if (StringUtils.isEmpty(allDictionaryPath)) {
         LOGGER.info("Generate global dictionary from source data files!")
         // load data by using dataSource com.databricks.spark.csv
-        var df = dataFrame.getOrElse(loadDataFrame(sqlContext, carbonLoadModel))
+        var df = dataFrame.getOrElse(loadDataFrame(sqlContext, carbonLoadModel, hadoopConf))
         var headers = carbonLoadModel.getCsvHeaderColumns
         headers = headers.map(headerName => headerName.trim)
         val colDictFilePath = carbonLoadModel.getColDictFilePath

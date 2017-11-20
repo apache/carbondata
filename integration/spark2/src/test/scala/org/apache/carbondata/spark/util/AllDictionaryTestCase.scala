@@ -61,7 +61,8 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
       CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-    carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
+    carbonLoadModel.setCsvHeaderColumns(
+      CommonUtil.getCsvHeaderColumns(carbonLoadModel, FileFactory.getConfiguration))
     // Create table and metadata folders if not exist
     val carbonTablePath = CarbonStorePath
       .getCarbonTablePath(table.getTablePath, table.getCarbonTableIdentifier)
@@ -142,7 +143,10 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     val header = "id,name,city,age"
     val carbonLoadModel = buildCarbonLoadModel(sampleRelation, null, header, sampleAllDictionaryFile)
     GlobalDictionaryUtil.generateGlobalDictionary(
-      sqlContext, carbonLoadModel, sampleRelation.carbonTable.getTablePath)
+      sqlContext,
+      carbonLoadModel,
+      sampleRelation.carbonTable.getTablePath,
+      FileFactory.getConfiguration)
 
     DictionaryTestCaseUtil.
       checkDictionary(sampleRelation, "city", "shenzhen")
@@ -151,10 +155,11 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   test("Support generate global dictionary from all dictionary files for complex type") {
     val header = "deviceInformationId,channelsId,ROMSize,purchasedate,mobile,MAC,locationinfo,proddate,gamePointId,contractNumber"
     val carbonLoadModel = buildCarbonLoadModel(complexRelation, null, header, complexAllDictionaryFile)
-    GlobalDictionaryUtil
-      .generateGlobalDictionary(sqlContext,
+    GlobalDictionaryUtil.generateGlobalDictionary(
+      sqlContext,
       carbonLoadModel,
-      complexRelation.carbonTable.getTablePath)
+      complexRelation.carbonTable.getTablePath,
+      FileFactory.getConfiguration)
 
     DictionaryTestCaseUtil.
       checkDictionary(complexRelation, "channelsId", "1650")
