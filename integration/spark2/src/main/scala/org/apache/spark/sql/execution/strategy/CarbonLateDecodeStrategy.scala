@@ -37,6 +37,7 @@ import org.apache.spark.sql.types.{AtomicType, IntegerType, StringType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
@@ -74,10 +75,38 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             SparkSession.getActiveSession.get
           ) :: Nil
         }
+      case CountStarPlan(colAttr, PhysicalOperation(projectList, predicates, l: LogicalRelation))
+        if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] && driverSideCountStar(l) =>
+        carbonCountStar(colAttr, l) :: Nil
       case _ => Nil
     }
   }
 
+  private def carbonCountStar(colAttr: Seq[Attribute],
+      logicalRelation: LogicalRelation): SparkPlan = {
+    val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+    CarbonCountStar(colAttr, relation.carbonRelation.metaData.carbonTable)
+  }
+
+  /**
+   * Return true if driver-side count star optimization can be used.
+   * Following case can't use driver-side count star:
+   * 1. There is data update and delete
+   * 2. It is streaming table
+   */
+  private def driverSideCountStar(logicalRelation: LogicalRelation): Boolean = {
+    val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+    val segmentUpdateStatusManager = new SegmentUpdateStatusManager(
+      relation.carbonRelation.metaData.carbonTable.getAbsoluteTableIdentifier)
+    val updateDeltaMetadata = segmentUpdateStatusManager.readLoadMetadata()
+    if (updateDeltaMetadata != null && updateDeltaMetadata.nonEmpty) {
+      false
+    } else if (relation.carbonTable.isStreamingTable) {
+      false
+    } else {
+      true
+    }
+  }
 
   def getDecoderRDD(
       logicalRelation: LogicalRelation,

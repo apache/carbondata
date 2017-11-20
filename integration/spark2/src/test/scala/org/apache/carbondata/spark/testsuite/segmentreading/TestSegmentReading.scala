@@ -12,7 +12,7 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll(): Unit = {
-    sql("drop table if exists carbon_table")
+    cleanAllTable()
     sql(
       "create table carbon_table(empno int, empname String, designation String, doj Timestamp," +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String," +
@@ -24,6 +24,22 @@ class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
     sql(
       s"""LOAD DATA local inpath '$resourcesPath/data1.csv' INTO TABLE carbon_table OPTIONS
           |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
+  }
+
+  private def cleanAllTable(): Unit = {
+    sql("drop table if exists carbon_table")
+    sql("drop table if exists carbon_table_join")
+    sql("drop table if exists carbon_table_update")
+    sql("drop table if exists carbon_table_delete")
+    sql("drop table if exists carbon_table_show_seg")
+    sql("drop table if exists carbon_table_compact")
+    sql("drop table if exists carbon_table_alter")
+    sql("drop table if exists carbon_table_alter_new")
+    sql("drop table if exists carbon_table_recreate")
+  }
+
+  override def afterAll(): Unit = {
+    cleanAllTable()
   }
 
   test("test SET -V for segment reading property") {
