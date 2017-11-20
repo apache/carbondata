@@ -18,10 +18,12 @@
 package org.apache.spark.carbondata
 
 import scala.collection.mutable
+
+import org.apache.spark.sql.{AnalysisException, Row, SaveMode}
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{AnalysisException, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.util.CarbonProperties
 
 class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
