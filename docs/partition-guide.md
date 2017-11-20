@@ -54,7 +54,7 @@ Example:
       col_F Timestamp
    ) partitioned by (col_E Long)
    stored by 'carbondata'
-   tblproperties('partition_type'='Hash','num_partition'='9')
+   tblproperties('partition_type'='Hash','num_partitions'='9')
 ```
 
 ### Create Range Partition Table
