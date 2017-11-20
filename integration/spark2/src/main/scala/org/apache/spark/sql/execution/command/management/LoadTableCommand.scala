@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.command.management
 import scala.collection.JavaConverters._
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
@@ -97,6 +98,7 @@ case class LoadTableCommand(
     // update the property with new value
     carbonProperty.addProperty(CarbonCommonConstants.NUM_CORES_LOADING, numCoresLoading)
 
+    val hadoopConf = sparkSession.sessionState.newHadoopConf()
     try {
       val table = if (tableInfoOp.isDefined) {
         CarbonTable.buildFromTableInfo(tableInfoOp.get)
@@ -126,7 +128,7 @@ case class LoadTableCommand(
         ""
       } else {
         FileUtils.getPaths(
-          CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser))
+          CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser), hadoopConf)
       }
       carbonLoadModel.setFactFilePath(factPath)
       DataLoadingUtil.buildCarbonLoadModel(
@@ -134,7 +136,8 @@ case class LoadTableCommand(
         carbonProperty,
         options,
         optionsFinal,
-        carbonLoadModel
+        carbonLoadModel,
+        hadoopConf
       )
 
       try{
@@ -174,13 +177,15 @@ case class LoadTableCommand(
             carbonProperty,
             carbonLoadModel,
             columnar,
-            partitionStatus)
+            partitionStatus,
+            hadoopConf)
         } else {
           loadData(
             sparkSession,
             carbonLoadModel,
             columnar,
-            partitionStatus)
+            partitionStatus,
+            hadoopConf)
         }
       } catch {
         case CausedBy(ex: NoRetryException) =>
@@ -227,7 +232,8 @@ case class LoadTableCommand(
       carbonProperty: CarbonProperties,
       carbonLoadModel: CarbonLoadModel,
       columnar: Boolean,
-      partitionStatus: SegmentStatus): Unit = {
+      partitionStatus: SegmentStatus,
+      hadoopConf: Configuration): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       .getCarbonTableIdentifier
@@ -295,6 +301,7 @@ case class LoadTableCommand(
       partitionStatus,
       server,
       isOverwriteTable,
+      hadoopConf,
       dataFrame,
       updateModel)
   }
@@ -303,7 +310,8 @@ case class LoadTableCommand(
       sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
       columnar: Boolean,
-      partitionStatus: SegmentStatus): Unit = {
+      partitionStatus: SegmentStatus,
+      hadoopConf: Configuration): Unit = {
     val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
       val fields = dataFrame.get.schema.fields
       import org.apache.spark.sql.functions.udf
@@ -334,6 +342,7 @@ case class LoadTableCommand(
       sparkSession.sqlContext,
       carbonLoadModel,
       carbonLoadModel.getTablePath,
+      hadoopConf,
       dictionaryDataFrame)
     CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
       carbonLoadModel,
@@ -342,6 +351,7 @@ case class LoadTableCommand(
       partitionStatus,
       None,
       isOverwriteTable,
+      hadoopConf,
       loadDataFrame,
       updateModel)
   }

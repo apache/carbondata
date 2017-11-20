@@ -22,6 +22,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.commons.lang3.StringUtils
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.constants.LoggerAction
@@ -195,7 +196,8 @@ object DataLoadingUtil {
       carbonProperty: CarbonProperties,
       options: immutable.Map[String, String],
       optionsFinal: mutable.Map[String, String],
-      carbonLoadModel: CarbonLoadModel): Unit = {
+      carbonLoadModel: CarbonLoadModel,
+      hadoopConf: Configuration): Unit = {
     carbonLoadModel.setTableName(table.getTableName)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTablePath(table.getTablePath)
@@ -306,7 +308,8 @@ object DataLoadingUtil {
     carbonLoadModel.setCsvDelimiter(CarbonUtil.unescapeChar(delimeter))
     carbonLoadModel.setCsvHeader(fileHeader)
     carbonLoadModel.setColDictFilePath(column_dict)
-    carbonLoadModel.setCsvHeaderColumns(CommonUtil.getCsvHeaderColumns(carbonLoadModel))
+    carbonLoadModel.setCsvHeaderColumns(
+      CommonUtil.getCsvHeaderColumns(carbonLoadModel, hadoopConf))
 
     val validatedMaxColumns = CommonUtil.validateMaxColumns(
       carbonLoadModel.getCsvHeaderColumns,

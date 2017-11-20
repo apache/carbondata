@@ -49,21 +49,21 @@ object DataLoadProcessBuilderOnSpark {
   def loadDataUsingGlobalSort(
       sc: SparkContext,
       dataFrame: Option[DataFrame],
-      model: CarbonLoadModel): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+      model: CarbonLoadModel,
+      hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     val originRDD = if (dataFrame.isDefined) {
       dataFrame.get.rdd
     } else {
       // input data from files
-      val hadoopConfiguration = new Configuration()
-      CommonUtil.configureCSVInputFormat(hadoopConfiguration, model)
-      hadoopConfiguration.set(FileInputFormat.INPUT_DIR, model.getFactFilePath)
+      CommonUtil.configureCSVInputFormat(hadoopConf, model)
+      hadoopConf.set(FileInputFormat.INPUT_DIR, model.getFactFilePath)
       val columnCount = model.getCsvHeaderColumns.length
       new NewHadoopRDD[NullWritable, StringArrayWritable](
         sc,
         classOf[CSVInputFormat],
         classOf[NullWritable],
         classOf[StringArrayWritable],
-        hadoopConfiguration)
+        hadoopConf)
         .map(x => DataLoadProcessorStepOnSpark.toStringArrayRow(x._2, columnCount))
     }
 

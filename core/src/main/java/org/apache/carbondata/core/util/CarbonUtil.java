@@ -1358,6 +1358,25 @@ public final class CarbonUtil {
     return readLine;
   }
 
+  public static String readHeader(String csvFilePath,
+      Configuration hadoopConf) throws IOException {
+
+    DataInputStream fileReader = null;
+    BufferedReader bufferedReader = null;
+    String readLine = null;
+
+    try {
+      fileReader = FileFactory.getDataInputStream(
+          csvFilePath, FileFactory.getFileType(csvFilePath), -1, hadoopConf);
+      bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+      readLine = bufferedReader.readLine();
+    } finally {
+      CarbonUtil.closeStreams(fileReader, bufferedReader);
+    }
+    return readLine;
+  }
+
   /**
    * Below method will create string like "***********"
    *
