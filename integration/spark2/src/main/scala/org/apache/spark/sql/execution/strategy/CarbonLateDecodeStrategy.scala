@@ -77,15 +77,10 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         }
       case CountStarPlan(colAttr, PhysicalOperation(projectList, predicates, l: LogicalRelation))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] && driverSideCountStar(l) =>
-        carbonCountStar(colAttr, l) :: Nil
+        val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+        CarbonCountStar(colAttr, relation.carbonTable) :: Nil
       case _ => Nil
     }
-  }
-
-  private def carbonCountStar(colAttr: Seq[Attribute],
-      logicalRelation: LogicalRelation): SparkPlan = {
-    val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-    CarbonCountStar(colAttr, relation.carbonRelation.metaData.carbonTable)
   }
 
   /**
