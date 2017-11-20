@@ -351,20 +351,13 @@ class CarbonScanRDD(
     val format = new CarbonTableInputFormat[Object]
     CarbonTableInputFormat.setTablePath(conf,
       identifier.appendWithLocalPrefix(identifier.getTablePath))
+    CarbonTableInputFormat.setQuerySegment(conf, identifier)
     CarbonTableInputFormat.setFilterPredicates(conf, filterExpression)
     CarbonTableInputFormat.setColumnProjection(conf, columnProjection)
     if (CarbonProperties.getInstance()
       .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
         CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT).toBoolean) {
       CarbonTableInputFormat.setDataMapJob(conf, new SparkDataMapJob)
-    }
-    val dbName = identifier.getCarbonTableIdentifier.getDatabaseName.toLowerCase
-    val tbName = identifier.getCarbonTableIdentifier.getTableName.toLowerCase
-    val segmentNumbersFromProperty = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbName + "." + tbName, "*")
-    if (!segmentNumbersFromProperty.trim.equals("*")) {
-      CarbonTableInputFormat
-        .setSegmentsToAccess(conf, segmentNumbersFromProperty.split(",").toList.asJava)
     }
     val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (carbonSessionInfo != null) {

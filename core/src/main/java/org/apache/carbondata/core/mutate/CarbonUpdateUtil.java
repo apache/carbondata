@@ -733,6 +733,28 @@ public class CarbonUpdateUtil {
   }
 
   /**
+   * Return row count of input block
+   */
+  public static long getRowCount(
+      BlockMappingVO blockMappingVO,
+      AbsoluteTableIdentifier absoluteTableIdentifier) {
+    SegmentUpdateStatusManager updateStatusManager =
+        new SegmentUpdateStatusManager(absoluteTableIdentifier);
+    long rowCount = 0;
+    Map<String, Long> blockRowCountMap = blockMappingVO.getBlockRowCountMapping();
+    for (Map.Entry<String, Long> blockRowEntry : blockRowCountMap.entrySet()) {
+      String key = blockRowEntry.getKey();
+      long alreadyDeletedCount = 0;
+      SegmentUpdateDetails detail = updateStatusManager.getDetailsForABlock(key);
+      if (detail != null) {
+        alreadyDeletedCount = Long.parseLong(detail.getDeletedRowsInBlock());
+      }
+      rowCount += (blockRowEntry.getValue() - alreadyDeletedCount);
+    }
+    return rowCount;
+  }
+
+  /**
    *
    * @param blockMappingVO
    * @param segmentUpdateStatusManager

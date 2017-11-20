@@ -66,6 +66,7 @@ import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverter;
@@ -92,6 +93,7 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocalFileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -258,6 +260,20 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   /**
+   * Set `CARBON_INPUT_SEGMENTS` from property to configuration
+   */
+  public static void setQuerySegment(Configuration conf, AbsoluteTableIdentifier identifier) {
+    String dbName = identifier.getCarbonTableIdentifier().getDatabaseName().toLowerCase();
+    String tbName = identifier.getCarbonTableIdentifier().getTableName().toLowerCase();
+    String segmentNumbersFromProperty = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbName + "." + tbName, "*");
+    if (!segmentNumbersFromProperty.trim().equals("*")) {
+      CarbonTableInputFormat
+          .setSegmentsToAccess(conf, Arrays.asList(segmentNumbersFromProperty.split(",")));
+    }
+  }
+
+  /**
    * set list of segment to access
    */
   public static void setValidateSegmentsToAccess(Configuration configuration, Boolean validate) {
@@ -321,12 +337,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     List<String> invalidSegments = new ArrayList<>();
     List<UpdateVO> invalidTimestampsList = new ArrayList<>();
     List<String> streamSegments = null;
-    List<String> filteredSegmentToAccess = new ArrayList<>();
+    List<String> filteredSegmentToAccess = null;
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
-      String[] segmentsToAccess = getSegmentsToAccess(job);
-      Set<String> segmentToAccessSet = new HashSet<>();
-      segmentToAccessSet.addAll(Arrays.asList(segmentsToAccess));
-
       // get all valid segments and set them into the configuration
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
       SegmentStatusManager.ValidAndInvalidSegmentsInfo segments =
@@ -336,22 +348,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       if (validSegments.size() == 0) {
         return getSplitsOfStreaming(job, identifier, streamSegments);
       }
-      if (segmentsToAccess.length == 0 || segmentsToAccess[0].equalsIgnoreCase("*")) {
-        filteredSegmentToAccess.addAll(validSegments);
-      } else {
-        for (String validSegment : validSegments) {
-          if (segmentToAccessSet.contains(validSegment)) {
-            filteredSegmentToAccess.add(validSegment);
-          }
-        }
-        if (!filteredSegmentToAccess.containsAll(segmentToAccessSet)) {
-          List<String> filteredSegmentToAccessTemp = new ArrayList<>();
-          filteredSegmentToAccessTemp.addAll(filteredSegmentToAccess);
-          filteredSegmentToAccessTemp.removeAll(segmentToAccessSet);
-          LOG.info(
-              "Segments ignored are : " + Arrays.toString(filteredSegmentToAccessTemp.toArray()));
-        }
-      }
+
+      filteredSegmentToAccess = getFilteredSegment(job, validSegments);
       if (filteredSegmentToAccess.size() == 0) {
         return new ArrayList<>(0);
       } else {
@@ -431,6 +429,34 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       splits.addAll(splitsOfStreaming);
     }
     return splits;
+  }
+
+  /**
+   * Return segment list after filtering out valid segments and segments set by user by
+   * `INPUT_SEGMENT_NUMBERS` in job configuration
+   */
+  private List<String> getFilteredSegment(JobContext job, List<String> validSegments) {
+    String[] segmentsToAccess = getSegmentsToAccess(job);
+    Set<String> segmentToAccessSet = new HashSet<>();
+    segmentToAccessSet.addAll(Arrays.asList(segmentsToAccess));
+    List<String> filteredSegmentToAccess = new ArrayList<>();
+    if (segmentsToAccess.length == 0 || segmentsToAccess[0].equalsIgnoreCase("*")) {
+      filteredSegmentToAccess.addAll(validSegments);
+    } else {
+      for (String validSegment : validSegments) {
+        if (segmentToAccessSet.contains(validSegment)) {
+          filteredSegmentToAccess.add(validSegment);
+        }
+      }
+      if (!filteredSegmentToAccess.containsAll(segmentToAccessSet)) {
+        List<String> filteredSegmentToAccessTemp = new ArrayList<>();
+        filteredSegmentToAccessTemp.addAll(filteredSegmentToAccess);
+        filteredSegmentToAccessTemp.removeAll(segmentToAccessSet);
+        LOG.info(
+            "Segments ignored are : " + Arrays.toString(filteredSegmentToAccessTemp.toArray()));
+      }
+    }
+    return filteredSegmentToAccess;
   }
 
   /**
@@ -872,25 +898,25 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Get the row count of the Block and mapping of segment and Block count.
    *
-   * @param job
    * @param identifier
    * @return
    * @throws IOException
    * @throws KeyGenException
    */
-  public BlockMappingVO getBlockRowCount(JobContext job, AbsoluteTableIdentifier identifier)
+  public BlockMappingVO getBlockRowCount(Job job, AbsoluteTableIdentifier identifier)
       throws IOException, KeyGenException {
     TableDataMap blockletMap = DataMapStoreManager.getInstance()
         .getDataMap(identifier, BlockletDataMap.NAME, BlockletDataMapFactory.class.getName());
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
-    SegmentStatusManager.ValidAndInvalidSegmentsInfo validAndInvalidSegments =
+    SegmentStatusManager.ValidAndInvalidSegmentsInfo allSegments =
         new SegmentStatusManager(identifier).getValidAndInvalidSegments();
-    Map<String, Long> blockRowCountMapping =
-        new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    Map<String, Long> segmentAndBlockCountMapping =
-        new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    List<ExtendedBlocklet> blocklets =
-        blockletMap.prune(validAndInvalidSegments.getValidSegments(), null);
+    Map<String, Long> blockRowCountMapping = new HashMap<>();
+    Map<String, Long> segmentAndBlockCountMapping = new HashMap<>();
+
+    // TODO: currently only batch segment is supported, add support for streaming table
+    List<String> filteredSegment = getFilteredSegment(job, allSegments.getValidSegments());
+
+    List<ExtendedBlocklet> blocklets = blockletMap.prune(filteredSegment, null);
     for (ExtendedBlocklet blocklet : blocklets) {
       String blockName = blocklet.getPath();
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);
@@ -917,6 +943,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         blockRowCountMapping.put(key, blockCount);
       }
     }
+
     return new BlockMappingVO(blockRowCountMapping, segmentAndBlockCountMapping);
   }
 
