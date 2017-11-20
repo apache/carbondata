@@ -294,7 +294,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val exception = intercept[Exception] {
       sql("""update iud.dest d set (c2, c5 ) = (c2 + 1, concat(c5 , "z"), "abc")""").show()
     }
-    assertResult("Number of source and destination columns are not matching")(exception.getMessage)
+    assertResult("The number of columns in source table and destination table columns mismatch;")(exception.getMessage)
   }
 
   test("update carbon table-error[no set columns") {

@@ -26,6 +26,7 @@ import org.apache.spark.sql.catalyst.analysis.MultiInstanceRelation
 import org.apache.spark.sql.catalyst.expressions.AttributeReference
 import org.apache.spark.sql.catalyst.plans.logical.{LeafNode, LogicalPlan, Statistics}
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.datatype.DataTypes
@@ -263,7 +264,8 @@ object CarbonMetastoreTypes extends RegexParsers {
   def toDataType(metastoreType: String): DataType = {
     parseAll(dataType, metastoreType) match {
       case Success(result, _) => result
-      case failure: NoSuccess => sys.error(s"Unsupported dataType: $metastoreType")
+      case _: NoSuccess =>
+        CarbonException.analysisException(s"Unsupported dataType: $metastoreType")
     }
   }
 

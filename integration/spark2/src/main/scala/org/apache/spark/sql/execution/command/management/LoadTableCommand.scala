@@ -22,7 +22,7 @@ import scala.collection.JavaConverters._
 import org.apache.commons.lang3.StringUtils
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
-import org.apache.spark.sql.catalyst.analysis.UnresolvedAttribute
+import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
 import org.apache.spark.sql.execution.command.{DataLoadTableFileMapping, DataProcessCommand, RunnableCommand, UpdateTableModel}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.{CausedBy, FileUtils}
@@ -104,12 +104,12 @@ case class LoadTableCommand(
         val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .lookupRelation(Option(dbName), tableName)(sparkSession).asInstanceOf[CarbonRelation]
         if (relation == null) {
-          sys.error(s"Table $dbName.$tableName does not exist")
+          throw new NoSuchTableException(dbName, tableName)
         }
         if (null == relation.carbonTable) {
           LOGGER.error(s"Data loading failed. table not found: $dbName.$tableName")
           LOGGER.audit(s"Data loading failed. table not found: $dbName.$tableName")
-          sys.error(s"Data loading failed. table not found: $dbName.$tableName")
+          throw new NoSuchTableException(dbName, tableName)
         }
         relation.carbonTable
       }

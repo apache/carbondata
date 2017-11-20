@@ -29,6 +29,7 @@ import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.AlterPartitionModel
 import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.PartitionUtils
 
@@ -144,9 +145,11 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
           case e: Throwable =>
             LOGGER.error(e)
             if (null != e.getMessage) {
-              sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
+              CarbonException.analysisException(
+                s"Exception occurred in query execution :: ${e.getMessage}")
             } else {
-              sys.error("Exception occurred in query execution. Please check logs.")
+              CarbonException.analysisException(
+                "Exception occurred in query execution. Please check logs.")
             }
         }
         val segmentProperties = PartitionUtils.getSegmentProperties(absoluteTableIdentifier,

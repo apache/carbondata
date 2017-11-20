@@ -21,6 +21,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.execution.command.management.LoadTableCommand
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -154,7 +155,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       case DateType => CarbonType.DATE.getName
       case decimal: DecimalType => s"decimal(${decimal.precision}, ${decimal.scale})"
       case BooleanType => CarbonType.BOOLEAN.getName
-      case other => sys.error(s"unsupported type: $other")
+      case other => CarbonException.analysisException(s"unsupported type: $other")
     }
   }
 
