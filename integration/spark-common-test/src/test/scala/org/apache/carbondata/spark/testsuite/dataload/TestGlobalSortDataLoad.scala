@@ -168,8 +168,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
     assert(getIndexFileCount("carbon_globalsort") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(24)))
-    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
-      sql("SELECT * FROM carbon_localsort_twice ORDER BY name"))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
+      sql("SELECT * FROM carbon_localsort_twice ORDER BY name, id"))
   }
 
   // ----------------------------------- Check Configurations -----------------------------------
@@ -227,8 +227,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
     assert(getIndexFileCount("carbon_globalsort") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
-    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
-      sql("SELECT * FROM carbon_localsort_delete ORDER BY name"))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
+      sql("SELECT * FROM carbon_localsort_delete ORDER BY name, id"))
   }
 
   test("LOAD with UPDATE") {
@@ -248,8 +248,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql("select * from carbon_globalsort").show()
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
     checkAnswer(sql("SELECT name FROM carbon_globalsort WHERE id = 2"), Seq(Row("bb")))
-    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
-      sql("SELECT * FROM carbon_localsort_update ORDER BY name"))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
+      sql("SELECT * FROM carbon_localsort_update ORDER BY name, id"))
   }
 
   // ----------------------------------- INSERT INTO -----------------------------------
@@ -260,8 +260,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
     assert(getIndexFileCount("carbon_globalsort") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
-    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
-      sql("SELECT * FROM carbon_localsort_once ORDER BY name"))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
+      sql("SELECT * FROM carbon_localsort_once ORDER BY name, id"))
   }
 
   test("Test with different date types") {
