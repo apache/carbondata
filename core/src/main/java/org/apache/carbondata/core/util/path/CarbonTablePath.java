@@ -233,7 +233,7 @@ public class CarbonTablePath extends Path {
    * @return absolute path of schema file
    */
   public String getSchemaFilePath() {
-    return getMetaDataDir() + File.separator + SCHEMA_FILE;
+    return getActualSchemaFilePath(tablePath);
   }
 
   /**
@@ -242,7 +242,22 @@ public class CarbonTablePath extends Path {
    * @return schema file path
    */
   public static String getSchemaFilePath(String tablePath) {
-    return tablePath + File.separator + METADATA_DIR + File.separator + SCHEMA_FILE;
+    return getActualSchemaFilePath(tablePath);
+  }
+
+  private static String getActualSchemaFilePath(String tablePath) {
+    String metaPath = tablePath + CarbonCommonConstants.FILE_SEPARATOR + METADATA_DIR;
+    CarbonFile carbonFile = FileFactory.getCarbonFile(metaPath);
+    CarbonFile[] schemaFile = carbonFile.listFiles(new CarbonFileFilter() {
+      @Override public boolean accept(CarbonFile file) {
+        return file.getName().startsWith(SCHEMA_FILE);
+      }
+    });
+    if (schemaFile != null && schemaFile.length > 0) {
+      return schemaFile[0].getAbsolutePath();
+    } else {
+      return metaPath + CarbonCommonConstants.FILE_SEPARATOR + SCHEMA_FILE;
+    }
   }
 
   /**
@@ -351,6 +366,9 @@ public class CarbonTablePath extends Path {
 
   private static String getCarbonIndexFileName(String taskNo, int bucketNumber,
       String factUpdatedtimeStamp) {
+    if (bucketNumber == -1) {
+      return taskNo + "-" + factUpdatedtimeStamp + INDEX_FILE_EXT;
+    }
     return taskNo + "-" + bucketNumber + "-" + factUpdatedtimeStamp + INDEX_FILE_EXT;
   }
 
