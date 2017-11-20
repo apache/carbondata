@@ -31,6 +31,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark._
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, NodeInfo}
 import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -186,9 +187,11 @@ class CarbonMergerRDD[K, V](
           case e: Throwable =>
             LOGGER.error(e)
             if (null != e.getMessage) {
-              sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
+              CarbonException.analysisException(
+                s"Exception occurred in query execution :: ${ e.getMessage }")
             } else {
-              sys.error("Exception occurred in query execution.Please check logs.")
+              CarbonException.analysisException(
+                "Exception occurred in query execution.Please check logs.")
             }
         }
 

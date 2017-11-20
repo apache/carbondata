@@ -36,6 +36,7 @@ import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, N
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.execution.command.{CompactionModel, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -116,13 +117,14 @@ object CarbonDataRDDFactory {
           .createCompactionRequiredFile(carbonTable.getMetaDataFilepath, compactionType)
       // do sys error only in case of DDL trigger.
       if (compactionModel.isDDLTrigger) {
-        sys.error("Compaction is in progress, compaction request for table " +
-            s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }" +
+        CarbonException.analysisException(
+          s"Compaction is in progress, compaction request for table " +
+            s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}" +
             " is in queue.")
       } else {
         LOGGER.error("Compaction is in progress, compaction request for table " +
-            s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }" +
-            " is in queue.")
+          s"${carbonLoadModel.getDatabaseName}.${carbonLoadModel.getTableName}" +
+          " is in queue.")
       }
     }
   }
