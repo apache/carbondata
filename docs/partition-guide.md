@@ -39,7 +39,7 @@ This tutorial is designed to provide a quick introduction to create and use part
    PARTITIONED BY (partition_col_name data_type)
    STORED BY 'carbondata'
    [TBLPROPERTIES ('PARTITION_TYPE'='HASH',
-                   'NUM_PARTITION'='N' ...)]
+                   'NUM_PARTITIONS'='N' ...)]
    //N is the number of hash partitions
 ```
 
