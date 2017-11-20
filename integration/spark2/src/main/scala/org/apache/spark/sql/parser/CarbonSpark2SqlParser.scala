@@ -70,8 +70,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     loadManagement|showLoads|alterTable|restructure|updateTable|deleteRecords|
     alterPartition|datamapManagement
 
-  protected lazy val loadManagement: Parser[LogicalPlan] =
-    deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
+  protected lazy val loadManagement: Parser[LogicalPlan] = cleanFilesForAll |
+    deleteLoadsByID | deleteLoadsByLoadDate | cleanFilesForTable | loadDataNew
 
   protected lazy val restructure: Parser[LogicalPlan] =
     alterTableModifyDataType | alterTableDropColumn | alterTableAddColumns
@@ -328,10 +328,15 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         }
     }
 
-  protected lazy val cleanFiles: Parser[LogicalPlan] =
+  protected lazy val cleanFilesForTable: Parser[LogicalPlan] =
     CLEAN ~> FILES ~> FOR ~> TABLE ~> (ident <~ ".").? ~ ident <~ opt(";") ^^ {
       case databaseName ~ tableName =>
-        CleanFilesCommand(convertDbNameToLowerCase(databaseName), tableName.toLowerCase())
+        CleanFilesCommand(convertDbNameToLowerCase(databaseName), Option(tableName.toLowerCase()))
+    }
+
+  protected lazy val cleanFilesForAll: Parser[LogicalPlan] =
+    CLEAN ~> FILES ~> FOR ~> ALL <~ opt(";") ^^ {
+      case _ => CleanFilesCommand(None, None)
     }
 
   protected lazy val explainPlan: Parser[LogicalPlan] =
