@@ -94,21 +94,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-	<groupId>org.apache.lucene</groupId>
-	<artifactId>lucene-core</artifactId>
-	<version>6.3.0</version>
-    </dependency>
-    <dependency>
-	<groupId>org.apache.lucene</groupId>
-	<artifactId>lucene-analyzers-common</artifactId>
-	<version>6.3.0</version> 
-    </dependency>
-    <dependency>
-	<groupId>org.apache.lucene</groupId>
- 	<artifactId>lucene-queryparser</artifactId>
-	<version>6.3.0</version>
-    </dependency>
   </dependencies>
 
   <build>
