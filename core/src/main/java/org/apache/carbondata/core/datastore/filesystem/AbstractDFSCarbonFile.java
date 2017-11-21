@@ -75,6 +75,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
 
   public AbstractDFSCarbonFile(FileStatus fileStatus) {
     this.fileStatus = fileStatus;
+    this.hadoopConf = FileFactory.getConfiguration();
   }
 
   @Override public boolean createNewFile() {
