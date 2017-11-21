@@ -27,6 +27,7 @@ import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeRef
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CarbonException
@@ -822,33 +823,56 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
    * @return
    */
   private def transformAggregatePlan(logicalPlan: LogicalPlan): LogicalPlan = {
+    val validExpressionsMap = scala.collection.mutable.LinkedHashMap.empty[String, NamedExpression]
     logicalPlan transform {
       case aggregate@Aggregate(_, aExp, _) =>
-        val newExpressions = aExp.flatMap {
-          case alias@Alias(attrExpression: AggregateExpression, _) =>
-            attrExpression.aggregateFunction match {
-              case Average(attr: AttributeReference) =>
-                Seq(Alias(attrExpression
-                  .copy(aggregateFunction = Sum(attr),
-                    resultId = NamedExpression.newExprId), attr.name + "_sum")(),
-                  Alias(attrExpression
-                    .copy(aggregateFunction = Count(attr),
-                      resultId = NamedExpression.newExprId), attr.name + "_count")())
-              case Average(cast@MatchCast(attr: AttributeReference, _)) =>
-                Seq(Alias(attrExpression
-                  .copy(aggregateFunction = Sum(cast),
-                    resultId = NamedExpression.newExprId),
-                  attr.name + "_sum")(),
-                  Alias(attrExpression
-                    .copy(aggregateFunction = Count(cast),
-                      resultId = NamedExpression.newExprId), attr.name + "_count")())
-              case _ => Seq(alias)
-            }
-          case namedExpr: NamedExpression => Seq(namedExpr)
+        aExp.foreach {
+          case alias: Alias =>
+            validExpressionsMap ++= validateAggregateFunctionAndGetAlias(alias)
+          case namedExpr: NamedExpression => validExpressionsMap.put(namedExpr.name, namedExpr)
         }
-        aggregate.copy(aggregateExpressions = newExpressions.asInstanceOf[Seq[NamedExpression]])
+        aggregate.copy(aggregateExpressions = validExpressionsMap.values.toSeq)
       case plan: LogicalPlan => plan
     }
   }
+
+  /**
+   * This method will split the avg column into sum and count and will return a sequence of tuple
+   * of unique name, alias
+   *
+   */
+  def validateAggregateFunctionAndGetAlias(alias: Alias): Seq[(String, NamedExpression)] = {
+    alias match {
+      case alias@Alias(attrExpression: AggregateExpression, _) =>
+        attrExpression.aggregateFunction match {
+          case Sum(attr: AttributeReference) =>
+            (attr.name + "_sum", alias) :: Nil
+          case Sum(Cast(attr: AttributeReference, _)) =>
+            (attr.name + "_sum", alias) :: Nil
+          case Count(Seq(attr: AttributeReference)) =>
+            (attr.name + "_count", alias) :: Nil
+          case Count(Seq(Cast(attr: AttributeReference, _))) =>
+            (attr.name + "_count", alias) :: Nil
+          case Average(attr: AttributeReference) =>
+            Seq((attr.name + "_sum", Alias(attrExpression
+              .copy(aggregateFunction = Sum(attr),
+                resultId = NamedExpression.newExprId), attr.name + "_sum")()),
+              (attr.name, Alias(attrExpression
+                .copy(aggregateFunction = Count(attr),
+                  resultId = NamedExpression.newExprId), attr.name + "_count")()))
+          case Average(cast@Cast(attr: AttributeReference, _)) =>
+            Seq((attr.name + "_sum", Alias(attrExpression
+              .copy(aggregateFunction = Sum(cast),
+                resultId = NamedExpression.newExprId),
+              attr.name + "_sum")()),
+              (attr.name, Alias(attrExpression
+                .copy(aggregateFunction = Count(cast),
+                  resultId = NamedExpression.newExprId), attr.name + "_count")()))
+          case _ => Seq(("", alias))
+        }
+
+    }
+  }
+
 }
 

@@ -297,7 +297,7 @@ object PreAggregateUtil {
         precision = precision,
         scale = scale,
         rawSchema = rawSchema), dataMapField)
-} else {
+    } else {
       (Field(column = actualColumnName,
         dataType = Some(dataType.typeName),
         name = Some(actualColumnName),
@@ -484,4 +484,5 @@ object PreAggregateUtil {
     }
     updatedPlan
   }
+
 }
