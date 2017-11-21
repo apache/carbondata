@@ -3,6 +3,8 @@ package org.apache.carbondata.datamap.lucene;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datamap.dev.DataMapModel;
+import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.Blocklet;
 import org.apache.carbondata.core.memory.MemoryException;
@@ -79,17 +81,16 @@ public class LuceneDataMap implements DataMap {
         this.tableIdentifier = tableIdentifier;
     }
 
-
     /**
      * It is called to load the data map to memory or to initialize it.
      *
-     * @param filePath
+     * @param dataMapModel
      */
-    public void init(String filePath) throws MemoryException, IOException {
+    public void init(DataMapModel dataMapModel) throws MemoryException, IOException {
         /**
          * get this path from file path
          */
-        Path indexPath = FileFactory.getPath(filePath);
+        Path indexPath = FileFactory.getPath(dataMapModel.getFilePath());
 
         /**
          * get file system , use hdfs file system , realized in solr project
@@ -127,21 +128,24 @@ public class LuceneDataMap implements DataMap {
         indexSearcher = new IndexSearcher(indexReader);
     }
 
+
     /**
      * Prune the datamap with filter expression. It returns the list of
      * blocklets where these filters can exist.
      *
      * @param filterExp
+     * @param segmentProperties
      * @return
      */
-    public List<Blocklet> prune(FilterResolverIntf filterExp) throws IOException {
+    public List prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties) throws IOException {
+
         /**
          * convert filter expr into lucene list query
          */
         List<String> fields = new ArrayList<String>();
 
         /**
-         * only for test , query all datas
+         * only for test , query all data
          */
         String strQuery = "*:*";
 
@@ -213,6 +217,10 @@ public class LuceneDataMap implements DataMap {
 
         return blocklets;
     }
+
+
+
+
 
     /**
      * Clear complete index table and release memory.

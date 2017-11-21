@@ -47,12 +47,12 @@ public abstract class AbstractDataMapWriter {
    *
    * @param blockId file name of the carbondata file
    */
-  public abstract void onBlockStart(String blockId);
+  public abstract void onBlockStart(String blockId) throws IOException;
 
   /**
    * End of block notification
    */
-  public abstract void onBlockEnd(String blockId);
+  public abstract void onBlockEnd(String blockId) throws IOException;
 
   /**
    * Start of new blocklet notification.
@@ -74,7 +74,8 @@ public abstract class AbstractDataMapWriter {
    * Implementation should copy the content of `pages` as needed, because `pages` memory
    * may be freed after this method returns, if using unsafe column page.
    */
-  public abstract void onPageAdded(int blockletId, int pageId, ColumnPage[] pages);
+  public abstract void onPageAdded(int blockletId, int pageId, ColumnPage[] pages)
+          throws IOException;
 
   /**
    * This is called during closing of writer.So after this call no more data will be sent to this

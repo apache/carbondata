@@ -122,7 +122,8 @@ public class DataMapWriterListener {
    * @param pageId     sequence number of page, start from 0
    * @param tablePage  page data
    */
-  public void onPageAdded(int blockletId, int pageId, TablePage tablePage) {
+  public void onPageAdded(int blockletId, int pageId, TablePage tablePage)
+  throws IOException {
     Set<Map.Entry<List<String>, List<AbstractDataMapWriter>>> entries = registry.entrySet();
     for (Map.Entry<List<String>, List<AbstractDataMapWriter>> entry : entries) {
       List<String> indexedColumns = entry.getKey();

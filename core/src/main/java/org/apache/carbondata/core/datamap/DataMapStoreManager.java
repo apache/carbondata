@@ -30,6 +30,9 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.mutate.SegmentUpdateDetails;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
@@ -56,6 +59,17 @@ public final class DataMapStoreManager {
   }
 
   public List<TableDataMap> getAllDataMap(AbsoluteTableIdentifier identifier) {
+    String uniqueName = identifier.getCarbonTableIdentifier().getTableUniqueName();
+    if (null == allDataMaps.get(uniqueName)) {
+
+      CarbonMetadata carbonMetadata = CarbonMetadata.getInstance();
+      CarbonTable carbonTable = carbonMetadata.getCarbonTable(uniqueName);
+      carbonMetadata.loadTableMetadata(carbonTable.getTableInfo());
+      List<DataMapSchema> lstDataMapSchema = carbonTable.getTableInfo().getDataMapSchemaList();
+      for (DataMapSchema dataMapSchema : lstDataMapSchema) {
+        getDataMap(identifier, dataMapSchema.getDataMapName(), dataMapSchema.getClassName());
+      }
+    }
     return allDataMaps.get(identifier.getCarbonTableIdentifier().getTableUniqueName());
   }
 

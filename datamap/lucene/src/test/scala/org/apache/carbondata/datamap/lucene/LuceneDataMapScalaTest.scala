@@ -1,17 +1,11 @@
 package org.apache.carbondata.datamap.lucene
 
 import java.io.File
-import java.nio.file.{Path, Paths}
 
 import junit.framework.TestCase
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.lucene.analysis.standard.StandardAnalyzer
-import org.apache.lucene.index.{DirectoryReader, IndexableField}
-import org.apache.lucene.queryparser.classic.MultiFieldQueryParser
-import org.apache.lucene.search.{IndexSearcher, ScoreDoc}
-import org.apache.lucene.store.{Directory, FSDirectory}
-import org.apache.spark.sql.{SaveMode, SparkSession}
+import org.apache.spark.sql.{Row, SaveMode, SparkSession}
 import org.junit.{AfterClass, BeforeClass, Test}
 import org.scalatest.junit.AssertionsForJUnit
 
@@ -55,14 +49,14 @@ class LuceneDataMapScalaTest extends TestCase  with AssertionsForJUnit{
 
   @Test def testLuceneDatamap(): Unit = {
 
-    carbonSession.sql("drop table if exists test_table")
-    carbonSession
-      .sql("create table if not exists test_table(id long, name string, city string, age int) stored by 'carbondata'")
+    //carbonSession.sql("drop table if exists test_table")
+    //carbonSession
+    //  .sql("create table if not exists test_table(id long, name string, city string, age int) stored by 'carbondata'")
 
 
-    carbonSession.sql("create datamap lucenedatamap on table test_table using" +
-    " 'org.apache.carbondata.datamap.lucene.LuceneDataMapFactory' " +
-    " dmproperties() as select * from test_table")
+    //carbonSession.sql("create datamap lucenedatamap on table test_table using" +
+    //" 'org.apache.carbondata.datamap.lucene.LuceneDataMapFactory' " +
+    //" dmproperties() as select * from test_table")
 
     val options = Map("tableName" -> "test_table")
     val rdd = carbonSession.sparkContext.makeRDD(
@@ -70,20 +64,24 @@ class LuceneDataMapScalaTest extends TestCase  with AssertionsForJUnit{
         (2, "eason", "shenzhen", 27),
         (3, "jarry", "wuhan", 35),
         (4, "simon", "guangzhou", 39)))
-    val df = carbonSession.createDataFrame(rdd);
+    val df = carbonSession.createDataFrame(rdd).toDF("id","name","city","age")
 
     val dbName = "default"
     val tableName = "test_table"
     val tableIndentifier = AbsoluteTableIdentifier.from(storePath, dbName, tableName)
 
+    carbonSession.sql("drop table if exists test_table")
+
+    val dataMapStoreManager = DataMapStoreManager.getInstance()
+    dataMapStoreManager.createAndRegisterDataMap(tableIndentifier,classOf[LuceneDataMapFactory].getName,LuceneDataMap.NAME);
+
     df.write.format("carbondata").options(options).mode(SaveMode.Overwrite).save
-//
-//    val dataMapStoreManager = DataMapStoreManager.getInstance();
-//    val lstTableDataMap = dataMapStoreManager.
-//      getDataMap(tableIndentifier, LuceneDataMap.NAME, classOf[LuceneDataMapFactory].getName)
-//
+
+
+//    val lstTableDataMap = dataMapStoreManager.getDataMap(tableIndentifier, LuceneDataMap.NAME, classOf[LuceneDataMapFactory].getName)
+
 //    assert(lstTableDataMap != null, "list table data map is empty")
-//
+
 //    val Writer = lstTableDataMap.getDataMapFactory.createWriter("0")
 //    val luceneWriter = classOf[LuceneDataMapWriter].cast(Writer)
 //    val lucenePath = luceneWriter.getIndexPath("0");
@@ -109,9 +107,9 @@ class LuceneDataMapScalaTest extends TestCase  with AssertionsForJUnit{
 //      assertResult(3)(doc.getFields.size())
 //    })
 //
-//    val result = carbonSession.sql("select * from test_table where _3 like 'wuha%'").collect()
-//    assertResult(1)(result.length)
-//    assertResult(Row.fromSeq(Seq(3,"jarry","wuhan",35)))(result.apply(0))
+      val result = carbonSession.sql("select * from test_table where city like 'wuha%'").collect()
+      assertResult(1)(result.length)
+      assertResult(Row.fromSeq(Seq(3,"jarry","wuhan",35)))(result.apply(0))
 
   }
 

@@ -41,7 +41,8 @@ public interface DataMap<T extends Blocklet> {
    * @param filterExp
    * @return
    */
-  List<T> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties) throws IOException;
+  List<T> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties)
+          throws IOException;
 
 
   /**

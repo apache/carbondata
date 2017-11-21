@@ -3,16 +3,12 @@ package org.apache.carbondata.datamap.lucene;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.DataMapMeta;
-import org.apache.carbondata.core.datamap.dev.DataMapWriter;
+import org.apache.carbondata.core.datamap.dev.AbstractDataMapWriter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.datatype.BooleanType;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.datatype.TimestampType;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.lucene.analysis.Analyzer;
@@ -24,11 +20,10 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.solr.store.hdfs.HdfsDirectory;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
-public class LuceneDataMapWriter implements DataMapWriter {
+public class LuceneDataMapWriter extends AbstractDataMapWriter {
     /**
      * logger
      */
@@ -46,29 +41,20 @@ public class LuceneDataMapWriter implements DataMapWriter {
 
     private String blockId = null;
 
-    private AbsoluteTableIdentifier identifier = null;
-
-    private String dataMapName = null;
-
-    private String segmentId = null;
-
     final static public String BLOCKID_NAME = "blockId";
 
     final static public String BLOCKLETID_NAME = "blockletId";
 
     final static public String ROWID_NAME = "rowId";
 
-    public LuceneDataMapWriter(AbsoluteTableIdentifier identifier, DataMapMeta dataMapMeta, String dataMapName, String segmentId) {
-        this.identifier = identifier;
-        this.dataMapName = dataMapName;
-        this.segmentId = segmentId;
+    public LuceneDataMapWriter(AbsoluteTableIdentifier identifier, String segmentId,
+                               String writeDirectoryPath,DataMapMeta dataMapMeta) {
+        super(identifier, segmentId,writeDirectoryPath);
         this.dataMapMeta = dataMapMeta;
     }
 
     public String getIndexPath(String blockId) {
-        CarbonTablePath tablePath = CarbonStorePath.getCarbonTablePath(identifier);
-        String dataPath = tablePath.getCarbonDataDirectoryPath("0", segmentId);
-        return dataPath + File.separator + dataMapName;
+        return writeDirectoryPath;
     }
 
     private String getBlockIdKey(String blockId) {
@@ -174,6 +160,12 @@ public class LuceneDataMapWriter implements DataMapWriter {
         IndexWriter ramIndexWriter = new IndexWriter(ramDir, new IndexWriterConfig(analyzer));
 
         int columnsCount = pages.length;
+        if(columnsCount <= 0){
+            LOGGER.warn("write empty data");
+            ramIndexWriter.close();
+            ramDir.close();
+            return;
+        }
         int pageSize = pages[0].getPageSize();
         for (int rowId = 0; rowId < pageSize; rowId++) {
             /**
@@ -231,6 +223,7 @@ public class LuceneDataMapWriter implements DataMapWriter {
          */
         ramDir.close();
     }
+
 
     private boolean addField(Document doc, ColumnPage page, int rowId, Field.Store store) {
         //get field name
@@ -325,12 +318,12 @@ public class LuceneDataMapWriter implements DataMapWriter {
              * TODO: how to get data value
              */
 
-        } else if (type == TimestampType.TIMESTAMP) {
+        } else if (type == DataTypes.TIMESTAMP) {
             /**
              * TODO: how to get
              */
 
-        } else if (type == BooleanType.BOOLEAN) {
+        } else if (type == DataTypes.BOOLEAN) {
             boolean value = page.getBoolean(rowId);
             IntRangeField field = new IntRangeField(fieldName, new int[]{0}, new int[]{1});
             field.setIntValue(value ? 1 : 0);
@@ -338,7 +331,19 @@ public class LuceneDataMapWriter implements DataMapWriter {
             if (store == Field.Store.YES) {
                 doc.add(new StoredField(fieldName, value ? 1 : 0));
             }
+        }else{
+            LOGGER.error("unsupport data type " + type);
+            throw new RuntimeException("unsupported data type " + type);
         }
         return true;
     }
+
+    /**
+     * This is called during closing of writer.So after this call no more data will be sent to this
+     * class.
+     */
+    public void finish() throws IOException {
+
+    }
+
 }
