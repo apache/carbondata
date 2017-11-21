@@ -200,7 +200,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
           | GROUP BY dataTime
         """.stripMargin)
     }
-    assert(e.getMessage.equals("Unknown data map type abc"))
+    assert(e.getMessage.equals("DataMap class 'abc' not found"))
   }
 
   test("test timeseries create table: USING and catch MalformedCarbonCommandException") {
@@ -215,10 +215,11 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
           | GROUP BY dataTime
         """.stripMargin)
     }
-    assert(e.getMessage.equals("Unknown data map type abc"))
+    assert(e.getMessage.equals("DataMap class 'abc' not found"))
   }
 
   test("test timeseries create table: Only one granularity level can be defined 1") {
+    sql("drop datamap if exists agg0_second on table mainTable")
     val e: Exception = intercept[MalformedCarbonCommandException] {
       sql(
         s"""
@@ -235,6 +236,7 @@ class TestTimeSeriesCreateTable extends QueryTest with BeforeAndAfterAll {
            | GROUP BY dataTime
        """.stripMargin)
     }
+    e.printStackTrace()
     assert(e.getMessage.equals("Only one granularity level can be defined"))
   }
 
