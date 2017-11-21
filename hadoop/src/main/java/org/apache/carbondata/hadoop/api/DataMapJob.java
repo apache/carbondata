@@ -20,7 +20,6 @@ import java.io.Serializable;
 import java.util.List;
 
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 
 /**
  * Distributable datamap job to execute the #DistributableDataMapFormat in cluster. it prunes the
@@ -28,7 +27,6 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
  */
 public interface DataMapJob extends Serializable {
 
-  List<ExtendedBlocklet> execute(DistributableDataMapFormat dataMapFormat,
-      FilterResolverIntf resolverIntf);
+  List<ExtendedBlocklet> execute(DistributableDataMapFormat dataMapFormat);
 
 }

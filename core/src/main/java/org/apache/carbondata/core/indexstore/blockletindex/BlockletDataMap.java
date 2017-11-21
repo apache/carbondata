@@ -78,8 +78,6 @@ public class BlockletDataMap extends AbstractCoarseGrainDataMap implements Cache
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(BlockletDataMap.class.getName());
 
-  public static final String NAME = "clustered.btree.blocklet";
-
   private static int KEY_INDEX = 0;
 
   private static int MIN_VALUES_INDEX = 1;

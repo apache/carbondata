@@ -22,9 +22,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.carbondata.core.datamap.DataMapDistributable;
 import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datamap.TableDataMap;
+import org.apache.carbondata.core.datamap.dev.expr.DataMapDistributableWrapper;
+import org.apache.carbondata.core.datamap.dev.expr.DataMapExprWrapper;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
@@ -43,11 +44,9 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBlocklet> implements
     Serializable {
 
-  private static final String FILTER_EXP = "mapreduce.input.distributed.datamap.filter";
-
   private AbsoluteTableIdentifier identifier;
 
-  private String dataMapName;
+  private DataMapExprWrapper dataMapExprWrapper;
 
   private List<String> validSegments;
 
@@ -56,9 +55,9 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
   private List<String> partitions;
 
   public DistributableDataMapFormat(AbsoluteTableIdentifier identifier,
-      String dataMapName, List<String> validSegments, List<String> partitions, String className) {
+      DataMapExprWrapper dataMapExprWrapper, List<String> validSegments, List<String> partitions, String className) {
     this.identifier = identifier;
-    this.dataMapName = dataMapName;
+    this.dataMapExprWrapper = dataMapExprWrapper;
     this.validSegments = validSegments;
     this.className = className;
     this.partitions = partitions;
@@ -83,9 +82,8 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
 
   @Override
   public List<InputSplit> getSplits(JobContext job) throws IOException {
-    TableDataMap dataMap =
-        DataMapStoreManager.getInstance().getDataMap(identifier, dataMapName, className);
-    List<DataMapDistributable> distributables = dataMap.toDistributable(validSegments);
+    List<DataMapDistributableWrapper> distributables =
+        dataMapExprWrapper.toDistributable(validSegments);
     List<InputSplit> inputSplits = new ArrayList<>(distributables.size());
     inputSplits.addAll(distributables);
     return inputSplits;
@@ -101,13 +99,15 @@ public class DistributableDataMapFormat extends FileInputFormat<Void, ExtendedBl
       @Override
       public void initialize(InputSplit inputSplit, TaskAttemptContext taskAttemptContext)
           throws IOException, InterruptedException {
-        DataMapDistributable distributable = (DataMapDistributable)inputSplit;
+        DataMapDistributableWrapper distributable = (DataMapDistributableWrapper) inputSplit;
         TableDataMap dataMap = DataMapStoreManager.getInstance()
-            .getDataMap(identifier, distributable.getDataMapName(),
-                distributable.getDataMapFactoryClass());
-        blockletIterator = dataMap.prune(
-            distributable, getFilterExp(taskAttemptContext.getConfiguration()), partitions)
-            .iterator();
+            .getDataMap(identifier, distributable.getDistributable().getDataMapSchema());
+        List<ExtendedBlocklet> blocklets = dataMap.prune(
+            distributable, dataMapExprWrapper.getFilterResolverIntf(distributable.getUniqueId()), partitions);
+        for (ExtendedBlocklet blocklet: blocklets) {
+          blocklet.setDataMapUniqueId(distributable.getUniqueId());
+        }
+        blockletIterator = blocklets.iterator();
       }
 
       @Override

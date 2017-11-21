@@ -39,6 +39,8 @@ public enum ExpressionType {
   LITERAL,
   RANGE,
   FALSE,
-  TRUE
-
+  TRUE,
+  STARTSWITH,
+  ENDSWITH,
+  CONTAINSWITH
 }

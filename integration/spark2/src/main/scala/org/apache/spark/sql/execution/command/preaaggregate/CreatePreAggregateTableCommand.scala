@@ -147,8 +147,7 @@ case class CreatePreAggregateTableCommand(
       PreAggregateUtil.createTimeSeriesSelectQueryFromMain(dataMap.getChildSchema,
         parentTable.getTableName,
         parentTable.getDatabaseName)
-    }
-    else {
+    } else {
       queryString
     }
     val dataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
