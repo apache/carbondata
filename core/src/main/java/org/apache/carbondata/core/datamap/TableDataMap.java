@@ -33,6 +33,7 @@ import org.apache.carbondata.core.indexstore.FineGrainBlocklet;
 import org.apache.carbondata.core.indexstore.PartitionSpec;
 import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.events.Event;
 import org.apache.carbondata.events.OperationContext;
@@ -46,7 +47,7 @@ public final class TableDataMap extends OperationEventListener {
 
   private AbsoluteTableIdentifier identifier;
 
-  private String dataMapName;
+  private DataMapSchema dataMapSchema;
 
   private DataMapFactory dataMapFactory;
 
@@ -57,11 +58,11 @@ public final class TableDataMap extends OperationEventListener {
   /**
    * It is called to initialize and load the required table datamap metadata.
    */
-  public TableDataMap(AbsoluteTableIdentifier identifier, String dataMapName,
+  public TableDataMap(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema,
       DataMapFactory dataMapFactory, BlockletDetailsFetcher blockletDetailsFetcher,
       SegmentPropertiesFetcher segmentPropertiesFetcher) {
     this.identifier = identifier;
-    this.dataMapName = dataMapName;
+    this.dataMapSchema = dataMapSchema;
     this.dataMapFactory = dataMapFactory;
     this.blockletDetailsFetcher = blockletDetailsFetcher;
     this.segmentPropertiesFetcher = segmentPropertiesFetcher;
@@ -116,10 +117,9 @@ public final class TableDataMap extends OperationEventListener {
     for (Segment segment : segments) {
       List<DataMapDistributable> list = dataMapFactory.toDistributable(segment);
       for (DataMapDistributable distributable: list) {
-        distributable.setDataMapName(dataMapName);
+        distributable.setDataMapSchema(dataMapSchema);
         distributable.setSegment(segment);
         distributable.setTablePath(identifier.getTablePath());
-        distributable.setDataMapFactoryClass(dataMapFactory.getClass().getName());
       }
       distributables.addAll(list);
     }
@@ -148,7 +148,8 @@ public final class TableDataMap extends OperationEventListener {
     }
     BlockletSerializer serializer = new BlockletSerializer();
     String writePath =
-        identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + dataMapName;
+        identifier.getTablePath() + CarbonCommonConstants.FILE_SEPARATOR + dataMapSchema
+            .getDataMapName();
     if (dataMapFactory.getDataMapType() == DataMapType.FG) {
       FileFactory.mkdirs(writePath, FileFactory.getFileType(writePath));
     }
@@ -183,13 +184,9 @@ public final class TableDataMap extends OperationEventListener {
   public void clear() {
     dataMapFactory.clear();
   }
-  /**
-   * Get the unique name of datamap
-   *
-   * @return
-   */
-  public String getDataMapName() {
-    return dataMapName;
+
+  public DataMapSchema getDataMapSchema() {
+    return dataMapSchema;
   }
 
   public DataMapFactory getDataMapFactory() {
