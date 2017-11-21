@@ -347,20 +347,6 @@ public class NodeHolder {
   }
 
   /**
-   * @return
-   */
-  public boolean[] getColGrpBlocks() {
-    return this.colGrpBlocks;
-  }
-
-  /**
-   * @param colGrpBlock true if block is column group
-   */
-  public void setColGrpBlocks(boolean[] colGrpBlock) {
-    this.colGrpBlocks = colGrpBlock;
-  }
-
-  /**
    * @return the measureNullValueIndex
    */
   public BitSet[] getMeasureNullValueIndex() {
