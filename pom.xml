@@ -482,7 +482,7 @@
             <artifactId>coveralls-maven-plugin</artifactId>
             <version>4.3.0</version>
             <configuration>
-              <repoToken>Q8mcBW8dw34wjNiPAMx0SFQidspIwHw8g</repoToken>
+              <repoToken>opPwqWW41vYppv6KISea3u1TJvE1ugJ5Y</repoToken>
               <sourceEncoding>UTF-8</sourceEncoding>
               <jacocoReports>
                 <jacocoReport>${basedir}/target/carbondata-coverage-report/carbondata-coverage-report.xml
