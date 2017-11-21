@@ -46,6 +46,8 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists restructure_badnew")
     // clean data folder
     CarbonProperties.getInstance()
+
+    sql("CREATE TABLE uniqdata_alter (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES ('TABLE_BLOCKSIZE'= '256 MB')")
     sql(
       "CREATE TABLE restructure (empno int, empname String, designation String, doj Timestamp, " +
       "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
@@ -504,8 +506,26 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     assert(intercept[RuntimeException] {
       sql("alter table preaggmain rename to preaggmain_new")
     }.getMessage.contains("Rename operation is not supported for table with pre-aggregate tables"))
-  }
 
+  }
+  test("test for alter the decimal data type if first alter is unsuccessfull") {
+    try {
+      sql("alter table uniqdata_alter add columns (decimal_column3 decimal(10,14))")
+      assert(false)
+    }
+    catch {
+      case exception: Exception =>
+        assert(exception.getMessage.contains("Alter table add operation failed: Scale 14 can not be Greater Than Precision 10"))
+        //now give the correct decimal precision and scale it should pass
+        try {
+          sql("alter table uniqdata_alter add columns (decimal_column3 decimal(10,4))")
+          assert(true)
+        }
+        catch {
+          case _ => assert(false)
+        }
+    }
+  }
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
     sql("drop table if exists table1")
@@ -518,5 +538,6 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists uniqdata1")
     sql("drop table if exists defaultSortColumnsWithAlter")
     sql("drop table if exists specifiedSortColumnsWithAlter")
+    sql("drop table if exists uniqdata_alter")
   }
 }
