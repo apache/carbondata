@@ -43,6 +43,7 @@ import org.apache.carbondata.core.indexstore.SegmentPropertiesFetcher;
 import org.apache.carbondata.core.indexstore.TableBlockIndexUniqueIdentifier;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.SegmentFileStore;
+import org.apache.carbondata.core.metadata.schema.table.DataMapSchema;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.events.Event;
 
@@ -57,6 +58,11 @@ import org.apache.hadoop.fs.RemoteIterator;
 public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
     implements BlockletDetailsFetcher, SegmentPropertiesFetcher {
 
+  private static final String NAME = "clustered.btree.blocklet";
+
+  public static final DataMapSchema DATA_MAP_SCHEMA =
+      new DataMapSchema(NAME, BlockletDataMapFactory.class.getName());
+
   private AbsoluteTableIdentifier identifier;
 
   // segmentId -> list of index file
@@ -65,7 +71,7 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
   private Cache<TableBlockIndexUniqueIdentifier, AbstractCoarseGrainDataMap> cache;
 
   @Override
-  public void init(AbsoluteTableIdentifier identifier, String dataMapName) {
+  public void init(AbsoluteTableIdentifier identifier, DataMapSchema dataMapSchema) {
     this.identifier = identifier;
     cache = CacheProvider.getInstance()
         .createCache(CacheType.DRIVER_BLOCKLET_DATAMAP);
@@ -188,7 +194,6 @@ public class BlockletDataMapFactory extends AbstractCoarseGrainDataMapFactory
             new BlockletDataMapDistributable(path.toString());
         distributable.setLocations(location);
         distributables.add(distributable);
-
       }
     } catch (IOException e) {
       throw new RuntimeException(e);

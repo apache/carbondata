@@ -30,6 +30,7 @@ import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
+import org.apache.carbondata.common.exceptions.sql.MalformedDataMapCommandException
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider
 import org.apache.carbondata.core.metadata.schema.table.AggregationDataMapSchema
@@ -67,8 +68,10 @@ case class CreatePreAggregateTableCommand(
     dmProperties.foreach(t => tableProperties.put(t._1, t._2))
 
     parentTable = PreAggregateUtil.getParentCarbonTable(df.logicalPlan)
-    assert(parentTable.getTableName.equalsIgnoreCase(parentTableIdentifier.table),
-      "Parent table name is different in select and create")
+    if (!parentTable.getTableName.equalsIgnoreCase(parentTableIdentifier.table)) {
+      throw new MalformedDataMapCommandException(
+        "Parent table name is different in select and create")
+    }
     var neworder = Seq[String]()
     val parentOrder = parentTable.getSortColumns(parentTable.getTableName).asScala
     parentOrder.foreach(parentcol =>
@@ -131,23 +134,19 @@ case class CreatePreAggregateTableCommand(
     dmProperties.foreach(f => childSchema.getProperties.put(f._1, f._2))
 
     // updating the parent table about child table
-    try {
-      PreAggregateUtil.updateMainTable(
-        CarbonEnv.getDatabaseName(parentTableIdentifier.database)(sparkSession),
-        parentTableIdentifier.table,
-        childSchema,
-        sparkSession)
-    } catch {
-      case ex: Exception =>
-        undoMetadata(sparkSession, ex)
-        throw ex
-    }
+    PreAggregateUtil.updateMainTable(
+      parentTable,
+      childSchema,
+      sparkSession)
+    // After updating the parent carbon table with data map entry extract the latest table object
+    // to be used in further create process.
+    parentTable = CarbonEnv.getCarbonTable(parentTableIdentifier.database,
+      parentTableIdentifier.table)(sparkSession)
     val updatedLoadQuery = if (timeSeriesFunction.isDefined) {
       PreAggregateUtil.createTimeSeriesSelectQueryFromMain(childSchema.getChildSchema,
         parentTable.getTableName,
         parentTable.getDatabaseName)
-    }
-    else {
+    } else {
       queryString
     }
     val dataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(

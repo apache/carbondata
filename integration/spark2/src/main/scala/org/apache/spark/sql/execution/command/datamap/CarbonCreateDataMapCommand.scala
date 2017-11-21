@@ -16,17 +16,23 @@
  */
 package org.apache.spark.sql.execution.command.datamap
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.preaaggregate.CreatePreAggregateTableCommand
+import org.apache.spark.sql.execution.command.preaaggregate.{CreatePreAggregateTableCommand, PreAggregateUtil}
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
+import org.apache.spark.sql.hive.CarbonRelation
 
+import org.apache.carbondata.common.exceptions.MetadataProcessException
 import org.apache.carbondata.common.exceptions.sql.{MalformedCarbonCommandException, MalformedDataMapCommandException}
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.schema.datamap.DataMapProvider._
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
 
 /**
  * Below command class will be used to create datamap on table
@@ -52,59 +58,60 @@ case class CarbonCreateDataMapCommand(
     if (carbonTable.isStreamingTable) {
       throw new MalformedCarbonCommandException("Streaming table does not support creating datamap")
     }
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
-    val tableName = tableIdentifier.table + "_" + dataMapName
-    val newDmProperties = if (dmProperties.get(TimeSeriesUtil.TIMESERIES_EVENTTIME).isDefined) {
-      dmProperties.updated(TimeSeriesUtil.TIMESERIES_EVENTTIME,
-        dmProperties.get(TimeSeriesUtil.TIMESERIES_EVENTTIME).get.trim)
-    } else {
-      dmProperties
-    }
-    val dataMapProvider = {
-      try {
-        DataMapProvider.getDataMapProvider(dmClassName)
-      } catch {
-        case e: UnsupportedOperationException =>
-          throw new MalformedDataMapCommandException(e.getMessage)
-      }
-    }
-    if (sparkSession.sessionState.catalog.listTables(dbName)
-      .exists(_.table.equalsIgnoreCase(tableName))) {
-      LOGGER.audit(
-        s"Table creation with Database name [$dbName] and Table name [$tableName] failed. " +
-          s"Table [$tableName] already exists under database [$dbName]")
-      tableIsExists = true
-      if (!ifNotExistsSet) {
-        throw new TableAlreadyExistsException(dbName, tableName)
-      }
-    } else {
-      TimeSeriesUtil.validateTimeSeriesGranularity(newDmProperties, dmClassName)
-      createPreAggregateTableCommands = if (dataMapProvider == TIMESERIES) {
-        val details = TimeSeriesUtil
-          .getTimeSeriesGranularityDetails(newDmProperties, dmClassName)
-        val updatedDmProperties = newDmProperties - details._1
+    validateDataMapName(carbonTable)
+
+    if (dmClassName.equalsIgnoreCase(PREAGGREGATE.toString) ||
+        dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
+      TimeSeriesUtil.validateTimeSeriesGranularity(dmProperties, dmClassName)
+      createPreAggregateTableCommands = if (dmClassName.equalsIgnoreCase(TIMESERIES.toString)) {
+        val details = TimeSeriesUtil.getTimeSeriesGranularityDetails(dmProperties, dmClassName)
+        val updatedDmProperties = dmProperties - details._1
         CreatePreAggregateTableCommand(
           dataMapName,
           tableIdentifier,
-          dataMapProvider,
+          DataMapProvider.TIMESERIES,
           updatedDmProperties,
           queryString.get,
-          Some(details._1),
-          ifNotExistsSet = ifNotExistsSet)
+          Some(details._1))
       } else {
         CreatePreAggregateTableCommand(
           dataMapName,
           tableIdentifier,
-          dataMapProvider,
-          newDmProperties,
-          queryString.get,
-          ifNotExistsSet = ifNotExistsSet)
+          DataMapProvider.PREAGGREGATE,
+          dmProperties,
+          queryString.get
+        )
       }
-      createPreAggregateTableCommands.processMetadata(sparkSession)
+      try {
+        createPreAggregateTableCommands.processMetadata(sparkSession)
+      } catch {
+        case e: Throwable => throw new MetadataProcessException(s"Failed to create datamap " +
+                                                                s"'$dataMapName'", e)
+      }
+    } else {
+      val dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
+      dataMapSchema.setProperties(new java.util.HashMap[String, String](dmProperties.asJava))
+      val dbName = CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession)
+      val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore.lookupRelation(
+        Some(dbName),
+        tableIdentifier.table)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
+      DataMapStoreManager.getInstance().createAndRegisterDataMap(
+        carbonTable.getAbsoluteTableIdentifier, dataMapSchema)
+      // Save DataMapSchema in the  schema file of main table
+      PreAggregateUtil.updateMainTable(carbonTable, dataMapSchema, sparkSession)
     }
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     LOGGER.audit(s"DataMap $dataMapName successfully added to Table ${tableIdentifier.table}")
     Seq.empty
+  }
+
+  private def validateDataMapName(carbonTable: CarbonTable): Unit = {
+    val existingDataMaps = carbonTable.getTableInfo.getDataMapSchemaList
+    existingDataMaps.asScala.foreach { dataMapSchema =>
+      if (dataMapSchema.getDataMapName.equalsIgnoreCase(dataMapName)) {
+        throw new MalformedDataMapCommandException(s"DataMap name '$dataMapName' already exist")
+      }
+    }
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
@@ -116,7 +123,7 @@ case class CarbonCreateDataMapCommand(
         Seq.empty
       }
     } else {
-      throw new MalformedDataMapCommandException("Unknown datamap provider/class " + dmClassName)
+      Seq.empty
     }
   }
 
