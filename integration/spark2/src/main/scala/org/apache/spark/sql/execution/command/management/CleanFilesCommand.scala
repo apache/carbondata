@@ -93,8 +93,14 @@ case class CleanFilesCommand(
   }
 
   private def cleanGarbageDataInAllTables(sparkSession: SparkSession): Unit = {
-    CommonUtil.cleanInProgressSegments(
-      CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
-      sparkSession.sparkContext)
+    val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
+    val tables = catalog.listAllTables(sparkSession)
+    tables.foreach(table => {
+      val databaseOp = Option(table.getDatabaseName)
+      val tableName = table.getTableName
+      if (catalog.tableExists(tableName, databaseOp)(sparkSession)) {
+        cleanGarbageData(sparkSession, databaseOp, tableName)
+      }
+    })
   }
 }

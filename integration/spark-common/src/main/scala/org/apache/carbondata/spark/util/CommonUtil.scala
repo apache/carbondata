@@ -761,11 +761,13 @@ object CommonUtil {
    * @param storePath
    * @param sparkContext
    */
-  def cleanInProgressSegments(storePath: String, sparkContext: SparkContext): Unit = {
+  def cleanInProgressSegments(storePath: String, sparkContext: SparkContext,
+    cleanFilesdisabled: Boolean = true): Unit = {
     val loaderDriver = CarbonProperties.getInstance().
       getProperty(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER,
         CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT).toBoolean
-    if (!loaderDriver) {
+    // Clean files for all will make cleanFilesEnabled to true
+    if (!loaderDriver && cleanFilesdisabled) {
       return
     }
     try {
