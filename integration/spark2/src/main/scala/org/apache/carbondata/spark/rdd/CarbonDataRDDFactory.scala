@@ -268,6 +268,7 @@ object CarbonDataRDDFactory {
       partitionStatus: SegmentStatus = SegmentStatus.SUCCESS,
       result: Option[DictionaryServer],
       overwriteTable: Boolean,
+      hadoopConf: Configuration,
       dataFrame: Option[DataFrame] = None,
       updateModel: Option[UpdateTableModel] = None): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -320,14 +321,14 @@ object CarbonDataRDDFactory {
         }
       } else {
         status = if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
-          loadDataForPartitionTable(sqlContext, dataFrame, carbonLoadModel)
+          loadDataForPartitionTable(sqlContext, dataFrame, carbonLoadModel, hadoopConf)
         } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
           DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkContext,
-            dataFrame, carbonLoadModel)
+            dataFrame, carbonLoadModel, hadoopConf)
         } else if (dataFrame.isDefined) {
           loadDataFrame(sqlContext, dataFrame, carbonLoadModel)
         } else {
-          loadDataFile(sqlContext, carbonLoadModel)
+          loadDataFile(sqlContext, carbonLoadModel, hadoopConf)
         }
         CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
           Seq(carbonLoadModel.getSegmentId), storePath, carbonTable, false)
@@ -783,7 +784,8 @@ object CarbonDataRDDFactory {
   private def repartitionInputData(
       sqlContext: SQLContext,
       dataFrame: Option[DataFrame],
-      carbonLoadModel: CarbonLoadModel): RDD[Row] = {
+      carbonLoadModel: CarbonLoadModel,
+      hadoopConf: Configuration): RDD[Row] = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
     val partitionColumn = partitionInfo.getColumnSchemaList.get(0).getColumnName
@@ -840,16 +842,15 @@ object CarbonDataRDDFactory {
       }
     } else {
       // input data from csv files
-      val hadoopConfiguration = new Configuration()
-      CommonUtil.configureCSVInputFormat(hadoopConfiguration, carbonLoadModel)
-      hadoopConfiguration.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
+      CommonUtil.configureCSVInputFormat(hadoopConf, carbonLoadModel)
+      hadoopConf.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
       val columnCount = columns.length
       new NewHadoopRDD[NullWritable, StringArrayWritable](
         sqlContext.sparkContext,
         classOf[CSVInputFormat],
         classOf[NullWritable],
         classOf[StringArrayWritable],
-        hadoopConfiguration
+        hadoopConf
       ).map { currentRow =>
         if (null == currentRow || null == currentRow._2) {
           val row = new StringArrayRow(new Array[String](columnCount))
@@ -892,10 +893,11 @@ object CarbonDataRDDFactory {
   private def loadDataForPartitionTable(
       sqlContext: SQLContext,
       dataFrame: Option[DataFrame],
-      carbonLoadModel: CarbonLoadModel
+      carbonLoadModel: CarbonLoadModel,
+      hadoopConf: Configuration
   ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     try {
-      val rdd = repartitionInputData(sqlContext, dataFrame, carbonLoadModel)
+      val rdd = repartitionInputData(sqlContext, dataFrame, carbonLoadModel, hadoopConf)
       new PartitionTableDataLoaderRDD(
         sqlContext.sparkContext,
         new DataLoadResultImpl(),
@@ -946,7 +948,8 @@ object CarbonDataRDDFactory {
    */
   private def loadDataFile(
       sqlContext: SQLContext,
-      carbonLoadModel: CarbonLoadModel
+      carbonLoadModel: CarbonLoadModel,
+      hadoopConf: Configuration
   ): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     /*
      * when data load handle by node partition
@@ -956,20 +959,19 @@ object CarbonDataRDDFactory {
      *   for locally writing carbondata files(one file one block) in nodes
      * 4)use NewCarbonDataLoadRDD to load data and write to carbondata files
      */
-    val hadoopConfiguration = new Configuration(sqlContext.sparkContext.hadoopConfiguration)
     // FileUtils will skip file which is no csv, and return all file path which split by ','
     val filePaths = carbonLoadModel.getFactFilePath
-    hadoopConfiguration.set(FileInputFormat.INPUT_DIR, filePaths)
-    hadoopConfiguration.set(FileInputFormat.INPUT_DIR_RECURSIVE, "true")
-    hadoopConfiguration.set("io.compression.codecs",
+    hadoopConf.set(FileInputFormat.INPUT_DIR, filePaths)
+    hadoopConf.set(FileInputFormat.INPUT_DIR_RECURSIVE, "true")
+    hadoopConf.set("io.compression.codecs",
       """org.apache.hadoop.io.compress.GzipCodec,
              org.apache.hadoop.io.compress.DefaultCodec,
              org.apache.hadoop.io.compress.BZip2Codec""".stripMargin)
 
-    CommonUtil.configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConfiguration)
+    CommonUtil.configSplitMaxSize(sqlContext.sparkContext, filePaths, hadoopConf)
 
     val inputFormat = new org.apache.hadoop.mapreduce.lib.input.TextInputFormat
-    val jobContext = new Job(hadoopConfiguration)
+    val jobContext = new Job(hadoopConf)
     val rawSplits = inputFormat.getSplits(jobContext).toArray
     val blockList = rawSplits.map { inputSplit =>
       val fileSplit = inputSplit.asInstanceOf[FileSplit]
@@ -1020,7 +1022,8 @@ object CarbonDataRDDFactory {
       sqlContext.sparkContext,
       new DataLoadResultImpl(),
       carbonLoadModel,
-      blocksGroupBy
+      blocksGroupBy,
+      hadoopConf
     ).collect()
   }
 

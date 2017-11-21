@@ -25,6 +25,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -41,8 +42,16 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
     super(filePath);
   }
 
+  public HDFSCarbonFile(String filePath, Configuration hadoopConf) {
+    super(filePath, hadoopConf);
+  }
+
   public HDFSCarbonFile(Path path) {
     super(path);
+  }
+
+  public HDFSCarbonFile(Path path, Configuration hadoopConf) {
+    super(path, hadoopConf);
   }
 
   public HDFSCarbonFile(FileStatus fileStatus) {
@@ -103,14 +112,14 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
   @Override
   public CarbonFile getParentFile() {
     Path parent = fileStatus.getPath().getParent();
-    return null == parent ? null : new HDFSCarbonFile(parent);
+    return null == parent ? null : new HDFSCarbonFile(parent, hadoopConf);
   }
 
   @Override
   public boolean renameForce(String changetoName) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(hadoopConf);
       if (fs instanceof DistributedFileSystem) {
         ((DistributedFileSystem) fs).rename(fileStatus.getPath(), new Path(changetoName),
             org.apache.hadoop.fs.Options.Rename.OVERWRITE);

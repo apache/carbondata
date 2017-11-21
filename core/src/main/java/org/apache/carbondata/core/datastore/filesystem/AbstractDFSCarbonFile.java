@@ -27,6 +27,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -38,13 +39,19 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AbstractDFSCarbonFile.class.getName());
   protected FileStatus fileStatus;
+  protected Configuration hadoopConf;
 
   public AbstractDFSCarbonFile(String filePath) {
+    this(filePath, FileFactory.getConfiguration());
+  }
+
+  public AbstractDFSCarbonFile(String filePath, Configuration hadoopConf) {
+    this.hadoopConf = hadoopConf;
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
     FileSystem fs;
     try {
-      fs = path.getFileSystem(FileFactory.getConfiguration());
+      fs = path.getFileSystem(this.hadoopConf);
       fileStatus = fs.getFileStatus(path);
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
@@ -52,9 +59,14 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   }
 
   public AbstractDFSCarbonFile(Path path) {
+    this(path, FileFactory.getConfiguration());
+  }
+
+  public AbstractDFSCarbonFile(Path path, Configuration hadoopConf) {
+    this.hadoopConf = hadoopConf;
     FileSystem fs;
     try {
-      fs = path.getFileSystem(FileFactory.getConfiguration());
+      fs = path.getFileSystem(this.hadoopConf);
       fileStatus = fs.getFileStatus(path);
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
@@ -69,7 +81,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
     Path path = fileStatus.getPath();
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(hadoopConf);
       return fs.createNewFile(path);
     } catch (IOException e) {
       return false;
@@ -92,7 +104,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
     FileSystem fs;
     try {
       if (null != fileStatus) {
-        fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+        fs = fileStatus.getPath().getFileSystem(hadoopConf);
         return fs.exists(fileStatus.getPath());
       }
     } catch (IOException e) {
@@ -116,7 +128,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   public boolean renameTo(String changetoName) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(hadoopConf);
       return fs.rename(fileStatus.getPath(), new Path(changetoName));
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
@@ -127,7 +139,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   public boolean delete() {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(hadoopConf);
       return fs.delete(fileStatus.getPath(), true);
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
@@ -142,7 +154,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   @Override public boolean setLastModifiedTime(long timestamp) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      fs = fileStatus.getPath().getFileSystem(hadoopConf);
       fs.setTimes(fileStatus.getPath(), timestamp, timestamp);
     } catch (IOException e) {
       return false;

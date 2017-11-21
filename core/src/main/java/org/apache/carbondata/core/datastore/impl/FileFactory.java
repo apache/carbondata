@@ -124,12 +124,35 @@ public final class FileFactory {
     }
   }
 
+  public static CarbonFile getCarbonFile(String path, FileType fileType,
+      Configuration hadoopConf) {
+    switch (fileType) {
+      case LOCAL:
+        return new LocalCarbonFile(getUpdatedFilePath(path, fileType));
+      case HDFS:
+      case S3:
+        return new HDFSCarbonFile(path, hadoopConf);
+      case ALLUXIO:
+        return new AlluxioCarbonFile(path);
+      case VIEWFS:
+        return new ViewFSCarbonFile(path);
+      default:
+        return new LocalCarbonFile(getUpdatedFilePath(path, fileType));
+    }
+  }
+
   public static DataInputStream getDataInputStream(String path, FileType fileType)
       throws IOException {
     return getDataInputStream(path, fileType, -1);
   }
 
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize)
+      throws IOException {
+    return getDataInputStream(path, fileType, bufferSize, configuration);
+  }
+
+  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
+      Configuration hadoopConf)
       throws IOException {
     path = path.replace("\\", "/");
     boolean gzip = path.endsWith(".gz");
@@ -151,7 +174,7 @@ public final class FileFactory {
       case VIEWFS:
       case S3:
         Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
+        FileSystem fs = pt.getFileSystem(hadoopConf);
         if (bufferSize == -1) {
           stream = fs.open(pt);
         } else {
@@ -164,7 +187,7 @@ public final class FileFactory {
           codecName = BZip2Codec.class.getName();
         }
         if (null != codecName) {
-          CompressionCodecFactory ccf = new CompressionCodecFactory(configuration);
+          CompressionCodecFactory ccf = new CompressionCodecFactory(hadoopConf);
           CompressionCodec codec = ccf.getCodecByClassName(codecName);
           stream = codec.createInputStream(stream);
         }

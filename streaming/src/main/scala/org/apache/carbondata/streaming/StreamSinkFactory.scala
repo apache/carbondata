@@ -19,6 +19,7 @@ package org.apache.carbondata.streaming
 
 import scala.collection.JavaConverters._
 
+import org.apache.hadoop.conf.Configuration
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sink}
@@ -42,6 +43,7 @@ object StreamSinkFactory {
 
   def createStreamTableSink(
       sparkSession: SparkSession,
+      hadoopConf: Configuration,
       carbonTable: CarbonTable,
       parameters: Map[String, String]): Sink = {
     validateParameters(parameters)
@@ -51,6 +53,7 @@ object StreamSinkFactory {
     // build load model
     val carbonLoadModel = buildCarbonLoadModelForStream(
       sparkSession,
+      hadoopConf,
       carbonTable,
       parameters,
       segmentId)
@@ -139,6 +142,7 @@ object StreamSinkFactory {
 
   private def buildCarbonLoadModelForStream(
       sparkSession: SparkSession,
+      hadoopConf: Configuration,
       carbonTable: CarbonTable,
       parameters: Map[String, String],
       segmentId: String): CarbonLoadModel = {
@@ -156,8 +160,8 @@ object StreamSinkFactory {
       carbonProperty,
       parameters,
       optionsFinal,
-      carbonLoadModel
-    )
+      carbonLoadModel,
+      hadoopConf)
     carbonLoadModel.setSegmentId(segmentId)
     // stream should use one pass
     val dictionaryServerPort = parameters.getOrElse(

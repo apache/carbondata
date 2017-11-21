@@ -179,7 +179,8 @@ class NewCarbonDataLoadRDD[K, V](
     sc: SparkContext,
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
-    blocksGroupBy: Array[(String, Array[BlockDetails])])
+    blocksGroupBy: Array[(String, Array[BlockDetails])],
+    @transient hadoopConf: Configuration)
   extends CarbonRDD[(K, V)](sc, Nil) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -192,7 +193,7 @@ class NewCarbonDataLoadRDD[K, V](
   private val confBytes = {
     val bao = new ByteArrayOutputStream()
     val oos = new ObjectOutputStream(bao)
-    sc.hadoopConfiguration.write(oos)
+    hadoopConf.write(oos)
     oos.close()
     CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
   }
