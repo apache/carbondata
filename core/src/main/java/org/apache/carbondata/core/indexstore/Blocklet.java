@@ -58,4 +58,24 @@ public class Blocklet implements Writable,Serializable {
     blockId = in.readUTF();
     blockletId = in.readUTF();
   }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) return true;
+    if (o == null || getClass() != o.getClass()) return false;
+
+    Blocklet blocklet = (Blocklet) o;
+
+    if (blockId != null ? !blockId.equals(blocklet.blockId) : blocklet.blockId != null) {
+      return false;
+    }
+    return blockletId != null ?
+        blockletId.equals(blocklet.blockletId) :
+        blocklet.blockletId == null;
+  }
+
+  @Override public int hashCode() {
+    int result = blockId != null ? blockId.hashCode() : 0;
+    result = 31 * result + (blockletId != null ? blockletId.hashCode() : 0);
+    return result;
+  }
 }

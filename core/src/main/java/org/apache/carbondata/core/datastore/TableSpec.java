@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.datatype.DecimalType;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -38,7 +39,14 @@ public class TableSpec {
   // number of simple dimensions
   private int numSimpleDimensions;
 
-  public TableSpec(List<CarbonDimension> dimensions, List<CarbonMeasure> measures) {
+  private CarbonTable carbonTable;
+
+  public TableSpec(CarbonTable carbonTable) {
+    this.carbonTable = carbonTable;
+    List<CarbonDimension> dimensions =
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
+    List<CarbonMeasure> measures =
+        carbonTable.getMeasureByTableName(carbonTable.getTableName());
     // first calculate total number of columnar field considering column group and complex column
     numSimpleDimensions = 0;
     for (CarbonDimension dimension : dimensions) {
@@ -110,6 +118,10 @@ public class TableSpec {
    */
   public int getNumMeasures() {
     return measureSpec.length;
+  }
+
+  public CarbonTable getCarbonTable() {
+    return carbonTable;
   }
 
   public static class ColumnSpec implements Writable {

@@ -14,21 +14,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.hadoop.api;
 
-import java.io.Serializable;
-import java.util.List;
+package org.apache.carbondata.common.exceptions;
 
-import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
-import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.common.annotations.InterfaceAudience;
+import org.apache.carbondata.common.annotations.InterfaceStability;
 
 /**
- * Distributable datamap job to execute the #DistributableDataMapFormat in cluster. it prunes the
- * datamaps distributably and returns the final blocklet list
+ * This exception will be thrown when failed to process metadata while executing
+ * carbon command
  */
-public interface DataMapJob extends Serializable {
+@InterfaceAudience.User
+@InterfaceStability.Evolving
+public class MetadataProcessException extends RuntimeException {
+  public MetadataProcessException(String message) {
+    super(message);
+  }
 
-  List<ExtendedBlocklet> execute(DistributableDataMapFormat dataMapFormat,
-      FilterResolverIntf filter);
-
+  public MetadataProcessException(String message, Throwable cause) {
+    super(message + ": " + cause.getMessage(), cause);
+  }
 }

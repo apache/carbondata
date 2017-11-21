@@ -46,7 +46,9 @@ import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.expression.conditional.LessThanEqualToExpression;
 import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression;
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
+import org.apache.carbondata.core.scan.expression.conditional.StartsWithExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.expression.logical.AndExpression;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecutor;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
@@ -369,7 +371,23 @@ public class FilterExpressionProcessor implements FilterProcessor {
       case LESSTHAN_EQUALTO:
         return getFilterResolverBasedOnExpressionType(ExpressionType.EQUALS, true, expressionTree,
             tableIdentifier, expressionTree);
-
+      case STARTSWITH:
+        assert (expressionTree instanceof StartsWithExpression);
+        currentExpression = (StartsWithExpression) expressionTree;
+        Expression re = currentExpression.getRight();
+        assert (re instanceof LiteralExpression);
+        LiteralExpression literal = (LiteralExpression) re;
+        String value = literal.getLiteralExpValue().toString();
+        Expression left = new GreaterThanEqualToExpression(currentExpression.getLeft(), literal);
+        String maxValueLimit = value.substring(0, value.length() - 1) + (char) (
+            ((int) value.charAt(value.length() - 1)) + 1);
+        Expression right = new LessThanExpression(currentExpression.getLeft(),
+            new LiteralExpression(maxValueLimit, literal.getLiteralExpDataType()));
+        currentExpression = new AndExpression(left, right);
+        return new LogicalFilterResolverImpl(
+            createFilterResolverTree(currentExpression.getLeft(), tableIdentifier),
+            createFilterResolverTree(currentExpression.getRight(), tableIdentifier),
+            currentExpression);
       case NOT_EQUALS:
       case NOT_IN:
         return getFilterResolverBasedOnExpressionType(ExpressionType.NOT_EQUALS, false,
