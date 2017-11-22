@@ -73,6 +73,7 @@ object CarbonDataFrameExample {
     val carbondf = spark.read
       .format("carbondata")
       .schema(customSchema)
+      // .option("dbname", "db_name") the system will use "default" as dbname if not set this option
       .option("tableName", "carbon_table")
       .load()
 
