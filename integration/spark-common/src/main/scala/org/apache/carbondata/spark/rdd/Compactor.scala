@@ -43,7 +43,7 @@ object Compactor {
     val sc = compactionCallableModel.sqlContext
     val carbonLoadModel = compactionCallableModel.carbonLoadModel
     val compactionType = compactionCallableModel.compactionType
-    val storePath = carbonLoadModel.getTablePath
+    val tablePath = carbonLoadModel.getTablePath
     val startTime = System.nanoTime()
     val mergedLoadName = CarbonDataMergerUtil.getMergedLoadName(loadsToMerge)
     var finalMergeStatus = false
@@ -52,7 +52,7 @@ object Compactor {
     val validSegments: Array[String] = CarbonDataMergerUtil
       .getValidSegments(loadsToMerge).split(',')
     val mergeLoadStartTime = CarbonUpdateUtil.readCurrentTime()
-    val carbonMergerMapping = CarbonMergerMapping(storePath,
+    val carbonMergerMapping = CarbonMergerMapping(tablePath,
       carbonTable.getMetaDataFilepath,
       mergedLoadName,
       databaseName,
@@ -69,11 +69,7 @@ object Compactor {
     // trigger event for compaction
     val operationContext = new OperationContext
     val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
-      AlterTableCompactionPreEvent(compactionCallableModel.sqlContext.sparkSession,
-        carbonTable,
-        carbonLoadModel,
-        mergedLoadName,
-        sc)
+      AlterTableCompactionPreEvent(carbonTable, carbonMergerMapping, mergedLoadName, sc)
     OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
 
     var execInstance = "1"
@@ -118,15 +114,11 @@ object Compactor {
     if (finalMergeStatus) {
       val mergedLoadNumber = CarbonDataMergerUtil.getLoadNumberFromLoadName(mergedLoadName)
       CommonUtil.mergeIndexFiles(
-        sc.sparkContext, Seq(mergedLoadNumber), storePath, carbonTable, false)
+        sc.sparkContext, Seq(mergedLoadNumber), tablePath, carbonTable, false)
 
       // trigger event for compaction
       val alterTableCompactionPostEvent: AlterTableCompactionPostEvent =
-        AlterTableCompactionPostEvent(compactionCallableModel.sqlContext.sparkSession,
-          carbonTable,
-          carbonLoadModel,
-          mergedLoadName,
-          sc)
+        AlterTableCompactionPostEvent(carbonTable, carbonMergerMapping, mergedLoadName, sc)
       OperationListenerBus.getInstance.fireEvent(alterTableCompactionPostEvent, operationContext)
 
       val endTime = System.nanoTime()

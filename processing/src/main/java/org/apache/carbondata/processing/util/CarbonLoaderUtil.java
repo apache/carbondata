@@ -62,6 +62,8 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.processing.merger.CarbonDataMergerUtil;
+import org.apache.carbondata.processing.merger.CompactionType;
 import org.apache.carbondata.processing.merger.NodeBlockRelation;
 import org.apache.carbondata.processing.merger.NodeMultiBlockRelation;
 
@@ -235,6 +237,21 @@ public final class CarbonLoaderUtil {
 
   }
 
+  private static String getCompactedSegmentName(CarbonLoadModel carbonLoadModel) {
+    List<LoadMetadataDetails> loadMetadataDetails = CarbonDataMergerUtil
+        .identifySegmentsToBeMerged(carbonLoadModel,
+            CarbonDataMergerUtil.getCompactionSize(CompactionType.MAJOR),
+            carbonLoadModel.getLoadMetadataDetails(),
+            carbonLoadModel.getCompactionType());
+    String mergedSegmentName =
+        CarbonDataMergerUtil.getMergedLoadName(loadMetadataDetails).split("_")[1];
+    for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
+      loadMetadataDetail.setMergedLoadName(mergedSegmentName);
+      loadMetadataDetail.setModificationOrdeletionTimesStamp(System.currentTimeMillis());
+    }
+    return mergedSegmentName;
+  }
+
   /**
    * This API will write the load level metadata for the loadmanagement module inorder to
    * manage the load and query execution management smoothly.
@@ -274,8 +291,11 @@ public final class CarbonLoaderUtil {
         if (loadStartEntry) {
           String segmentId =
               String.valueOf(SegmentStatusManager.createNewSegmentId(listOfLoadFolderDetailsArray));
-          newMetaEntry.setLoadName(segmentId);
           loadModel.setLoadMetadataDetails(listOfLoadFolderDetails);
+          if (loadModel.getCompactionType() != CompactionType.NONE) {
+            segmentId = getCompactedSegmentName(loadModel);
+          }
+          newMetaEntry.setLoadName(segmentId);
           loadModel.setSegmentId(segmentId);
           // Exception should be thrown if:
           // 1. If insert overwrite is in progress and any other load or insert operation

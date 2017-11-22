@@ -179,16 +179,14 @@ object DataManagementFunc {
       val carbonTableStatusLock =
         CarbonLockFactory.getCarbonLockObj(
           absoluteTableIdentifier,
-          LockUsage.TABLE_STATUS_LOCK
-        )
+          LockUsage.TABLE_STATUS_LOCK)
 
       // Delete marked loads
       val isUpdationRequired =
         DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
           absoluteTableIdentifier,
           isForceDeletion,
-          details
-        )
+          details)
 
       if (isUpdationRequired) {
         try {

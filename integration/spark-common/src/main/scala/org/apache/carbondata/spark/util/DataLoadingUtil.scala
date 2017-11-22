@@ -54,7 +54,6 @@ object DataLoadingUtil {
     optionsFinal.put("escapechar", options.getOrElse("escapechar", "\\"))
     optionsFinal.put("commentchar", options.getOrElse("commentchar", "#"))
     optionsFinal.put("columndict", options.getOrElse("columndict", null))
-
     optionsFinal.put(
       "serialization_null_format",
       options.getOrElse("serialization_null_format", "\\N"))

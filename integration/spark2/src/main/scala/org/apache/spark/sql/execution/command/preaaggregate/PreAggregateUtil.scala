@@ -38,7 +38,7 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableSchema}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.TableInfo
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -495,50 +495,20 @@ object PreAggregateUtil {
     updatedPlan
   }
 
-  /**
-   * This method will start load process on the data map
-   */
-  def startDataLoadForDataMap(
-      parentCarbonTable: CarbonTable,
-      dataMapIdentifier: TableIdentifier,
-      queryString: String,
-      segmentToLoad: String,
-      validateSegments: Boolean,
-      sparkSession: SparkSession): Unit = {
-    CarbonSession.threadSet(
-      CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-      parentCarbonTable.getDatabaseName + "." +
-      parentCarbonTable.getTableName,
-      segmentToLoad)
-    CarbonSession.threadSet(
-      CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-      parentCarbonTable.getDatabaseName + "." +
-      parentCarbonTable.getTableName, validateSegments.toString)
-    val headers = parentCarbonTable.getTableInfo.getDataMapSchemaList.asScala.
-      find(_.getChildSchema.getTableName.equals(dataMapIdentifier.table)).get.getChildSchema.
-      getListOfColumns.asScala.map(_.getColumnName).mkString(",")
-    val dataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
-      queryString)).drop("preAggLoad")
-    try {
-      CarbonLoadDataCommand(dataMapIdentifier.database,
-        dataMapIdentifier.table,
-        null,
-        Nil,
-        Map("fileheader" -> headers),
-        isOverwriteTable = false,
-        dataFrame = Some(dataFrame),
-        internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true")).
-        run(sparkSession)
-    } finally {
-      CarbonSession.threadUnset(
-        CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-        parentCarbonTable.getDatabaseName + "." +
-        parentCarbonTable.getTableName)
-      CarbonSession.threadUnset(
-        CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-        parentCarbonTable.getDatabaseName + "." +
-        parentCarbonTable.getTableName)
+  def createChildSelectQuery(tableSchema: TableSchema): String = {
+    val aggregateColumns = scala.collection.mutable.ArrayBuffer.empty[String]
+    val groupingExpressions = scala.collection.mutable.ArrayBuffer.empty[String]
+    tableSchema.getListOfColumns.asScala.foreach {
+      a => if (a.getAggFunction.nonEmpty) {
+        aggregateColumns += s"${a.getAggFunction match {
+          case "count" => "sum"
+          case _ => a.getAggFunction}}(${a.getColumnName})"
+      } else {
+        groupingExpressions += a.getColumnName
+      }
     }
+    s"select ${ groupingExpressions.mkString(",") },${ aggregateColumns.mkString(",")
+    } from ${ tableSchema.getTableName } group by ${ groupingExpressions.mkString(",") }"
   }
 
 }
