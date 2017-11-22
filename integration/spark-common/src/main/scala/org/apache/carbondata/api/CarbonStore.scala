@@ -22,9 +22,7 @@ import java.lang.Long
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.Row
-import org.apache.spark.sql.catalyst.expressions.{Cast, Literal}
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
-import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.unsafe.types.UTF8String
 
@@ -37,7 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.rdd.DataManagementFunc
+import org.apache.carbondata.spark.util.DataLoadingUtil
 
 object CarbonStore {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -127,7 +125,7 @@ object CarbonStore {
           FileFactory.getCarbonFile(absIdent.getTablePath,
             FileFactory.getFileType(absIdent.getTablePath)))
       } else {
-        DataManagementFunc.deleteLoadsAndUpdateMetadata(
+        DataLoadingUtil.deleteLoadsAndUpdateMetadata(
           isForceDeletion = true, carbonTable)
         CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
       }
