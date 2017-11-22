@@ -138,30 +138,6 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     dropTable(table)
   }
 
-  test("test clean files for all") {
-    // Create table with compacted segment
-    sql("drop table if exists carbon_table5")
-    sql("drop table if exists carbon_table6")
-    sql("create table carbon_table5 (col1 int, col2 string) stored by 'carbondata'")
-    sql("insert into table carbon_table5 select 1, \"abc\"")
-    sql("insert into table carbon_table5 select 2, \"def\"")
-    sql("delete from table carbon_table5 where segment.id in (0,1)")
-
-    // Create table with MARKED_FOR_DELETED
-    sql("create table carbon_table6 (col1 int, col2 string) stored by 'carbondata'")
-    sql("insert into table carbon_table6 select 1, \"abc\"")
-    sql("insert into table carbon_table6 select 2, \"def\"")
-    sql("delete from table carbon_table6 where segment.id in (0,1)")
-    sql("clean files for all")
-
-    val res1 = sql("show segments for table carbon_table5")
-    val res2 = sql("show segments for table carbon_table6")
-    checkExistence(res1, false, "Marked for Delete")
-    checkExistence(res2, false, "Marked for Delete")
-    sql("drop table if exists carbon_table5")
-    sql("drop table if exists carbon_table6")
-  }
-
   test("test if delete segments by id is unsupported for pre-aggregate tables") {
     dropTable("preaggMain")
     dropTable("preaggMain_preagg1")
