@@ -461,11 +461,10 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
 ## COMPACTION
 
-  Compaction help to improve query performance, because frequently load data, will generate several CarbonData files, because data is sorted only within each load(per load per segment and one B+ tree index).
-  This means that there will be one index for each load and as number of data load increases, the number of indices also increases. 
-  Compaction feature combines several segments into one large segment by merge sorting the data from across the segments.
+  Compaction improves the query performance significantly. 
+  During the load data, several CarbonData files are generated, this is because data is sorted only within each load (per load segment and one B+ tree index).
   
-  There are two types of compaction Minor and Major compaction.
+  There are two types of compaction, Minor and Major compaction.
   
   ```
   ALTER TABLE [db_name.]table_name COMPACT 'MINOR/MAJOR'
@@ -473,11 +472,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
   - **Minor Compaction**
   
-  In minor compaction the user can specify how many loads to be merged. 
+  In Minor compaction, user can specify the number of loads to be merged. 
   Minor compaction triggers for every data load if the parameter carbon.enable.auto.load.merge is set to true. 
   If any segments are available to be merged, then compaction will run parallel with data load, there are 2 levels in minor compaction:
   * Level 1: Merging of the segments which are not yet compacted.
-  * Level 2: Merging of the compacted segments again to form a bigger segment.
+  * Level 2: Merging of the compacted segments again to form a larger segment.
   
   ```
   ALTER TABLE table_name COMPACT 'MINOR'
@@ -485,7 +484,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
   - **Major Compaction**
   
-  In Major compaction, many segments can be merged into one big segment. 
+  In Major compaction, multiple segments can be merged into one large segment. 
   User will specify the compaction size until which segments can be merged, Major compaction is usually done during the off-peak time.
   This command merges the specified number of segments into one segment: 
      
@@ -495,7 +494,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
 ## PARTITION
 
-  Similar other system's partition features, CarbonData's partition feature can be used to improve query performance by filtering on the partition column. 
+  Similar to other system's partition features, CarbonData's partition feature also can be used to improve query performance by filtering on the partition column.
 
 ### Create Hash Partition Table
 
