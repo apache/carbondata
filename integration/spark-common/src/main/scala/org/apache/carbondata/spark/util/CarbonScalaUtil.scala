@@ -27,7 +27,7 @@ import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, StructField => CarbonStructField}
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.metadata.schema.table.column.{CarbonColumn, ColumnSchema}
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
@@ -94,12 +94,12 @@ object CarbonScalaUtil {
   }
 
   def getString(value: Any,
-      serializationNullFormat: String,
-      delimiterLevel1: String,
-      delimiterLevel2: String,
-      timeStampFormat: SimpleDateFormat,
-      dateFormat: SimpleDateFormat,
-      level: Int = 1): String = {
+                serializationNullFormat: String,
+                delimiterLevel1: String,
+                delimiterLevel2: String,
+                timeStampFormat: SimpleDateFormat,
+                dateFormat: SimpleDateFormat,
+                level: Int = 1): String = {
     if (value == null) {
       serializationNullFormat
     } else {
@@ -124,7 +124,7 @@ object CarbonScalaUtil {
           val builder = new StringBuilder()
           s.foreach { x =>
             builder.append(getString(x, serializationNullFormat, delimiterLevel1,
-                delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
+              delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
           }
           builder.substring(0, builder.length - 1)
         case m: scala.collection.Map[Any, Any] =>
@@ -138,7 +138,7 @@ object CarbonScalaUtil {
           val builder = new StringBuilder()
           for (i <- 0 until r.length) {
             builder.append(getString(r(i), serializationNullFormat, delimiterLevel1,
-                delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
+              delimiterLevel2, timeStampFormat, dateFormat, level + 1)).append(delimiter)
           }
           builder.substring(0, builder.length - 1)
         case other => other.toString
@@ -198,7 +198,7 @@ object CarbonScalaUtil {
           // difference of precision and scale specified by user should not be less than the
           // difference of already existing precision and scale else it will result in data loss
           val carbonColumnPrecisionScaleDiff = carbonColumn.getColumnSchema.getPrecision -
-                                               carbonColumn.getColumnSchema.getScale
+            carbonColumn.getColumnSchema.getScale
           val dataInfoPrecisionScaleDiff = dataTypeInfo.precision - dataTypeInfo.scale
           if (dataInfoPrecisionScaleDiff < carbonColumnPrecisionScaleDiff) {
             sys
@@ -215,5 +215,11 @@ object CarbonScalaUtil {
               .getDataType.getName
           } cannot be modified. Only Int and Decimal data types are allowed for modification")
     }
+  }
+
+  def validateTheDecimalType(columnSchemaList: List[ColumnSchema]): Option[ColumnSchema] = {
+    columnSchemaList.filter(_.getDataType.getName.
+      equals("DECIMAL")).
+      find(datatype => datatype.getScale > datatype.getPrecision)
   }
 }

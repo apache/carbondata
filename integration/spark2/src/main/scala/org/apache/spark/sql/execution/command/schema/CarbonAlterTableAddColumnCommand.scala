@@ -32,6 +32,7 @@ import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{AlterTableAddColumnPreEvent, OperationListenerBus}
 import org.apache.carbondata.format.TableInfo
 import org.apache.carbondata.spark.rdd.{AlterTableAddColumnRDD, AlterTableDropColumnRDD}
+import org.apache.carbondata.spark.util.CarbonScalaUtil._
 
 private[sql] case class CarbonAlterTableAddColumnCommand(
     alterTableAddColumnsModel: AlterTableAddColumnsModel)
@@ -78,10 +79,17 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
         carbonTablePath,
         carbonTable.getCarbonTableIdentifier,
         sparkSession.sparkContext).process
+
+      val invalidCol = validateTheDecimalType(newCols.toList)
+      if (invalidCol.isDefined) {
+        throw new Exception(s"Scale ${invalidCol.get.getScale} " +
+          s"can not be Greater Than Precision ${invalidCol.get.getPrecision} ")
+      }
       // generate dictionary files for the newly added columns
       new AlterTableAddColumnRDD(sparkSession.sparkContext,
         newCols,
         carbonTable.getAbsoluteTableIdentifier).collect()
+
       timeStamp = System.currentTimeMillis
       val schemaEvolutionEntry = new org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry
       schemaEvolutionEntry.setTimeStamp(timeStamp)
@@ -104,6 +112,7 @@ private[sql] case class CarbonAlterTableAddColumnCommand(
             newCols,
             carbonTable.getAbsoluteTableIdentifier).collect()
           AlterTableUtil.revertAddColumnChanges(dbName, tableName, timeStamp)(sparkSession)
+
         }
         sys.error(s"Alter table add operation failed: ${e.getMessage}")
     } finally {
