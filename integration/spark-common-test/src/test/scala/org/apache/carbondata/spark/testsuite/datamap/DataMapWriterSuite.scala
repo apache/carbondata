@@ -186,6 +186,5 @@ object DataMapWriterSuite {
     override def onBlockStart(blockId: String): Unit = {
       callbackSeq :+= s"block start $blockId"
     }
-
   }
 }
