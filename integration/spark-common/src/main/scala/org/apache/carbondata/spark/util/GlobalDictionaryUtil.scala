@@ -801,11 +801,13 @@ object GlobalDictionaryUtil {
   // Get proper error message of TextParsingException
   def trimErrorMessage(input: String): String = {
     var errorMessage: String = null
-    if (input != null) {
+    if (input != null && input.contains("TextParsingException:")) {
       if (input.split("Hint").length > 0 &&
           input.split("Hint")(0).split("TextParsingException: ").length > 1) {
         errorMessage = input.split("Hint")(0).split("TextParsingException: ")(1)
       }
+    } else if (input != null && input.contains("Exception:")) {
+      errorMessage = input.split("Exception: ")(1).split("\n")(0)
     }
     errorMessage
   }
