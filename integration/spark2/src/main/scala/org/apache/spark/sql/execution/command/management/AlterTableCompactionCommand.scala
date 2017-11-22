@@ -139,14 +139,6 @@ case class AlterTableCompactionCommand(
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     }
-    if (compactionType == CompactionType.SEGMENT_INDEX_COMPACTION) {
-      // Just launch job to merge index and return
-      CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
-        CarbonDataMergerUtil.getValidSegmentList(carbonTable.getAbsoluteTableIdentifier).asScala,
-        carbonLoadModel.getTablePath,
-        carbonTable, true)
-      return
-    }
     // reading the start time of data load.
     val loadStartTime : Long =
       if (alterTableModel.factTimeStamp.isEmpty) {
@@ -192,6 +184,16 @@ case class AlterTableCompactionCommand(
         LOGGER.info("Acquired the compaction lock for table" +
                     s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         try {
+          if (compactionType == CompactionType.SEGMENT_INDEX_COMPACTION) {
+            // Just launch job to merge index and return
+            CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
+              CarbonDataMergerUtil.getValidSegmentList(
+                carbonTable.getAbsoluteTableIdentifier).asScala,
+              carbonLoadModel.getTablePath,
+              carbonTable, true)
+            lock.unlock()
+            return
+          }
           CarbonDataRDDFactory.startCompactionThreads(sqlContext,
             carbonLoadModel,
             storeLocation,

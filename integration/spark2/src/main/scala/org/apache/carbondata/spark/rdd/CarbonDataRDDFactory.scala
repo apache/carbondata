@@ -93,6 +93,16 @@ object CarbonDataRDDFactory {
       LOGGER.info(s"Acquired the compaction lock for table ${ carbonLoadModel.getDatabaseName }" +
           s".${ carbonLoadModel.getTableName }")
       try {
+        if (compactionType == CompactionType.SEGMENT_INDEX_COMPACTION) {
+          // Just launch job to merge index and return
+          CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
+            CarbonDataMergerUtil.getValidSegmentList(
+              carbonTable.getAbsoluteTableIdentifier).asScala,
+            carbonLoadModel.getTablePath,
+            carbonTable, true)
+          lock.unlock()
+          return
+        }
         startCompactionThreads(sqlContext,
           carbonLoadModel,
           storeLocation,
