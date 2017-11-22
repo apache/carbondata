@@ -53,7 +53,7 @@ object DataManagementExample {
       s"""
          | LOAD DATA LOCAL INPATH '$path'
          | INTO TABLE carbon_table
-         | OPTIONS('HEADER'='true', 'COMPLEX_DELIMITER_LEVEL_1'='#')
+         | OPTIONS('HEADER'='true')
        """.stripMargin))
     // scalastyle:on
 
@@ -79,11 +79,11 @@ object DataManagementExample {
       s"""
          | LOAD DATA LOCAL INPATH '$path'
          | INTO TABLE carbon_table
-         | OPTIONS('HEADER'='true', 'COMPLEX_DELIMITER_LEVEL_1'='#')
+         | OPTIONS('HEADER'='true')
        """.stripMargin)
     spark.sql("SHOW SEGMENTS FOR TABLE carbon_table").show()
 
-    // this query will be executed on 2 segments, it should return 5000 rows
+    // this query will be executed on 2 segments, it should return 50 rows
     spark.sql("SELECT count(*) FROM carbon_table").show()
 
     // delete all segments whose loading time is before '2099-01-01 01:00:00'
