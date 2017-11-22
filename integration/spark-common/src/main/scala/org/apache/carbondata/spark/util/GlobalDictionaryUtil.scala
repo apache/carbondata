@@ -30,8 +30,11 @@ import org.apache.commons.lang3.{ArrayUtils, StringUtils}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
+import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
+import org.apache.hadoop.mapreduce.security.TokenCache
 import org.apache.spark.{Accumulator, SparkException}
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.{NewHadoopRDD, RDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
@@ -362,6 +365,11 @@ object GlobalDictionaryUtil {
     })
     val values = new Array[String](columnNames.length)
     val row = new StringArrayRow(values)
+    val jobConf = new JobConf(hadoopConf)
+    SparkHadoopUtil.get.addCredentials(jobConf)
+    TokenCache.obtainTokensForNamenodes(jobConf.getCredentials,
+      Array[Path](new Path(carbonLoadModel.getFactFilePath)),
+      jobConf)
     val rdd = new NewHadoopRDD[NullWritable, StringArrayWritable](
       sqlContext.sparkContext,
       classOf[CSVInputFormat],
