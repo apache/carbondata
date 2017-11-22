@@ -168,6 +168,28 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbon_table")
   }
 
+  test("test insert / update with data more than 32000 characters") {
+    val testdata =s"$resourcesPath/32000char.csv"
+    sql("drop table if exists load32000chardata")
+    sql("drop table if exists load32000chardata_dup")
+    sql("CREATE TABLE load32000chardata(dim1 String, dim2 String, mes1 int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE load32000chardata_dup(dim1 String, dim2 String, mes1 int) STORED BY 'org.apache.carbondata.format'")
+    sql(s"LOAD DATA LOCAL INPATH '$testdata' into table load32000chardata OPTIONS('FILEHEADER'='dim1,dim2,mes1')")
+    try{
+      sql("insert into load32000chardata_dup select dim1,concat(load32000chardata.dim2,'aaaa'),mes1 from load32000chardata").show()
+      assert(false)
+    } catch {
+      case _:Exception => assert(true)
+    }
+    try{
+      sql("update load32000chardata_dup set(load32000chardata_dup.dim2)=(select concat(load32000chardata.dim2,'aaaa') from load32000chardata)").show()
+      assert(false)
+    } catch {
+      case _:Exception => assert(true)
+    }
+
+  }
+
   override def afterAll {
     sql("DROP TABLE if exists loadtest")
     sql("drop table if exists invalidMeasures")
