@@ -21,8 +21,10 @@ import java.util.Comparator
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.NullWritable
+import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{SparkContext, TaskContext}
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.NewHadoopRDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.execution.command.ExecutionErrors
@@ -58,12 +60,14 @@ object DataLoadProcessBuilderOnSpark {
       CommonUtil.configureCSVInputFormat(hadoopConf, model)
       hadoopConf.set(FileInputFormat.INPUT_DIR, model.getFactFilePath)
       val columnCount = model.getCsvHeaderColumns.length
+      val jobConf = new JobConf(hadoopConf)
+      SparkHadoopUtil.get.addCredentials(jobConf)
       new NewHadoopRDD[NullWritable, StringArrayWritable](
         sc,
         classOf[CSVInputFormat],
         classOf[NullWritable],
         classOf[StringArrayWritable],
-        hadoopConf)
+        jobConf)
         .map(x => DataLoadProcessorStepOnSpark.toStringArrayRow(x._2, columnCount))
     }
 

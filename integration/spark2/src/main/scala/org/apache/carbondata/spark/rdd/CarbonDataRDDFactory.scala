@@ -29,9 +29,11 @@ import scala.util.control.Breaks._
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
+import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkEnv, SparkException, TaskContext}
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, NewHadoopRDD, RDD}
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.execution.command.{CompactionModel, ExecutionErrors, UpdateTableModel}
@@ -845,12 +847,14 @@ object CarbonDataRDDFactory {
       CommonUtil.configureCSVInputFormat(hadoopConf, carbonLoadModel)
       hadoopConf.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
       val columnCount = columns.length
+      val jobConf = new JobConf(hadoopConf)
+      SparkHadoopUtil.get.addCredentials(jobConf)
       new NewHadoopRDD[NullWritable, StringArrayWritable](
         sqlContext.sparkContext,
         classOf[CSVInputFormat],
         classOf[NullWritable],
         classOf[StringArrayWritable],
-        hadoopConf
+        jobConf
       ).map { currentRow =>
         if (null == currentRow || null == currentRow._2) {
           val row = new StringArrayRow(new Array[String](columnCount))
