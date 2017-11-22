@@ -17,8 +17,9 @@
 
 package org.apache.carbondata.examples
 
-import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.hadoop.conf.Configuration
+
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.CarbonProjection
 
 // scalastyle:off println
