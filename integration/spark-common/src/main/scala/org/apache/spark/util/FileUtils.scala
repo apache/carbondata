@@ -87,7 +87,7 @@ object FileUtils {
     }
   }
 
-  def getSpaceOccupied(inputPath: String): Long = {
+  def getSpaceOccupied(inputPath: String, hadoopConfiguration: Configuration): Long = {
     var size : Long = 0
     if (inputPath == null || inputPath.isEmpty) {
       size
@@ -95,7 +95,7 @@ object FileUtils {
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
         val fileType = FileFactory.getFileType(filePaths(i))
-        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
+        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType, hadoopConfiguration)
         size = size + carbonFile.getSize
       }
       size
