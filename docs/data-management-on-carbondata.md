@@ -89,8 +89,8 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
      ```
      TBLPROPERTIES ('TABLE_BLOCKSIZE'='512')
-     //512 or 512M both are accepted.
      ```
+     Note: 512 or 512M both are accepted.
 
 ### Example:
     ```
@@ -122,7 +122,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
   Example:
   ```
-  SHOT TABLES
+  SHOW TABLES
   OR
   SHOW TABLES IN defaultdb
   ```
