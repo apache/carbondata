@@ -105,11 +105,6 @@ public class NodeHolder {
   private boolean[] rleEncodingForDictDim;
 
   /**
-   * true if given index is colgroup block
-   */
-  private boolean[] colGrpBlocks;
-
-  /**
    * bit set which will holds the measure
    * indexes which are null
    */
