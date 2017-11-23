@@ -297,7 +297,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   - **DATEFORMAT/TIMESTAMPFORMAT:** Date and Timestamp format for specified column.
 
     ```
-    OPTIONS('dateformat' = 'yyyy-MM-dd','timestampformat'='yyyy/MM/dd HH:mm:ss')
+    OPTIONS('DATEFORMAT' = 'yyyy-MM-dd','TIMESTAMPFORMAT'='yyyy-MM-dd HH:mm:ss')
      ```
     NOTE: Date formats are specified by date pattern strings. The date pattern letters in CarbonData are same as in JAVA. Refer to [SimpleDateFormat](http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html).
 
@@ -314,7 +314,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
    * If this option is set to TRUE, then high.cardinality.identify.enable property will be disabled during data load.
    * For first Load SINGLE_PASS loading option is disabled.
 
-   Example:`
+   Example:
    ```
    LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
    options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
