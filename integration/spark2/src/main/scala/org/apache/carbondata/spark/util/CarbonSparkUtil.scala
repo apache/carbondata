@@ -21,8 +21,10 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.hive.{CarbonMetaData, CarbonRelation, DictionaryMap}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 
 case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 
@@ -51,4 +53,49 @@ object CarbonSparkUtil {
       table)
   }
 
+  /**
+   * return's the formatted column comment if column comment is present else empty("")
+   *
+   * @param carbonColumn
+   * @return
+   */
+  def getColumnComment(carbonColumn: CarbonColumn): String = {
+    {
+      val columnProperties = carbonColumn.getColumnProperties
+      if (columnProperties != null) {
+        val comment: String = columnProperties.get(CarbonCommonConstants.COLUMN_COMMENT)
+        if (comment != null && comment != null) {
+          return " comment \"" + comment + "\""
+        }
+      }
+      ""
+    }
+  }
+
+  /**
+   * the method return's raw schema
+   *
+   * @param carbonRelation
+   * @return
+   */
+  def getRawSchema(carbonRelation: CarbonRelation): String = {
+    val fields = new Array[String](
+      carbonRelation.dimensionsAttr.size + carbonRelation.measureAttr.size)
+    val carbonTable = carbonRelation.carbonTable
+    carbonRelation.dimensionsAttr.foreach(attr => {
+      val carbonDimension = carbonTable.getDimensionByName(carbonRelation.tableName, attr.name)
+      val carbonColumn = carbonTable.getColumnByName(carbonRelation.tableName, attr.name)
+      val columnComment = getColumnComment(carbonColumn)
+      fields(carbonDimension.getSchemaOrdinal) =
+        '`' + attr.name + '`' + ' ' + attr.dataType.catalogString + columnComment
+    })
+    carbonRelation.measureAttr.foreach(msrAtrr => {
+      val carbonMeasure = carbonTable.getMeasureByName(carbonRelation.tableName, msrAtrr.name)
+      val carbonColumn = carbonTable.getColumnByName(carbonRelation.tableName, msrAtrr.name)
+      val columnComment = getColumnComment(carbonColumn)
+      fields(carbonMeasure.getSchemaOrdinal) =
+        '`' + msrAtrr.name + '`' + ' ' + msrAtrr.dataType.catalogString + columnComment
+    })
+    fields.mkString(",")
+  }
 }

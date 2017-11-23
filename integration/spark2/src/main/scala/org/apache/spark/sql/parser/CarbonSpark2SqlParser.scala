@@ -522,8 +522,10 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   def getFields(schema: Seq[StructField]): Seq[Field] = {
     schema.map { col =>
       var columnComment: String = ""
+      var plainComment: String = ""
       if (col.getComment().isDefined) {
         columnComment = " comment \"" + col.getComment().get + "\""
+        plainComment = col.getComment().get
       }
       val x =
         if (col.dataType.catalogString == "float") {
@@ -553,6 +555,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         f.dataType = Some("double")
       }
       f.rawSchema = x
+      f.columnComment = plainComment
       f
     }
   }

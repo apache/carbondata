@@ -237,6 +237,4 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       sparkSession,
       schemaConverter)
   }
-
-
 }
