@@ -28,6 +28,7 @@ import org.apache.spark.sql.types._
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, StructField => CarbonStructField}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
@@ -104,7 +105,12 @@ object CarbonScalaUtil {
       serializationNullFormat
     } else {
       value match {
-        case s: String => s
+        case s: String => if (s.length > CSVInputFormat.MAX_CHARS_PER_COLUMN_DEFAULT) {
+          throw new Exception("Dataload failed, String length cannot exceed " +
+                              CSVInputFormat.MAX_CHARS_PER_COLUMN_DEFAULT + " characters")
+        } else {
+          s
+        }
         case d: java.math.BigDecimal => d.toPlainString
         case i: java.lang.Integer => i.toString
         case d: java.lang.Double => d.toString
