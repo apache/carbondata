@@ -25,7 +25,7 @@
 
 ## Suggestions to Create CarbonData Table
 
-  For example,the results of the analysis for table creation with dimensions ranging from 10 thousand to 10 billion rows and 100 to 300 columns have been summarized below.
+  For example, the results of the analysis for table creation with dimensions ranging from 10 thousand to 10 billion rows and 100 to 300 columns have been summarized below.
   The following table describes some of the columns from the table used.
 
   - **Table Column Description**
@@ -68,7 +68,7 @@
   the columns in the order of cardinality low to high. This ordering of frequently used columns improves the compression ratio and
   enhances the performance of queries with filter on these columns.
 
-  For example if MSISDN, HOST and Dime_1 are frequently-used columns, then the column order of table is suggested as
+  For example, if MSISDN, HOST and Dime_1 are frequently-used columns, then the column order of table is suggested as
   Dime_1>HOST>MSISDN, because Dime_1 has the lowest cardinality.
   The create table command can be modified as suggested below :
 
@@ -142,7 +142,7 @@
   |carbon.merge.sort.reader.thread|Default: 3 |Specifies the number of cores used for temp file merging during data loading in CarbonData.|
   |carbon.merge.sort.prefetch|Default: true | You may want set this value to false if you have not enough memory|
 
-  For example, if there are 10 million records ,and i have only 16 cores ,64GB memory, will be loaded to CarbonData table.
+  For example, if there are 10 million records, and i have only 16 cores, 64GB memory, will be loaded to CarbonData table.
   Using the default configuration  always fail in sort step. Modify carbon.properties as suggested below:
 
   ```
