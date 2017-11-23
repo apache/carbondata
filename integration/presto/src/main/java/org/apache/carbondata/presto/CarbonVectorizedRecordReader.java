@@ -42,15 +42,9 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.AbstractRecordReader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
-import org.apache.carbondata.hadoop.util.CarbonTypeUtil;
 
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
-import org.apache.spark.memory.MemoryMode;
-import org.apache.spark.sql.execution.vectorized.ColumnarBatch;
-import org.apache.spark.sql.types.DecimalType;
-import org.apache.spark.sql.types.StructField;
-import org.apache.spark.sql.types.StructType;
 
 /**
  * A specialized RecordReader that reads into InternalRows or ColumnarBatches directly using the
@@ -62,7 +56,7 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
 
   private int numBatched = 0;
 
-  private ColumnarBatch columnarBatch;
+  private CarbonVectorBatch columnarBatch;
 
   private CarbonColumnarBatch carbonColumnarBatch;
 
@@ -70,11 +64,6 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
    * If true, this class returns batches instead of rows.
    */
   private boolean returnColumnarBatch;
-
-  /**
-   * The default config on whether columnarBatch should be offheap.
-   */
-  private static final MemoryMode DEFAULT_MEMORY_MODE = MemoryMode.OFF_HEAP;
 
   private QueryModel queryModel;
 
@@ -121,7 +110,6 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
   @Override public void close() throws IOException {
     logStatistics(rowCount, queryModel.getStatisticsRecorder());
     if (columnarBatch != null) {
-      columnarBatch.close();
       columnarBatch = null;
     }
     // clear dictionary cache
@@ -154,9 +142,9 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     if (returnColumnarBatch) {
       rowCount += columnarBatch.numValidRows();
       return columnarBatch;
+    } else {
+      return null;
     }
-    rowCount += 1;
-    return columnarBatch.getRow(batchIdx - 1);
   }
 
   @Override public Void getCurrentKey() throws IOException, InterruptedException {
@@ -174,7 +162,7 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
    * before any calls to nextKeyValue/nextBatch.
    */
 
-  private void initBatch(MemoryMode memMode) {
+  private void initBatch() {
     List<QueryDimension> queryDimension = queryModel.getQueryDimension();
     List<QueryMeasure> queryMeasures = queryModel.getQueryMeasures();
     StructField[] fields = new StructField[queryDimension.size() + queryMeasures.size()];
@@ -184,18 +172,16 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
         DirectDictionaryGenerator generator = DirectDictionaryKeyGeneratorFactory
             .getDirectDictionaryGenerator(dim.getDimension().getDataType());
         fields[dim.getQueryOrder()] = new StructField(dim.getColumnName(),
-            CarbonTypeUtil.convertCarbonToSparkDataType(generator.getReturnType()), true, null);
+           generator.getReturnType(), true);
       } else if (!dim.getDimension().hasEncoding(Encoding.DICTIONARY)) {
         fields[dim.getQueryOrder()] = new StructField(dim.getColumnName(),
-            CarbonTypeUtil.convertCarbonToSparkDataType(dim.getDimension().getDataType()), true,
-            null);
+            dim.getDimension().getDataType(), true);
       } else if (dim.getDimension().isComplex()) {
         fields[dim.getQueryOrder()] = new StructField(dim.getColumnName(),
-            CarbonTypeUtil.convertCarbonToSparkDataType(dim.getDimension().getDataType()), true,
-            null);
+           dim.getDimension().getDataType(), true);
       } else {
         fields[dim.getQueryOrder()] = new StructField(dim.getColumnName(),
-            CarbonTypeUtil.convertCarbonToSparkDataType(DataTypes.INT), true, null);
+            DataTypes.INT, true);
       }
     }
 
@@ -204,19 +190,17 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
       DataType dataType = msr.getMeasure().getDataType();
       if (dataType == DataTypes.SHORT || dataType == DataTypes.INT || dataType == DataTypes.LONG) {
         fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-            CarbonTypeUtil.convertCarbonToSparkDataType(msr.getMeasure().getDataType()), true,
-            null);
+            msr.getMeasure().getDataType(), true);
       } else if (DataTypes.isDecimal(dataType)) {
         fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-            new DecimalType(msr.getMeasure().getPrecision(), msr.getMeasure().getScale()), true,
-            null);
+           msr.getMeasure().getDataType(), true);
       } else {
         fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-            CarbonTypeUtil.convertCarbonToSparkDataType(DataTypes.DOUBLE), true, null);
+            DataTypes.DOUBLE, true);
       }
     }
 
-    columnarBatch = ColumnarBatch.allocate(new StructType(fields), memMode);
+    columnarBatch = CarbonVectorBatch.allocate(fields);
     CarbonColumnVector[] vectors = new CarbonColumnVector[fields.length];
     boolean[] filteredRows = new boolean[columnarBatch.capacity()];
     for (int i = 0; i < fields.length; i++) {
@@ -225,11 +209,8 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
     carbonColumnarBatch = new CarbonColumnarBatch(vectors, columnarBatch.capacity(), filteredRows);
   }
 
-  private void initBatch() {
-    initBatch(DEFAULT_MEMORY_MODE);
-  }
 
-  private ColumnarBatch resultBatch() {
+  private CarbonVectorBatch resultBatch() {
     if (columnarBatch == null) initBatch();
     return columnarBatch;
   }

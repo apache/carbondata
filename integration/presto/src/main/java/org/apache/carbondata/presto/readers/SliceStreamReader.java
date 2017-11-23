@@ -73,7 +73,7 @@ public class SliceStreamReader extends AbstractStreamReader {
           int[] values = new int[numberOfRows];
           for (int i = 0; i < numberOfRows; i++) {
             if (!columnVector.isNullAt(i)) {
-              values[i] = columnVector.getInt(i);
+              values[i] = (Integer) columnVector.getData(i);
             }
           }
           Block block = new DictionaryBlock(batchSize, dictionaryBlock, values);
@@ -84,7 +84,7 @@ public class SliceStreamReader extends AbstractStreamReader {
             if (columnVector.isNullAt(i)) {
               builder.appendNull();
             } else {
-              type.writeSlice(builder, wrappedBuffer(columnVector.getArray(i).toByteArray()));
+              type.writeSlice(builder, wrappedBuffer((byte[]) columnVector.getData(i)));
             }
           }
         }

@@ -15,29 +15,37 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.presto.readers;
+package org.apache.carbondata.presto;
 
-import java.io.IOException;
-
-import org.apache.carbondata.presto.CarbonColumnVectorImpl;
-
-import com.facebook.presto.spi.block.Block;
-import com.facebook.presto.spi.type.Type;
+import org.apache.carbondata.core.metadata.datatype.DataType;
 
 /**
- * Interface for StreamReader
+ * This class is to pass the Schema Information to the Carbon Columnar Batch
  */
-public interface StreamReader {
+public class StructField {
 
-  Block readBlock(Type type) throws IOException;
+  private final String name;
 
-  void setStreamData(Object[] data);
+  private final DataType dataType;
 
-  void setVector(CarbonColumnVectorImpl vector);
-
-  void setVectorReader(boolean isVectorReader);
-
-  void setBatchSize(int batchSize);
+  private final boolean nullable;
 
 
+  public StructField(String name, DataType dataType, boolean nullable ) {
+    this.name = name;
+    this.dataType = dataType;
+    this.nullable = nullable;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public DataType getDataType() {
+    return dataType;
+  }
+
+  public boolean isNullable() {
+    return nullable;
+  }
 }
