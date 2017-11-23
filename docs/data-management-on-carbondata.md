@@ -294,11 +294,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     ```
     NOTE: ALL_DICTIONARY_PATH and COLUMNDICT can't be used together.
     
-  - **DATEFORMAT:** Date format for specified column.
+  - **DATEFORMAT/TIMESTAMPFORMAT:** Date and Timestamp format for specified column.
 
     ```
-    OPTIONS('DATEFORMAT'='column1:dateFormat1, column2:dateFormat2')
-    ```
+    OPTIONS('dateformat' = 'yyyy-MM-dd','timestampformat'='yyyy/MM/dd HH:mm:ss')
+     ```
     NOTE: Date formats are specified by date pattern strings. The date pattern letters in CarbonData are same as in JAVA. Refer to [SimpleDateFormat](http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html).
 
   - **SINGLE_PASS:** Single Pass Loading enables single job to finish data loading with dictionary generation on the fly. It enhances performance in the scenarios where the subsequent data loading after initial load involves fewer incremental updates on the dictionary.
@@ -312,8 +312,9 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
    * If this option is set to TRUE then data loading will take less time.
    * If this option is set to some invalid value other than TRUE or FALSE then it uses the default value.
    * If this option is set to TRUE, then high.cardinality.identify.enable property will be disabled during data load.
-   
-   Example:
+   * For first Load SINGLE_PASS loading option is disabled.
+
+   Example:`
    ```
    LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
    options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
@@ -336,7 +337,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     ```
 
   NOTE:
+  * BAD_RECORD_ACTION property can have four type of actions for bad records FORCE, REDIRECT, IGNORE and FAIL.
   * If the REDIRECT option is used, CarbonData will add all bad records in to a separate CSV file. However, this file must not be used for subsequent data loading because the content may not exactly match the source record. You are advised to cleanse the original source record for further data ingestion. This option is used to remind you which records are bad records.
+  * If the FORCE option is used, then it auto-corrects the data by storing the bad records as NULL before Loading data.
+  * If the IGNORE option is used, then bad records are neither loaded nor written to the separate CSV file.
+  * IF the FAIL option is used, then data loading fails if any bad records are found.
   * In loaded data, if all records are bad records, the BAD_RECORDS_ACTION is invalid and the load operation fails.
   * The maximum number of characters per column is 100000. If there are more than 100000 characters in a column, data loading will fail.
 
@@ -379,7 +384,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
   Examples
   ```
-  INSERT INTO table1 SELECT item1 ,sum(item2 + 1000) as result FROM table2 group by item1
+  INSERT INTO table1 SELECT item1, sum(item2 + 1000) as result FROM table2 group by item1
   ```
 
   ```
@@ -507,8 +512,9 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   STORED BY 'carbondata'
   [TBLPROPERTIES ('PARTITION_TYPE'='HASH',
                   'NUM_PARTITIONS'='N' ...)]
-  //N is the number of hash partitions
   ```
+  NOTE: N is the number of hash partitions
+
 
   Example:
   ```
@@ -531,7 +537,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   PARTITIONED BY (partition_col_name data_type)
   STORED BY 'carbondata'
   [TBLPROPERTIES ('PARTITION_TYPE'='RANGE',
-                  'RANGE_INFO'='2014-01-01, 2015-01-01, 2016-01-01' ...)]
+                  'RANGE_INFO'='2014-01-01, 2015-01-01, 2016-01-01, ...')]
   ```
 
   NOTE:
@@ -561,7 +567,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   PARTITIONED BY (partition_col_name data_type)
   STORED BY 'carbondata'
   [TBLPROPERTIES ('PARTITION_TYPE'='LIST',
-                  'LIST_INFO'='A, B, C' ...)]
+                  'LIST_INFO'='A, B, C, ...')]
   ```
   NOTE : List partition supports list info in one level group.
 
@@ -602,11 +608,14 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
 ### Drop a partition
 
-  ```
-  //Only drop partition definition, but keep data
-  ALTER TABLE [db_name].table_name DROP PARTITION(partition_id)
+    Only drop partition definition, but keep data
 
-  //Drop both partition definition and data
+  ```
+    ALTER TABLE [db_name].table_name DROP PARTITION(partition_id)
+   ```
+
+  Drop both partition definition and data
+  ```
   ALTER TABLE [db_name].table_name DROP PARTITION(partition_id) WITH DATA
   ```
 
