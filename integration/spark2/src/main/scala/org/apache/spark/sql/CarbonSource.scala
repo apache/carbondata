@@ -308,7 +308,9 @@ object CarbonSource {
       metaStore: CarbonMetaStore,
       properties: Map[String, String]): Map[String, String] = {
     val model = createTableInfoFromParams(properties, dataSchema, identifier)
-    val tableInfo: TableInfo = TableNewProcessor(model, identifier)
+    val tableInfo: TableInfo = TableNewProcessor(model)
+    tableInfo.setTablePath(identifier.getTablePath)
+    tableInfo.setDatabaseName(identifier.getDatabaseName)
     val schemaEvolutionEntry = new SchemaEvolutionEntry
     schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
     tableInfo.getFactTable.getSchemaEvalution.getSchemaEvolutionEntryList.add(schemaEvolutionEntry)

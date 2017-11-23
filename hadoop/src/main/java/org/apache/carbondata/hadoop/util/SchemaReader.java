@@ -21,15 +21,14 @@ import java.io.IOException;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
-import org.apache.carbondata.core.reader.ThriftReader;
+import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
-
-import org.apache.thrift.TBase;
 
 /**
  * TODO: It should be removed after store manager implementation.
@@ -46,18 +45,8 @@ public class SchemaReader {
         FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS)) {
       String tableName = identifier.getCarbonTableIdentifier().getTableName();
 
-      ThriftReader.TBaseCreator createTBase = new ThriftReader.TBaseCreator() {
-        public TBase create() {
-          return new org.apache.carbondata.format.TableInfo();
-        }
-      };
-      ThriftReader thriftReader =
-          new ThriftReader(carbonTablePath.getSchemaFilePath(), createTBase);
-      thriftReader.open();
       org.apache.carbondata.format.TableInfo tableInfo =
-          (org.apache.carbondata.format.TableInfo) thriftReader.read();
-      thriftReader.close();
-
+          CarbonUtil.readSchemaFile(carbonTablePath.getSchemaFilePath());
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
       TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
           tableInfo,
@@ -70,5 +59,25 @@ public class SchemaReader {
     } else {
       throw new IOException("File does not exist: " + schemaFilePath);
     }
+  }
+  /**
+   * the method returns the Wrapper TableInfo
+   *
+   * @param absoluteTableIdentifier
+   * @return
+   */
+  public static TableInfo getTableInfo(AbsoluteTableIdentifier absoluteTableIdentifier)
+      throws IOException {
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
+    org.apache.carbondata.format.TableInfo thriftTableInfo =
+        CarbonUtil.readSchemaFile(carbonTablePath.getSchemaFilePath());
+    ThriftWrapperSchemaConverterImpl thriftWrapperSchemaConverter =
+        new ThriftWrapperSchemaConverterImpl();
+    CarbonTableIdentifier carbonTableIdentifier =
+        absoluteTableIdentifier.getCarbonTableIdentifier();
+    TableInfo tableInfo = thriftWrapperSchemaConverter
+        .fromExternalToWrapperTableInfo(thriftTableInfo, carbonTableIdentifier.getDatabaseName(),
+            carbonTableIdentifier.getTableName(), absoluteTableIdentifier.getTablePath());
+    return tableInfo;
   }
 }

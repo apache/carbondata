@@ -67,7 +67,8 @@ case class Field(column: String, var dataType: Option[String], name: Option[Stri
     children: Option[List[Field]], parent: String = null,
     storeType: Option[String] = Some("columnar"),
     var schemaOrdinal: Int = -1,
-    var precision: Int = 0, var scale: Int = 0, var rawSchema: String = "") {
+    var precision: Int = 0, var scale: Int = 0, var rawSchema: String = "",
+    var columnComment: String = "") {
   override def equals(o: Any) : Boolean = o match {
     case that: Field =>
       that.column.equalsIgnoreCase(this.column)
@@ -320,13 +321,8 @@ class AlterTableColumnSchemaGenerator(
 // TODO: move this to carbon store API
 object TableNewProcessor {
   def apply(
-      cm: TableModel,
-      identifier: AbsoluteTableIdentifier): TableInfo = {
-    new TableNewProcessor(
-      cm,
-      identifier.getDatabaseName,
-      identifier.getTableName,
-      identifier.getTablePath).process
+      cm: TableModel): TableInfo = {
+    new TableNewProcessor(cm).process
   }
 
   def createColumnSchema(
@@ -373,7 +369,7 @@ object TableNewProcessor {
   }
 }
 
-class TableNewProcessor(cm: TableModel, dbName: String, tableName: String, tablePath: String) {
+class TableNewProcessor(cm: TableModel) {
 
   def getAllChildren(fieldChildren: Option[List[Field]]): Seq[ColumnSchema] = {
     var allColumns: Seq[ColumnSchema] = Seq[ColumnSchema]()
@@ -445,6 +441,14 @@ class TableNewProcessor(cm: TableModel, dbName: String, tableName: String, table
     }
     // TODO: Need to fill RowGroupID, converted type
     // & Number of Children after DDL finalization
+    if (field.columnComment.nonEmpty) {
+      var columnProperties = columnSchema.getColumnProperties
+      if (columnProperties == null) {
+        columnProperties = new util.HashMap[String, String]()
+        columnSchema.setColumnProperties(columnProperties)
+      }
+      columnProperties.put(CarbonCommonConstants.COLUMN_COMMENT, field.columnComment)
+    }
     columnSchema
   }
 
@@ -622,12 +626,12 @@ class TableNewProcessor(cm: TableModel, dbName: String, tableName: String, table
       partitionInfo.setColumnSchemaList(partitionCols)
       tableSchema.setPartitionInfo(partitionInfo)
     }
-    tableSchema.setTableName(tableName)
+    tableSchema.setTableName(cm.tableName)
     tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)
-    tableInfo.setTablePath(tablePath)
-    tableInfo.setDatabaseName(dbName)
-    tableInfo.setTableUniqueName(CarbonTable.buildUniqueName(dbName, tableName))
+    tableInfo.setDatabaseName(cm.databaseNameOp.getOrElse(null))
+    tableInfo.setTableUniqueName(CarbonTable.buildUniqueName(cm.databaseNameOp.getOrElse(null),
+      cm.tableName))
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
     tableInfo

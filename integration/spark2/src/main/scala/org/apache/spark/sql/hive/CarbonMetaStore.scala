@@ -42,6 +42,7 @@ trait CarbonMetaStore {
 
   /**
    * Create spark session from paramters.
+   *
    * @param parameters
    * @param absIdentifier
    * @param sparkSession
@@ -52,8 +53,8 @@ trait CarbonMetaStore {
 
 
   def tableExists(
-    table: String,
-    databaseOp: Option[String] = None)(sparkSession: SparkSession): Boolean
+      table: String,
+      databaseOp: Option[String] = None)(sparkSession: SparkSession): Boolean
 
   def tableExists(tableIdentifier: TableIdentifier)(sparkSession: SparkSession): Boolean
 
@@ -101,6 +102,7 @@ trait CarbonMetaStore {
 
   def revertTableSchemaForPreAggCreationFailure(absoluteTableIdentifier: AbsoluteTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo)(sparkSession: SparkSession): String
+
   /**
    * Prepare Thrift Schema from wrapper TableInfo and write to disk
    */
@@ -108,6 +110,7 @@ trait CarbonMetaStore {
 
   /**
    * Generates schema string to save it in hive metastore
+   *
    * @param tableInfo
    * @return
    */
@@ -134,16 +137,14 @@ trait CarbonMetaStore {
 
   def checkSchemasModifiedTimeAndReloadTables()
 
-  def isReadFromHiveMetaStore : Boolean
+  def isReadFromHiveMetaStore: Boolean
 
   def listAllTables(sparkSession: SparkSession): Seq[CarbonTable]
 
   def getThriftTableInfo(tablePath: CarbonTablePath)(sparkSession: SparkSession): TableInfo
 
   def getTableFromMetadataCache(database: String, tableName: String): Option[CarbonTable]
-
 }
-
 /**
  * Factory for Carbon metastore
  */
