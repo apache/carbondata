@@ -42,7 +42,6 @@ object DataManagementExample {
          | ) STORED BY 'carbondata'
        """.stripMargin)
 
-    // data.csv has 10 lines
     val rootPath = new File(this.getClass.getResource("/").getPath
       + "../../../..").getCanonicalPath
     val path = s"$rootPath/examples/spark2/src/main/resources/dataSample.csv"
