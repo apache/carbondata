@@ -83,7 +83,7 @@ public class LuceneFineGrainDataMapFactory extends AbstractFineGrainDataMapFacto
 //        /**
 //         * add all columns into lucene indexer , TODO:only add index columns
 //         */
-         List<String> indexedColumns = new ArrayList<String>();
+        List <String> indexedColumns = new ArrayList <String>();
 //        for (ColumnSchema columnSchema : lstCoumnSchemas) {
 //            if (!columnSchema.isInvisible()) {
 //                indexedColumns.add(columnSchema.getColumnName());
@@ -108,7 +108,7 @@ public class LuceneFineGrainDataMapFactory extends AbstractFineGrainDataMapFacto
         /**
          * add optimizedOperations
          */
-        List<ExpressionType> optimizedOperations = new ArrayList<ExpressionType>();
+        List <ExpressionType> optimizedOperations = new ArrayList <ExpressionType>();
         optimizedOperations.add(ExpressionType.EQUALS);
         optimizedOperations.add(ExpressionType.GREATERTHAN);
         optimizedOperations.add(ExpressionType.GREATERTHAN_EQUALTO);
@@ -131,7 +131,8 @@ public class LuceneFineGrainDataMapFactory extends AbstractFineGrainDataMapFacto
      */
     public AbstractDataMapWriter createWriter(String segmentId, String writeDirectoryPath) {
         LOGGER.info("lucene data write to " + writeDirectoryPath);
-        return new LuceneDataMapWriter(tableIdentifier,segmentId,writeDirectoryPath,dataMapMeta);
+        return new LuceneDataMapWriter(tableIdentifier,
+                dataMapName, segmentId, writeDirectoryPath, dataMapMeta, true);
     }
 
     /**
@@ -139,8 +140,8 @@ public class LuceneFineGrainDataMapFactory extends AbstractFineGrainDataMapFacto
      *
      * @param segmentId
      */
-    public List<AbstractFineGrainDataMap> getDataMaps(String segmentId) throws IOException {
-        List<AbstractFineGrainDataMap> lstDataMap = new ArrayList<AbstractFineGrainDataMap>();
+    public List <AbstractFineGrainDataMap> getDataMaps(String segmentId) throws IOException {
+        List <AbstractFineGrainDataMap> lstDataMap = new ArrayList <AbstractFineGrainDataMap>();
         AbstractFineGrainDataMap dataMap =
                 new LuceneFineGrainDataMap(tableIdentifier, dataMapName, segmentId, analyzer);
         try {
@@ -160,10 +161,7 @@ public class LuceneFineGrainDataMapFactory extends AbstractFineGrainDataMapFacto
      *
      * @param distributable
      */
-    public List<AbstractFineGrainDataMap> getDataMaps(DataMapDistributable distributable) throws IOException {
-        if (distributable == null) {
-            return null;
-        }
+    public List <AbstractFineGrainDataMap> getDataMaps(DataMapDistributable distributable) throws IOException {
         return getDataMaps(distributable.getSegmentId());
     }
 
@@ -182,8 +180,8 @@ public class LuceneFineGrainDataMapFactory extends AbstractFineGrainDataMapFacto
      * @param segmentId
      * @return
      */
-    public List<DataMapDistributable> toDistributable(String segmentId) {
-        List<DataMapDistributable> lstDataMapDistribute = new ArrayList<DataMapDistributable>();
+    public List <DataMapDistributable> toDistributable(String segmentId) {
+        List <DataMapDistributable> lstDataMapDistribute = new ArrayList <DataMapDistributable>();
         DataMapDistributable luceneDataMapDistributable = new LuceneDataMapDistributable();
         luceneDataMapDistributable.setDataMapFactoryClass(this.getClass().getName());
         luceneDataMapDistributable.setDataMapName(dataMapName);
