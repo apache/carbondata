@@ -109,6 +109,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     // 12. reject alter streaming properties
     createTable(tableName = "stream_table_alter", streaming = true, withBatchLoad = false)
+
+    // 13. handoff streaming segment
+    createTable(tableName = "stream_table_handoff", streaming = true, withBatchLoad = false)
   }
 
   test("validate streaming property") {
@@ -189,6 +192,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists streaming.stream_table_tolerant")
     sql("drop table if exists streaming.stream_table_delete")
     sql("drop table if exists streaming.stream_table_alter")
+    sql("drop table if exists streaming.stream_table_handoff")
   }
 
   // normal table not support streaming ingest
@@ -251,7 +255,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     // streaming ingest 10 rows
     generateCSVDataFile(spark, idStart = 10, rowNums = 10, csvDataDir)
     val thread = createFileStreamingThread(spark, tablePath, csvDataDir, intervalSecond = 1,
-      identifier )
+      identifier)
     thread.start()
     Thread.sleep(2000)
     generateCSVDataFile(spark, idStart = 30, rowNums = 10, csvDataDir)
@@ -327,7 +331,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     )
     checkAnswer(
       sql("select count(*) from streaming.stream_table_10s"),
-      Seq(Row(5 + 10000*5)))
+      Seq(Row(5 + 10000 * 5)))
   }
 
   // batch loading on streaming table
@@ -344,13 +348,13 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     )
     checkAnswer(
       sql("select count(*) from streaming.stream_table_batch"),
-      Seq(Row(100*5)))
+      Seq(Row(100 * 5)))
 
     executeBatchLoad("stream_table_batch")
 
     checkAnswer(
       sql("select count(*) from streaming.stream_table_batch"),
-      Seq(Row(100*5 + 5)))
+      Seq(Row(100 * 5 + 5)))
   }
 
   // detail query on batch and stream segment
@@ -664,6 +668,43 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       case _ =>
         assert(true)
     }
+  }
+
+  test("handoff 'streaming finish' segment to columnar segment") {
+    executeStreamingIngest(
+      tableName = "stream_table_handoff",
+      batchNums = 6,
+      rowNumsEachBatch = 10000,
+      intervalOfSource = 5,
+      intervalOfIngest = 10,
+      continueSeconds = 40,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      handoffSize = 1024L * 200
+    )
+    val segments = sql("show segments for table streaming.stream_table_handoff").collect()
+    assertResult(3)(segments.length)
+    assertResult("Streaming")(segments(0).getString(1))
+    assertResult("Streaming Finish")(segments(1).getString(1))
+    assertResult("Streaming Finish")(segments(2).getString(1))
+    checkAnswer(
+      sql("select count(*) from streaming.stream_table_handoff"),
+      Seq(Row(6 * 10000))
+    )
+
+    sql("alter table streaming.stream_table_handoff compact 'streaming'")
+    Thread.sleep(10000)
+    val newSegments = sql("show segments for table streaming.stream_table_handoff").collect()
+    assertResult(5)(newSegments.length)
+    assertResult("Success")(newSegments(0).getString(1))
+    assertResult("Success")(newSegments(1).getString(1))
+    assertResult("Streaming")(newSegments(2).getString(1))
+    assertResult("Compacted")(newSegments(3).getString(1))
+    assertResult("Compacted")(newSegments(4).getString(1))
+    checkAnswer(
+      sql("select count(*) from streaming.stream_table_handoff"),
+      Seq(Row(6 * 10000))
+    )
   }
 
   def createWriteSocketThread(

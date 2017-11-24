@@ -35,6 +35,7 @@ import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, Car
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.streaming.StreamHandoffRDD
 
 /**
  * Command for the compaction in alter table command
@@ -82,17 +83,16 @@ case class AlterTableCompactionCommand(
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTablePath(table.getTablePath)
 
-    var storeLocation = CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
-        System.getProperty("java.io.tmpdir")
-      )
+    var storeLocation = CarbonProperties.getInstance.getProperty(
+      CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
+      System.getProperty("java.io.tmpdir"))
     storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
     try {
-      alterTableForCompaction(sparkSession.sqlContext,
-          alterTableModel,
-          carbonLoadModel,
-          storeLocation
-        )
+      alterTableForCompaction(
+        sparkSession.sqlContext,
+        alterTableModel,
+        carbonLoadModel,
+        storeLocation)
     } catch {
       case e: Exception =>
         if (null != e.getMessage) {
@@ -110,26 +110,16 @@ case class AlterTableCompactionCommand(
       alterTableModel: AlterTableModel,
       carbonLoadModel: CarbonLoadModel,
       storeLocation: String): Unit = {
-    val LOGGER: LogService =
-    LogServiceFactory.getLogService(this.getClass.getName)
-    var compactionSize: Long = 0
-    var compactionType: CompactionType = CompactionType.MINOR_COMPACTION
-    if (alterTableModel.compactionType.equalsIgnoreCase("major")) {
-      compactionSize = CarbonDataMergerUtil.getCompactionSize(CompactionType.MAJOR_COMPACTION)
-      compactionType = CompactionType.MAJOR_COMPACTION
-    } else if (alterTableModel.compactionType.equalsIgnoreCase(
-      CompactionType.IUD_UPDDEL_DELTA_COMPACTION.toString)) {
-      compactionType = CompactionType.IUD_UPDDEL_DELTA_COMPACTION
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    val compactionType = CompactionType.valueOf(alterTableModel.compactionType.toUpperCase)
+    val compactionSize: Long = CarbonDataMergerUtil.getCompactionSize(compactionType)
+    if (CompactionType.IUD_UPDDEL_DELTA == compactionType) {
       if (alterTableModel.segmentUpdateStatusManager.isDefined) {
         carbonLoadModel.setSegmentUpdateStatusManager(
           alterTableModel.segmentUpdateStatusManager.get)
         carbonLoadModel.setLoadMetadataDetails(
           alterTableModel.segmentUpdateStatusManager.get.getLoadMetadataDetails.toList.asJava)
       }
-    } else if (alterTableModel.compactionType.equalsIgnoreCase("segment_index")) {
-      compactionType = CompactionType.SEGMENT_INDEX_COMPACTION
-    } else {
-      compactionType = CompactionType.MINOR_COMPACTION
     }
 
     LOGGER.audit(s"Compaction request received for table " +
@@ -139,6 +129,15 @@ case class AlterTableCompactionCommand(
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     }
+
+    if (compactionType == CompactionType.STREAMING) {
+      StreamHandoffRDD.startStreamingHandoffThread(
+        carbonLoadModel,
+        sqlContext,
+        storeLocation)
+      return
+    }
+
     // reading the start time of data load.
     val loadStartTime : Long =
       if (alterTableModel.factTimeStamp.isEmpty) {
@@ -166,7 +165,8 @@ case class AlterTableCompactionCommand(
     // so that this will be taken up by the compaction process which is executing.
     if (!isConcurrentCompactionAllowed) {
       LOGGER.info("System level compaction lock is enabled.")
-      CarbonDataRDDFactory.handleCompactionForSystemLocking(sqlContext,
+      CarbonDataRDDFactory.handleCompactionForSystemLocking(
+        sqlContext,
         carbonLoadModel,
         storeLocation,
         compactionType,
@@ -175,16 +175,15 @@ case class AlterTableCompactionCommand(
       )
     } else {
       // normal flow of compaction
-      val lock = CarbonLockFactory
-        .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
-          LockUsage.COMPACTION_LOCK
-        )
+      val lock = CarbonLockFactory.getCarbonLockObj(
+        carbonTable.getAbsoluteTableIdentifier,
+        LockUsage.COMPACTION_LOCK)
 
       if (lock.lockWithRetries()) {
         LOGGER.info("Acquired the compaction lock for table" +
                     s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         try {
-          if (compactionType == CompactionType.SEGMENT_INDEX_COMPACTION) {
+          if (compactionType == CompactionType.SEGMENT_INDEX) {
             // Just launch job to merge index and return
             CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
               CarbonDataMergerUtil.getValidSegmentList(
@@ -194,7 +193,8 @@ case class AlterTableCompactionCommand(
             lock.unlock()
             return
           }
-          CarbonDataRDDFactory.startCompactionThreads(sqlContext,
+          CarbonDataRDDFactory.startCompactionThreads(
+            sqlContext,
             carbonLoadModel,
             storeLocation,
             compactionModel,

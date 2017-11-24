@@ -28,7 +28,6 @@ import org.apache.spark.sql.execution.command.{CompactionCallableModel, Compacti
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -62,7 +61,7 @@ object DataManagementFunc {
       compactionModel.compactionType
     )
     while (loadsToMerge.size() > 1 ||
-           (compactionModel.compactionType.name().equals("IUD_UPDDEL_DELTA_COMPACTION") &&
+           (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType &&
             loadsToMerge.size() > 0)) {
       val lastSegment = sortedSegments.get(sortedSegments.size() - 1)
       deletePartialLoadsInCompaction(carbonLoadModel)
@@ -97,13 +96,13 @@ object DataManagementFunc {
       // in case of major compaction we will scan only once and come out as it will keep
       // on doing major for the new loads also.
       // excluding the newly added segments.
-      if (compactionModel.compactionType == CompactionType.MAJOR_COMPACTION) {
+      if (CompactionType.MAJOR == compactionModel.compactionType) {
 
         segList = CarbonDataMergerUtil
           .filterOutNewlyAddedSegments(carbonLoadModel.getLoadMetadataDetails, lastSegment)
       }
 
-      if (compactionModel.compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
+      if (CompactionType.IUD_UPDDEL_DELTA == compactionModel.compactionType) {
         loadsToMerge.clear()
       } else if (segList.size > 0) {
         loadsToMerge = CarbonDataMergerUtil.identifySegmentsToBeMerged(
@@ -223,5 +222,4 @@ object DataManagementFunc {
       }
     }
   }
-
 }

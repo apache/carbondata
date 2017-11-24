@@ -87,7 +87,7 @@ object Compactor {
     }
 
     val mergeStatus =
-    if (compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
+    if (CompactionType.IUD_UPDDEL_DELTA == compactionType) {
       new CarbonIUDMergerRDD(
         sc.sparkContext,
         new MergeResultImpl(),
@@ -124,7 +124,7 @@ object Compactor {
       val endTime = System.nanoTime()
       logger.info(s"time taken to merge $mergedLoadName is ${ endTime - startTime }")
       val statusFileUpdation =
-        ((compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) &&
+        ((compactionType == CompactionType.IUD_UPDDEL_DELTA) &&
           CarbonDataMergerUtil
             .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
               carbonTable.getMetaDataFilepath,
