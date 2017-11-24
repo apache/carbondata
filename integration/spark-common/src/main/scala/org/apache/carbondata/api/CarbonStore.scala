@@ -92,8 +92,8 @@ object CarbonStore {
             load.getSegmentStatus.getMessage,
             startTime,
             endTime,
-            load.getFileFormat.toString,
-            mergedTo)
+            mergedTo,
+            load.getFileFormat.toString)
         }.toSeq
     } else {
       Seq.empty

@@ -570,7 +570,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     result.foreach { row =>
       if (row.getString(0).equals("1")) {
         assertResult(SegmentStatus.STREAMING.getMessage)(row.getString(1))
-        assertResult(FileFormat.ROW_V1.toString)(row.getString(4))
+        assertResult(FileFormat.ROW_V1.toString)(row.getString(5))
       }
     }
   }
