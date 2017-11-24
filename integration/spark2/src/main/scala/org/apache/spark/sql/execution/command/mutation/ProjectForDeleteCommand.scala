@@ -56,7 +56,7 @@ private[sql] case class ProjectForDeleteCommand(
     // trigger event for Delete from table
     val operationContext = new OperationContext
     val deleteFromTablePreEvent: DeleteFromTablePreEvent =
-      DeleteFromTablePreEvent(carbonTable)
+      DeleteFromTablePreEvent(sparkSession, carbonTable)
     OperationListenerBus.getInstance.fireEvent(deleteFromTablePreEvent, operationContext)
 
     val metadataLock = CarbonLockFactory
@@ -85,7 +85,7 @@ private[sql] case class ProjectForDeleteCommand(
 
         // trigger post event for Delete from table
         val deleteFromTablePostEvent: DeleteFromTablePostEvent =
-          DeleteFromTablePostEvent(carbonTable)
+          DeleteFromTablePostEvent(sparkSession, carbonTable)
         OperationListenerBus.getInstance.fireEvent(deleteFromTablePostEvent, operationContext)
       }
     } catch {

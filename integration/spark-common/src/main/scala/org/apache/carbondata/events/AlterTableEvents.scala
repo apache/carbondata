@@ -40,8 +40,18 @@ case class AlterTableDropColumnPreEvent(carbonTable: CarbonTable,
  * @param carbonTable
  * @param alterTableDataTypeChangeModel
  */
-case class AlterTableDataTypeChangePreEvent(carbonTable: CarbonTable,
+case class AlterTableDataTypeChangePreEvent(sparkSession: SparkSession, carbonTable: CarbonTable,
         alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel)
+  extends Event with AlterTableDataTypeChangeEventInfo
+
+/**
+ * Class for handling clean up in case of any failure and abort the operation
+ *
+ * @param carbonTable
+ * @param alterTableDataTypeChangeModel
+ */
+case class AlterTableDataTypeChangePostEvent(sparkSession: SparkSession, carbonTable: CarbonTable,
+    alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel)
   extends Event with AlterTableDataTypeChangeEventInfo
 
 /**
@@ -82,7 +92,16 @@ case class AlterTableRenamePreEvent(carbonTable: CarbonTable,
  * @param carbonTable
  * @param alterTableAddColumnsModel
  */
-case class AlterTableAddColumnPreEvent(carbonTable: CarbonTable,
+case class AlterTableAddColumnPreEvent(sparkSession: SparkSession, carbonTable: CarbonTable,
+    alterTableAddColumnsModel: AlterTableAddColumnsModel)
+  extends Event with AlterTableAddColumnEventInfo
+
+/**
+ *
+ * @param carbonTable
+ * @param alterTableAddColumnsModel
+ */
+case class AlterTableAddColumnPostEvent(sparkSession: SparkSession, carbonTable: CarbonTable,
     alterTableAddColumnsModel: AlterTableAddColumnsModel)
   extends Event with AlterTableAddColumnEventInfo
 
@@ -118,7 +137,7 @@ case class AlterTableRenameAbortEvent(carbonTable: CarbonTable,
  * @param mergedLoadName
  * @param sQLContext
  */
-case class AlterTableCompactionPreEvent(carbonTable: CarbonTable,
+case class AlterTableCompactionPreEvent(sparkSession: SparkSession, carbonTable: CarbonTable,
     carbonLoadModel: CarbonLoadModel,
     mergedLoadName: String,
     sQLContext: SQLContext) extends Event with AlterTableCompactionEventInfo
@@ -131,7 +150,7 @@ case class AlterTableCompactionPreEvent(carbonTable: CarbonTable,
  * @param mergedLoadName
  * @param sQLContext
  */
-case class AlterTableCompactionPostEvent(carbonTable: CarbonTable,
+case class AlterTableCompactionPostEvent(sparkSession: SparkSession, carbonTable: CarbonTable,
     carbonLoadModel: CarbonLoadModel,
     mergedLoadName: String,
     sQLContext: SQLContext) extends Event with AlterTableCompactionEventInfo

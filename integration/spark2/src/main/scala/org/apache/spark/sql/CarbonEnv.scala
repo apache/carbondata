@@ -26,10 +26,12 @@ import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonMetaStoreFactory, Carbo
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, SessionParams, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util._
 import org.apache.carbondata.events.{CarbonEnvInitPreEvent, OperationListenerBus}
+import org.apache.carbondata.events.{CarbonEnvInitPreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
+
 
 /**
  * Carbon Environment for unified context
@@ -80,9 +82,10 @@ class CarbonEnv {
           }
           LOGGER.info(s"carbon env initial: $storePath")
           // trigger event for CarbonEnv init
+          val operationContext = new OperationContext
           val carbonEnvInitPreEvent: CarbonEnvInitPreEvent =
             CarbonEnvInitPreEvent(sparkSession, storePath)
-          OperationListenerBus.getInstance.fireEvent(carbonEnvInitPreEvent)
+          OperationListenerBus.getInstance.fireEvent(carbonEnvInitPreEvent, operationContext)
 
           CarbonMetaStoreFactory.createCarbonMetaStore(sparkSession.conf)
         }

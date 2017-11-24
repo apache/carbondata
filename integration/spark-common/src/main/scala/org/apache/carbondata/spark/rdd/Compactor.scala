@@ -69,7 +69,11 @@ object Compactor {
     // trigger event for compaction
     val operationContext = new OperationContext
     val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
-      AlterTableCompactionPreEvent(carbonTable, carbonLoadModel, mergedLoadName, sc)
+      AlterTableCompactionPreEvent(compactionCallableModel.sqlContext.sparkSession,
+        carbonTable,
+        carbonLoadModel,
+        mergedLoadName,
+        sc)
     OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
 
     var execInstance = "1"
@@ -118,7 +122,11 @@ object Compactor {
 
       // trigger event for compaction
       val alterTableCompactionPostEvent: AlterTableCompactionPostEvent =
-        AlterTableCompactionPostEvent(carbonTable, carbonLoadModel, mergedLoadName, sc)
+        AlterTableCompactionPostEvent(compactionCallableModel.sqlContext.sparkSession,
+          carbonTable,
+          carbonLoadModel,
+          mergedLoadName,
+          sc)
       OperationListenerBus.getInstance.fireEvent(alterTableCompactionPostEvent, operationContext)
 
       val endTime = System.nanoTime()

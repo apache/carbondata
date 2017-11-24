@@ -62,9 +62,8 @@ private[sql] case class ProjectForUpdateCommand(
     // trigger event for Update table
     val operationContext = new OperationContext
     val updateTablePreEvent: UpdateTablePreEvent =
-      UpdateTablePreEvent(carbonTable)
+      UpdateTablePreEvent(sparkSession, carbonTable)
     OperationListenerBus.getInstance.fireEvent(updateTablePreEvent, operationContext)
-
     val metadataLock = CarbonLockFactory
       .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
         LockUsage.METADATA_LOCK)
@@ -117,7 +116,7 @@ private[sql] case class ProjectForUpdateCommand(
 
       // trigger event for Update table
       val updateTablePostEvent: UpdateTablePostEvent =
-        UpdateTablePostEvent(carbonTable)
+        UpdateTablePostEvent(sparkSession, carbonTable)
       OperationListenerBus.getInstance.fireEvent(updateTablePostEvent, operationContext)
     } catch {
       case e: HorizontalCompactionException =>

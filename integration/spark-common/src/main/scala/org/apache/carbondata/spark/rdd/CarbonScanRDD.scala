@@ -56,8 +56,8 @@ import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
  */
 class CarbonScanRDD(
     @transient sc: SparkContext,
-    columnProjection: CarbonProjection,
-    filterExpression: Expression,
+    val columnProjection: CarbonProjection,
+    var filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
     @transient serializedTableInfo: Array[Byte],
     @transient tableInfo: TableInfo, inputMetricsStats: InitInputMetrics)

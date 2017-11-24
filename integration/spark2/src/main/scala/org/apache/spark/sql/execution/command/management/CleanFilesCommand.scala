@@ -45,6 +45,12 @@ case class CleanFilesCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
+    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
+    val operationContext = new OperationContext
+    val cleanFilesPreEvent: CleanFilesPreEvent =
+      CleanFilesPreEvent(carbonTable,
+        sparkSession)
+    OperationListenerBus.getInstance.fireEvent(cleanFilesPreEvent, operationContext)
     if (tableName.isDefined) {
       Checker.validateTableExists(databaseNameOp, tableName.get, sparkSession)
       if (forceTableClean) {
@@ -55,6 +61,10 @@ case class CleanFilesCommand(
     } else {
       cleanGarbageDataInAllTables(sparkSession)
     }
+    val cleanFilesPostEvent: CleanFilesPostEvent =
+      CleanFilesPostEvent(carbonTable,
+        sparkSession)
+    OperationListenerBus.getInstance.fireEvent(cleanFilesPreEvent)
     Seq.empty
   }
 

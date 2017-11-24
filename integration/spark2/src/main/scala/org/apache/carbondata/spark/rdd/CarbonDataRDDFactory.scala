@@ -496,13 +496,6 @@ object CarbonDataRDDFactory {
         throw new Exception("No Data to load")
       }
       writeDictionary(carbonLoadModel, result, writeAll = false)
-      // Register a handler here for executing tasks required before committing
-      // the load operation to a table status file
-      val loadTablePostExecutionEvent: LoadTablePostExecutionEvent =
-      LoadTablePostExecutionEvent(sqlContext.sparkSession,
-        carbonTable.getCarbonTableIdentifier,
-        carbonLoadModel)
-      OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
       val done = updateTableStatus(status, carbonLoadModel, loadStatus, overwriteTable)
       if (!done) {
         CommonUtil.updateTableStatusForFailure(carbonLoadModel)
