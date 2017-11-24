@@ -156,11 +156,22 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case AlterTableSetPropertiesCommand(tableName, properties, isView)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(tableName)(sparkSession) => {
+        val property = properties.find(_._1.equalsIgnoreCase("streaming"))
+        if (property.isDefined) {
+          if (!property.get._2.trim.equalsIgnoreCase("true")) {
+            throw new MalformedCarbonCommandException(
+              "Unsupported alter table to disable streaming property")
+          }
+        }
         ExecutedCommandExec(AlterTableSetCommand(tableName, properties, isView)) :: Nil
       }
       case AlterTableUnsetPropertiesCommand(tableName, propKeys, ifExists, isView)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(tableName)(sparkSession) => {
+        if (propKeys.find(_.equalsIgnoreCase("streaming")).isDefined) {
+          throw new MalformedCarbonCommandException(
+            "Unsupported alter table to unset streaming properties")
+        }
         ExecutedCommandExec(AlterTableUnsetCommand(tableName, propKeys, ifExists, isView)) :: Nil
       }
       case _ => Nil

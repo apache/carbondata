@@ -106,6 +106,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     // 11. table for delete segment test
     createTable(tableName = "stream_table_delete", streaming = true, withBatchLoad = false)
+
+    // 12. reject alter streaming properties
+    createTable(tableName = "stream_table_alter", streaming = true, withBatchLoad = false)
   }
 
   test("validate streaming property") {
@@ -185,6 +188,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists streaming.stream_table_new")
     sql("drop table if exists streaming.stream_table_tolerant")
     sql("drop table if exists streaming.stream_table_delete")
+    sql("drop table if exists streaming.stream_table_alter")
   }
 
   // normal table not support streaming ingest
@@ -634,6 +638,31 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     assertResult(beforeDelete.length)(rows.length)
     rows.foreach { row =>
       assertResult(SegmentStatus.MARKED_FOR_DELETE.getMessage)(row.getString(1))
+    }
+  }
+
+  test("reject alter streaming properties") {
+    try {
+      sql("ALTER TABLE stream_table_alter UNSET TBLPROPERTIES IF EXISTS ('streaming')")
+      assert(false, "unsupport to unset streaming property")
+    } catch {
+      case _ =>
+        assert(true)
+    }
+    try {
+      sql("ALTER TABLE stream_table_alter SET TBLPROPERTIES('streaming'='true')")
+      assert(true)
+    } catch {
+      case _ =>
+        assert(false, "should support set table to streaming")
+    }
+
+    try {
+      sql("ALTER TABLE stream_table_alter SET TBLPROPERTIES('streaming'='false')")
+      assert(false,  "unsupport disable streaming properties")
+    } catch {
+      case _ =>
+        assert(true)
     }
   }
 
