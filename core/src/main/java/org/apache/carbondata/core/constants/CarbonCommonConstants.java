@@ -1290,6 +1290,8 @@ public final class CarbonCommonConstants {
 
   public static final String DATA_MANAGEMENT_DRIVER_DEFAULT = "false";
 
+  public static final String CARBON_SESSIONSTATE_CLASSNAME = "spark.carbon.sessionstate.classname";
+
   @CarbonProperty
   public static final String CARBON_LEASE_RECOVERY_RETRY_COUNT =
       "carbon.lease.recovery.retry.count";
