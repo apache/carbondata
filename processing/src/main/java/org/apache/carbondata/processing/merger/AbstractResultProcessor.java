@@ -45,7 +45,7 @@ public abstract class AbstractResultProcessor {
       CompactionType compactionType, CarbonTable carbonTable,
       CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
     CarbonDataFileAttributes carbonDataFileAttributes;
-    if (compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
+    if (compactionType == CompactionType.IUD_UPDDEL_DELTA) {
       int taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegmentId(),
           CarbonStorePath.getCarbonTablePath(loadModel.getTablePath(),
               carbonTable.getCarbonTableIdentifier()));

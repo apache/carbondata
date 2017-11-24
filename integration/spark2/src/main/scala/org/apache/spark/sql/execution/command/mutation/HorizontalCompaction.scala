@@ -53,7 +53,7 @@ object HorizontalCompaction {
       return
     }
 
-    var compactionTypeIUD = CompactionType.IUD_UPDDEL_DELTA_COMPACTION
+    var compactionTypeIUD = CompactionType.IUD_UPDDEL_DELTA
     val carbonTable = carbonRelation.carbonTable
     val absTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val updateTimeStamp = System.currentTimeMillis()
@@ -78,7 +78,7 @@ object HorizontalCompaction {
     if (isUpdateOperation) {
 
       // This is only update operation, perform only update compaction.
-      compactionTypeIUD = CompactionType.IUD_UPDDEL_DELTA_COMPACTION
+      compactionTypeIUD = CompactionType.IUD_UPDDEL_DELTA
       performUpdateDeltaCompaction(sparkSession,
         compactionTypeIUD,
         carbonTable,
@@ -89,7 +89,7 @@ object HorizontalCompaction {
     }
 
     // After Update Compaction perform delete compaction
-    compactionTypeIUD = CompactionType.IUD_DELETE_DELTA_COMPACTION
+    compactionTypeIUD = CompactionType.IUD_DELETE_DELTA
     segLists = CarbonDataMergerUtil.getValidSegmentList(absTableIdentifier)
     if (segLists == null || segLists.size() == 0) {
       return
@@ -135,7 +135,7 @@ object HorizontalCompaction {
       val alterTableModel = AlterTableModel(Option(carbonTable.getDatabaseName),
         carbonTable.getTableName,
         Some(segmentUpdateStatusManager),
-        CompactionType.IUD_UPDDEL_DELTA_COMPACTION.toString,
+        CompactionType.IUD_UPDDEL_DELTA.toString,
         Some(factTimeStamp),
         "")
 

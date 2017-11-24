@@ -196,9 +196,16 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void processResult(List<RawResultIterator> resultIteratorList) throws Exception {
     for (RawResultIterator resultIterator : resultIteratorList) {
-      while (resultIterator.hasNext()) {
-        addRowForSorting(prepareRowObjectForSorting(resultIterator.next()));
-        isRecordFound = true;
+      if (CompactionType.STREAMING == compactionType) {
+        while (resultIterator.hasNext()) {
+          addRowForSorting(resultIterator.next());
+          isRecordFound = true;
+        }
+      } else {
+        while (resultIterator.hasNext()) {
+          addRowForSorting(prepareRowObjectForSorting(resultIterator.next()));
+          isRecordFound = true;
+        }
       }
     }
     try {

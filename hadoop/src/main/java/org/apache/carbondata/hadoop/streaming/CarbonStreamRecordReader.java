@@ -134,6 +134,9 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
   // empty project, null filter
   private boolean skipScanData;
 
+  // return raw row
+  private boolean useRawRow = false;
+
   @Override public void initialize(InputSplit split, TaskAttemptContext context)
       throws IOException, InterruptedException {
     // input
@@ -256,6 +259,10 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
     return header.getSync_marker();
   }
 
+  public void setUseRawRow(boolean useRawRow) {
+    this.useRawRow = useRawRow;
+  }
+
   private void initializeAtFirstRow() throws IOException {
     filterValues = new Object[carbonTable.getDimensionOrdinalMax() + measureCount];
     filterRow = new RowImpl();
@@ -342,7 +349,11 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
             input.nextRow();
             scanMore = false;
           } else {
-            readRowFromStream();
+            if (useRawRow) {
+              readRawRowFromStream();
+            } else {
+              readRowFromStream();
+            }
             if (null != filter) {
               scanMore = !filter.applyFilter(filterRow, carbonTable.getDimensionOrdinalMax());
             } else {
@@ -600,6 +611,61 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
           } else {
             input.skipBytes(len);
           }
+        }
+      }
+    }
+  }
+
+  private void readRawRowFromStream() {
+    input.nextRow();
+    short nullLen = input.readShort();
+    BitSet nullBitSet = allNonNull;
+    if (nullLen > 0) {
+      nullBitSet = BitSet.valueOf(input.readBytes(nullLen));
+    }
+    int colCount = 0;
+    // primitive type dimension
+    for (; colCount < isNoDictColumn.length; colCount++) {
+      if (nullBitSet.get(colCount)) {
+        outputValues[colCount] = CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY;
+      } else {
+        if (isNoDictColumn[colCount]) {
+          int v = input.readShort();
+          outputValues[colCount] = input.readBytes(v);
+        } else {
+          outputValues[colCount] = input.readInt();
+        }
+      }
+    }
+    // complex type dimension
+    for (; colCount < dimensionCount; colCount++) {
+      if (nullBitSet.get(colCount)) {
+        outputValues[colCount] = null;
+      } else {
+        short v = input.readShort();
+        outputValues[colCount] = input.readBytes(v);
+      }
+    }
+    // measure
+    DataType dataType;
+    for (int msrCount = 0; msrCount < measureCount; msrCount++, colCount++) {
+      if (nullBitSet.get(colCount)) {
+        outputValues[colCount] = null;
+      } else {
+        dataType = measureDataTypes[msrCount];
+        if (dataType == DataTypes.BOOLEAN) {
+          outputValues[colCount] = input.readBoolean();
+        } else if (dataType == DataTypes.SHORT) {
+          outputValues[colCount] = input.readShort();
+        } else if (dataType == DataTypes.INT) {
+          outputValues[colCount] = input.readInt();
+        } else if (dataType == DataTypes.LONG) {
+          outputValues[colCount] = input.readLong();
+        } else if (dataType == DataTypes.DOUBLE) {
+          outputValues[colCount] = input.readDouble();
+        } else if (DataTypes.isDecimal(dataType)) {
+          int len = input.readShort();
+          outputValues[colCount] = DataTypeUtil.byteToBigDecimal(input.readBytes(len));
         }
       }
     }

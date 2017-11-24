@@ -83,29 +83,34 @@ object CarbonDataRDDFactory {
       carbonTable: CarbonTable,
       compactionModel: CompactionModel): Unit = {
     // taking system level lock at the mdt file location
-    var configuredMdtPath = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
-        CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT).trim
+    var configuredMdtPath = CarbonProperties.getInstance().getProperty(
+      CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
+      CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT).trim
+
     configuredMdtPath = CarbonUtil.checkAndAppendFileSystemURIScheme(configuredMdtPath)
-    val lock = CarbonLockFactory
-      .getCarbonLockObj(configuredMdtPath + CarbonCommonConstants.FILE_SEPARATOR +
-                        CarbonCommonConstants.SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER,
-        LockUsage.SYSTEMLEVEL_COMPACTION_LOCK)
+    val lock = CarbonLockFactory.getCarbonLockObj(
+      configuredMdtPath + CarbonCommonConstants.FILE_SEPARATOR +
+        CarbonCommonConstants.SYSTEM_LEVEL_COMPACTION_LOCK_FOLDER,
+      LockUsage.SYSTEMLEVEL_COMPACTION_LOCK)
+
     if (lock.lockWithRetries()) {
       LOGGER.info(s"Acquired the compaction lock for table ${ carbonLoadModel.getDatabaseName }" +
           s".${ carbonLoadModel.getTableName }")
       try {
-        if (compactionType == CompactionType.SEGMENT_INDEX_COMPACTION) {
+        if (compactionType == CompactionType.SEGMENT_INDEX) {
           // Just launch job to merge index and return
-          CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
+          CommonUtil.mergeIndexFiles(
+            sqlContext.sparkContext,
             CarbonDataMergerUtil.getValidSegmentList(
               carbonTable.getAbsoluteTableIdentifier).asScala,
             carbonLoadModel.getTablePath,
-            carbonTable, true)
+            carbonTable,
+            true)
           lock.unlock()
           return
         }
-        startCompactionThreads(sqlContext,
+        startCompactionThreads(
+          sqlContext,
           carbonLoadModel,
           storeLocation,
           compactionModel,
@@ -148,7 +153,7 @@ object CarbonDataRDDFactory {
       compactionLock: ICarbonLock): Unit = {
     val executor: ExecutorService = Executors.newFixedThreadPool(1)
     // update the updated table status.
-    if (compactionModel.compactionType != CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
+    if (compactionModel.compactionType != CompactionType.IUD_UPDDEL_DELTA) {
       // update the updated table status. For the case of Update Delta Compaction the Metadata
       // is filled in LoadModel, no need to refresh.
       CommonUtil.readLoadMetadataDetails(carbonLoadModel)
@@ -197,8 +202,7 @@ object CarbonDataRDDFactory {
 
               val newCarbonLoadModel = prepareCarbonLoadModel(table)
 
-              val compactionSize = CarbonDataMergerUtil
-                .getCompactionSize(CompactionType.MAJOR_COMPACTION)
+              val compactionSize = CarbonDataMergerUtil.getCompactionSize(CompactionType.MAJOR)
 
               val newcompactionModel = CompactionModel(compactionSize,
                 compactionType,
@@ -231,11 +235,10 @@ object CarbonDataRDDFactory {
                 }
               }
               // ********* check again for all the tables.
-              tableForCompaction = CarbonCompactionUtil
-                .getNextTableToCompact(CarbonEnv.getInstance(sqlContext.sparkSession)
-                  .carbonMetastore.listAllTables(sqlContext.sparkSession).toArray,
-                  skipCompactionTables.asJava
-                )
+              tableForCompaction = CarbonCompactionUtil.getNextTableToCompact(
+                CarbonEnv.getInstance(sqlContext.sparkSession).carbonMetastore
+                  .listAllTables(sqlContext.sparkSession).toArray,
+                skipCompactionTables.asJava)
             }
           }
           // giving the user his error for telling in the beeline if his triggered table
@@ -695,7 +698,7 @@ object CarbonDataRDDFactory {
       val compactionSize = 0
       val isCompactionTriggerByDDl = false
       val compactionModel = CompactionModel(compactionSize,
-        CompactionType.MINOR_COMPACTION,
+        CompactionType.MINOR,
         carbonTable,
         isCompactionTriggerByDDl
       )
@@ -718,7 +721,7 @@ object CarbonDataRDDFactory {
         handleCompactionForSystemLocking(sqlContext,
           carbonLoadModel,
           storeLocation,
-          CompactionType.MINOR_COMPACTION,
+          CompactionType.MINOR,
           carbonTable,
           compactionModel
         )
