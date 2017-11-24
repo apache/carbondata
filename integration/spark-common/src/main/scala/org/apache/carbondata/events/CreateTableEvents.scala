@@ -17,34 +17,27 @@
 
 package org.apache.carbondata.events
 
-import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql._
 
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
-import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
 /**
  * Class for handling operations before start of a load process.
  * Example usage: For validation purpose
  */
-case class LoadTablePreExecutionEvent(sparkSession: SparkSession,
+case class CreateTablePreExecutionEvent(sparkSession: SparkSession,
     carbonTableIdentifier: CarbonTableIdentifier,
-    carbonLoadModel: CarbonLoadModel,
-    factPath: String,
-    isDataFrameDefined: Boolean,
-    optionsFinal: scala.collection
-    .mutable.Map[String, String]) extends Event with LoadEventInfo
+    storePath: String) extends Event with TableEventInfo
 
 /**
  * Class for handling operations after data load completion and before final
  * commit of load operation. Example usage: For loading pre-aggregate tables
  */
-case class LoadTablePostExecutionEvent(sparkSession: SparkSession,
-    carbonTableIdentifier: CarbonTableIdentifier,
-    carbonLoadModel: CarbonLoadModel) extends Event with LoadEventInfo
+case class CreateTablePostExecutionEvent(sparkSession: SparkSession,
+    carbonTableIdentifier: CarbonTableIdentifier) extends Event with TableEventInfo
 
 /**
  * Class for handling clean up in case of any failure and abort the operation.
  */
-case class LoadTableAbortExecutionEvent(sparkSession: SparkSession,
-    carbonTableIdentifier: CarbonTableIdentifier,
-    carbonLoadModel: CarbonLoadModel) extends Event with LoadEventInfo
+case class CreateTableAbortExecutionEvent(sparkSession: SparkSession,
+    carbonTableIdentifier: CarbonTableIdentifier) extends Event with TableEventInfo
