@@ -20,6 +20,7 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.RAMDirectory;
 import org.apache.solr.store.hdfs.HdfsDirectory;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 
@@ -45,6 +46,8 @@ public class LuceneDataMapWriter extends AbstractDataMapWriter {
 
     final static public String BLOCKLETID_NAME = "blockletId";
 
+    final static public String PAGEID_NAME = "pageId";
+
     final static public String ROWID_NAME = "rowId";
 
     public LuceneDataMapWriter(AbsoluteTableIdentifier identifier, String segmentId,
@@ -54,7 +57,9 @@ public class LuceneDataMapWriter extends AbstractDataMapWriter {
     }
 
     public String getIndexPath(String blockId) {
-        return writeDirectoryPath;
+        return identifier.getTablePath()
+                + "/Fact/Part0/Segment_" + segmentId + File.separator + "LuceneDataMap";
+        //return writeDirectoryPath + File.separator + "LuceneDataMap";
     }
 
     private String getBlockIdKey(String blockId) {
@@ -161,7 +166,7 @@ public class LuceneDataMapWriter extends AbstractDataMapWriter {
 
         int columnsCount = pages.length;
         if(columnsCount <= 0){
-            LOGGER.warn("write empty data");
+            LOGGER.warn("empty data");
             ramIndexWriter.close();
             ramDir.close();
             return;
@@ -184,6 +189,13 @@ public class LuceneDataMapWriter extends AbstractDataMapWriter {
             doc.add(new IntPoint(BLOCKLETID_NAME, new int[]{blockletId}));
             doc.add(new StoredField(BLOCKLETID_NAME, blockletId));
             //doc.add(new NumericDocValuesField(BLOCKLETID_NAME,blockletId));
+
+            /**
+             * add page Id
+             */
+            doc.add(new IntPoint(PAGEID_NAME,new int[]{pageId}));
+            doc.add(new StoredField(PAGEID_NAME,pageId));
+            //doc.add(new NumericDocValuesField(PAGEID_NAME,pageId));
 
             /**
              * add row id
