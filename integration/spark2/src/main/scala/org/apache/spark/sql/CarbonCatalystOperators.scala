@@ -122,12 +122,12 @@ case class ShowLoadsCommand(
   extends Command {
 
   override def output: Seq[Attribute] = {
-    Seq(AttributeReference("Segment Id", StringType, nullable = false)(),
+    Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
       AttributeReference("Status", StringType, nullable = false)(),
       AttributeReference("Load Start Time", TimestampType, nullable = false)(),
       AttributeReference("Load End Time", TimestampType, nullable = true)(),
-      AttributeReference("File Format", StringType, nullable = false)(),
-      AttributeReference("Merged To", StringType, nullable = false)())
+      AttributeReference("Merged To", StringType, nullable = false)(),
+      AttributeReference("File Format", StringType, nullable = false)())
   }
 }
 
