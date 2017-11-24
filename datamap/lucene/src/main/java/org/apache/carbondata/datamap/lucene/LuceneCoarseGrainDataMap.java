@@ -3,15 +3,12 @@ package org.apache.carbondata.datamap.lucene;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
-import org.apache.carbondata.core.datamap.dev.fgdatamap.AbstractFineGrainDataMap;
+import org.apache.carbondata.core.datamap.dev.cgdatamap.AbstractCoarseGrainDataMap;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.indexstore.Blocklet;
-import org.apache.carbondata.core.indexstore.FineGrainBlocklet;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.scan.expression.Expression;
-import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -24,14 +21,24 @@ import org.apache.lucene.index.IndexableField;
 import org.apache.lucene.queryparser.classic.MultiFieldQueryParser;
 import org.apache.lucene.queryparser.classic.ParseException;
 import org.apache.lucene.queryparser.classic.QueryParser;
-import org.apache.lucene.search.*;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.Query;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.Directory;
 import org.apache.solr.store.hdfs.HdfsDirectory;
 
 import java.io.IOException;
 import java.util.*;
 
-public class LuceneFineGrainDataMap extends AbstractFineGrainDataMap {
+public class LuceneCoarseGrainDataMap extends AbstractCoarseGrainDataMap {
+
+
+    /**
+     * log information
+     */
+    private static final LogService LOGGER =
+            LogServiceFactory.getLogService(LuceneCoarseGrainDataMap.class.getName());
 
     final static public int BLOCKID_ID = 0;
 
@@ -40,13 +47,6 @@ public class LuceneFineGrainDataMap extends AbstractFineGrainDataMap {
     final static public int PAGEID_ID = 2;
 
     final static public int ROWID_ID = 3;
-
-    /**
-     * log information
-     */
-    private static final LogService LOGGER =
-            LogServiceFactory.getLogService(LuceneFineGrainDataMap.class.getName());
-
     /**
      * searcher object for this datamap
      */
@@ -77,7 +77,7 @@ public class LuceneFineGrainDataMap extends AbstractFineGrainDataMap {
      */
     private Analyzer analyzer = null;
 
-    public LuceneFineGrainDataMap(AbsoluteTableIdentifier tableIdentifier, String dataMapName, String segmentId, Analyzer analyzer) {
+    public LuceneCoarseGrainDataMap(AbsoluteTableIdentifier tableIdentifier, String dataMapName, String segmentId, Analyzer analyzer) {
         this.analyzer = analyzer;
         this.dataMapName = dataMapName;
         this.segmentId = segmentId;
@@ -133,7 +133,6 @@ public class LuceneFineGrainDataMap extends AbstractFineGrainDataMap {
         indexSearcher = new IndexSearcher(indexReader);
     }
 
-
     /**
      * Prune the datamap with filter expression. It returns the list of
      * blocklets where these filters can exist.
@@ -142,7 +141,7 @@ public class LuceneFineGrainDataMap extends AbstractFineGrainDataMap {
      * @param segmentProperties
      * @return
      */
-    public List prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties) throws IOException {
+    public List <Blocklet> prune(FilterResolverIntf filterExp, SegmentProperties segmentProperties) throws IOException {
 
         /**
          * convert filter expr into lucene list query
@@ -178,7 +177,7 @@ public class LuceneFineGrainDataMap extends AbstractFineGrainDataMap {
         }
 
         if (strQuery == null) {
-            query = FilterExpressParser.transformFilterExpress(filterExp);
+            //query = transformFilterExpress(filterExp);
         }
 
         /**
@@ -198,8 +197,8 @@ public class LuceneFineGrainDataMap extends AbstractFineGrainDataMap {
          * temporary data, delete duplicated data
          * Map<BlockId, Map<BlockletId, Map<PageId, Set<RowId>>>>
          */
-        Map <String, Map <String, Map <Integer, Set <Integer>>>> mapBlocks =
-                new HashMap <String, Map <String, Map <Integer, Set <Integer>>>>();
+        Map <String, Set <Number>> mapBlocks =
+                new HashMap <String, Set <Number>>();
 
         for (ScoreDoc scoreDoc : result.scoreDocs) {
             /**
@@ -214,43 +213,23 @@ public class LuceneFineGrainDataMap extends AbstractFineGrainDataMap {
 
             /**
              * get this block id
-             * Map<BlockId, Map<BlockletId, Map<PageId, Set<RowId>>>>
+             * Map<BlockId, Set<BlockletId>>>>
              */
             String blockId = fieldsInDoc.get(BLOCKID_ID).stringValue();
-            Map <String, Map <Integer, Set <Integer>>> mapBlocklets = mapBlocks.get(blockId);
-            if (mapBlocklets == null) {
-                mapBlocklets = new HashMap <String, Map <Integer, Set <Integer>>>();
-                mapBlocks.put(blockId, mapBlocklets);
+            Set <Number> setBlocklets = mapBlocks.get(blockId);
+            if (setBlocklets == null) {
+                setBlocklets = new HashSet <Number>();
+                mapBlocks.put(blockId, setBlocklets);
             }
 
             /**
              * get the blocklet id
-             * Map<BlockletId, Map<PageId, Set<RowId>>>
+             * Set<BlockletId>
              */
-            String blockletId = fieldsInDoc.get(BLOCKLETID_ID).stringValue();
-            Map <Integer, Set <Integer>> mapPageIds = mapBlocklets.get(blockletId);
-            if (mapPageIds == null) {
-                mapPageIds = new HashMap <Integer, Set <Integer>>();
-                mapBlocklets.put(blockletId, mapPageIds);
+            Number blockletId = fieldsInDoc.get(BLOCKLETID_ID).numericValue();
+            if (!setBlocklets.contains(blockletId.intValue())) {
+                setBlocklets.add(blockletId.intValue());
             }
-
-            /**
-             * get the page id
-             *  Map<PageId, Set<RowId>>
-             */
-            Number pageId = fieldsInDoc.get(PAGEID_ID).numericValue();
-            Set <Integer> setRowId = mapPageIds.get(pageId.intValue());
-            if (setRowId == null) {
-                setRowId = new HashSet <Integer>();
-                mapPageIds.put(pageId.intValue(), setRowId);
-            }
-
-            /**
-             * get the row id
-             * Set<RowId>
-             */
-            Number rowId = fieldsInDoc.get(ROWID_ID).numericValue();
-            setRowId.add(rowId.intValue());
         }
 
 
@@ -261,62 +240,26 @@ public class LuceneFineGrainDataMap extends AbstractFineGrainDataMap {
 
         /**
          * transform all blocks into result type blocklets
-         * Map<BlockId, Map<BlockletId, Map<PageId, Set<RowId>>>>
+         * Map<BlockId, Set<BlockletId>>
          */
-        for (Map.Entry <String, Map <String, Map <Integer, Set <Integer>>>> mapBlock : mapBlocks.entrySet()) {
+        for (Map.Entry <String, Set <Number>> mapBlock : mapBlocks.entrySet()) {
             String blockId = mapBlock.getKey();
-            Map <String, Map <Integer, Set <Integer>>> mapBlocklets = mapBlock.getValue();
+            Set <Number> setBlocklets = mapBlock.getValue();
             /**
              * for blocklets in this block
-             * Map<BlockletId, Map<PageId, Set<RowId>>>
+             * Set<BlockletId>
              */
-            for (Map.Entry <String, Map <Integer, Set <Integer>>> mapBlocklet : mapBlocklets.entrySet()) {
-                String blockletId = mapBlocklet.getKey();
-                Map <Integer, Set <Integer>> mapPageIds = mapBlocklet.getValue();
-                List <FineGrainBlocklet.Page> pages = new ArrayList <FineGrainBlocklet.Page>();
+            for (Number blockletId : setBlocklets) {
 
                 /**
-                 * for pages in this blocklet
-                 *  Map<PageId, Set<RowId>>>
+                 * add a CoarseGrainBlocklet
                  */
-                for (Map.Entry <Integer, Set <Integer>> mapPageId : mapPageIds.entrySet()) {
-                    /**
-                     * construct array rowid
-                     */
-                    int[] rowIds = new int[mapPageId.getValue().size()];
-                    int i = 0;
-                    /**
-                     * for rowids in this page
-                     * Set<RowId>
-                     */
-                    for (Integer rowid : mapPageId.getValue()) {
-                        rowIds[i++] = rowid;
-                    }
-                    /**
-                     * construct one page
-                     */
-                    FineGrainBlocklet.Page page = new FineGrainBlocklet.Page();
-                    page.setPageId(mapPageId.getKey());
-                    page.setRowId(rowIds);
-
-                    /**
-                     * add this page into list pages
-                     */
-                    pages.add(page);
-                }
-
-                /**
-                 * add a FineGrainBlocklet
-                 */
-                blocklets.add(new FineGrainBlocklet(blockId, blockletId, pages));
+                blocklets.add(new Blocklet(blockId, blockletId.toString()));
             }
         }
 
         return blocklets;
     }
-
-
-
 
     /**
      * Clear complete index table and release memory.
@@ -324,6 +267,4 @@ public class LuceneFineGrainDataMap extends AbstractFineGrainDataMap {
     public void clear() {
 
     }
-
-
 }

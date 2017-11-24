@@ -42,6 +42,10 @@ public class LuceneDataMapWriter extends AbstractDataMapWriter {
 
     private String blockId = null;
 
+    private String dataMapName = null;
+
+    private boolean isFineGrain = true;
+
     final static public String BLOCKID_NAME = "blockId";
 
     final static public String BLOCKLETID_NAME = "blockletId";
@@ -50,26 +54,31 @@ public class LuceneDataMapWriter extends AbstractDataMapWriter {
 
     final static public String ROWID_NAME = "rowId";
 
-    public LuceneDataMapWriter(AbsoluteTableIdentifier identifier, String segmentId,
-                               String writeDirectoryPath,DataMapMeta dataMapMeta) {
+    public LuceneDataMapWriter(AbsoluteTableIdentifier identifier,
+                               String dataMapName,
+                               String segmentId,
+                               String writeDirectoryPath,
+                               DataMapMeta dataMapMeta,
+                               boolean isFineGrain) {
         super(identifier, segmentId,writeDirectoryPath);
         this.dataMapMeta = dataMapMeta;
+        this.dataMapName = dataMapName;
+        this.isFineGrain = isFineGrain;
     }
 
-    public String getIndexPath(String blockId) {
-        return identifier.getTablePath()
-                + "/Fact/Part0/Segment_" + segmentId + File.separator + "LuceneDataMap";
-        //return writeDirectoryPath + File.separator + "LuceneDataMap";
+    public String getIndexPath() {
+        if(isFineGrain) {
+            return identifier.getTablePath()
+                    + "/Fact/Part0/Segment_" + segmentId + File.separator + dataMapName;
+        }else{
+            /**
+             * TODO: where write data in coarse grain data map
+             */
+            return identifier.getTablePath()
+                    + "/Fact/Part0/Segment_" + segmentId + File.separator + dataMapName;
+        }
     }
 
-    private String getBlockIdKey(String blockId) {
-        /**
-         * get valid string from blockid from 5 to 19
-         * part-0-0_batchno0-0-1509950589280.carbondata
-         */
-        //return blockId.substring(5,19);
-        return blockId;
-    }
 
     /**
      * Start of new block notification.
@@ -85,7 +94,7 @@ public class LuceneDataMapWriter extends AbstractDataMapWriter {
         /**
          * get index path, put index data into segment's path
          */
-        String strIndexPath = getIndexPath(blockId);
+        String strIndexPath = getIndexPath();
         Path indexPath = FileFactory.getPath(strIndexPath);
         FileSystem fs = FileFactory.getFileSystem(indexPath);
 
@@ -181,7 +190,7 @@ public class LuceneDataMapWriter extends AbstractDataMapWriter {
             /**
              * add block id, save this id
              */
-            doc.add(new StringField(BLOCKID_NAME, getBlockIdKey(blockId), Field.Store.YES));
+            doc.add(new StringField(BLOCKID_NAME, blockId, Field.Store.YES));
 
             /**
              * add blocklet Id
@@ -191,19 +200,23 @@ public class LuceneDataMapWriter extends AbstractDataMapWriter {
             //doc.add(new NumericDocValuesField(BLOCKLETID_NAME,blockletId));
 
             /**
-             * add page Id
+             * add page id and row id in Fine Grain data map
              */
-            doc.add(new IntPoint(PAGEID_NAME,new int[]{pageId}));
-            doc.add(new StoredField(PAGEID_NAME,pageId));
-            //doc.add(new NumericDocValuesField(PAGEID_NAME,pageId));
+            if(isFineGrain) {
+                /**
+                 * add page Id
+                 */
+                doc.add(new IntPoint(PAGEID_NAME, new int[]{pageId}));
+                doc.add(new StoredField(PAGEID_NAME, pageId));
+                //doc.add(new NumericDocValuesField(PAGEID_NAME,pageId));
 
-            /**
-             * add row id
-             */
-            doc.add(new IntPoint(ROWID_NAME, new int[]{rowId}));
-            doc.add(new StoredField(ROWID_NAME, rowId));
-            //doc.add(new NumericDocValuesField(ROWID_NAME,rowId));
-
+                /**
+                 * add row id
+                 */
+                doc.add(new IntPoint(ROWID_NAME, new int[]{rowId}));
+                doc.add(new StoredField(ROWID_NAME, rowId));
+                //doc.add(new NumericDocValuesField(ROWID_NAME,rowId));
+            }
 
             /**
              * add other fields
