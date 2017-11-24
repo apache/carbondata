@@ -71,7 +71,7 @@ case class CarbonCreateTableCommand(
         LOGGER.audit(
           s"Table creation with Database name [$dbName] and Table name [$tbName] failed. " +
           s"Table [$tbName] already exists under database [$dbName]")
-        throw new TableAlreadyExistsException(dbName, dbName)
+        throw new TableAlreadyExistsException(dbName, tbName)
       }
     } else {
       val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tbName)
