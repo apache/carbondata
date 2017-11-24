@@ -104,7 +104,7 @@ object ResourceRegisterAndCopier {
         i += 1
       }
     } catch {
-      case e: InterruptedException =>
+      case _: InterruptedException =>
         return false
     }
     false
@@ -146,7 +146,7 @@ object ResourceRegisterAndCopier {
       "Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; .NET CLR 1.0.3705; .NET CLR 1.1.4322;" +
       " .NET CLR 1.2.30703)")
 
-    var input = c.getInputStream
+    val input = c.getInputStream
     val buffer = new Array[Byte](4096)
     var n = input.read(buffer)
 
@@ -167,8 +167,6 @@ object ResourceRegisterAndCopier {
       while ( { enu.hasMoreElements }) {
         val zipEntry = enu.nextElement
         val name = destDir + "/" + zipEntry.getName
-        val size = zipEntry.getSize
-        val compressedSize = zipEntry.getCompressedSize
         val file = new File(name)
         if (name.endsWith("/")) {
           file.mkdirs

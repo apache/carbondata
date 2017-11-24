@@ -40,11 +40,12 @@ class UpdateCoalescedRDD[T: ClassTag](
     // This iterator combines data from all the parent partitions
     new Iterator[T] {
       val parentPartitionIter = split.asInstanceOf[CoalescedRDDPartition].parents.iterator
-      var currentDataIter: Iterator[T] = null
+      var currentDataIter: Iterator[T] = _
       val prevRdd = firstParent[T]
 
       def hasNext: Boolean = {
-        while ((currentDataIter == null || currentDataIter.hasNext == false) &&
+        while (currentDataIter == null ||
+               !currentDataIter.hasNext &&
                parentPartitionIter.hasNext) {
           val currentPartition = parentPartitionIter.next()
           currentDataIter = prevRdd.compute(currentPartition, context)

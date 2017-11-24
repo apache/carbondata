@@ -124,15 +124,14 @@ object Compactor {
       val endTime = System.nanoTime()
       logger.info(s"time taken to merge $mergedLoadName is ${ endTime - startTime }")
       val statusFileUpdation =
-        (((compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) &&
-          (CarbonDataMergerUtil
+        ((compactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) &&
+          CarbonDataMergerUtil
             .updateLoadMetadataIUDUpdateDeltaMergeStatus(loadsToMerge,
-              carbonTable.getMetaDataFilepath(),
-              carbonLoadModel))) ||
-         (CarbonDataMergerUtil
-           .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath(),
-             mergedLoadNumber, carbonLoadModel, mergeLoadStartTime, compactionType))
-          )
+              carbonTable.getMetaDataFilepath,
+              carbonLoadModel)) ||
+         CarbonDataMergerUtil
+           .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath,
+             mergedLoadNumber, carbonLoadModel, mergeLoadStartTime, compactionType)
 
       if (!statusFileUpdation) {
         logger.audit(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
