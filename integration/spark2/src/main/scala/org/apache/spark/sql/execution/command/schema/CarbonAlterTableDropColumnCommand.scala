@@ -70,7 +70,6 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       val tableColumns = carbonTable.getCreateOrderColumn(tableName).asScala
       var dictionaryColumns = Seq[org.apache.carbondata.core.metadata.schema.table.column
       .ColumnSchema]()
-      var keyColumnCountToBeDeleted = 0
       // TODO: if deleted column list includes bucketted column throw an error
       alterTableDropColumnModel.columns.foreach { column =>
         var columnExist = false
@@ -78,7 +77,6 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
           // column should not be already deleted and should exist in the table
           if (!tableColumn.isInvisible && column.equalsIgnoreCase(tableColumn.getColName)) {
             if (tableColumn.isDimension) {
-              keyColumnCountToBeDeleted += 1
               if (tableColumn.hasEncoding(Encoding.DICTIONARY)) {
                 dictionaryColumns ++= Seq(tableColumn.getColumnSchema)
               }
@@ -89,14 +87,6 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
         if (!columnExist) {
           sys.error(s"Column $column does not exists in the table $dbName.$tableName")
         }
-      }
-      // take the total key column count. key column to be deleted should not
-      // be >= key columns in schema
-      val totalKeyColumnInSchema = tableColumns.count {
-        tableColumn => !tableColumn.isInvisible && tableColumn.isDimension
-      }
-      if (keyColumnCountToBeDeleted >= totalKeyColumnInSchema) {
-        sys.error(s"Alter drop operation failed. AtLeast one key column should exist after drop.")
       }
 
       val operationContext = new OperationContext

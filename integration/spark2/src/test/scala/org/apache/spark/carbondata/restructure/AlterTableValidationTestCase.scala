@@ -44,6 +44,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists restructure_new")
     sql("drop table if exists restructure_bad")
     sql("drop table if exists restructure_badnew")
+    sql("drop table if exists allKeyCol")
     // clean data folder
     CarbonProperties.getInstance()
     sql(
@@ -149,6 +150,19 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     checkExistence(sql("desc restructure"), true, "longfldbigint")
     checkExistence(sql("desc restructure"), true, "dblflddouble")
     checkExistence(sql("desc restructure"), true, "dcmldecimal(5,4)")
+  }
+
+  test("test drop all keycolumns in a table") {
+    sql(
+      "create table allKeyCol (name string, age int, address string) stored by 'org.apache" +
+      ".carbondata.format'")
+    try {
+      sql("alter table allKeyCol drop columns(name,address)")
+      assert(true)
+    } catch {
+      case _: Exception =>
+        assert(false)
+    }
   }
 
   ignore(
@@ -526,5 +540,6 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists uniqdata1")
     sql("drop table if exists defaultSortColumnsWithAlter")
     sql("drop table if exists specifiedSortColumnsWithAlter")
+    sql("drop table if exists allKeyCol")
   }
 }
