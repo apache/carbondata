@@ -504,6 +504,9 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     assert(intercept[RuntimeException] {
       sql("alter table preaggmain rename to preaggmain_new")
     }.getMessage.contains("Rename operation is not supported for table with pre-aggregate tables"))
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists preaggmain_new")
+    sql("drop table if exists preaggMain_preagg1")
   }
 
   override def afterAll {
