@@ -156,11 +156,24 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case AlterTableSetPropertiesCommand(tableName, properties, isView)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(tableName)(sparkSession) => {
+        // TODO remove this limitation later
+        val property = properties.find(_._1.equalsIgnoreCase("streaming"))
+        if (property.isDefined) {
+          if (!property.get._2.trim.equalsIgnoreCase("true")) {
+            throw new MalformedCarbonCommandException(
+              "Streaming property can not be changed to 'false' once it is 'true'")
+          }
+        }
         ExecutedCommandExec(AlterTableSetCommand(tableName, properties, isView)) :: Nil
       }
       case AlterTableUnsetPropertiesCommand(tableName, propKeys, ifExists, isView)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(tableName)(sparkSession) => {
+        // TODO remove this limitation later
+        if (propKeys.find(_.equalsIgnoreCase("streaming")).isDefined) {
+          throw new MalformedCarbonCommandException(
+            "Streaming property can not be removed")
+        }
         ExecutedCommandExec(AlterTableUnsetCommand(tableName, propKeys, ifExists, isView)) :: Nil
       }
       case _ => Nil
