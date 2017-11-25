@@ -207,6 +207,7 @@ object CommonUtil {
             isValid &= validateTypeConvert(partitionerFields(0), _))
         }
         case "RANGE_INTERVAL" => isValid = false
+        case "HIVE" => isValid = true
         case _ => isValid = false
       }
       // only support one partition column for now
