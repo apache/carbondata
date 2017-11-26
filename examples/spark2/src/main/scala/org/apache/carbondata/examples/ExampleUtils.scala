@@ -42,6 +42,7 @@ object ExampleUtils {
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
+      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "")
 
     import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
