@@ -374,7 +374,7 @@ object GlobalDictionaryUtil {
       classOf[CSVInputFormat],
       classOf[NullWritable],
       classOf[StringArrayWritable],
-      hadoopConf).setName("global dictionary").map[Row] { currentRow =>
+      jobConf).setName("global dictionary").map[Row] { currentRow =>
       row.setValues(currentRow._2.get())
     }
     sqlContext.createDataFrame(rdd, schema)
