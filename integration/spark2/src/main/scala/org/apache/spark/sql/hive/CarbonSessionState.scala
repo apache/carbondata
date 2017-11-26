@@ -132,7 +132,7 @@ class CarbonSessionCatalog(
  * Session state implementation to override sql parser and adding strategies
  * @param sparkSession
  */
-class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sparkSession) {
+class CarbonSessionState(sparkSession: SparkSession) extends CarbonHiveSessionState(sparkSession) {
 
   override lazy val sqlParser: ParserInterface = new CarbonSparkSqlParser(conf, sparkSession)
 
