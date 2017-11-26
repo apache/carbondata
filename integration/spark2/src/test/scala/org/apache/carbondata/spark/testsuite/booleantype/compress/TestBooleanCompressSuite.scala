@@ -17,7 +17,9 @@
 
 package org.apache.carbondata.spark.testsuite.booleantype.compress
 
-import java.io.File
+import java.io.{File, PrintWriter}
+
+import scala.util.Random
 
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -36,14 +38,14 @@ class TestBooleanCompressSuite extends QueryTest with BeforeAndAfterEach with Be
 
   override def afterAll(): Unit = {
     sql("drop table if exists boolean_table")
-    assert(BooleanFile.deleteFile(randomBoolean))
+    assert(deleteFile(randomBoolean))
   }
 
   val randomBoolean = s"$rootPath/src/test/resources/bool/supportRandomBooleanBigFile.csv"
   val trueNum = 10000000
 
   override def beforeAll(): Unit = {
-    assert(BooleanFile.createBooleanFileRandom(randomBoolean, trueNum, 0.5))
+    assert(createBooleanFileRandom(randomBoolean, trueNum, 0.5))
     CarbonProperties.getInstance()
       .addProperty("carbon.storelocation", s"$rootPath/target/warehouse/")
   }
@@ -74,4 +76,36 @@ class TestBooleanCompressSuite extends QueryTest with BeforeAndAfterEach with Be
       Row(trueNum))
   }
 
+  val randomNumber = 10000
+  def createBooleanFileRandom(path: String, totalLines: Int, rate: Double): Boolean = {
+    try {
+      val write = new PrintWriter(path)
+      var d: Double = 0.0
+      val random = new Random()
+      for (i <- 0 until totalLines) {
+        val eachNum = random.nextInt(randomNumber)
+        var flag: Boolean = true
+        if (eachNum >= randomNumber * rate) {
+          flag = false
+        }
+        write.println(flag)
+        d = d + 1
+      }
+
+      write.close()
+    } catch {
+      case _: Exception => assert(false)
+    }
+    return true
+  }
+
+  def deleteFile(path: String): Boolean = {
+    try {
+      val file = new File(path)
+      file.delete()
+    } catch {
+      case _: Exception => assert(false)
+    }
+    return true
+  }
 }
