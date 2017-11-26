@@ -155,7 +155,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     try {
       initTempStoreLocation();
       initSortDataRows();
-      initAggType();
+      dataTypes = CarbonDataProcessorUtil.initDataType(carbonTable, tableName, measureCount);
       processResult(resultIteratorList);
       // After delete command, if no records are fetched from one split,
       // below steps are not required to be initialized.
@@ -257,7 +257,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * @return
    */
   private Object getConvertedMeasureValue(Object value, DataType type) {
-    if (type == DataTypes.DECIMAL) {
+    if (DataTypes.isDecimal(type)) {
       if (value != null) {
         value = ((Decimal) value).toJavaBigDecimal();
       }
@@ -406,10 +406,4 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
             true, false);
   }
 
-  /**
-   * initialise aggregation type for measures for their storage format
-   */
-  private void initAggType() {
-    dataTypes = CarbonDataProcessorUtil.initDataType(carbonTable, tableName, measureCount);
-  }
 }

@@ -43,7 +43,7 @@ public class CarbonLoadModel implements Serializable {
 
   private boolean aggLoadRequest;
 
-  private String storePath;
+  private String tablePath;
 
   private boolean isRetentionRequest;
 
@@ -53,7 +53,6 @@ public class CarbonLoadModel implements Serializable {
   private String complexDelimiterLevel1;
   private String complexDelimiterLevel2;
 
-  private boolean isDirectLoad;
   private List<LoadMetadataDetails> loadMetadataDetails;
   private transient SegmentUpdateStatusManager segmentUpdateStatusManager;
 
@@ -94,6 +93,8 @@ public class CarbonLoadModel implements Serializable {
    */
   private String commentChar;
 
+  private String timestampformat;
+
   private String dateFormat;
 
   private String defaultTimestampFormat;
@@ -124,6 +125,11 @@ public class CarbonLoadModel implements Serializable {
    * defines the string to specify whether empty data is good or bad
    */
   private String isEmptyDataBadRecord;
+
+  /**
+   * defines the string to specify whether to skip empty line
+   */
+  private String skipEmptyLine;
 
   /**
    * Use one pass to generate dictionary
@@ -163,6 +169,16 @@ public class CarbonLoadModel implements Serializable {
    * Number of partitions in global sort.
    */
   private String globalSortPartitions;
+
+  private boolean isAggLoadRequest;
+
+  public boolean isAggLoadRequest() {
+    return isAggLoadRequest;
+  }
+
+  public void setAggLoadRequest(boolean aggLoadRequest) {
+    isAggLoadRequest = aggLoadRequest;
+  }
 
   /**
    * get escape char
@@ -204,14 +220,6 @@ public class CarbonLoadModel implements Serializable {
 
   public void setComplexDelimiterLevel2(String complexDelimiterLevel2) {
     this.complexDelimiterLevel2 = complexDelimiterLevel2;
-  }
-
-  public boolean isDirectLoad() {
-    return isDirectLoad;
-  }
-
-  public void setDirectLoad(boolean isDirectLoad) {
-    this.isDirectLoad = isDirectLoad;
   }
 
   public String getAllDictPath() {
@@ -350,18 +358,21 @@ public class CarbonLoadModel implements Serializable {
     copy.escapeChar = escapeChar;
     copy.quoteChar = quoteChar;
     copy.commentChar = commentChar;
+    copy.timestampformat = timestampformat;
     copy.dateFormat = dateFormat;
     copy.defaultTimestampFormat = defaultTimestampFormat;
     copy.maxColumns = maxColumns;
-    copy.storePath = storePath;
+    copy.tablePath = tablePath;
     copy.useOnePass = useOnePass;
     copy.dictionaryServerHost = dictionaryServerHost;
     copy.dictionaryServerPort = dictionaryServerPort;
     copy.preFetch = preFetch;
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
+    copy.skipEmptyLine = skipEmptyLine;
     copy.sortScope = sortScope;
     copy.batchSortSizeInMb = batchSortSizeInMb;
     copy.badRecordsLocation = badRecordsLocation;
+    copy.isAggLoadRequest = isAggLoadRequest;
     return copy;
   }
 
@@ -383,7 +394,6 @@ public class CarbonLoadModel implements Serializable {
     copy.isRetentionRequest = isRetentionRequest;
     copy.csvHeader = csvHeader;
     copy.csvHeaderColumns = csvHeaderColumns;
-    copy.isDirectLoad = isDirectLoad;
     copy.csvDelimiter = csvDelimiter;
     copy.complexDelimiterLevel1 = complexDelimiterLevel1;
     copy.complexDelimiterLevel2 = complexDelimiterLevel2;
@@ -398,17 +408,20 @@ public class CarbonLoadModel implements Serializable {
     copy.escapeChar = escapeChar;
     copy.quoteChar = quoteChar;
     copy.commentChar = commentChar;
+    copy.timestampformat = timestampformat;
     copy.dateFormat = dateFormat;
     copy.defaultTimestampFormat = defaultTimestampFormat;
     copy.maxColumns = maxColumns;
-    copy.storePath = storePath;
+    copy.tablePath = tablePath;
     copy.useOnePass = useOnePass;
     copy.dictionaryServerHost = dictionaryServerHost;
     copy.dictionaryServerPort = dictionaryServerPort;
     copy.preFetch = preFetch;
     copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
+    copy.skipEmptyLine = skipEmptyLine;
     copy.sortScope = sortScope;
     copy.batchSortSizeInMb = batchSortSizeInMb;
+    copy.isAggLoadRequest = isAggLoadRequest;
     return copy;
   }
 
@@ -434,7 +447,6 @@ public class CarbonLoadModel implements Serializable {
     copyObj.carbonDataLoadSchema = carbonDataLoadSchema;
     copyObj.csvHeader = header;
     copyObj.csvHeaderColumns = csvHeaderColumns;
-    copyObj.isDirectLoad = true;
     copyObj.csvDelimiter = delimiter;
     copyObj.complexDelimiterLevel1 = complexDelimiterLevel1;
     copyObj.complexDelimiterLevel2 = complexDelimiterLevel2;
@@ -448,18 +460,21 @@ public class CarbonLoadModel implements Serializable {
     copyObj.escapeChar = escapeChar;
     copyObj.quoteChar = quoteChar;
     copyObj.commentChar = commentChar;
+    copyObj.timestampformat = timestampformat;
     copyObj.dateFormat = dateFormat;
     copyObj.defaultTimestampFormat = defaultTimestampFormat;
     copyObj.maxColumns = maxColumns;
-    copyObj.storePath = storePath;
+    copyObj.tablePath = tablePath;
     copyObj.useOnePass = useOnePass;
     copyObj.dictionaryServerHost = dictionaryServerHost;
     copyObj.dictionaryServerPort = dictionaryServerPort;
     copyObj.preFetch = preFetch;
     copyObj.isEmptyDataBadRecord = isEmptyDataBadRecord;
+    copyObj.skipEmptyLine = skipEmptyLine;
     copyObj.sortScope = sortScope;
     copyObj.batchSortSizeInMb = batchSortSizeInMb;
     copyObj.badRecordsLocation = badRecordsLocation;
+    copyObj.isAggLoadRequest = isAggLoadRequest;
     return copyObj;
   }
 
@@ -478,17 +493,17 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * @param storePath The storePath to set.
+   * @param tablePath The tablePath to set.
    */
-  public void setStorePath(String storePath) {
-    this.storePath = storePath;
+  public void setTablePath(String tablePath) {
+    this.tablePath = tablePath;
   }
 
   /**
    * @return Returns the factStoreLocation.
    */
-  public String getStorePath() {
-    return storePath;
+  public String getTablePath() {
+    return tablePath;
   }
 
   /**
@@ -760,5 +775,20 @@ public class CarbonLoadModel implements Serializable {
 
   public void setBadRecordsLocation(String badRecordsLocation) {
     this.badRecordsLocation = badRecordsLocation;
+  }
+
+  public String getTimestampformat() {
+    return timestampformat;
+  }
+
+  public void setTimestampformat(String timestampformat) {
+    this.timestampformat = timestampformat;
+  }
+  public String getSkipEmptyLine() {
+    return skipEmptyLine;
+  }
+
+  public void setSkipEmptyLine(String skipEmptyLine) {
+    this.skipEmptyLine = skipEmptyLine;
   }
 }

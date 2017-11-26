@@ -58,7 +58,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
     tableInfo.setTableUniqueName("TestTable");
     tableInfo.setDatabaseName("test");
     String storePath = System.getProperty("java.io.tmpdir") + "/tmp";
-    tableInfo.setStorePath(storePath);
+    tableInfo.setTablePath(storePath + "/test" + "/TestTable");
     carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
     carbonDimension = new CarbonDimension(columnSchema,0,0,0,0,0);
   }
@@ -152,7 +152,7 @@ public class IncrementalColumnDictionaryGeneratorTest {
     File dictPath = new File(storePath + "/test/TestTable/Metadata/");
     System.out.print(dictPath.mkdirs());
 
-    tableInfo.setStorePath(storePath);
+    tableInfo.setTablePath(storePath + "/test" + "/TestTable");
     CarbonTable carbonTable = CarbonTable.buildFromTableInfo(tableInfo);
 
     // Add the table to metadata

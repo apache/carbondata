@@ -52,7 +52,7 @@ public class CarbonInputFormatUtil {
     if (columnString != null) {
       columns = columnString.split(",");
     }
-    String factTableName = carbonTable.getFactTableName();
+    String factTableName = carbonTable.getTableName();
     CarbonQueryPlan plan = new CarbonQueryPlan(carbonTable.getDatabaseName(), factTableName);
     // fill dimensions
     // If columns are null, set all dimensions and measures
@@ -82,6 +82,10 @@ public class CarbonInputFormatUtil {
       AbsoluteTableIdentifier identifier,
       Job job) throws IOException {
     CarbonTableInputFormat<V> carbonInputFormat = new CarbonTableInputFormat<>();
+    carbonInputFormat.setDatabaseName(job.getConfiguration(),
+        identifier.getCarbonTableIdentifier().getDatabaseName());
+    carbonInputFormat
+        .setTableName(job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
     return carbonInputFormat;
   }
@@ -90,6 +94,10 @@ public class CarbonInputFormatUtil {
       AbsoluteTableIdentifier identifier, List<String> partitionId, Job job) throws IOException {
     CarbonTableInputFormat<V> carbonTableInputFormat = new CarbonTableInputFormat<>();
     carbonTableInputFormat.setPartitionIdList(job.getConfiguration(), partitionId);
+    carbonTableInputFormat.setDatabaseName(job.getConfiguration(),
+        identifier.getCarbonTableIdentifier().getDatabaseName());
+    carbonTableInputFormat
+        .setTableName(job.getConfiguration(), identifier.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(identifier.getTablePath()));
     return carbonTableInputFormat;
   }
@@ -109,12 +117,14 @@ public class CarbonInputFormatUtil {
     plan.addDimension(queryDimension);
   }
 
-  public static void processFilterExpression(Expression filterExpression, CarbonTable carbonTable) {
+  public static void processFilterExpression(Expression filterExpression, CarbonTable carbonTable,
+      boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
     List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
-    QueryModel.processFilterExpression(filterExpression, dimensions, measures);
+        carbonTable.getMeasureByTableName(carbonTable.getTableName());
+    QueryModel.processFilterExpression(filterExpression, dimensions, measures,
+        isFilterDimensions, isFilterMeasures);
 
     if (null != filterExpression) {
       // Optimize Filter Expression and fit RANGE filters is conditions apply.

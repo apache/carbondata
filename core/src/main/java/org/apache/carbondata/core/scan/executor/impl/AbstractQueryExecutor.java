@@ -49,7 +49,6 @@ import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -146,8 +145,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
       // get the table blocks
       CacheProvider cacheProvider = CacheProvider.getInstance();
       BlockIndexStore<TableBlockUniqueIdentifier, AbstractIndex> cache =
-          (BlockIndexStore) cacheProvider
-              .createCache(CacheType.EXECUTOR_BTREE, queryModel.getTable().getStorePath());
+          (BlockIndexStore) cacheProvider.createCache(CacheType.EXECUTOR_BTREE);
       // remove the invalid table blocks, block which is deleted or compacted
       cache.removeTableBlocks(queryModel.getInvalidSegmentIds(),
           queryModel.getAbsoluteTableIdentifier());
@@ -161,10 +159,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
         .addStatistics(QueryStatisticsConstants.LOAD_BLOCKS_EXECUTOR, System.currentTimeMillis());
     queryProperties.queryStatisticsRecorder.recordStatistics(queryStatistic);
     // calculating the total number of aggeragted columns
-    int aggTypeCount = queryModel.getQueryMeasures().size();
+    int measureCount = queryModel.getQueryMeasures().size();
 
     int currentIndex = 0;
-    DataType[] dataTypes = new DataType[aggTypeCount];
+    DataType[] dataTypes = new DataType[measureCount];
 
     for (QueryMeasure carbonMeasure : queryModel.getQueryMeasures()) {
       // adding the data type and aggregation type of all the measure this
@@ -261,7 +259,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
             queryModel.getQueryDimension(), tableBlockDimensions,
             segmentProperties.getComplexDimensions());
     int tableFactPathLength = CarbonStorePath
-        .getCarbonTablePath(queryModel.getAbsoluteTableIdentifier().getStorePath(),
+        .getCarbonTablePath(queryModel.getAbsoluteTableIdentifier().getTablePath(),
             queryModel.getAbsoluteTableIdentifier().getCarbonTableIdentifier()).getFactDir()
         .length() + 1;
     blockExecutionInfo.setBlockId(filePath.substring(tableFactPathLength));
@@ -478,8 +476,7 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
   private int[] getComplexDimensionParentBlockIndexes(List<QueryDimension> queryDimensions) {
     List<Integer> parentBlockIndexList = new ArrayList<Integer>();
     for (QueryDimension queryDimension : queryDimensions) {
-      if (CarbonUtil.hasDataType(queryDimension.getDimension().getDataType(),
-          new DataType[] { DataTypes.ARRAY, DataTypes.STRUCT, DataTypes.MAP })) {
+      if (queryDimension.getDimension().getDataType().isComplexType()) {
         parentBlockIndexList.add(queryDimension.getDimension().getOrdinal());
       }
     }

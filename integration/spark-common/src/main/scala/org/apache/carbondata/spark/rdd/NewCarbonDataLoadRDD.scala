@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.spark.rdd
 
-import java.io.{File, IOException, ObjectInputStream, ObjectOutputStream}
+import java.io._
 import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.{Date, UUID}
@@ -41,6 +41,8 @@ import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.compression.CompressorFactory
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses}
@@ -178,7 +180,7 @@ class NewCarbonDataLoadRDD[K, V](
     result: DataLoadResult[K, V],
     carbonLoadModel: CarbonLoadModel,
     blocksGroupBy: Array[(String, Array[BlockDetails])],
-    isTableSplitPartition: Boolean)
+    @transient hadoopConf: Configuration)
   extends CarbonRDD[(K, V)](sc, Nil) {
 
   sc.setLocalProperty("spark.scheduler.pool", "DDL")
@@ -188,33 +190,27 @@ class NewCarbonDataLoadRDD[K, V](
     formatter.format(new Date())
   }
 
-  // A Hadoop Configuration can be about 10 KB, which is pretty big, so broadcast it
-  private val confBroadcast =
-    sc.broadcast(new SerializableConfiguration(sc.hadoopConfiguration))
+  private val confBytes = {
+    val bao = new ByteArrayOutputStream()
+    val oos = new ObjectOutputStream(bao)
+    hadoopConf.write(oos)
+    oos.close()
+    CompressorFactory.getInstance().getCompressor.compressByte(bao.toByteArray)
+  }
+
+  private def getConf = {
+    val configuration = new Configuration(false)
+    val bai = new ByteArrayInputStream(CompressorFactory.getInstance().getCompressor
+      .unCompressByte(confBytes))
+    val ois = new ObjectInputStream(bai)
+    configuration.readFields(ois)
+    ois.close()
+    configuration
+  }
 
   override def getPartitions: Array[Partition] = {
-    if (isTableSplitPartition) {
-      // for table split partition
-      var splits: Array[TableSplit] = null
-
-      if (carbonLoadModel.isDirectLoad) {
-        splits = CarbonQueryUtil.getTableSplitsForDirectLoad(carbonLoadModel.getFactFilePath)
-      } else {
-        splits = CarbonQueryUtil.getTableSplits(carbonLoadModel.getDatabaseName,
-          carbonLoadModel.getTableName, null)
-      }
-
-      splits.zipWithIndex.map { s =>
-        // filter the same partition unique id, because only one will match, so get 0 element
-        val blocksDetails: Array[BlockDetails] = blocksGroupBy.filter(p =>
-          p._1 == s._1.getPartition.getUniqueID)(0)._2
-        new CarbonTableSplitPartition(id, s._2, s._1, blocksDetails)
-      }
-    } else {
-      // for node partition
-      blocksGroupBy.zipWithIndex.map { b =>
-        new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
-      }
+    blocksGroupBy.zipWithIndex.map { b =>
+      new CarbonNodePartition(id, b._2, b._1._1, b._1._2)
     }
   }
 
@@ -233,7 +229,7 @@ class NewCarbonDataLoadRDD[K, V](
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
         loadMetadataDetails.setPartitionCount(partitionID)
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+        loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
 
         val preFetch = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
           .USE_PREFETCH_WHILE_LOADING, CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING_DEFAULT)
@@ -254,12 +250,12 @@ class NewCarbonDataLoadRDD[K, V](
           recordReaders)
       } catch {
         case e: NoRetryException =>
-          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+          loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
           logInfo("Bad Record Found")
         case e: Exception =>
-          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
+          loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
           logInfo("DataLoad failure", e)
           LOGGER.error(e)
           throw e
@@ -268,8 +264,7 @@ class NewCarbonDataLoadRDD[K, V](
         CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
-        if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          .equals(loadMetadataDetails.getLoadStatus)) {
+        if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {
           CarbonTimeStatisticsFactory.getLoadStatisticsInstance
             .printStatisticsInfo(model.getPartitionId)
         }
@@ -277,66 +272,32 @@ class NewCarbonDataLoadRDD[K, V](
 
       def getInputIterators: Array[CarbonIterator[Array[AnyRef]]] = {
         val attemptId = new TaskAttemptID(jobTrackerId, id, TaskType.MAP, theSplit.index, 0)
-        var configuration: Configuration = confBroadcast.value.value
+        var configuration: Configuration = getConf
         if (configuration == null) {
           configuration = new Configuration()
         }
         CommonUtil.configureCSVInputFormat(configuration, carbonLoadModel)
         val hadoopAttemptContext = new TaskAttemptContextImpl(configuration, attemptId)
         val format = new CSVInputFormat
-        if (isTableSplitPartition) {
-          // for table split partition
-          val split = theSplit.asInstanceOf[CarbonTableSplitPartition]
-          logInfo("Input split: " + split.serializableHadoopSplit.value)
-          carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-          if (carbonLoadModel.isDirectLoad) {
-            model = carbonLoadModel.getCopyWithPartition(
-                split.serializableHadoopSplit.value.getPartition.getUniqueID,
-                split.serializableHadoopSplit.value.getPartition.getFilesPath,
-                carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
-          } else {
-            model = carbonLoadModel.getCopyWithPartition(
-                split.serializableHadoopSplit.value.getPartition.getUniqueID)
-          }
-          partitionID = split.serializableHadoopSplit.value.getPartition.getUniqueID
-          StandardLogService.setThreadName(StandardLogService
-            .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
-            , ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId + "")
-          CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordPartitionBlockMap(
-              partitionID, split.partitionBlocksDetail.length)
-          val readers =
-          split.partitionBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
-          readers.zipWithIndex.map { case (reader, index) =>
-            new CSVRecordReaderIterator(reader,
-              split.partitionBlocksDetail(index),
-              hadoopAttemptContext)
-          }
-        } else {
-          // for node partition
-          val split = theSplit.asInstanceOf[CarbonNodePartition]
-          logInfo("Input split: " + split.serializableHadoopSplit)
-          logInfo("The Block Count in this node :" + split.nodeBlocksDetail.length)
-          CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordHostBlockMap(
-              split.serializableHadoopSplit, split.nodeBlocksDetail.length)
-          val blocksID = gernerateBlocksID
-          carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
-          if (carbonLoadModel.isDirectLoad) {
-            val filelist: java.util.List[String] = new java.util.ArrayList[String](
-                CarbonCommonConstants.CONSTANT_SIZE_TEN)
-            CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, filelist, ",")
-            model = carbonLoadModel.getCopyWithPartition(partitionID, filelist,
-                carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
-          } else {
-            model = carbonLoadModel.getCopyWithPartition(partitionID)
-          }
-          StandardLogService.setThreadName(StandardLogService
-            .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
-            , ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId + "")
-          val readers =
-            split.nodeBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
-          readers.zipWithIndex.map { case (reader, index) =>
-            new CSVRecordReaderIterator(reader, split.nodeBlocksDetail(index), hadoopAttemptContext)
-          }
+
+        val split = theSplit.asInstanceOf[CarbonNodePartition]
+        logInfo("Input split: " + split.serializableHadoopSplit)
+        logInfo("The Block Count in this node :" + split.nodeBlocksDetail.length)
+        CarbonTimeStatisticsFactory.getLoadStatisticsInstance.recordHostBlockMap(
+            split.serializableHadoopSplit, split.nodeBlocksDetail.length)
+        carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
+        val fileList: java.util.List[String] = new java.util.ArrayList[String](
+            CarbonCommonConstants.CONSTANT_SIZE_TEN)
+        CarbonQueryUtil.splitFilePath(carbonLoadModel.getFactFilePath, fileList, ",")
+        model = carbonLoadModel.getCopyWithPartition(partitionID, fileList,
+            carbonLoadModel.getCsvHeader, carbonLoadModel.getCsvDelimiter)
+        StandardLogService.setThreadName(StandardLogService
+          .getPartitionID(model.getCarbonDataLoadSchema.getCarbonTable.getTableUniqueName)
+          , ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId + "")
+        val readers =
+          split.nodeBlocksDetail.map(format.createRecordReader(_, hadoopAttemptContext))
+        readers.zipWithIndex.map { case (reader, index) =>
+          new CSVRecordReaderIterator(reader, split.nodeBlocksDetail(index), hadoopAttemptContext)
         }
       }
       /**
@@ -345,14 +306,8 @@ class NewCarbonDataLoadRDD[K, V](
        * @return
        */
       def gernerateBlocksID: String = {
-        if (isTableSplitPartition) {
-          carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
-          theSplit.asInstanceOf[CarbonTableSplitPartition].serializableHadoopSplit.value
-            .getPartition.getUniqueID + "_" + UUID.randomUUID()
-        } else {
-          carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
-          UUID.randomUUID()
-        }
+        carbonLoadModel.getDatabaseName + "_" + carbonLoadModel.getTableName + "_" +
+        UUID.randomUUID()
       }
 
       var finished = false
@@ -370,23 +325,17 @@ class NewCarbonDataLoadRDD[K, V](
   }
 
   override def getPreferredLocations(split: Partition): Seq[String] = {
-    if (isTableSplitPartition) {
-      val theSplit = split.asInstanceOf[CarbonTableSplitPartition]
-      val location = theSplit.serializableHadoopSplit.value.getLocations.asScala
-      location
-    } else {
-      val theSplit = split.asInstanceOf[CarbonNodePartition]
-      val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
-      logInfo("Preferred Location for split : " + firstOptionLocation.mkString(","))
-      /**
-       * At original logic, we were adding the next preferred location so that in case of the
-       * failure the Spark should know where to schedule the failed task.
-       * Remove the next preferred location is because some time Spark will pick the same node
-       * for 2 tasks, so one node is getting over loaded with the task and one have no task to
-       * do. And impacting the performance despite of any failure.
-       */
-      firstOptionLocation
-    }
+    val theSplit = split.asInstanceOf[CarbonNodePartition]
+    val firstOptionLocation: Seq[String] = List(theSplit.serializableHadoopSplit)
+    logInfo("Preferred Location for split : " + firstOptionLocation.mkString(","))
+    /**
+     * At original logic, we were adding the next preferred location so that in case of the
+     * failure the Spark should know where to schedule the failed task.
+     * Remove the next preferred location is because some time Spark will pick the same node
+     * for 2 tasks, so one node is getting over loaded with the task and one have no task to
+     * do. And impacting the performance despite of any failure.
+     */
+    firstOptionLocation
   }
 }
 
@@ -413,7 +362,7 @@ class NewDataFrameLoaderRDD[K, V](
       try {
 
         loadMetadataDetails.setPartitionCount(partitionID)
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+        loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
         carbonLoadModel.setPartitionId(partitionID)
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
         carbonLoadModel.setPreFetch(false)
@@ -443,12 +392,12 @@ class NewDataFrameLoaderRDD[K, V](
         executor.execute(model, loader.storeLocation, recordReaders.toArray)
       } catch {
         case e: NoRetryException =>
-          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+          loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
           logInfo("Bad Record Found")
         case e: Exception =>
-          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
+          loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
           logInfo("DataLoad failure", e)
           LOGGER.error(e)
           throw e
@@ -457,8 +406,7 @@ class NewDataFrameLoaderRDD[K, V](
         CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
-        if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          .equals(loadMetadataDetails.getLoadStatus)) {
+        if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {
           CarbonTimeStatisticsFactory.getLoadStatisticsInstance
             .printStatisticsInfo(model.getPartitionId)
         }
@@ -601,13 +549,13 @@ class PartitionTableDataLoaderRDD[K, V](
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
       val model: CarbonLoadModel = carbonLoadModel
       val carbonTable = model.getCarbonDataLoadSchema.getCarbonTable
-      val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+      val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
       val uniqueLoadStatusId =
         carbonLoadModel.getTableName + CarbonCommonConstants.UNDERSCORE + theSplit.index
       try {
 
         loadMetadataDetails.setPartitionCount(partitionID)
-        loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+        loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
         carbonLoadModel.setPartitionId(partitionID)
         carbonLoadModel.setTaskNo(String.valueOf(partitionInfo.getPartitionId(theSplit.index)))
         carbonLoadModel.setPreFetch(false)
@@ -628,12 +576,12 @@ class PartitionTableDataLoaderRDD[K, V](
         executor.execute(model, loader.storeLocation, recordReaders)
       } catch {
         case e: NoRetryException =>
-          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+          loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
           executionErrors.failureCauses = FailureCauses.BAD_RECORDS
           executionErrors.errorMsg = e.getMessage
           logInfo("Bad Record Found")
         case e: Exception =>
-          loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_FAILURE)
+          loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
           logInfo("DataLoad For Partition Table failure", e)
           LOGGER.error(e)
           throw e
@@ -642,8 +590,7 @@ class PartitionTableDataLoaderRDD[K, V](
         CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.
         // So print the data load statistics only in case of non failure case
-        if (!CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-          .equals(loadMetadataDetails.getLoadStatus)) {
+        if (SegmentStatus.LOAD_FAILURE != loadMetadataDetails.getSegmentStatus) {
           CarbonTimeStatisticsFactory.getLoadStatisticsInstance
             .printStatisticsInfo(model.getPartitionId)
         }

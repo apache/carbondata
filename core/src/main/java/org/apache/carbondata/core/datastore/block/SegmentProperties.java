@@ -378,8 +378,7 @@ public class SegmentProperties {
         }
         // as complex type will be stored at last so once complex type started all the dimension
         // will be added to complex type
-        else if (isComplexDimensionStarted || CarbonUtil.hasDataType(columnSchema.getDataType(),
-            new DataType[] { DataTypes.ARRAY, DataTypes.STRUCT })) {
+        else if (isComplexDimensionStarted || columnSchema.getDataType().isComplexType()) {
           cardinalityIndexForComplexDimensionColumn.add(tableOrdinal);
           carbonDimension =
               new CarbonDimension(columnSchema, dimensonOrdinal++, -1, -1, ++complexTypeOrdinal);
@@ -669,7 +668,7 @@ public class SegmentProperties {
     int k = eachDimColumnValueSize.length + eachComplexDimColumnValueSize.length;
     for (int i = 0; i < measures.size(); i++) {
       DataType dataType = measures.get(i).getDataType();
-      if (dataType.equals(DataTypes.DECIMAL)) {
+      if (DataTypes.isDecimal(dataType)) {
         dimensionValueSize[k++] = -1;
       } else {
         dimensionValueSize[k++] = 8;

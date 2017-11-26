@@ -18,34 +18,32 @@
 package org.apache.carbondata.spark.testsuite.datamap
 
 import java.util
-
 import scala.collection.JavaConverters._
-
 import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
-
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory, DataMapWriter}
 import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
 import org.apache.carbondata.core.datastore.page.ColumnPage
-import org.apache.carbondata.core.events.ChangeEvent
 import org.apache.carbondata.core.indexstore.schema.FilterType
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.events.Event
 
 class C2DataMapFactory() extends DataMapFactory {
 
   override def init(identifier: AbsoluteTableIdentifier,
       dataMapName: String): Unit = {}
 
-  override def fireEvent(event: ChangeEvent[_]): Unit = ???
+  override def fireEvent(event: Event): Unit = ???
 
   override def clear(segmentId: String): Unit = {}
 
   override def clear(): Unit = {}
 
-  override def getDataMap(distributable: DataMapDistributable): DataMap = ???
+  override def getDataMaps(distributable: DataMapDistributable): java.util.List[DataMap] = ???
 
   override def getDataMaps(segmentId: String): util.List[DataMap] = ???
 
@@ -64,7 +62,6 @@ class C2DataMapFactory() extends DataMapFactory {
 }
 
 class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
-
   def buildTestData(numRows: Int): DataFrame = {
     import sqlContext.implicits._
     sqlContext.sparkContext.parallelize(1 to numRows)
@@ -83,69 +80,74 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
 
   test("test write datamap 2 pages") {
     // register datamap writer
-    DataMapStoreManager.getInstance().createAndRegisterDataMap(
-      AbsoluteTableIdentifier.from(storeLocation, "default", "carbon1"),
-      classOf[C2DataMapFactory].getName,
-      "test")
+      DataMapStoreManager.getInstance().createAndRegisterDataMap(
+        AbsoluteTableIdentifier.from(storeLocation + "/carbon1", "default", "carbon1"),
+        classOf[C2DataMapFactory].getName,
+        "test")
 
-    val df = buildTestData(33000)
+      val df = buildTestData(33000)
 
-    // save dataframe to carbon file
-    df.write
-      .format("carbondata")
-      .option("tableName", "carbon1")
-      .mode(SaveMode.Overwrite)
-      .save()
+      // save dataframe to carbon file
+      df.write
+        .format("carbondata")
+        .option("tableName", "carbon1")
+        .mode(SaveMode.Overwrite)
+        .save()
 
-    assert(DataMapWriterSuite.callbackSeq.head.contains("block start"))
-    assert(DataMapWriterSuite.callbackSeq.last.contains("block end"))
-    assert(DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
-      "blocklet start 0",
-      "add page data: blocklet 0, page 0",
-      "add page data: blocklet 0, page 1",
-      "blocklet end: 0"
-    ))
-    DataMapWriterSuite.callbackSeq = Seq()
+      assert(DataMapWriterSuite.callbackSeq.head.contains("block start"))
+      assert(DataMapWriterSuite.callbackSeq.last.contains("block end"))
+      assert(
+        DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
+          "blocklet start 0",
+          "add page data: blocklet 0, page 0",
+          "add page data: blocklet 0, page 1",
+          "blocklet end: 0"
+        ))
+      DataMapWriterSuite.callbackSeq = Seq()
   }
 
   test("test write datamap 2 blocklet") {
     // register datamap writer
-    DataMapStoreManager.getInstance().createAndRegisterDataMap(
-      AbsoluteTableIdentifier.from(storeLocation, "default", "carbon2"),
-      classOf[C2DataMapFactory].getName,
-      "test")
+      DataMapStoreManager.getInstance().createAndRegisterDataMap(
+        AbsoluteTableIdentifier.from(storeLocation + "/carbon2", "default", "carbon2"),
+        classOf[C2DataMapFactory].getName,
+        "test")
 
+      CarbonProperties.getInstance()
+        .addProperty("carbon.blockletgroup.size.in.mb", "1")
     CarbonProperties.getInstance()
-      .addProperty("carbon.blockletgroup.size.in.mb", "1")
+      .addProperty("carbon.number.of.cores.while.loading",
+          CarbonCommonConstants.NUM_CORES_DEFAULT_VAL)
 
-    val df = buildTestData(300000)
+      val df = buildTestData(300000)
 
-    // save dataframe to carbon file
-    df.write
-      .format("carbondata")
-      .option("tableName", "carbon2")
-      .mode(SaveMode.Overwrite)
-      .save()
+      // save dataframe to carbon file
+      df.write
+        .format("carbondata")
+        .option("tableName", "carbon2")
+        .mode(SaveMode.Overwrite)
+        .save()
 
-    assert(DataMapWriterSuite.callbackSeq.head.contains("block start"))
-    assert(DataMapWriterSuite.callbackSeq.last.contains("block end"))
-    assert(DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
-      "blocklet start 0",
-      "add page data: blocklet 0, page 0",
-      "add page data: blocklet 0, page 1",
-      "add page data: blocklet 0, page 2",
-      "add page data: blocklet 0, page 3",
-      "add page data: blocklet 0, page 4",
-      "add page data: blocklet 0, page 5",
-      "add page data: blocklet 0, page 6",
-      "add page data: blocklet 0, page 7",
-      "blocklet end: 0",
-      "blocklet start 1",
-      "add page data: blocklet 1, page 0",
-      "add page data: blocklet 1, page 1",
-      "blocklet end: 1"
-    ))
-    DataMapWriterSuite.callbackSeq = Seq()
+      assert(DataMapWriterSuite.callbackSeq.head.contains("block start"))
+      assert(DataMapWriterSuite.callbackSeq.last.contains("block end"))
+      assert(
+        DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
+          "blocklet start 0",
+          "add page data: blocklet 0, page 0",
+          "add page data: blocklet 0, page 1",
+          "add page data: blocklet 0, page 2",
+          "add page data: blocklet 0, page 3",
+          "add page data: blocklet 0, page 4",
+          "add page data: blocklet 0, page 5",
+          "add page data: blocklet 0, page 6",
+          "add page data: blocklet 0, page 7",
+          "blocklet end: 0",
+          "blocklet start 1",
+          "add page data: blocklet 1, page 0",
+          "add page data: blocklet 1, page 1",
+          "blocklet end: 1"
+        ))
+      DataMapWriterSuite.callbackSeq = Seq()
   }
 
   override def afterAll {

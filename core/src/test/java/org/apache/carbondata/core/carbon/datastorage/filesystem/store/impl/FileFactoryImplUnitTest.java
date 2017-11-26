@@ -18,8 +18,10 @@
 package org.apache.carbondata.core.carbon.datastorage.filesystem.store.impl;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 import mockit.Mock;
@@ -146,6 +148,48 @@ public class FileFactoryImplUnitTest {
   @Test public void testGetCarbonFile() throws IOException {
     FileFactory.getDataOutputStream(filePath, FileFactory.FileType.VIEWFS);
     assertNotNull(FileFactory.getCarbonFile(filePath, FileFactory.FileType.HDFS));
+  }
+
+  @Test public void testTruncateFile() {
+    FileWriter writer = null;
+    String path = null;
+    try {
+      // generate a file
+      path = new File("target/truncatFile").getCanonicalPath();
+      writer = new FileWriter(path);
+      for (int i = 0; i < 4000; i++) {
+        writer.write("test truncate file method");
+      }
+      writer.close();
+      CarbonFile file = FileFactory.getCarbonFile(path);
+      assertTrue(file.getSize() == 100000L);
+
+      // truncate file to 4000 bytes
+      FileFactory.truncateFile(
+          path,
+          FileFactory.getFileType(path),
+          4000);
+      file = FileFactory.getCarbonFile(path);
+      assertEquals(file.getSize(), 4000L);
+    } catch (IOException e) {
+      e.printStackTrace();
+      assertTrue(e.getMessage(), false);
+    } finally {
+      if (writer != null) {
+        try {
+          writer.close();
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+      if (path != null) {
+        try {
+          FileFactory.deleteFile(path, FileFactory.getFileType(path));
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+    }
   }
 }
 

@@ -21,8 +21,11 @@ import java.io.File
 import java.math.{BigDecimal, RoundingMode}
 import java.sql.Timestamp
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{CarbonEnv, Row}
 import org.apache.spark.sql.common.util.Spark2QueryTest
+import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
+import org.apache.spark.sql.test.Spark2TestQueryExecutor
+import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -434,7 +437,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   test("test to check if the lock file is successfully deleted") {
       sql("create table lock_check(id int, name string) stored by 'carbondata'")
     sql("alter table lock_check rename to lock_rename")
-    assert(!new File(s"${ CarbonCommonConstants.STORE_LOCATION } + /default/lock_rename/meta.lock")
+    assert(!new File(s"${ CarbonCommonConstants.STORE_LOCATION } + /lock_rename/meta.lock")
       .exists())
   }
 
@@ -446,6 +449,30 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("alter table Default.uniqdata rename to uniqdata1")
     checkAnswer(sql("select * from Default.uniqdata1"), Row(1,"hello"))
   }
+
+  // test query before&after renaming, see CARBONDATA-1690
+  test("RenameTable_query_before_and_after_renaming") {
+    try {
+      sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""create table test2 (name string, id int) stored by 'carbondata'""").collect
+      sql(s"""insert into test1 select 'xx1',1""").collect
+      sql(s"""insert into test2 select 'xx2',2""").collect
+      // query before rename
+      checkAnswer(sql(s"""select * from test1"""), Seq(Row("xx1", 1)))
+      sql(s"""alter table test1 RENAME TO test3""").collect
+      sql(s"""alter table test2 RENAME TO test1""").collect
+      // query after rename
+      checkAnswer(sql(s"""select * from test1"""), Seq(Row("xx2", 2)))
+    } catch {
+      case e: Exception =>
+        assert(false)
+    } finally {
+      sql(s"""drop table if exists test1""").collect
+      sql(s"""drop table if exists test3""").collect
+      sql(s"""drop table if exists test2""").collect
+    }
+  }
+
   test("describe formatted for default sort_columns pre and post alter") {
     sql("CREATE TABLE defaultSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' " +
         "tblproperties('DICTIONARY_INCLUDE'='empno','DICTIONARY_EXCLUDE'='role')")
@@ -461,6 +488,25 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("alter table specifiedSortColumnsWithAlter add columns (designation12 String)")
     checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"SORT_COLUMNS")
     checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"empno,empname,role,doj")
+  }
+
+  test("test to check if new parent table name is reflected in pre-aggregate tables") {
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists preaggmain_new")
+    sql("drop table if exists preaggMain_preagg1")
+    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
+    sql(
+      "create datamap preagg1 on table PreAggMain using 'preaggregate' as select" +
+      " a,sum(b) from PreAggMain group by a")
+    assert(intercept[RuntimeException] {
+      sql("alter table preAggmain_preagg1 rename to preagg2")
+    }.getMessage.contains("Rename operation for pre-aggregate table is not supported."))
+    assert(intercept[RuntimeException] {
+      sql("alter table preaggmain rename to preaggmain_new")
+    }.getMessage.contains("Rename operation is not supported for table with pre-aggregate tables"))
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists preaggmain_new")
+    sql("drop table if exists preaggMain_preagg1")
   }
 
   override def afterAll {

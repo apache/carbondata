@@ -32,6 +32,7 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     sql("DROP TABLE IF EXISTS integertypetableAgg")
+    sql("DROP TABLE IF EXISTS short_table")
     sql("CREATE TABLE integertypetableAgg (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) STORED BY 'org.apache.carbondata.format'")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE integertypetableAgg OPTIONS ('DELIMITER'= ',', 'QUOTECHAR'= '\"', 'FILEHEADER'='')""")
   }
@@ -141,7 +142,25 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
         | DROP TABLE short_int_target_table
       """.stripMargin)
   }
-  
+
+  test("Create a table that contains short data type") {
+    sql("CREATE TABLE if not exists short_table(col1 short, col2 BOOLEAN) STORED BY 'carbondata'")
+
+    sql("insert into short_table values(1,true)")
+    sql("insert into short_table values(11,false)")
+    sql("insert into short_table values(211,false)")
+    sql("insert into short_table values(3111,true)")
+    sql("insert into short_table values(31111,false)")
+    sql("insert into short_table values(411111,false)")
+    sql("insert into short_table values(5111111,true)")
+
+    checkAnswer(
+      sql("select count(*) from short_table"),
+      Row(7)
+    )
+    sql("DROP TABLE IF EXISTS short_table")
+  }
+
   override def afterAll {
     sql("drop table if exists integertypetableAgg")
     CarbonProperties.getInstance().addProperty(

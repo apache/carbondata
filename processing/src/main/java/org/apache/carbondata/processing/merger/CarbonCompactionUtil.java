@@ -308,7 +308,7 @@ public class CarbonCompactionUtil {
   public static int[] updateColumnSchemaAndGetCardinality(Map<String, Integer> columnCardinalityMap,
       CarbonTable carbonTable, List<ColumnSchema> updatedColumnSchemaList) {
     List<CarbonDimension> masterDimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     List<Integer> updatedCardinalityList = new ArrayList<>(columnCardinalityMap.size());
     for (CarbonDimension dimension : masterDimensions) {
       Integer value = columnCardinalityMap.get(dimension.getColumnId());
@@ -321,7 +321,7 @@ public class CarbonCompactionUtil {
     }
     // add measures to the column schema list
     List<CarbonMeasure> masterSchemaMeasures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
+        carbonTable.getMeasureByTableName(carbonTable.getTableName());
     for (CarbonMeasure measure : masterSchemaMeasures) {
       updatedColumnSchemaList.add(measure.getColumnSchema());
     }

@@ -29,7 +29,6 @@ import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentif
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
@@ -55,11 +54,6 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
       LogServiceFactory.getLogService(CarbonDictionaryWriterImpl.class.getName());
 
   /**
-   * carbon type identifier
-   */
-  protected CarbonTableIdentifier carbonTableIdentifier;
-
-  /**
    * list which will hold values upto maximum of one dictionary chunk size
    */
   private List<ByteBuffer> oneDictionaryChunkList;
@@ -78,11 +72,6 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    * column identifier
    */
   protected DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier;
-
-  /**
-   * carbon dictionary data store path
-   */
-  protected String storePath;
 
   /**
    * dictionary file path
@@ -130,15 +119,11 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   /**
    * Constructor
    *
-   * @param storePath             carbon dictionary data store path
-   * @param carbonTableIdentifier table identifier which will give table name and database name
-   * @param dictionaryColumnUniqueIdentifier      column unique identifier
+   * @param dictionaryColumnUniqueIdentifier column unique identifier
    */
-  public CarbonDictionaryWriterImpl(String storePath, CarbonTableIdentifier carbonTableIdentifier,
+  public CarbonDictionaryWriterImpl(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-    this.carbonTableIdentifier = carbonTableIdentifier;
     this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
-    this.storePath = storePath;
     this.isFirstTime = true;
   }
 
@@ -255,7 +240,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
   protected void initPaths() {
     PathService pathService = CarbonCommonFactory.getPathService();
     CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(this.storePath, carbonTableIdentifier,
+        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getAbsoluteCarbonTableIdentifier(),
             dictionaryColumnUniqueIdentifier);
     this.dictionaryFilePath = carbonTablePath.getDictionaryFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
@@ -430,8 +415,7 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
    * @return
    */
   protected CarbonDictionaryMetadataReader getDictionaryMetadataReader() {
-    return new CarbonDictionaryMetadataReaderImpl(storePath, carbonTableIdentifier,
-        dictionaryColumnUniqueIdentifier);
+    return new CarbonDictionaryMetadataReaderImpl(dictionaryColumnUniqueIdentifier);
   }
 
   @Override public void commit() throws IOException {

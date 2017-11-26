@@ -21,8 +21,10 @@ import java.util.Comparator
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.NullWritable
+import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.{SparkContext, TaskContext}
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.NewHadoopRDD
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.execution.command.ExecutionErrors
@@ -31,7 +33,7 @@ import org.apache.spark.storage.StorageLevel
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.row.CarbonRow
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.loading.{DataLoadProcessBuilder, FailureCauses}
 import org.apache.carbondata.processing.loading.csvinput.{CSVInputFormat, StringArrayWritable}
@@ -49,21 +51,23 @@ object DataLoadProcessBuilderOnSpark {
   def loadDataUsingGlobalSort(
       sc: SparkContext,
       dataFrame: Option[DataFrame],
-      model: CarbonLoadModel): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+      model: CarbonLoadModel,
+      hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     val originRDD = if (dataFrame.isDefined) {
       dataFrame.get.rdd
     } else {
       // input data from files
-      val hadoopConfiguration = new Configuration()
-      CommonUtil.configureCSVInputFormat(hadoopConfiguration, model)
-      hadoopConfiguration.set(FileInputFormat.INPUT_DIR, model.getFactFilePath)
+      CommonUtil.configureCSVInputFormat(hadoopConf, model)
+      hadoopConf.set(FileInputFormat.INPUT_DIR, model.getFactFilePath)
       val columnCount = model.getCsvHeaderColumns.length
+      val jobConf = new JobConf(hadoopConf)
+      SparkHadoopUtil.get.addCredentials(jobConf)
       new NewHadoopRDD[NullWritable, StringArrayWritable](
         sc,
         classOf[CSVInputFormat],
         classOf[NullWritable],
         classOf[StringArrayWritable],
-        hadoopConfiguration)
+        jobConf)
         .map(x => DataLoadProcessorStepOnSpark.toStringArrayRow(x._2, columnCount))
     }
 
@@ -144,14 +148,14 @@ object DataLoadProcessBuilderOnSpark {
       val uniqueLoadStatusId = model.getTableName + CarbonCommonConstants.UNDERSCORE +
         "Partial_Success"
       val loadMetadataDetails = new LoadMetadataDetails()
-      loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS)
+      loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_PARTIAL_SUCCESS)
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
       executionErrors.failureCauses = FailureCauses.BAD_RECORDS
       Array((uniqueLoadStatusId, (loadMetadataDetails, executionErrors)))
     } else {
       val uniqueLoadStatusId = model.getTableName + CarbonCommonConstants.UNDERSCORE + "Success"
       val loadMetadataDetails = new LoadMetadataDetails()
-      loadMetadataDetails.setLoadStatus(CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS)
+      loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
       val executionErrors = new ExecutionErrors(FailureCauses.NONE, "")
       Array((uniqueLoadStatusId, (loadMetadataDetails, executionErrors)))
     }

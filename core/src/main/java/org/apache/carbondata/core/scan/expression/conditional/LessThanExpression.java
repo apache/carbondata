@@ -68,7 +68,7 @@ public class LessThanExpression extends BinaryConditionalExpression {
       result = elRes.getTime() < (erRes.getTime());
     } else if (dataType == DataTypes.LONG) {
       result = elRes.getLong() < (erRes.getLong());
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       result = elRes.getDecimal().compareTo(erRes.getDecimal()) < 0;
     } else {
       throw new FilterUnsupportedException("DataType: " + val1.getDataType() +

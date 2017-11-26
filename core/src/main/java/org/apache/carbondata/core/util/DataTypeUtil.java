@@ -27,8 +27,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -51,7 +49,6 @@ public final class DataTypeUtil {
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DataTypeUtil.class.getName());
-  private static final Map<String, String> dataTypeDisplayNames;
 
   private static final ThreadLocal<DateFormat> timeStampformatter = new ThreadLocal<DateFormat>() {
     @Override protected DateFormat initialValue() {
@@ -71,23 +68,6 @@ public final class DataTypeUtil {
     }
   };
 
-  static {
-    dataTypeDisplayNames = new HashMap<String, String>(16);
-    dataTypeDisplayNames.put(DataTypes.DATE.toString(), DataTypes.DATE.getName());
-    dataTypeDisplayNames.put(DataTypes.LONG.toString(), DataTypes.LONG.getName());
-    dataTypeDisplayNames.put(DataTypes.INT.toString(), DataTypes.INT.getName());
-    dataTypeDisplayNames.put(DataTypes.FLOAT.toString(), DataTypes.FLOAT.getName());
-    dataTypeDisplayNames.put(DataTypes.BOOLEAN.toString(), DataTypes.BOOLEAN.getName());
-    dataTypeDisplayNames.put(DataTypes.NULL.toString(), DataTypes.NULL.getName());
-    dataTypeDisplayNames.put(DataTypes.DECIMAL.toString(), DataTypes.DECIMAL.getName());
-    dataTypeDisplayNames.put(DataTypes.ARRAY.toString(), DataTypes.ARRAY.getName());
-    dataTypeDisplayNames.put(DataTypes.STRUCT.toString(), DataTypes.STRUCT.getName());
-    dataTypeDisplayNames.put(DataTypes.TIMESTAMP.toString(), DataTypes.TIMESTAMP.getName());
-    dataTypeDisplayNames.put(DataTypes.DATE.toString(), DataTypes.DATE.getName());
-    dataTypeDisplayNames.put(DataTypes.SHORT.toString(), DataTypes.SHORT.getName());
-    dataTypeDisplayNames.put(DataTypes.STRING.toString(), DataTypes.STRING.getName());
-  }
-
   /**
    * DataType converter for different computing engines
    */
@@ -105,7 +85,7 @@ public final class DataTypeUtil {
       CarbonMeasure carbonMeasure) {
     if (dataType == DataTypes.BOOLEAN) {
       return BooleanConvert.parseBoolean(msrValue);
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       BigDecimal bigDecimal =
           new BigDecimal(msrValue).setScale(carbonMeasure.getScale(), RoundingMode.HALF_UP);
       return normalizeDecimalValue(bigDecimal, carbonMeasure.getPrecision());
@@ -137,7 +117,7 @@ public final class DataTypeUtil {
       return (int) bb.getLong();
     } else if (dataType == DataTypes.LONG) {
       return bb.getLong();
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return byteToBigDecimal(data);
     } else {
       return bb.getDouble();
@@ -154,7 +134,7 @@ public final class DataTypeUtil {
       return (int) measurePage.getLong(index);
     } else if (dataType == DataTypes.LONG) {
       return measurePage.getLong(index);
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       BigDecimal bigDecimalMsrValue = measurePage.getDecimal(index);
       if (null != bigDecimalMsrValue && carbonMeasure.getScale() > bigDecimalMsrValue.scale()) {
         bigDecimalMsrValue =
@@ -163,20 +143,11 @@ public final class DataTypeUtil {
       if (null != bigDecimalMsrValue) {
         return normalizeDecimalValue(bigDecimalMsrValue, carbonMeasure.getPrecision());
       } else {
-        return bigDecimalMsrValue;
+        return null;
       }
     } else {
       return measurePage.getDouble(index);
     }
-  }
-
-
-  /**
-   * @param dataType
-   * @return
-   */
-  public static String getColumnDataTypeDisplayName(String dataType) {
-    return dataTypeDisplayNames.get(dataType);
   }
 
   /**
@@ -236,55 +207,6 @@ public final class DataTypeUtil {
     System.arraycopy(raw, offset + 1, unscale, 0, unscale.length);
     BigInteger sig = new BigInteger(unscale);
     return new BigDecimal(sig, scale);
-  }
-
-  /**
-   * returns the SqlStatement.Type of corresponding string value
-   *
-   * @param dataTypeStr
-   * @return return the SqlStatement.Type
-   */
-  public static DataType getDataType(String dataTypeStr) {
-    DataType dataType = null;
-    switch (dataTypeStr) {
-      case "BOOLEAN":
-        dataType = DataTypes.BOOLEAN;
-        break;
-      case "DATE":
-        dataType = DataTypes.DATE;
-        break;
-      case "TIMESTAMP":
-        dataType = DataTypes.TIMESTAMP;
-        break;
-      case "STRING":
-        dataType = DataTypes.STRING;
-        break;
-      case "INT":
-        dataType = DataTypes.INT;
-        break;
-      case "SMALLINT":
-        dataType = DataTypes.SHORT;
-        break;
-      case "LONG":
-        dataType = DataTypes.LONG;
-        break;
-      case "DOUBLE":
-        dataType = DataTypes.DOUBLE;
-        break;
-      case "DECIMAL":
-        dataType = DataTypes.DECIMAL;
-        break;
-      case "ARRAY":
-        dataType = DataTypes.ARRAY;
-        break;
-      case "STRUCT":
-        dataType = DataTypes.STRUCT;
-        break;
-      case "MAP":
-      default:
-        dataType = DataTypes.STRING;
-    }
-    return dataType;
   }
 
   /**
@@ -365,7 +287,7 @@ public final class DataTypeUtil {
           LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
           return null;
         }
-      } else if (actualDataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(actualDataType)) {
         if (data.isEmpty()) {
           return null;
         }
@@ -385,8 +307,6 @@ public final class DataTypeUtil {
       return ByteUtil.toBytes(BooleanConvert.parseBoolean(dimensionValue));
     } else if (actualDataType == DataTypes.STRING) {
       return ByteUtil.toBytes(dimensionValue);
-    } else if (actualDataType == DataTypes.BOOLEAN) {
-      return ByteUtil.toBytes(Boolean.parseBoolean(dimensionValue));
     } else if (actualDataType == DataTypes.SHORT) {
       return ByteUtil.toBytes(Short.parseShort(dimensionValue));
     } else if (actualDataType == DataTypes.INT) {
@@ -397,7 +317,7 @@ public final class DataTypeUtil {
       Date dateToStr = null;
       DateFormat dateFormatter = null;
       try {
-        if (null != dateFormat) {
+        if (null != dateFormat && !dateFormat.trim().isEmpty()) {
           dateFormatter = new SimpleDateFormat(dateFormat);
         } else {
           dateFormatter = timeStampformatter.get();
@@ -432,8 +352,6 @@ public final class DataTypeUtil {
         return ByteUtil.toBoolean(dataInBytes);
       } else if (actualDataType == DataTypes.STRING) {
         return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
-      } else if (actualDataType == DataTypes.BOOLEAN) {
-        return ByteUtil.toBoolean(dataInBytes);
       } else if (actualDataType == DataTypes.SHORT) {
         return ByteUtil.toShort(dataInBytes, 0, dataInBytes.length);
       } else if (actualDataType == DataTypes.INT) {
@@ -518,7 +436,7 @@ public final class DataTypeUtil {
           LOGGER.error("Cannot convert value to Time/Long type value" + e.getMessage());
           return null;
         }
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         String data7 = new String(dataInBytes, CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
         if (data7.isEmpty()) {
           return null;
@@ -585,7 +503,7 @@ public final class DataTypeUtil {
       // validation will not be done for timestamp datatype as for timestamp direct dictionary
       // is generated. No dictionary file is created for timestamp datatype column
       DataType dataType = dimension.getDataType();
-      if (dataType == DataTypes.DECIMAL) {
+      if (DataTypes.isDecimal(dataType)) {
         return parseStringToBigDecimal(value, dimension);
       } else if (dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
           dataType == DataTypes.LONG) {
@@ -618,7 +536,7 @@ public final class DataTypeUtil {
     }
     try {
       DataType dataType = dimension.getDataType();
-      if (dataType == DataTypes.DECIMAL) {
+      if (DataTypes.isDecimal(dataType)) {
         return parseStringToBigDecimal(value, dimension);
       } else if (dataType == DataTypes.INT) {
         Integer.parseInt(value);
@@ -721,7 +639,7 @@ public final class DataTypeUtil {
             return null;
           }
         }
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         String parsedValue = parseStringToBigDecimal(data, columnSchema);
         if (null == parsedValue) {
           return null;
@@ -749,7 +667,7 @@ public final class DataTypeUtil {
     try {
       Object parsedValue = null;
       DataType dataType = columnSchema.getDataType();
-      if (dataType == DataTypes.DECIMAL) {
+      if (DataTypes.isDecimal(dataType)) {
         return parseStringToBigDecimal(value, columnSchema);
       } else if (dataType == DataTypes.SHORT || dataType == DataTypes.INT ||
           dataType == DataTypes.LONG) {

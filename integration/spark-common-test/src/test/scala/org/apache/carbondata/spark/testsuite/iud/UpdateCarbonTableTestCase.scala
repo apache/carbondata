@@ -294,7 +294,7 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     val exception = intercept[Exception] {
       sql("""update iud.dest d set (c2, c5 ) = (c2 + 1, concat(c5 , "z"), "abc")""").show()
     }
-    assertResult("Number of source and destination columns are not matching")(exception.getMessage)
+    assertResult("The number of columns in source table and destination table columns mismatch;")(exception.getMessage)
   }
 
   test("update carbon table-error[no set columns") {
@@ -511,6 +511,21 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("select  name , rand()  from  iud.rand").show(100)
 
     sql("DROP TABLE IF EXISTS iud.rand")
+  }
+
+  test("test if update is unsupported for pre-aggregate tables") {
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists preaggMain_preagg1")
+    sql("create table preaggMain (a string, b string, c string) stored by 'carbondata'")
+    sql("create datamap preagg1 on table PreAggMain using 'preaggregate' as select a,sum(b) from PreAggMain group by a")
+    intercept[RuntimeException] {
+      sql("update preaggmain set (a)=('a')").show
+    }.getMessage.contains("Update operation is not supported for tables")
+    intercept[RuntimeException] {
+      sql("update preaggMain_preagg1 set (a)=('a')").show
+    }.getMessage.contains("Update operation is not supported for pre-aggregate table")
+    sql("drop table if exists preaggMain")
+    sql("drop table if exists preaggMain_preagg1")
   }
 
   override def afterAll {

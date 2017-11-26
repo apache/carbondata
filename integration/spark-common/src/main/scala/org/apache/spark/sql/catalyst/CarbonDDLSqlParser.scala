@@ -28,19 +28,20 @@ import scala.util.matching.Regex
 
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
+import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
-import org.apache.carbondata.processing.loading.sort.SortScopeOptions
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.{CommonUtil, DataTypeConverterUtil}
 
@@ -92,6 +93,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val BAD_RECORDS_ACTION = carbonKeyWord("BAD_RECORDS_ACTION")
   protected val IS_EMPTY_DATA_BAD_RECORD = carbonKeyWord("IS_EMPTY_DATA_BAD_RECORD")
   protected val IS_EMPTY_COMMA_DATA_BAD_RECORD = carbonKeyWord("IS_NULL_DATA_BAD_RECORD")
+  protected val SKIP_EMPTY_LINE = carbonKeyWord("SKIP_EMPTY_LINE")
   protected val FILES = carbonKeyWord("FILES")
   protected val FROM = carbonKeyWord("FROM")
   protected val HIERARCHIES = carbonKeyWord("HIERARCHIES")
@@ -171,6 +173,10 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val CHANGE = carbonKeyWord("CHANGE")
   protected val TBLPROPERTIES = carbonKeyWord("TBLPROPERTIES")
   protected val ID = carbonKeyWord("ID")
+  protected val DATAMAP = carbonKeyWord("DATAMAP")
+  protected val ON = carbonKeyWord("ON")
+  protected val DMPROPERTIES = carbonKeyWord("DMPROPERTIES")
+  protected val SELECT = carbonKeyWord("SELECT")
 
   protected val doubleQuotedString = "\"([^\"]+)\"".r
   protected val singleQuotedString = "'([^']+)'".r
@@ -222,16 +228,6 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     dimensions ++ complexDimensions
   }
 
-
-
-  def getScaleAndPrecision(dataType: String): (Int, Int) = {
-    val m: Matcher = Pattern.compile("^decimal\\(([^)]+)\\)").matcher(dataType)
-    m.find()
-    val matchedString: String = m.group(1)
-    val scaleAndPrecision = matchedString.split(",")
-    (Integer.parseInt(scaleAndPrecision(0).trim), Integer.parseInt(scaleAndPrecision(1).trim))
-  }
-
   /**
    * This will prepate the Model from the Tree details.
    *
@@ -243,11 +239,16 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @param tableProperties
    * @return
    */
-  def prepareTableModel(ifNotExistPresent: Boolean, dbName: Option[String]
-      , tableName: String, fields: Seq[Field],
+  def prepareTableModel(
+      ifNotExistPresent: Boolean,
+      dbName: Option[String],
+      tableName: String,
+      fields: Seq[Field],
       partitionCols: Seq[PartitionerField],
       tableProperties: mutable.Map[String, String],
-      bucketFields: Option[BucketFields], isAlterFlow: Boolean = false): TableModel = {
+      bucketFields: Option[BucketFields],
+      isAlterFlow: Boolean = false,
+      tableComment: Option[String] = None): TableModel = {
 
     fields.zipWithIndex.foreach { case (field, index) =>
       field.schemaOrdinal = index
@@ -287,7 +288,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       groupCols,
       Some(colProps),
       bucketFields: Option[BucketFields],
-      partitionInfo)
+      partitionInfo,
+      tableComment)
   }
 
   /**
@@ -381,19 +383,19 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       val columnDataType = DataTypeConverterUtil.
         convertToCarbonType(partitionCols.head.dataType.get)
       if (tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).isDefined) {
-        partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).get
+        partitionType = tableProperties(CarbonCommonConstants.PARTITION_TYPE)
       }
       if (tableProperties.get(CarbonCommonConstants.NUM_PARTITIONS).isDefined) {
-        numPartitions = tableProperties.get(CarbonCommonConstants.NUM_PARTITIONS).get
+        numPartitions = tableProperties(CarbonCommonConstants.NUM_PARTITIONS)
           .toInt
       }
       if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
-        rangeInfo = tableProperties.get(CarbonCommonConstants.RANGE_INFO).get.split(",")
+        rangeInfo = tableProperties(CarbonCommonConstants.RANGE_INFO).split(",")
           .map(_.trim()).toList
         CommonUtil.validateRangeInfo(rangeInfo, columnDataType, timestampFormatter, dateFormatter)
       }
       if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
-        val originListInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO).get
+        val originListInfo = tableProperties(CarbonCommonConstants.LIST_INFO)
         listInfo = PartitionUtils.getListInfo(originListInfo)
         CommonUtil.validateListInfo(listInfo)
       }
@@ -549,14 +551,14 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           val dataType = fields.find(x =>
             x.column.equalsIgnoreCase(column)).get.dataType.get
           if (isDataTypeSupportedForSortColumn(dataType)) {
-            val errormsg = s"sort_columns is unsupported for ${dataType} datatype column: " + column
+            val errormsg = s"sort_columns is unsupported for $dataType datatype column: " + column
             throw new MalformedCarbonCommandException(errormsg)
           }
         }
       }
 
       sortKey.foreach { dimension =>
-        if (!sortKeyDimsTmp.exists(dimension.equalsIgnoreCase(_))) {
+        if (!sortKeyDimsTmp.exists(dimension.equalsIgnoreCase)) {
           fields.foreach { field =>
             if (field.column.equalsIgnoreCase(dimension)) {
               sortKeyDimsTmp :+= field.column
@@ -623,7 +625,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         dimFields += field
       } else if (dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
         dimFields += field
-      } else if (DataTypeUtil.getDataType(field.dataType.get.toUpperCase) == DataTypes.TIMESTAMP &&
+      } else if (field.dataType.get.toUpperCase.equals("TIMESTAMP") &&
                  !dictIncludeCols.exists(x => x.equalsIgnoreCase(field.column))) {
         noDictionaryDims :+= field.column
         dimFields += field
@@ -755,7 +757,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @param dbName
    * @return Option of String
    */
-  protected def convertDbNameToLowerCase(dbName: Option[String]): Option[String] = {
+  def convertDbNameToLowerCase(dbName: Option[String]): Option[String] = {
     dbName match {
       case Some(databaseName) => Some(convertDbNameToLowerCase(databaseName))
       case None => dbName
@@ -782,7 +784,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
 
     if (remainingNodes.nonEmpty) {
-      sys.error(
+      CarbonException.analysisException(
         s"""Unhandled clauses:
             |You are likely trying to use an unsupported carbon feature."""".stripMargin)
     }
@@ -853,7 +855,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       "SERIALIZATION_NULL_FORMAT", "BAD_RECORDS_LOGGER_ENABLE", "BAD_RECORDS_ACTION",
       "ALL_DICTIONARY_PATH", "MAXCOLUMNS", "COMMENTCHAR", "DATEFORMAT", "BAD_RECORD_PATH",
       "BATCH_SORT_SIZE_INMB", "GLOBAL_SORT_PARTITIONS", "SINGLE_PASS",
-      "IS_EMPTY_DATA_BAD_RECORD", "HEADER"
+      "IS_EMPTY_DATA_BAD_RECORD", "HEADER", "TIMESTAMPFORMAT", "SKIP_EMPTY_LINE"
     )
     var isSupported = true
     val invalidOptions = StringBuilder.newBuilder
@@ -879,34 +881,42 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     }
 
     if (options.exists(_._1.equalsIgnoreCase("MAXCOLUMNS"))) {
-      val maxColumns: String = options.get("maxcolumns").get.head._2
+      val maxColumns: String = options("maxcolumns").head._2
       try {
         maxColumns.toInt
       } catch {
-        case ex: NumberFormatException =>
+        case _: NumberFormatException =>
           throw new MalformedCarbonCommandException(
             "option MAXCOLUMNS can only contain integer values")
       }
     }
 
     if (options.exists(_._1.equalsIgnoreCase("BAD_RECORDS_ACTION"))) {
-      val optionValue: String = options.get("bad_records_action").get.head._2
+      val optionValue: String = options("bad_records_action").head._2
       try {
         LoggerAction.valueOf(optionValue.toUpperCase)
       }
       catch {
-        case e: IllegalArgumentException =>
+        case _: IllegalArgumentException =>
           throw new MalformedCarbonCommandException(
             "option BAD_RECORDS_ACTION can have only either FORCE or IGNORE or REDIRECT")
       }
     }
     if (options.exists(_._1.equalsIgnoreCase("IS_EMPTY_DATA_BAD_RECORD"))) {
-      val optionValue: String = options.get("is_empty_data_bad_record").get.head._2
+      val optionValue: String = options("is_empty_data_bad_record").head._2
       if (!("true".equalsIgnoreCase(optionValue) || "false".equalsIgnoreCase(optionValue))) {
         throw new MalformedCarbonCommandException(
           "option IS_EMPTY_DATA_BAD_RECORD can have option either true or false")
       }
     }
+
+      if (options.exists(_._1.equalsIgnoreCase("SKIP_EMPTY_LINE"))) {
+        val optionValue: String = options.get("skip_empty_line").get.head._2
+        if (!("true".equalsIgnoreCase(optionValue) || "false".equalsIgnoreCase(optionValue))) {
+          throw new MalformedCarbonCommandException(
+            "option SKIP_EMPTY_LINE can have option either true or false")
+        }
+      }
 
     // check for duplicate options
     val duplicateOptions = options filter {
@@ -991,6 +1001,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         Field(e1, e2.dataType, Some(e1), e2.children, null, e3)
     }
 
+  lazy val addPreAgg: Parser[String] =
+    SELECT ~> restInput <~ opt(";") ^^ {
+      case query =>
+        "select preAGG() as preAgg, " + query
+    }
+
   protected lazy val primitiveFieldType: Parser[Field] =
     primitiveTypes ^^ {
       case e1 =>
@@ -1069,7 +1085,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       // if it is present then extracting the precision and scale. resetting the data type
       // with Decimal.
       case _ if dataType.startsWith("decimal") =>
-        val (precision, scale) = getScaleAndPrecision(dataType)
+        val (precision, scale) = CommonUtil.getScaleAndPrecision(dataType)
         Field(field.column,
           Some("Decimal"),
           field.name,

@@ -42,6 +42,7 @@ public class SchemaReader {
     String schemaFilePath = carbonTablePath.getSchemaFilePath();
     if (FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.LOCAL) ||
         FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.HDFS) ||
+        FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.S3) ||
         FileFactory.isFileExist(schemaFilePath, FileFactory.FileType.VIEWFS)) {
       String tableName = identifier.getCarbonTableIdentifier().getTableName();
 
@@ -61,7 +62,7 @@ public class SchemaReader {
       TableInfo wrapperTableInfo = schemaConverter
           .fromExternalToWrapperTableInfo(tableInfo,
               identifier.getCarbonTableIdentifier().getDatabaseName(), tableName,
-              identifier.getStorePath());
+              identifier.getTablePath());
       wrapperTableInfo.setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath));
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
       return CarbonMetadata.getInstance().getCarbonTable(

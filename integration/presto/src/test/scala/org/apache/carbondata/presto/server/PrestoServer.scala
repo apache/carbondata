@@ -18,7 +18,7 @@ package org.apache.carbondata.presto.server
 
 import java.sql.{Connection, DriverManager, ResultSet}
 import java.util
-import java.util.{Locale, Optional}
+import java.util.{Locale, Optional, Properties}
 
 import scala.collection.JavaConverters._
 import scala.util.{Failure, Success, Try}
@@ -119,14 +119,14 @@ object PrestoServer {
     val JDBC_DRIVER = "com.facebook.presto.jdbc.PrestoDriver"
     val DB_URL = "jdbc:presto://localhost:8086/carbondata/testdb"
 
+    val properties = new Properties
     // The database Credentials
-    val USER = "username"
-    val PASS = "password"
-
+    properties.setProperty("user", "test");
+  
     // STEP 2: Register JDBC driver
     Class.forName(JDBC_DRIVER)
     // STEP 3: Open a connection
-    DriverManager.getConnection(DB_URL, USER, PASS)
+    DriverManager.getConnection(DB_URL, properties)
   }
 
   /**

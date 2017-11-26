@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class ShortType extends DataType {
+class ShortType extends DataType {
 
-  public static final DataType SHORT = new ShortType(DataTypes.SHORT_TYPE_ID, 2, "SHORT", 2);
+  static final DataType SHORT = new ShortType(DataTypes.SHORT_TYPE_ID, 2, "SHORT", 2);
 
   private ShortType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);

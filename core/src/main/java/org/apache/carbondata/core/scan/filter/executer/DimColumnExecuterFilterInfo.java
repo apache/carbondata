@@ -20,6 +20,16 @@ public class DimColumnExecuterFilterInfo {
 
   byte[][] filterKeys;
 
+  public byte[][] getExcludeFilterKeys() {
+    return filterKeysForExclude;
+  }
+
+  public void setExcludeFilterKeys(byte[][] filterKeysForExclude) {
+    this.filterKeysForExclude = filterKeysForExclude;
+  }
+
+  byte[][] filterKeysForExclude;
+
   public void setFilterKeys(byte[][] filterKeys) {
     this.filterKeys = filterKeys;
   }

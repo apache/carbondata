@@ -20,64 +20,13 @@ package org.apache.spark.sql.hive
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute, UnresolvedFunction, UnresolvedRelation, UnresolvedStar}
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, NamedExpression}
+import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
 import org.apache.spark.sql.execution.SparkSqlParser
 import org.apache.spark.sql.execution.command.mutation.ProjectForDeleteCommand
-import org.apache.spark.sql.execution.datasources.LogicalRelation
-
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-
-
-/**
- * Insert into carbon table from other source
- */
-object CarbonPreInsertionCasts extends Rule[LogicalPlan] {
-  def apply(plan: LogicalPlan): LogicalPlan = {
-    plan.transform {
-      // Wait until children are resolved.
-      case p: LogicalPlan if !p.childrenResolved => p
-
-      case p@InsertIntoTable(relation: LogicalRelation, _, child, _, _)
-        if relation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        castChildOutput(p, relation.relation.asInstanceOf[CarbonDatasourceHadoopRelation], child)
-    }
-  }
-
-  def castChildOutput(p: InsertIntoTable,
-      relation: CarbonDatasourceHadoopRelation,
-      child: LogicalPlan)
-  : LogicalPlan = {
-    if (relation.carbonRelation.output.size > CarbonCommonConstants
-      .DEFAULT_MAX_NUMBER_OF_COLUMNS) {
-      sys
-        .error("Maximum supported column by carbon is:" + CarbonCommonConstants
-          .DEFAULT_MAX_NUMBER_OF_COLUMNS
-        )
-    }
-    if (child.output.size >= relation.carbonRelation.output.size) {
-      val newChildOutput = child.output.zipWithIndex.map { columnWithIndex =>
-        columnWithIndex._1 match {
-          case attr: Alias =>
-            Alias(attr.child, s"col${ columnWithIndex._2 }")(attr.exprId)
-          case attr: Attribute =>
-            Alias(attr, s"col${ columnWithIndex._2 }")(NamedExpression.newExprId)
-          case attr => attr
-        }
-      }
-      val newChild: LogicalPlan = if (newChildOutput == child.output) {
-        p.child
-      } else {
-        Project(newChildOutput, child)
-      }
-      InsertIntoCarbonTable(relation, p.partition, newChild, p.overwrite, p.ifNotExists)
-    } else {
-      sys.error("Cannot insert into target table because column number are different")
-    }
-  }
-}
+import org.apache.spark.sql.util.CarbonException
 
 case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
@@ -107,7 +56,8 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
       case Project(projectList, child) if !includedDestColumns =>
         includedDestColumns = true
         if (projectList.size != columns.size) {
-          sys.error("Number of source and destination columns are not matching")
+          CarbonException.analysisException(
+            "The number of columns in source table and destination table columns mismatch")
         }
         val renamedProjectList = projectList.zip(columns).map{ case(attr, col) =>
           attr match {

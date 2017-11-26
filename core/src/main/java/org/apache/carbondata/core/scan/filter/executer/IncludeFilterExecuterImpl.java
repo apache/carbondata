@@ -27,6 +27,7 @@ import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -78,6 +79,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
               null, null, msrColumnEvaluatorInfo.getMeasure(), msrColumnExecutorInfo);
       isMeasurePresentInCurrentBlock = true;
 
+      DataType msrType = getMeasureDataType(msrColumnEvaluatorInfo);
+      comparator = Comparator.getComparatorByDataTypeForMeasure(msrType);
     }
 
   }
@@ -147,6 +150,34 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
     return null;
   }
 
+  @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
+    if (isDimensionPresentInCurrentBlock) {
+      byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+      byte[] col = (byte[])value.getVal(dimColumnEvaluatorInfo.getDimension().getOrdinal());
+      for (int i = 0; i < filterValues.length; i++) {
+        if (0 == ByteUtil.UnsafeComparer.INSTANCE.compareTo(col, 0, col.length,
+            filterValues[i], 0, filterValues[i].length)) {
+          return true;
+        }
+      }
+    } else if (isMeasurePresentInCurrentBlock) {
+      Object[] filterValues = msrColumnExecutorInfo.getFilterKeys();
+      Object col = value.getVal(msrColumnEvaluatorInfo.getMeasure().getOrdinal() + dimOrdinalMax);
+      for (int i = 0; i < filterValues.length; i++) {
+        if (filterValues[i] == null) {
+          if (null == col) {
+            return true;
+          }
+          continue;
+        }
+        if (comparator.compare(col, filterValues[i]) == 0) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   private DataType getMeasureDataType(MeasureColumnResolvedFilterInfo msrColumnEvaluatorInfo) {
     if (msrColumnEvaluatorInfo.getType() == DataTypes.BOOLEAN) {
       return DataTypes.BOOLEAN;
@@ -156,8 +187,8 @@ public class IncludeFilterExecuterImpl implements FilterExecuter {
       return DataTypes.INT;
     } else if (msrColumnEvaluatorInfo.getType() == DataTypes.LONG) {
       return DataTypes.LONG;
-    } else if (msrColumnEvaluatorInfo.getType() == DataTypes.DECIMAL) {
-      return DataTypes.DECIMAL;
+    } else if (DataTypes.isDecimal(msrColumnEvaluatorInfo.getType())) {
+      return DataTypes.createDefaultDecimalType();
     } else {
       return DataTypes.DOUBLE;
     }

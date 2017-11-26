@@ -55,6 +55,7 @@ enum Encoding{
 	DIRECT_STRING = 10;   // Stores string value and string length separately in page data
 	ADAPTIVE_FLOATING = 11; // Identifies that a column is encoded using AdaptiveFloatingCodec
 	BOOL_BYTE = 12;   // Identifies that a column is encoded using BooleanPageCodec
+	ADAPTIVE_DELTA_FLOATING = 13; // Identifies that a column is encoded using AdaptiveDeltaFloatingCodec
 }
 
 enum PartitionType{
@@ -115,6 +116,12 @@ struct ColumnSchema{
 	 * It will have column order which user has provided
 	 */	
 	16: optional i32 schemaOrdinal
+
+  /**
+  *  to maintain the column relation with parent table.
+  *  will be usefull in case of pre-aggregate
+  **/
+	17: optional list<ParentColumnTableRelation> parentColumnTableRelations;
 }
 
 /**
@@ -167,7 +174,34 @@ struct TableSchema{
   6: optional PartitionInfo partitionInfo; // Partition information
 }
 
+struct RelationIdentifier {
+   1: optional string databaseName;
+   2: required string tableName;
+   3: required string tableId;
+}
+
+struct ParentColumnTableRelation {
+   1: required RelationIdentifier relationIdentifier;
+   2: required string columnId;
+   3: required string columnName
+}
+
+struct DataMapSchema  {
+    // DataMap name
+    1: required string dataMapName;
+    // class name
+    2: required string className;
+    // relation indentifier
+    3: optional RelationIdentifier relationIdentifire;
+    // in case of preaggregate it will be used to maintain the child schema
+    // which will be usefull in case of query and data load
+    4: optional TableSchema childTableSchema;
+    // to maintain properties like select query, query type like groupby, join
+    5: optional map<string, string> properties;
+}
+
 struct TableInfo{
 	1: required TableSchema fact_table;
 	2: required list<TableSchema> aggregate_table_list;
+	3: optional list<DataMapSchema> dataMapSchemas; // childSchema information
 }

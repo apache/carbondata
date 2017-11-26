@@ -1,20 +1,18 @@
 <!--
-    Licensed to the Apache Software Foundation (ASF) under one
-    or more contributor license agreements.  See the NOTICE file
-    distributed with this work for additional information
-    regarding copyright ownership.  The ASF licenses this file
-    to you under the Apache License, Version 2.0 (the
-    "License"); you may not use this file except in compliance
-    with the License.  You may obtain a copy of the License at
+    Licensed to the Apache Software Foundation (ASF) under one or more 
+    contributor license agreements.  See the NOTICE file distributed with
+    this work for additional information regarding copyright ownership. 
+    The ASF licenses this file to you under the Apache License, Version 2.0
+    (the "License"); you may not use this file except in compliance with 
+    the License.  You may obtain a copy of the License at
 
       http://www.apache.org/licenses/LICENSE-2.0
 
-    Unless required by applicable law or agreed to in writing,
-    software distributed under the License is distributed on an
-    "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
-    KIND, either express or implied.  See the License for the
-    specific language governing permissions and limitations
-    under the License.
+    Unless required by applicable law or agreed to in writing, software 
+    distributed under the License is distributed on an "AS IS" BASIS, 
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and 
+    limitations under the License.
 -->
 
 # How to contribute to Apache CarbonData
@@ -152,9 +150,13 @@ $ git rebase -i origin/master
 Navigate to the CarbonData GitHub mirror to create a pull request. The title of the pull request
 should be strictly in the following format:
 ```
-[CARBONDATA-issue number>] Title of the pull request
+[CARBONDATA-JiraTicketNumer][FeatureName] Description of pull request    
 ```
-Please include a descriptive pull request message to help make the reviewer’s job easier.
+Please include a descriptive pull request message to help make the reviewer’s job easier:
+```
+ - The root cause/problem statement
+ - What is the implemented solution
+ ```
 
 If you know a good committer to review your pull request, please make a comment like the following.
 If not, don’t worry, a committer will pick it up.

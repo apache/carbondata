@@ -19,7 +19,9 @@ package org.apache.carbondata.core.scan.filter.executer;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
+import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -51,6 +53,11 @@ public class RestructureIncludeFilterExecutorImpl extends RestructureEvaluatorIm
     return FilterUtil
         .createBitSetGroupWithDefaultValue(blockChunkHolder.getDataBlock().numberOfPages(),
             numberOfRows, isDefaultValuePresentInFilterValues);
+  }
+
+  @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+      throws FilterUnsupportedException {
+    throw new FilterUnsupportedException("Unsupported RestructureIncludeFilterExecutorImpl on row");
   }
 
   public BitSet isScanRequired(byte[][] blkMaxVal, byte[][] blkMinVal) {

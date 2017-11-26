@@ -35,6 +35,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -54,9 +55,12 @@ import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.columnar.UnBlockIndexer;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
+import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -64,6 +68,7 @@ import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
@@ -74,16 +79,24 @@ import org.apache.carbondata.core.reader.ThriftReader.TBaseCreator;
 import org.apache.carbondata.core.scan.model.QueryDimension;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.PathService;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
+import org.apache.carbondata.format.BlockletHeader;
 import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 
 import com.google.gson.Gson;
+import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileStatus;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.thrift.TBase;
 import org.apache.thrift.TException;
@@ -389,7 +402,9 @@ public final class CarbonUtil {
 
   public static void deleteFiles(File[] intermediateFiles) throws IOException {
     for (int i = 0; i < intermediateFiles.length; i++) {
-      if (!intermediateFiles[i].delete()) {
+      // ignore deleting for index file since it is inside merged file.
+      if (!intermediateFiles[i].delete() && !intermediateFiles[i].getName()
+          .endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
         throw new IOException("Problem while deleting intermediate file");
       }
     }
@@ -724,12 +739,54 @@ public final class CarbonUtil {
     return defaultFsUrl + currentPath;
   }
 
+  /**
+   * Append default file system schema if not added to the filepath
+   *
+   * @param filePath
+   */
+  public static String checkAndAppendFileSystemURIScheme(String filePath) {
+    String currentPath = filePath;
+
+    if (checkIfPrefixExists(filePath)) {
+      return currentPath;
+    }
+    if (!filePath.startsWith("/")) {
+      filePath = "/" + filePath;
+    }
+    currentPath = filePath;
+    String defaultFsUrl = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
+    if (defaultFsUrl == null) {
+      return currentPath;
+    }
+    return defaultFsUrl + currentPath;
+  }
+
   private static boolean checkIfPrefixExists(String path) {
-    final String lowerPath = path.toLowerCase();
-    return lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) || lowerPath
-        .startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) || lowerPath
-        .startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX) || lowerPath
-        .startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX);
+    final String lowerPath = path.toLowerCase(Locale.getDefault());
+    return lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.LOCAL_FILE_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3A_PREFIX);
+  }
+
+  public static String removeAKSK(String filePath) {
+    if (null == filePath) {
+      return "";
+    }
+    String lowerPath = filePath.toLowerCase(Locale.getDefault());
+    if (lowerPath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3A_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      int prefixLength = filePath.indexOf(":", 0) + 3;
+      int pathOffset = filePath.indexOf("@");
+      if (pathOffset > 0) {
+        return filePath.substring(0, prefixLength) + filePath.substring(pathOffset + 1);
+      }
+    }
+    return filePath;
   }
 
   /**
@@ -742,7 +799,7 @@ public final class CarbonUtil {
         return true;
       }
     } catch (IOException e) {
-      LOGGER.error("@@@@@@  File not found at a given location @@@@@@ : " + fileName);
+      LOGGER.error("@@@@@@  File not found at a given location @@@@@@ : " + removeAKSK(fileName));
     }
     return false;
   }
@@ -1002,7 +1059,7 @@ public final class CarbonUtil {
     // it will be sinkup with block index read from file
     Collections.sort(tableBlockInfoList);
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
     // geting the index file path
     //TODO need to pass proper partition number when partiton will be supported
@@ -1245,7 +1302,7 @@ public final class CarbonUtil {
     // it will be sinkup with block index read from file
     Collections.sort(tableBlockInfoList);
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+        .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
     // geting the index file path
     //TODO need to pass proper partition number when partiton will be supported
@@ -1292,6 +1349,25 @@ public final class CarbonUtil {
     try {
       fileReader =
           FileFactory.getDataInputStream(csvFilePath, FileFactory.getFileType(csvFilePath));
+      bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
+          Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
+      readLine = bufferedReader.readLine();
+    } finally {
+      CarbonUtil.closeStreams(fileReader, bufferedReader);
+    }
+    return readLine;
+  }
+
+  public static String readHeader(String csvFilePath,
+      Configuration hadoopConf) throws IOException {
+
+    DataInputStream fileReader = null;
+    BufferedReader bufferedReader = null;
+    String readLine = null;
+
+    try {
+      fileReader = FileFactory.getDataInputStream(
+          csvFilePath, FileFactory.getFileType(csvFilePath), -1, hadoopConf);
       bufferedReader = new BufferedReader(new InputStreamReader(fileReader,
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET)));
       readLine = bufferedReader.readLine();
@@ -1356,6 +1432,13 @@ public final class CarbonUtil {
     return thriftByteArray;
   }
 
+  public static BlockletHeader readBlockletHeader(byte[] data) throws IOException {
+    return (BlockletHeader) read(data, new ThriftReader.TBaseCreator() {
+      @Override public TBase create() {
+        return new BlockletHeader();
+      }
+    }, 0, data.length);
+  }
 
   public static DataChunk3 readDataChunk3(ByteBuffer dataChunkBuffer, int offset, int length)
       throws IOException {
@@ -1552,13 +1635,12 @@ public final class CarbonUtil {
    *                                         tableName and columnIdentifier
    * @return
    */
-  public static boolean isFileExistsForGivenColumn(String carbonStorePath,
+  public static boolean isFileExistsForGivenColumn(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService.getCarbonTablePath(carbonStorePath,
-        dictionaryColumnUniqueIdentifier.getCarbonTableIdentifier(),
-        dictionaryColumnUniqueIdentifier);
-
+    CarbonTablePath carbonTablePath = pathService
+        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getAbsoluteCarbonTableIdentifier(),
+            dictionaryColumnUniqueIdentifier);
     String dictionaryFilePath = carbonTablePath.getDictionaryFilePath(
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
     String dictionaryMetadataFilePath = carbonTablePath.getDictionaryMetaFilePath(
@@ -1846,6 +1928,7 @@ public final class CarbonUtil {
     return map;
   }
 
+  // TODO: move this to carbon store API as it is related to TableInfo creation
   public static TableInfo convertGsonToTableInfo(Map<String, String> properties) {
     Gson gson = new Gson();
     String partsNo = properties.get("carbonSchemaPartsNo");
@@ -1862,7 +1945,33 @@ public final class CarbonUtil {
       builder.append(part);
     }
     TableInfo tableInfo = gson.fromJson(builder.toString(), TableInfo.class);
+
+    // The tableInfo is deserialized from GSON string, need to update the scale and
+    // precision if there are any decimal field, because DecimalType is added in Carbon 1.3,
+    // If it is not updated, read compactibility will be break for table generated before Carbon 1.3
+    updateDecimalType(tableInfo);
     return tableInfo;
+  }
+
+  // Update decimal type inside `tableInfo` to set scale and precision, if there are any decimal
+  private static void updateDecimalType(TableInfo tableInfo) {
+    List<ColumnSchema> deserializedColumns = tableInfo.getFactTable().getListOfColumns();
+    for (ColumnSchema column : deserializedColumns) {
+      DataType dataType = column.getDataType();
+      if (DataTypes.isDecimal(dataType)) {
+        column.setDataType(DataTypes.createDecimalType(column.getPrecision(), column.getScale()));
+      }
+    }
+    if (tableInfo.getFactTable().getPartitionInfo() != null) {
+      List<ColumnSchema> partitionColumns =
+          tableInfo.getFactTable().getPartitionInfo().getColumnSchemaList();
+      for (ColumnSchema column : partitionColumns) {
+        DataType dataType = column.getDataType();
+        if (DataTypes.isDecimal(dataType)) {
+          column.setDataType(DataTypes.createDecimalType(column.getPrecision(), column.getScale()));
+        }
+      }
+    }
   }
 
   /**
@@ -1962,7 +2071,7 @@ public final class CarbonUtil {
       b.putDouble((double) value);
       b.flip();
       return b.array();
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return DataTypeUtil.bigDecimalToByte((BigDecimal) value);
     } else if (dataType == DataTypes.BYTE_ARRAY) {
       return (byte[]) value;
@@ -1974,6 +2083,30 @@ public final class CarbonUtil {
     }
   }
 
+  public static boolean validateRangeOfSegmentList(String segmentId)
+      throws InvalidConfigurationException {
+    String[] values = segmentId.split(",");
+    try {
+      if (values.length == 0) {
+        throw new InvalidConfigurationException(
+            "carbon.input.segments.<database_name>.<table_name> value can't be empty.");
+      }
+      for (String value : values) {
+        if (!value.equalsIgnoreCase("*")) {
+          Float aFloatValue = Float.parseFloat(value);
+          if (aFloatValue < 0 || aFloatValue > Float.MAX_VALUE) {
+            throw new InvalidConfigurationException(
+                "carbon.input.segments.<database_name>.<table_name> value range should be greater "
+                    + "than 0 and less than " + Float.MAX_VALUE);
+          }
+        }
+      }
+    } catch (NumberFormatException nfe) {
+      throw new InvalidConfigurationException(
+          "carbon.input.segments.<database_name>.<table_name> value range is not valid");
+    }
+    return true;
+  }
   /**
    * Below method will be used to check whether bitset applied on previous filter
    * can be used to apply on next column filter
@@ -2018,6 +2151,164 @@ public final class CarbonUtil {
       }
     }
     return -1;
+  }
+
+  /**
+   * get the parent folder of old table path and returns the new tablePath by appending new
+   * tableName to the parent
+   *
+   * @param carbonTablePath       Old tablePath
+   * @param carbonTableIdentifier new carbonTableIdentifier
+   * @return the new table path
+   */
+  public static String getNewTablePath(Path carbonTablePath,
+      CarbonTableIdentifier carbonTableIdentifier) {
+    Path parentPath = carbonTablePath.getParent();
+    return parentPath.toString() + CarbonCommonConstants.FILE_SEPARATOR + carbonTableIdentifier
+        .getTableName();
+  }
+
+  /*
+   * This method will add data size and index size into tablestatus for each segment
+   */
+  public static void addDataIndexSizeIntoMetaEntry(LoadMetadataDetails loadMetadataDetails,
+      String segmentId, CarbonTable carbonTable) throws IOException {
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath((carbonTable.getAbsoluteTableIdentifier()));
+    Map<String, Long> dataIndexSize =
+        CarbonUtil.getDataSizeAndIndexSize(carbonTablePath, segmentId);
+    loadMetadataDetails
+        .setDataSize(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE).toString());
+    loadMetadataDetails
+        .setIndexSize(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE).toString());
+  }
+
+  /**
+   * This method will calculate the data size and index size for carbon table
+   */
+  public static Map<String, Long> calculateDataIndexSize(CarbonTable carbonTable)
+      throws IOException {
+    Map<String, Long> dataIndexSizeMap = new HashMap<String, Long>();
+    long dataSize = 0L;
+    long indexSize = 0L;
+    long lastUpdateTime = 0L;
+    boolean needUpdate = false;
+    AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
+    String isCalculated = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.ENABLE_CALCULATE_SIZE,
+            CarbonCommonConstants.DEFAULT_ENABLE_CALCULATE_SIZE);
+    if (isCalculated.equalsIgnoreCase("true")) {
+      SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
+      ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
+      try {
+        if (carbonLock.lockWithRetries()) {
+          LOGGER.info("Acquired lock for table for table status updation");
+          String metadataPath = carbonTable.getMetaDataFilepath();
+          LoadMetadataDetails[] loadMetadataDetails =
+              SegmentStatusManager.readLoadMetadata(metadataPath);
+
+          for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
+            SegmentStatus loadStatus = loadMetadataDetail.getSegmentStatus();
+            if (loadStatus == SegmentStatus.SUCCESS || loadStatus ==
+                      SegmentStatus.LOAD_PARTIAL_SUCCESS) {
+              String dsize = loadMetadataDetail.getDataSize();
+              String isize = loadMetadataDetail.getIndexSize();
+              // If it is old segment, need to calculate data size and index size again
+              if (null == dsize || null == isize) {
+                needUpdate = true;
+                LOGGER.info("It is an old segment, need calculate data size and index size again");
+                HashMap<String, Long> map = CarbonUtil
+                    .getDataSizeAndIndexSize(carbonTablePath, loadMetadataDetail.getLoadName());
+                dsize = String.valueOf(map.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE));
+                isize = String.valueOf(map.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE));
+                loadMetadataDetail.setDataSize(dsize);
+                loadMetadataDetail.setIndexSize(isize);
+              }
+              dataSize += Long.parseLong(dsize);
+              indexSize += Long.parseLong(isize);
+            }
+          }
+          // If it contains old segment, write new load details
+          if (needUpdate) {
+            SegmentStatusManager.writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath(),
+                loadMetadataDetails);
+          }
+          String tableStatusPath = carbonTablePath.getTableStatusFilePath();
+          if (FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
+            lastUpdateTime =
+                FileFactory.getCarbonFile(tableStatusPath, FileFactory.getFileType(tableStatusPath))
+                    .getLastModifiedTime();
+          }
+          dataIndexSizeMap
+              .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE), dataSize);
+          dataIndexSizeMap
+              .put(String.valueOf(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE), indexSize);
+          dataIndexSizeMap
+              .put(String.valueOf(CarbonCommonConstants.LAST_UPDATE_TIME), lastUpdateTime);
+        } else {
+          LOGGER.error("Not able to acquire the lock for Table status updation for table");
+        }
+      } finally {
+        if (carbonLock.unlock()) {
+          LOGGER.info("Table unlocked successfully after table status updation");
+        } else {
+          LOGGER.error("Unable to unlock Table lock for table during table status updation");
+        }
+      }
+    }
+    return dataIndexSizeMap;
+  }
+
+  // Get the total size of carbon data and the total size of carbon index
+  public static HashMap<String, Long> getDataSizeAndIndexSize(CarbonTablePath carbonTablePath,
+      String segmentId) throws IOException {
+    long carbonDataSize = 0L;
+    long carbonIndexSize = 0L;
+    HashMap<String, Long> dataAndIndexSize = new HashMap<String, Long>();
+    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
+    FileFactory.FileType fileType = FileFactory.getFileType(segmentPath);
+    switch (fileType) {
+      case HDFS:
+      case ALLUXIO:
+      case VIEWFS:
+      case S3:
+        Path path = new Path(segmentPath);
+        FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+        FileStatus[] fileStatuses = fs.listStatus(path);
+        if (null != fileStatuses) {
+          for (FileStatus dataAndIndexStatus : fileStatuses) {
+            String pathName = dataAndIndexStatus.getPath().getName();
+            if (pathName.endsWith(CarbonTablePath.getCarbonIndexExtension()) || pathName
+                .endsWith(CarbonTablePath.getCarbonMergeIndexExtension())) {
+              carbonIndexSize += dataAndIndexStatus.getLen();
+            } else if (pathName.endsWith(CarbonTablePath.getCarbonDataExtension())) {
+              carbonDataSize += dataAndIndexStatus.getLen();
+            }
+          }
+        }
+        break;
+      case LOCAL:
+      default:
+        segmentPath = FileFactory.getUpdatedFilePath(segmentPath, fileType);
+        File file = new File(segmentPath);
+        File[] segmentFiles = file.listFiles();
+        if (null != segmentFiles) {
+          for (File dataAndIndexFile : segmentFiles) {
+            if (dataAndIndexFile.getCanonicalPath()
+                .endsWith(CarbonTablePath.getCarbonIndexExtension()) || dataAndIndexFile
+                .getCanonicalPath().endsWith(CarbonTablePath.getCarbonMergeIndexExtension())) {
+              carbonIndexSize += FileUtils.sizeOf(dataAndIndexFile);
+            } else if (dataAndIndexFile.getCanonicalPath()
+                .endsWith(CarbonTablePath.getCarbonDataExtension())) {
+              carbonDataSize += FileUtils.sizeOf(dataAndIndexFile);
+            }
+          }
+        }
+    }
+    dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE, carbonDataSize);
+    dataAndIndexSize.put(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE, carbonIndexSize);
+    return dataAndIndexSize;
   }
 
 }

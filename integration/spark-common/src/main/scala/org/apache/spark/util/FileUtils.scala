@@ -17,32 +17,38 @@
 
 package org.apache.spark.util
 
+import org.apache.hadoop.conf.Configuration
+
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.processing.exception.DataLoadingException
 
 object FileUtils {
   /**
    * append all csv file path to a String, file path separated by comma
    */
-  private def getPathsFromCarbonFile(carbonFile: CarbonFile, stringBuild: StringBuilder): Unit = {
+  private def getPathsFromCarbonFile(
+      carbonFile: CarbonFile,
+      stringBuild: StringBuilder,
+      hadoopConf: Configuration): Unit = {
     if (carbonFile.isDirectory) {
       val files = carbonFile.listFiles()
       for (j <- 0 until files.size) {
-        getPathsFromCarbonFile(files(j), stringBuild)
+        getPathsFromCarbonFile(files(j), stringBuild, hadoopConf)
       }
     } else {
       val path = carbonFile.getAbsolutePath
       val fileName = carbonFile.getName
       if (carbonFile.getSize == 0) {
         LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-            .warn(s"skip empty input file: $path")
+            .warn(s"skip empty input file: ${CarbonUtil.removeAKSK(path)}")
       } else if (fileName.startsWith(CarbonCommonConstants.UNDERSCORE) ||
                  fileName.startsWith(CarbonCommonConstants.POINT)) {
         LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-            .warn(s"skip invisible input file: $path")
+            .warn(s"skip invisible input file: ${CarbonUtil.removeAKSK(path)}")
       } else {
         stringBuild.append(path.replace('\\', '/')).append(CarbonCommonConstants.COMMA)
       }
@@ -54,6 +60,10 @@ object FileUtils {
    *
    */
   def getPaths(inputPath: String): String = {
+    getPaths(inputPath, FileFactory.getConfiguration)
+  }
+
+  def getPaths(inputPath: String, hadoopConf: Configuration): String = {
     if (inputPath == null || inputPath.isEmpty) {
       throw new DataLoadingException("Input file path cannot be empty.")
     } else {
@@ -61,11 +71,12 @@ object FileUtils {
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
         val fileType = FileFactory.getFileType(filePaths(i))
-        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
+        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType, hadoopConf)
         if (!carbonFile.exists()) {
-          throw new DataLoadingException(s"The input file does not exist: ${filePaths(i)}" )
+          throw new DataLoadingException(
+            s"The input file does not exist: ${CarbonUtil.removeAKSK(filePaths(i))}" )
         }
-        getPathsFromCarbonFile(carbonFile, stringBuild)
+        getPathsFromCarbonFile(carbonFile, stringBuild, hadoopConf)
       }
       if (stringBuild.nonEmpty) {
         stringBuild.substring(0, stringBuild.size - 1)
@@ -76,7 +87,7 @@ object FileUtils {
     }
   }
 
-  def getSpaceOccupied(inputPath: String): Long = {
+  def getSpaceOccupied(inputPath: String, hadoopConfiguration: Configuration): Long = {
     var size : Long = 0
     if (inputPath == null || inputPath.isEmpty) {
       size
@@ -84,7 +95,7 @@ object FileUtils {
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
         val fileType = FileFactory.getFileType(filePaths(i))
-        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType)
+        val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType, hadoopConfiguration)
         size = size + carbonFile.getSize
       }
       size

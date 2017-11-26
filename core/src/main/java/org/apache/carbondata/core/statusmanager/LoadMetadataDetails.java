@@ -30,10 +30,35 @@ public class LoadMetadataDetails implements Serializable {
 
   private static final long serialVersionUID = 1106104914918491724L;
   private String timestamp;
-  private String loadStatus;
+
+  // For backward compatibility, this member is required to read from JSON in the table_status file
+  private SegmentStatus loadStatus;
+
+  // name of the segment
   private String loadName;
+
+  // partition count of this segment
   private String partitionCount;
+
   private String isDeleted = CarbonCommonConstants.KEYWORD_FALSE;
+  private String dataSize;
+  private String indexSize;
+
+  public String getDataSize() {
+    return dataSize;
+  }
+
+  public void setDataSize(String dataSize) {
+    this.dataSize = dataSize;
+  }
+
+  public String getIndexSize() {
+    return indexSize;
+  }
+
+  public void setIndexSize(String indexSize) {
+    this.indexSize = indexSize;
+  }
 
   // update delta end timestamp
   private String updateDeltaEndTimestamp = "";
@@ -70,6 +95,11 @@ public class LoadMetadataDetails implements Serializable {
    */
   private String majorCompacted;
 
+  /**
+   * the file format of this segment
+   */
+  private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
+
   public String getPartitionCount() {
     return partitionCount;
   }
@@ -79,6 +109,9 @@ public class LoadMetadataDetails implements Serializable {
   }
 
   public long getLoadEndTime() {
+    if (timestamp == null) {
+      return CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT;
+    }
     return convertTimeStampToLong(timestamp);
   }
 
@@ -86,12 +119,12 @@ public class LoadMetadataDetails implements Serializable {
     this.timestamp = getTimeStampConvertion(timestamp);;
   }
 
-  public String getLoadStatus() {
+  public SegmentStatus getSegmentStatus() {
     return loadStatus;
   }
 
-  public void setLoadStatus(String loadStatus) {
-    this.loadStatus = loadStatus;
+  public void setSegmentStatus(SegmentStatus segmentStatus) {
+    this.loadStatus = segmentStatus;
   }
 
   public String getLoadName() {
@@ -156,6 +189,9 @@ public class LoadMetadataDetails implements Serializable {
    * @return the startLoadTime
    */
   public long getLoadStartTime() {
+    if (loadStartTime == null) {
+      return CarbonCommonConstants.SEGMENT_LOAD_TIME_DEFAULT;
+    }
     return convertTimeStampToLong(loadStartTime);
   }
 
@@ -184,6 +220,10 @@ public class LoadMetadataDetails implements Serializable {
       LOGGER.error("Cannot convert" + factTimeStamp + " to Time/Long type value" + e.getMessage());
       parser = new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP);
       try {
+        // if the load is in progress, factTimeStamp will be null, so use current time
+        if (null == factTimeStamp) {
+          return System.currentTimeMillis();
+        }
         dateToStr = parser.parse(factTimeStamp);
         return dateToStr.getTime();
       } catch (ParseException e1) {
@@ -338,5 +378,13 @@ public class LoadMetadataDetails implements Serializable {
    */
   public void setUpdateStatusFileName(String updateStatusFileName) {
     this.updateStatusFileName = updateStatusFileName;
+  }
+
+  public FileFormat getFileFormat() {
+    return fileFormat;
+  }
+
+  public void setFileFormat(FileFormat fileFormat) {
+    this.fileFormat = fileFormat;
   }
 }

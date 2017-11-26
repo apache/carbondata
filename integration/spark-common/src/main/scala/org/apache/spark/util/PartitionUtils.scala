@@ -29,7 +29,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark.sql.execution.command.AlterPartitionModel
 
 import org.apache.carbondata.core.datastore.block.{SegmentProperties, TableBlockInfo}
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.util.CarbonUtil
@@ -160,12 +160,13 @@ object PartitionUtils {
     val segmentId = alterPartitionModel.segmentId
     val oldPartitionIds = alterPartitionModel.oldPartitionIds
     val newTime = carbonLoadModel.getFactTimeStamp
-    val storePath = carbonLoadModel.getStorePath
+    val tablePath = carbonLoadModel.getTablePath
     val tableBlockInfoList =
       getPartitionBlockList(identifier, segmentId, partitionIds, oldPartitionIds,
         partitionInfo).asScala
     val pathList: util.List[String] = new util.ArrayList[String]()
-    val carbonTablePath = new CarbonTablePath(storePath, dbName, tableName)
+    val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
+    val carbonTablePath = new CarbonTablePath(carbonTableIdentifier, tablePath)
     tableBlockInfoList.foreach{ tableBlockInfo =>
       val path = tableBlockInfo.getFilePath
       val timestamp = CarbonTablePath.DataFileUtil.getTimeStampFromFileName(path)

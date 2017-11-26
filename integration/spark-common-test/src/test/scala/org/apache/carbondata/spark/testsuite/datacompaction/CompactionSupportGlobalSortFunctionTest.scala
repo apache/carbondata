@@ -24,6 +24,8 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
 
 class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -438,8 +440,8 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
     assert(getIndexFileCount("compaction_globalsort", "0.1") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(72)))
-    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
-      sql("SELECT * FROM carbon_localsort"))
+    checkAnswer(sql("SELECT * FROM compaction_globalsort order by name, id"),
+      sql("SELECT * FROM carbon_localsort order by name, id"))
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Success")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
   }
@@ -453,8 +455,8 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
 
     assert(getIndexFileCount("compaction_globalsort", "0.1") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(72)))
-    checkAnswer(sql("SELECT * FROM compaction_globalsort"),
-      sql("SELECT * FROM carbon_localsort"))
+    checkAnswer(sql("SELECT * FROM compaction_globalsort order by name, id"),
+      sql("SELECT * FROM carbon_localsort order by name, id"))
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Success")
     checkExistence(sql("SHOW SEGMENTS FOR TABLE compaction_globalsort"), true, "Compacted")
   }
@@ -526,10 +528,9 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
   }
 
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {
-    val store = storeLocation + "/default/" + tableName + "/Fact/Part0/Segment_" + segmentNo
-    val list = new File(store).list(new FilenameFilter {
-      override def accept(dir: File, name: String) = name.endsWith(".carbonindex")
-    })
-    list.size
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default" + "_" + tableName)
+    val store = carbonTable.getAbsoluteTableIdentifier.getTablePath + "/Fact/Part0/Segment_" +
+                segmentNo
+    new SegmentIndexFileStore().getIndexFilesFromSegment(store).size()
   }
 }

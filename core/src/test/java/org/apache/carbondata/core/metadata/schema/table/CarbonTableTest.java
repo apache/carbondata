@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -57,7 +56,7 @@ public class CarbonTableTest extends TestCase {
   }
 
   @Test public void testFactTableNameReturnsProperFactTableName() {
-    assertEquals("carbonTestTable", carbonTable.getFactTableName());
+    assertEquals("carbonTestTable", carbonTable.getTableName());
   }
 
   @Test public void testTableUniqueNameIsProper() {
@@ -109,7 +108,7 @@ public class CarbonTableTest extends TestCase {
     info.setLastUpdatedTime(timeStamp);
     info.setTableUniqueName("carbonTestDatabase_carbonTestTable");
     info.setFactTable(getTableSchema());
-    info.setStorePath("testore");
+    info.setTablePath("testore");
     return info;
   }
 

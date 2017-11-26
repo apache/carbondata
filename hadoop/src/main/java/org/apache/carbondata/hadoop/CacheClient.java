@@ -31,9 +31,9 @@ public class CacheClient {
   private CacheAccessClient<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper>
       segmentAccessClient;
 
-  public CacheClient(String storePath) {
+  public CacheClient() {
     Cache<TableSegmentUniqueIdentifier, SegmentTaskIndexWrapper> segmentCache =
-        CacheProvider.getInstance().createCache(CacheType.DRIVER_BTREE, storePath);
+        CacheProvider.getInstance().createCache(CacheType.DRIVER_BTREE);
     segmentAccessClient = new CacheAccessClient<>(segmentCache);
   }
 

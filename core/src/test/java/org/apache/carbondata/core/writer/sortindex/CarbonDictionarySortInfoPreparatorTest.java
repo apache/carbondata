@@ -68,7 +68,7 @@ public class CarbonDictionarySortInfoPreparatorTest {
     };
 
     CarbonDictionarySortInfo carbonDictionarySortInfo = carbonDictionarySortInfoPreparator
-        .getDictionarySortInfo(newDistinctValues, dictionary, DataTypes.ARRAY);
+        .getDictionarySortInfo(newDistinctValues, dictionary, DataTypes.STRING);
     int expectedGetSortIndexValue = 1;
     int expectedGetSortInvertedIndexLength = 3;
     int actualGetSortIndexValue = carbonDictionarySortInfo.getSortIndex().get(0);
@@ -87,7 +87,7 @@ public class CarbonDictionarySortInfoPreparatorTest {
     newDistinctValues.add("xyz");
     Dictionary dictionary = null;
     CarbonDictionarySortInfo carbonDictionarySortInfo = carbonDictionarySortInfoPreparator
-        .getDictionarySortInfo(newDistinctValues, dictionary, DataTypes.ARRAY);
+        .getDictionarySortInfo(newDistinctValues, dictionary, DataTypes.createDefaultArrayType());
     int expectedGetSortIndexValue = 1;
     int expectedGetSortInvertedIndexLength = 2;
     int actualGetSortIndexValue = carbonDictionarySortInfo.getSortIndex().get(0);

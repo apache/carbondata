@@ -19,15 +19,29 @@ package org.apache.carbondata.core.metadata.datatype;
 
 public class DecimalType extends DataType {
 
-  public static final DataType DECIMAL =
-      new DecimalType(DataTypes.DECIMAL_TYPE_ID, 8, "DECIMAL", -1);
+  private int precision;
+  private int scale;
 
-  private DecimalType(int id, int precedenceOrder, String name, int sizeInBytes) {
-    super(id, precedenceOrder, name, sizeInBytes);
+  // create a decimal type object with specified precision and scale
+  DecimalType(int precision, int scale) {
+    super(DataTypes.DECIMAL_TYPE_ID, 8, "DECIMAL", -1);
+    this.precision = precision;
+    this.scale = scale;
   }
 
-  // this function is needed to ensure singleton pattern while supporting java serialization
-  private Object readResolve() {
-    return DataTypes.DECIMAL;
+  public int getPrecision() {
+    return precision;
+  }
+
+  public void setPrecision(int precision) {
+    this.precision = precision;
+  }
+
+  public int getScale() {
+    return scale;
+  }
+
+  public void setScale(int scale) {
+    this.scale = scale;
   }
 }

@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.scan.expression.exception.FilterIllegalMemberException;
 
 import org.junit.BeforeClass;
@@ -255,7 +256,7 @@ public class ExpressionResultTest {
   }
 
   @Test public void testGetDecimalForDecimal() throws FilterIllegalMemberException {
-    ExpressionResult expressionResultForDecimal = new ExpressionResult(DataTypes.DECIMAL, 5);
+    ExpressionResult expressionResultForDecimal = new ExpressionResult(DataTypes.createDefaultDecimalType(), 5);
     BigDecimal actualValue = expressionResultForDecimal.getDecimal();
     BigDecimal expectedValue = new BigDecimal(5);
     assertEquals(expectedValue, actualValue);
@@ -403,8 +404,8 @@ public class ExpressionResultTest {
   }
 
   @Test public void testEqualsForDecimal() {
-    ExpressionResult expressionResult = new ExpressionResult(DataTypes.DECIMAL, 5);
-    ExpressionResult objToCompare = new ExpressionResult(DataTypes.DECIMAL, 6);
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.createDefaultDecimalType(), 5);
+    ExpressionResult objToCompare = new ExpressionResult(DataTypes.createDefaultDecimalType(), 6);
     boolean result = expressionResult.equals(objToCompare);
     assertFalse(result);
   }
@@ -443,8 +444,8 @@ public class ExpressionResultTest {
   }
 
   @Test public void compareToForDecimal() {
-    ExpressionResult obj = new ExpressionResult(DataTypes.DECIMAL, 5);
-    ExpressionResult expressionResult = new ExpressionResult(DataTypes.DECIMAL, 6);
+    ExpressionResult obj = new ExpressionResult(DataTypes.createDefaultDecimalType(), 5);
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.createDefaultDecimalType(), 6);
     int actualValue = expressionResult.compareTo(obj);
     int expectedValue = 1;
     assertEquals(expectedValue, actualValue);
@@ -452,7 +453,7 @@ public class ExpressionResultTest {
 
   @Test public void compareToForException() {
     ExpressionResult obj = new ExpressionResult(DataTypes.INT, 5);
-    ExpressionResult expressionResult = new ExpressionResult(DataTypes.DECIMAL, 6);
+    ExpressionResult expressionResult = new ExpressionResult(DataTypes.createDefaultDecimalType(), 6);
     int actualValue = expressionResult.compareTo(obj);
     int expectedValue = -1;
     assertEquals(expectedValue, actualValue);

@@ -51,7 +51,7 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test to revert table name on failure") {
-    intercept[RuntimeException] {
+    val exception = intercept[RuntimeException] {
       new File(TestQueryExecutor.warehouse + "/reverttest_fail").mkdir()
       sql("alter table reverttest rename to reverttest_fail")
       new File(TestQueryExecutor.warehouse + "/reverttest_fail").delete()
@@ -104,7 +104,7 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       sql("alter table reverttest rename to revert")
     }
     AlterTableUtil.releaseLocks(locks)
-    assert(exception.getMessage == "Alter table rename table operation failed: Table is locked for updation. Please try after some time")
+    assert(exception.getMessage == "Alter table rename table operation failed: Acquire table lock failed after retry, please try after some time")
   }
 
   override def afterAll() {

@@ -266,6 +266,15 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
     return bitSetGroup;
   }
 
+  @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax)
+      throws FilterUnsupportedException, IOException {
+    try {
+      return exp.evaluate(value).getBoolean();
+    } catch (FilterIllegalMemberException e) {
+      throw new FilterUnsupportedException(e);
+    }
+  }
+
   /**
    * Method will read the members of particular dimension block and create
    * a row instance for further processing of the filters
@@ -288,8 +297,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
             getDimensionDefaultValue(dimColumnEvaluatorInfo);
         continue;
       }
-      if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.ARRAY
-          && dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.STRUCT) {
+      if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
         if (!dimColumnEvaluatorInfo.isDimensionExistsInCurrentSilce()) {
           record[dimColumnEvaluatorInfo.getRowIndex()] =
               dimColumnEvaluatorInfo.getDimension().getDefaultValue();
@@ -359,8 +367,8 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         msrType = DataTypes.INT;
       } else if (dataType == DataTypes.LONG) {
         msrType = DataTypes.LONG;
-      } else if (dataType == DataTypes.DECIMAL) {
-        msrType = DataTypes.DECIMAL;
+      } else if (DataTypes.isDecimal(dataType)) {
+        msrType = DataTypes.createDefaultDecimalType();
       } else {
         msrType = DataTypes.DOUBLE;
       }
@@ -386,7 +394,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
         msrValue = (int) columnPage.getLong(index);
       } else if (msrType == DataTypes.LONG) {
         msrValue = columnPage.getLong(index);
-      } else if (msrType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(msrType)) {
         BigDecimal bigDecimalValue = columnPage.getDecimal(index);
         if (null != bigDecimalValue
             && msrColumnEvalutorInfo.getCarbonColumn().getColumnSchema().getScale()
@@ -525,8 +533,7 @@ public class RowLevelFilterExecuterImpl implements FilterExecuter {
   @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
     for (int i = 0; i < dimColEvaluatorInfoList.size(); i++) {
       DimColumnResolvedFilterInfo dimColumnEvaluatorInfo = dimColEvaluatorInfoList.get(i);
-      if (dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.ARRAY
-          && dimColumnEvaluatorInfo.getDimension().getDataType() != DataTypes.STRUCT) {
+      if (!dimColumnEvaluatorInfo.getDimension().getDataType().isComplexType()) {
         if (null == blockChunkHolder.getDimensionRawDataChunk()[dimensionBlocksIndex[i]]) {
           blockChunkHolder.getDimensionRawDataChunk()[dimensionBlocksIndex[i]] =
               blockChunkHolder.getDataBlock()

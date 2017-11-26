@@ -35,7 +35,6 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 
 import org.apache.hadoop.hive.common.type.HiveDecimal;
@@ -84,12 +83,11 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
           .hasEncoding(Encoding.DIRECT_DICTIONARY) && !carbonColumns[i].isComplex()) {
         CacheProvider cacheProvider = CacheProvider.getInstance();
         Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
-            .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath());
+            .createCache(CacheType.FORWARD_DICTIONARY);
         dataTypes[i] = carbonColumns[i].getDataType();
         dictionaries[i] = forwardDictionaryCache.get(
-            new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier(),
-                carbonColumns[i].getColumnIdentifier(), dataTypes[i],
-                CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)));
+            new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
+                carbonColumns[i].getColumnIdentifier()));
       } else {
         dataTypes[i] = carbonColumns[i].getDataType();
       }
@@ -137,9 +135,9 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
    */
   private Writable createWritableObject(Object obj, CarbonColumn carbonColumn) throws IOException {
     DataType dataType = carbonColumn.getDataType();
-    if (dataType == DataTypes.STRUCT) {
+    if (DataTypes.isStructType(dataType)) {
       return createStruct(obj, carbonColumn);
-    } else if (dataType == DataTypes.ARRAY) {
+    } else if (DataTypes.isArrayType(dataType)) {
       return createArray(obj, carbonColumn);
     } else {
       return createWritablePrimitive(obj, carbonColumn);
@@ -239,7 +237,7 @@ public class CarbonDictionaryDecodeReadSupport<T> implements CarbonReadSupport<T
       return new TimestampWritable(new Timestamp((long) obj / 1000));
     } else if (dataType == DataTypes.STRING) {
       return new Text(obj.toString());
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return new HiveDecimalWritable(HiveDecimal.create(new java.math.BigDecimal(obj.toString())));
     } else {
       throw new IOException("unsupported data type:" + dataType);

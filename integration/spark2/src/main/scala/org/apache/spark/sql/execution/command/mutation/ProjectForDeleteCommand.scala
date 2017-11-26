@@ -25,8 +25,8 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.events.{DeleteFromTablePostEvent, DeleteFromTablePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.FailureCauses
-
 /**
  * IUD update delete and compaction framework.
  *
@@ -42,6 +42,7 @@ private[sql] case class ProjectForDeleteCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+      IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)
     val dataFrame = Dataset.ofRows(sparkSession, plan)
     //    dataFrame.show(truncate = false)
     //    dataFrame.collect().foreach(println)
@@ -50,9 +51,16 @@ private[sql] case class ProjectForDeleteCommand(
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(DeleteExecution.getTableIdentifier(identifier))(sparkSession).
       asInstanceOf[CarbonRelation]
-    val carbonTable = relation.tableMeta.carbonTable
+    val carbonTable = relation.carbonTable
+
+    // trigger event for Delete from table
+    val operationContext = new OperationContext
+    val deleteFromTablePreEvent: DeleteFromTablePreEvent =
+      DeleteFromTablePreEvent(carbonTable)
+    OperationListenerBus.getInstance.fireEvent(deleteFromTablePreEvent, operationContext)
+
     val metadataLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier,
+      .getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
         LockUsage.METADATA_LOCK)
     var lockStatus = false
     try {
@@ -69,12 +77,16 @@ private[sql] case class ProjectForDeleteCommand(
       // handle the clean up of IUD.
       CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
-      if (DeleteExecution
-        .deleteDeltaExecution(identifier, sparkSession, dataRdd, timestamp, relation,
-          isUpdateOperation = false, executorErrors)) {
+      if (DeleteExecution.deleteDeltaExecution(identifier, sparkSession, dataRdd, timestamp,
+        isUpdateOperation = false, executorErrors)) {
         // call IUD Compaction.
         HorizontalCompaction.tryHorizontalCompaction(sparkSession, relation,
           isUpdateOperation = false)
+
+        // trigger post event for Delete from table
+        val deleteFromTablePostEvent: DeleteFromTablePostEvent =
+          DeleteFromTablePostEvent(carbonTable)
+        OperationListenerBus.getInstance.fireEvent(deleteFromTablePostEvent, operationContext)
       }
     } catch {
       case e: HorizontalCompactionException =>

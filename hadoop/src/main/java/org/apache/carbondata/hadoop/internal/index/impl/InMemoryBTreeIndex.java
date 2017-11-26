@@ -98,7 +98,7 @@ class InMemoryBTreeIndex implements Index {
   private Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> getSegmentAbstractIndexs(
       JobContext job, AbsoluteTableIdentifier identifier) throws IOException {
     Map<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> segmentIndexMap = null;
-    CacheClient cacheClient = new CacheClient(identifier.getStorePath());
+    CacheClient cacheClient = new CacheClient();
     TableSegmentUniqueIdentifier segmentUniqueIdentifier =
         new TableSegmentUniqueIdentifier(identifier, segment.getId());
     try {

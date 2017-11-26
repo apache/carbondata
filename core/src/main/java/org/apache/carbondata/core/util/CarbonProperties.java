@@ -482,6 +482,13 @@ public final class CarbonProperties {
   }
 
   /**
+   * Return the store path
+   */
+  public static String getStorePath() {
+    return getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION);
+  }
+
+  /**
    * This method will be used to get the properties value
    *
    * @param key
@@ -669,9 +676,11 @@ public final class CarbonProperties {
     int numberOfCores;
     try {
       numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
-              CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
+          .getProperty(CarbonCommonConstants.NUM_CORES_LOADING));
     } catch (NumberFormatException exc) {
+      LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_LOADING
+          + " is wrong. Falling back to the default value "
+          + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
       numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
     }
     return numberOfCores;

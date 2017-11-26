@@ -124,6 +124,10 @@ public class CarbonTable implements Serializable {
    */
   private int numberOfNoDictSortColumns;
 
+  private int dimensionOrdinalMax;
+
+  private boolean hasDataMapSchema;
+
   private CarbonTable() {
     this.tableDimensionsMap = new HashMap<String, List<CarbonDimension>>();
     this.tableImplicitDimensionsMap = new HashMap<String, List<CarbonDimension>>();
@@ -156,6 +160,8 @@ public class CarbonTable implements Serializable {
       table.tablePartitionMap.put(tableInfo.getFactTable().getTableName(),
           tableInfo.getFactTable().getPartitionInfo());
     }
+    table.hasDataMapSchema =
+        null != tableInfo.getDataMapSchemaList() && tableInfo.getDataMapSchemaList().size() > 0;
     return table;
   }
 
@@ -212,7 +218,7 @@ public class CarbonTable implements Serializable {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
               new CarbonDimension(columnSchema, dimensionOrdinal++,
-                    columnSchema.getSchemaOrdinal(), -1, -1, ++complexTypeOrdinal);
+                  columnSchema.getSchemaOrdinal(), -1, -1, ++complexTypeOrdinal);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           allDimensions.add(complexDimension);
           dimensionOrdinal =
@@ -226,8 +232,8 @@ public class CarbonTable implements Serializable {
           }
           if (!columnSchema.getEncodingList().contains(Encoding.DICTIONARY)) {
             CarbonDimension dimension =
-                    new CarbonDimension(columnSchema, dimensionOrdinal++,
-                            columnSchema.getSchemaOrdinal(), -1, -1, -1);
+                new CarbonDimension(columnSchema, dimensionOrdinal++,
+                    columnSchema.getSchemaOrdinal(), -1, -1, -1);
             if (!columnSchema.isInvisible() && columnSchema.isSortColumn()) {
               this.numberOfNoDictSortColumns++;
             }
@@ -236,8 +242,8 @@ public class CarbonTable implements Serializable {
           } else if (columnSchema.getEncodingList().contains(Encoding.DICTIONARY)
               && columnSchema.getColumnGroupId() == -1) {
             CarbonDimension dimension =
-                    new CarbonDimension(columnSchema, dimensionOrdinal++,
-                            columnSchema.getSchemaOrdinal(), keyOrdinal++, -1, -1);
+                new CarbonDimension(columnSchema, dimensionOrdinal++,
+                    columnSchema.getSchemaOrdinal(), keyOrdinal++, -1, -1);
             allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           } else {
@@ -245,20 +251,22 @@ public class CarbonTable implements Serializable {
                 previousColumnGroupId == columnSchema.getColumnGroupId() ? ++columnGroupOrdinal : 0;
             previousColumnGroupId = columnSchema.getColumnGroupId();
             CarbonDimension dimension = new CarbonDimension(columnSchema, dimensionOrdinal++,
-                    columnSchema.getSchemaOrdinal(), keyOrdinal++,
-                    columnGroupOrdinal, -1);
+                columnSchema.getSchemaOrdinal(), keyOrdinal++,
+                columnGroupOrdinal, -1);
             allDimensions.add(dimension);
             primitiveDimensions.add(dimension);
           }
         }
       } else {
         allMeasures.add(new CarbonMeasure(columnSchema, measureOrdinal++,
-                 columnSchema.getSchemaOrdinal()));
+            columnSchema.getSchemaOrdinal()));
       }
     }
     fillVisibleDimensions(tableSchema.getTableName());
     fillVisibleMeasures(tableSchema.getTableName());
     addImplicitDimension(dimensionOrdinal, implicitDimensions);
+
+    dimensionOrdinalMax = dimensionOrdinal;
   }
 
   /**
@@ -286,14 +294,14 @@ public class CarbonTable implements Serializable {
    */
   private int readAllComplexTypeChildrens(int dimensionOrdinal, int childCount,
       List<ColumnSchema> listOfColumns, CarbonDimension parentDimension,
-                                          List<CarbonDimension> primitiveDimensions) {
+      List<CarbonDimension> primitiveDimensions) {
     for (int i = 0; i < childCount; i++) {
       ColumnSchema columnSchema = listOfColumns.get(dimensionOrdinal);
       if (columnSchema.isDimensionColumn()) {
         if (columnSchema.getNumberOfChild() > 0) {
           CarbonDimension complexDimension =
               new CarbonDimension(columnSchema, dimensionOrdinal++,
-                        columnSchema.getSchemaOrdinal(), -1, -1, -1);
+                  columnSchema.getSchemaOrdinal(), -1, -1, -1);
           complexDimension.initializeChildDimensionsList(columnSchema.getNumberOfChild());
           parentDimension.getListOfChildDimensions().add(complexDimension);
           dimensionOrdinal =
@@ -301,8 +309,8 @@ public class CarbonTable implements Serializable {
                   listOfColumns, complexDimension, primitiveDimensions);
         } else {
           CarbonDimension carbonDimension =
-                  new CarbonDimension(columnSchema, dimensionOrdinal++,
-                          columnSchema.getSchemaOrdinal(), -1, -1, -1);
+              new CarbonDimension(columnSchema, dimensionOrdinal++,
+                  columnSchema.getSchemaOrdinal(), -1, -1, -1);
           parentDimension.getListOfChildDimensions().add(carbonDimension);
           primitiveDimensions.add(carbonDimension);
         }
@@ -339,7 +347,7 @@ public class CarbonTable implements Serializable {
   /**
    * @return the tabelName
    */
-  public String getFactTableName() {
+  public String getTableName() {
     return absoluteTableIdentifier.getCarbonTableIdentifier().getTableName();
   }
 
@@ -360,8 +368,8 @@ public class CarbonTable implements Serializable {
   /**
    * @return storepath
    */
-  public String getStorePath() {
-    return absoluteTableIdentifier.getStorePath();
+  public String getTablePath() {
+    return absoluteTableIdentifier.getTablePath();
   }
 
   /**
@@ -428,6 +436,30 @@ public class CarbonTable implements Serializable {
    */
   public List<CarbonColumn> getCreateOrderColumn(String tableName) {
     return createOrderColumn.get(tableName);
+  }
+
+  /**
+   * This method will give storage order column list
+   */
+  public List<CarbonColumn> getStreamStorageOrderColumn(String tableName) {
+    List<CarbonDimension> dimensions = tableDimensionsMap.get(tableName);
+    List<CarbonMeasure> measures = tableMeasuresMap.get(tableName);
+    List<CarbonColumn> columnList = new ArrayList<>(dimensions.size() + measures.size());
+    List<CarbonColumn> complexdimensionList = new ArrayList<>(dimensions.size());
+    for (CarbonColumn column : dimensions) {
+      if (column.isComplex()) {
+        complexdimensionList.add(column);
+      } else {
+        columnList.add(column);
+      }
+    }
+    columnList.addAll(complexdimensionList);
+    for (CarbonColumn column : measures) {
+      if (!(column.getColName().equals("default_dummy_measure"))) {
+        columnList.add(column);
+      }
+    }
+    return columnList;
   }
 
   /**
@@ -537,7 +569,7 @@ public class CarbonTable implements Serializable {
   }
 
   public boolean isPartitionTable() {
-    return null != tablePartitionMap.get(getFactTableName());
+    return null != tablePartitionMap.get(getTableName());
   }
 
   /**
@@ -656,5 +688,31 @@ public class CarbonTable implements Serializable {
 
   public TableInfo getTableInfo() {
     return tableInfo;
+  }
+
+  /**
+   * Return true if this is a streaming table (table with property "streaming"="true")
+   */
+  public boolean isStreamingTable() {
+    String streaming = getTableInfo().getFactTable().getTableProperties().get("streaming");
+    return streaming != null && streaming.equalsIgnoreCase("true");
+  }
+
+  public int getDimensionOrdinalMax() {
+    return dimensionOrdinalMax;
+  }
+
+  public void setDimensionOrdinalMax(int dimensionOrdinalMax) {
+    this.dimensionOrdinalMax = dimensionOrdinalMax;
+  }
+
+
+  public boolean hasDataMapSchema() {
+    return hasDataMapSchema;
+  }
+
+  public boolean isChildDataMap() {
+    return null != tableInfo.getParentRelationIdentifiers()
+        && !tableInfo.getParentRelationIdentifiers().isEmpty();
   }
 }

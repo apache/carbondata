@@ -37,8 +37,11 @@ import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
+import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
@@ -126,13 +129,17 @@ public abstract class AbstractDataFileFooterConverter {
    * @return list of index info
    * @throws IOException problem while reading the index file
    */
-  public List<DataFileFooter> getIndexInfo(String filePath) throws IOException {
+  public List<DataFileFooter> getIndexInfo(String filePath, byte[] fileData) throws IOException {
     CarbonIndexFileReader indexReader = new CarbonIndexFileReader();
     List<DataFileFooter> dataFileFooters = new ArrayList<DataFileFooter>();
     String parentPath = filePath.substring(0, filePath.lastIndexOf("/"));
     try {
       // open the reader
-      indexReader.openThriftReader(filePath);
+      if (fileData != null) {
+        indexReader.openThriftReader(fileData);
+      } else {
+        indexReader.openThriftReader(filePath);
+      }
       // get the index header
       org.apache.carbondata.format.IndexHeader readIndexHeader = indexReader.readIndexHeader();
       List<ColumnSchema> columnSchemaList = new ArrayList<ColumnSchema>();
@@ -258,8 +265,13 @@ public abstract class AbstractDataFileFooterConverter {
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
     wrapperColumnSchema.setColumnar(externalColumnSchema.isColumnar());
-    wrapperColumnSchema
-        .setDataType(thriftDataTyopeToWrapperDataType(externalColumnSchema.data_type));
+    DataType dataType = thriftDataTyopeToWrapperDataType(externalColumnSchema.data_type);
+    if (DataTypes.isDecimal(dataType)) {
+      DecimalType decimalType = (DecimalType) dataType;
+      decimalType.setPrecision(externalColumnSchema.getPrecision());
+      decimalType.setScale(externalColumnSchema.getScale());
+    }
+    wrapperColumnSchema.setDataType(dataType);
     wrapperColumnSchema.setDimensionColumn(externalColumnSchema.isDimension());
     List<Encoding> encoders = new ArrayList<Encoding>();
     for (org.apache.carbondata.format.Encoding encoder : externalColumnSchema.getEncoders()) {
@@ -277,8 +289,34 @@ public abstract class AbstractDataFileFooterConverter {
         wrapperColumnSchema.setSortColumn(true);
       }
     }
+    wrapperColumnSchema.setAggFunction(externalColumnSchema.getAggregate_function());
+    List<org.apache.carbondata.format.ParentColumnTableRelation> parentColumnTableRelation =
+        externalColumnSchema.getParentColumnTableRelations();
+    if (null != parentColumnTableRelation) {
+      wrapperColumnSchema.setParentColumnTableRelations(
+          fromThriftToWrapperParentTableColumnRelations(parentColumnTableRelation));
+    }
     return wrapperColumnSchema;
   }
+
+  private List<ParentColumnTableRelation> fromThriftToWrapperParentTableColumnRelations(
+      List<org.apache.carbondata.format.ParentColumnTableRelation> thirftParentColumnRelation) {
+    List<ParentColumnTableRelation> parentColumnTableRelationList = new ArrayList<>();
+    for (org.apache.carbondata.format.ParentColumnTableRelation carbonTableRelation :
+        thirftParentColumnRelation) {
+      RelationIdentifier relationIdentifier =
+          new RelationIdentifier(carbonTableRelation.getRelationIdentifier().getDatabaseName(),
+              carbonTableRelation.getRelationIdentifier().getTableName(),
+              carbonTableRelation.getRelationIdentifier().getTableId());
+      ParentColumnTableRelation parentColumnTableRelation =
+          new ParentColumnTableRelation(relationIdentifier, carbonTableRelation.getColumnId(),
+              carbonTableRelation.getColumnName());
+      parentColumnTableRelationList.add(parentColumnTableRelation);
+    }
+    return parentColumnTableRelationList;
+  }
+
+
 
   /**
    * Below method is convert the thrift encoding to wrapper encoding
@@ -365,15 +403,15 @@ public abstract class AbstractDataFileFooterConverter {
       case DOUBLE:
         return DataTypes.DOUBLE;
       case DECIMAL:
-        return DataTypes.DECIMAL;
+        return DataTypes.createDefaultDecimalType();
       case DATE:
         return DataTypes.DATE;
       case TIMESTAMP:
         return DataTypes.TIMESTAMP;
       case ARRAY:
-        return DataTypes.ARRAY;
+        return DataTypes.createDefaultArrayType();
       case STRUCT:
-        return DataTypes.STRUCT;
+        return DataTypes.createDefaultStructType();
       default:
         return DataTypes.STRING;
     }

@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -42,7 +41,9 @@ import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -259,6 +260,23 @@ public final class CarbonDataProcessorUtil {
         .toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
   }
 
+  public static boolean[] getNoDictionaryMapping(CarbonColumn[] carbonColumns) {
+    List<Boolean> noDictionaryMapping = new ArrayList<Boolean>();
+    for (CarbonColumn column : carbonColumns) {
+      // for  complex type need to break the loop
+      if (column.isComplex()) {
+        break;
+      }
+      if (!column.hasEncoding(Encoding.DICTIONARY) && column.isDimension()) {
+        noDictionaryMapping.add(true);
+      } else if (column.isDimension()) {
+        noDictionaryMapping.add(false);
+      }
+    }
+    return ArrayUtils
+        .toPrimitive(noDictionaryMapping.toArray(new Boolean[noDictionaryMapping.size()]));
+  }
+
   /**
    * Preparing the boolean [] to map whether the dimension use inverted index or not.
    */
@@ -277,10 +295,8 @@ public final class CarbonDataProcessorUtil {
 
   private static String getComplexTypeString(DataField[] dataFields) {
     StringBuilder dimString = new StringBuilder();
-    for (int i = 0; i < dataFields.length; i++) {
-      DataField dataField = dataFields[i];
-      if (dataField.getColumn().getDataType() == DataTypes.ARRAY ||
-          dataField.getColumn().getDataType() == DataTypes.STRUCT) {
+    for (DataField dataField : dataFields) {
+      if (dataField.getColumn().getDataType().isComplexType()) {
         addAllComplexTypeChildren((CarbonDimension) dataField.getColumn(), dimString, "");
         dimString.append(CarbonCommonConstants.SEMICOLON_SPC_CHARACTER);
       }
@@ -366,7 +382,7 @@ public final class CarbonDataProcessorUtil {
    */
   public static Set<String> getSchemaColumnNames(CarbonDataLoadSchema schema, String tableName) {
     Set<String> columnNames = new HashSet<String>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
-    String factTableName = schema.getCarbonTable().getFactTableName();
+    String factTableName = schema.getCarbonTable().getTableName();
     if (tableName.equals(factTableName)) {
       List<CarbonDimension> dimensions =
           schema.getCarbonTable().getDimensionByTableName(factTableName);
@@ -411,24 +427,6 @@ public final class CarbonDataProcessorUtil {
       type[i] = measureFields[i].getColumn().getDataType();
     }
     return type;
-  }
-
-  /**
-   * Creates map for columns which dateformats mentioned while loading the data.
-   * @param dataFormatString
-   * @return
-   */
-  public static Map<String, String> getDateFormatMap(String dataFormatString) {
-    Map<String, String> dateformatsHashMap = new HashMap<>();
-    if (dataFormatString != null && !dataFormatString.isEmpty()) {
-      String[] dateformats = dataFormatString.split(CarbonCommonConstants.COMMA);
-      for (String dateFormat : dateformats) {
-        String[] dateFormatSplits = dateFormat.split(":", 2);
-        dateformatsHashMap
-            .put(dateFormatSplits[0].toLowerCase().trim(), dateFormatSplits[1].trim());
-      }
-    }
-    return dateformatsHashMap;
   }
 
   /**

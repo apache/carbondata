@@ -29,6 +29,7 @@ import org.apache.spark.{Partition, TaskContext}
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.execution.command.AlterPartitionModel
 import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.PartitionUtils
 
@@ -54,12 +55,12 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil
  * This RDD is used in alter table partition statement to get data of target partitions,
  * then repartition data according to new partitionInfo
  * @param alterPartitionModel
- * @param carbonTableIdentifier
+ * @param absoluteTableIdentifier
  * @param partitionIds  the ids of target partition to be scanned
  * @param bucketId
  */
 class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
-    carbonTableIdentifier: CarbonTableIdentifier,
+    absoluteTableIdentifier: AbsoluteTableIdentifier,
     partitionIds: Seq[String],
     bucketId: Int)
   extends RDD[(AnyRef, Array[AnyRef])](alterPartitionModel.sqlContext.sparkContext, Nil) {
@@ -69,15 +70,14 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
   val segmentId = alterPartitionModel.segmentId
   val carbonLoadModel = alterPartitionModel.carbonLoadModel
   val oldPartitionIdList = alterPartitionModel.oldPartitionIds
-  val storePath = carbonLoadModel.getStorePath
-  val identifier = new AbsoluteTableIdentifier(storePath, carbonTableIdentifier)
   var storeLocation: String = null
   var splitStatus: Boolean = false
   var blockId: String = null
   val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
   val dimensions = carbonTable.getAllDimensions.asScala
   val measures = carbonTable.getAllMeasures.asScala
-  val partitionInfo = carbonTable.getPartitionInfo(carbonTableIdentifier.getTableName)
+  val partitionInfo = carbonTable
+    .getPartitionInfo(absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
   val partitionColumn = partitionInfo.getColumnSchemaList().get(0)
   val partitionDataType = partitionColumn.getDataType
   val partitionColumnName = partitionColumn.getColumnName
@@ -90,11 +90,10 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
   val measureIndexGroup: ArrayBuffer[Int] = new ArrayBuffer[Int]()
 
   override def getPartitions: Array[Partition] = {
-    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val parallelism = sparkContext.defaultParallelism
     val jobConf = new JobConf(new Configuration)
     val job = new Job(jobConf)
-    val format = CarbonInputFormatUtil.createCarbonTableInputFormat(identifier,
+    val format = CarbonInputFormatUtil.createCarbonTableInputFormat(absoluteTableIdentifier,
       partitionIds.toList.asJava, job)
     job.getConfiguration.set("query.id", queryId)
 
@@ -114,7 +113,7 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
           val splits = blocksPerTask.asScala.map(_.asInstanceOf[CarbonInputSplit])
           if (blocksPerTask.size() != 0) {
             val multiBlockSplit =
-              new CarbonMultiBlockSplit(identifier, splits.asJava, Array(node))
+              new CarbonMultiBlockSplit(absoluteTableIdentifier, splits.asJava, Array(node))
             val partition = new CarbonSparkPartition(id, partition_num, multiBlockSplit)
             result.add(partition)
             partition_num += 1
@@ -145,13 +144,15 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
           case e: Throwable =>
             LOGGER.error(e)
             if (null != e.getMessage) {
-              sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
+              CarbonException.analysisException(
+                s"Exception occurred in query execution :: ${e.getMessage}")
             } else {
-              sys.error("Exception occurred in query execution. Please check logs.")
+              CarbonException.analysisException(
+                "Exception occurred in query execution. Please check logs.")
             }
         }
-        val segmentProperties = PartitionUtils.getSegmentProperties(identifier, segmentId,
-          partitionIds.toList, oldPartitionIdList, partitionInfo)
+        val segmentProperties = PartitionUtils.getSegmentProperties(absoluteTableIdentifier,
+          segmentId, partitionIds.toList, oldPartitionIdList, partitionInfo)
         val partColIdx = getPartitionColumnIndex(partitionColumnName, segmentProperties)
         indexInitialise()
         for (iterator <- result.asScala) {
@@ -202,8 +203,8 @@ class CarbonScanPartitionRDD(alterPartitionModel: AlterPartitionModel,
           partitionValue = partitionValue.toString
         }
       } else {  // normal dictionary
-        val dict = CarbonLoaderUtil.getDictionary(carbonTableIdentifier,
-          dimension.getColumnIdentifier, storePath, partitionDataType)
+        val dict = CarbonLoaderUtil.getDictionary(absoluteTableIdentifier,
+          dimension.getColumnIdentifier, partitionDataType)
         if (partitionDataType == DataTypes.STRING) {
           if (partitionType == PartitionType.RANGE) {
             partitionValue = ByteUtil.

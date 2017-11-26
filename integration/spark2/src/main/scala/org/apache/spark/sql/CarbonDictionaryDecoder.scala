@@ -34,10 +34,11 @@ import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.scan.executor.util.QueryUtil
 import org.apache.carbondata.core.util.DataTypeUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
@@ -69,10 +70,9 @@ case class CarbonDictionaryDecoder(
 
   override def doExecute(): RDD[InternalRow] = {
     attachTree(this, "execute") {
-      val storePath = CarbonEnv.getInstance(sparkSession).storePath
       val absoluteTableIdentifiers = relations.map { relation =>
         val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
-        (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
+        (carbonTable.getTableName, carbonTable.getAbsoluteTableIdentifier)
       }.toMap
 
       if (CarbonDictionaryDecoder.isRequiredToDecode(getDictionaryColumnIds)) {
@@ -80,7 +80,7 @@ case class CarbonDictionaryDecoder(
         child.execute().mapPartitions { iter =>
           val cacheProvider: CacheProvider = CacheProvider.getInstance
           val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-            cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+            cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
           val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
             forwardDictionaryCache)
           val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
@@ -123,18 +123,17 @@ case class CarbonDictionaryDecoder(
 
   override def doConsume(ctx: CodegenContext, input: Seq[ExprCode], row: ExprCode): String = {
 
-    val storePath = CarbonEnv.getInstance(sparkSession).storePath
     val absoluteTableIdentifiers = relations.map { relation =>
       val carbonTable = relation.carbonRelation.carbonRelation.metaData.carbonTable
-      (carbonTable.getFactTableName, carbonTable.getAbsoluteTableIdentifier)
+      (carbonTable.getTableName, carbonTable.getAbsoluteTableIdentifier)
     }.toMap
 
     if (CarbonDictionaryDecoder.isRequiredToDecode(getDictionaryColumnIds)) {
       val cacheProvider: CacheProvider = CacheProvider.getInstance
       val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
       val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryWrapper(absoluteTableIdentifiers,
-        forwardDictionaryCache, storePath)
+        forwardDictionaryCache)
 
       val exprs = child.output.map { exp =>
         ExpressionCanonicalizer.execute(BindReferences.bindReference(exp, child.output))
@@ -164,46 +163,49 @@ case class CarbonDictionaryDecoder(
              |}
              """.stripMargin
 
-            val caseCode = getDictionaryColumnIds(index)._3.getDataType match {
-              case CarbonDataTypes.INT =>
-                s"""
-                   |int $value = Integer.parseInt(new String($valueIntern,
-                   |org.apache.carbondata.core.constants.CarbonCommonConstants
-                   |.DEFAULT_CHARSET_CLASS));
-                 """.stripMargin
-              case CarbonDataTypes.SHORT =>
-                s"""
-                   |short $value =
-                   |Short.parseShort(new String($valueIntern,
-                   |org.apache.carbondata.core.constants.CarbonCommonConstants
-                   |.DEFAULT_CHARSET_CLASS));
-                 """.stripMargin
-              case CarbonDataTypes.DOUBLE =>
-                s"""
-                   |double $value =
-                   |Double.parseDouble(new String($valueIntern,
-                   |org.apache.carbondata.core.constants.CarbonCommonConstants
-                   |.DEFAULT_CHARSET_CLASS));
-                 """.stripMargin
-              case CarbonDataTypes.LONG =>
-                s"""
-                   |long $value =
-                   |Long.parseLong(new String($valueIntern,
-                   |org.apache.carbondata.core.constants.CarbonCommonConstants
-                   |.DEFAULT_CHARSET_CLASS));
-                 """.stripMargin
-              case CarbonDataTypes.DECIMAL =>
+            val caseCode =
+              if (CarbonDataTypes.isDecimal(getDictionaryColumnIds(index)._3.getDataType)) {
                 s"""
                    |org.apache.spark.sql.types.Decimal $value =
                    |Decimal.apply(new java.math.BigDecimal(
                    |new String($valueIntern, org.apache.carbondata.core.constants
                    |.CarbonCommonConstants.DEFAULT_CHARSET_CLASS)));
                  """.stripMargin
-              case _ =>
-                s"""
-                   | UTF8String $value = UTF8String.fromBytes($valueIntern);
+              } else {
+                getDictionaryColumnIds(index)._3.getDataType match {
+                  case CarbonDataTypes.INT =>
+                    s"""
+                       |int $value = Integer.parseInt(new String($valueIntern,
+                       |org.apache.carbondata.core.constants.CarbonCommonConstants
+                       |.DEFAULT_CHARSET_CLASS));
                  """.stripMargin
-            }
+                  case CarbonDataTypes.SHORT =>
+                    s"""
+                       |short $value =
+                       |Short.parseShort(new String($valueIntern,
+                       |org.apache.carbondata.core.constants.CarbonCommonConstants
+                       |.DEFAULT_CHARSET_CLASS));
+                 """.stripMargin
+                  case CarbonDataTypes.DOUBLE =>
+                    s"""
+                       |double $value =
+                       |Double.parseDouble(new String($valueIntern,
+                       |org.apache.carbondata.core.constants.CarbonCommonConstants
+                       |.DEFAULT_CHARSET_CLASS));
+                 """.stripMargin
+                  case CarbonDataTypes.LONG =>
+                    s"""
+                       |long $value =
+                       |Long.parseLong(new String($valueIntern,
+                       |org.apache.carbondata.core.constants.CarbonCommonConstants
+                       |.DEFAULT_CHARSET_CLASS));
+                 """.stripMargin
+                  case _ =>
+                    s"""
+                       | UTF8String $value = UTF8String.fromBytes($valueIntern);
+                 """.stripMargin
+                }
+              }
           code +=
             s"""
                |$caseCode
@@ -248,7 +250,7 @@ case class CarbonDictionaryDecoder(
       if (f._2 != null) {
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
-            atiMap(f._1).getCarbonTableIdentifier,
+            atiMap(f._1),
             f._2, f._3.getDataType,
             CarbonStorePath.getCarbonTablePath(atiMap(f._1))))
         } catch {
@@ -262,20 +264,31 @@ case class CarbonDictionaryDecoder(
   }
 
   private def getDictionaryWrapper(atiMap: Map[String, AbsoluteTableIdentifier],
-      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary], storePath: String) = {
+      cache: Cache[DictionaryColumnUniqueIdentifier, Dictionary]) = {
     val allDictIdentifiers = new ArrayBuffer[DictionaryColumnUniqueIdentifier]()
     val dicts: Seq[ForwardDictionaryWrapper] = getDictionaryColumnIds.map {
       case (tableName, columnIdentifier, carbonDimension) =>
         if (columnIdentifier != null) {
           try {
+            val (newAbsoluteTableIdentifier, newColumnIdentifier) =
+              if (null != carbonDimension.getColumnSchema.getParentColumnTableRelations &&
+                  !carbonDimension
+                    .getColumnSchema.getParentColumnTableRelations.isEmpty) {
+                (QueryUtil.getTableIdentifierForColumn(carbonDimension, atiMap(tableName)),
+                  new ColumnIdentifier(carbonDimension.getColumnSchema
+                    .getParentColumnTableRelations.get(0).getColumnId,
+                    carbonDimension.getColumnProperties,
+                    carbonDimension.getDataType))
+              } else {
+                (atiMap(tableName), columnIdentifier)
+              }
             val dictionaryColumnUniqueIdentifier = new DictionaryColumnUniqueIdentifier(
-              atiMap(tableName).getCarbonTableIdentifier,
-              columnIdentifier, carbonDimension.getDataType,
-              CarbonStorePath.getCarbonTablePath(atiMap(tableName)))
-            allDictIdentifiers += dictionaryColumnUniqueIdentifier;
-            new ForwardDictionaryWrapper(
-              storePath,
-              dictionaryColumnUniqueIdentifier)
+              newAbsoluteTableIdentifier,
+              newColumnIdentifier, carbonDimension.getDataType,
+              CarbonStorePath
+                .getCarbonTablePath(newAbsoluteTableIdentifier))
+            allDictIdentifiers += dictionaryColumnUniqueIdentifier
+            new ForwardDictionaryWrapper(dictionaryColumnUniqueIdentifier)
           } catch {
             case _: Throwable => null
           }
@@ -283,7 +296,7 @@ case class CarbonDictionaryDecoder(
           null
         }
     }
-    val dictionaryLoader = new DictionaryLoader(storePath, allDictIdentifiers.toList)
+    val dictionaryLoader = new DictionaryLoader(allDictIdentifiers.toList)
     dicts.foreach { dict =>
       if (dict != null) {
         dict.setDictionaryLoader(dictionaryLoader)
@@ -310,7 +323,7 @@ object CarbonDictionaryDecoder {
       if (relation.isDefined && canBeDecoded(attr, profile)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension = carbonTable
-          .getDimensionByName(carbonTable.getFactTableName, attr.name)
+          .getDimensionByName(carbonTable.getTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
@@ -342,7 +355,7 @@ object CarbonDictionaryDecoder {
       if (relation.isDefined) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension = carbonTable
-          .getDimensionByName(carbonTable.getFactTableName, attr.name)
+          .getDimensionByName(carbonTable.getTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
@@ -381,29 +394,31 @@ object CarbonDictionaryDecoder {
    */
   def convertCarbonToSparkDataType(carbonDimension: CarbonDimension,
       relation: CarbonRelation): types.DataType = {
-    carbonDimension.getDataType match {
-      case CarbonDataTypes.STRING => StringType
-      case CarbonDataTypes.SHORT => ShortType
-      case CarbonDataTypes.INT => IntegerType
-      case CarbonDataTypes.LONG => LongType
-      case CarbonDataTypes.DOUBLE => DoubleType
-      case CarbonDataTypes.BOOLEAN => BooleanType
-      case CarbonDataTypes.DECIMAL =>
-        val scale: Int = carbonDimension.getColumnSchema.getScale
-        val precision: Int = carbonDimension.getColumnSchema.getPrecision
-        if (scale == 0 && precision == 0) {
-          DecimalType(18, 2)
-        } else {
-          DecimalType(precision, scale)
-        }
-      case CarbonDataTypes.TIMESTAMP => TimestampType
-      case CarbonDataTypes.DATE => DateType
-      case CarbonDataTypes.STRUCT =>
-        CarbonMetastoreTypes
-          .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
-      case CarbonDataTypes.ARRAY =>
-        CarbonMetastoreTypes
-          .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
+    if (CarbonDataTypes.isDecimal(carbonDimension.getDataType)) {
+      val scale: Int = carbonDimension.getColumnSchema.getScale
+      val precision: Int = carbonDimension.getColumnSchema.getPrecision
+      if (scale == 0 && precision == 0) {
+        DecimalType(18, 2)
+      } else {
+        DecimalType(precision, scale)
+      }
+    } else if (CarbonDataTypes.isArrayType(carbonDimension.getDataType)) {
+      CarbonMetastoreTypes
+        .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
+    } else if (CarbonDataTypes.isStructType(carbonDimension.getDataType)) {
+      CarbonMetastoreTypes
+        .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
+    } else {
+      carbonDimension.getDataType match {
+        case CarbonDataTypes.STRING => StringType
+        case CarbonDataTypes.SHORT => ShortType
+        case CarbonDataTypes.INT => IntegerType
+        case CarbonDataTypes.LONG => LongType
+        case CarbonDataTypes.DOUBLE => DoubleType
+        case CarbonDataTypes.BOOLEAN => BooleanType
+        case CarbonDataTypes.TIMESTAMP => TimestampType
+        case CarbonDataTypes.DATE => DateType
+      }
     }
   }
 
@@ -417,12 +432,12 @@ object CarbonDictionaryDecoder {
       if (relation.isDefined && CarbonDictionaryDecoder.canBeDecoded(attr, profile)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension =
-          carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
+          carbonTable.getDimensionByName(carbonTable.getTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
             !carbonDimension.isComplex) {
-          (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
+          (carbonTable.getTableName, carbonDimension.getColumnIdentifier,
             carbonDimension)
         } else {
           (null, null, null)
@@ -448,7 +463,6 @@ class CarbonDecoderRDD(
     aliasMap: CarbonAliasDecoderRelation,
     prev: RDD[InternalRow],
     output: Seq[Attribute],
-    storePath: String,
     serializedTableInfo: Array[Byte])
   extends CarbonRDDWithTableInfo[InternalRow](prev, serializedTableInfo) {
 
@@ -464,34 +478,6 @@ class CarbonDecoderRDD(
     }
   }
 
-  def convertCarbonToSparkDataType(carbonDimension: CarbonDimension,
-      relation: CarbonRelation): types.DataType = {
-    carbonDimension.getDataType match {
-      case CarbonDataTypes.STRING => StringType
-      case CarbonDataTypes.SHORT => ShortType
-      case CarbonDataTypes.INT => IntegerType
-      case CarbonDataTypes.LONG => LongType
-      case CarbonDataTypes.DOUBLE => DoubleType
-      case CarbonDataTypes.BOOLEAN => BooleanType
-      case CarbonDataTypes.DECIMAL =>
-        val scale: Int = carbonDimension.getColumnSchema.getScale
-        val precision: Int = carbonDimension.getColumnSchema.getPrecision
-        if (scale == 0 && precision == 0) {
-          DecimalType(18, 2)
-        } else {
-          DecimalType(precision, scale)
-        }
-      case CarbonDataTypes.TIMESTAMP => TimestampType
-      case CarbonDataTypes.DATE => DateType
-      case CarbonDataTypes.STRUCT =>
-        CarbonMetastoreTypes
-          .toDataType(s"struct<${ relation.getStructChildren(carbonDimension.getColName) }>")
-      case CarbonDataTypes.ARRAY =>
-        CarbonMetastoreTypes
-          .toDataType(s"array<${ relation.getArrayChildren(carbonDimension.getColName) }>")
-    }
-  }
-
   val getDictionaryColumnIds = {
     val dictIds: Array[(String, ColumnIdentifier, CarbonDimension)] = output.map { a =>
       val attr = aliasMap.getOrElse(a, a)
@@ -499,12 +485,12 @@ class CarbonDecoderRDD(
       if (relation.isDefined && canBeDecoded(attr)) {
         val carbonTable = relation.get.carbonRelation.carbonRelation.metaData.carbonTable
         val carbonDimension =
-          carbonTable.getDimensionByName(carbonTable.getFactTableName, attr.name)
+          carbonTable.getDimensionByName(carbonTable.getTableName, attr.name)
         if (carbonDimension != null &&
             carbonDimension.hasEncoding(Encoding.DICTIONARY) &&
             !carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
             !carbonDimension.isComplex()) {
-          (carbonTable.getFactTableName, carbonDimension.getColumnIdentifier,
+          (carbonTable.getTableName, carbonDimension.getColumnIdentifier,
             carbonDimension)
         } else {
           (null, null, null)
@@ -525,7 +511,7 @@ class CarbonDecoderRDD(
 
     val cacheProvider: CacheProvider = CacheProvider.getInstance
     val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+      cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
     val dicts: Seq[Dictionary] = getDictionary(absoluteTableIdentifiers,
       forwardDictionaryCache)
     val dictIndex = dicts.zipWithIndex.filter(x => x._1 != null).map(x => x._2)
@@ -568,7 +554,7 @@ class CarbonDecoderRDD(
       if (f._2 != null) {
         try {
           cache.get(new DictionaryColumnUniqueIdentifier(
-            atiMap(f._1).getCarbonTableIdentifier,
+            atiMap(f._1),
             f._2, f._3.getDataType,
             CarbonStorePath.getCarbonTablePath(atiMap(f._1))))
         } catch {
@@ -587,10 +573,9 @@ class CarbonDecoderRDD(
 /**
  * It is a wrapper around Dictionary, it is a work around to keep the dictionary serializable in
  * case of codegen
- * @param storePath
+ * @param dictIdentifier Dictionary column unique identifier
  */
 class ForwardDictionaryWrapper(
-    val storePath: String,
     dictIdentifier: DictionaryColumnUniqueIdentifier) extends Serializable {
 
   var dictionary: Dictionary = null
@@ -619,8 +604,8 @@ class ForwardDictionaryWrapper(
 /**
  * It is Dictionary Loader class to load all dictionaries at a time instead of one by one.
  */
-class DictionaryLoader(storePath: String,
-    allDictIdentifiers: List[DictionaryColumnUniqueIdentifier]) extends Serializable {
+class DictionaryLoader(allDictIdentifiers: List[DictionaryColumnUniqueIdentifier])
+  extends Serializable {
 
   var isDictionaryLoaded = false
 
@@ -630,7 +615,7 @@ class DictionaryLoader(storePath: String,
     if (!isDictionaryLoaded) {
       val cacheProvider: CacheProvider = CacheProvider.getInstance
       val forwardDictionaryCache: Cache[DictionaryColumnUniqueIdentifier, Dictionary] =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY, storePath)
+        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY)
       allDicts = forwardDictionaryCache.getAll(allDictIdentifiers.asJava)
       isDictionaryLoaded = true
       val dictionaryTaskCleaner = TaskContext.get

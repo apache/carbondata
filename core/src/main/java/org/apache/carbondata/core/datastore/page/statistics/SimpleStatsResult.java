@@ -29,7 +29,4 @@ public interface SimpleStatsResult {
 
   DataType getDataType();
 
-  int getScale();
-
-  int getPrecision();
 }

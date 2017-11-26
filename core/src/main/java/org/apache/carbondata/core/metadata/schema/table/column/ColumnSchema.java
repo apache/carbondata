@@ -27,6 +27,7 @@ import java.util.Map;
 
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.DecimalType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.Writable;
 import org.apache.carbondata.core.metadata.schema.table.WritableUtil;
@@ -121,6 +122,13 @@ public class ColumnSchema implements Serializable, Writable {
   private boolean isSortColumn = false;
 
   /**
+   * aggregate function used in pre aggregate table
+   */
+  private String aggFunction = "";
+
+  private List<ParentColumnTableRelation> parentColumnTableRelations;
+
+  /**
    * @return the columnName
    */
   public String getColumnName() {
@@ -212,6 +220,16 @@ public class ColumnSchema implements Serializable, Writable {
   }
 
   /**
+   * Set the scale if it is decimal type
+   */
+  public void setScale(int scale) {
+    this.scale = scale;
+    if (DataTypes.isDecimal(dataType)) {
+      ((DecimalType) dataType).setScale(scale);
+    }
+  }
+
+  /**
    * @return the scale
    */
   public int getScale() {
@@ -219,10 +237,13 @@ public class ColumnSchema implements Serializable, Writable {
   }
 
   /**
-   * @param scale the scale to set
+   * Set the precision if it is decimal type
    */
-  public void setScale(int scale) {
-    this.scale = scale;
+  public void setPrecision(int precision) {
+    this.precision = precision;
+    if (DataTypes.isDecimal(dataType)) {
+      ((DecimalType) dataType).setPrecision(precision);
+    }
   }
 
   /**
@@ -230,13 +251,6 @@ public class ColumnSchema implements Serializable, Writable {
    */
   public int getPrecision() {
     return precision;
-  }
-
-  /**
-   * @param precision the precision to set
-   */
-  public void setPrecision(int precision) {
-    this.precision = precision;
   }
 
   /**
@@ -267,6 +281,15 @@ public class ColumnSchema implements Serializable, Writable {
     this.defaultValue = defaultValue;
   }
 
+  public List<ParentColumnTableRelation> getParentColumnTableRelations() {
+    return parentColumnTableRelations;
+  }
+
+  public void setParentColumnTableRelations(
+      List<ParentColumnTableRelation> parentColumnTableRelations) {
+    this.parentColumnTableRelations = parentColumnTableRelations;
+  }
+
   /**
    * hash code method to check get the hashcode based.
    * for generating the hash code only column name and column unique id will considered
@@ -275,7 +298,7 @@ public class ColumnSchema implements Serializable, Writable {
     final int prime = 31;
     int result = 1;
     result = prime * result + ((columnName == null) ? 0 : columnName.hashCode()) +
-      ((dataType == null) ? 0 : dataType.hashCode());
+        ((dataType == null) ? 0 : dataType.hashCode());
     return result;
   }
 
@@ -408,6 +431,14 @@ public class ColumnSchema implements Serializable, Writable {
     isSortColumn = sortColumn;
   }
 
+  public String getAggFunction() {
+    return aggFunction;
+  }
+
+  public void setAggFunction(String aggFunction) {
+    this.aggFunction = aggFunction;
+  }
+
   @Override
   public void write(DataOutput out) throws IOException {
     out.writeShort(dataType.getId());
@@ -423,8 +454,13 @@ public class ColumnSchema implements Serializable, Writable {
       }
     }
     out.writeBoolean(isDimensionColumn);
-    out.writeInt(scale);
-    out.writeInt(precision);
+    if (DataTypes.isDecimal(dataType)) {
+      out.writeInt(((DecimalType) dataType).getScale());
+      out.writeInt(((DecimalType) dataType).getPrecision());
+    } else {
+      out.writeInt(-1);
+      out.writeInt(-1);
+    }
     out.writeInt(schemaOrdinal);
     out.writeInt(numberOfChild);
     WritableUtil.writeByteArray(out, defaultValue);
@@ -439,6 +475,16 @@ public class ColumnSchema implements Serializable, Writable {
     }
     out.writeBoolean(invisible);
     out.writeBoolean(isSortColumn);
+    out.writeUTF(null != aggFunction ? aggFunction : "");
+    boolean isParentTableColumnRelationExists =
+        null != parentColumnTableRelations && parentColumnTableRelations.size() > 0;
+    out.writeBoolean(isParentTableColumnRelationExists);
+    if (isParentTableColumnRelationExists) {
+      out.writeShort(parentColumnTableRelations.size());
+      for (int i = 0; i < parentColumnTableRelations.size(); i++) {
+        parentColumnTableRelations.get(i).write(out);
+      }
+    }
   }
 
   @Override
@@ -457,6 +503,11 @@ public class ColumnSchema implements Serializable, Writable {
     this.isDimensionColumn = in.readBoolean();
     this.scale = in.readInt();
     this.precision = in.readInt();
+    if (DataTypes.isDecimal(dataType)) {
+      DecimalType decimalType = (DecimalType) dataType;
+      decimalType.setPrecision(precision);
+      decimalType.setScale(scale);
+    }
     this.schemaOrdinal = in.readInt();
     this.numberOfChild = in.readInt();
     this.defaultValue = WritableUtil.readByteArray(in);
@@ -469,5 +520,17 @@ public class ColumnSchema implements Serializable, Writable {
     }
     this.invisible = in.readBoolean();
     this.isSortColumn = in.readBoolean();
+    this.aggFunction = in.readUTF();
+    boolean isParentTableColumnRelationExists = in.readBoolean();
+    if (isParentTableColumnRelationExists) {
+      short parentColumnTableRelationSize = in.readShort();
+      this.parentColumnTableRelations = new ArrayList<>(parentColumnTableRelationSize);
+      for (int i = 0; i < parentColumnTableRelationSize; i++) {
+        ParentColumnTableRelation parentColumnTableRelation =
+            new ParentColumnTableRelation(null, null, null);
+        parentColumnTableRelation.readFields(in);
+        parentColumnTableRelations.add(parentColumnTableRelation);
+      }
+    }
   }
 }

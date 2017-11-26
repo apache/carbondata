@@ -78,6 +78,7 @@ public class HDFSLeaseUtils {
     switch (fileType) {
       case ALLUXIO:
       case HDFS:
+      case S3:
         Path path = FileFactory.getPath(filePath);
         FileSystem fs = FileFactory.getFileSystem(path);
         return recoverLeaseOnFile(filePath, path, (DistributedFileSystem) fs);

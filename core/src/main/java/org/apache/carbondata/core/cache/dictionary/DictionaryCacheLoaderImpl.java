@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.reader.CarbonDictionaryReader;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReader;
@@ -37,25 +36,15 @@ import org.apache.carbondata.core.util.CarbonUtil;
 public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
 
   /**
-   * carbon table identifier
+   * carbon dictionary column identifier
    */
-  private CarbonTableIdentifier carbonTableIdentifier;
-
   private DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier;
 
   /**
-   * carbon store path
+   * @param dictionaryColumnUniqueIdentifier dictionary column identifier
    */
-  private String carbonStorePath;
-
-  /**
-   * @param carbonTableIdentifier fully qualified table name
-   * @param carbonStorePath       hdfs store path
-   */
-  public DictionaryCacheLoaderImpl(CarbonTableIdentifier carbonTableIdentifier,
-      String carbonStorePath, DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
-    this.carbonTableIdentifier = carbonTableIdentifier;
-    this.carbonStorePath = carbonStorePath;
+  public DictionaryCacheLoaderImpl(
+      DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     this.dictionaryColumnUniqueIdentifier = dictionaryColumnUniqueIdentifier;
   }
 
@@ -166,8 +155,7 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
   private CarbonDictionaryReader getDictionaryReader(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
-    return dictService.getDictionaryReader(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
-        carbonStorePath);
+    return dictService.getDictionaryReader(dictionaryColumnUniqueIdentifier);
   }
 
   /**
@@ -178,7 +166,6 @@ public class DictionaryCacheLoaderImpl implements DictionaryCacheLoader {
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) {
     DictionaryService dictService = CarbonCommonFactory.getDictionaryService();
     return dictService
-        .getDictionarySortIndexReader(carbonTableIdentifier, dictionaryColumnUniqueIdentifier,
-            carbonStorePath);
+        .getDictionarySortIndexReader(dictionaryColumnUniqueIdentifier);
   }
 }

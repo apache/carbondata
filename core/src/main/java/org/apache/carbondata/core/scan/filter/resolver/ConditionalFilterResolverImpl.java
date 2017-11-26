@@ -167,14 +167,11 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
             metadata);
 
       } else if ((null != columnList.get(0).getDimension()) && (
-          columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) && !(
-              columnList.get(0).getDimension().getDataType()
-                  == org.apache.carbondata.core.metadata.datatype.DataTypes.STRUCT
-                  || columnList.get(0).getDimension().getDataType()
-                  == org.apache.carbondata.core.metadata.datatype.DataTypes.ARRAY))) {
+          columnList.get(0).getDimension().hasEncoding(Encoding.DICTIONARY) &&
+              ! columnList.get(0).getDimension().getDataType().isComplexType())) {
         dimColResolvedFilterInfo.setFilterValues(FilterUtil
             .getFilterListForAllValues(absoluteTableIdentifier, exp, columnList.get(0),
-                isIncludeFilter, tableProvider));
+                isIncludeFilter, tableProvider, isExpressionResolve));
 
         dimColResolvedFilterInfo.setColumnIndex(columnList.get(0).getDimension().getOrdinal());
         dimColResolvedFilterInfo.setDimension(columnList.get(0).getDimension());
@@ -322,7 +319,7 @@ public class ConditionalFilterResolverImpl implements FilterResolverIntf {
     } else if (null != dimColResolvedFilterInfo.getFilterValues() && dimColResolvedFilterInfo
         .getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
       return FilterUtil.getKeyArray(this.dimColResolvedFilterInfo.getFilterValues(),
-          this.dimColResolvedFilterInfo.getDimension(), segmentProperties);
+          this.dimColResolvedFilterInfo.getDimension(), segmentProperties, false);
     }
     return null;
 

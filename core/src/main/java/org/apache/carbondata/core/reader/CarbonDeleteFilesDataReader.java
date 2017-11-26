@@ -65,13 +65,7 @@ public class CarbonDeleteFilesDataReader {
    * max number of threads for a job
    */
   private void initThreadPoolSize() {
-    try {
-      thread_pool_size = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
-              CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
-    } catch (NumberFormatException e) {
-      thread_pool_size = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-    }
+    thread_pool_size = CarbonProperties.getInstance().getNumberOfCores();
   }
 
   /**

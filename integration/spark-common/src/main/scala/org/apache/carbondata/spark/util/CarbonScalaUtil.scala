@@ -19,18 +19,19 @@ package org.apache.carbondata.spark.util
 
 import java.nio.charset.Charset
 import java.text.SimpleDateFormat
+import java.util
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.DataTypeInfo
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes}
+import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, DecimalType => CarbonDecimalType, StructField => CarbonStructField}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 
 object CarbonScalaUtil {
-  def convertSparkToCarbonDataType(
-      dataType: org.apache.spark.sql.types.DataType): CarbonDataType = {
+  def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
     dataType match {
       case StringType => CarbonDataTypes.STRING
       case ShortType => CarbonDataTypes.SHORT
@@ -41,10 +42,21 @@ object CarbonScalaUtil {
       case DateType => CarbonDataTypes.DATE
       case BooleanType => CarbonDataTypes.BOOLEAN
       case TimestampType => CarbonDataTypes.TIMESTAMP
-      case ArrayType(_, _) => CarbonDataTypes.ARRAY
-      case StructType(_) => CarbonDataTypes.STRUCT
+      case ArrayType(elementType, _) =>
+        CarbonDataTypes.createArrayType(CarbonScalaUtil.convertSparkToCarbonDataType(elementType))
+      case StructType(fields) =>
+        val carbonFields = new util.ArrayList[CarbonStructField]
+        fields.map { field =>
+          carbonFields.add(
+            new CarbonStructField(
+              field.name,
+              CarbonScalaUtil.convertSparkToCarbonDataType(field.dataType)))
+        }
+        CarbonDataTypes.createStructType(carbonFields)
       case NullType => CarbonDataTypes.NULL
-      case _ => CarbonDataTypes.DECIMAL
+      case decimal: DecimalType =>
+        CarbonDataTypes.createDecimalType(decimal.precision, decimal.scale)
+      case _ => throw new UnsupportedOperationException("getting " + dataType + " from spark")
     }
   }
 
@@ -66,27 +78,19 @@ object CarbonScalaUtil {
   }
 
   def convertCarbonToSparkDataType(dataType: CarbonDataType): types.DataType = {
-    dataType match {
-      case CarbonDataTypes.STRING => StringType
-      case CarbonDataTypes.SHORT => ShortType
-      case CarbonDataTypes.INT => IntegerType
-      case CarbonDataTypes.LONG => LongType
-      case CarbonDataTypes.DOUBLE => DoubleType
-      case CarbonDataTypes.BOOLEAN => BooleanType
-      case CarbonDataTypes.DECIMAL => DecimalType.SYSTEM_DEFAULT
-      case CarbonDataTypes.TIMESTAMP => TimestampType
-      case CarbonDataTypes.DATE => DateType
-    }
-  }
-
-  def updateDataType(
-      currentDataType: org.apache.spark.sql.types.DataType): org.apache.spark.sql.types.DataType = {
-    currentDataType match {
-      case decimal: DecimalType =>
-        val scale = currentDataType.asInstanceOf[DecimalType].scale
-        DecimalType(DecimalType.MAX_PRECISION, scale)
-      case _ =>
-        currentDataType
+    if (CarbonDataTypes.isDecimal(dataType)) {
+      DecimalType.SYSTEM_DEFAULT
+    } else {
+      dataType match {
+        case CarbonDataTypes.STRING => StringType
+        case CarbonDataTypes.SHORT => ShortType
+        case CarbonDataTypes.INT => IntegerType
+        case CarbonDataTypes.LONG => LongType
+        case CarbonDataTypes.DOUBLE => DoubleType
+        case CarbonDataTypes.BOOLEAN => BooleanType
+        case CarbonDataTypes.TIMESTAMP => TimestampType
+        case CarbonDataTypes.DATE => DateType
+      }
     }
   }
 
@@ -101,7 +105,12 @@ object CarbonScalaUtil {
       serializationNullFormat
     } else {
       value match {
-        case s: String => s
+        case s: String => if (s.length > CSVInputFormat.MAX_CHARS_PER_COLUMN_DEFAULT) {
+          throw new Exception("Dataload failed, String length cannot exceed " +
+                              CSVInputFormat.MAX_CHARS_PER_COLUMN_DEFAULT + " characters")
+        } else {
+          s
+        }
         case d: java.math.BigDecimal => d.toPlainString
         case i: java.lang.Integer => i.toString
         case d: java.lang.Double => d.toString

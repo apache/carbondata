@@ -27,13 +27,13 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.sources.{BaseRelation, Filter, InsertableRelation}
 import org.apache.spark.sql.types.StructType
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.Expression
 import org.apache.carbondata.core.scan.expression.logical.AndExpression
-import org.apache.carbondata.core.util.{CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.hadoop.CarbonProjection
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 
@@ -45,19 +45,19 @@ case class CarbonDatasourceHadoopRelation(
     isSubquery: ArrayBuffer[Boolean] = new ArrayBuffer[Boolean]())
   extends BaseRelation with InsertableRelation {
 
-  lazy val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.fromTablePath(paths.head)
+  lazy val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(paths.head,
+    parameters.getOrElse("dbname", GetDB.getDatabaseName(None, sparkSession)),
+    parameters("tablename"))
   lazy val databaseName: String = carbonTable.getDatabaseName
-  lazy val tableName: String = carbonTable.getFactTableName
-  lazy val carbonSessionInfo : CarbonSessionInfo =
-    CarbonEnv.getInstance(sparkSession).carbonSessionInfo
-  ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
+  lazy val tableName: String = carbonTable.getTableName
+  CarbonSession.updateSessionInfoToCurrentThread(sparkSession)
 
   @transient lazy val carbonRelation: CarbonRelation =
     CarbonEnv.getInstance(sparkSession).carbonMetastore.
     createCarbonRelation(parameters, identifier, sparkSession)
 
 
-  @transient lazy val carbonTable: CarbonTable = carbonRelation.tableMeta.carbonTable
+  @transient lazy val carbonTable: CarbonTable = carbonRelation.carbonTable
 
   override def sqlContext: SQLContext = sparkSession.sqlContext
 
@@ -91,13 +91,14 @@ case class CarbonDatasourceHadoopRelation(
 
   override def insert(data: DataFrame, overwrite: Boolean): Unit = {
     if (carbonRelation.output.size > CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS) {
-      sys.error("Maximum supported column by carbon is: " +
-          CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS)
+      CarbonException.analysisException("Maximum supported column by carbon is: " +
+        CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS)
     }
     if (data.logicalPlan.output.size >= carbonRelation.output.size) {
       LoadTableByInsertCommand(this, data.logicalPlan, overwrite).run(sparkSession)
     } else {
-      sys.error("Cannot insert into target table because column number are different")
+      CarbonException.analysisException(
+        "Cannot insert into target table because number of columns mismatch")
     }
   }
 

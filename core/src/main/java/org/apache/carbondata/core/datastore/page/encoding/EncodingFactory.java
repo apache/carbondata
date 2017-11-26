@@ -26,6 +26,7 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.ColumnType;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveDeltaFloatingCodec;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveDeltaIntegralCodec;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveFloatingCodec;
 import org.apache.carbondata.core.datastore.page.encoding.adaptive.AdaptiveIntegralCodec;
@@ -40,12 +41,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.format.Encoding;
 
-import static org.apache.carbondata.format.Encoding.ADAPTIVE_DELTA_INTEGRAL;
-import static org.apache.carbondata.format.Encoding.ADAPTIVE_FLOATING;
-import static org.apache.carbondata.format.Encoding.ADAPTIVE_INTEGRAL;
-import static org.apache.carbondata.format.Encoding.BOOL_BYTE;
-import static org.apache.carbondata.format.Encoding.DIRECT_COMPRESS;
-import static org.apache.carbondata.format.Encoding.RLE_INTEGRAL;
+import static org.apache.carbondata.format.Encoding.*;
 
 /**
  * Base class for encoding factory implementation.
@@ -91,6 +87,12 @@ public abstract class EncodingFactory {
       SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
       return new AdaptiveFloatingCodec(metadata.getSchemaDataType(), metadata.getStoreDataType(),
           stats).createDecoder(metadata);
+    } else if (encoding == ADAPTIVE_DELTA_FLOATING) {
+      ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
+      metadata.readFields(in);
+      SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
+      return new AdaptiveDeltaFloatingCodec(metadata.getSchemaDataType(),
+          metadata.getStoreDataType(), stats).createDecoder(metadata);
     } else if (encoding == RLE_INTEGRAL) {
       RLEEncoderMeta metadata = new RLEEncoderMeta();
       metadata.readFields(in);
@@ -111,8 +113,8 @@ public abstract class EncodingFactory {
    */
   public ColumnPageDecoder createDecoderLegacy(ValueEncoderMeta metadata) {
     SimpleStatsResult stats = PrimitivePageStatsCollector.newInstance(metadata);
-    TableSpec.ColumnSpec spec = new TableSpec.ColumnSpec("legacy", stats.getDataType(),
-        ColumnType.MEASURE);
+    TableSpec.ColumnSpec spec =
+        TableSpec.ColumnSpec.newInstanceLegacy("legacy", stats.getDataType(), ColumnType.MEASURE);
     String compressor = "snappy";
     DataType dataType = DataType.getDataType(metadata.getType());
     if (dataType == DataTypes.BYTE ||
@@ -152,10 +154,15 @@ public abstract class EncodingFactory {
             new ColumnPageEncoderMeta(spec, DataType.getDataType(metadata.getType()), stats,
                 compressor);
         return codec.createDecoder(meta);
+      } else if (codec instanceof AdaptiveDeltaFloatingCodec) {
+        AdaptiveDeltaFloatingCodec adaptiveCodec = (AdaptiveDeltaFloatingCodec) codec;
+        ColumnPageEncoderMeta meta =
+            new ColumnPageEncoderMeta(spec, adaptiveCodec.getTargetDataType(), stats, compressor);
+        return codec.createDecoder(meta);
       } else {
         throw new RuntimeException("internal error");
       }
-    } else if (dataType == DataTypes.DECIMAL || dataType == DataTypes.BYTE_ARRAY) {
+    } else if (DataTypes.isDecimal(dataType) || dataType == DataTypes.BYTE_ARRAY) {
       // no dictionary dimension
       return new DirectCompressCodec(stats.getDataType())
           .createDecoder(new ColumnPageEncoderMeta(spec, stats.getDataType(), stats, compressor));

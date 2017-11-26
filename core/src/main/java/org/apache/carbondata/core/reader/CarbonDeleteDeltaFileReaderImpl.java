@@ -80,7 +80,7 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
     StringWriter sw = new StringWriter();
     dataInputStream = FileFactory.getDataInputStream(filePath, fileType);
     inputStream = new InputStreamReader(dataInputStream,
-        CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT);
+        CarbonCommonConstants.DEFAULT_CHARSET);
     int n = 0;
     while (-1 != (n = inputStream.read(buffer))) {
       sw.write(buffer, 0, n);
@@ -108,7 +108,7 @@ public class CarbonDeleteDeltaFileReaderImpl implements CarbonDeleteDeltaFileRea
       }
       dataInputStream = fileOperation.openForRead();
       inStream = new InputStreamReader(dataInputStream,
-          CarbonCommonConstants.CARBON_DEFAULT_STREAM_ENCODEFORMAT);
+          CarbonCommonConstants.DEFAULT_CHARSET);
       buffReader = new BufferedReader(inStream);
       deleteDeltaBlockDetails =
           gsonObjectToRead.fromJson(buffReader, DeleteDeltaBlockDetails.class);

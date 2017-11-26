@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
-import java.io.{File, FilenameFilter}
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -26,6 +24,11 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.TestQueryExecutor.projectPath
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
+
+import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.util.path.CarbonStorePath
 
 class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   var filePath: String = s"$resourcesPath/globalsort"
@@ -163,8 +166,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
     assert(getIndexFileCount("carbon_globalsort") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(24)))
-    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
-      sql("SELECT * FROM carbon_localsort_twice ORDER BY name"))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
+      sql("SELECT * FROM carbon_localsort_twice ORDER BY name, id"))
   }
 
   // ----------------------------------- Check Configurations -----------------------------------
@@ -222,8 +225,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
     assert(getIndexFileCount("carbon_globalsort") === 3)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
-    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
-      sql("SELECT * FROM carbon_localsort_delete ORDER BY name"))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
+      sql("SELECT * FROM carbon_localsort_delete ORDER BY name, id"))
   }
 
   test("LOAD with UPDATE") {
@@ -234,15 +237,17 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
         | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('SORT_SCOPE'='GLOBAL_SORT')
       """.stripMargin)
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_localsort_update")
+
     sql("UPDATE carbon_localsort_update SET (name) = ('bb') WHERE id = 2").show
-
+    sql("select * from carbon_localsort_update").show()
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
+    sql("select * from carbon_globalsort").show()
     sql("UPDATE carbon_globalsort SET (name) = ('bb') WHERE id = 2").show
-
+    sql("select * from carbon_globalsort").show()
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
     checkAnswer(sql("SELECT name FROM carbon_globalsort WHERE id = 2"), Seq(Row("bb")))
-    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
-      sql("SELECT * FROM carbon_localsort_update ORDER BY name"))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
+      sql("SELECT * FROM carbon_localsort_update ORDER BY name, id"))
   }
 
   // ----------------------------------- INSERT INTO -----------------------------------
@@ -253,8 +258,8 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
 
     assert(getIndexFileCount("carbon_globalsort") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
-    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
-      sql("SELECT * FROM carbon_localsort_once ORDER BY name"))
+    checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
+      sql("SELECT * FROM carbon_localsort_once ORDER BY name, id"))
   }
 
   test("Test with different date types") {
@@ -324,10 +329,9 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
   }
 
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {
-    val store  = storeLocation + "/default/" + tableName + "/Fact/Part0/Segment_" + segmentNo
-    val list = new File(store).list(new FilenameFilter {
-      override def accept(dir: File, name: String) = name.endsWith(".carbonindex")
-    })
-    list.size
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default"+"_"+tableName)
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
+    val segmentDir = carbonTablePath.getCarbonDataDirectoryPath("0", segmentNo)
+    new SegmentIndexFileStore().getIndexFilesFromSegment(segmentDir).size()
   }
 }

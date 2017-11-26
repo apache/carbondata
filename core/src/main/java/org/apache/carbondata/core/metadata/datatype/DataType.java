@@ -85,7 +85,7 @@ public class DataType implements Serializable {
       return BIG_INT_MEASURE_CHAR;
     } else if (dataType == DataTypes.DOUBLE) {
       return DOUBLE_MEASURE_CHAR;
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       return BIG_DECIMAL_MEASURE_CHAR;
     } else if (dataType == DataTypes.STRING) {
       return STRING_CHAR;
@@ -107,11 +107,12 @@ public class DataType implements Serializable {
       case DOUBLE_MEASURE_CHAR:
         return DataTypes.DOUBLE;
       case BIG_DECIMAL_MEASURE_CHAR:
-        return DataTypes.DECIMAL;
+        return DataTypes.createDefaultDecimalType();
       case 'l':
         return DataTypes.LEGACY_LONG;
       default:
         throw new RuntimeException("Unexpected type: " + type);
     }
   }
+
 }

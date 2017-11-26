@@ -20,7 +20,6 @@ package org.apache.carbondata.processing.loading;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -28,6 +27,7 @@ import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
@@ -142,7 +142,7 @@ public final class DataLoadProcessBuilder {
     CarbonProperties.getInstance().addProperty(tempLocationKey,
         StringUtils.join(storeLocation, File.pathSeparator));
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, loadModel.getStorePath());
+        .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, loadModel.getTablePath());
 
     return createConfiguration(loadModel);
   }
@@ -170,6 +170,8 @@ public final class DataLoadProcessBuilder {
         loadModel.getBadRecordsAction().split(",")[1]);
     configuration.setDataLoadProperty(DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD,
         loadModel.getIsEmptyDataBadRecord().split(",")[1]);
+    configuration.setDataLoadProperty(DataLoadProcessorConstants.SKIP_EMPTY_LINE,
+        loadModel.getSkipEmptyLine());
     configuration.setDataLoadProperty(DataLoadProcessorConstants.FACT_FILE_PATH,
         loadModel.getFactFilePath());
     configuration
@@ -182,11 +184,9 @@ public final class DataLoadProcessBuilder {
         loadModel.getBadRecordsLocation());
     CarbonMetadata.getInstance().addCarbonTable(carbonTable);
     List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getFactTableName());
+        carbonTable.getDimensionByTableName(carbonTable.getTableName());
     List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getFactTableName());
-    Map<String, String> dateFormatMap =
-        CarbonDataProcessorUtil.getDateFormatMap(loadModel.getDateFormat());
+        carbonTable.getMeasureByTableName(carbonTable.getTableName());
     List<DataField> dataFields = new ArrayList<>();
     List<DataField> complexDataFields = new ArrayList<>();
 
@@ -194,7 +194,11 @@ public final class DataLoadProcessBuilder {
     // And then add complex data types and measures.
     for (CarbonColumn column : dimensions) {
       DataField dataField = new DataField(column);
-      dataField.setDateFormat(dateFormatMap.get(column.getColName()));
+      if (column.getDataType() == DataTypes.DATE) {
+        dataField.setDateFormat(loadModel.getDateFormat());
+      } else if (column.getDataType() == DataTypes.TIMESTAMP) {
+        dataField.setTimestampFormat(loadModel.getTimestampformat());
+      }
       if (column.isComplex()) {
         complexDataFields.add(dataField);
       } else {
@@ -209,7 +213,7 @@ public final class DataLoadProcessBuilder {
       }
     }
     configuration.setDataFields(dataFields.toArray(new DataField[dataFields.size()]));
-    configuration.setBucketingInfo(carbonTable.getBucketingInfo(carbonTable.getFactTableName()));
+    configuration.setBucketingInfo(carbonTable.getBucketingInfo(carbonTable.getTableName()));
     // configuration for one pass load: dictionary server info
     configuration.setUseOnePass(loadModel.getUseOnePass());
     configuration.setDictionaryServerHost(loadModel.getDictionaryServerHost());

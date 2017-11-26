@@ -30,6 +30,8 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
+
+
 class QueryTest extends PlanTest {
 
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -56,6 +58,17 @@ class QueryTest extends PlanTest {
         assert(!outputs.contains(key), s"Failed for $df ($key existed in the result)")
       }
     }
+  }
+
+  /**
+   * Runs the plan and counts the keyword in the answer
+   * @param df the [[DataFrame]] to be executed
+   * @param count expected count
+   * @param keyword keyword to search
+   */
+  def checkExistenceCount(df: DataFrame, count: Long, keyword: String): Unit = {
+    val outputs = df.collect().map(_.mkString).mkString
+    assert(outputs.sliding(keyword.length).count(_ == keyword) === count)
   }
 
   def sqlTest(sqlString: String, expectedAnswer: Seq[Row])(implicit sqlContext: SQLContext) {
@@ -92,6 +105,7 @@ class QueryTest extends PlanTest {
     getProperty(CarbonCommonConstants.STORE_LOCATION)
   val resourcesPath = TestQueryExecutor.resourcesPath
   val integrationPath = TestQueryExecutor.integrationPath
+  val dblocation = TestQueryExecutor.location
 }
 
 object QueryTest {

@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.processing.store;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -42,19 +41,15 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter;
 import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
-import org.apache.carbondata.processing.store.file.FileManager;
-import org.apache.carbondata.processing.store.file.IFileManagerComposite;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 import org.apache.carbondata.processing.store.writer.CarbonFactDataWriter;
 
@@ -77,10 +72,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private CarbonFactDataWriter dataWriter;
 
   /**
-   * File manager
-   */
-  private IFileManagerComposite fileManager;
-  /**
    * total number of entries in blocklet
    */
   private int entryCount;
@@ -91,11 +82,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private int pageSize;
 
-  // This variable is true if it is dictionary dimension and its cardinality is lower than
-  // property of CarbonCommonConstants.HIGH_CARDINALITY_VALUE
-  // It decides whether it will do RLE encoding on data page for this dimension
-  private boolean[] rleEncodingForDictDimension;
-  private boolean[] isNoDictionary;
   private long processedDataCount;
   private ExecutorService producerExecutorService;
   private List<Future<Void>> producerExecutorServiceTaskList;
@@ -130,12 +116,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   private boolean processingComplete;
 
   /**
-   * boolean to check whether dimension
-   * is of dictionary type or no dictionary type
-   */
-  private boolean[] isDictDimension;
-
-  /**
    * current data format version
    */
   private ColumnarFormatVersion version;
@@ -146,47 +126,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
   public CarbonFactDataHandlerColumnar(CarbonFactDataHandlerModel model) {
     this.model = model;
     initParameters(model);
-
-    int numDimColumns = colGrpModel.getNoOfColumnStore() + model.getNoDictionaryCount()
-        + getExpandedComplexColsCount();
-    this.rleEncodingForDictDimension = new boolean[numDimColumns];
-    this.isNoDictionary = new boolean[numDimColumns];
-
-    int noDictStartIndex = this.colGrpModel.getNoOfColumnStore();
-    // setting true value for dims of high card
-    for (int i = 0; i < model.getNoDictionaryCount(); i++) {
-      this.isNoDictionary[noDictStartIndex + i] = true;
-    }
-
-    boolean isAggKeyBlock = Boolean.parseBoolean(
-        CarbonProperties.getInstance().getProperty(
-            CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK,
-            CarbonCommonConstants.AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE));
-    if (isAggKeyBlock) {
-      int[] dimLens = model.getSegmentProperties().getDimColumnsCardinality();
-      for (int i = 0; i < model.getTableSpec().getNumSimpleDimensions(); i++) {
-        if (model.getSegmentProperties().getDimensions().get(i).isGlobalDictionaryEncoding()) {
-          this.rleEncodingForDictDimension[i] = true;
-        }
-      }
-
-      if (model.getDimensionCount() < dimLens.length) {
-        int allColsCount = getColsCount(model.getDimensionCount());
-        List<Boolean> rleWithComplex = new ArrayList<Boolean>(allColsCount);
-        for (int i = 0; i < model.getDimensionCount(); i++) {
-          GenericDataType complexDataType = model.getComplexIndexMap().get(i);
-          if (complexDataType != null) {
-            complexDataType.fillAggKeyBlock(rleWithComplex, this.rleEncodingForDictDimension);
-          } else {
-            rleWithComplex.add(this.rleEncodingForDictDimension[i]);
-          }
-        }
-        this.rleEncodingForDictDimension = new boolean[allColsCount];
-        for (int i = 0; i < allColsCount; i++) {
-          this.rleEncodingForDictDimension[i] = rleWithComplex.get(i);
-        }
-      }
-    }
     this.version = CarbonProperties.getInstance().getFormatVersion();
     StringBuffer noInvertedIdxCol = new StringBuffer();
     for (CarbonDimension cd : model.getSegmentProperties().getDimensions()) {
@@ -202,13 +141,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     SortScopeOptions.SortScope sortScope = model.getSortScope();
     this.colGrpModel = model.getSegmentProperties().getColumnGroupModel();
 
-    //TODO need to pass carbon table identifier to metadata
-    CarbonTable carbonTable =
-        CarbonMetadata.getInstance().getCarbonTable(
-            model.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + model.getTableName());
-    isDictDimension =
-        CarbonUtil.identifyDimensionType(carbonTable.getDimensionByTableName(model.getTableName()));
-
     // in compaction flow the measure with decimal type will come as spark decimal.
     // need to convert it to byte array.
     if (model.isCompactionFlow()) {
@@ -223,16 +155,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
       }
     } else {
-      try {
-        numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.NUM_CORES_LOADING,
-                CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
-      } catch (NumberFormatException exc) {
-        LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_LOADING
-            + "is wrong.Falling back to the default value "
-            + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-        numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-      }
+      numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
     }
 
     if (sortScope != null && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
@@ -254,19 +177,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     // Start the consumer which will take each blocklet/page in order and write to a file
     Consumer consumer = new Consumer(tablePageList);
     consumerExecutorServiceTaskList.add(consumerExecutorService.submit(consumer));
-  }
-
-  private boolean[] arrangeUniqueBlockType(boolean[] aggKeyBlock) {
-    int counter = 0;
-    boolean[] uniqueBlock = new boolean[aggKeyBlock.length];
-    for (int i = 0; i < isDictDimension.length; i++) {
-      if (isDictDimension[i]) {
-        uniqueBlock[i] = aggKeyBlock[counter++];
-      } else {
-        uniqueBlock[i] = false;
-      }
-    }
-    return uniqueBlock;
   }
 
   private void setComplexMapSurrogateIndex(int dimensionCount) {
@@ -292,9 +202,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    * @throws CarbonDataWriterException
    */
   public void initialise() throws CarbonDataWriterException {
-    fileManager = new FileManager();
-    // todo: the fileManager seems to be useless, remove it later
-    fileManager.setName(new File(model.getStoreLocation()[0]).getName());
     setWritingConfiguration();
   }
 
@@ -421,25 +328,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
   }
 
-  private int getColsCount(int columnSplit) {
-    int count = 0;
-    for (int i = 0; i < columnSplit; i++) {
-      GenericDataType complexDataType = model.getComplexIndexMap().get(i);
-      if (complexDataType != null) {
-        count += complexDataType.getColsCount();
-      } else count++;
-    }
-    return count;
-  }
-
   // return the number of complex column after complex columns are expanded
   private int getExpandedComplexColsCount() {
     return model.getExpandedComplexColsCount();
-  }
-
-  // return the number of complex column
-  private int getComplexColumnCount() {
-    return model.getComplexIndexMap().size();
   }
 
   /**
@@ -504,7 +395,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
         new ArrayList<Integer>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     DataType[] type = model.getMeasureDataType();
     for (int j = 0; j < type.length; j++) {
-      if (type[j] != DataTypes.BYTE && type[j] != DataTypes.DECIMAL) {
+      if (type[j] != DataTypes.BYTE && !DataTypes.isDecimal(type[j])) {
         otherMeasureIndexList.add(j);
       } else {
         customMeasureIndexList.add(j);
@@ -528,7 +419,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     this.dataWriter = getFactDataWriter();
     // initialize the channel;
     this.dataWriter.initializeWriter();
-    //initializeColGrpMinMax();
   }
 
   /**
@@ -580,14 +470,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     carbonDataWriterVo.setStoreLocation(model.getStoreLocation());
     carbonDataWriterVo.setMeasureCount(model.getMeasureCount());
     carbonDataWriterVo.setTableName(model.getTableName());
-    carbonDataWriterVo.setFileManager(fileManager);
-    carbonDataWriterVo.setRleEncodingForDictDim(rleEncodingForDictDimension);
-    carbonDataWriterVo.setIsComplexType(isComplexTypes());
     carbonDataWriterVo.setNoDictionaryCount(model.getNoDictionaryCount());
     carbonDataWriterVo.setCarbonDataFileAttributes(model.getCarbonDataFileAttributes());
     carbonDataWriterVo.setDatabaseName(model.getDatabaseName());
     carbonDataWriterVo.setWrapperColumnSchemaList(model.getWrapperColumnSchema());
-    carbonDataWriterVo.setIsDictionaryColumn(isDictDimension);
     carbonDataWriterVo.setCarbonDataDirectoryPath(model.getCarbonDataDirectoryPath());
     carbonDataWriterVo.setColCardinality(model.getColCardinality());
     carbonDataWriterVo.setSegmentProperties(model.getSegmentProperties());
@@ -597,31 +483,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     carbonDataWriterVo.setSchemaUpdatedTimeStamp(model.getSchemaUpdatedTimeStamp());
     carbonDataWriterVo.setListener(model.getDataMapWriterlistener());
     return carbonDataWriterVo;
-  }
-
-  private boolean[] isComplexTypes() {
-    int noDictionaryCount = model.getNoDictionaryCount();
-    int noOfColumn = colGrpModel.getNoOfColumnStore() + noDictionaryCount + getComplexColumnCount();
-    int allColsCount = getColsCount(noOfColumn);
-    boolean[] isComplexType = new boolean[allColsCount];
-
-    List<Boolean> complexTypesList = new ArrayList<Boolean>(allColsCount);
-    for (int i = 0; i < noOfColumn; i++) {
-      GenericDataType complexDataType = model.getComplexIndexMap().get(i - noDictionaryCount);
-      if (complexDataType != null) {
-        int count = complexDataType.getColsCount();
-        for (int j = 0; j < count; j++) {
-          complexTypesList.add(true);
-        }
-      } else {
-        complexTypesList.add(false);
-      }
-    }
-    for (int i = 0; i < allColsCount; i++) {
-      isComplexType[i] = complexTypesList.get(i);
-    }
-
-    return isComplexType;
   }
 
   /**

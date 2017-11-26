@@ -22,6 +22,7 @@ import java.util.List;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.converter.BadRecordLogHolder;
@@ -42,10 +43,17 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
       boolean isEmptyBadRecord) {
     this.nullFormat = nullFormat;
     this.column = dataField.getColumn();
-    if (dataField.getDateFormat() != null && !dataField.getDateFormat().isEmpty()) {
+    if (dataField.getColumn().getDataType() == DataTypes.DATE && dataField.getDateFormat() != null
+        && !dataField.getDateFormat().isEmpty()) {
       this.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
           .getDirectDictionaryGenerator(dataField.getColumn().getDataType(),
               dataField.getDateFormat());
+
+    } else if (dataField.getColumn().getDataType() == DataTypes.TIMESTAMP
+        && dataField.getTimestampFormat() != null && !dataField.getTimestampFormat().isEmpty()) {
+      this.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory
+          .getDirectDictionaryGenerator(dataField.getColumn().getDataType(),
+              dataField.getTimestampFormat());
 
     } else {
       this.directDictionaryGenerator = DirectDictionaryKeyGeneratorFactory

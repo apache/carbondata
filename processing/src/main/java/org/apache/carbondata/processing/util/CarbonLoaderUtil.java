@@ -53,7 +53,6 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.datastore.impl.FileFactory.FileType;
-import org.apache.carbondata.core.datastore.row.LoadStatusType;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
@@ -65,6 +64,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
@@ -89,7 +89,7 @@ public final class CarbonLoaderUtil {
   public static void deleteSegment(CarbonLoadModel loadModel, int currentLoad) {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier());
+        .getCarbonTablePath(loadModel.getTablePath(), carbonTable.getCarbonTableIdentifier());
 
     for (int i = 0; i < carbonTable.getPartitionCount(); i++) {
       String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(i + "", currentLoad + "");
@@ -109,7 +109,7 @@ public final class CarbonLoaderUtil {
     CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema()
         .getCarbonTable();
     CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
-        loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier());
+        loadModel.getTablePath(), carbonTable.getCarbonTableIdentifier());
 
     int fileCount = 0;
     int partitionCount = carbonTable.getPartitionCount();
@@ -145,7 +145,7 @@ public final class CarbonLoaderUtil {
     String metaDataLocation = carbonTable.getMetaDataFilepath();
     final LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(loadModel.getStorePath(), carbonTable.getCarbonTableIdentifier());
+        .getCarbonTablePath(loadModel.getTablePath(), carbonTable.getCarbonTableIdentifier());
 
     //delete folder which metadata no exist in tablestatus
     for (int i = 0; i < carbonTable.getPartitionCount(); i++) {
@@ -186,7 +186,7 @@ public final class CarbonLoaderUtil {
     }
   }
 
-  private static void deleteStorePath(String path) {
+  public static void deleteStorePath(String path) {
     try {
       FileType fileType = FileFactory.getFileType(path);
       if (FileFactory.isFileExist(path, fileType)) {
@@ -262,9 +262,12 @@ public final class CarbonLoaderUtil {
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getMetaDataFilepath();
     AbsoluteTableIdentifier absoluteTableIdentifier =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
+    String metadataPath = carbonTablePath.getMetadataDirectoryPath();
+    FileType fileType = FileFactory.getFileType(metadataPath);
+    if (!FileFactory.isFileExist(metadataPath, fileType)) {
+      FileFactory.mkdirs(metadataPath, fileType);
+    }
     String tableStatusPath = carbonTablePath.getTableStatusFilePath();
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
@@ -292,11 +295,10 @@ public final class CarbonLoaderUtil {
           // 2. If load or insert into operation is in progress and insert overwrite operation
           // is triggered
           for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
-            if (entry.getLoadStatus().equals(LoadStatusType.INSERT_OVERWRITE.getMessage())) {
+            if (entry.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
               throw new RuntimeException("Already insert overwrite is in progress");
-            } else if (
-                newMetaEntry.getLoadStatus().equals(LoadStatusType.INSERT_OVERWRITE.getMessage())
-                    && entry.getLoadStatus().equals(LoadStatusType.IN_PROGRESS.getMessage())) {
+            } else if (newMetaEntry.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
+                && entry.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS) {
               throw new RuntimeException("Already insert into or load is in progress");
             }
           }
@@ -313,14 +315,14 @@ public final class CarbonLoaderUtil {
             }
             indexToOverwriteNewMetaEntry++;
           }
-          if (listOfLoadFolderDetails.get(indexToOverwriteNewMetaEntry).getLoadStatus()
-              .equals(CarbonCommonConstants.MARKED_FOR_DELETE)) {
+          if (listOfLoadFolderDetails.get(indexToOverwriteNewMetaEntry).getSegmentStatus() ==
+              SegmentStatus.MARKED_FOR_DELETE) {
             throw new RuntimeException("It seems insert overwrite has been issued during load");
           }
           if (insertOverwrite) {
             for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
-              if (!entry.getLoadStatus().equals(LoadStatusType.INSERT_OVERWRITE.getMessage())) {
-                entry.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
+              if (entry.getSegmentStatus() != SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+                entry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
                 // For insert overwrite, we will delete the old segment folder immediately
                 // So collect the old segments here
                 String path = carbonTablePath.getCarbonDataDirectoryPath("0", entry.getLoadName());
@@ -374,19 +376,19 @@ public final class CarbonLoaderUtil {
    * @param addLoadEndTime
    */
   public static void populateNewLoadMetaEntry(LoadMetadataDetails loadMetadataDetails,
-      String loadStatus, long loadStartTime, boolean addLoadEndTime) {
+      SegmentStatus loadStatus, long loadStartTime, boolean addLoadEndTime) {
     if (addLoadEndTime) {
       long loadEndDate = CarbonUpdateUtil.readCurrentTime();
       loadMetadataDetails.setLoadEndTime(loadEndDate);
     }
-    loadMetadataDetails.setLoadStatus(loadStatus);
+    loadMetadataDetails.setSegmentStatus(loadStatus);
     loadMetadataDetails.setLoadStartTime(loadStartTime);
   }
 
-  public static void writeLoadMetadata(String storeLocation, String dbName, String tableName,
+  public static void writeLoadMetadata(AbsoluteTableIdentifier absoluteTableIdentifier,
       List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(storeLocation, dbName, tableName);
+        CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
     String dataLoadLocation = carbonTablePath.getTableStatusFilePath();
 
     DataOutputStream dataOutputStream;
@@ -428,20 +430,19 @@ public final class CarbonLoaderUtil {
     return date;
   }
 
-  public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier,
-      String carbonStorePath) throws IOException {
+  public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier)
+      throws IOException {
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> dictCache =
-        CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY, carbonStorePath);
+        CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY);
     return dictCache.get(columnIdentifier);
   }
 
-  public static Dictionary getDictionary(CarbonTableIdentifier tableIdentifier,
-      ColumnIdentifier columnIdentifier, String carbonStorePath, DataType dataType)
+  public static Dictionary getDictionary(AbsoluteTableIdentifier absoluteTableIdentifier,
+      ColumnIdentifier columnIdentifier, DataType dataType)
       throws IOException {
     return getDictionary(
-        new DictionaryColumnUniqueIdentifier(tableIdentifier, columnIdentifier, dataType,
-            CarbonStorePath.getCarbonTablePath(carbonStorePath, tableIdentifier)),
-        carbonStorePath);
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier, dataType,
+            CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)));
   }
 
   /**

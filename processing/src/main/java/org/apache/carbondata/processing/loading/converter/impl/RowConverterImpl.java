@@ -85,8 +85,7 @@ public class RowConverterImpl implements RowConverter {
   @Override
   public void initialize() throws IOException {
     CacheProvider cacheProvider = CacheProvider.getInstance();
-    cache = cacheProvider.createCache(CacheType.REVERSE_DICTIONARY,
-        configuration.getTableIdentifier().getStorePath());
+    cache = cacheProvider.createCache(CacheType.REVERSE_DICTIONARY);
     String nullFormat =
         configuration.getDataLoadProperty(DataLoadProcessorConstants.SERIALIZATION_NULL_FORMAT)
             .toString();
@@ -102,10 +101,8 @@ public class RowConverterImpl implements RowConverter {
     for (int i = 0; i < fields.length; i++) {
       localCaches[i] = new ConcurrentHashMap<>();
       FieldConverter fieldConverter = FieldEncoderFactory.getInstance()
-          .createFieldEncoder(fields[i], cache,
-              configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat, client,
-              configuration.getUseOnePass(), configuration.getTableIdentifier().getStorePath(),
-              localCaches[i], isEmptyBadRecord);
+          .createFieldEncoder(fields[i], cache, configuration.getTableIdentifier(), i, nullFormat,
+              client, configuration.getUseOnePass(), localCaches[i], isEmptyBadRecord);
       fieldConverterList.add(fieldConverter);
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
@@ -210,10 +207,9 @@ public class RowConverterImpl implements RowConverter {
     for (int i = 0; i < fields.length; i++) {
       FieldConverter fieldConverter = null;
       try {
-        fieldConverter = FieldEncoderFactory.getInstance().createFieldEncoder(fields[i], cache,
-            configuration.getTableIdentifier().getCarbonTableIdentifier(), i, nullFormat, client,
-            configuration.getUseOnePass(), configuration.getTableIdentifier().getStorePath(),
-            localCaches[i], isEmptyBadRecord);
+        fieldConverter = FieldEncoderFactory.getInstance()
+            .createFieldEncoder(fields[i], cache, configuration.getTableIdentifier(), i, nullFormat,
+                client, configuration.getUseOnePass(), localCaches[i], isEmptyBadRecord);
       } catch (IOException e) {
         throw new RuntimeException(e);
       }

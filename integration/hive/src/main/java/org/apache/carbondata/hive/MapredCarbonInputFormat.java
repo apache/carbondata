@@ -17,7 +17,8 @@
 package org.apache.carbondata.hive;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
@@ -150,7 +151,7 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
         QueryModel.createModel(identifier, queryPlan, carbonTable, new DataTypeConverterImpl());
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
-    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable);
+    CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, null, null);
     FilterResolverIntf filterIntf =
         CarbonInputFormatUtil.resolveFilter(filter, identifier, tableProvider);
     queryModel.setFilterExpressionResolverTree(filterIntf);

@@ -30,8 +30,11 @@ import org.apache.commons.lang3.{ArrayUtils, StringUtils}
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
+import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
+import org.apache.hadoop.mapreduce.security.TokenCache
 import org.apache.spark.{Accumulator, SparkException}
+import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.{NewHadoopRDD, RDD}
 import org.apache.spark.sql._
 import org.apache.spark.sql.types.{StringType, StructField, StructType}
@@ -42,16 +45,16 @@ import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumn
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
-import org.apache.carbondata.core.metadata.{CarbonTableIdentifier, ColumnIdentifier}
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, ColumnIdentifier}
+import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.{CarbonDimension, ColumnSchema}
 import org.apache.carbondata.core.reader.CarbonDictionaryReader
 import org.apache.carbondata.core.service.CarbonCommonFactory
+import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter
-import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.csvinput.{CSVInputFormat, StringArrayWritable}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
@@ -173,12 +176,9 @@ object GlobalDictionaryUtil {
       model.table,
       model.columnIdentifier(columnIndex),
       model.columnIdentifier(columnIndex).getDataType,
-      CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
-    val writer: CarbonDictionaryWriter = dictService.getDictionaryWriter(
-      model.table,
-      dictionaryColumnUniqueIdentifier,
-      model.hdfsLocation
-    )
+      CarbonStorePath.getCarbonTablePath(model.table))
+    val writer: CarbonDictionaryWriter = dictService
+      .getDictionaryWriter(dictionaryColumnUniqueIdentifier)
     try {
       while (iter.hasNext) {
         writer.write(iter.next)
@@ -195,8 +195,7 @@ object GlobalDictionaryUtil {
     val dictMap = new HashMap[String, Dictionary]
     model.primDimensions.zipWithIndex.filter(f => model.dictFileExists(f._2)).foreach { m =>
       val dict = CarbonLoaderUtil.getDictionary(model.table,
-        m._1.getColumnIdentifier, model.hdfsLocation,
-        m._1.getDataType
+        m._1.getColumnIdentifier, m._1.getDataType
       )
       dictMap.put(m._1.getColumnId, dict)
     }
@@ -217,12 +216,11 @@ object GlobalDictionaryUtil {
             model.table,
             model.columnIdentifier(i),
             model.columnIdentifier(i).getDataType,
-            CarbonStorePath.getCarbonTablePath(model.hdfsLocation, model.table))
+            CarbonStorePath.getCarbonTablePath(model.table))
       val set = new HashSet[String]
       if (model.dictFileExists(i)) {
-        val reader: CarbonDictionaryReader = dictService.getDictionaryReader(model.table,
-          dictionaryColumnUniqueIdentifier, model.hdfsLocation
-        )
+        val reader: CarbonDictionaryReader = dictService.getDictionaryReader(
+          dictionaryColumnUniqueIdentifier)
         val values = reader.read
         if (values != null) {
           for (j <- 0 until values.size) {
@@ -259,17 +257,16 @@ object GlobalDictionaryUtil {
       case None =>
         None
       case Some(dim) =>
-        dim.getDataType match {
-          case DataTypes.ARRAY =>
-            val arrDim = ArrayParser(dim, format)
-            generateParserForChildrenDimension(dim, format, mapColumnValuesWithId, arrDim)
-            Some(arrDim)
-          case DataTypes.STRUCT =>
-            val stuDim = StructParser(dim, format)
-            generateParserForChildrenDimension(dim, format, mapColumnValuesWithId, stuDim)
-            Some(stuDim)
-          case _ =>
-            Some(PrimitiveParser(dim, mapColumnValuesWithId.get(dim.getColumnId)))
+        if (DataTypes.isArrayType(dim.getDataType)) {
+          val arrDim = ArrayParser(dim, format)
+          generateParserForChildrenDimension(dim, format, mapColumnValuesWithId, arrDim)
+          Some(arrDim)
+        } else if (DataTypes.isStructType(dim.getDataType)) {
+          val stuDim = StructParser(dim, format)
+          generateParserForChildrenDimension(dim, format, mapColumnValuesWithId, stuDim)
+          Some(stuDim)
+        } else {
+          Some(PrimitiveParser(dim, mapColumnValuesWithId.get(dim.getColumnId)))
         }
     }
   }
@@ -330,7 +327,8 @@ object GlobalDictionaryUtil {
     if (null == carbonLoadModel.getLoadMetadataDetails) {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     }
-    DictionaryLoadModel(table,
+    val absoluteTableIdentifier = new AbsoluteTableIdentifier(hdfsLocation, table)
+    DictionaryLoadModel(absoluteTableIdentifier,
       dimensions,
       hdfsLocation,
       dictfolderPath,
@@ -356,22 +354,27 @@ object GlobalDictionaryUtil {
    * @param carbonLoadModel carbon data load model
    */
   def loadDataFrame(sqlContext: SQLContext,
-      carbonLoadModel: CarbonLoadModel): DataFrame = {
-    val hadoopConfiguration = new Configuration()
-    CommonUtil.configureCSVInputFormat(hadoopConfiguration, carbonLoadModel)
-    hadoopConfiguration.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
+      carbonLoadModel: CarbonLoadModel,
+      hadoopConf: Configuration): DataFrame = {
+    CommonUtil.configureCSVInputFormat(hadoopConf, carbonLoadModel)
+    hadoopConf.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
     val columnNames = carbonLoadModel.getCsvHeaderColumns
     val schema = StructType(columnNames.map[StructField, Array[StructField]] { column =>
       StructField(column, StringType)
     })
     val values = new Array[String](columnNames.length)
     val row = new StringArrayRow(values)
+    val jobConf = new JobConf(hadoopConf)
+    SparkHadoopUtil.get.addCredentials(jobConf)
+    TokenCache.obtainTokensForNamenodes(jobConf.getCredentials,
+      Array[Path](new Path(carbonLoadModel.getFactFilePath)),
+      jobConf)
     val rdd = new NewHadoopRDD[NullWritable, StringArrayWritable](
       sqlContext.sparkContext,
       classOf[CSVInputFormat],
       classOf[NullWritable],
       classOf[StringArrayWritable],
-      hadoopConfiguration).setName("global dictionary").map[Row] { currentRow =>
+      hadoopConf).setName("global dictionary").map[Row] { currentRow =>
       row.setValues(currentRow._2.get())
     }
     sqlContext.createDataFrame(rdd, schema)
@@ -389,12 +392,12 @@ object GlobalDictionaryUtil {
   private def checkStatus(carbonLoadModel: CarbonLoadModel,
       sqlContext: SQLContext,
       model: DictionaryLoadModel,
-      status: Array[(Int, String)]) = {
+      status: Array[(Int, SegmentStatus)]) = {
     var result = false
-    val tableName = model.table.getTableName
+    val tableName = model.table.getCarbonTableIdentifier.getTableName
     status.foreach { x =>
       val columnName = model.primDimensions(x._1).getColName
-      if (CarbonCommonConstants.STORE_LOADSTATUS_FAILURE.equals(x._2)) {
+      if (SegmentStatus.LOAD_FAILURE == x._2) {
         result = true
         LOGGER.error(s"table:$tableName column:$columnName generate global dictionary file failed")
       }
@@ -477,14 +480,14 @@ object GlobalDictionaryUtil {
       val children = preDictDimension.getListOfChildDimensions.asScala.toArray
       // for Array, user set ArrayFiled: path, while ArrayField has a child Array.val
       val currentColName = {
-        preDictDimension.getDataType match {
-          case DataTypes.ARRAY =>
-            if (children(0).isComplex) {
-              "val." + colName.substring(middleDimName.length + 1)
-            } else {
-              "val"
-            }
-          case _ => colName.substring(middleDimName.length + 1)
+        if (DataTypes.isArrayType(preDictDimension.getDataType)) {
+          if (children(0).isComplex) {
+            "val." + colName.substring(middleDimName.length + 1)
+          } else {
+            "val"
+          }
+        } else {
+          colName.substring(middleDimName.length + 1)
         }
       }
       setPredefineDict(carbonLoadModel, children, table, currentColName,
@@ -577,7 +580,7 @@ object GlobalDictionaryUtil {
         try {
           columnName = csvFileColumns(tokens(0).toInt)
         } catch {
-          case ex: Exception =>
+          case _: Exception =>
             LOGGER.error("Read a bad dictionary record: " + x)
             accum += 1
         }
@@ -587,7 +590,7 @@ object GlobalDictionaryUtil {
         columnName = csvFileColumns(tokens(0).toInt)
         value = tokens(1)
       } catch {
-        case ex: Exception =>
+        case _: Exception =>
           LOGGER.error("Read a bad dictionary record: " + x)
           accum += 1
       }
@@ -680,17 +683,18 @@ object GlobalDictionaryUtil {
    */
   def generateGlobalDictionary(sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      storePath: String,
+      tablePath: String,
+      hadoopConf: Configuration,
       dataFrame: Option[DataFrame] = None): Unit = {
     try {
       val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
       val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier
       // create dictionary folder if not exists
-      val carbonTablePath = CarbonStorePath.getCarbonTablePath(storePath, carbonTableIdentifier)
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(tablePath, carbonTableIdentifier)
       val dictfolderPath = carbonTablePath.getMetadataDirectoryPath
       // columns which need to generate global dictionary file
       val dimensions = carbonTable.getDimensionByTableName(
-        carbonTable.getFactTableName).asScala.toArray
+        carbonTable.getTableName).asScala.toArray
       // generate global dict from pre defined column dict file
       carbonLoadModel.initPredefDictMap()
 
@@ -698,14 +702,14 @@ object GlobalDictionaryUtil {
       if (StringUtils.isEmpty(allDictionaryPath)) {
         LOGGER.info("Generate global dictionary from source data files!")
         // load data by using dataSource com.databricks.spark.csv
-        var df = dataFrame.getOrElse(loadDataFrame(sqlContext, carbonLoadModel))
+        var df = dataFrame.getOrElse(loadDataFrame(sqlContext, carbonLoadModel, hadoopConf))
         var headers = carbonLoadModel.getCsvHeaderColumns
         headers = headers.map(headerName => headerName.trim)
         val colDictFilePath = carbonLoadModel.getColDictFilePath
         if (colDictFilePath != null) {
           // generate predefined dictionary
           generatePredefinedColDictionary(colDictFilePath, carbonTableIdentifier,
-            dimensions, carbonLoadModel, sqlContext, storePath, dictfolderPath)
+            dimensions, carbonLoadModel, sqlContext, tablePath, dictfolderPath)
         }
         if (headers.length > df.columns.length) {
           val msg = "The number of columns in the file header do not match the " +
@@ -721,7 +725,7 @@ object GlobalDictionaryUtil {
           // select column to push down pruning
           df = df.select(requireColumnNames.head, requireColumnNames.tail: _*)
           val model = createDictionaryLoadModel(carbonLoadModel, carbonTableIdentifier,
-            requireDimension, storePath, dictfolderPath, false)
+            requireDimension, tablePath, dictfolderPath, false)
           // combine distinct value in a block and partition by column
           val inputRDD = new CarbonBlockDistinctValuesCombineRDD(df.rdd, model)
             .partitionBy(new ColumnPartitioner(model.primDimensions.length))
@@ -735,7 +739,7 @@ object GlobalDictionaryUtil {
       } else {
         generateDictionaryFromDictionaryFiles(sqlContext,
           carbonLoadModel,
-          storePath,
+          tablePath,
           carbonTableIdentifier,
           dictfolderPath,
           dimensions,
@@ -804,11 +808,13 @@ object GlobalDictionaryUtil {
   // Get proper error message of TextParsingException
   def trimErrorMessage(input: String): String = {
     var errorMessage: String = null
-    if (input != null) {
+    if (input != null && input.contains("TextParsingException:")) {
       if (input.split("Hint").length > 0 &&
           input.split("Hint")(0).split("TextParsingException: ").length > 1) {
         errorMessage = input.split("Hint")(0).split("TextParsingException: ")(1)
       }
+    } else if (input != null && input.contains("Exception:")) {
+      errorMessage = input.split("Exception: ")(1).split("\n")(0)
     }
     errorMessage
   }
@@ -819,21 +825,16 @@ object GlobalDictionaryUtil {
    *
    * @param carbonTablePath
    * @param columnSchema
-   * @param tableIdentifier
-   * @param storePath
+   * @param absoluteTableIdentifier
    * @param defaultValue
    */
   def loadDefaultDictionaryValueForNewColumn(carbonTablePath: CarbonTablePath,
       columnSchema: ColumnSchema,
-      tableIdentifier: CarbonTableIdentifier,
-      storePath: String,
+      absoluteTableIdentifier: AbsoluteTableIdentifier,
       defaultValue: String): Unit = {
 
-    var carbonDictionarySortIndexWriter: CarbonDictionarySortIndexWriter = null
-    var dictionary: Dictionary = null
-
     val dictLock = CarbonLockFactory
-      .getCarbonLockObj(carbonTablePath.getRelativeDictionaryDirectory,
+      .getCarbonLockObj(absoluteTableIdentifier,
         columnSchema.getColumnUniqueId + LockUsage.LOCK)
     var isDictionaryLocked = false
     try {
@@ -852,7 +853,7 @@ object GlobalDictionaryUtil {
         columnSchema.getDataType)
       val dictionaryColumnUniqueIdentifier: DictionaryColumnUniqueIdentifier = new
           DictionaryColumnUniqueIdentifier(
-            tableIdentifier,
+            absoluteTableIdentifier,
             columnIdentifier,
             columnIdentifier.getDataType,
             carbonTablePath)
@@ -862,10 +863,8 @@ object GlobalDictionaryUtil {
         valuesBuffer += parsedValue
       }
       val dictWriteTask = new DictionaryWriterTask(valuesBuffer,
-        dictionary,
-        tableIdentifier,
+        dictionary = null,
         dictionaryColumnUniqueIdentifier,
-        storePath,
         columnSchema,
         false
       )
@@ -875,17 +874,12 @@ object GlobalDictionaryUtil {
       }")
 
       if (distinctValues.size() > 0) {
-        val sortIndexWriteTask = new SortIndexWriterTask(tableIdentifier,
+        val sortIndexWriteTask = new SortIndexWriterTask(
           dictionaryColumnUniqueIdentifier,
           columnSchema.getDataType,
-          storePath,
-          dictionary,
+          dictionary = null,
           distinctValues)
         sortIndexWriteTask.execute()
-      }
-
-      if (null != carbonDictionarySortIndexWriter) {
-        carbonDictionarySortIndexWriter.close()
       }
 
       LOGGER.info(s"SortIndex file writing is successful for new column ${
@@ -903,7 +897,6 @@ object GlobalDictionaryUtil {
         LOGGER.error(ex)
         throw ex
     } finally {
-      CarbonUtil.clearDictionaryCache(dictionary)
       if (dictLock != null && isDictionaryLocked) {
         if (dictLock.unlock()) {
           LOGGER.info(s"Dictionary ${

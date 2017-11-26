@@ -17,6 +17,9 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Holds all singleton object for all data type used in carbon
  */
@@ -43,11 +46,6 @@ public class DataTypes {
 
   // Only for internal use for backward compatability. It is only used for V1 version
   public static final DataType LEGACY_LONG = LegacyLongType.LEGACY_LONG;
-
-  public static final DataType DECIMAL = DecimalType.DECIMAL;
-  public static final DataType ARRAY = ArrayType.ARRAY;
-  public static final DataType STRUCT = StructType.STRUCT;
-  public static final DataType MAP = MapType.MAP;
 
   // these IDs are used within this package only
   static final int STRING_TYPE_ID = 0;
@@ -99,19 +97,91 @@ public class DataTypes {
       return DOUBLE;
     } else if (id == NULL.getId()) {
       return NULL;
-    } else if (id == DECIMAL.getId()) {
-      return DECIMAL;
-    } else if (id == ARRAY.getId()) {
-      return ARRAY;
-    } else if (id == STRUCT.getId()) {
-      return STRUCT;
-    } else if (id == MAP.getId()) {
-      return MAP;
+    } else if (id == DECIMAL_TYPE_ID) {
+      return createDefaultDecimalType();
+    } else if (id == ARRAY_TYPE_ID) {
+      return createDefaultArrayType();
+    } else if (id == STRUCT_TYPE_ID) {
+      return createDefaultStructType();
+    } else if (id == MAP_TYPE_ID) {
+      return createDefaultMapType();
     } else if (id == BYTE_ARRAY.getId()) {
       return BYTE_ARRAY;
     } else {
       throw new RuntimeException("create DataType with invalid id: " + id);
     }
+  }
+
+  /**
+   * create a decimal type object with specified precision and scale
+   */
+  public static DecimalType createDecimalType(int precision, int scale) {
+    return new DecimalType(precision, scale);
+  }
+
+  /**
+   * create a decimal type object with default precision = 10 and scale = 2
+   */
+  public static DecimalType createDefaultDecimalType() {
+    return new DecimalType(10, 2);
+  }
+
+  public static boolean isDecimal(DataType dataType) {
+    return dataType.getId() == DECIMAL_TYPE_ID;
+  }
+
+  /**
+   * create array type with specified element type
+   */
+  public static ArrayType createArrayType(DataType elementType) {
+    return new ArrayType(elementType);
+  }
+
+  /**
+   * create a array type object with no child
+   */
+  public static ArrayType createDefaultArrayType() {
+    return new ArrayType(STRING);
+  }
+
+  public static boolean isArrayType(DataType dataType) {
+    return dataType.getId() == ARRAY_TYPE_ID;
+  }
+
+  /**
+   * create struct type with specified fields
+   */
+  public static StructType createStructType(List<StructField> fields) {
+    return new StructType(fields);
+  }
+
+  /**
+   * create a struct type object with no field
+   */
+  public static StructType createDefaultStructType() {
+    return new StructType(new ArrayList<StructField>());
+  }
+
+  public static boolean isStructType(DataType dataType) {
+    return dataType.getId() == STRUCT_TYPE_ID;
+  }
+
+  /**
+   * create map type with specified key type and value type
+   */
+  public static MapType createMapType(DataType keyType, DataType valueType) {
+    return new MapType(keyType, valueType);
+  }
+
+  /**
+   * create a map type object with no child
+   */
+  public static MapType createDefaultMapType() {
+    return new MapType(STRING, STRING);
+  }
+
+  public static boolean isMapType(DataType dataType) {
+    return dataType.getId() == MAP_TYPE_ID;
   }
 
 }

@@ -49,7 +49,6 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.converter.SchemaConverter;
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
@@ -62,6 +61,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
@@ -99,14 +99,15 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl;
 public class StoreCreator {
 
   private static AbsoluteTableIdentifier absoluteTableIdentifier;
+  private static String storePath = null;
 
   static {
     try {
-      String storePath = new File("target/store").getCanonicalPath();
+      storePath = new File("target/store").getCanonicalPath();
       String dbName = "testdb";
       String tableName = "testtable";
       absoluteTableIdentifier =
-          new AbsoluteTableIdentifier(storePath, new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
+          new AbsoluteTableIdentifier(storePath +"/testdb/testtable", new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
     } catch (IOException ex) {
 
     }
@@ -116,69 +117,74 @@ public class StoreCreator {
     return absoluteTableIdentifier;
   }
 
+  public static CarbonLoadModel buildCarbonLoadModel(CarbonTable table, String factFilePath,
+      AbsoluteTableIdentifier absoluteTableIdentifier) {
+    CarbonDataLoadSchema schema = new CarbonDataLoadSchema(table);
+    CarbonLoadModel loadModel = new CarbonLoadModel();
+    loadModel.setCarbonDataLoadSchema(schema);
+    loadModel.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
+    loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
+    loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
+    loadModel.setFactFilePath(factFilePath);
+    loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
+    loadModel.setTablePath(absoluteTableIdentifier.getTablePath());
+    loadModel.setDateFormat(null);
+    loadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS));
+    loadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
+    loadModel
+        .setSerializationNullFormat(
+            TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName() + "," + "\\N");
+    loadModel
+        .setBadRecordsLoggerEnable(
+            TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName() + "," + "false");
+    loadModel
+        .setBadRecordsAction(
+            TableOptionConstant.BAD_RECORDS_ACTION.getName() + "," + "FORCE");
+    loadModel
+        .setIsEmptyDataBadRecord(
+            DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," + "false");
+    loadModel.setCsvHeader("ID,date,country,name,phonetype,serialname,salary");
+    loadModel.setCsvHeaderColumns(loadModel.getCsvHeader().split(","));
+    loadModel.setTaskNo("0");
+    loadModel.setSegmentId("0");
+    loadModel.setPartitionId("0");
+    loadModel.setFactTimeStamp(System.currentTimeMillis());
+    loadModel.setMaxColumns("10");
+    return loadModel;
+  }
+
   /**
    * Create store without any restructure
    */
   public static void createCarbonStore() {
-
     try {
-
-      String factFilePath = new File("../hadoop/src/test/resources/data.csv").getCanonicalPath();
-      File storeDir = new File(absoluteTableIdentifier.getStorePath());
+      String factFilePath =
+          new File("../hadoop/src/test/resources/data.csv").getCanonicalPath();
+      File storeDir = new File(storePath);
       CarbonUtil.deleteFoldersAndFiles(storeDir);
       CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS,
-          absoluteTableIdentifier.getStorePath());
+          storePath);
 
-      CarbonTable table = createTable();
+      CarbonTable table = createTable(absoluteTableIdentifier);
       writeDictionary(factFilePath, table);
-      CarbonDataLoadSchema schema = new CarbonDataLoadSchema(table);
-      CarbonLoadModel loadModel = new CarbonLoadModel();
-      String partitionId = "0";
-      loadModel.setCarbonDataLoadSchema(schema);
-      loadModel.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
-      loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
-      loadModel.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
-      loadModel.setFactFilePath(factFilePath);
-      loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
-      loadModel.setStorePath(absoluteTableIdentifier.getStorePath());
-      loadModel.setDateFormat(null);
-      loadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS));
-      loadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_DATE_FORMAT,
-          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
-      loadModel
-          .setSerializationNullFormat(
-              TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName() + "," + "\\N");
-      loadModel
-          .setBadRecordsLoggerEnable(
-              TableOptionConstant.BAD_RECORDS_LOGGER_ENABLE.getName() + "," + "false");
-      loadModel
-          .setBadRecordsAction(
-              TableOptionConstant.BAD_RECORDS_ACTION.getName() + "," + "FORCE");
-      loadModel
-          .setIsEmptyDataBadRecord(
-              DataLoadProcessorConstants.IS_EMPTY_DATA_BAD_RECORD + "," + "false");
-      loadModel.setCsvHeader("ID,date,country,name,phonetype,serialname,salary");
-      loadModel.setCsvHeaderColumns(loadModel.getCsvHeader().split(","));
-      loadModel.setTaskNo("0");
-      loadModel.setSegmentId("0");
-      loadModel.setPartitionId("0");
-      loadModel.setFactTimeStamp(System.currentTimeMillis());
-      loadModel.setMaxColumns("10");
+      CarbonLoadModel loadModel =
+          buildCarbonLoadModel(table, factFilePath, absoluteTableIdentifier);
 
-      executeGraph(loadModel, absoluteTableIdentifier.getStorePath());
+      executeGraph(loadModel, storePath);
 
     } catch (Exception e) {
       e.printStackTrace();
     }
-
   }
 
-  private static CarbonTable createTable() throws IOException {
+  public static CarbonTable createTable(
+      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException {
     TableInfo tableInfo = new TableInfo();
-    tableInfo.setStorePath(absoluteTableIdentifier.getStorePath());
+    tableInfo.setTablePath(absoluteTableIdentifier.getTablePath());
     tableInfo.setDatabaseName(absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName());
     TableSchema tableSchema = new TableSchema();
     tableSchema.setTableName(absoluteTableIdentifier.getCarbonTableIdentifier().getTableName());
@@ -271,8 +277,7 @@ public class StoreCreator {
     tableInfo.setLastUpdatedTime(System.currentTimeMillis());
     tableInfo.setFactTable(tableSchema);
     CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
-            absoluteTableIdentifier.getCarbonTableIdentifier());
+        .getCarbonTablePath(absoluteTableIdentifier);
     String schemaFilePath = carbonTablePath.getSchemaFilePath();
     String schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath);
     tableInfo.setMetaDataFilepath(schemaMetadataPath);
@@ -304,9 +309,9 @@ public class StoreCreator {
     String header = reader.readLine();
     String[] split = header.split(",");
     List<CarbonColumn> allCols = new ArrayList<CarbonColumn>();
-    List<CarbonDimension> dims = table.getDimensionByTableName(table.getFactTableName());
+    List<CarbonDimension> dims = table.getDimensionByTableName(table.getTableName());
     allCols.addAll(dims);
-    List<CarbonMeasure> msrs = table.getMeasureByTableName(table.getFactTableName());
+    List<CarbonMeasure> msrs = table.getMeasureByTableName(table.getTableName());
     allCols.addAll(msrs);
     Set<String>[] set = new HashSet[dims.size()];
     for (int i = 0; i < set.length; i++) {
@@ -322,34 +327,33 @@ public class StoreCreator {
     }
 
     Cache dictCache = CacheProvider.getInstance()
-        .createCache(CacheType.REVERSE_DICTIONARY, absoluteTableIdentifier.getStorePath());
+        .createCache(CacheType.REVERSE_DICTIONARY);
     for (int i = 0; i < set.length; i++) {
       ColumnIdentifier columnIdentifier = new ColumnIdentifier(dims.get(i).getColumnId(), null, null);
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-          new DictionaryColumnUniqueIdentifier(table.getCarbonTableIdentifier(), columnIdentifier,
+          new DictionaryColumnUniqueIdentifier(table.getAbsoluteTableIdentifier(), columnIdentifier,
               columnIdentifier.getDataType(), CarbonStorePath
-              .getCarbonTablePath(table.getStorePath(), table.getCarbonTableIdentifier()));
+              .getCarbonTablePath(table.getAbsoluteTableIdentifier().getTablePath(),
+                  table.getCarbonTableIdentifier()));
       CarbonDictionaryWriter writer =
-          new CarbonDictionaryWriterImpl(absoluteTableIdentifier.getStorePath(),
-              absoluteTableIdentifier.getCarbonTableIdentifier(), dictionaryColumnUniqueIdentifier);
+          new CarbonDictionaryWriterImpl(dictionaryColumnUniqueIdentifier);
       for (String value : set[i]) {
         writer.write(value);
       }
       writer.close();
       writer.commit();
       Dictionary dict = (Dictionary) dictCache.get(
-          new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier.getCarbonTableIdentifier(),
+          new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
         		  columnIdentifier, dims.get(i).getDataType(),CarbonStorePath
-              .getCarbonTablePath(table.getStorePath(), table.getCarbonTableIdentifier())));
+              .getCarbonTablePath(table.getAbsoluteTableIdentifier().getTablePath(),
+                  table.getCarbonTableIdentifier())));
       CarbonDictionarySortInfoPreparator preparator =
           new CarbonDictionarySortInfoPreparator();
       List<String> newDistinctValues = new ArrayList<String>();
       CarbonDictionarySortInfo dictionarySortInfo =
           preparator.getDictionarySortInfo(newDistinctValues, dict, dims.get(i).getDataType());
       CarbonDictionarySortIndexWriter carbonDictionaryWriter =
-          new CarbonDictionarySortIndexWriterImpl(
-              absoluteTableIdentifier.getCarbonTableIdentifier(), dictionaryColumnUniqueIdentifier,
-              absoluteTableIdentifier.getStorePath());
+          new CarbonDictionarySortIndexWriterImpl(dictionaryColumnUniqueIdentifier);
       try {
         carbonDictionaryWriter.writeSortIndex(dictionarySortInfo.getSortIndex());
         carbonDictionaryWriter.writeInvertedSortIndex(dictionarySortInfo.getSortIndexInverted());
@@ -374,7 +378,7 @@ public class StoreCreator {
     String databaseName = loadModel.getDatabaseName();
     String tableName = loadModel.getTableName();
     String tempLocationKey = databaseName + '_' + tableName + "_1";
-    CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation);
+    CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation + "/" + databaseName + "/" + tableName);
     CarbonProperties.getInstance().addProperty("store_output_location", outPutLoc);
     CarbonProperties.getInstance().addProperty("send.signal.load", "false");
     CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true");
@@ -416,7 +420,7 @@ public class StoreCreator {
 
     CSVRecordReaderIterator readerIterator = new CSVRecordReaderIterator(recordReader, blockDetails, hadoopAttemptContext);
     new DataLoadExecutor().execute(loadModel,
-        new String[] {storeLocation},
+        new String[] {storeLocation + "/" + databaseName + "/" + tableName},
         new CarbonIterator[]{readerIterator});
 
     writeLoadMetadata(loadModel.getCarbonDataLoadSchema(), loadModel.getTableName(), loadModel.getTableName(),
@@ -451,7 +455,7 @@ public class StoreCreator {
       String tableName, List<LoadMetadataDetails> listOfLoadFolderDetails) throws IOException {
     LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
     loadMetadataDetails.setLoadEndTime(System.currentTimeMillis());
-    loadMetadataDetails.setLoadStatus("SUCCESS");
+    loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS);
     loadMetadataDetails.setLoadName(String.valueOf(0));
     loadMetadataDetails.setLoadStartTime(loadMetadataDetails.getTimeStamp(readCurrentTime()));
     listOfLoadFolderDetails.add(loadMetadataDetails);

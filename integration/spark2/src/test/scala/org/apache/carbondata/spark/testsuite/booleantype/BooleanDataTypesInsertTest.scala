@@ -22,6 +22,9 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
 
   override def beforeEach(): Unit = {
@@ -428,7 +431,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
            """.stripMargin)
       sql("insert into boolean_table2 select * from boolean_table")
     }
-    assert(exception_insert.getMessage.contains("Cannot insert into target table because column number are different"))
+    assert(exception_insert.getMessage.contains("Cannot insert into target table because number of columns mismatch"))
   }
 
   test("Inserting into Hive table from carbon table: support boolean data type and other format") {
@@ -943,6 +946,43 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
         "from carbon_table where hive_table.intField=carbon_table.intField)"),
       Seq(Row(true, 10, true), Row(true, 10, true), Row(true, 10, true), Row(false, 10, false), Row(false, 10, false), Row(false, 10, false))
     )
+  }
+
+  test("Inserting table with bad records, and SORT_COLUMNS is boolean column") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    sql("DROP TABLE IF EXISTS carbon_table")
+    sql(
+      s"""
+         | CREATE TABLE if not exists carbon_table(
+         | cc BOOLEAN
+         | )
+         | STORED BY 'carbondata'
+         | TBLPROPERTIES('SORT_COLUMNS'='cc')
+       """.stripMargin)
+    sql("insert into carbon_table values(true)")
+    sql("insert into carbon_table values(True)")
+    sql("insert into carbon_table values(TRUE)")
+    sql("insert into carbon_table values('true')")
+    sql("insert into carbon_table values(False)")
+    sql("insert into carbon_table values(false)")
+    sql("insert into carbon_table values(FALSE)")
+    sql("insert into carbon_table values('false')")
+    sql("insert into carbon_table values('tr')")
+    sql("insert into carbon_table values(null)")
+    sql("insert into carbon_table values('truEe')")
+    sql("insert into carbon_table values('falSee')")
+    sql("insert into carbon_table values('t')")
+    sql("insert into carbon_table values('f')")
+    checkAnswer(
+      sql("select * from carbon_table"),
+      Seq(
+        Row(true), Row(true), Row(true), Row(true),
+        Row(false), Row(false), Row(false), Row(false),
+        Row(null), Row(null), Row(null), Row(null), Row(null), Row(null)))
+
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+        CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
   }
 
 }

@@ -144,19 +144,36 @@ public final class DataMapStoreManager {
    * Clear the datamap/datamaps of a table from memory
    * @param identifier Table identifier
    */
-  public void clearDataMap(AbsoluteTableIdentifier identifier) {
+  public void clearDataMaps(AbsoluteTableIdentifier identifier) {
     List<TableDataMap> tableDataMaps = allDataMaps.get(identifier.uniqueName());
     segmentRefreshMap.remove(identifier.uniqueName());
     if (tableDataMaps != null) {
-      int i = 0;
       for (TableDataMap tableDataMap: tableDataMaps) {
         if (tableDataMap != null) {
           tableDataMap.clear();
           break;
         }
-        i++;
       }
       allDataMaps.remove(identifier.uniqueName());
+    }
+  }
+
+  /**
+   * Clear the datamap/datamaps of a table from memory
+   * @param identifier Table identifier
+   */
+  public void clearDataMap(AbsoluteTableIdentifier identifier, String dataMapName) {
+    List<TableDataMap> tableDataMaps = allDataMaps.get(identifier.uniqueName());
+    if (tableDataMaps != null) {
+      int i = 0;
+      for (TableDataMap tableDataMap: tableDataMaps) {
+        if (tableDataMap != null && dataMapName.equalsIgnoreCase(tableDataMap.getDataMapName())) {
+          tableDataMap.clear();
+          tableDataMaps.remove(i);
+          break;
+        }
+        i++;
+      }
     }
   }
 

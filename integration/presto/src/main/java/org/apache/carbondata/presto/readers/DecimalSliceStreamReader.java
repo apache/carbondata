@@ -187,9 +187,9 @@ public class DecimalSliceStreamReader  extends AbstractStreamReader {
         builder.appendNull();
       } else {
         if (isShortDecimal(type)) {
-          long rescaledDecimal = Decimals
-              .rescale(columnVector.getDecimal(i, precision, scale).toLong(),
-                  columnVector.getDecimal(i, precision, scale).scale(), scale);
+          BigDecimal decimalValue = columnVector.getDecimal(i, precision, scale).toJavaBigDecimal();
+          long rescaledDecimal = Decimals.rescale(decimalValue.unscaledValue().longValue(),
+              decimalValue.scale(), scale);
           type.writeLong(builder, rescaledDecimal);
         } else {
           Slice slice =

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.BitSet;
 
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
+import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.util.BitSetGroup;
 
@@ -32,6 +33,9 @@ public interface FilterExecuter {
    * @throws FilterUnsupportedException
    */
   BitSetGroup applyFilter(BlocksChunkHolder blocksChunkHolder, boolean useBitsetPipeLine)
+      throws FilterUnsupportedException, IOException;
+
+  boolean applyFilter(RowIntf value, int dimOrdinalMax)
       throws FilterUnsupportedException, IOException;
 
   /**

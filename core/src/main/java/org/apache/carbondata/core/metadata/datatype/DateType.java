@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class DateType extends DataType {
+class DateType extends DataType {
 
-  public static final DataType DATE = new DateType(DataTypes.DATE_TYPE_ID, 1, "DATE", -1);
+  static final DataType DATE = new DateType(DataTypes.DATE_TYPE_ID, 1, "DATE", -1);
 
   private DateType(int id, int precedenceOrder, String name, int sizeInBytes) {
     super(id, precedenceOrder, name, sizeInBytes);

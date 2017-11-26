@@ -42,6 +42,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.AbstractRecordReader;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
 import org.apache.carbondata.hadoop.CarbonMultiBlockSplit;
+import org.apache.carbondata.hadoop.util.CarbonTypeUtil;
 
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -205,7 +206,7 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
         fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
             CarbonTypeUtil.convertCarbonToSparkDataType(msr.getMeasure().getDataType()), true,
             null);
-      } else if (dataType == DataTypes.DECIMAL) {
+      } else if (DataTypes.isDecimal(dataType)) {
         fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
             new DecimalType(msr.getMeasure().getPrecision(), msr.getMeasure().getScale()), true,
             null);

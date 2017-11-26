@@ -107,7 +107,9 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <snappy.version>1.1.2.6</snappy.version>
-    <hadoop.version>2.2.0</hadoop.version>
+    <hadoop.version>2.7.2</hadoop.version>
+    <scala.binary.version>2.11</scala.binary.version>
+    <scala.version>2.11.8</scala.version>
     <hadoop.deps.scope>compile</hadoop.deps.scope>
     <spark.deps.scope>compile</spark.deps.scope>
     <scala.deps.scope>compile</scala.deps.scope>
@@ -427,8 +429,6 @@
       <id>build-all</id>
       <properties>
         <spark.version>2.1.0</spark.version>
-        <scala.binary.version>2.11</scala.binary.version>
-        <scala.version>2.11.8</scala.version>
         <maven.test.skip>true</maven.test.skip>
       </properties>
       <modules>
@@ -438,6 +438,7 @@
         <module>integration/hive</module>
         <module>integration/presto</module>
         <module>examples/flink</module>
+        <module>streaming</module>
       </modules>
       <build>
         <plugins>
@@ -453,15 +454,8 @@
     </profile>
     <profile>
       <id>hadoop-2.2.0</id>
-      <!-- default -->
       <properties>
         <hadoop.version>2.2.0</hadoop.version>
-      </properties>
-    </profile>
-    <profile>
-      <id>hadoop-2.7.2</id>
-      <properties>
-        <hadoop.version>2.7.2</hadoop.version>
       </properties>
     </profile>
     <profile>
@@ -478,6 +472,7 @@
         <module>integration/spark2</module>
         <module>integration/hive</module>
         <module>integration/presto</module>
+        <module>streaming</module>
         <module>examples/spark2</module>
       </modules>
       <build>
@@ -508,6 +503,8 @@
                 <sourceDirectory>${basedir}/integration/hive/src/main/java</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/presto/src/main/scala</sourceDirectory>
                 <sourceDirectory>${basedir}/integration/presto/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
+                <sourceDirectory>${basedir}/streaming/src/main/java</sourceDirectory>
               </sourceDirectories>
             </configuration>
           </plugin>

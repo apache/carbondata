@@ -35,6 +35,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.Cacheable;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMap;
+import org.apache.carbondata.core.datamap.dev.DataMapModel;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -44,7 +45,7 @@ import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.UnsafeMemoryDMStore;
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.DataMapRowImpl;
-import org.apache.carbondata.core.indexstore.schema.DataMapSchema;
+import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
@@ -96,10 +97,13 @@ public class BlockletDataMap implements DataMap, Cacheable {
   private int[] columnCardinality;
 
   @Override
-  public void init(String filePath) throws IOException, MemoryException {
+  public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
     long startTime = System.currentTimeMillis();
+    assert (dataMapModel instanceof BlockletDataMapModel);
+    BlockletDataMapModel blockletDataMapInfo = (BlockletDataMapModel) dataMapModel;
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
-    List<DataFileFooter> indexInfo = fileFooterConverter.getIndexInfo(filePath);
+    List<DataFileFooter> indexInfo = fileFooterConverter
+        .getIndexInfo(blockletDataMapInfo.getFilePath(), blockletDataMapInfo.getFileData());
     for (DataFileFooter fileFooter : indexInfo) {
       List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
       if (segmentProperties == null) {
@@ -119,15 +123,16 @@ public class BlockletDataMap implements DataMap, Cacheable {
     if (unsafeMemoryDMStore != null) {
       unsafeMemoryDMStore.finishWriting();
     }
-    LOGGER.info("Time taken to load blocklet datamap from file : " + filePath + "is " +
-        (System.currentTimeMillis() - startTime));
+    LOGGER.info(
+        "Time taken to load blocklet datamap from file : " + dataMapModel.getFilePath() + "is " + (
+            System.currentTimeMillis() - startTime));
   }
 
   private void loadToUnsafe(DataFileFooter fileFooter, SegmentProperties segmentProperties,
       String filePath) {
     int[] minMaxLen = segmentProperties.getColumnsValueSize();
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
-    DataMapSchema[] schema = unsafeMemoryDMStore.getSchema();
+    CarbonRowSchema[] schema = unsafeMemoryDMStore.getSchema();
     for (int index = 0; index < blockletList.size(); index++) {
       DataMapRow row = new DataMapRowImpl(schema);
       int ordinal = 0;
@@ -201,7 +206,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
         } else if (dataType == DataTypes.LONG) {
           buffer.putLong(Long.MIN_VALUE);
           updatedValues[minValues.length + i] = buffer.array().clone();
-        } else if (dataType == DataTypes.DECIMAL) {
+        } else if (DataTypes.isDecimal(dataType)) {
           updatedValues[minValues.length + i] =
               DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Long.MIN_VALUE));
         } else {
@@ -239,7 +244,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
         } else if (dataType == DataTypes.LONG) {
           buffer.putLong(Long.MAX_VALUE);
           updatedValues[maxValues.length + i] = buffer.array().clone();
-        } else if (dataType == DataTypes.DECIMAL) {
+        } else if (DataTypes.isDecimal(dataType)) {
           updatedValues[maxValues.length + i] =
               DataTypeUtil.bigDecimalToByte(BigDecimal.valueOf(Long.MAX_VALUE));
         } else {
@@ -251,9 +256,10 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return updatedValues;
   }
 
-  private DataMapRow addMinMax(int[] minMaxLen, DataMapSchema dataMapSchema, byte[][] minValues) {
-    DataMapSchema[] minSchemas =
-        ((DataMapSchema.StructDataMapSchema) dataMapSchema).getChildSchemas();
+  private DataMapRow addMinMax(int[] minMaxLen, CarbonRowSchema carbonRowSchema,
+      byte[][] minValues) {
+    CarbonRowSchema[] minSchemas =
+        ((CarbonRowSchema.StructCarbonRowSchema) carbonRowSchema).getChildSchemas();
     DataMapRow minRow = new DataMapRowImpl(minSchemas);
     int minOrdinal = 0;
     // min value adding
@@ -264,45 +270,48 @@ public class BlockletDataMap implements DataMap, Cacheable {
   }
 
   private void createSchema(SegmentProperties segmentProperties) throws MemoryException {
-    List<DataMapSchema> indexSchemas = new ArrayList<>();
+    List<CarbonRowSchema> indexSchemas = new ArrayList<>();
 
     // Index key
-    indexSchemas.add(new DataMapSchema.VariableDataMapSchema(DataTypes.BYTE_ARRAY));
+    indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
     int[] minMaxLen = segmentProperties.getColumnsValueSize();
     // do it 2 times, one for min and one for max.
     for (int k = 0; k < 2; k++) {
-      DataMapSchema[] mapSchemas = new DataMapSchema[minMaxLen.length];
+      CarbonRowSchema[] mapSchemas = new CarbonRowSchema[minMaxLen.length];
       for (int i = 0; i < minMaxLen.length; i++) {
         if (minMaxLen[i] <= 0) {
-          mapSchemas[i] = new DataMapSchema.VariableDataMapSchema(DataTypes.BYTE_ARRAY);
+          mapSchemas[i] = new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY);
         } else {
-          mapSchemas[i] = new DataMapSchema.FixedDataMapSchema(DataTypes.BYTE_ARRAY, minMaxLen[i]);
+          mapSchemas[i] =
+              new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, minMaxLen[i]);
         }
       }
-      DataMapSchema mapSchema = new DataMapSchema.StructDataMapSchema(DataTypes.STRUCT, mapSchemas);
+      CarbonRowSchema mapSchema =
+          new CarbonRowSchema.StructCarbonRowSchema(DataTypes.createDefaultStructType(),
+              mapSchemas);
       indexSchemas.add(mapSchema);
     }
 
     // for number of rows.
-    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataTypes.INT));
+    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.INT));
 
     // for table block path
-    indexSchemas.add(new DataMapSchema.VariableDataMapSchema(DataTypes.BYTE_ARRAY));
+    indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
 
     // for number of pages.
-    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataTypes.SHORT));
+    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.SHORT));
 
     // for version number.
-    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataTypes.SHORT));
+    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.SHORT));
 
     // for schema updated time.
-    indexSchemas.add(new DataMapSchema.FixedDataMapSchema(DataTypes.LONG));
+    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
 
     //for blocklet info
-    indexSchemas.add(new DataMapSchema.VariableDataMapSchema(DataTypes.BYTE_ARRAY));
+    indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
 
     unsafeMemoryDMStore =
-        new UnsafeMemoryDMStore(indexSchemas.toArray(new DataMapSchema[indexSchemas.size()]));
+        new UnsafeMemoryDMStore(indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]));
   }
 
   @Override

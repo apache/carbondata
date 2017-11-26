@@ -26,14 +26,18 @@ import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.SparkOptimizer
+import org.apache.spark.sql.execution.command.datamap.{DataMapDropTablePostListener, DropDataMapPostListener}
+import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.datasources._
-import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy}
+import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.CarbonSparkSqlParser
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.events._
 
 /**
  * This class will have carbon catalog and refresh the relation from cache if the carbontable in
@@ -103,19 +107,19 @@ class CarbonSessionCatalog(
       alias: Option[String],
       carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): Boolean = {
     var isRefreshed = false
-    val storePath = CarbonEnv.getInstance(sparkSession).storePath
+    val storePath = CarbonProperties.getStorePath
     carbonEnv.carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(storePath)
+      checkSchemasModifiedTimeAndReloadTables()
 
-    val tableMeta = carbonEnv.carbonMetastore
-      .getTableFromMetadataCache(carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
-        carbonDatasourceHadoopRelation.carbonTable.getFactTableName)
-    if (tableMeta.isEmpty || (tableMeta.isDefined &&
-        tableMeta.get.carbonTable.getTableLastUpdatedTime !=
+    val table = carbonEnv.carbonMetastore.getTableFromMetadataCache(
+      carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
+      carbonDatasourceHadoopRelation.carbonTable.getTableName)
+    if (table.isEmpty || (table.isDefined &&
+        table.get.getTableLastUpdatedTime !=
           carbonDatasourceHadoopRelation.carbonTable.getTableLastUpdatedTime)) {
       refreshTable(identifier)
       DataMapStoreManager.getInstance().
-        clearDataMap(AbsoluteTableIdentifier.from(storePath,
+        clearDataMaps(AbsoluteTableIdentifier.from(storePath,
           identifier.database.getOrElse("default"), identifier.table))
       isRefreshed = true
       logInfo(s"Schema changes have been detected for table: $identifier")
@@ -133,7 +137,11 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
   override lazy val sqlParser: ParserInterface = new CarbonSparkSqlParser(conf, sparkSession)
 
   experimentalMethods.extraStrategies =
-    Seq(new CarbonLateDecodeStrategy, new DDLStrategy(sparkSession))
+    Seq(
+      new StreamingTableStrategy(sparkSession),
+      new CarbonLateDecodeStrategy,
+      new DDLStrategy(sparkSession)
+    )
   experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
 
   override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)
@@ -144,15 +152,15 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
         catalog.ParquetConversions ::
         catalog.OrcConversions ::
         CarbonPreInsertionCasts ::
+        CarbonPreAggregateQueryRules(sparkSession) ::
         CarbonIUDAnalysisRule(sparkSession) ::
         AnalyzeCreateTable(sparkSession) ::
         PreprocessTableInsertion(conf) ::
         DataSourceAnalysis(conf) ::
         (if (conf.runSQLonFile) {
           new ResolveDataSource(sparkSession) :: Nil
-        } else {
-          Nil
-        })
+        } else {  Nil }
+           )
 
       override val extendedCheckRules = Seq(
         PreWriteCheck(conf, catalog))

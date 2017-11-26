@@ -76,7 +76,12 @@ public abstract class RestructureEvaluatorImpl implements FilterExecuter {
       if (null != defaultValue) {
         defaultSurrogateValueToCompare++;
       }
-      List<Integer> filterList = filterValues.getFilterList();
+      List<Integer> filterList = null;
+      if (filterValues.isIncludeFilter() && !filterValues.isOptimized()) {
+        filterList = filterValues.getFilterList();
+      } else {
+        filterList = filterValues.getExcludeFilterList();
+      }
       for (Integer filterValue : filterList) {
         if (defaultSurrogateValueToCompare == filterValue) {
           isDefaultValuePresentInFilterValues = true;

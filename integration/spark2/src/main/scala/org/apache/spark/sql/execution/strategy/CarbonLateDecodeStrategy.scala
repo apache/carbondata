@@ -37,6 +37,7 @@ import org.apache.spark.sql.types.{AtomicType, IntegerType, StringType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
@@ -74,10 +75,33 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
             SparkSession.getActiveSession.get
           ) :: Nil
         }
+      case CountStarPlan(colAttr, PhysicalOperation(projectList, predicates, l: LogicalRelation))
+        if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] && driverSideCountStar(l) =>
+        val relation = l.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+        CarbonCountStar(colAttr, relation.carbonTable) :: Nil
       case _ => Nil
     }
   }
 
+  /**
+   * Return true if driver-side count star optimization can be used.
+   * Following case can't use driver-side count star:
+   * 1. There is data update and delete
+   * 2. It is streaming table
+   */
+  private def driverSideCountStar(logicalRelation: LogicalRelation): Boolean = {
+    val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+    val segmentUpdateStatusManager = new SegmentUpdateStatusManager(
+      relation.carbonRelation.metaData.carbonTable.getAbsoluteTableIdentifier)
+    val updateDeltaMetadata = segmentUpdateStatusManager.readLoadMetadata()
+    if (updateDeltaMetadata != null && updateDeltaMetadata.nonEmpty) {
+      false
+    } else if (relation.carbonTable.isStreamingTable) {
+      false
+    } else {
+      true
+    }
+  }
 
   def getDecoderRDD(
       logicalRelation: LogicalRelation,
@@ -102,7 +126,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       CarbonAliasDecoderRelation(),
       rdd,
       output,
-      CarbonEnv.getInstance(SparkSession.getActiveSession.get).storePath,
       table.carbonTable.getTableInfo.serialize())
   }
 
@@ -358,11 +381,11 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
   private def getPartitioning(carbonTable: CarbonTable,
       output: Seq[Attribute]): Partitioning = {
-    val info: BucketingInfo = carbonTable.getBucketingInfo(carbonTable.getFactTableName)
+    val info: BucketingInfo = carbonTable.getBucketingInfo(carbonTable.getTableName)
     if (info != null) {
       val cols = info.getListOfColumns.asScala
       val sortColumn = carbonTable.
-        getDimensionByTableName(carbonTable.getFactTableName).get(0).getColName
+        getDimensionByTableName(carbonTable.getTableName).get(0).getColName
       val numBuckets = info.getNumberOfBuckets
       val bucketColumns = cols.flatMap { n =>
         val attrRef = output.find(_.name.equalsIgnoreCase(n.getColumnName))

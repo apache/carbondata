@@ -16,7 +16,9 @@
  */
 package org.apache.carbondata.spark.testsuite.sortcolumns
 
+import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -29,6 +31,11 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 
     sql("CREATE TABLE origintable1 (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE origintable1 OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""")
+
+    sql("CREATE TABLE tableOne(id int, name string, city string, age int) STORED BY 'org.apache.carbondata.format'")
+    sql("CREATE TABLE tableTwo(id int, age int) STORED BY 'org.apache.carbondata.format'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table tableOne")
+
   }
 
   test("create table sort columns dictionary include - int") {
@@ -327,6 +334,13 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   assert(exceptionCaught.getMessage.equals("SORT_COLUMNS Either having duplicate columns : empno or it contains illegal argumnet."))
   }
 
+  test("Test tableTwo data") {
+    sql("insert into table tableTwo select id, count(age) from tableOne group by id")
+    checkAnswer(
+      sql("select id,age from tableTwo order by id"),
+      Seq(Row(1, 1), Row(2, 1), Row(3, 2), Row(4, 2)))
+  }
+
   test("Measure columns in sort_columns") {
     val exceptionCaught = intercept[MalformedCarbonCommandException] {
       sql(
@@ -378,6 +392,8 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists test_sort_col")
     sql("drop table if exists test_sort_col_hive")
     sql("drop table if exists sorttable1b")
+    sql("DROP TABLE IF EXISTS tableOne")
+    sql("DROP TABLE IF EXISTS tableTwo")
   }
 
   def setLoadingProperties(offheap: String, unsafe: String, useBatch: String): Unit = {

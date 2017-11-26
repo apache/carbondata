@@ -47,12 +47,12 @@ class CarbonV1toV3CompatabilityTestCase extends QueryTest with BeforeAndAfterAll
       .appName("CarbonV1toV3CompatabilityTestCase")
       .config("spark.driver.host", "localhost")
       .getOrCreateCarbonSession(storeLocation, metaLocation).asInstanceOf[CarbonSession]
-    println("store path from env : " + CarbonEnv.getInstance(localspark).storePath)
+    println("store path : " + CarbonProperties.getStorePath)
     localspark.sparkContext.setLogLevel("WARN")
     localspark.sessionState.asInstanceOf[CarbonSessionState].metadataHive
       .runSqlHive(
         s"ALTER TABLE default.t3 SET SERDEPROPERTIES" +
-        s"('tablePath'='$storeLocation/default/t3')")
+        s"('tablePath'='$storeLocation/default/t3', 'dbname'='default', 'tablename'='t3')")
     localspark.sql("show tables").show()
   }
 
@@ -78,6 +78,12 @@ class CarbonV1toV3CompatabilityTestCase extends QueryTest with BeforeAndAfterAll
   test("test v1 to v3 compatabilty filter on measure with decimal dimension") {
     val dataFrame = localspark
       .sql(s"SELECT sum(salary2) FROM t3 where salary2 > 15408")
+    checkAnswer(dataFrame, Seq(Row(9281064)))
+  }
+
+  test("test v1 to v3 compatabilty filter on measure with double dimension") {
+    val dataFrame = localspark
+      .sql(s"SELECT sum(salary1) FROM t3 where salary1 > 15408")
     checkAnswer(dataFrame, Seq(Row(9281064)))
   }
 

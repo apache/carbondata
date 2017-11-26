@@ -141,7 +141,20 @@ public class CarbonInputMapperTest extends TestCase {
     return 0;
   }
 
-  public static class Map extends Mapper<Void, Object[], Text, Text> {
+  @Override public void tearDown() throws Exception {
+    super.tearDown();
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true");
+  }
+
+  @Override public void setUp() throws Exception {
+    super.setUp();
+    CarbonProperties.getInstance()
+        .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false");
+    StoreCreator.createCarbonStore();
+  }
+
+ public static class Map extends Mapper<Void, Object[], Text, Text> {
 
     private BufferedWriter fileWriter;
 
@@ -174,7 +187,9 @@ public class CarbonInputMapperTest extends TestCase {
   private void runJob(String outPath, CarbonProjection projection, Expression filter)
       throws Exception {
 
-    Job job = Job.getInstance(new Configuration());
+    Configuration configuration = new Configuration();
+    configuration.set("mapreduce.cluster.local.dir", new File(outPath + "1").getCanonicalPath());
+    Job job = Job.getInstance(configuration);
     job.setJarByClass(CarbonInputMapperTest.class);
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(IntWritable.class);
@@ -189,10 +204,15 @@ public class CarbonInputMapperTest extends TestCase {
     if (filter != null) {
       CarbonInputFormat.setFilterPredicates(job.getConfiguration(), filter);
     }
+    CarbonInputFormat.setDatabaseName(job.getConfiguration(),
+        abs.getCarbonTableIdentifier().getDatabaseName());
+    CarbonInputFormat.setTableName(job.getConfiguration(),
+        abs.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(abs.getTablePath()));
     CarbonUtil.deleteFoldersAndFiles(new File(outPath + "1"));
     FileOutputFormat.setOutputPath(job, new Path(outPath + "1"));
     job.getConfiguration().set("outpath", outPath);
+    job.getConfiguration().set("query.id", String.valueOf(System.nanoTime()));
     boolean status = job.waitForCompletion(true);
   }
 

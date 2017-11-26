@@ -63,7 +63,7 @@ public class BlockIndexStoreTest extends TestCase {
     CarbonProperties.getInstance().
         addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
     CacheProvider cacheProvider = CacheProvider.getInstance();
-    cache = (BlockIndexStore) cacheProvider.createCache(CacheType.EXECUTOR_BTREE, "");
+    cache = (BlockIndexStore) cacheProvider.createCache(CacheType.EXECUTOR_BTREE);
   }
 
   @AfterClass public void tearDown() {
@@ -258,9 +258,7 @@ public class BlockIndexStoreTest extends TestCase {
   }
 
   private static File getPartFile() {
-    String path = StoreCreator.getAbsoluteTableIdentifier().getStorePath() + "/" + StoreCreator
-        .getAbsoluteTableIdentifier().getCarbonTableIdentifier().getDatabaseName() + "/"
-        + StoreCreator.getAbsoluteTableIdentifier().getCarbonTableIdentifier().getTableName()
+    String path = StoreCreator.getAbsoluteTableIdentifier().getTablePath()
         + "/Fact/Part0/Segment_0";
     File file = new File(path);
     File[] files = file.listFiles();

@@ -21,6 +21,7 @@ import scala.language.implicitConversions
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 
@@ -29,11 +30,12 @@ object Checker {
       dbName: Option[String],
       tableName: String,
       session: SparkSession): Unit = {
+    val database = dbName.getOrElse(session.catalog.currentDatabase)
     val identifier = TableIdentifier(tableName, dbName)
     if (!CarbonEnv.getInstance(session).carbonMetastore.tableExists(identifier)(session)) {
       val err = s"table $dbName.$tableName not found"
       LogServiceFactory.getLogService(this.getClass.getName).error(err)
-      throw new IllegalArgumentException(err)
+      throw new NoSuchTableException(database, tableName)
     }
   }
 }

@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class TimestampType extends DataType {
-  public static final TimestampType TIMESTAMP =
+class TimestampType extends DataType {
+  static final TimestampType TIMESTAMP =
       new TimestampType(DataTypes.TIMESTAMP_TYPE_ID, 2, "TIMESTAMP", -1);
 
   private TimestampType(int id, int precedenceOrder, String name, int sizeInBytes) {

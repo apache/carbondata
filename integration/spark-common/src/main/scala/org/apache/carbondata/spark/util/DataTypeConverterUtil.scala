@@ -17,6 +17,8 @@
 
 package org.apache.carbondata.spark.util
 
+import org.apache.spark.sql.util.CarbonException
+
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.format.{DataType => ThriftDataType}
 
@@ -32,17 +34,18 @@ object DataTypeConverterUtil {
       case "integer" => DataTypes.INT
       case "tinyint" => DataTypes.SHORT
       case "smallint" => DataTypes.SHORT
+      case "short" => DataTypes.SHORT
       case "long" => DataTypes.LONG
       case "bigint" => DataTypes.LONG
       case "numeric" => DataTypes.DOUBLE
       case "double" => DataTypes.DOUBLE
       case "float" => DataTypes.DOUBLE
-      case "decimal" => DataTypes.DECIMAL
-      case FIXED_DECIMAL(_, _) => DataTypes.DECIMAL
+      case "decimal" => DataTypes.createDefaultDecimalType
+      case FIXED_DECIMAL(_, _) => DataTypes.createDefaultDecimalType
       case "timestamp" => DataTypes.TIMESTAMP
       case "date" => DataTypes.DATE
-      case "array" => DataTypes.ARRAY
-      case "struct" => DataTypes.STRUCT
+      case "array" => DataTypes.createDefaultArrayType
+      case "struct" => DataTypes.createDefaultStructType
       case _ => convertToCarbonTypeForSpark2(dataType)
     }
   }
@@ -60,39 +63,44 @@ object DataTypeConverterUtil {
       case "numerictype" => DataTypes.DOUBLE
       case "doubletype" => DataTypes.DOUBLE
       case "floattype" => DataTypes.DOUBLE
-      case "decimaltype" => DataTypes.DECIMAL
-      case FIXED_DECIMALTYPE(_, _) => DataTypes.DECIMAL
+      case "decimaltype" => DataTypes.createDefaultDecimalType
+      case FIXED_DECIMALTYPE(_, _) => DataTypes.createDefaultDecimalType
       case "timestamptype" => DataTypes.TIMESTAMP
       case "datetype" => DataTypes.DATE
       case others =>
         if (others != null && others.startsWith("arraytype")) {
-          DataTypes.ARRAY
+          DataTypes.createDefaultArrayType()
         } else if (others != null && others.startsWith("structtype")) {
-          DataTypes.STRUCT
+          DataTypes.createDefaultStructType()
         } else if (others != null && others.startsWith("char")) {
           DataTypes.STRING
         } else if (others != null && others.startsWith("varchar")) {
           DataTypes.STRING
         } else {
-          sys.error(s"Unsupported data type: $dataType")
+          CarbonException.analysisException(s"Unsupported data type: $dataType")
         }
     }
   }
 
   def convertToString(dataType: DataType): String = {
-    dataType match {
-      case DataTypes.BOOLEAN => "boolean"
+    if (DataTypes.isDecimal(dataType)) {
+      "decimal"
+    } else if (DataTypes.isArrayType(dataType)) {
+      "array"
+    } else if (DataTypes.isStructType(dataType)) {
+      "struct"
+    } else {
+      dataType match {
+        case DataTypes.BOOLEAN => "boolean"
       case DataTypes.STRING => "string"
-      case DataTypes.SHORT => "smallint"
-      case DataTypes.INT => "int"
-      case DataTypes.LONG => "bigint"
-      case DataTypes.DOUBLE => "double"
-      case DataTypes.FLOAT => "double"
-      case DataTypes.DECIMAL => "decimal"
-      case DataTypes.TIMESTAMP => "timestamp"
-      case DataTypes.DATE => "date"
-      case DataTypes.ARRAY => "array"
-      case DataTypes.STRUCT => "struct"
+        case DataTypes.SHORT => "smallint"
+        case DataTypes.INT => "int"
+        case DataTypes.LONG => "bigint"
+        case DataTypes.DOUBLE => "double"
+        case DataTypes.FLOAT => "double"
+        case DataTypes.TIMESTAMP => "timestamp"
+        case DataTypes.DATE => "date"
+      }
     }
   }
 

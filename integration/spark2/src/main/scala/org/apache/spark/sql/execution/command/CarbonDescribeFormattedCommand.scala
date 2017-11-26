@@ -29,6 +29,8 @@ import org.codehaus.jackson.map.ObjectMapper
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
+import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.CarbonUtil
 
 private[sql] case class CarbonDescribeFormattedCommand(
     child: SparkPlan,
@@ -65,9 +67,10 @@ private[sql] case class CarbonDescribeFormattedCommand(
     val dims = relation.metaData.dims.map(x => x.toLowerCase)
     var results: Seq[(String, String, String)] = child.schema.fields.map { field =>
       val fieldName = field.name.toLowerCase
+      val colComment = field.getComment().getOrElse("null")
       val comment = if (dims.contains(fieldName)) {
         val dimension = relation.metaData.carbonTable.getDimensionByName(
-          relation.tableMeta.carbonTableIdentifier.getTableName, fieldName)
+          relation.carbonTable.getTableName, fieldName)
         if (null != dimension.getColumnProperties && !dimension.getColumnProperties.isEmpty) {
           colProps.append(fieldName).append(".")
             .append(mapper.writeValueAsString(dimension.getColumnProperties))
@@ -76,20 +79,21 @@ private[sql] case class CarbonDescribeFormattedCommand(
         if (dimension.hasEncoding(Encoding.DICTIONARY) &&
             !dimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           "DICTIONARY, KEY COLUMN" + (if (dimension.hasEncoding(Encoding.INVERTED_INDEX)) {
-            ""
+            "".concat(",").concat(colComment)
           } else {
-            ",NOINVERTEDINDEX"
+            ",NOINVERTEDINDEX".concat(",").concat(colComment)
           })
         } else {
           "KEY COLUMN" + (if (dimension.hasEncoding(Encoding.INVERTED_INDEX)) {
-            ""
+            "".concat(",").concat(colComment)
           } else {
-            ",NOINVERTEDINDEX"
+            ",NOINVERTEDINDEX".concat(",").concat(colComment)
           })
         }
       } else {
-        "MEASURE"
+        "MEASURE".concat(",").concat(colComment)
       }
+
       (field.name, field.dataType.simpleString, comment)
     }
     val colPropStr = if (colProps.toString().trim().length() > 0) {
@@ -99,15 +103,27 @@ private[sql] case class CarbonDescribeFormattedCommand(
       colProps.toString()
     }
     results ++= Seq(("", "", ""), ("##Detailed Table Information", "", ""))
-    results ++= Seq(("Database Name: ", relation.tableMeta.carbonTableIdentifier
-      .getDatabaseName, "")
+    results ++= Seq(("Database Name: ", relation.carbonTable.getDatabaseName, "")
     )
-    results ++= Seq(("Table Name: ", relation.tableMeta.carbonTableIdentifier.getTableName, ""))
-    results ++= Seq(("CARBON Store Path: ", relation.tableMeta.storePath, ""))
-    val carbonTable = relation.tableMeta.carbonTable
+    results ++= Seq(("Table Name: ", relation.carbonTable.getTableName, ""))
+    results ++= Seq(("CARBON Store Path: ", CarbonProperties.getStorePath, ""))
+    val carbonTable = relation.carbonTable
+    // Carbon table support table comment
+    val tableComment = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse(CarbonCommonConstants.TABLE_COMMENT, "")
+    results ++= Seq(("Comment: ", tableComment, ""))
     results ++= Seq(("Table Block Size : ", carbonTable.getBlockSizeInMB + " MB", ""))
+    val dataIndexSize = CarbonUtil.calculateDataIndexSize(carbonTable)
+    if (!dataIndexSize.isEmpty) {
+      results ++= Seq((CarbonCommonConstants.TABLE_DATA_SIZE + ":",
+        dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE).toString, ""))
+      results ++= Seq((CarbonCommonConstants.TABLE_INDEX_SIZE + ":",
+        dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE).toString, ""))
+      results ++= Seq((CarbonCommonConstants.LAST_UPDATE_TIME + ":",
+        dataIndexSize.get(CarbonCommonConstants.LAST_UPDATE_TIME).toString, ""))
+    }
     results ++= Seq(("SORT_SCOPE", carbonTable.getTableInfo.getFactTable
-      .getTableProperties.getOrDefault("sort_scope", CarbonCommonConstants
+      .getTableProperties.asScala.getOrElse("sort_scope", CarbonCommonConstants
       .LOAD_SORT_SCOPE_DEFAULT), CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {
@@ -116,18 +132,21 @@ private[sql] case class CarbonDescribeFormattedCommand(
       results ++= Seq(("ADAPTIVE", "", ""))
     }
     results ++= Seq(("SORT_COLUMNS", relation.metaData.carbonTable.getSortColumns(
-      relation.tableMeta.carbonTableIdentifier.getTableName).asScala
+      relation.carbonTable.getTableName).asScala
       .map(column => column).mkString(","), ""))
     val dimension = carbonTable
-      .getDimensionByTableName(relation.tableMeta.carbonTableIdentifier.getTableName)
+      .getDimensionByTableName(relation.carbonTable.getTableName)
     results ++= getColumnGroups(dimension.asScala.toList)
-    if (carbonTable.getPartitionInfo(carbonTable.getFactTableName) != null) {
+    if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
       results ++=
-      Seq(("Partition Columns: ", carbonTable.getPartitionInfo(carbonTable.getFactTableName)
+      Seq(("Partition Columns: ", carbonTable.getPartitionInfo(carbonTable.getTableName)
         .getColumnSchemaList.asScala.map(_.getColumnName).mkString(","), ""))
     }
-    results.map { case (name, dataType, comment) =>
-      Row(f"$name%-36s", f"$dataType%-80s", f"$comment%-72s")
+    results.map {
+      case (name, dataType, null) =>
+        Row(f"$name%-36s", f"$dataType%-80s", null)
+      case (name, dataType, comment) =>
+        Row(f"$name%-36s", f"$dataType%-80s", f"$comment%-72s")
     }
   }
 }

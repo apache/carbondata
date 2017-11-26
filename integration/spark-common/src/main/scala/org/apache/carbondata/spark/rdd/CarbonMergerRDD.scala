@@ -31,6 +31,7 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.spark._
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, NodeInfo}
 import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -40,7 +41,7 @@ import org.apache.carbondata.core.metadata.blocklet.DataFileFooter
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.mutate.UpdateVO
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
-import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
+import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
@@ -167,7 +168,7 @@ class CarbonMergerRDD[K, V](
         val dataFileMetadataSegMapping: java.util.Map[String, List[DataFileFooter]] =
           CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList)
 
-        carbonLoadModel.setStorePath(hdfsStoreLocation)
+        carbonLoadModel.setTablePath(hdfsStoreLocation)
         // check for restructured block
         // TODO: only in case of add and drop this variable should be true
         val restructuredBlockExists: Boolean = CarbonCompactionUtil
@@ -186,9 +187,11 @@ class CarbonMergerRDD[K, V](
           case e: Throwable =>
             LOGGER.error(e)
             if (null != e.getMessage) {
-              sys.error(s"Exception occurred in query execution :: ${ e.getMessage }")
+              CarbonException.analysisException(
+                s"Exception occurred in query execution :: ${ e.getMessage }")
             } else {
-              sys.error("Exception occurred in query execution.Please check logs.")
+              CarbonException.analysisException(
+                "Exception occurred in query execution.Please check logs.")
             }
         }
 
@@ -229,7 +232,6 @@ class CarbonMergerRDD[K, V](
           throw e
       } finally {
         // delete temp location data
-        val newSlice = CarbonCommonConstants.LOAD_FOLDER + mergeNumber
         try {
           val isCompactionFlow = true
           CarbonLoaderUtil
@@ -239,7 +241,7 @@ class CarbonMergerRDD[K, V](
             LOGGER.error(e)
         }
         if (null != exec) {
-          exec.finish
+          exec.finish()
         }
       }
 
@@ -276,12 +278,7 @@ class CarbonMergerRDD[K, V](
     val result = new java.util.ArrayList[Partition](defaultParallelism)
     var taskPartitionNo = 0
     var carbonPartitionId = 0;
-    var columnSize = 0
     var noOfBlocks = 0
-
-    // mapping of the node and block list.
-    var nodeBlockMapping: java.util.Map[String, java.util.List[Distributable]] = new
-        java.util.HashMap[String, java.util.List[Distributable]]
 
     val taskInfoList = new java.util.ArrayList[Distributable]
     var carbonInputSplits = mutable.Seq[CarbonInputSplit]()
@@ -301,14 +298,15 @@ class CarbonMergerRDD[K, V](
          updateDetails = updateStatusManager.getInvalidTimestampRange(eachSeg)
       }
 
-      var updated: Boolean = updateStatusManager.getUpdateStatusDetails.length != 0
+      val updated: Boolean = updateStatusManager.getUpdateStatusDetails.length != 0
       // get splits
       val splits = format.getSplits(job)
 
       // keep on assigning till last one is reached.
-      if (null != splits && splits.size > 0) {
-        splitsOfLastSegment = splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).toList.asJava
-      }
+      if (null != splits && splits.size > 0) splitsOfLastSegment =
+        splits.asScala
+          .map(_.asInstanceOf[CarbonInputSplit])
+          .filter { split => FileFormat.COLUMNAR_V3.equals(split.getFileFormat) }.toList.asJava
 
       carbonInputSplits ++:= splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).filter(entry => {
         val blockInfo = new TableBlockInfo(entry.getPath.toString,
@@ -316,9 +314,10 @@ class CarbonMergerRDD[K, V](
           entry.getLocations, entry.getLength, entry.getVersion,
           updateStatusManager.getDeleteDeltaFilePath(entry.getPath.toString)
         )
-        ((!updated) || ((updated) && (!CarbonUtil
+        (!updated || (updated && (!CarbonUtil
           .isInvalidTableBlock(blockInfo.getSegmentId, blockInfo.getFilePath,
-            updateDetails, updateStatusManager))))
+            updateDetails, updateStatusManager)))) &&
+        FileFormat.COLUMNAR_V3.equals(entry.getFileFormat)
       })
     }
 

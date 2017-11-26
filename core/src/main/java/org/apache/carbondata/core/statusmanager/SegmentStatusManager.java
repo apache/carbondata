@@ -34,7 +34,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.datastore.row.LoadStatusType;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
@@ -71,8 +70,7 @@ public class SegmentStatusManager {
    * @return
    */
   public ICarbonLock getTableStatusLock() {
-    return CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier.getCarbonTableIdentifier(),
-            LockUsage.TABLE_STATUS_LOCK);
+    return CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
   }
 
   /**
@@ -81,7 +79,7 @@ public class SegmentStatusManager {
   public static long getTableStatusLastModifiedTime(AbsoluteTableIdentifier identifier)
       throws IOException {
     String tableStatusPath = CarbonStorePath
-        .getCarbonTablePath(identifier.getStorePath(), identifier.getCarbonTableIdentifier())
+        .getCarbonTablePath(identifier.getTablePath(), identifier.getCarbonTableIdentifier())
         .getTableStatusFilePath();
     if (!FileFactory.isFileExist(tableStatusPath, FileFactory.getFileType(tableStatusPath))) {
       return 0L;
@@ -100,15 +98,19 @@ public class SegmentStatusManager {
   public ValidAndInvalidSegmentsInfo getValidAndInvalidSegments() throws IOException {
 
     // @TODO: move reading LoadStatus file to separate class
-    List<String> listOfValidSegments = new ArrayList<String>(10);
-    List<String> listOfValidUpdatedSegments = new ArrayList<String>(10);
-    List<String> listOfInvalidSegments = new ArrayList<String>(10);
+    List<String> listOfValidSegments = new ArrayList<>(10);
+    List<String> listOfValidUpdatedSegments = new ArrayList<>(10);
+    List<String> listOfInvalidSegments = new ArrayList<>(10);
+    List<String> listOfStreamSegments = new ArrayList<>(10);
     CarbonTablePath carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(absoluteTableIdentifier.getStorePath(),
+            .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
                     absoluteTableIdentifier.getCarbonTableIdentifier());
     String dataPath = carbonTablePath.getTableStatusFilePath();
     DataInputStream dataInputStream = null;
-    Gson gsonObjectToRead = new Gson();
+
+    // Use GSON to deserialize the load information
+    Gson gson = new Gson();
+
     AtomicFileOperations fileOperation =
             new AtomicFileOperationsImpl(dataPath, FileFactory.getFileType(dataPath));
     LoadMetadataDetails[] loadFolderDetailsArray;
@@ -116,42 +118,45 @@ public class SegmentStatusManager {
       if (FileFactory.isFileExist(dataPath, FileFactory.getFileType(dataPath))) {
         dataInputStream = fileOperation.openForRead();
         BufferedReader buffReader =
-                new BufferedReader(new InputStreamReader(dataInputStream, "UTF-8"));
-        loadFolderDetailsArray = gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
+            new BufferedReader(new InputStreamReader(dataInputStream, "UTF-8"));
+        loadFolderDetailsArray = gson.fromJson(buffReader, LoadMetadataDetails[].class);
+        // if loadFolderDetailsArray is null, assign a empty array
+        if (null == loadFolderDetailsArray) {
+          loadFolderDetailsArray = new LoadMetadataDetails[0];
+        }
         //just directly iterate Array
-        for (LoadMetadataDetails loadMetadataDetails : loadFolderDetailsArray) {
-          if (CarbonCommonConstants.STORE_LOADSTATUS_SUCCESS
-                  .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
-                  || CarbonCommonConstants.MARKED_FOR_UPDATE
-                  .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
-                  || CarbonCommonConstants.STORE_LOADSTATUS_PARTIAL_SUCCESS
-                  .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
+        for (LoadMetadataDetails segment : loadFolderDetailsArray) {
+          if (SegmentStatus.SUCCESS == segment.getSegmentStatus() ||
+              SegmentStatus.MARKED_FOR_UPDATE == segment.getSegmentStatus() ||
+              SegmentStatus.LOAD_PARTIAL_SUCCESS == segment.getSegmentStatus() ||
+              SegmentStatus.STREAMING == segment.getSegmentStatus() ||
+              SegmentStatus.STREAMING_FINISH == segment.getSegmentStatus()) {
             // check for merged loads.
-            if (null != loadMetadataDetails.getMergedLoadName()) {
-              if (!listOfValidSegments.contains(loadMetadataDetails.getMergedLoadName())) {
-                listOfValidSegments.add(loadMetadataDetails.getMergedLoadName());
+            if (null != segment.getMergedLoadName()) {
+              if (!listOfValidSegments.contains(segment.getMergedLoadName())) {
+                listOfValidSegments.add(segment.getMergedLoadName());
               }
               // if merged load is updated then put it in updated list
-              if (CarbonCommonConstants.MARKED_FOR_UPDATE
-                      .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
-                listOfValidUpdatedSegments.add(loadMetadataDetails.getMergedLoadName());
+              if (SegmentStatus.MARKED_FOR_UPDATE == segment.getSegmentStatus()) {
+                listOfValidUpdatedSegments.add(segment.getMergedLoadName());
               }
               continue;
             }
 
-            if (CarbonCommonConstants.MARKED_FOR_UPDATE
-                    .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())) {
+            if (SegmentStatus.MARKED_FOR_UPDATE == segment.getSegmentStatus()) {
 
-              listOfValidUpdatedSegments.add(loadMetadataDetails.getLoadName());
+              listOfValidUpdatedSegments.add(segment.getLoadName());
             }
-            listOfValidSegments.add(loadMetadataDetails.getLoadName());
-          } else if ((CarbonCommonConstants.STORE_LOADSTATUS_FAILURE
-                  .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
-                  || CarbonCommonConstants.COMPACTED
-                  .equalsIgnoreCase(loadMetadataDetails.getLoadStatus())
-                  || CarbonCommonConstants.MARKED_FOR_DELETE
-                  .equalsIgnoreCase(loadMetadataDetails.getLoadStatus()))) {
-            listOfInvalidSegments.add(loadMetadataDetails.getLoadName());
+            if (SegmentStatus.STREAMING == segment.getSegmentStatus() ||
+                SegmentStatus.STREAMING_FINISH == segment.getSegmentStatus()) {
+              listOfStreamSegments.add(segment.getLoadName());
+              continue;
+            }
+            listOfValidSegments.add(segment.getLoadName());
+          } else if ((SegmentStatus.LOAD_FAILURE == segment.getSegmentStatus() ||
+              SegmentStatus.COMPACTED == segment.getSegmentStatus() ||
+              SegmentStatus.MARKED_FOR_DELETE == segment.getSegmentStatus())) {
+            listOfInvalidSegments.add(segment.getLoadName());
           }
         }
       }
@@ -169,7 +174,7 @@ public class SegmentStatusManager {
       }
     }
     return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
-            listOfInvalidSegments);
+            listOfInvalidSegments, listOfStreamSegments);
   }
 
   /**
@@ -200,9 +205,15 @@ public class SegmentStatusManager {
       listOfLoadFolderDetailsArray =
           gsonObjectToRead.fromJson(buffReader, LoadMetadataDetails[].class);
     } catch (IOException e) {
+      LOG.error(e, "Failed to read metadata of load");
       return new LoadMetadataDetails[0];
     } finally {
       closeStreams(buffReader, inStream, dataInputStream);
+    }
+
+    // if listOfLoadFolderDetailsArray is null, return empty array
+    if (null == listOfLoadFolderDetailsArray) {
+      return new LoadMetadataDetails[0];
     }
 
     return listOfLoadFolderDetailsArray;
@@ -265,9 +276,9 @@ public class SegmentStatusManager {
       List<String> loadIds, String tableFolderPath) throws Exception {
     CarbonTableIdentifier carbonTableIdentifier = identifier.getCarbonTableIdentifier();
     ICarbonLock carbonDeleteSegmentLock =
-        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK);
+        CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.DELETE_SEGMENT_LOCK);
     ICarbonLock carbonTableStatusLock =
-        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
+        CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
     String tableDetails =
         carbonTableIdentifier.getDatabaseName() + "." + carbonTableIdentifier.getTableName();
     List<String> invalidLoadIds = new ArrayList<String>(0);
@@ -276,7 +287,7 @@ public class SegmentStatusManager {
         LOG.info("Delete segment lock has been successfully acquired");
 
         CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
-            identifier.getStorePath(), identifier.getCarbonTableIdentifier());
+            identifier.getTablePath(), identifier.getCarbonTableIdentifier());
         String dataLoadLocation = carbonTablePath.getTableStatusFilePath();
         LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
         if (!FileFactory.isFileExist(dataLoadLocation, FileFactory.getFileType(dataLoadLocation))) {
@@ -286,7 +297,7 @@ public class SegmentStatusManager {
         }
         // read existing metadata details in load metadata.
         listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath);
-        if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
+        if (listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatus(loadIds, listOfLoadFolderDetailsArray, invalidLoadIds);
           if (invalidLoadIds.isEmpty()) {
             // All or None , if anything fails then dont write
@@ -347,9 +358,9 @@ public class SegmentStatusManager {
       String loadDate, String tableFolderPath, Long loadStartTime) throws Exception {
     CarbonTableIdentifier carbonTableIdentifier = identifier.getCarbonTableIdentifier();
     ICarbonLock carbonDeleteSegmentLock =
-        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.DELETE_SEGMENT_LOCK);
+        CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.DELETE_SEGMENT_LOCK);
     ICarbonLock carbonTableStatusLock =
-        CarbonLockFactory.getCarbonLockObj(carbonTableIdentifier, LockUsage.TABLE_STATUS_LOCK);
+        CarbonLockFactory.getCarbonLockObj(identifier, LockUsage.TABLE_STATUS_LOCK);
     String tableDetails =
         carbonTableIdentifier.getDatabaseName() + "." + carbonTableIdentifier.getTableName();
     List<String> invalidLoadTimestamps = new ArrayList<String>(0);
@@ -358,7 +369,7 @@ public class SegmentStatusManager {
         LOG.info("Delete segment lock has been successfully acquired");
 
         CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(
-            identifier.getStorePath(), identifier.getCarbonTableIdentifier());
+            identifier.getTablePath(), identifier.getCarbonTableIdentifier());
         String dataLoadLocation = carbonTablePath.getTableStatusFilePath();
         LoadMetadataDetails[] listOfLoadFolderDetailsArray = null;
 
@@ -370,7 +381,7 @@ public class SegmentStatusManager {
         }
         // read existing metadata details in load metadata.
         listOfLoadFolderDetailsArray = readLoadMetadata(tableFolderPath);
-        if (listOfLoadFolderDetailsArray != null && listOfLoadFolderDetailsArray.length != 0) {
+        if (listOfLoadFolderDetailsArray.length != 0) {
           updateDeletionStatus(loadDate, listOfLoadFolderDetailsArray, invalidLoadTimestamps,
               loadStartTime);
           if (invalidLoadTimestamps.isEmpty()) {
@@ -477,15 +488,14 @@ public class SegmentStatusManager {
 
         if (loadId.equalsIgnoreCase(loadMetadata.getLoadName())) {
           // if the segment is compacted then no need to delete that.
-          if (CarbonCommonConstants.COMPACTED
-                  .equalsIgnoreCase(loadMetadata.getLoadStatus())) {
+          if (SegmentStatus.COMPACTED == loadMetadata.getSegmentStatus()) {
             LOG.error("Cannot delete the Segment which is compacted. Segment is " + loadId);
             invalidLoadIds.add(loadId);
             return invalidLoadIds;
           }
-          if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())) {
+          if (SegmentStatus.MARKED_FOR_DELETE != loadMetadata.getSegmentStatus()) {
             loadFound = true;
-            loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
+            loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
             loadMetadata.setModificationOrdeletionTimesStamp(CarbonUpdateUtil.readCurrentTime());
             LOG.info("Segment ID " + loadId + " Marked for Delete");
           }
@@ -521,15 +531,14 @@ public class SegmentStatusManager {
     for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
       Integer result = compareDateValues(loadMetadata.getLoadStartTimeAsLong(), loadStartTime);
       if (result < 0) {
-        if (CarbonCommonConstants.COMPACTED
-            .equalsIgnoreCase(loadMetadata.getLoadStatus())) {
+        if (SegmentStatus.COMPACTED == loadMetadata.getSegmentStatus()) {
           LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
               + "as the segment has been compacted.");
           continue;
         }
-        if (!CarbonCommonConstants.MARKED_FOR_DELETE.equals(loadMetadata.getLoadStatus())
-            && !LoadStatusType.IN_PROGRESS.getMessage().equals(loadMetadata.getLoadStatus())
-            && !LoadStatusType.INSERT_OVERWRITE.getMessage().equals(loadMetadata.getLoadStatus())) {
+        if (SegmentStatus.MARKED_FOR_DELETE != loadMetadata.getSegmentStatus() &&
+            SegmentStatus.INSERT_IN_PROGRESS != loadMetadata.getSegmentStatus() &&
+            SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS != loadMetadata.getSegmentStatus()) {
           loadFound = true;
           updateSegmentMetadataDetails(loadMetadata);
           LOG.info("Info: " +
@@ -582,7 +591,7 @@ public class SegmentStatusManager {
     List<LoadMetadataDetails> newListMetadata =
         new ArrayList<LoadMetadataDetails>(Arrays.asList(newMetadata));
     for (LoadMetadataDetails oldSegment : oldMetadata) {
-      if (CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oldSegment.getLoadStatus())) {
+      if (SegmentStatus.MARKED_FOR_DELETE == oldSegment.getSegmentStatus()) {
         updateSegmentMetadataDetails(newListMetadata.get(newListMetadata.indexOf(oldSegment)));
       }
     }
@@ -596,8 +605,8 @@ public class SegmentStatusManager {
    */
   public static void updateSegmentMetadataDetails(LoadMetadataDetails loadMetadata) {
     // update status only if the segment is not marked for delete
-    if (!CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(loadMetadata.getLoadStatus())) {
-      loadMetadata.setLoadStatus(CarbonCommonConstants.MARKED_FOR_DELETE);
+    if (SegmentStatus.MARKED_FOR_DELETE != loadMetadata.getSegmentStatus()) {
+      loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
       loadMetadata.setModificationOrdeletionTimesStamp(CarbonUpdateUtil.readCurrentTime());
     }
   }
@@ -642,18 +651,25 @@ public class SegmentStatusManager {
     private final List<String> listOfValidSegments;
     private final List<String> listOfValidUpdatedSegments;
     private final List<String> listOfInvalidSegments;
+    private final List<String> listOfStreamSegments;
 
     private ValidAndInvalidSegmentsInfo(List<String> listOfValidSegments,
-        List<String> listOfValidUpdatedSegments, List<String> listOfInvalidUpdatedSegments) {
+        List<String> listOfValidUpdatedSegments, List<String> listOfInvalidUpdatedSegments,
+        List<String> listOfStreamSegments) {
       this.listOfValidSegments = listOfValidSegments;
       this.listOfValidUpdatedSegments = listOfValidUpdatedSegments;
       this.listOfInvalidSegments = listOfInvalidUpdatedSegments;
+      this.listOfStreamSegments = listOfStreamSegments;
     }
     public List<String> getInvalidSegments() {
       return listOfInvalidSegments;
     }
     public List<String> getValidSegments() {
       return listOfValidSegments;
+    }
+
+    public List<String> getStreamSegments() {
+      return listOfStreamSegments;
     }
   }
 }

@@ -26,8 +26,12 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
+import java.nio.channels.FileChannel;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.filesystem.AlluxioCarbonFile;
@@ -50,6 +54,11 @@ import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.GzipCodec;
 
 public final class FileFactory {
+  /**
+   * LOGGER
+   */
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(FileFactory.class.getName());
   private static Configuration configuration = null;
 
   static {
@@ -72,6 +81,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         return new DFSFileHolderImpl();
       default:
         return new FileHolderImpl();
@@ -79,14 +89,17 @@ public final class FileFactory {
   }
 
   public static FileType getFileType(String path) {
-    if (path.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
+    String lowerPath = path.toLowerCase();
+    if (lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX)) {
       return FileType.HDFS;
-    }
-    else if (path.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
+    } else if (lowerPath.startsWith(CarbonCommonConstants.ALLUXIOURL_PREFIX)) {
       return FileType.ALLUXIO;
-    }
-    else if (path.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
+    } else if (lowerPath.startsWith(CarbonCommonConstants.VIEWFSURL_PREFIX)) {
       return FileType.VIEWFS;
+    } else if (lowerPath.startsWith(CarbonCommonConstants.S3N_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3A_PREFIX) ||
+        lowerPath.startsWith(CarbonCommonConstants.S3_PREFIX)) {
+      return FileType.S3;
     }
     return FileType.LOCAL;
   }
@@ -100,7 +113,25 @@ public final class FileFactory {
       case LOCAL:
         return new LocalCarbonFile(getUpdatedFilePath(path, fileType));
       case HDFS:
+      case S3:
         return new HDFSCarbonFile(path);
+      case ALLUXIO:
+        return new AlluxioCarbonFile(path);
+      case VIEWFS:
+        return new ViewFSCarbonFile(path);
+      default:
+        return new LocalCarbonFile(getUpdatedFilePath(path, fileType));
+    }
+  }
+
+  public static CarbonFile getCarbonFile(String path, FileType fileType,
+      Configuration hadoopConf) {
+    switch (fileType) {
+      case LOCAL:
+        return new LocalCarbonFile(getUpdatedFilePath(path, fileType));
+      case HDFS:
+      case S3:
+        return new HDFSCarbonFile(path, hadoopConf);
       case ALLUXIO:
         return new AlluxioCarbonFile(path);
       case VIEWFS:
@@ -116,6 +147,12 @@ public final class FileFactory {
   }
 
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize)
+      throws IOException {
+    return getDataInputStream(path, fileType, bufferSize, configuration);
+  }
+
+  public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
+      Configuration hadoopConf)
       throws IOException {
     path = path.replace("\\", "/");
     boolean gzip = path.endsWith(".gz");
@@ -135,8 +172,9 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path pt = new Path(path);
-        FileSystem fs = pt.getFileSystem(configuration);
+        FileSystem fs = pt.getFileSystem(hadoopConf);
         if (bufferSize == -1) {
           stream = fs.open(pt);
         } else {
@@ -149,7 +187,7 @@ public final class FileFactory {
           codecName = BZip2Codec.class.getName();
         }
         if (null != codecName) {
-          CompressionCodecFactory ccf = new CompressionCodecFactory(configuration);
+          CompressionCodecFactory ccf = new CompressionCodecFactory(hadoopConf);
           CompressionCodec codec = ccf.getCodecByClassName(codecName);
           stream = codec.createInputStream(stream);
         }
@@ -177,6 +215,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         FSDataInputStream stream = fs.open(pt, bufferSize);
@@ -204,6 +243,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         return fs.create(pt, true);
@@ -223,6 +263,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         FSDataOutputStream stream = null;
@@ -256,6 +297,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         return fs.create(pt, true, bufferSize, fs.getDefaultReplication(pt), blockSize);
@@ -281,6 +323,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         if (performFileCheck) {
@@ -315,6 +358,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         return fs.exists(path);
@@ -333,6 +377,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         return fs.createNewFile(path);
@@ -351,6 +396,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         return fs.delete(path, true);
@@ -400,6 +446,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         return fs.mkdirs(path);
@@ -429,11 +476,68 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path pt = new Path(path);
         FileSystem fs = pt.getFileSystem(configuration);
         return fs.append(pt);
       default:
         return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+    }
+  }
+
+  /**
+   * this method will truncate the file to the new size.
+   * @param path
+   * @param fileType
+   * @param newSize
+   * @throws IOException
+   */
+  public static void truncateFile(String path, FileType fileType, long newSize) throws IOException {
+    path = path.replace("\\", "/");
+    FileChannel fileChannel = null;
+    switch (fileType) {
+      case LOCAL:
+        path = getUpdatedFilePath(path, fileType);
+        fileChannel = new FileOutputStream(path, true).getChannel();
+        try {
+          fileChannel.truncate(newSize);
+        } finally {
+          if (fileChannel != null) {
+            fileChannel.close();
+          }
+        }
+        return;
+      case HDFS:
+      case ALLUXIO:
+      case VIEWFS:
+      case S3:
+        // if hadoop version >= 2.7, it can call method 'FileSystem.truncate' to truncate file,
+        // this method was new in hadoop 2.7, otherwise use CarbonFile.truncate to do this.
+        try {
+          Path pt = new Path(path);
+          FileSystem fs = pt.getFileSystem(configuration);
+          Method truncateMethod = fs.getClass().getDeclaredMethod("truncate",
+              new Class[]{Path.class, long.class});
+          truncateMethod.invoke(fs, new Object[]{pt, newSize});
+        } catch (NoSuchMethodException e) {
+          LOGGER.error("the version of hadoop is below 2.7, there is no 'truncate'"
+              + " method in FileSystem, It needs to use 'CarbonFile.truncate'.");
+          CarbonFile carbonFile = FileFactory.getCarbonFile(path, fileType);
+          carbonFile.truncate(path, newSize);
+        } catch (Exception e) {
+          LOGGER.error("Other exception occurred while truncating the file " + e.getMessage());
+        }
+        return;
+      default:
+        fileChannel = new FileOutputStream(path, true).getChannel();
+        try {
+          fileChannel.truncate(newSize);
+        } finally {
+          if (fileChannel != null) {
+            fileChannel.close();
+          }
+        }
+        return;
     }
   }
 
@@ -452,6 +556,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         if (fs.createNewFile(path)) {
@@ -468,7 +573,7 @@ public final class FileFactory {
   }
 
   public enum FileType {
-    LOCAL, HDFS, ALLUXIO, VIEWFS
+    LOCAL, HDFS, ALLUXIO, VIEWFS, S3
   }
 
   /**
@@ -480,11 +585,12 @@ public final class FileFactory {
    * @param fileType
    * @return updated file path without url for local
    */
-  private static String getUpdatedFilePath(String filePath, FileType fileType) {
+  public static String getUpdatedFilePath(String filePath, FileType fileType) {
     switch (fileType) {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         return filePath;
       case LOCAL:
       default:
@@ -533,6 +639,7 @@ public final class FileFactory {
       case HDFS:
       case ALLUXIO:
       case VIEWFS:
+      case S3:
         Path path = new Path(filePath);
         FileSystem fs = path.getFileSystem(configuration);
         return fs.getContentSummary(path).getLength();

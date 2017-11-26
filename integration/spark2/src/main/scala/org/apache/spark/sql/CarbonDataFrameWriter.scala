@@ -21,10 +21,12 @@ import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.compress.GzipCodec
 import org.apache.spark.sql.execution.command.management.LoadTableCommand
 import org.apache.spark.sql.types._
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonType}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonOption
 
 class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
@@ -58,7 +60,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
    */
   private def loadTempCSV(options: CarbonOption): Unit = {
     // temporary solution: write to csv file, then load the csv into carbon
-    val storePath = CarbonEnv.getInstance(sqlContext.sparkSession).storePath
+    val storePath = CarbonProperties.getStorePath
     val tempCSVFolder = new StringBuilder(storePath).append(CarbonCommonConstants.FILE_SEPARATOR)
       .append("tempCSV")
       .append(CarbonCommonConstants.UNDERSCORE).append(options.dbName)
@@ -151,9 +153,9 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       case DoubleType => CarbonType.DOUBLE.getName
       case TimestampType => CarbonType.TIMESTAMP.getName
       case DateType => CarbonType.DATE.getName
-      case decimal: DecimalType => s"${CarbonType.DECIMAL.getName} (${decimal.precision}" +
-                                   s", ${decimal.scale})"
-      case other => sys.error(s"unsupported type: $other")
+      case decimal: DecimalType => s"decimal(${decimal.precision}, ${decimal.scale})"
+      case BooleanType => CarbonType.BOOLEAN.getName
+      case other => CarbonException.analysisException(s"unsupported type: $other")
     }
   }
 

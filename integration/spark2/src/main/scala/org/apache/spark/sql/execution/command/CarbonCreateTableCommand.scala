@@ -17,15 +17,20 @@
 
 package org.apache.spark.sql.execution.command
 
+import scala.collection.JavaConverters._
+
+import org.apache.spark.sql._
 import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
+import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
+import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 
 case class CarbonCreateTableCommand(
     cm: TableModel,
@@ -37,11 +42,13 @@ case class CarbonCreateTableCommand(
   }
 
   override def processSchema(sparkSession: SparkSession): Seq[Row] = {
-    val storePath = CarbonEnv.getInstance(sparkSession).storePath
+    val storePath = CarbonProperties.getStorePath
     CarbonEnv.getInstance(sparkSession).carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables(storePath)
+      checkSchemasModifiedTimeAndReloadTables()
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     cm.databaseName = GetDB.getDatabaseName(cm.databaseNameOp, sparkSession)
+    val dbLocation = GetDB.getDatabaseLocation(cm.databaseName, sparkSession, storePath)
+    val tablePath = dbLocation + CarbonCommonConstants.FILE_SEPARATOR + cm.tableName
     val tbName = cm.tableName
     val dbName = cm.databaseName
     LOGGER.audit(s"Creating Table with Database name [$dbName] and Table name [$tbName]")
@@ -49,8 +56,8 @@ case class CarbonCreateTableCommand(
     val tableInfo: TableInfo = TableNewProcessor(cm)
 
     // Add validation for sort scope when create table
-    val sortScope = tableInfo.getFactTable.getTableProperties
-      .getOrDefault("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+    val sortScope = tableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
     if (!CarbonUtil.isValidSortOption(sortScope)) {
       throw new InvalidConfigurationException(
         s"Passing invalid SORT_SCOPE '$sortScope', valid SORT_SCOPE are 'NO_SORT', 'BATCH_SORT'," +
@@ -58,7 +65,7 @@ case class CarbonCreateTableCommand(
     }
 
     if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
-      sys.error("No Dimensions found. Table should have at least one dimesnion !")
+      CarbonException.analysisException("Table should have at least one column.")
     }
 
     if (sparkSession.sessionState.catalog.listTables(dbName)
@@ -67,20 +74,20 @@ case class CarbonCreateTableCommand(
         LOGGER.audit(
           s"Table creation with Database name [$dbName] and Table name [$tbName] failed. " +
           s"Table [$tbName] already exists under database [$dbName]")
-        sys.error(s"Table [$tbName] already exists under database [$dbName]")
+        throw new TableAlreadyExistsException(dbName, dbName)
       }
     } else {
-      val tableIdentifier = AbsoluteTableIdentifier.from(storePath, dbName, tbName)
+      val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tbName)
       // Add Database to catalog and persist
       val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      val tablePath = tableIdentifier.getTablePath
-      val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tablePath)
+      val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tableIdentifier)
       if (createDSTable) {
         try {
           val fields = new Array[Field](cm.dimCols.size + cm.msrCols.size)
           cm.dimCols.foreach(f => fields(f.schemaOrdinal) = f)
           cm.msrCols.foreach(f => fields(f.schemaOrdinal) = f)
 
+          sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
           sparkSession.sql(
             s"""CREATE TABLE $dbName.$tbName
                |(${ fields.map(f => f.rawSchema).mkString(",") })
@@ -88,15 +95,16 @@ case class CarbonCreateTableCommand(
             s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath """.stripMargin +
             s""""$tablePath"$carbonSchemaString) """)
         } catch {
+          case e: AnalysisException => throw e
           case e: Exception =>
-            val identifier: TableIdentifier = TableIdentifier(tbName, Some(dbName))
             // call the drop table to delete the created table.
             CarbonEnv.getInstance(sparkSession).carbonMetastore
-              .dropTable(tablePath, identifier)(sparkSession)
+              .dropTable(tableIdentifier)(sparkSession)
 
-            LOGGER.audit(s"Table creation with Database name [$dbName] " +
-                         s"and Table name [$tbName] failed")
-            throw e
+            val msg = s"Create table'$tbName' in database '$dbName' failed."
+            LOGGER.audit(msg)
+            LOGGER.error(e, msg)
+            CarbonException.analysisException(msg)
         }
       }
 

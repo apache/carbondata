@@ -55,7 +55,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
   }
 
   @Test public void testFactTableNameReturnsProperFactTableName() {
-    assertEquals("carbonTestTable", carbonTable.getFactTableName());
+    assertEquals("carbonTestTable", carbonTable.getTableName());
   }
 
   @Test public void testTableUniqueNameIsProper() {
@@ -83,7 +83,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     structColumn.setColumnar(true);
     structColumn.setColumnName("mobile");
     structColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    structColumn.setDataType(DataTypes.STRUCT);
+    structColumn.setDataType(DataTypes.createDefaultStructType());
     structColumn.setDimensionColumn(true);
     structColumn.setEncodingList(encodeList);
     structColumn.setNumberOfChild(2);
@@ -103,7 +103,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     arrayColumn.setColumnar(true);
     arrayColumn.setColumnName("mobile.val");
     arrayColumn.setColumnUniqueId(UUID.randomUUID().toString());
-    arrayColumn.setDataType(DataTypes.ARRAY);
+    arrayColumn.setDataType(DataTypes.createDefaultArrayType());
     arrayColumn.setDimensionColumn(true);
     arrayColumn.setEncodingList(encodeList);
     arrayColumn.setNumberOfChild(1);
@@ -148,7 +148,7 @@ public class CarbonTableWithComplexTypesTest extends TestCase {
     info.setLastUpdatedTime(timeStamp);
     info.setTableUniqueName("carbonTestDatabase_carbonTestTable");
     info.setFactTable(getTableSchema());
-    info.setStorePath("testStore");
+    info.setTablePath("testStore");
     return info;
   }
 

@@ -77,7 +77,7 @@ public class NotEqualsExpression extends BinaryConditionalExpression {
       result = val1.getTime().longValue() != val2.getTime().longValue();
     } else if (dataType == DataTypes.LONG) {
       result = elRes.getLong().longValue() != (erRes.getLong()).longValue();
-    } else if (dataType == DataTypes.DECIMAL) {
+    } else if (DataTypes.isDecimal(dataType)) {
       result = elRes.getDecimal().compareTo(erRes.getDecimal()) != 0;
     } else {
       throw new FilterUnsupportedException(

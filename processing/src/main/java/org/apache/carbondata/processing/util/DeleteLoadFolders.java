@@ -21,13 +21,13 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -43,17 +43,14 @@ public final class DeleteLoadFolders {
   /**
    * returns segment path
    *
-   * @param dbName
-   * @param tableName
-   * @param storeLocation
+   * @param absoluteTableIdentifier
    * @param partitionId
    * @param oneLoad
    * @return
    */
-  private static String getSegmentPath(String dbName, String tableName, String storeLocation,
+  private static String getSegmentPath(AbsoluteTableIdentifier absoluteTableIdentifier,
       int partitionId, LoadMetadataDetails oneLoad) {
-    CarbonTablePath carbon = new CarbonStorePath(storeLocation).getCarbonTablePath(
-        new CarbonTableIdentifier(dbName, tableName, ""));
+    CarbonTablePath carbon = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
     String segmentId = oneLoad.getLoadName();
     return carbon.getCarbonDataDirectoryPath("" + partitionId, segmentId);
   }
@@ -110,8 +107,8 @@ public final class DeleteLoadFolders {
 
   private static boolean checkIfLoadCanBeDeleted(LoadMetadataDetails oneLoad,
       boolean isForceDelete) {
-    if ((CarbonCommonConstants.MARKED_FOR_DELETE.equalsIgnoreCase(oneLoad.getLoadStatus())
-        || CarbonCommonConstants.COMPACTED.equalsIgnoreCase(oneLoad.getLoadStatus()))
+    if ((SegmentStatus.MARKED_FOR_DELETE == oneLoad.getSegmentStatus() ||
+        SegmentStatus.COMPACTED == oneLoad.getSegmentStatus())
         && oneLoad.getVisibility().equalsIgnoreCase("true")) {
       if (isForceDelete) {
         return true;
@@ -125,15 +122,15 @@ public final class DeleteLoadFolders {
     return false;
   }
 
-  public static boolean deleteLoadFoldersFromFileSystem(String dbName, String tableName,
-      String storeLocation, boolean isForceDelete, LoadMetadataDetails[] details) {
-
+  public static boolean deleteLoadFoldersFromFileSystem(
+      AbsoluteTableIdentifier absoluteTableIdentifier, boolean isForceDelete,
+      LoadMetadataDetails[] details) {
     boolean isDeleted = false;
 
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneLoad : details) {
         if (checkIfLoadCanBeDeleted(oneLoad, isForceDelete)) {
-          String path = getSegmentPath(dbName, tableName, storeLocation, 0, oneLoad);
+          String path = getSegmentPath(absoluteTableIdentifier, 0, oneLoad);
           boolean deletionStatus = physicalFactAndMeasureMetadataDeletion(path);
           if (deletionStatus) {
             isDeleted = true;

@@ -17,9 +17,9 @@
 
 package org.apache.carbondata.core.metadata.datatype;
 
-public class BooleanType extends DataType {
+class BooleanType extends DataType {
 
-  public static final DataType BOOLEAN =
+  static final DataType BOOLEAN =
       new BooleanType(DataTypes.BOOLEAN_TYPE_ID, 1, "BOOLEAN", 1);
 
   private BooleanType(int id, int precedenceOrder, String name, int sizeInBytes) {

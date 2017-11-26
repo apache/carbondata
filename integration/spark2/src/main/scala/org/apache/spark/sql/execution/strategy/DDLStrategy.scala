@@ -24,10 +24,9 @@ import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.{AlterTableCompactionCommand, CarbonShowLoadsCommand, LoadTableByInsertCommand, LoadTableCommand}
 import org.apache.spark.sql.execution.command.partition.ShowCarbonPartitionsCommand
-import org.apache.spark.sql.execution.command.schema.{AlterTableAddColumnCommand, AlterTableDataTypeChangeCommand, AlterTableDropColumnCommand, AlterTableRenameTableCommand}
+import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 
-import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
@@ -52,11 +51,10 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         val dbOption = oldTableIdentifier.database.map(_.toLowerCase)
         val tableIdentifier = TableIdentifier(oldTableIdentifier.table.toLowerCase(), dbOption)
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
-          .tableExists(tableIdentifier)(
-            sparkSession)
+          .tableExists(tableIdentifier)(sparkSession)
         if (isCarbonTable) {
           val renameModel = AlterTableRenameModel(tableIdentifier, newTableIdentifier)
-          ExecutedCommandExec(AlterTableRenameTableCommand(renameModel)) :: Nil
+          ExecutedCommandExec(CarbonAlterTableRenameCommand(renameModel)) :: Nil
         } else {
           ExecutedCommandExec(alter) :: Nil
         }
@@ -77,17 +75,17 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       _, child: LogicalPlan, overwrite, _) =>
         ExecutedCommandExec(LoadTableByInsertCommand(relation, child, overwrite.enabled)) :: Nil
       case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
-        CarbonUtil.createDatabaseDirectory(dbName, CarbonEnv.getInstance(sparkSession).storePath)
         ExecutedCommandExec(createDb) :: Nil
       case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>
         ExecutedCommandExec(CarbonDropDatabaseCommand(drop)) :: Nil
-      case alterTable@AlterTableCompactionCommand(altertablemodel) =>
+      case alterTable@AlterTableCompactionCommand(altertablemodel, _) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(TableIdentifier(altertablemodel.tableName,
             altertablemodel.dbName))(sparkSession)
         if (isCarbonTable) {
           if (altertablemodel.compactionType.equalsIgnoreCase("minor") ||
-              altertablemodel.compactionType.equalsIgnoreCase("major")) {
+              altertablemodel.compactionType.equalsIgnoreCase("major") ||
+              altertablemodel.compactionType.equalsIgnoreCase("segment_index")) {
             ExecutedCommandExec(alterTable) :: Nil
           } else {
             throw new MalformedCarbonCommandException(
@@ -97,7 +95,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           throw new MalformedCarbonCommandException(
             "Operation not allowed : " + altertablemodel.alterSql)
         }
-      case dataTypeChange@AlterTableDataTypeChangeCommand(alterTableChangeDataTypeModel) =>
+      case dataTypeChange@CarbonAlterTableDataTypeChangeCommand(alterTableChangeDataTypeModel) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(TableIdentifier(alterTableChangeDataTypeModel.tableName,
             alterTableChangeDataTypeModel.databaseName))(sparkSession)
@@ -106,7 +104,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         } else {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
-      case addColumn@AlterTableAddColumnCommand(alterTableAddColumnsModel) =>
+      case addColumn@CarbonAlterTableAddColumnCommand(alterTableAddColumnsModel) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(TableIdentifier(alterTableAddColumnsModel.tableName,
             alterTableAddColumnsModel.databaseName))(sparkSession)
@@ -115,7 +113,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         } else {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
-      case dropColumn@AlterTableDropColumnCommand(alterTableDropColumnModel) =>
+      case dropColumn@CarbonAlterTableDropColumnCommand(alterTableDropColumnModel) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(TableIdentifier(alterTableDropColumnModel.tableName,
             alterTableDropColumnModel.databaseName))(sparkSession)
@@ -155,6 +153,29 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         val cmd =
           CreateDataSourceTableCommand(updatedCatalog, ignoreIfExists = mode == SaveMode.Ignore)
         ExecutedCommandExec(cmd) :: Nil
+      case AlterTableSetPropertiesCommand(tableName, properties, isView)
+        if CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(tableName)(sparkSession) => {
+        // TODO remove this limitation later
+        val property = properties.find(_._1.equalsIgnoreCase("streaming"))
+        if (property.isDefined) {
+          if (!property.get._2.trim.equalsIgnoreCase("true")) {
+            throw new MalformedCarbonCommandException(
+              "Streaming property can not be changed to 'false' once it is 'true'")
+          }
+        }
+        ExecutedCommandExec(AlterTableSetCommand(tableName, properties, isView)) :: Nil
+      }
+      case AlterTableUnsetPropertiesCommand(tableName, propKeys, ifExists, isView)
+        if CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(tableName)(sparkSession) => {
+        // TODO remove this limitation later
+        if (propKeys.find(_.equalsIgnoreCase("streaming")).isDefined) {
+          throw new MalformedCarbonCommandException(
+            "Streaming property can not be removed")
+        }
+        ExecutedCommandExec(AlterTableUnsetCommand(tableName, propKeys, ifExists, isView)) :: Nil
+      }
       case _ => Nil
     }
   }

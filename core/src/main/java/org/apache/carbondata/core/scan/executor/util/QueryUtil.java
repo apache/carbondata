@@ -42,6 +42,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -352,15 +353,16 @@ public class QueryUtil {
             absoluteTableIdentifier.getCarbonTableIdentifier(), tableProvider);
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache = cacheProvider
-        .createCache(CacheType.FORWARD_DICTIONARY, absoluteTableIdentifier.getStorePath());
-
+        .createCache(CacheType.FORWARD_DICTIONARY);
     List<Dictionary> columnDictionaryList =
         forwardDictionaryCache.getAll(dictionaryColumnUniqueIdentifiers);
     Map<String, Dictionary> columnDictionaryMap = new HashMap<>(columnDictionaryList.size());
     for (int i = 0; i < dictionaryColumnUniqueIdentifiers.size(); i++) {
       // TODO: null check for column dictionary, if cache size is less it
       // might return null here, in that case throw exception
-      columnDictionaryMap.put(dictionaryColumnIdList.get(i), columnDictionaryList.get(i));
+      columnDictionaryMap
+          .put(dictionaryColumnUniqueIdentifiers.get(i).getColumnIdentifier().getColumnId(),
+              columnDictionaryList.get(i));
     }
     return columnDictionaryMap;
   }
@@ -376,25 +378,49 @@ public class QueryUtil {
       List<String> dictionaryColumnIdList, CarbonTableIdentifier carbonTableIdentifier,
       TableProvider tableProvider) throws IOException {
     CarbonTable carbonTable = tableProvider.getCarbonTable(carbonTableIdentifier);
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonTable.getStorePath(), carbonTableIdentifier);
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
         new ArrayList<>(dictionaryColumnIdList.size());
     for (String columnId : dictionaryColumnIdList) {
       CarbonDimension dimension = CarbonMetadata.getInstance()
           .getCarbonDimensionBasedOnColIdentifier(carbonTable, columnId);
       if (dimension != null) {
+        AbsoluteTableIdentifier newCarbonTableIdentifier;
+        ColumnIdentifier columnIdentifier;
+        if (null != dimension.getColumnSchema().getParentColumnTableRelations() && !dimension
+            .getColumnSchema().getParentColumnTableRelations().isEmpty()) {
+          newCarbonTableIdentifier = getTableIdentifierForColumn(dimension,
+              carbonTable.getAbsoluteTableIdentifier());
+          columnIdentifier = new ColumnIdentifier(
+              dimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
+              dimension.getColumnProperties(), dimension.getDataType());
+        } else {
+          newCarbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
+          columnIdentifier = dimension.getColumnIdentifier();
+        }
         dictionaryColumnUniqueIdentifiers.add(
-            new DictionaryColumnUniqueIdentifier(
-                carbonTableIdentifier,
-                dimension.getColumnIdentifier(),
+            new DictionaryColumnUniqueIdentifier(newCarbonTableIdentifier, columnIdentifier,
                 dimension.getDataType(),
-                carbonTablePath
-            )
-        );
+                CarbonStorePath.getCarbonTablePath(newCarbonTableIdentifier)));
       }
     }
     return dictionaryColumnUniqueIdentifiers;
+  }
+
+  public static AbsoluteTableIdentifier getTableIdentifierForColumn(CarbonDimension carbonDimension,
+      AbsoluteTableIdentifier absoluteTableIdentifier) {
+    String parentTableName =
+        carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
+            .getRelationIdentifier().getTableName();
+    String parentDatabaseName =
+        carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
+            .getRelationIdentifier().getDatabaseName();
+    String parentTableId = carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
+        .getRelationIdentifier().getTableId();
+    CarbonTableIdentifier carbonTableIdentifier =
+        new CarbonTableIdentifier(parentDatabaseName, parentTableName, parentTableId);
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
+    String newTablePath = CarbonUtil.getNewTablePath(carbonTablePath, carbonTableIdentifier);
+    return new AbsoluteTableIdentifier(newTablePath, carbonTableIdentifier);
   }
 
   /**
@@ -678,23 +704,6 @@ public class QueryUtil {
   }
 
   /**
-   * below method will be used to get the actual type aggregator
-   *
-   * @param aggType
-   * @return index in aggrgetor
-   */
-  public static int[] getActualTypeIndex(List<String> aggType) {
-    List<Integer> indexList = new ArrayList<Integer>();
-    for (int i = 0; i < aggType.size(); i++) {
-      if (!CarbonCommonConstants.SUM.equals(aggType.get(i)) && !CarbonCommonConstants.AVERAGE
-          .equals(aggType.get(i))) {
-        indexList.add(i);
-      }
-    }
-    return ArrayUtils.toPrimitive(indexList.toArray(new Integer[indexList.size()]));
-  }
-
-  /**
    * Below method will be used to get the key structure for the column group
    *
    * @param segmentProperties      segment properties
@@ -780,10 +789,10 @@ public class QueryUtil {
       int[] eachComplexColumnValueSize, Map<String, Dictionary> columnIdToDictionaryMap) {
     int parentBlockIndex = dimensionToBlockIndexMap.get(dimension.getOrdinal());
     GenericQueryType parentQueryType;
-    if (dimension.getDataType() == DataTypes.ARRAY) {
+    if (DataTypes.isArrayType(dimension.getDataType())) {
       parentQueryType =
           new ArrayQueryType(dimension.getColName(), dimension.getColName(), parentBlockIndex);
-    } else if (dimension.getDataType() == DataTypes.STRUCT) {
+    } else if (DataTypes.isStructType(dimension.getDataType())) {
       parentQueryType =
           new StructQueryType(dimension.getColName(), dimension.getColName(),
               dimensionToBlockIndexMap.get(dimension.getOrdinal()));
@@ -801,11 +810,11 @@ public class QueryUtil {
       CarbonDimension dimension, GenericQueryType parentQueryType) {
     for (int i = 0; i < dimension.getNumberOfChild(); i++) {
       DataType dataType = dimension.getListOfChildDimensions().get(i).getDataType();
-      if (dataType == DataTypes.ARRAY) {
+      if (DataTypes.isArrayType(dataType)) {
         parentQueryType.addChildren(
             new ArrayQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
                 dimension.getColName(), ++parentBlockIndex));
-      } else if (dataType == DataTypes.STRUCT) {
+      } else if (DataTypes.isStructType(dataType)) {
         parentQueryType.addChildren(
             new StructQueryType(dimension.getListOfChildDimensions().get(i).getColName(),
                 dimension.getColName(), ++parentBlockIndex));
