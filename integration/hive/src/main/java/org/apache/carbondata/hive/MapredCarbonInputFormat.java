@@ -18,8 +18,11 @@ package org.apache.carbondata.hive;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
+import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
@@ -104,8 +107,13 @@ public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritabl
     String[] paths = configuration.get(FileInputFormat.INPUT_DIR).split(",");
     Arrays.sort(paths);
     String tablePath = paths[0];
-    AbsoluteTableIdentifier absoluteTableIdentifier =
-        AbsoluteTableIdentifier.fromTablePath(tablePath.replace("file:", ""));
+    AbsoluteTableIdentifier absoluteTableIdentifier = null;
+    try {
+      absoluteTableIdentifier = AbsoluteTableIdentifier
+        .from(tablePath, getDatabaseName(configuration), getTableName(configuration));
+    } catch (InvalidConfigurationException e) {
+      throw new IOException(e);
+    }
     // read the schema file to get the absoluteTableIdentifier having the correct table id
     // persisted in the schema
     CarbonTableIdentifier tableIdentifier = absoluteTableIdentifier.getCarbonTableIdentifier();
