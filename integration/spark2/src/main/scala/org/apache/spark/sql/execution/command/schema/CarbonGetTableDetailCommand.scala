@@ -31,7 +31,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 /**
  * collect dynamic detail information of the table, including table size, last modified time, etc.
  */
-case class GetTableDetailCommand(
+case class CarbonGetTableDetailCommand(
     databaseName: String,
     tableNames: Seq[String])
   extends RunnableCommand with DataProcessCommand {
@@ -51,26 +51,10 @@ case class GetTableDetailCommand(
 
       Row(
         tablename,
-        getSizeInBytes(sparkSession, carbonTable),
-        getLastModifiedTime(absoluteTableIdentifier)
+        carbonTable.size,
+        SegmentStatusManager.getTableStatusLastModifiedTime(absoluteTableIdentifier)
       )
     }
-  }
-
-  private def getLastModifiedTime(absoluteTableIdentifier: AbsoluteTableIdentifier): Long = {
-    SegmentStatusManager.getTableStatusLastModifiedTime(absoluteTableIdentifier)
-  }
-
-  private def getSizeInBytes(
-      sparkSession: SparkSession,
-      carbonTable: CarbonTable
-  ): Long = {
-    val dataIndexSize = CarbonUtil.calculateDataIndexSize(carbonTable)
-    val dataSize =
-      Option(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE)).getOrElse(0L)
-    val indexSize =
-      Option(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE)).getOrElse(0L)
-    dataSize.toString.toLong + indexSize.toString.toLong
   }
 
   override def output: Seq[Attribute] = {

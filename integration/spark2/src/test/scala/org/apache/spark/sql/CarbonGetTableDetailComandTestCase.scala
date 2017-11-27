@@ -18,11 +18,11 @@
 package org.apache.spark.sql
 
 import org.apache.spark.sql.execution.QueryExecution
-import org.apache.spark.sql.execution.command.schema.GetTableDetailCommand
+import org.apache.spark.sql.execution.command.schema.CarbonGetTableDetailCommand
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
-class GetTableDetailCommandTestCase extends QueryTest with BeforeAndAfterAll {
+class CarbonGetTableDetailCommandTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {
     sql("drop table if exists table_info1")
     sql("create table table_info1 (empno int, workgroupcategory string, deptno int, projectcode int, attendance int) stored by 'org.apache.carbondata.format'")
@@ -34,7 +34,7 @@ class GetTableDetailCommandTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("collect the information of tables") {
-    val logicalPlan = GetTableDetailCommand("default", Seq("table_info1", "table_info2"))
+    val logicalPlan = CarbonGetTableDetailCommand("default", Seq("table_info1", "table_info2"))
     val result =new QueryExecution(sqlContext.sparkSession, logicalPlan)
       .executedPlan
       .execute
