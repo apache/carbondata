@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.metadata.schema.table;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.*;
 
@@ -31,6 +32,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
  * Mapping class for Carbon actual table
@@ -714,5 +716,18 @@ public class CarbonTable implements Serializable {
   public boolean isChildDataMap() {
     return null != tableInfo.getParentRelationIdentifiers()
         && !tableInfo.getParentRelationIdentifiers().isEmpty();
+  }
+
+  public long size() throws IOException {
+    Map<String, Long> dataIndexSize = CarbonUtil.calculateDataIndexSize(this);
+    Long dataSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
+    if (dataSize == null) {
+      dataSize = 0L;
+    }
+    Long indexSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE);
+    if (indexSize == null) {
+      indexSize = 0L;
+    }
+    return dataSize + indexSize;
   }
 }
