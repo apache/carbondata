@@ -28,8 +28,16 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.common.constants.LoggerAction
+
 class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterAll {
+  val bad_records_action = CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
+
   override def beforeAll {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
+
     sql("DROP TABLE IF EXISTS t3")
     sql("""
            CREATE TABLE IF NOT EXISTS t3
@@ -131,6 +139,9 @@ class TestLoadDataWithDiffTimestampFormat extends QueryTest with BeforeAndAfterA
   }
 
   override def afterAll {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+      bad_records_action)
     sql("DROP TABLE IF EXISTS t3")
   }
 }

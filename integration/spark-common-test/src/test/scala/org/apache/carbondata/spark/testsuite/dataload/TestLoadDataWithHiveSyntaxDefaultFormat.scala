@@ -25,13 +25,19 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.common.constants.LoggerAction
+
 /**
   * Test Class for data loading with hive syntax and old syntax
   *
   */
 class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAfterAll {
+  val bad_records_action = CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
 
   override def beforeAll {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
     sql("drop table if exists escapechar1")
     sql("drop table if exists escapechar2")
     sql("drop table if exists escapechar3")
@@ -709,5 +715,8 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql("drop table if exists hivetable1")
     sql("drop table if exists comment_test")
     sql("drop table if exists double_test")
-  }
+
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+      bad_records_action)  }
 }
