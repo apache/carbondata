@@ -308,10 +308,11 @@ class CarbonScanRDD(
           val value = reader.getCurrentValue
           value
         }
+
         private def close() {
           TaskMetricsMap.getInstance().updateReadBytes(Thread.currentThread().getId)
           inputMetricsStats.updateAndClose()
-      }
+        }
       }
     } else {
       new Iterator[Any] {

@@ -116,7 +116,7 @@ class CarbonMergerRDD[K, V](
 
         // During UPDATE DELTA COMPACTION case all the blocks received in compute belongs to
         // one segment, so max cardinality will be calculated from first block of segment
-        if(carbonMergerMapping.campactionType == CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
+        if (CompactionType.IUD_UPDDEL_DELTA == carbonMergerMapping.campactionType) {
           var dataFileFooter: DataFileFooter = null
           try {
             // As the tableBlockInfoList is sorted take the ColCardinality from the last
@@ -137,15 +137,14 @@ class CarbonMergerRDD[K, V](
           carbonMergerMapping.maxSegmentColumnSchemaList = dataFileFooter.getColumnInTable.asScala
             .toList
         }
-        mergeNumber = if (carbonMergerMapping.campactionType ==
-                              CompactionType.IUD_UPDDEL_DELTA_COMPACTION) {
+        mergeNumber = if (CompactionType.IUD_UPDDEL_DELTA == carbonMergerMapping.campactionType) {
           tableBlockInfoList.get(0).getSegmentId
-        }
-        else {
-          mergedLoadName
-            .substring(mergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) +
-                       CarbonCommonConstants.LOAD_FOLDER.length(), mergedLoadName.length()
-            )
+        } else {
+          mergedLoadName.substring(
+            mergedLoadName.lastIndexOf(CarbonCommonConstants.LOAD_FOLDER) +
+              CarbonCommonConstants.LOAD_FOLDER.length(),
+            mergedLoadName.length()
+          )
         }
         carbonLoadModel.setSegmentId(mergeNumber)
         val tempLocationKey = CarbonDataProcessorUtil
@@ -277,7 +276,7 @@ class CarbonMergerRDD[K, V](
     var defaultParallelism = sparkContext.defaultParallelism
     val result = new java.util.ArrayList[Partition](defaultParallelism)
     var taskPartitionNo = 0
-    var carbonPartitionId = 0;
+    var carbonPartitionId = 0
     var noOfBlocks = 0
 
     val taskInfoList = new java.util.ArrayList[Distributable]

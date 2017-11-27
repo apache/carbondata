@@ -57,7 +57,7 @@ public class CarbonStreamOutputFormat extends FileOutputFormat<Void, Object> {
    * if the byte size of streaming segment reach this value,
    * the system will create a new stream segment
    */
-  public static final String HANDOFF_SIZE = "carbon.handoff.size";
+  public static final String HANDOFF_SIZE = "carbon.streaming.segment.max.size";
 
   /**
    * the min handoff size of streaming segment, the unit is byte

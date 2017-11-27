@@ -27,6 +27,7 @@ import org.apache.spark.sql.execution.command.partition.ShowCarbonPartitionsComm
 import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 
+import org.apache.carbondata.processing.merger.CompactionType
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
@@ -83,9 +84,18 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           .tableExists(TableIdentifier(altertablemodel.tableName,
             altertablemodel.dbName))(sparkSession)
         if (isCarbonTable) {
-          if (altertablemodel.compactionType.equalsIgnoreCase("minor") ||
-              altertablemodel.compactionType.equalsIgnoreCase("major") ||
-              altertablemodel.compactionType.equalsIgnoreCase("segment_index")) {
+          var compactionType: CompactionType = null
+          try {
+            compactionType = CompactionType.valueOf(altertablemodel.compactionType.toUpperCase)
+          } catch {
+            case _ =>
+              throw new MalformedCarbonCommandException(
+                "Unsupported alter operation on carbon table")
+          }
+          if (CompactionType.MINOR == compactionType ||
+              CompactionType.MAJOR == compactionType ||
+              CompactionType.SEGMENT_INDEX == compactionType ||
+              CompactionType.STREAMING == compactionType) {
             ExecutedCommandExec(alterTable) :: Nil
           } else {
             throw new MalformedCarbonCommandException(

@@ -180,15 +180,15 @@ public class SegmentStatusManager {
   /**
    * This method reads the load metadata file
    *
-   * @param tableFolderPath
+   * @param metadataFolderPath
    * @return
    */
-  public static LoadMetadataDetails[] readLoadMetadata(String tableFolderPath) {
+  public static LoadMetadataDetails[] readLoadMetadata(String metadataFolderPath) {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
     InputStreamReader inStream = null;
-    String metadataFileName = tableFolderPath + CarbonCommonConstants.FILE_SEPARATOR
+    String metadataFileName = metadataFolderPath + CarbonCommonConstants.FILE_SEPARATOR
         + CarbonCommonConstants.LOADMETADATA_FILENAME;
     LoadMetadataDetails[] listOfLoadFolderDetailsArray;
     AtomicFileOperations fileOperation =

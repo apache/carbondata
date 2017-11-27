@@ -332,7 +332,7 @@ public final class CarbonDataMergerUtil {
         loadMetadataDetails.setLoadStartTime(mergeLoadStartTime);
         loadMetadataDetails.setPartitionCount("0");
         // if this is a major compaction then set the segment as major compaction.
-        if (compactionType == CompactionType.MAJOR_COMPACTION) {
+        if (CompactionType.MAJOR == compactionType) {
           loadMetadataDetails.setMajorCompacted("true");
         }
 
@@ -394,7 +394,7 @@ public final class CarbonDataMergerUtil {
     sortSegments(sortedSegments);
 
     // Check for segments which are qualified for IUD compaction.
-    if (compactionType.equals(CompactionType.IUD_UPDDEL_DELTA_COMPACTION)) {
+    if (CompactionType.IUD_UPDDEL_DELTA == compactionType) {
 
       return identifySegmentsToBeMergedBasedOnIUD(sortedSegments, carbonLoadModel);
     }
@@ -410,7 +410,7 @@ public final class CarbonDataMergerUtil {
         identifySegmentsToBeMergedBasedOnLoadedDate(listOfSegmentsAfterPreserve);
     List<LoadMetadataDetails> listOfSegmentsToBeMerged;
     // identify the segments to merge based on the Size of the segments across partition.
-    if (compactionType.equals(CompactionType.MAJOR_COMPACTION)) {
+    if (CompactionType.MAJOR == compactionType) {
 
       listOfSegmentsToBeMerged = identifySegmentsToBeMergedBasedOnSize(compactionSize,
           listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, tablePath);
@@ -574,7 +574,7 @@ public final class CarbonDataMergerUtil {
    * @param listOfSegmentsAfterPreserve  the segments list after
    *        preserving the configured number of latest loads
    * @param carbonLoadModel carbon load model
-   * @param storeLocation the store location of the segment
+   * @param tablePath the store location of the segment
    * @return the list of segments that need to be merged
    *         based on the Size in case of Major compaction
    */
@@ -641,7 +641,7 @@ public final class CarbonDataMergerUtil {
 
   /**
    * For calculating the size of the specified segment
-   * @param storePath the store path of the segment
+   * @param tablePath the store path of the segment
    * @param tableIdentifier identifier of table that the segment belong to
    * @param segId segment id
    * @return the data size of the segment
@@ -814,7 +814,7 @@ public final class CarbonDataMergerUtil {
 
     long compactionSize = 0;
     switch (compactionType) {
-      case MAJOR_COMPACTION:
+      case MAJOR:
         compactionSize = CarbonProperties.getInstance().getMajorCompactionSize();
         break;
       default: // this case can not come.
@@ -926,7 +926,7 @@ public final class CarbonDataMergerUtil {
 
     List<String> validSegments = new ArrayList<>();
 
-    if (compactionTypeIUD.equals(CompactionType.IUD_DELETE_DELTA_COMPACTION)) {
+    if (CompactionType.IUD_DELETE_DELTA == compactionTypeIUD) {
       int numberDeleteDeltaFilesThreshold =
           CarbonProperties.getInstance().getNoDeleteDeltaFilesThresholdForIUDCompaction();
       List<String> deleteSegments = new ArrayList<>();
@@ -948,7 +948,7 @@ public final class CarbonDataMergerUtil {
           }
         }
       }
-    } else if (compactionTypeIUD.equals(CompactionType.IUD_UPDDEL_DELTA_COMPACTION)) {
+    } else if (CompactionType.IUD_UPDDEL_DELTA == compactionTypeIUD) {
       int numberUpdateDeltaFilesThreshold =
           CarbonProperties.getInstance().getNoUpdateDeltaFilesThresholdForIUDCompaction();
       for (String seg : Segments) {
