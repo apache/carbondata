@@ -134,7 +134,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
   // empty project, null filter
   private boolean skipScanData;
 
-  // return raw row
+  // return raw row for handoff
   private boolean useRawRow = false;
 
   @Override public void initialize(InputSplit split, TaskAttemptContext context)
@@ -350,6 +350,7 @@ public class CarbonStreamRecordReader extends RecordReader<Void, Object> {
             scanMore = false;
           } else {
             if (useRawRow) {
+              // read raw row for streaming handoff which does not require decode raw row
               readRawRowFromStream();
             } else {
               readRowFromStream();

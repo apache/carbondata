@@ -35,7 +35,7 @@ import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, Car
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 import org.apache.carbondata.spark.util.CommonUtil
-import org.apache.carbondata.streaming.StreamHandoffUtil
+import org.apache.carbondata.streaming.StreamHandoffRDD
 
 /**
  * Command for the compaction in alter table command
@@ -131,7 +131,7 @@ case class AlterTableCompactionCommand(
     }
 
     if (compactionType == CompactionType.STREAMING) {
-      StreamHandoffUtil.startStreamingHandoffThread(
+      StreamHandoffRDD.startStreamingHandoffThread(
         carbonLoadModel,
         sqlContext,
         storeLocation)

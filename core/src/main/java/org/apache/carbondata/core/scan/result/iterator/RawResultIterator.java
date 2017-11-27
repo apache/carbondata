@@ -64,10 +64,6 @@ public class RawResultIterator extends CarbonIterator<Object[]> {
     this.destinationSegProperties = destinationSegProperties;
   }
 
-  public RawResultIterator() {
-    this(null, null, null);
-  }
-
   @Override public boolean hasNext() {
 
     if (null == batch || checkIfBatchIsProcessedCompletely(batch)) {

@@ -116,7 +116,7 @@ class CarbonMergerRDD[K, V](
 
         // During UPDATE DELTA COMPACTION case all the blocks received in compute belongs to
         // one segment, so max cardinality will be calculated from first block of segment
-        if(CompactionType.IUD_UPDDEL_DELTA == carbonMergerMapping.campactionType) {
+        if (CompactionType.IUD_UPDDEL_DELTA == carbonMergerMapping.campactionType) {
           var dataFileFooter: DataFileFooter = null
           try {
             // As the tableBlockInfoList is sorted take the ColCardinality from the last

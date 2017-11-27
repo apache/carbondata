@@ -198,6 +198,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     for (RawResultIterator resultIterator : resultIteratorList) {
       if (CompactionType.STREAMING == compactionType) {
         while (resultIterator.hasNext()) {
+          // the input iterator of streaming segment is already using raw row
           addRowForSorting(resultIterator.next());
           isRecordFound = true;
         }
