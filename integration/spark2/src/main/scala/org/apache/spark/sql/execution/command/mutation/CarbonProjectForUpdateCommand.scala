@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command.mutation
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.management.LoadTableCommand
+import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.storage.StorageLevel
@@ -33,16 +33,13 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, UpdateTablePostEvent, UpdateTablePreEvent}
 import org.apache.carbondata.processing.loading.FailureCauses
 
-private[sql] case class ProjectForUpdateCommand(
-    plan: LogicalPlan, tableIdentifier: Seq[String])
-  extends RunnableCommand with DataProcessCommand {
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processData(sparkSession)
-  }
+private[sql] case class CarbonProjectForUpdateCommand(
+    plan: LogicalPlan,
+    tableIdentifier: Seq[String])
+  extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER = LogServiceFactory.getLogService(ProjectForUpdateCommand.getClass.getName)
+    val LOGGER = LogServiceFactory.getLogService(CarbonProjectForUpdateCommand.getClass.getName)
     IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)
     val res = plan find {
       case relation: LogicalRelation if relation.relation
@@ -206,7 +203,7 @@ private[sql] case class ProjectForUpdateCommand(
 
     val header = getHeader(carbonRelation, plan)
 
-    LoadTableCommand(
+    CarbonLoadDataCommand(
       Some(carbonRelation.identifier.getCarbonTableIdentifier.getDatabaseName),
       carbonRelation.identifier.getCarbonTableIdentifier.getTableName,
       null,

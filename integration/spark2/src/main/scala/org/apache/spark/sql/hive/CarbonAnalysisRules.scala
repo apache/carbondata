@@ -25,7 +25,7 @@ import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.Inner
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules._
-import org.apache.spark.sql.execution.command.mutation.ProjectForDeleteCommand
+import org.apache.spark.sql.execution.command.mutation.CarbonProjectForDeleteCommand
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
@@ -158,7 +158,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         // include tuple id in subquery
         Project(projList, relation)
     }
-    ProjectForDeleteCommand(
+    CarbonProjectForDeleteCommand(
       selectPlan,
       tidSeq,
       System.currentTimeMillis().toString)

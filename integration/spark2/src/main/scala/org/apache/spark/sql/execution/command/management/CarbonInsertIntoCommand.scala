@@ -19,24 +19,20 @@ package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Dataset, Row, SparkSession}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
-import org.apache.spark.sql.execution.command.{DataProcessCommand, RunnableCommand}
+import org.apache.spark.sql.execution.command.DataCommand
 
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
-case class LoadTableByInsertCommand(
+case class CarbonInsertIntoCommand(
     relation: CarbonDatasourceHadoopRelation,
     child: LogicalPlan,
     overwrite: Boolean)
-  extends RunnableCommand with DataProcessCommand {
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processData(sparkSession)
-  }
+  extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val df = Dataset.ofRows(sparkSession, child)
     val header = relation.tableSchema.get.fields.map(_.name).mkString(",")
-    val load = LoadTableCommand(
+    val load = CarbonLoadDataCommand(
       Some(relation.carbonRelation.databaseName),
       relation.carbonRelation.tableName,
       null,

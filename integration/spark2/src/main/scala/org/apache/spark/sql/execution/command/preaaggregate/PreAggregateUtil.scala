@@ -459,10 +459,6 @@ object PreAggregateUtil {
     }
   }
 
-  def checkMainTableLoad(carbonTable: CarbonTable): Boolean = {
-    SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath).nonEmpty
-  }
-
   /**
    * Below method will be used to update logical plan
    * this is required for creating pre aggregate tables,

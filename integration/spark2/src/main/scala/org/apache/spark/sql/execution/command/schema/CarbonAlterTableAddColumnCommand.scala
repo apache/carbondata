@@ -20,9 +20,7 @@ package org.apache.spark.sql.execution.command.schema
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableColumnSchemaGenerator, RunnableCommand}
-import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.internal.SessionState
+import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableColumnSchemaGenerator, MetadataCommand}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -36,9 +34,9 @@ import org.apache.carbondata.spark.rdd.{AlterTableAddColumnRDD, AlterTableDropCo
 
 private[sql] case class CarbonAlterTableAddColumnCommand(
     alterTableAddColumnsModel: AlterTableAddColumnsModel)
-  extends RunnableCommand {
+  extends MetadataCommand {
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = alterTableAddColumnsModel.tableName
     val dbName = alterTableAddColumnsModel.databaseName

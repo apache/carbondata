@@ -15,13 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.command
+package org.apache.spark.sql.execution.command.table
 
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.util.CarbonException
 
@@ -29,7 +30,7 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
@@ -40,14 +41,9 @@ case class CarbonDropTableCommand(
     databaseNameOp: Option[String],
     tableName: String,
     dropChildTable: Boolean = false)
-  extends RunnableCommand with SchemaProcessCommand with DataProcessCommand {
+  extends AtomicRunnableCommand {
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processSchema(sparkSession)
-    processData(sparkSession)
-  }
-
-  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val dbName = GetDB.getDatabaseName(databaseNameOp, sparkSession)
     val identifier = TableIdentifier(tableName, Option(dbName))
@@ -57,8 +53,8 @@ case class CarbonDropTableCommand(
     val databaseLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
       CarbonProperties.getStorePath)
     val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName.toLowerCase
-    val absoluteTableIdentifier = AbsoluteTableIdentifier
-      .from(tablePath, dbName.toLowerCase, tableName.toLowerCase)
+    val absoluteTableIdentifier =
+      AbsoluteTableIdentifier.from(tablePath, dbName.toLowerCase, tableName.toLowerCase)
     catalog.checkSchemasModifiedTimeAndReloadTables()
     val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
     try {
@@ -116,12 +112,11 @@ case class CarbonDropTableCommand(
         LOGGER.error(ex, s"Dropping table $dbName.$tableName failed")
         CarbonException.analysisException(
           s"Dropping table $dbName.$tableName failed: ${ ex.getMessage }")
-    }
-    finally {
+    } finally {
       if (carbonLocks.nonEmpty) {
         val unlocked = carbonLocks.forall(_.unlock())
         if (unlocked) {
-          logInfo("Table MetaData Unlocked Successfully")
+          LOGGER.info("Table MetaData Unlocked Successfully")
         }
       }
     }
@@ -144,4 +139,5 @@ case class CarbonDropTableCommand(
     }
     Seq.empty
   }
+
 }

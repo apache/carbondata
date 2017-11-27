@@ -25,7 +25,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.execution.command.{AlterTableSplitPartitionModel, DataProcessCommand, RunnableCommand, SchemaProcessCommand, SplitPartitionCallableModel}
+import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.{AlterTableUtil, PartitionUtils}
 
@@ -51,20 +51,14 @@ import org.apache.carbondata.spark.partition.SplitPartitionCallable
  * Command for Alter Table Add & Split partition
  * Add is a special case of Splitting the default partition (part0)
  */
-case class AlterTableSplitCarbonPartitionCommand(
+case class CarbonAlterTableSplitPartitionCommand(
     splitPartitionModel: AlterTableSplitPartitionModel)
-  extends RunnableCommand with DataProcessCommand with SchemaProcessCommand {
+  extends AtomicRunnableCommand {
 
   private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
   private val oldPartitionIds: util.ArrayList[Int] = new util.ArrayList[Int]()
 
-  // TODO will add rollback function in case of process data failure
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processSchema(sparkSession)
-    processData(sparkSession)
-  }
-
-  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val dbName = splitPartitionModel.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
     val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val tableName = splitPartitionModel.tableName

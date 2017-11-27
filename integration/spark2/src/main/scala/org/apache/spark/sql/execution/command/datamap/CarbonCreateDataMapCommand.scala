@@ -29,8 +29,6 @@ import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 /**
  * Below command class will be used to create datamap on table
  * and updating the parent table about the datamap information
- *
- * @param queryString
  */
 case class CarbonCreateDataMapCommand(
     dataMapName: String,
@@ -38,21 +36,19 @@ case class CarbonCreateDataMapCommand(
     dmClassName: String,
     dmproperties: Map[String, String],
     queryString: Option[String])
-  extends RunnableCommand with SchemaProcessCommand {
+  extends AtomicRunnableCommand {
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processSchema(sparkSession)
-  }
-
-  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     if (dmClassName.equals("org.apache.carbondata.datamap.AggregateDataMapHandler") ||
         dmClassName.equalsIgnoreCase("preaggregate")) {
-      CreatePreAggregateTableCommand(dataMapName,
+      CreatePreAggregateTableCommand(
+        dataMapName,
         tableIdentifier,
         dmClassName,
         dmproperties,
-        queryString.get).run(sparkSession)
+        queryString.get
+      ).processMetadata(sparkSession)
     } else {
       val dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
       dataMapSchema.setProperties(new java.util.HashMap[String, String](dmproperties.asJava))
@@ -60,9 +56,40 @@ case class CarbonCreateDataMapCommand(
       // upadting the parent table about dataschema
       PreAggregateUtil.updateMainTable(dbName, tableIdentifier.table, dataMapSchema, sparkSession)
     }
-    LOGGER.audit(s"DataMap ${dataMapName} successfully added to Table ${tableIdentifier.table}")
+    LOGGER.audit(s"DataMap $dataMapName successfully added to Table ${ tableIdentifier.table }")
     Seq.empty
   }
+
+  override def processData(sparkSession: SparkSession): Seq[Row] = {
+    if (dmClassName.equals("org.apache.carbondata.datamap.AggregateDataMapHandler") ||
+        dmClassName.equalsIgnoreCase("preaggregate")) {
+      CreatePreAggregateTableCommand(
+        dataMapName,
+        tableIdentifier,
+        dmClassName,
+        dmproperties,
+        queryString.get
+      ).processData(sparkSession)
+    } else {
+      Seq.empty
+    }
+  }
+
+  override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
+    if (dmClassName.equals("org.apache.carbondata.datamap.AggregateDataMapHandler") ||
+        dmClassName.equalsIgnoreCase("preaggregate")) {
+      CreatePreAggregateTableCommand(
+        dataMapName,
+        tableIdentifier,
+        dmClassName,
+        dmproperties,
+        queryString.get
+      ).undoMetadata(sparkSession, exception)
+    } else {
+      Seq.empty
+    }
+  }
+
 }
 
 

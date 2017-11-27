@@ -24,7 +24,7 @@ import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.AlterTableModel
-import org.apache.spark.sql.execution.command.management.AlterTableCompactionCommand
+import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompactionCommand
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -139,7 +139,7 @@ object HorizontalCompaction {
         Some(factTimeStamp),
         "")
 
-      AlterTableCompactionCommand(alterTableModel).run(sparkSession)
+      CarbonAlterTableCompactionCommand(alterTableModel).run(sparkSession)
     }
     catch {
       case e: Exception =>

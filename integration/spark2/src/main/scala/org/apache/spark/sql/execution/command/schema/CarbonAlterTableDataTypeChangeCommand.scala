@@ -20,8 +20,7 @@ package org.apache.spark.sql.execution.command.schema
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, RunnableCommand}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.execution.command.{AlterTableDataTypeChangeModel, MetadataCommand}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -34,9 +33,9 @@ import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil}
 
 private[sql] case class CarbonAlterTableDataTypeChangeCommand(
     alterTableDataTypeChangeModel: AlterTableDataTypeChangeModel)
-  extends RunnableCommand {
+  extends MetadataCommand {
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = alterTableDataTypeChangeModel.tableName
     val dbName = alterTableDataTypeChangeModel.databaseName

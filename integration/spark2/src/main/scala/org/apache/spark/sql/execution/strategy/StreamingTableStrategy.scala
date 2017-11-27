@@ -22,7 +22,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command.AlterTableRenameCommand
-import org.apache.spark.sql.execution.command.mutation.{DeleteExecution, ProjectForDeleteCommand, ProjectForUpdateCommand}
+import org.apache.spark.sql.execution.command.mutation.{CarbonProjectForDeleteCommand, CarbonProjectForUpdateCommand, DeleteExecution}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
 import org.apache.spark.sql.hive.CarbonRelation
 
@@ -35,12 +35,12 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
-      case ProjectForUpdateCommand(_, tableIdentifier) =>
+      case CarbonProjectForUpdateCommand(_, tableIdentifier) =>
         rejectIfStreamingTable(
           DeleteExecution.getTableIdentifier(tableIdentifier),
           "Data update")
         Nil
-      case ProjectForDeleteCommand(_, tableIdentifier, _) =>
+      case CarbonProjectForDeleteCommand(_, tableIdentifier, _) =>
         rejectIfStreamingTable(
           DeleteExecution.getTableIdentifier(tableIdentifier),
           "Date delete")

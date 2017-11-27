@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, DataProcessCommand, RunnableCommand}
+import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, DataCommand, DataProcessOperation, RunnableCommand}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.util.CarbonException
 
@@ -40,14 +40,10 @@ import org.apache.carbondata.streaming.StreamHandoffRDD
 /**
  * Command for the compaction in alter table command
  */
-case class AlterTableCompactionCommand(
+case class CarbonAlterTableCompactionCommand(
     alterTableModel: AlterTableModel,
     tableInfoOp: Option[TableInfo] = None)
-  extends RunnableCommand with DataProcessCommand {
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processData(sparkSession)
-  }
+  extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService =

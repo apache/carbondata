@@ -27,25 +27,21 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, Lock
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.events.{DeleteFromTablePostEvent, DeleteFromTablePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.FailureCauses
+
 /**
  * IUD update delete and compaction framework.
  *
  */
-private[sql] case class ProjectForDeleteCommand(
+private[sql] case class CarbonProjectForDeleteCommand(
     plan: LogicalPlan,
     identifier: Seq[String],
-    timestamp: String) extends RunnableCommand with DataProcessCommand {
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processData(sparkSession)
-  }
+    timestamp: String)
+  extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
       IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)
     val dataFrame = Dataset.ofRows(sparkSession, plan)
-    //    dataFrame.show(truncate = false)
-    //    dataFrame.collect().foreach(println)
     val dataRdd = dataFrame.rdd
 
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore

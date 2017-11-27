@@ -18,7 +18,7 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{Checker, DataProcessCommand, RunnableCommand}
+import org.apache.spark.sql.execution.command.{Checker, DataCommand, DataProcessOperation, RunnableCommand}
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -34,15 +34,11 @@ import org.apache.carbondata.spark.util.CommonUtil
  * in the table.
  * If table name is not provided, it will clean garbage segment in all tables.
  */
-case class CleanFilesCommand(
+case class CarbonCleanFilesCommand(
     databaseNameOp: Option[String],
     tableName: Option[String],
     forceTableClean: Boolean = false)
-  extends RunnableCommand with DataProcessCommand {
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processData(sparkSession)
-  }
+  extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName.get)(sparkSession)
