@@ -37,7 +37,7 @@ private[sql] case class CarbonAlterTableUnsetCommand(
   }
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    AlterTableUtil.modifyTableComment(tableIdentifier, Map.empty[String, String],
+    AlterTableUtil.modifyTableProperties(tableIdentifier, Map.empty[String, String],
       propKeys, false)(sparkSession)
     Seq.empty
   }
