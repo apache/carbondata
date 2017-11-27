@@ -26,6 +26,7 @@ import org.apache.spark.sql.sources
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonContainsWith
 import org.apache.spark.sql.CarbonEndsWith
+import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -41,7 +42,6 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  * All filter conversions are done here.
  */
 object CarbonFilters {
-
 
   /**
    * Converts data sources filters to carbon filter predicates.

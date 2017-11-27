@@ -19,21 +19,20 @@ package org.apache.spark.sql.execution.command.preaaggregate
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.collection.JavaConverters._
 
-import org.apache.spark.SparkConf
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
+import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFunction, UnresolvedRelation}
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Expression, NamedExpression, ScalaUDF}
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, NamedExpression, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField, Field}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.hive.HiveExternalCatalog.{DATASOURCE_SCHEMA_NUMPARTS, DATASOURCE_SCHEMA_PART_PREFIX}
 import org.apache.spark.sql.types.DataType
+import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
@@ -52,7 +51,7 @@ object PreAggregateUtil {
 
   def getParentCarbonTable(plan: LogicalPlan): CarbonTable = {
     plan match {
-      case Aggregate(_, _, SubqueryAlias(_, logicalRelation: LogicalRelation, _))
+      case Aggregate(_, _, SubqueryAlias(_, logicalRelation: LogicalRelation))
         if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
         logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].
           carbonRelation.metaData.carbonTable
@@ -76,7 +75,7 @@ object PreAggregateUtil {
   def validateActualSelectPlanAndGetAttributes(plan: LogicalPlan,
       selectStmt: String): scala.collection.mutable.LinkedHashMap[Field, DataMapField] = {
     plan match {
-      case Aggregate(groupByExp, aggExp, SubqueryAlias(_, logicalRelation: LogicalRelation, _)) =>
+      case Aggregate(groupByExp, aggExp, SubqueryAlias(_, logicalRelation: LogicalRelation)) =>
         getFieldsFromPlan(groupByExp, aggExp, logicalRelation, selectStmt)
       case Aggregate(groupByExp, aggExp, logicalRelation: LogicalRelation) =>
         getFieldsFromPlan(groupByExp, aggExp, logicalRelation, selectStmt)

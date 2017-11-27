@@ -43,6 +43,7 @@ class TestSegmentReading extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test SET -V for segment reading property") {
+    sql("SET -v").show(200,false)
     try {
       checkExistence(sql("SET -v"), true, "Property to configure the list of segments to query.")
     }

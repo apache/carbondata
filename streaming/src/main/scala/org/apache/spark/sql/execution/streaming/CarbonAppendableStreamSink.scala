@@ -23,7 +23,9 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.hadoop.mapreduce.v2.api.records.JobId
-import org.apache.spark.{SparkHadoopWriter, TaskContext}
+import org.apache.spark._
+import org.apache.spark.TaskContext
+import org.apache.spark.internal.io._
 import org.apache.spark.internal.io.FileCommitProtocol
 import org.apache.spark.internal.io.FileCommitProtocol.TaskCommitMessage
 import org.apache.spark.sql.{DataFrame, SparkSession}
@@ -39,6 +41,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.stats.QueryStatistic
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
+import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.streaming.CarbonStreamException
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
@@ -168,7 +171,7 @@ object CarbonAppendableStreamSink {
     val job = Job.getInstance(hadoopConf)
     job.setOutputKeyClass(classOf[Void])
     job.setOutputValueClass(classOf[InternalRow])
-    val jobId = SparkHadoopWriter.createJobID(new Date, batchId.toInt)
+    val jobId = CarbonInputFormatUtil.getJobId(new Date, batchId.toInt)
     job.setJobID(jobId)
 
     val description = WriteDataFileJobDescription(
@@ -247,7 +250,7 @@ object CarbonAppendableStreamSink {
       iterator: Iterator[InternalRow]
   ): TaskCommitMessage = {
 
-    val jobId = SparkHadoopWriter.createJobID(new Date, sparkStageId)
+    val jobId = CarbonInputFormatUtil.getJobId(new Date, sparkStageId)
     val taskId = new TaskID(jobId, TaskType.MAP, sparkPartitionId)
     val taskAttemptId = new TaskAttemptID(taskId, sparkAttemptNumber)
 

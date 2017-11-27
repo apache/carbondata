@@ -23,8 +23,10 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.catalyst.expressions.{Cast, Literal}
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.types.TimestampType
 import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -215,12 +217,13 @@ object CarbonStore {
   }
 
   private def validateTimeFormat(timestamp: String): Long = {
-    val timeObj = Cast(Literal(timestamp), TimestampType).eval()
-    if (null == timeObj) {
-      val errorMessage = "Error: Invalid load start time format: " + timestamp
-      throw new MalformedCarbonCommandException(errorMessage)
+    try {
+      DateTimeUtils.stringToTimestamp(UTF8String.fromString(timestamp)).get
+    } catch {
+      case e: Exception =>
+        val errorMessage = "Error: Invalid load start time format: " + timestamp
+        throw new MalformedCarbonCommandException(errorMessage)
     }
-    timeObj.asInstanceOf[Long]
   }
 
 }
