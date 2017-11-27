@@ -338,7 +338,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       rowNumsEachBatch = 100,
       intervalOfSource = 3,
       intervalOfIngest = 5,
-      continueSeconds = 20,
+      continueSeconds = 30,
       generateBadRecords = false,
       badRecordAction = "force"
     )
