@@ -25,11 +25,15 @@ import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 
 class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
+
+  val bad_records_action = CarbonProperties.getInstance()
+    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
 
   protected def createAndLoadInputTable(inputTableName: String, inputPath: String): Unit = {
     sql(
@@ -83,6 +87,8 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   override def beforeAll(): Unit = {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
     dropTable("csv_table")
     dropTable("carbon_table")
     createAndLoadInputTable("csv_table", s"$resourcesPath/data_alltypes.csv")
@@ -92,6 +98,10 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   override def afterAll(): Unit = {
     dropTable("csv_table")
     dropTable("carbon_table")
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+      bad_records_action)
+
   }
 
   private lazy val location =

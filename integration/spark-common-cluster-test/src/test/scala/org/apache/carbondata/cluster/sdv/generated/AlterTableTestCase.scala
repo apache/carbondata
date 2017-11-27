@@ -23,6 +23,7 @@ import org.apache.spark.sql.common.util._
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
@@ -1067,7 +1068,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   val p3 = prop.getProperty("carbon.horizontal.delete.compaction.threshold", CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
   val p4 = prop.getProperty("carbon.compaction.level.threshold", CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
   val p5 = prop.getProperty("carbon.enable.auto.load.merge", CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
-  val p6 = prop.getProperty("carbon.bad.records.action", CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
+  val p6 = prop.getProperty("carbon.bad.records.action", LoggerAction.FORCE.name())
 
   override protected def beforeAll() {
     // Adding new properties

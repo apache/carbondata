@@ -1273,10 +1273,14 @@ public final class CarbonCommonConstants {
       "spark.sql.sources.schemaStringLengthThreshold";
 
   public static final int SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT = 4000;
+
   @CarbonProperty
   public static final String CARBON_BAD_RECORDS_ACTION = "carbon.bad.records.action";
 
-  public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FORCE";
+  /**
+   * FAIL action will fail the load in case of bad records in loading data
+   */
+  public static final String CARBON_BAD_RECORDS_ACTION_DEFAULT = "FAIL";
 
   public static final String ENABLE_HIVE_SCHEMA_META_STORE = "spark.carbon.hive.schema.store";
 
