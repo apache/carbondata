@@ -15,14 +15,14 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.command
+package org.apache.spark.sql.execution.command.table
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql._
-import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession, _}
 import org.apache.spark.sql.catalyst.analysis.TableAlreadyExistsException
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
+import org.apache.spark.sql.execution.command.{Field, MetadataCommand, TableModel, TableNewProcessor}
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -36,13 +36,9 @@ import org.apache.carbondata.events.{CreateTablePostExecutionEvent, CreateTableP
 case class CarbonCreateTableCommand(
     cm: TableModel,
     createDSTable: Boolean = true)
-  extends RunnableCommand with SchemaProcessCommand {
+  extends MetadataCommand {
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processSchema(sparkSession)
-  }
-
-  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val storePath = CarbonProperties.getStorePath
     CarbonEnv.getInstance(sparkSession).carbonMetastore.
       checkSchemasModifiedTimeAndReloadTables()

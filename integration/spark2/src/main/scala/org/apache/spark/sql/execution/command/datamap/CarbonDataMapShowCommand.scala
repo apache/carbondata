@@ -21,8 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.execution.command.{Checker, DataProcessCommand, RunnableCommand}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.types.StringType
 
 /**
@@ -33,16 +32,12 @@ import org.apache.spark.sql.types.StringType
 case class CarbonDataMapShowCommand(
     databaseNameOp: Option[String],
     tableName: String)
-  extends RunnableCommand with DataProcessCommand {
+  extends DataCommand {
 
   override def output: Seq[Attribute] = {
     Seq(AttributeReference("DataMapName", StringType, nullable = false)(),
       AttributeReference("ClassName", StringType, nullable = false)(),
       AttributeReference("Associated Table", StringType, nullable = false)())
-  }
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processData(sparkSession)
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {

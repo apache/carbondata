@@ -23,7 +23,7 @@ import java.util.concurrent.{Executors, ExecutorService, Future}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
-import org.apache.spark.sql.execution.command.{AlterTableDropPartitionModel, DataProcessCommand, DropPartitionCallableModel, RunnableCommand, SchemaProcessCommand}
+import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.AlterTableUtil
 
@@ -44,23 +44,17 @@ import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, Car
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.partition.DropPartitionCallable
 
-case class AlterTableDropCarbonPartitionCommand(
+case class CarbonAlterTableDropPartitionCommand(
     model: AlterTableDropPartitionModel)
-  extends RunnableCommand with DataProcessCommand with SchemaProcessCommand {
+  extends AtomicRunnableCommand {
 
   private val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
   private val oldPartitionIds: util.ArrayList[Int] = new util.ArrayList[Int]()
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     if (model.partitionId.equals("0")) {
       sys.error(s"Cannot drop default partition! Please use delete statement!")
     }
-    processSchema(sparkSession)
-    processData(sparkSession)
-    Seq.empty
-  }
-
-  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
     val dbName = model.databaseName.getOrElse(sparkSession.catalog.currentDatabase)
     val tableName = model.tableName
     val carbonMetaStore = CarbonEnv.getInstance(sparkSession).carbonMetastore

@@ -22,9 +22,10 @@ import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
-import org.apache.spark.sql.execution.command.management.{AlterTableCompactionCommand, CarbonShowLoadsCommand, LoadTableByInsertCommand, LoadTableCommand}
-import org.apache.spark.sql.execution.command.partition.ShowCarbonPartitionsCommand
+import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand, CarbonLoadDataCommand}
+import org.apache.spark.sql.execution.command.partition.CarbonShowCarbonPartitionsCommand
 import org.apache.spark.sql.execution.command.schema._
+import org.apache.spark.sql.execution.command.table.{CarbonDescribeFormattedCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
 import org.apache.spark.util.FileUtils
@@ -45,7 +46,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(identifier)(sparkSession) =>
         ExecutedCommandExec(
-          LoadTableCommand(
+          CarbonLoadDataCommand(
             identifier.database,
             identifier.table.toLowerCase,
             path,
@@ -69,22 +70,15 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         ExecutedCommandExec(
           CarbonDropTableCommand(ifNotExists, identifier.database,
             identifier.table.toLowerCase)) :: Nil
-      case ShowLoadsCommand(databaseName, table, limit) =>
-        ExecutedCommandExec(
-          CarbonShowLoadsCommand(
-            databaseName,
-            table.toLowerCase,
-            limit,
-            plan.output)) :: Nil
       case InsertIntoCarbonTable(relation: CarbonDatasourceHadoopRelation,
       _, child: LogicalPlan, overwrite, _) =>
-        ExecutedCommandExec(LoadTableByInsertCommand(relation, child, overwrite)) :: Nil
+        ExecutedCommandExec(CarbonInsertIntoCommand(relation, child, overwrite)) :: Nil
       case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
         FileUtils.createDatabaseDirectory(dbName, CarbonProperties.getStorePath)
         ExecutedCommandExec(createDb) :: Nil
       case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>
         ExecutedCommandExec(CarbonDropDatabaseCommand(drop)) :: Nil
-      case alterTable@AlterTableCompactionCommand(altertablemodel, _) =>
+      case alterTable@CarbonAlterTableCompactionCommand(altertablemodel, _) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(TableIdentifier(altertablemodel.tableName,
             altertablemodel.dbName))(sparkSession)
@@ -152,7 +146,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(t)(sparkSession)
         if (isCarbonTable) {
-          ExecutedCommandExec(ShowCarbonPartitionsCommand(t)) :: Nil
+          ExecutedCommandExec(CarbonShowCarbonPartitionsCommand(t)) :: Nil
         } else {
           ExecutedCommandExec(ShowPartitionsCommand(t, cols)) :: Nil
         }
@@ -185,7 +179,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
               "Streaming property can not be changed to 'false' once it is 'true'")
           }
         }
-        ExecutedCommandExec(AlterTableSetCommand(tableName, properties, isView)) :: Nil
+        ExecutedCommandExec(CarbonAlterTableSetCommand(tableName, properties, isView)) :: Nil
       }
       case AlterTableUnsetPropertiesCommand(tableName, propKeys, ifExists, isView)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
@@ -195,7 +189,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           throw new MalformedCarbonCommandException(
             "Streaming property can not be removed")
         }
-        ExecutedCommandExec(AlterTableUnsetCommand(tableName, propKeys, ifExists, isView)) :: Nil
+        ExecutedCommandExec(
+          CarbonAlterTableUnsetCommand(tableName, propKeys, ifExists, isView)) :: Nil
       }
       case _ => Nil
     }

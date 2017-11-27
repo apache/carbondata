@@ -18,44 +18,40 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{Checker, DataProcessCommand, RunnableCommand}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 
 import org.apache.carbondata.api.CarbonStore
-import org.apache.carbondata.events.{DeleteSegmentByDatePostEvent, DeleteSegmentByDatePreEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{DeleteSegmentByIdPostEvent, DeleteSegmentByIdPreEvent, OperationContext, OperationListenerBus}
 
-case class DeleteLoadByLoadDateCommand(
+case class CarbonDeleteLoadByIdCommand(
+    loadIds: Seq[String],
     databaseNameOp: Option[String],
-    tableName: String,
-    dateField: String,
-    loadDate: String)
-  extends RunnableCommand with DataProcessCommand {
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processData(sparkSession)
-  }
+    tableName: String)
+  extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     Checker.validateTableExists(databaseNameOp, tableName, sparkSession)
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     val operationContext = new OperationContext
-    val deleteSegmentByDatePreEvent: DeleteSegmentByDatePreEvent =
-      DeleteSegmentByDatePreEvent(carbonTable,
-        loadDate,
-        sparkSession)
-    OperationListenerBus.getInstance.fireEvent(deleteSegmentByDatePreEvent, operationContext)
 
-    CarbonStore.deleteLoadByDate(
-      loadDate,
+    val deleteSegmentByIdPreEvent: DeleteSegmentByIdPreEvent =
+      DeleteSegmentByIdPreEvent(carbonTable,
+        loadIds,
+        sparkSession)
+    OperationListenerBus.getInstance.fireEvent(deleteSegmentByIdPreEvent, operationContext)
+
+    CarbonStore.deleteLoadById(
+      loadIds,
       GetDB.getDatabaseName(databaseNameOp, sparkSession),
       tableName,
-      carbonTable)
-    val deleteSegmentPostEvent: DeleteSegmentByDatePostEvent =
-      DeleteSegmentByDatePostEvent(carbonTable,
-        loadDate,
+      carbonTable
+    )
+
+    val deleteSegmentPostEvent: DeleteSegmentByIdPostEvent =
+      DeleteSegmentByIdPostEvent(carbonTable,
+        loadIds,
         sparkSession)
     OperationListenerBus.getInstance.fireEvent(deleteSegmentPostEvent, operationContext)
-
     Seq.empty
   }
 }

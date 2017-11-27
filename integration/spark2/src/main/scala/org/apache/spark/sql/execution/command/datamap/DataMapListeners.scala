@@ -18,44 +18,41 @@ package org.apache.spark.sql.execution.command.datamap
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.execution.command.CarbonDropTableCommand
+import org.apache.spark.sql.execution.command.AtomicRunnableCommand
+import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.events.{DropDataMapPostEvent, DropTablePostEvent, Event, OperationContext, OperationEventListener}
 
 object DataMapDropTablePostListener extends OperationEventListener {
 
   /**
-   * Called on a specified event occurrence
-   *
-   * @param event
+   * Called on DropTablePostEvent occurrence
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     val dropPostEvent = event.asInstanceOf[DropTablePostEvent]
     val carbonTable = dropPostEvent.carbonTable
     val sparkSession = dropPostEvent.sparkSession
     if (carbonTable.isDefined && carbonTable.get.hasDataMapSchema) {
+      // drop all child tables
       val childSchemas = carbonTable.get.getTableInfo.getDataMapSchemaList
-      for (childSchema: DataMapSchema <- childSchemas.asScala) {
-        if (childSchema.getRelationIdentifier != null) {
+      childSchemas.asScala
+        .filter(_.getRelationIdentifier != null)
+        .foreach { childSchema =>
           CarbonDropTableCommand(
             ifExistsSet = true,
             Some(childSchema.getRelationIdentifier.getDatabaseName),
-            childSchema.getRelationIdentifier.getTableName, true
+            childSchema.getRelationIdentifier.getTableName,
+            dropChildTable = true
           ).run(sparkSession)
         }
-      }
     }
-
   }
 }
 
 object DropDataMapPostListener extends OperationEventListener {
 
   /**
-   * Called on a specified event occurrence
-   *
-   * @param event
+   * Called on DropDataMapPostEvent occurrence
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     val dropPostEvent = event.asInstanceOf[DropDataMapPostEvent]
@@ -63,9 +60,12 @@ object DropDataMapPostListener extends OperationEventListener {
     val sparkSession = dropPostEvent.sparkSession
     if (dataMapSchema.isDefined) {
       if (dataMapSchema.get.getRelationIdentifier != null) {
-        CarbonDropTableCommand(ifExistsSet = true,
+        CarbonDropTableCommand(
+          ifExistsSet = true,
           Some(dataMapSchema.get.getRelationIdentifier.getDatabaseName),
-          dataMapSchema.get.getRelationIdentifier.getTableName, true).run(sparkSession)
+          dataMapSchema.get.getRelationIdentifier.getTableName,
+          dropChildTable = true
+        ).run(sparkSession)
       }
     }
   }

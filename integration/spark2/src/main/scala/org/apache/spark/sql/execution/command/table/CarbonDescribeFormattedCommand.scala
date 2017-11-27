@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.command
+package org.apache.spark.sql.execution.command.table
 
 import scala.collection.JavaConverters._
 
@@ -23,24 +23,20 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.SparkPlan
+import org.apache.spark.sql.execution.command.MetadataCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.codehaus.jackson.map.ObjectMapper
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
-import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 
 private[sql] case class CarbonDescribeFormattedCommand(
     child: SparkPlan,
     override val output: Seq[Attribute],
     tblIdentifier: TableIdentifier)
-  extends RunnableCommand with SchemaProcessCommand {
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processSchema(sparkSession)
-  }
+  extends MetadataCommand {
 
   private def getColumnGroups(dimensions: List[CarbonDimension]): Seq[(String, String, String)] = {
     var results: Seq[(String, String, String)] =
@@ -59,7 +55,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results
   }
 
-  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tblIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
     val mapper = new ObjectMapper()

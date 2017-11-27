@@ -25,9 +25,10 @@ import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonMetaStoreFactory, Carbo
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util._
-import org.apache.carbondata.events.{CarbonEnvInitPreEvent, OperationListenerBus}
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.events.{CarbonEnvInitPreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
@@ -68,7 +69,7 @@ class CarbonEnv {
         carbonSessionInfo.setSessionParams(sessionParams)
         ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
         val config = new CarbonSQLConf(sparkSession)
-        if (sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT) == None) {
+        if (sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT).isEmpty) {
           config.addDefaultCarbonParams()
         }
         // add session params after adding DefaultCarbonParams
@@ -116,7 +117,7 @@ object CarbonEnv {
   }
 
   /**
-   * Return carbon table instance by looking up relation in `sparkSession`
+   * Return carbon table instance by looking up table in `sparkSession`
    */
   def getCarbonTable(
       databaseNameOp: Option[String],
@@ -130,6 +131,9 @@ object CarbonEnv {
       .carbonTable
   }
 
+  /**
+   * Return carbon table instance by looking up table in `sparkSession`
+   */
   def getCarbonTable(
       tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession): CarbonTable = {
@@ -139,5 +143,44 @@ object CarbonEnv {
       .lookupRelation(tableIdentifier)(sparkSession)
       .asInstanceOf[CarbonRelation]
       .carbonTable
+  }
+
+  /**
+   * Return database name or get default name from sparkSession
+   */
+  def getDatabaseName(
+      databaseNameOp: Option[String]
+  )(sparkSession: SparkSession): String = {
+    databaseNameOp.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase)
+  }
+
+  /**
+   * Return table path for specified table
+   */
+  def getTablePath(
+      databaseNameOp: Option[String],
+      tableName: String
+  )(sparkSession: SparkSession): String = {
+    val dbLocation = GetDB.getDatabaseLocation(
+      databaseNameOp.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
+      sparkSession,
+      CarbonProperties.getStorePath)
+    dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
+  }
+
+  /**
+   * Return metadata path for specified table
+   */
+  def getMetadataPath(
+      databaseNameOp: Option[String],
+      tableName: String
+  )(sparkSession: SparkSession): String = {
+    val absoluteTableIdentifier = AbsoluteTableIdentifier.from(
+      getTablePath(databaseNameOp, tableName)(sparkSession),
+      getDatabaseName(databaseNameOp)(sparkSession),
+      tableName)
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)
+    val schemaFilePath = carbonTablePath.getSchemaFilePath
+    CarbonTablePath.getFolderContainingFile(schemaFilePath)
   }
 }

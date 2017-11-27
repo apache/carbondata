@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command.partition
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.execution.command.{RunnableCommand, SchemaProcessCommand}
+import org.apache.spark.sql.execution.command.MetadataCommand
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -29,17 +29,13 @@ import org.apache.carbondata.spark.util.CommonUtil
 /**
  * Command for show table partitions Command
  */
-private[sql] case class ShowCarbonPartitionsCommand(
+private[sql] case class CarbonShowCarbonPartitionsCommand(
     tableIdentifier: TableIdentifier)
-  extends RunnableCommand with SchemaProcessCommand {
+  extends MetadataCommand {
 
   override val output: Seq[Attribute] = CommonUtil.partitionInfoOutput
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processSchema(sparkSession)
-  }
-
-  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tableIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
     val carbonTable = relation.carbonTable
@@ -52,7 +48,7 @@ private[sql] case class ShowCarbonPartitionsCommand(
     }
     val partitionType = partitionInfo.getPartitionType
     val columnName = partitionInfo.getColumnSchemaList.get(0).getColumnName
-    val LOGGER = LogServiceFactory.getLogService(ShowCarbonPartitionsCommand.getClass.getName)
+    val LOGGER = LogServiceFactory.getLogService(CarbonShowCarbonPartitionsCommand.getClass.getName)
     LOGGER.info("partition column name:" + columnName)
     CommonUtil.getPartitionInfo(columnName, partitionType, partitionInfo)
   }

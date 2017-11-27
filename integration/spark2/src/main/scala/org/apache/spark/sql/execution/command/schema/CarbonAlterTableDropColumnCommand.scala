@@ -21,8 +21,8 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{AlterTableDropColumnModel, RunnableCommand}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.execution.command.{AlterTableDropColumnModel, MetadataCommand}
+import org.apache.spark.sql.hive.CarbonSessionState
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -36,9 +36,9 @@ import org.apache.carbondata.spark.rdd.AlterTableDropColumnRDD
 
 private[sql] case class CarbonAlterTableDropColumnCommand(
     alterTableDropColumnModel: AlterTableDropColumnModel)
-  extends RunnableCommand {
+  extends MetadataCommand {
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = alterTableDropColumnModel.tableName
     val dbName = alterTableDropColumnModel.databaseName
@@ -137,9 +137,9 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       // event will be fired before dropping the columns
       val alterTableDropColumnPostEvent: AlterTableDropColumnPostEvent =
         AlterTableDropColumnPostEvent(
-        carbonTable,
-        alterTableDropColumnModel,
-        sparkSession)
+          carbonTable,
+          alterTableDropColumnModel,
+          sparkSession)
       OperationListenerBus.getInstance().fireEvent(alterTableDropColumnPostEvent, operationContext)
 
       LOGGER.info(s"Alter table for drop columns is successful for table $dbName.$tableName")

@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command.preaaggregate
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.CarbonSession
-import org.apache.spark.sql.execution.command.CarbonDropTableCommand
+import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
