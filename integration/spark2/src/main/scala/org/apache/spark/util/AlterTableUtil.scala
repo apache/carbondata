@@ -38,6 +38,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object AlterTableUtil {
 
@@ -327,12 +328,12 @@ object AlterTableUtil {
    * @param sparkSession
    * @param sessionState
    */
-  def modifyTableComment(tableIdentifier: TableIdentifier, properties: Map[String, String],
-                         propKeys: Seq[String], set: Boolean)
-                        (sparkSession: SparkSession): Unit = {
+  def modifyTableProperties(tableIdentifier: TableIdentifier, properties: Map[String, String],
+                            propKeys: Seq[String], set: Boolean)
+                           (sparkSession: SparkSession): Unit = {
     val tableName = tableIdentifier.table
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
-    LOGGER.audit(s"Alter table comment request has been received for $dbName.$tableName")
+    LOGGER.audit(s"Alter table properties request has been received for $dbName.$tableName")
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
     var locks = List.empty[ICarbonLock]
     var timeStamp = 0L
@@ -363,33 +364,42 @@ object AlterTableUtil {
         //       This overrides old properties and update the comment parameter of thriftTable
         //       with the newly added/modified comment since thriftTable also holds comment as its
         //       direct property.
-
-        properties.foreach { x =>
-          if (x._1.equalsIgnoreCase(CarbonCommonConstants.TABLE_COMMENT)) {
-            tblPropertiesMap.put(x._1, x._2)
-          }
+        properties.foreach { property => if (validateTableProperties(property._1)) {
+          tblPropertiesMap.put(property._1.toLowerCase, property._2)
+        } else { val errorMessage = "Error: Invalid option(s): " + property._1.toString()
+          throw new MalformedCarbonCommandException(errorMessage)
+        }
         }
       } else {
         // This removes the comment parameter from thriftTable
         // since thriftTable also holds comment as its property.
-        propKeys.foreach { x =>
-          if (x.equalsIgnoreCase(CarbonCommonConstants.TABLE_COMMENT)) {
-            tblPropertiesMap.remove(x)
+        propKeys.foreach { propKey =>
+          if (validateTableProperties(propKey)) {
+            tblPropertiesMap.remove(propKey.toLowerCase)
+          } else {
+            val errorMessage = "Error: Invalid option(s): " + propKey
+            throw new MalformedCarbonCommandException(errorMessage)
           }
         }
       }
+
       updateSchemaInfo(carbonTable,
         schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
         thriftTable)(sparkSession)
-      LOGGER.info(s"Alter table comment is successful for table $dbName.$tableName")
-      LOGGER.audit(s"Alter table comment is successful for table $dbName.$tableName")
+      LOGGER.info(s"Alter table properties is successful for table $dbName.$tableName")
+      LOGGER.audit(s"Alter table properties is successful for table $dbName.$tableName")
     } catch {
       case e: Exception =>
-        LOGGER.error(e, "Alter table comment failed")
-        sys.error(s"Alter table comment operation failed: ${e.getMessage}")
+        LOGGER.error(e, "Alter table properties failed")
+        sys.error(s"Alter table properties operation failed: ${e.getMessage}")
     } finally {
       // release lock after command execution completion
       AlterTableUtil.releaseLocks(locks)
     }
+  }
+
+  def validateTableProperties(propKey: String): Boolean = {
+    val supportedOptions = Seq("STREAMING", "COMMENT")
+   supportedOptions.contains(propKey.toUpperCase)
   }
 }

@@ -33,7 +33,7 @@ private[sql] case class CarbonAlterTableSetCommand(
   }
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
-    AlterTableUtil.modifyTableComment(
+    AlterTableUtil.modifyTableProperties(
       tableIdentifier,
       properties,
       Nil,

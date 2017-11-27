@@ -30,6 +30,7 @@ import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, C
 import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
 import org.apache.spark.util.FileUtils
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.merger.CompactionType
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -185,7 +186,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(tableName)(sparkSession) => {
         // TODO remove this limitation later
-        if (propKeys.find(_.equalsIgnoreCase("streaming")).isDefined) {
+        if (propKeys.exists(_.equalsIgnoreCase("streaming"))) {
           throw new MalformedCarbonCommandException(
             "Streaming property can not be removed")
         }

@@ -107,7 +107,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     createTable(tableName = "stream_table_delete", streaming = true, withBatchLoad = false)
 
     // 12. reject alter streaming properties
-    createTable(tableName = "stream_table_alter", streaming = true, withBatchLoad = false)
+    createTable(tableName = "stream_table_alter", streaming = false, withBatchLoad = false)
 
     // 13. handoff streaming segment
     createTable(tableName = "stream_table_handoff", streaming = true, withBatchLoad = false)
@@ -647,15 +647,29 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
   test("reject alter streaming properties") {
     try {
-      sql("ALTER TABLE stream_table_alter UNSET TBLPROPERTIES IF EXISTS ('streaming')")
+      sql("ALTER TABLE streaming.stream_table_alter UNSET TBLPROPERTIES IF EXISTS ('streaming')")
       assert(false, "unsupport to unset streaming property")
     } catch {
       case _ =>
         assert(true)
     }
     try {
-      sql("ALTER TABLE stream_table_alter SET TBLPROPERTIES('streaming'='true')")
-      assert(true)
+      sql("ALTER TABLE streaming.stream_table_alter SET TBLPROPERTIES('streaming'='true')")
+      executeStreamingIngest(
+        tableName = "stream_table_alter",
+        batchNums = 6,
+        rowNumsEachBatch = 10000,
+        intervalOfSource = 5,
+        intervalOfIngest = 10,
+        continueSeconds = 40,
+        generateBadRecords = false,
+        badRecordAction = "force",
+        handoffSize = 1024L * 200
+      )
+      checkAnswer(
+        sql("select count(*) from streaming.stream_table_alter"),
+        Seq(Row(6 * 10000))
+      )
     } catch {
       case _ =>
         assert(false, "should support set table to streaming")
