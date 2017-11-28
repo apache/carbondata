@@ -1412,6 +1412,22 @@ public final class CarbonCommonConstants {
 
   public static final String CARBON_SKIP_EMPTY_LINE_DEFAULT = "false";
 
+  /**
+   * if the byte size of streaming segment reach this value,
+   * the system will create a new stream segment
+   */
+  public static final String HANDOFF_SIZE = "carbon.streaming.segment.max.size";
+
+  /**
+   * the min handoff size of streaming segment, the unit is byte
+   */
+  public static final long HANDOFF_SIZE_MIN = 1024L * 1024 * 64;
+
+  /**
+   * the default handoff size of streaming segment, the unit is byte
+   */
+  public static final long HANDOFF_SIZE_DEFAULT = 1024L * 1024 * 1024;
+
   private CarbonCommonConstants() {
   }
 }
