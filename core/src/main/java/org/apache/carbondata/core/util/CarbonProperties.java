@@ -105,6 +105,7 @@ public final class CarbonProperties {
     validateEnableVectorReader();
     validateLockType();
     validateCarbonCSVReadBufferSizeByte();
+    validateHandoffSize();
   }
 
   private void validateCarbonCSVReadBufferSizeByte() {
@@ -253,6 +254,31 @@ public final class CarbonProperties {
             + CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT + "\"");
         carbonProperties.setProperty(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
             CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT);
+      }
+    }
+  }
+
+  private void validateHandoffSize() {
+    String handoffSizeStr = carbonProperties.getProperty(CarbonCommonConstants.HANDOFF_SIZE);
+    if (null == handoffSizeStr || handoffSizeStr.length() == 0) {
+      carbonProperties.setProperty(CarbonCommonConstants.HANDOFF_SIZE,
+          "" + CarbonCommonConstants.HANDOFF_SIZE_DEFAULT);
+    } else {
+      try {
+        long handoffSize = Long.parseLong(handoffSizeStr);
+        if (handoffSize < CarbonCommonConstants.HANDOFF_SIZE_MIN) {
+          LOGGER.info("The streaming segment max size configured value " + handoffSizeStr +
+              " is invalid. Using the default value "
+              + CarbonCommonConstants.HANDOFF_SIZE_DEFAULT);
+          carbonProperties.setProperty(CarbonCommonConstants.HANDOFF_SIZE,
+              "" + CarbonCommonConstants.HANDOFF_SIZE_DEFAULT);
+        }
+      } catch (NumberFormatException e) {
+        LOGGER.info("The streaming segment max size value \"" + handoffSizeStr
+            + "\" is invalid. Using the default value \""
+            + CarbonCommonConstants.HANDOFF_SIZE_DEFAULT + "\"");
+        carbonProperties.setProperty(CarbonCommonConstants.HANDOFF_SIZE,
+            "" + CarbonCommonConstants.HANDOFF_SIZE_DEFAULT);
       }
     }
   }
@@ -733,6 +759,21 @@ public final class CarbonProperties {
       batchSize = Integer.parseInt(CarbonCommonConstants.DATA_LOAD_BATCH_SIZE_DEFAULT);
     }
     return batchSize;
+  }
+
+  public long getHandoffSize() {
+    Long handoffSize;
+    try {
+      handoffSize = Long.parseLong(
+          CarbonProperties.getInstance().getProperty(
+              CarbonCommonConstants.HANDOFF_SIZE,
+              "" + CarbonCommonConstants.HANDOFF_SIZE_DEFAULT
+          )
+      );
+    } catch (NumberFormatException exc) {
+      handoffSize = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT;
+    }
+    return handoffSize;
   }
 
   /**

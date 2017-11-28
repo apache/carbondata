@@ -32,6 +32,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types.StructType
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
@@ -759,7 +760,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       tableIdentifier: TableIdentifier,
       badRecordAction: String = "force",
       intervalSecond: Int = 2,
-      handoffSize: Long = CarbonStreamOutputFormat.HANDOFF_SIZE_DEFAULT): Thread = {
+      handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT): Thread = {
     new Thread() {
       override def run(): Unit = {
         var qry: StreamingQuery = null
@@ -779,7 +780,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .option("bad_records_action", badRecordAction)
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)
-            .option(CarbonStreamOutputFormat.HANDOFF_SIZE, handoffSize)
+            .option(CarbonCommonConstants.HANDOFF_SIZE, handoffSize)
             .start()
           qry.awaitTermination()
         } catch {
@@ -806,7 +807,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       continueSeconds: Int,
       generateBadRecords: Boolean,
       badRecordAction: String,
-      handoffSize: Long = CarbonStreamOutputFormat.HANDOFF_SIZE_DEFAULT
+      handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT
   ): Unit = {
     val identifier = new TableIdentifier(tableName, Option("streaming"))
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.lookupRelation(identifier)(spark)

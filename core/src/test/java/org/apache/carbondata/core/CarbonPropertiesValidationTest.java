@@ -145,4 +145,11 @@ public class CarbonPropertiesValidationTest extends TestCase {
     assertTrue(
         CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT.equalsIgnoreCase(valueAfterValidation));
   }
+
+  @Test public void testValidateHandoffSize() {
+    assertEquals(CarbonCommonConstants.HANDOFF_SIZE_DEFAULT, carbonProperties.getHandoffSize());
+    long newSize = 1024L * 1024 * 100;
+    carbonProperties.addProperty(CarbonCommonConstants.HANDOFF_SIZE, "" + newSize);
+    assertEquals(newSize, carbonProperties.getHandoffSize());
+  }
 }

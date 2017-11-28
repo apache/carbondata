@@ -35,10 +35,12 @@ import org.apache.spark.util.{SerializableConfiguration, Utils}
 
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.stats.QueryStatistic
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
@@ -74,8 +76,9 @@ class CarbonAppendableStreamSink(
   }
   // segment max size(byte)
   private val segmentMaxSize = hadoopConf.getLong(
-    CarbonStreamOutputFormat.HANDOFF_SIZE,
-    CarbonStreamOutputFormat.HANDOFF_SIZE_DEFAULT)
+    CarbonCommonConstants.HANDOFF_SIZE,
+    CarbonProperties.getInstance().getHandoffSize
+  )
 
   override def addBatch(batchId: Long, data: DataFrame): Unit = {
     if (batchId <= fileLog.getLatest().map(_._1).getOrElse(-1L)) {
