@@ -79,18 +79,18 @@ object StreamSinkFactory {
   }
 
   private def validateParameters(parameters: Map[String, String]): Unit = {
-    val segmentSize = parameters.get(CarbonStreamOutputFormat.HANDOFF_SIZE)
+    val segmentSize = parameters.get(CarbonCommonConstants.HANDOFF_SIZE)
     if (segmentSize.isDefined) {
       try {
         val value = java.lang.Long.parseLong(segmentSize.get)
-        if (value < CarbonStreamOutputFormat.HANDOFF_SIZE_MIN) {
-          new CarbonStreamException(CarbonStreamOutputFormat.HANDOFF_SIZE +
+        if (value < CarbonCommonConstants.HANDOFF_SIZE_MIN) {
+          new CarbonStreamException(CarbonCommonConstants.HANDOFF_SIZE +
                                     "should be bigger than or equal " +
-                                    CarbonStreamOutputFormat.HANDOFF_SIZE_MIN)
+                                    CarbonCommonConstants.HANDOFF_SIZE_MIN)
         }
       } catch {
         case ex: NumberFormatException =>
-          new CarbonStreamException(CarbonStreamOutputFormat.HANDOFF_SIZE +
+          new CarbonStreamException(CarbonCommonConstants.HANDOFF_SIZE +
                                     s" $segmentSize is an illegal number")
       }
     }
