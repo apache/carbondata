@@ -90,10 +90,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      ```
      TBLPROPERTIES ('TABLE_BLOCKSIZE'='512')
      ```
-     Note: 512 or 512M both are accepted.
+     NOTE: 512 or 512M both are accepted.
 
 ### Example:
-    ```
+
+   ```
     CREATE TABLE IF NOT EXISTS productSchema.productSalesTable (
                                    productNumber Int,
                                    productName String,
@@ -109,7 +110,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
                    'SORT_COLUMNS'='productName,storeCity',
                    'SORT_SCOPE'='NO_SORT',
                    'TABLE_BLOCKSIZE'='512')
-    ```
+   ```
         
 ## TABLE MANAGEMENT  
 
@@ -194,7 +195,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      Valid Scenarios
      - Invalid scenario - Change of decimal precision from (10,2) to (10,5) is invalid as in this case only scale is increased but total number of digits remains the same.
      - Valid scenario - Change of decimal precision from (10,2) to (12,3) is valid as the total number of digits are increased by 2 but scale is increased only by 1 which will not lead to any data loss.
-     - Note :The allowed range is 38,38 (precision, scale) and is a valid upper case scenario which is not resulting in data loss.
+     - NOTE: The allowed range is 38,38 (precision, scale) and is a valid upper case scenario which is not resulting in data loss.
 
      Example1:Changing data type of column a1 from INT to BIGINT.
      ```
@@ -298,23 +299,25 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
     ```
     OPTIONS('DATEFORMAT' = 'yyyy-MM-dd','TIMESTAMPFORMAT'='yyyy-MM-dd HH:mm:ss')
-     ```
+    ```
     NOTE: Date formats are specified by date pattern strings. The date pattern letters in CarbonData are same as in JAVA. Refer to [SimpleDateFormat](http://docs.oracle.com/javase/7/docs/api/java/text/SimpleDateFormat.html).
 
   - **SINGLE_PASS:** Single Pass Loading enables single job to finish data loading with dictionary generation on the fly. It enhances performance in the scenarios where the subsequent data loading after initial load involves fewer incremental updates on the dictionary.
 
-   This option specifies whether to use single pass for loading data or not. By default this option is set to FALSE.
+  This option specifies whether to use single pass for loading data or not. By default this option is set to FALSE.
 
-    ```
+   ```
     OPTIONS('SINGLE_PASS'='TRUE')
-    ```
-   Note :
+   ```
+
+   NOTE:
    * If this option is set to TRUE then data loading will take less time.
    * If this option is set to some invalid value other than TRUE or FALSE then it uses the default value.
    * If this option is set to TRUE, then high.cardinality.identify.enable property will be disabled during data load.
    * For first Load SINGLE_PASS loading option is disabled.
 
    Example:
+
    ```
    LOAD DATA local inpath '/opt/rawdata/data.csv' INTO table carbontable
    options('DELIMITER'=',', 'QUOTECHAR'='"','COMMENTCHAR'='#',
@@ -346,6 +349,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   * The maximum number of characters per column is 100000. If there are more than 100000 characters in a column, data loading will fail.
 
   Example:
+
   ```
   LOAD DATA INPATH 'filepath.csv' INTO TABLE tablename
   OPTIONS('BAD_RECORDS_LOGGER_ENABLE'='true','BAD_RECORD_PATH'='hdfs://hacluster/tmp/carbon',
@@ -569,7 +573,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   [TBLPROPERTIES ('PARTITION_TYPE'='LIST',
                   'LIST_INFO'='A, B, C, ...')]
   ```
-  NOTE : List partition supports list info in one level group.
+  NOTE: List partition supports list info in one level group.
 
   Example:
   ```
@@ -608,8 +612,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
 ### Drop a partition
 
-    Only drop partition definition, but keep data
-
+   Only drop partition definition, but keep data
   ```
     ALTER TABLE [db_name].table_name DROP PARTITION(partition_id)
    ```
