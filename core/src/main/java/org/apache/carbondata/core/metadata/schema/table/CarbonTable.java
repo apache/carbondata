@@ -361,6 +361,17 @@ public class CarbonTable implements Serializable {
   }
 
   /**
+   * build table unique name
+   * all should call this method to build table unique name
+   * @param databaseName
+   * @param tableName
+   * @return
+   */
+  public static String buildUniqueName(String databaseName, String tableName) {
+    return databaseName + CarbonCommonConstants.UNDERSCORE + tableName;
+  }
+
+  /**
    * @return the metaDataFilepath
    */
   public String getMetaDataFilepath() {

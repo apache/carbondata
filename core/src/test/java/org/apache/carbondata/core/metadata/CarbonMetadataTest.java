@@ -48,7 +48,7 @@ public class CarbonMetadataTest {
   @BeforeClass public static void setUp() {
     carbonMetadata = CarbonMetadata.getInstance();
     carbonMetadata.loadTableMetadata(getTableInfo(10000));
-    tableUniqueName = "carbonTestDatabase_carbonTestTable";
+    tableUniqueName = CarbonTable.buildUniqueName("carbonTestDatabase", "carbonTestTable");
   }
 
   @AfterClass public static void tearDown() {

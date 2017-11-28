@@ -38,6 +38,7 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetad
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
@@ -74,7 +75,7 @@ case class AlterTableSplitCarbonPartitionCommand(
       sys.error(s"Table $dbName.$tableName does not exist")
     }
     carbonMetaStore.checkSchemasModifiedTimeAndReloadTables()
-    if (null == CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)) {
+    if (null == CarbonMetadata.getInstance.getCarbonTable(dbName, tableName)) {
       LOGGER.error(s"Alter table failed. table not found: $dbName.$tableName")
       sys.error(s"Alter table failed. table not found: $dbName.$tableName")
     }
