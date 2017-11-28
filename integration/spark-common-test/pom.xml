@@ -93,6 +93,12 @@
       <scope>test</scope>
     </dependency>
     <dependency>
+      <groupId>org.apache.carbondata</groupId>
+      <artifactId>carbondata-spark2</artifactId>
+      <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
       <groupId>org.apache.spark</groupId>
       <artifactId>spark-hive-thriftserver_${scala.binary.version}</artifactId>
       <scope>test</scope>
@@ -327,31 +333,6 @@
     </plugins>
   </build>
   <profiles>
-    <profile>
-      <id>spark-2.1</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.carbondata</groupId>
-          <artifactId>carbondata-spark2</artifactId>
-          <version>${project.version}</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
-    <profile>
-      <id>spark-2.2</id>
-      <dependencies>
-        <dependency>
-          <groupId>org.apache.carbondata</groupId>
-          <artifactId>carbondata-spark2</artifactId>
-          <version>${project.version}</version>
-          <scope>test</scope>
-        </dependency>
-      </dependencies>
-    </profile>
     <profile>
       <id>sdvtest</id>
       <properties>
