@@ -117,7 +117,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     createAndLoadTestTable(table, "csv_table")
     DeleteSegmentById.main(Array(s"${location}", table, "0"))
     CleanFiles.main(Array(s"${location}", table))
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_"+table)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", table)
     val tablePath = carbonTable.getAbsoluteTableIdentifier.getTablePath
     val f = new File(s"$tablePath/Fact/Part0")
     assert(f.isDirectory)

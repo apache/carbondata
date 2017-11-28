@@ -32,6 +32,8 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+
 /**
  * This class contains data retention feature test cases
  */
@@ -67,9 +69,15 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
       "phonetype String, serialname String, salary int) stored by 'org.apache.carbondata.format'"
 
     )
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME+"_"+ "retentionlock")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "retentionlock"
+    )
     absoluteTableIdentifierForLock = carbonTable.getAbsoluteTableIdentifier
-    val carbonTable2 = CarbonMetadata.getInstance().getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME+"_"+ "dataRetentionTable")
+    val carbonTable2 = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "dataRetentionTable"
+    )
     absoluteTableIdentifierForRetention = carbonTable2.getAbsoluteTableIdentifier
     carbonTablePath = CarbonStorePath
       .getCarbonTablePath(absoluteTableIdentifierForRetention).getMetadataDirectoryPath

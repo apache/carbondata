@@ -107,7 +107,7 @@ class MergeIndexTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   private def getIndexFileCount(dbName: String, tableName: String, segment: String): Int = {
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName + "_" + tableName)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName, tableName)
     val identifier = carbonTable.getAbsoluteTableIdentifier
     val path = CarbonTablePath
       .getSegmentPath(identifier.getTablePath, segment)

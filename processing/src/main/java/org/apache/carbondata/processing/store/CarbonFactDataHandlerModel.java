@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.TableSpec;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
@@ -182,8 +181,8 @@ public class CarbonFactDataHandlerModel {
       }
     }
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(
-        identifier.getDatabaseName() + CarbonCommonConstants.UNDERSCORE + identifier
-            .getTableName());
+        identifier.getDatabaseName(), identifier.getTableName());
+
     List<ColumnSchema> wrapperColumnSchema = CarbonUtil
         .getColumnSchemaList(carbonTable.getDimensionByTableName(identifier.getTableName()),
             carbonTable.getMeasureByTableName(identifier.getTableName()));

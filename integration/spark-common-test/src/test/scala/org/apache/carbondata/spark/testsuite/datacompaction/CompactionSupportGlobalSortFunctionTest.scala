@@ -26,6 +26,7 @@ import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore
 import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 
 class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -528,7 +529,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
   }
 
   private def getIndexFileCount(tableName: String, segmentNo: String = "0"): Int = {
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default" + "_" + tableName)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", tableName)
     val store = carbonTable.getAbsoluteTableIdentifier.getTablePath + "/Fact/Part0/Segment_" +
                 segmentNo
     new SegmentIndexFileStore().getIndexFilesFromSegment(store).size()

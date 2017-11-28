@@ -90,7 +90,7 @@ class AlterTableRevertTestCase extends Spark2QueryTest with BeforeAndAfterAll {
       intercept[AnalysisException] {
         sql("select newField from reverttest")
       }
-      val carbonTable = CarbonMetadata.getInstance.getCarbonTable("default_reverttest")
+      val carbonTable = CarbonMetadata.getInstance.getCarbonTable("default", "reverttest")
 
       assert(new File(carbonTable.getMetaDataFilepath).listFiles().length < 6)
     }
