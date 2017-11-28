@@ -972,12 +972,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     DATE ^^^ "date" | charType
 
   /**
-   * Matching the decimal(10,0) data type and returning the same.
+   * Matching the char data type and returning the same.
    */
   private lazy val charType =
-    (CHAR | VARCHAR ) ~ ("(" ~>numericLit <~ ")") ^^ {
-      case char ~ digit =>
-        s"$char($digit)"
+    (CHAR | VARCHAR ) ~ opt("(" ~>numericLit <~ ")") ^^ {
+      case (char ~ _) =>
+        s"$char"
     }
 
   /**

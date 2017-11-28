@@ -239,7 +239,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test to check if exception is thrown with wrong char syntax") {
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    intercept[Exception] {
+    try {
       sql("DROP TABLE IF EXISTS carbon_table")
       sql(
         "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
@@ -249,6 +249,10 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       sql(
         "ALTER TABLE carbon_table ADD COLUMNS(newfield char) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
       sql("DROP TABLE IF EXISTS carbon_table")
+      assert(true)
+    }
+    catch {
+      case _ => assert(false)
     }
   }
 
@@ -268,7 +272,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
   test("test to check if exception is thrown with wrong varchar syntax") {
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    intercept[Exception] {
+    try {
       sql("DROP TABLE IF EXISTS carbon_table")
       sql(
         "CREATE TABLE carbon_table(intField INT,stringField STRING,charField STRING,timestampField " +
@@ -278,6 +282,10 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       sql(
         "ALTER TABLE carbon_table ADD COLUMNS(newfield varchar) TBLPROPERTIES ('DEFAULT.VALUE.newfield'='c')")
       sql("DROP TABLE IF EXISTS carbon_table")
+      assert(true)
+    }
+    catch {
+      case exception:Exception => assert(false)
     }
   }
 
