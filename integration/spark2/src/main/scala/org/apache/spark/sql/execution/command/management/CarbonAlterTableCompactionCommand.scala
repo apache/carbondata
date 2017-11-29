@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, DataCommand, DataProcessOperation, RunnableCommand}
+import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, DataCommand}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.util.CarbonException
 
