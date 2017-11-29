@@ -327,7 +327,7 @@ object AlterTableUtil {
    * @param sparkSession
    * @param sessionState
    */
-  def modifyTableComment(tableIdentifier: TableIdentifier, properties: Map[String, String],
+  def modifyTableProperties(tableIdentifier: TableIdentifier, properties: Map[String, String],
                          propKeys: Seq[String], set: Boolean)
                         (sparkSession: SparkSession): Unit = {
     val tableName = tableIdentifier.table
@@ -366,6 +366,9 @@ object AlterTableUtil {
 
         properties.foreach { x =>
           if (x._1.equalsIgnoreCase(CarbonCommonConstants.TABLE_COMMENT)) {
+            tblPropertiesMap.put(x._1, x._2)
+          }
+          if (x._1.equalsIgnoreCase(CarbonCommonConstants.STREAMING_PROPERTY)) {
             tblPropertiesMap.put(x._1, x._2)
           }
         }
