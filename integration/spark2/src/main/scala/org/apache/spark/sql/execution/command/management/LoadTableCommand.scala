@@ -39,6 +39,7 @@ import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.events.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.exception.NoRetryException
@@ -139,6 +140,15 @@ case class LoadTableCommand(
         carbonLoadModel,
         hadoopConf
       )
+      val operationContext = new OperationContext
+      val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =
+        new LoadTablePreExecutionEvent(sparkSession,
+          null,
+          carbonLoadModel,
+          factPath,
+          dataFrame.isDefined,
+          optionsFinal)
+      OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
 
       try{
         // First system has to partition the data first and then call the load data
@@ -187,6 +197,11 @@ case class LoadTableCommand(
             partitionStatus,
             hadoopConf)
         }
+        val loadTablePostExecutionEvent: LoadTablePostExecutionEvent =
+          new LoadTablePostExecutionEvent(sparkSession,
+            table.getCarbonTableIdentifier,
+            carbonLoadModel)
+        OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
       } catch {
         case CausedBy(ex: NoRetryException) =>
           LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")

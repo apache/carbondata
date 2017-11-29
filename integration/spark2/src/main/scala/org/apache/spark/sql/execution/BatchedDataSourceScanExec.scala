@@ -23,6 +23,7 @@ import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.expressions.codegen.{CodegenContext, ExprCode}
 import org.apache.spark.sql.catalyst.plans.physical.Partitioning
+import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.execution.metric.SQLMetrics
 import org.apache.spark.sql.sources.BaseRelation
 import org.apache.spark.sql.types.DataType
@@ -35,7 +36,8 @@ case class BatchedDataSourceScanExec(
     @transient relation: BaseRelation,
     override val outputPartitioning: Partitioning,
     override val metadata: Map[String, String],
-    override val metastoreTableIdentifier: Option[TableIdentifier])
+    override val metastoreTableIdentifier: Option[TableIdentifier],
+    @transient logicalRelation: LogicalRelation)
   extends DataSourceScanExec with CodegenSupport {
 
   override lazy val metrics =

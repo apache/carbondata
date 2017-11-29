@@ -28,7 +28,7 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.events.{AlterTableAddColumnPreEvent, AlterTableDataTypeChangePreEvent, OperationListenerBus}
+import org.apache.carbondata.events.{AlterTableDataTypeChangePostEvent, AlterTableDataTypeChangePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.{ColumnSchema, SchemaEvolutionEntry, TableInfo}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataTypeConverterUtil}
 
@@ -52,9 +52,11 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
         .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
       carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
-      val alterTableDataTypeChangeListener = AlterTableDataTypeChangePreEvent(carbonTable,
-        alterTableDataTypeChangeModel)
-      OperationListenerBus.getInstance().fireEvent(alterTableDataTypeChangeListener)
+      val operationContext = new OperationContext
+      val alterTableDataTypeChangeListener = AlterTableDataTypeChangePreEvent(sparkSession,
+        carbonTable, alterTableDataTypeChangeModel)
+      OperationListenerBus.getInstance()
+        .fireEvent(alterTableDataTypeChangeListener, operationContext)
       val columnName = alterTableDataTypeChangeModel.columnName
       val carbonColumns = carbonTable.getCreateOrderColumn(tableName).asScala.filter(!_.isInvisible)
       if (!carbonColumns.exists(_.getColName.equalsIgnoreCase(columnName))) {
@@ -96,6 +98,10 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
         .setTime_stamp(System.currentTimeMillis)
       AlterTableUtil.updateSchemaInfo(carbonTable, schemaEvolutionEntry, tableInfo)(sparkSession)
+      val alterTablePostExecutionEvent: AlterTableDataTypeChangePostEvent =
+        new AlterTableDataTypeChangePostEvent(sparkSession, carbonTable,
+          alterTableDataTypeChangeModel)
+      OperationListenerBus.getInstance.fireEvent(alterTablePostExecutionEvent, operationContext)
       LOGGER.info(s"Alter table for data type change is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for data type change is successful for table $dbName.$tableName")
     } catch {

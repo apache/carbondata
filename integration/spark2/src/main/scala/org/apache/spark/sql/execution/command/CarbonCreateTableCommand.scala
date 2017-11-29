@@ -31,6 +31,7 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.events.{CreateTablePostExecutionEvent, CreateTablePreExecutionEvent, OperationContext, OperationListenerBus}
 
 case class CarbonCreateTableCommand(
     cm: TableModel,
@@ -78,6 +79,12 @@ case class CarbonCreateTableCommand(
       }
     } else {
       val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tbName)
+      val operationContext = new OperationContext
+      val createTablePreExecutionEvent: CreateTablePreExecutionEvent =
+        new CreateTablePreExecutionEvent(sparkSession,
+          tableIdentifier.getCarbonTableIdentifier,
+          tablePath)
+      OperationListenerBus.getInstance.fireEvent(createTablePreExecutionEvent, operationContext)
       // Add Database to catalog and persist
       val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
       val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tableIdentifier)
@@ -93,7 +100,7 @@ case class CarbonCreateTableCommand(
                |(${ fields.map(f => f.rawSchema).mkString(",") })
                |USING org.apache.spark.sql.CarbonSource""".stripMargin +
             s""" OPTIONS (tableName "$tbName", dbName "$dbName", tablePath """.stripMargin +
-            s""""$tablePath"$carbonSchemaString) """)
+            s""""$tablePath", path "$tablePath" $carbonSchemaString) """.stripMargin)
         } catch {
           case e: AnalysisException => throw e
           case e: Exception =>
@@ -107,7 +114,9 @@ case class CarbonCreateTableCommand(
             CarbonException.analysisException(msg)
         }
       }
-
+      val createTablePostExecutionEvent: CreateTablePostExecutionEvent =
+        new CreateTablePostExecutionEvent(sparkSession, tableIdentifier.getCarbonTableIdentifier)
+      OperationListenerBus.getInstance.fireEvent(createTablePostExecutionEvent, operationContext)
       LOGGER.audit(s"Table created with Database name [$dbName] and Table name [$tbName]")
     }
     Seq.empty

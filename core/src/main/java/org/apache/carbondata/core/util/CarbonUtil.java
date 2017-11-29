@@ -2026,12 +2026,6 @@ public final class CarbonUtil {
     }
   }
 
-  public static void createDatabaseDirectory(String dbName, String storePath) throws IOException {
-    String databasePath = storePath + File.separator + dbName.toLowerCase();
-    FileFactory.FileType fileType = FileFactory.getFileType(databasePath);
-    FileFactory.mkdirs(databasePath, fileType);
-  }
-
   public static void dropDatabaseDirectory(String dbName, String storePath)
       throws IOException, InterruptedException {
     String databasePath = storePath + File.separator + dbName;
