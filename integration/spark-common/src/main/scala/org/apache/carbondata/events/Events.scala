@@ -18,6 +18,7 @@
 package org.apache.carbondata.events
 
 import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser.CreateTableContext
 import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel}
 
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
@@ -141,4 +142,11 @@ trait DeleteFromTableEventInfo {
  */
 trait SessionEventInfo {
   val sparkSession: SparkSession
+}
+
+/**
+ * event to create table
+ */
+trait CreateTableEventInfo {
+  val ctx: CreateTableContext
 }
