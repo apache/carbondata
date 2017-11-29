@@ -1428,11 +1428,6 @@ public final class CarbonCommonConstants {
    */
   public static final long HANDOFF_SIZE_DEFAULT = 1024L * 1024 * 1024;
 
-  /**
-   * streaming property to identify whether the table is a streaming table or not
-   */
-  public static final String STREAMING_PROPERTY = "streaming";
-
   private CarbonCommonConstants() {
   }
 }

@@ -107,7 +107,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     createTable(tableName = "stream_table_delete", streaming = true, withBatchLoad = false)
 
     // 12. reject alter streaming properties
-    createTable(tableName = "", streaming = false, withBatchLoad = false)
+    createTable(tableName = "stream_table_alter", streaming = false, withBatchLoad = false)
 
     // 13. handoff streaming segment
     createTable(tableName = "stream_table_handoff", streaming = true, withBatchLoad = false)

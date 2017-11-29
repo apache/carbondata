@@ -60,7 +60,7 @@ class CarbonOption(options: Map[String, String]) {
                                     options.contains("bucketnumber")
 
   def isStreaming: Boolean =
-    options.getOrElse(CarbonCommonConstants.STREAMING_PROPERTY, "false").toBoolean
+    options.getOrElse("streaming", "false").toBoolean
 
   def toMap: Map[String, String] = options
 }

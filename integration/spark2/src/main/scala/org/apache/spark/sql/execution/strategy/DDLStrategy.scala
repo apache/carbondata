@@ -173,9 +173,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(tableName)(sparkSession) => {
         // TODO remove this limitation later
-        val property = properties.find(
-          _._1.equalsIgnoreCase(CarbonCommonConstants.STREAMING_PROPERTY)
-        )
+        val property = properties.find(_._1.equalsIgnoreCase("streaming"))
         if (property.isDefined) {
           if (!property.get._2.trim.equalsIgnoreCase("true")) {
             throw new MalformedCarbonCommandException(
@@ -188,7 +186,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(tableName)(sparkSession) => {
         // TODO remove this limitation later
-        if (propKeys.exists(_.equalsIgnoreCase(CarbonCommonConstants.STREAMING_PROPERTY))) {
+        if (propKeys.exists(_.equalsIgnoreCase("streaming"))) {
           throw new MalformedCarbonCommandException(
             "Streaming property can not be removed")
         }
