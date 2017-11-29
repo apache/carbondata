@@ -131,7 +131,7 @@ case class CarbonDropTableCommand(
       CarbonProperties.getStorePath)
     val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName.toLowerCase
     val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName + "_" + tableName)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName, tableName)
     if (carbonTable != null) {
       // clear driver side index and dictionary cache
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
