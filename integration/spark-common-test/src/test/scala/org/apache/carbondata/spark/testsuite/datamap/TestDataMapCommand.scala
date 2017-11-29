@@ -33,7 +33,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
 
   test("test datamap create") {
     sql("create datamap datamap1 on table datamaptest using 'new.class'")
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamaptest")
+    val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
     assert(table != null)
     val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
     assert(dataMapSchemaList.size() == 1)
@@ -43,7 +43,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
 
   test("test datamap create with dmproperties") {
     sql("create datamap datamap2 on table datamaptest using 'new.class' dmproperties('key'='value')")
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamaptest")
+    val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
     assert(table != null)
     val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
     assert(dataMapSchemaList.size() == 2)
@@ -57,7 +57,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       sql(
         "create datamap datamap2 on table datamaptest using 'new.class' dmproperties('key'='value')")
     }
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamaptest")
+    val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
     assert(table != null)
     val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
     assert(dataMapSchemaList.size() == 2)
@@ -67,7 +67,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     sql("drop datamap if exists datamap3 on table datamaptest")
     sql(
       "create datamap datamap3 on table datamaptest using 'preaggregate' dmproperties('key'='value') as select count(a) from datamaptest")
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamaptest")
+    val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
     assert(table != null)
     val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
     assert(dataMapSchemaList.size() == 3)
@@ -82,7 +82,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
         "create datamap datamap2 on table datamaptest using 'preaggregate' dmproperties('key'='value') as select count(a) from datamaptest")
 
     }
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamaptest")
+    val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
     assert(table != null)
     val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
     assert(dataMapSchemaList.size() == 3)
@@ -93,7 +93,7 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
       sql("drop table datamap3")
 
     }
-    val table = CarbonMetadata.getInstance().getCarbonTable("default_datamaptest")
+    val table = CarbonMetadata.getInstance().getCarbonTable("default", "datamaptest")
     assert(table != null)
     val dataMapSchemaList = table.getTableInfo.getDataMapSchemaList
     assert(dataMapSchemaList.size() == 3)

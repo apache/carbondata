@@ -30,6 +30,8 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.CacheClient
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+
 /**
   * FT for compaction scenario where major segment should not be included in minor.
   */
@@ -77,8 +79,10 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     // delete merged segments
     sql("clean files for table ignoremajor")
 
-    val carbonTable = CarbonMetadata.getInstance()
-      .getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME + "_" + "ignoremajor")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "ignoremajor"
+    )
     val absoluteTableIdentifier = carbonTable
       .getAbsoluteTableIdentifier
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
@@ -110,8 +114,10 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       case _:Throwable => assert(true)
     }
 
-    val carbonTable = CarbonMetadata.getInstance()
-      .getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME + "_" + "ignoremajor")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "ignoremajor"
+    )
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
     val carbontablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)
@@ -130,8 +136,10 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       "delete from table ignoremajor where segment.starttime before " +
         " '2222-01-01 19:35:01'"
     )
-    val carbonTable = CarbonMetadata.getInstance()
-      .getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME + "_" + "ignoremajor")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "ignoremajor"
+    )
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val carbontablePath = CarbonStorePath
       .getCarbonTablePath(absoluteTableIdentifier).getMetadataDirectoryPath
@@ -170,8 +178,10 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     )
     sql("alter table testmajor compact 'major'")
 
-    val carbonTable = CarbonMetadata.getInstance()
-      .getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME + "_" + "testmajor")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "testmajor"
+    )
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
       absoluteTableIdentifier)

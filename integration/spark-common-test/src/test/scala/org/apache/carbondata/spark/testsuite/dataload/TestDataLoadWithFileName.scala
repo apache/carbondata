@@ -47,7 +47,7 @@ class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {
     val testData = s"$resourcesPath/sample.csv"
     sql(s"LOAD DATA LOCAL INPATH '$testData' into table test_table_v3")
     val indexReader = new CarbonIndexFileReader()
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_test_table_v3")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "test_table_v3")
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
     val segmentDir = carbonTablePath.getCarbonDataDirectoryPath("0", "0")
     val carbonIndexPaths = new File(segmentDir)

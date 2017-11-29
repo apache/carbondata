@@ -287,9 +287,8 @@ object CarbonDataStoreCreator {
     tableSchema.setSchemaEvalution(schemaEvol)
     tableSchema.setTableId(UUID.randomUUID().toString)
     tableInfo.setTableUniqueName(
-      absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName +
-      "_" +
-      absoluteTableIdentifier.getCarbonTableIdentifier.getTableName)
+      absoluteTableIdentifier.getCarbonTableIdentifier.getTableUniqueName
+    )
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
     val carbonTablePath: CarbonTablePath = CarbonStorePath.getCarbonTablePath(

@@ -26,7 +26,7 @@ public class TableInfoTest extends TestCase {
     private TableInfo tableInfo;
 
     @BeforeClass public void setUp() {
-        tableInfo = getTableInfo("tableInfoTestDatabase_equalsTableInfoTestTable");
+        tableInfo = getTableInfo("tableInfoTestDatabase", "equalsTableInfoTestTable");
     }
 
     @AfterClass public void tearDown() {
@@ -34,17 +34,19 @@ public class TableInfoTest extends TestCase {
     }
 
     @Test public void testTableInfoEquals() {
-        TableInfo cmpEqualsTableInfo = getTableInfo("tableInfoTestDatabase_equalsTableInfoTestTable");
-        TableInfo cmpNotEqualsTableInfo = getTableInfo("tableInfoTestDatabase_notEqualsTableInfoTestTable");
+        TableInfo cmpEqualsTableInfo =
+            getTableInfo("tableInfoTestDatabase", "equalsTableInfoTestTable");
+        TableInfo cmpNotEqualsTableInfo =
+            getTableInfo("tableInfoTestDatabase", "notEqualsTableInfoTestTable");
         assertTrue(tableInfo.equals(cmpEqualsTableInfo));
         assertTrue(!(tableInfo.equals(cmpNotEqualsTableInfo)));
     }
 
-    private TableInfo getTableInfo(String tableUniqueName) {
+    private TableInfo getTableInfo(String databaseName, String tableName) {
         TableInfo info = new TableInfo();
         info.setDatabaseName("tableInfoTestDatabase");
         info.setLastUpdatedTime(1000L);
-        info.setTableUniqueName(tableUniqueName);
+        info.setTableUniqueName(CarbonTable.buildUniqueName(databaseName, tableName));
         return info;
     }
 }

@@ -52,7 +52,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
         "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t4")
-    val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t4")
+    val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "t4")
     if (table != null && table.getBucketingInfo("t4") != null) {
       assert(true)
     } else {
@@ -67,7 +67,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t10")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
-    val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default_t10")
+    val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "t10")
     if (table != null && table.getBucketingInfo("t10") != null) {
       assert(true)
     } else {

@@ -26,6 +26,8 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+
 /**
   * FT for compaction scenario where major compaction will only compact the segments which are
   * present at the time of triggering the compaction.
@@ -78,8 +80,10 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
     var status = false
     var noOfRetries = 0
     while (!status && noOfRetries < 10) {
-      val carbonTable = CarbonMetadata.getInstance()
-        .getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME + "_" + "stopmajor")
+      val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+        CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+        "stopmajor"
+      )
       val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
       val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(
@@ -110,8 +114,10 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
     // delete merged segments
     sql("clean files for table stopmajor")
 
-    val carbonTable = CarbonMetadata.getInstance()
-      .getCarbonTable(CarbonCommonConstants.DATABASE_DEFAULT_NAME + "_" + "stopmajor")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(
+      CarbonCommonConstants.DATABASE_DEFAULT_NAME,
+      "stopmajor"
+    )
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
 
     val segmentStatusManager: SegmentStatusManager = new SegmentStatusManager(

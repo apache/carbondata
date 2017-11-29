@@ -665,9 +665,8 @@ object CarbonDataRDDFactory {
   private def writeDictionary(carbonLoadModel: CarbonLoadModel,
       result: Option[DictionaryServer], writeAll: Boolean): Unit = {
     // write dictionary file
-    val uniqueTableName: String = s"${ carbonLoadModel.getDatabaseName }_${
-      carbonLoadModel.getTableName
-    }"
+    val uniqueTableName: String =
+      CarbonTable.buildUniqueName(carbonLoadModel.getDatabaseName, carbonLoadModel.getTableName)
     result match {
       case Some(server) =>
         try {

@@ -58,6 +58,16 @@ public final class CarbonMetadata {
   }
 
   /**
+   * removed the table information
+   *
+   * @param databaseName
+   * @param tableName
+   */
+  public void removeTable(String databaseName, String tableName) {
+    removeTable(CarbonTable.buildUniqueName(databaseName, tableName));
+  }
+
+  /**
    * Below method will be used to set the carbon table
    * This method will be used in executor side as driver will always have
    * updated table so from driver during query execution and data loading
@@ -91,6 +101,17 @@ public final class CarbonMetadata {
    */
   public CarbonTable getCarbonTable(String tableUniqueName) {
     return tableInfoMap.get(convertToLowerCase(tableUniqueName));
+  }
+
+  /**
+   * Below method to get the loaded carbon table
+   *
+   * @param databaseName
+   * @param tableName
+   * @return
+   */
+  public CarbonTable getCarbonTable(String databaseName, String tableName) {
+    return getCarbonTable(CarbonTable.buildUniqueName(databaseName, tableName));
   }
 
   /**

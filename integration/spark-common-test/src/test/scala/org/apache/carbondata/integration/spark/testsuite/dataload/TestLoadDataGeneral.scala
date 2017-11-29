@@ -30,6 +30,7 @@ import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 
 class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
@@ -48,7 +49,7 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
       segmentId: String,
       datbaseName: String,
       tableName: String): Boolean = {
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(datbaseName + "_" + tableName)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(datbaseName, tableName)
     val partitionPath = CarbonStorePath
       .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier).getPartitionDir("0")
     val fileType: FileFactory.FileType = FileFactory.getFileType(partitionPath)

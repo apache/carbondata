@@ -211,7 +211,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val tableMetadataFile = carbonTablePath.getSchemaFilePath
     val fileType = FileFactory.getFileType(tableMetadataFile)
     if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
-      val tableUniqueName = dbName + "_" + tableName
+      val tableUniqueName = CarbonTable.buildUniqueName(dbName, tableName)
       val tableInfo: TableInfo = CarbonUtil.readSchemaFile(tableMetadataFile)
       val schemaConverter = new ThriftWrapperSchemaConverterImpl
       val wrapperTableInfo = schemaConverter
@@ -402,7 +402,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     carbonTableToBeRemoved match {
       case Some(carbonTable) =>
         metadata.carbonTables -= carbonTable
-        CarbonMetadata.getInstance.removeTable(dbName + "_" + tableName)
+        CarbonMetadata.getInstance.removeTable(dbName, tableName)
       case None =>
         if (LOGGER.isDebugEnabled) {
           LOGGER.debug(s"No entry for table $tableName in database $dbName")
@@ -458,7 +458,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val tableName = absoluteTableIdentifier.getCarbonTableIdentifier.getTableName
     val metadataFilePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)
       .getMetadataDirectoryPath
-    val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName + "_" + tableName)
+    val carbonTable = CarbonMetadata.getInstance.getCarbonTable(dbName, tableName)
     if (null != carbonTable) {
       // clear driver B-tree and dictionary cache
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
