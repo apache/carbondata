@@ -128,16 +128,17 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
    * @return processed row.
    */
   protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch, RowConverter localConverter) {
-    CarbonRowBatch newBatch = new CarbonRowBatch(rowBatch.getSize());
     while (rowBatch.hasNext()) {
-      CarbonRow next = rowBatch.next();
-      short bucketNumber = (short) partitioner.getPartition(next.getData());
-      CarbonRow convertRow = localConverter.convert(next);
+      CarbonRow row = rowBatch.next();
+      short bucketNumber = (short) partitioner.getPartition(row.getData());
+      CarbonRow convertRow = localConverter.convert(row);
       convertRow.bucketNumber = bucketNumber;
-      newBatch.addRow(convertRow);
+      rowBatch.setPreviousRow(convertRow);
     }
-    rowCounter.getAndAdd(newBatch.getSize());
-    return newBatch;
+    rowCounter.getAndAdd(rowBatch.getSize());
+    // reuse the origin batch
+    rowBatch.rewind();
+    return rowBatch;
   }
 
   @Override

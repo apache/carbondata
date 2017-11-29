@@ -106,12 +106,14 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
    * @return processed row.
    */
   protected CarbonRowBatch processRowBatch(CarbonRowBatch rowBatch, RowConverter localConverter) {
-    CarbonRowBatch newBatch = new CarbonRowBatch(rowBatch.getSize());
     while (rowBatch.hasNext()) {
-      newBatch.addRow(localConverter.convert(rowBatch.next()));
+      CarbonRow convertRow = localConverter.convert(rowBatch.next());
+      rowBatch.setPreviousRow(convertRow);
     }
-    rowCounter.getAndAdd(newBatch.getSize());
-    return newBatch;
+    rowCounter.getAndAdd(rowBatch.getSize());
+    // reuse the origin batch
+    rowBatch.rewind();
+    return rowBatch;
   }
 
   @Override
