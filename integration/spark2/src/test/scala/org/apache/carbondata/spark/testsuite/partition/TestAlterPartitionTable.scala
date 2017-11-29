@@ -836,6 +836,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     val exception_test_add_partition: Exception = intercept[Exception] {
       sql("CREATE DATABASE IF NOT EXISTS carbondb")
       sql("USE default")
+      sql("drop table if exists carbon_table_in_default_db")
       sql(
         """
           | CREATE TABLE carbon_table_in_default_db(id INT, name STRING)

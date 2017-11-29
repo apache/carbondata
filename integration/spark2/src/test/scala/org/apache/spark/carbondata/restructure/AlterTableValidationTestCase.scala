@@ -98,19 +98,19 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("select distinct(tmpstmp) from restructure").show(200,false)
     checkAnswer(sql("select distinct(tmpstmp) from restructure"),
       Row(new java.sql.Timestamp(107, 0, 17, 0, 0, 0, 0)))
-    checkExistence(sql("desc restructure"), true, "tmpstmptimestamp")
+    checkExistence(sql("desc restructure"), true, "tmpstmp", "timestamp")
   }
 
-  ignore ("test add timestamp direct dictionary column") {
+  test ("test add timestamp direct dictionary column") {
     sql(
       "alter table restructure add columns(tmpstmp1 timestamp) TBLPROPERTIES ('DEFAULT.VALUE" +
       ".tmpstmp1'= '17-01-3007','DICTIONARY_INCLUDE'='tmpstmp1')")
     checkAnswer(sql("select distinct(tmpstmp1) from restructure"),
       Row(null))
-    checkExistence(sql("desc restructure"), true, "tmpstmptimestamp")
+    checkExistence(sql("desc restructure"), true, "tmpstmp", "timestamp")
   }
 
-  ignore("test add timestamp column and load as dictionary") {
+  ignore ("test add timestamp column and load as dictionary") {
     sql("create table table1(name string) stored by 'carbondata'")
     sql("insert into table1 select 'abc'")
     sql("alter table table1 add columns(tmpstmp timestamp) TBLPROPERTIES " +
@@ -121,19 +121,19 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
         Row("name",Timestamp.valueOf("2007-01-17 00:00:00.0"))))
   }
 
-  ignore("test add msr column") {
+  test("test add msr column") {
     sql(
       "alter table restructure add columns(msrField decimal(5,2))TBLPROPERTIES ('DEFAULT.VALUE" +
       ".msrfield'= '123.45')")
     sql("desc restructure").show(2000,false)
-    checkExistence(sql("desc restructure"), true, "msrfielddecimal(5,2)")
+    checkExistence(sql("desc restructure"), true, "msrfield", "decimal(5,2)")
     val output = sql("select msrField from restructure").collect
     sql("select distinct(msrField) from restructure").show(2000,false)
     checkAnswer(sql("select distinct(msrField) from restructure"),
       Row(new BigDecimal("123.45").setScale(2, RoundingMode.HALF_UP)))
   }
 
-  ignore("test add all datatype supported dictionary column") {
+  test("test add all datatype supported dictionary column") {
     sql(
       "alter table restructure add columns(strfld string, datefld date, tptfld timestamp, " +
       "shortFld smallInt, " +
@@ -142,14 +142,14 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
       ".dblFld'= '12345')")
     checkAnswer(sql("select distinct(dblFld) from restructure"),
       Row(java.lang.Double.parseDouble("12345")))
-    checkExistence(sql("desc restructure"), true, "strfldstring")
-    checkExistence(sql("desc restructure"), true, "dateflddate")
-    checkExistence(sql("desc restructure"), true, "tptfldtimestamp")
-    checkExistence(sql("desc restructure"), true, "shortfldsmallint")
-    checkExistence(sql("desc restructure"), true, "intfldint")
-    checkExistence(sql("desc restructure"), true, "longfldbigint")
-    checkExistence(sql("desc restructure"), true, "dblflddouble")
-    checkExistence(sql("desc restructure"), true, "dcmldecimal(5,4)")
+    checkExistence(sql("desc restructure"), true, "strfld", "string")
+    checkExistence(sql("desc restructure"), true, "datefld", "date")
+    checkExistence(sql("desc restructure"), true, "tptfld", "timestamp")
+    checkExistence(sql("desc restructure"), true, "shortfld", "smallint")
+    checkExistence(sql("desc restructure"), true, "intfld", "int")
+    checkExistence(sql("desc restructure"), true, "longfld", "bigint")
+    checkExistence(sql("desc restructure"), true, "dblfld", "double")
+    checkExistence(sql("desc restructure"), true, "dcml", "decimal(5,4)")
   }
 
   test("test drop all keycolumns in a table") {
@@ -170,7 +170,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     "used")
   {
     sql("alter table restructure add columns(dcmldefault decimal)")
-    checkExistence(sql("desc restructure"), true, "dcmldefaultdecimal(10,0)")
+    checkExistence(sql("desc restructure"), true, "dcmldefault", "decimal(10,0)")
   }
 
   test("test adding existing measure as dimension") {
@@ -292,11 +292,11 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     }
   }
 
-  ignore("test drop dimension, measure column") {
+  test("test drop dimension, measure column") {
     sql("alter table default.restructure drop columns(empno, designation, doj)")
-    checkExistence(sql("desc restructure"), false, "empnoint")
-    checkExistence(sql("desc restructure"), false, "designationstring")
-    checkExistence(sql("desc restructure"), false, "dojtimestamp")
+    checkExistence(sql("desc restructure"), false, "empno")
+    checkExistence(sql("desc restructure"), false, "designation")
+    checkExistence(sql("desc restructure"), false, "doj")
     assert(sql("select * from restructure").schema
              .filter(p => p.name.equalsIgnoreCase("empno") ||
                           p.name.equalsIgnoreCase("designation") || p.name.equalsIgnoreCase("doj"))
@@ -304,7 +304,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("alter table restructure add columns(empno int, designation string, doj timestamp)")
   }
 
-  ignore ("test drop & add same column multiple times as dict, nodict, timestamp and msr") {
+  test ("test drop & add same column multiple times as dict, nodict, timestamp and msr") {
     // drop and add dict column
     sql("alter table restructure drop columns(designation)")
     sql(
@@ -332,10 +332,10 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     checkAnswer(sql("select distinct(designation) from restructure"), Row(67890))
   }
 
-  ignore("test change datatype of int and decimal column") {
+  test("test change datatype of int and decimal column") {
     sql("alter table restructure add columns(intfield int, decimalfield decimal(10,2))")
     sql("alter table default.restructure change intfield intField bigint")
-    checkExistence(sql("desc restructure"), true, "intfieldbigint")
+    checkExistence(sql("desc restructure"), true, "intfield", "bigint")
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(11,3)")
     sql("alter table default.restructure change decimalfield deciMalfield Decimal(12,3)")
     intercept[RuntimeException] {
@@ -404,7 +404,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     assert(result.count().equals(10L))
   }
 
-  test("test to check if bad record folder name is changed") {
+  ignore("test to check if bad record folder name is changed") {
     sql("alter table restructure_bad rename to restructure_badnew")
     val oldLocation = new File("./target/test/badRecords/default/restructure_bad")
     val newLocation = new File("./target/test/badRecords/default/restructure_badnew")

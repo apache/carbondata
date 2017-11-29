@@ -24,7 +24,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.apache.spark.SPARK_VERSION
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonSource, SparkSession}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
@@ -154,9 +154,10 @@ class CarbonFileMetastore extends CarbonMetaStore {
           case Some(name) if name.equals("org.apache.spark.sql.CarbonSource") => name
           case _ => throw new NoSuchTableException(database, tableIdentifier.table)
         }
-        new CarbonSource().createRelation(sparkSession.sqlContext,
-          catalogTable.storage.properties
-        ).asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation
+        val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
+           catalogTable.location.toString, database, tableIdentifier.table)
+        CarbonEnv.getInstance(sparkSession).carbonMetastore.
+          createCarbonRelation(catalogTable.storage.properties, identifier, sparkSession)
       case _ => throw new NoSuchTableException(database, tableIdentifier.table)
     }
 

@@ -28,7 +28,7 @@ import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeRef
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
-import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.execution.datasources.{FindDataSourceTable, LogicalRelation}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.sql.CarbonExpressions.MatchCast
@@ -145,8 +145,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             carbonTable,
             tableName,
             list)
-          // TODO need to handle filter predicate subquery scenario
-          // isValidPlan = !PredicateSubquery.hasPredicateSubquery(filterExp)
+          isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(filterExp)
           // getting the columns from filter expression
           if(isValidPlan) {
             filterExp.transform {
@@ -210,8 +209,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             carbonTable,
             tableName,
             list)
-          // TODO need to handle filter predicate subquery scenario
-//          isValidPlan = !PredicateSubquery.hasPredicateSubquery(filterExp)
+          isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(filterExp)
           if (isValidPlan) {
             list ++
             extractQueryColumnForOrderBy(Some(projectList), sortOrders, carbonTable, tableName)
@@ -258,8 +256,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             carbonTable,
             tableName,
             list)
-          // TODO need to handle filter predicate subquery scenario
-//          isValidPlan = !PredicateSubquery.hasPredicateSubquery(filterExp)
+          isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(filterExp)
           if(isValidPlan) {
             list ++ extractQueryColumnForOrderBy(sortOrders = sortOrders,
               carbonTable = carbonTable,
@@ -311,8 +308,9 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
               val relation = sparkSession.sessionState.catalog.lookupRelation(identifier)
               (selectedDataMapSchema, carbonRelation, relation)
             }.minBy(f => f._2.sizeInBytes)
+          val newRelation = new FindDataSourceTable(sparkSession).apply(relation)
           // transform the query plan based on selected child schema
-          transformPreAggQueryPlan(plan, aggDataMapSchema, relation)
+          transformPreAggQueryPlan(plan, aggDataMapSchema, newRelation)
         } else {
           plan
         }
@@ -1223,6 +1221,4 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
         "Cannot insert into target table because number of columns mismatch")
     }
   }
-
 }
-
