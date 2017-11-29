@@ -17,9 +17,11 @@
 
 package org.apache.carbondata.core.datastore.filesystem;
 
+import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -28,9 +30,16 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.io.compress.BZip2Codec;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.io.compress.GzipCodec;
 
 public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   /**
@@ -39,6 +48,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(AbstractDFSCarbonFile.class.getName());
   protected FileStatus fileStatus;
+  public FileSystem fs;
   protected Configuration hadoopConf;
 
   public AbstractDFSCarbonFile(String filePath) {
@@ -49,7 +59,6 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
     this.hadoopConf = hadoopConf;
     filePath = filePath.replace("\\", "/");
     Path path = new Path(filePath);
-    FileSystem fs;
     try {
       fs = path.getFileSystem(this.hadoopConf);
       fileStatus = fs.getFileStatus(path);
@@ -230,5 +239,170 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
       isFileModified = true;
     }
     return isFileModified;
+  }
+
+  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, boolean append) throws IOException {
+    Path pt = new Path(path);
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    FSDataOutputStream stream = null;
+    if (append) {
+      // append to a file only if file already exists else file not found
+      // exception will be thrown by hdfs
+      if (CarbonUtil.isFileExists(path)) {
+        stream = fs.append(pt, bufferSize);
+      } else {
+        stream = fs.create(pt, true, bufferSize);
+      }
+    } else {
+      stream = fs.create(pt, true, bufferSize);
+    }
+    return stream;
+  }
+
+  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, Configuration hadoopConf) throws IOException {
+    path = path.replace("\\", "/");
+    boolean gzip = path.endsWith(".gz");
+    boolean bzip2 = path.endsWith(".bz2");
+    InputStream stream;
+    Path pt = new Path(path);
+    FileSystem fs = pt.getFileSystem(hadoopConf);
+    if (bufferSize == -1) {
+      stream = fs.open(pt);
+    } else {
+      stream = fs.open(pt, bufferSize);
+    }
+    String codecName = null;
+    if (gzip) {
+      codecName = GzipCodec.class.getName();
+    } else if (bzip2) {
+      codecName = BZip2Codec.class.getName();
+    }
+    if (null != codecName) {
+      CompressionCodecFactory ccf = new CompressionCodecFactory(hadoopConf);
+      CompressionCodec codec = ccf.getCodecByClassName(codecName);
+      stream = codec.createInputStream(stream);
+    }
+    return new DataInputStream(new BufferedInputStream(stream));
+  }
+
+  /**
+   * return the datainputStream which is seek to the offset of file
+   *
+   * @param path
+   * @param fileType
+   * @param bufferSize
+   * @param offset
+   * @return DataInputStream
+   * @throws IOException
+   */
+  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, long offset) throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    FSDataInputStream stream = fs.open(pt, bufferSize);
+    stream.seek(offset);
+    return new DataInputStream(new BufferedInputStream(stream));
+  }
+
+  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
+      throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    return fs.create(pt, true);
+  }
+
+  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, long blockSize) throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    return fs.create(pt, true, bufferSize, fs.getDefaultReplication(pt), blockSize);
+  }
+
+  @Override public boolean isFileExist(String filePath, FileFactory.FileType fileType,
+      boolean performFileCheck) throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    if (performFileCheck) {
+      return fs.exists(path) && fs.isFile(path);
+    } else {
+      return fs.exists(path);
+    }
+  }
+
+  @Override public boolean isFileExist(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    return fs.exists(path);
+  }
+
+  @Override public boolean createNewFile(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    return fs.createNewFile(path);
+  }
+
+  @Override
+  public boolean createNewFile(String filePath, FileFactory.FileType fileType, boolean doAs,
+      final FsPermission permission) throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    boolean result = fs.createNewFile(path);
+    if (null != permission) {
+      fs.setPermission(path, permission);
+    }
+    return result;
+  }
+
+  @Override public boolean deleteFile(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    return fs.delete(path, true);
+  }
+
+  @Override public boolean mkdirs(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    return fs.mkdirs(path);
+  }
+
+  @Override
+  public DataOutputStream getDataOutputStreamUsingAppend(String path, FileFactory.FileType fileType)
+      throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    return fs.append(pt);
+  }
+
+  @Override public boolean createNewLockFile(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    Path path = new Path(filePath);
+    FileSystem fs = path.getFileSystem(FileFactory.getConfiguration());
+    if (fs.createNewFile(path)) {
+      fs.deleteOnExit(path);
+      return true;
+    }
+    return false;
+  }
+
+  @Override
+  public void setPermission(String directoryPath, FsPermission permission, String username,
+      String group) throws IOException {
   }
 }

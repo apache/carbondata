@@ -17,12 +17,19 @@
 
 package org.apache.carbondata.core.datastore.filesystem;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.channels.FileChannel;
+import java.util.zip.GZIPInputStream;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -30,7 +37,10 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.permission.FsPermission;
 
 public class LocalCarbonFile implements CarbonFile {
   private static final LogService LOGGER =
@@ -212,6 +222,7 @@ public class LocalCarbonFile implements CarbonFile {
     return isFileModified;
   }
 
+
   @Override public boolean renameForce(String changetoName) {
     File destFile = new File(changetoName);
     if (destFile.exists()) {
@@ -224,4 +235,171 @@ public class LocalCarbonFile implements CarbonFile {
 
   }
 
+  /**
+   * below method will be used to update the file path
+   * for local type
+   * it removes the file:/ from the path
+   *
+   * @param filePath
+   * @return updated file path without url for local
+   */
+  private static String getUpdatedFilePath(String filePath) {
+    if (filePath != null && !filePath.isEmpty()) {
+      // If the store path is relative then convert to absolute path.
+      if (filePath.startsWith("./")) {
+        try {
+          return new File(filePath).getCanonicalPath();
+        } catch (IOException e) {
+          throw new RuntimeException(e);
+        }
+      } else {
+        Path pathWithoutSchemeAndAuthority =
+            Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
+        return pathWithoutSchemeAndAuthority.toString();
+      }
+    } else {
+      return filePath;
+    }
+  }
+
+  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, boolean append) throws FileNotFoundException {
+    path = getUpdatedFilePath(path);
+    return new DataOutputStream(
+        new BufferedOutputStream(new FileOutputStream(path, append), bufferSize));
+  }
+
+  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, Configuration configuration) throws IOException {
+    path = path.replace("\\", "/");
+    boolean gzip = path.endsWith(".gz");
+    boolean bzip2 = path.endsWith(".bz2");
+    InputStream stream;
+    path = FileFactory.getUpdatedFilePath(path, fileType);
+    if (gzip) {
+      stream = new GZIPInputStream(new FileInputStream(path));
+    } else if (bzip2) {
+      stream = new BZip2CompressorInputStream(new FileInputStream(path));
+    } else {
+      stream = new FileInputStream(path);
+    }
+    return new DataInputStream(new BufferedInputStream(stream));
+  }
+
+  /**
+   * return the datainputStream which is seek to the offset of file
+   *
+   * @param path
+   * @param fileType
+   * @param bufferSize
+   * @param offset
+   * @return DataInputStream
+   * @throws IOException
+   */
+  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, long offset) throws IOException {
+    path = path.replace("\\", "/");
+    path = FileFactory.getUpdatedFilePath(path, fileType);
+    FileInputStream fis = new FileInputStream(path);
+    long actualSkipSize = 0;
+    long skipSize = offset;
+    try {
+      while (actualSkipSize != offset) {
+        actualSkipSize += fis.skip(skipSize);
+        skipSize = skipSize - actualSkipSize;
+      }
+    } catch (IOException ioe) {
+      CarbonUtil.closeStream(fis);
+      throw ioe;
+    }
+    return new DataInputStream(new BufferedInputStream(fis));
+  }
+
+  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
+      throws IOException {
+    path = path.replace("\\", "/");
+    return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
+  }
+
+  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, long blockSize) throws IOException {
+    path = path.replace("\\", "/");
+    path = FileFactory.getUpdatedFilePath(path, fileType);
+    return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path), bufferSize));
+  }
+
+  @Override public boolean isFileExist(String filePath, FileFactory.FileType fileType,
+      boolean performFileCheck) throws IOException {
+    filePath = filePath.replace("\\", "/");
+    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
+    File defaultFile = new File(filePath);
+
+    if (performFileCheck) {
+      return defaultFile.exists() && defaultFile.isFile();
+    } else {
+      return defaultFile.exists();
+    }
+  }
+
+  @Override public boolean isFileExist(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
+    File defaultFile = new File(filePath);
+    return defaultFile.exists();
+  }
+
+  @Override public boolean createNewFile(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
+    File file = new File(filePath);
+    return file.createNewFile();
+  }
+
+  @Override
+  public boolean createNewFile(String filePath, FileFactory.FileType fileType, boolean doAs,
+      final FsPermission permission) throws IOException {
+    filePath = filePath.replace("\\", "/");
+    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
+    File file = new File(filePath);
+    return file.createNewFile();
+  }
+
+  @Override public boolean deleteFile(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
+    File file = new File(filePath);
+    return FileFactory.deleteAllFilesOfDir(file);
+  }
+
+  @Override public boolean mkdirs(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
+    File file = new File(filePath);
+    return file.mkdirs();
+  }
+
+  @Override
+  public DataOutputStream getDataOutputStreamUsingAppend(String path, FileFactory.FileType fileType)
+      throws IOException {
+    path = path.replace("\\", "/");
+    path = FileFactory.getUpdatedFilePath(path, fileType);
+    return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path, true)));
+  }
+
+  @Override public boolean createNewLockFile(String filePath, FileFactory.FileType fileType)
+      throws IOException {
+    filePath = filePath.replace("\\", "/");
+    filePath = FileFactory.getUpdatedFilePath(filePath, fileType);
+    File file = new File(filePath);
+    return file.createNewFile();
+  }
+
+  @Override
+  public void setPermission(String directoryPath, FsPermission permission, String username,
+      String group) throws IOException {
+  }
 }

@@ -22,6 +22,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 import scala.collection.mutable.ArrayBuffer
 
+import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
 import org.apache.spark.sql.CarbonDatasourceHadoopRelation
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
 import org.apache.spark.sql.CarbonSource
@@ -488,7 +489,9 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val timestampFile = basePath + "/" + CarbonCommonConstants.SCHEMAS_MODIFIED_TIME_FILE
     val timestampFileType = FileFactory.getFileType(timestampFile)
     if (!FileFactory.isFileExist(basePath, timestampFileType)) {
-      FileFactory.mkdirs(basePath, timestampFileType)
+      FileFactory
+        .createDirectoryAndSetPermission(basePath,
+          new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     }
     (timestampFile, timestampFileType)
   }
@@ -516,7 +519,11 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val (timestampFile, timestampFileType) = getTimestampFileAndType()
     if (!FileFactory.isFileExist(timestampFile, timestampFileType)) {
       LOGGER.audit(s"Creating timestamp file for $timestampFile")
-      FileFactory.createNewFile(timestampFile, timestampFileType)
+      FileFactory
+        .createNewFile(timestampFile,
+          timestampFileType,
+          true,
+          new FsPermission(FsAction.ALL, FsAction.ALL, FsAction.ALL))
     }
     FileFactory.getCarbonFile(timestampFile, timestampFileType)
       .setLastModifiedTime(System.currentTimeMillis())
