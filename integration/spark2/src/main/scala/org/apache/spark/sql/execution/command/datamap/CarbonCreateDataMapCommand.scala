@@ -25,6 +25,7 @@ import org.apache.spark.sql.execution.command.preaaggregate.{CreatePreAggregateT
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
  * Below command class will be used to create datamap on table
@@ -39,6 +40,13 @@ case class CarbonCreateDataMapCommand(
   extends AtomicRunnableCommand {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    // since streaming segment does not support building index and pre-aggregate yet,
+    // so streaming table does not support create datamap
+    val carbonTable =
+      CarbonEnv.getCarbonTable(tableIdentifier.database, tableIdentifier.table)(sparkSession)
+    if (carbonTable.isStreamingTable) {
+      throw new MalformedCarbonCommandException("Streaming table does not support creating datamap")
+    }
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     if (dmClassName.equals("org.apache.carbondata.datamap.AggregateDataMapHandler") ||
         dmClassName.equalsIgnoreCase("preaggregate")) {
