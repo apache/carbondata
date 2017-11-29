@@ -25,19 +25,20 @@ import org.apache.spark.util.AlterTableUtil
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.format.TableInfo
 
-private[sql] case class AlterTableSetCommand(val tableIdentifier: TableIdentifier,
-                                             val properties: Map[String, String],
-                                             val isView: Boolean)
-  extends RunnableCommand with SchemaProcessCommand {
+private[sql] case class CarbonAlterTableUnsetCommand(
+    tableIdentifier: TableIdentifier,
+    propKeys: Seq[String],
+    ifExists: Boolean,
+    isView: Boolean)
+  extends RunnableCommand with MetadataProcessOpeation {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
-    processSchema(sparkSession)
+    processMetadata(sparkSession)
   }
 
-  override def processSchema(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    AlterTableUtil.modifyTableComment(tableIdentifier, properties, Nil,
-      true)(sparkSession)
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
+    AlterTableUtil.modifyTableComment(tableIdentifier, Map.empty[String, String],
+      propKeys, false)(sparkSession)
     Seq.empty
   }
 }

@@ -19,7 +19,7 @@ package org.apache.spark.sql
 
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.compress.GzipCodec
-import org.apache.spark.sql.execution.command.management.LoadTableCommand
+import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CarbonException
 
@@ -132,7 +132,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
    */
   private def loadDataFrame(options: CarbonOption): Unit = {
     val header = dataFrame.columns.mkString(",")
-    LoadTableCommand(
+    CarbonLoadDataCommand(
       Some(options.dbName),
       options.tableName,
       null,

@@ -18,7 +18,7 @@ package org.apache.spark.util
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.apache.spark.sql.execution.command.AlterTableModel
-import org.apache.spark.sql.execution.command.management.AlterTableCompactionCommand
+import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompactionCommand
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -34,7 +34,7 @@ object Compaction {
     TableAPIUtil.validateTableExists(spark, dbName, tableName)
     if (compactionType.equalsIgnoreCase(CarbonCommonConstants.MAJOR) ||
         compactionType.equalsIgnoreCase(CarbonCommonConstants.MINOR)) {
-      AlterTableCompactionCommand(AlterTableModel(Some(dbName),
+      CarbonAlterTableCompactionCommand(AlterTableModel(Some(dbName),
         tableName,
         None,
         compactionType,

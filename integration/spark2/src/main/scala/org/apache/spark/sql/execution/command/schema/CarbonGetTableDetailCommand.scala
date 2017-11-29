@@ -19,14 +19,12 @@ package org.apache.spark.sql.execution.command.schema
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.execution.command.{DataProcessCommand, RunnableCommand}
+import org.apache.spark.sql.execution.command.DataCommand
 import org.apache.spark.sql.types.{LongType, StringType}
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * collect dynamic detail information of the table, including table size, last modified time, etc.
@@ -34,11 +32,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 case class CarbonGetTableDetailCommand(
     databaseName: String,
     tableNames: Seq[String])
-  extends RunnableCommand with DataProcessCommand {
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processData(sparkSession)
-  }
+  extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val storePath = CarbonProperties.getStorePath

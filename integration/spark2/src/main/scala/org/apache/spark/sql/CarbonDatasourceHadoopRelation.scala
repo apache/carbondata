@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 import org.apache.spark.CarbonInputMetrics
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.execution.command.management.LoadTableByInsertCommand
+import org.apache.spark.sql.execution.command.management.CarbonInsertIntoCommand
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.sources.{BaseRelation, Filter, InsertableRelation}
@@ -96,7 +96,7 @@ case class CarbonDatasourceHadoopRelation(
         CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS)
     }
     if (data.logicalPlan.output.size >= carbonRelation.output.size) {
-      LoadTableByInsertCommand(this, data.logicalPlan, overwrite).run(sparkSession)
+      CarbonInsertIntoCommand(this, data.logicalPlan, overwrite).run(sparkSession)
     } else {
       CarbonException.analysisException(
         "Cannot insert into target table because number of columns mismatch")

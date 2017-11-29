@@ -24,7 +24,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
-import org.apache.spark.sql.execution.command.{DataLoadTableFileMapping, DataProcessCommand, RunnableCommand, UpdateTableModel}
+import org.apache.spark.sql.execution.command.{DataLoadTableFileMapping, DataProcessOperation, RunnableCommand, UpdateTableModel}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.{CausedBy, FileUtils}
 
@@ -48,7 +48,7 @@ import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CommonUtil, DataLoadingUtil, GlobalDictionaryUtil}
 
-case class LoadTableCommand(
+case class CarbonLoadDataCommand(
     databaseNameOp: Option[String],
     tableName: String,
     factPathFromUser: String,
@@ -59,7 +59,7 @@ case class LoadTableCommand(
     dataFrame: Option[DataFrame] = None,
     updateModel: Option[UpdateTableModel] = None,
     var tableInfoOp: Option[TableInfo] = None)
-  extends RunnableCommand with DataProcessCommand {
+  extends RunnableCommand with DataProcessOperation {
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
     processData(sparkSession)

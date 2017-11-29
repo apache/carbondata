@@ -18,21 +18,25 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
-import org.apache.spark.sql.catalyst.expressions.Attribute
-import org.apache.spark.sql.execution.command.{Checker, DataProcessCommand, RunnableCommand}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.types.{StringType, TimestampType}
 
 import org.apache.carbondata.api.CarbonStore
 
 case class CarbonShowLoadsCommand(
     databaseNameOp: Option[String],
     tableName: String,
-    limit: Option[String],
-    override val output: Seq[Attribute])
-  extends RunnableCommand with DataProcessCommand {
+    limit: Option[String])
+  extends DataCommand {
 
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processData(sparkSession)
+  override def output: Seq[Attribute] = {
+    Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
+      AttributeReference("Status", StringType, nullable = false)(),
+      AttributeReference("Load Start Time", TimestampType, nullable = false)(),
+      AttributeReference("Load End Time", TimestampType, nullable = true)(),
+      AttributeReference("Merged To", StringType, nullable = false)(),
+      AttributeReference("File Format", StringType, nullable = false)())
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
