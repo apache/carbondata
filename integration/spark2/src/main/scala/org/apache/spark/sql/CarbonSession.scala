@@ -21,6 +21,7 @@ import java.io.File
 import scala.collection.JavaConverters._
 
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, SECRET_KEY}
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
@@ -32,6 +33,7 @@ import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
@@ -119,13 +121,6 @@ object CarbonSession {
         }
       }
 
-      val carbonProperties = CarbonProperties.getInstance()
-      if(carbonProperties.getProperty(CarbonCommonConstants.S3_ACCESS_KEY) != ""){
-        options ++= Map[String, String]((CarbonCommonConstants.S3_ACCESS_KEY, carbonProperties.getProperty(CarbonCommonConstants.S3_ACCESS_KEY))
-          ,(CarbonCommonConstants.S3_SECRET_KEY, carbonProperties.getProperty(CarbonCommonConstants.S3_SECRET_KEY)),
-        (CarbonCommonConstants.S3_IMPLEMENTATION, carbonProperties.getProperty(CarbonCommonConstants.S3_IMPLEMENTATION)))
-      }
-
       // Get the session from current thread's active session.
       var session: SparkSession = SparkSession.getActiveSession match {
         case Some(sparkSession: CarbonSession) =>
@@ -168,6 +163,7 @@ object CarbonSession {
             sparkConf.setAppName(randomAppName)
           }
           val sc = SparkContext.getOrCreate(sparkConf)
+          setS3Configurations(sc)
           // maybe this is an existing SparkContext, update its SparkConf which maybe used
           // by SparkSession
           options.foreach { case (k, v) => sc.conf.set(k, v) }
@@ -269,5 +265,20 @@ object CarbonSession {
       .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
       .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
         AlterPreAggregateTableCompactionPostListener)
+  }
+
+  private def setS3Configurations(sparkContext: SparkContext): Unit = {
+    FileFactory.getConfiguration
+      .set(ACCESS_KEY, sparkContext.hadoopConfiguration.get(ACCESS_KEY, ""))
+    FileFactory.getConfiguration
+      .set(SECRET_KEY, sparkContext.hadoopConfiguration.get(SECRET_KEY, ""))
+    FileFactory.getConfiguration.set(CarbonCommonConstants.S3_ACCESS_KEY,
+      sparkContext.hadoopConfiguration.get(CarbonCommonConstants.S3_ACCESS_KEY, ""))
+    FileFactory.getConfiguration.set(CarbonCommonConstants.S3_SECRET_KEY,
+      sparkContext.hadoopConfiguration.get(CarbonCommonConstants.S3_SECRET_KEY, ""))
+    FileFactory.getConfiguration.set(CarbonCommonConstants.S3N_ACCESS_KEY,
+      sparkContext.hadoopConfiguration.get(CarbonCommonConstants.S3N_ACCESS_KEY, ""))
+    FileFactory.getConfiguration.set(CarbonCommonConstants.S3N_SECRET_KEY,
+      sparkContext.hadoopConfiguration.get(CarbonCommonConstants.S3N_SECRET_KEY, ""))
   }
 }

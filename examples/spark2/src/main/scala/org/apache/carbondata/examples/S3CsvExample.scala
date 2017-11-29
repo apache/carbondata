@@ -25,10 +25,10 @@ import org.slf4j.{Logger, LoggerFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-object S3Example {
+object S3CsvExample {
 
   /**
-   * This example demonstrate usage of s3 as a store.
+   * This example demonstrate to create local store having csv on s3.
    *
    * @param args require three parameters "Access-key" "Secret-key"
    *             "s3 bucket path"
@@ -37,32 +37,31 @@ object S3Example {
   def main(args: Array[String]) {
     val rootPath = new File(this.getClass.getResource("/").getPath
                             + "../../../..").getCanonicalPath
+    val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    val path = s"$rootPath/examples/spark2/src/main/resources/data1.csv"
     val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
       .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
-      .addProperty(CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE, "0.02")
 
     import org.apache.spark.sql.CarbonSession._
     if (args.length != 3) {
       logger.error("Usage: java CarbonS3Example <access-key> <secret-key>" +
-                   "<carbon store location>")
+                   "<s3.csv.location>")
       System.exit(0)
     }
 
-    val (accessKey, secretKey) = getKeyOnPrefix(args(2))
     val spark = SparkSession
       .builder()
       .master("local")
       .appName("CarbonSessionExample")
       .config("spark.sql.warehouse.dir", warehouse)
       .config("spark.driver.host", "localhost")
-      .config(accessKey, args(0))
-      .config(secretKey, args(1))
-      .getOrCreateCarbonSession(args(2), warehouse)
+      .config("spark.hadoop." + ACCESS_KEY, args(0))
+      .config("spark.hadoop." + SECRET_KEY, args(1))
+      .getOrCreateCarbonSession(storeLocation, warehouse)
 
     spark.sparkContext.setLogLevel("INFO")
 
@@ -78,52 +77,28 @@ object S3Example {
          | decimalField DECIMAL(18,2),
          | dateField DATE,
          | charField CHAR(5),
-         | floatField FLOAT
+         | floatField FLOAT,
+         | complexData ARRAY<STRING>
          | )
          | STORED BY 'carbondata'
          | TBLPROPERTIES('SORT_COLUMNS'='', 'DICTIONARY_INCLUDE'='dateField, charField')
        """.stripMargin)
 
+    // scalastyle:off
     spark.sql(
       s"""
-         | LOAD DATA LOCAL INPATH '$path'
+         | LOAD DATA LOCAL INPATH '${ args(2) }'
          | INTO TABLE carbon_table
-         | OPTIONS('HEADER'='true')
+         | OPTIONS('HEADER'='true', 'COMPLEX_DELIMITER_LEVEL_1'='#')
        """.stripMargin)
 
     spark.sql(
       s"""
-         | LOAD DATA LOCAL INPATH '$path'
+         | LOAD DATA LOCAL INPATH '${ args(2) }'
          | INTO TABLE carbon_table
-         | OPTIONS('HEADER'='true')
+         | OPTIONS('HEADER'='true', 'COMPLEX_DELIMITER_LEVEL_1'='#')
        """.stripMargin)
-
-    spark.sql(
-      s"""
-         | LOAD DATA LOCAL INPATH '$path'
-         | INTO TABLE carbon_table
-         | OPTIONS('HEADER'='true')
-       """.stripMargin)
-
-    spark.sql(
-      s"""
-         | LOAD DATA LOCAL INPATH '$path'
-         | INTO TABLE carbon_table
-         | OPTIONS('HEADER'='true')
-       """.stripMargin)
-
-    spark.sql("ALTER table carbon_table compact 'MINOR'")
-    spark.sql("show segments for table carbon_table").show()
-
-    spark.sql(
-      s"""
-         | LOAD DATA LOCAL INPATH '$path'
-         | INTO TABLE carbon_table
-         | OPTIONS('HEADER'='true')
-       """.stripMargin)
-
-    spark.sql("ALTER table carbon_table compact 'MAJOR'")
-    spark.sql("show segments for table carbon_table").show()
+    // scalastyle:on
 
     spark.sql(
       s"""
@@ -134,19 +109,5 @@ object S3Example {
     spark.sql("Drop table if exists carbon_table")
 
     spark.stop()
-  }
-
-  def getKeyOnPrefix(path: String): (String, String) = {
-    if (path.startsWith(CarbonCommonConstants.S3A_PREFIX)) {
-      ("spark.hadoop." + ACCESS_KEY, "spark.hadoop." + SECRET_KEY)
-    } else if (path.startsWith(CarbonCommonConstants.S3N_PREFIX)) {
-      ("spark.hadoop." + CarbonCommonConstants.S3N_ACCESS_KEY,
-        "spark.hadoop." + CarbonCommonConstants.S3N_SECRET_KEY)
-    } else if (path.startsWith(CarbonCommonConstants.S3_PREFIX)) {
-      ("spark.hadoop." + CarbonCommonConstants.S3_ACCESS_KEY,
-        "spark.hadoop." + CarbonCommonConstants.S3_SECRET_KEY)
-    } else {
-      throw new Exception("Incorrect Store Path")
-    }
   }
 }

@@ -43,14 +43,6 @@ public class S3FileLock extends AbstractCarbonLock {
   private DataOutputStream dataOutputStream;
 
   /**
-   * @param lockFilePath
-   */
-  public S3FileLock(String lockFilePath) {
-    this.location = lockFilePath;
-    initRetry();
-  }
-
-  /**
    * @param tableIdentifier
    * @param lockFile
    */

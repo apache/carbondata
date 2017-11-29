@@ -14,41 +14,64 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.carbondata.examples
 
 import java.io.File
 
+import org.apache.hadoop.fs.s3a.Constants.{ACCESS_KEY, SECRET_KEY}
+import org.apache.spark.sql.SparkSession
+import org.slf4j.{Logger, LoggerFactory}
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-object FederationExample {
+object MultiStoreExample {
+
+  /** This example demonstrate the usage of multiple filesystem(s3 and local) on one carbon session
+   *
+   * @param args represents "fs.s3a.access.key" "fs.s3a.secret.key" "bucket-name"
+   */
 
   def main(args: Array[String]) {
 
+    val rootPath = new File(this.getClass.getResource("/").getPath
+                            + "../../../..").getCanonicalPath
+    val storeLocation = s"$rootPath/examples/spark2/target/store"
+    val warehouse = s"$rootPath/examples/spark2/target/warehouse"
+    val metastoredb = s"$rootPath/examples/spark2/target"
+    val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
+    val logger: Logger = LoggerFactory.getLogger(this.getClass)
+
+    if (args.length != 3) {
+      logger.error("Usage: java CarbonS3Example <fs.s3a.access.key> <fs.s3a.secret" +
+              ".key> <bucket-name>")
+      System.exit(0)
+    }
+
     CarbonProperties.getInstance()
-      .addProperty("carbon.enable.vector.reader", "true")
-      .addProperty("enable.unsafe.sort", "true")
-      .addProperty("carbon.blockletgroup.size.in.mb", "32")
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
-      .addProperty(CarbonCommonConstants.S3_ACCESS_KEY, "***********")
-      .addProperty(CarbonCommonConstants.S3_SECRET_KEY, "***********")
-      .addProperty(CarbonCommonConstants.S3_IMPLEMENTATION, "org.apache.carbondata.core.datastore.impl.CarbonS3FileSystem")
+      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
+
+    import org.apache.spark.sql.CarbonSession._
+    val spark = SparkSession
+      .builder()
+      .master("local")
+      .appName("CarbonSessionExample")
+      .config("spark.sql.warehouse.dir", warehouse)
+      .config("spark.driver.host", "localhost")
+      .config("spark.hadoop." + ACCESS_KEY, args(0))
+      .config("spark.hadoop." + SECRET_KEY, args(1))
+      .getOrCreateCarbonSession(storeLocation, warehouse)
+
+    spark.sparkContext.setLogLevel("INFO")
 
     val s3Db = "s3Db"
     val s3Table = "s3table"
     val localDb = "localdatabase"
     val localTable = "localtable"
 
-    val spark = ExampleUtils.createCarbonSession("CarbonSessionExample")
-    spark.sparkContext.setLogLevel("WARN")
-
-    val rootPath = new File(this.getClass.getResource("/").getPath
-      + "../../../..").getCanonicalPath
-    val path = s"$rootPath/examples/spark2/src/main/resources/data.csv"
-
-    spark.sql(s"CREATE DATABASE if not exists $s3Db LOCATION 's3a://<bucket-name>/$s3Db'")
+    spark.sql(s"CREATE DATABASE if not exists $s3Db LOCATION 's3a://${ args(2) }/$s3Db'")
     spark.sql(
       s"""
          | CREATE TABLE if not exists $s3Db.$s3Table(
@@ -127,5 +150,4 @@ object FederationExample {
 
     spark.stop()
   }
-
 }
