@@ -707,6 +707,15 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("do not support creating datamap on streaming table") {
+    assert(
+      intercept[MalformedCarbonCommandException](
+        sql("CREATE DATAMAP datamap ON TABLE source " +
+            "USING 'preaggregate'" +
+            " AS SELECT c1, sum(c2) FROM source GROUP BY c1")
+      ).getMessage.contains("Streaming table does not support creating datamap"))
+  }
+
   def createWriteSocketThread(
       serverSocket: ServerSocket,
       writeNums: Int,
