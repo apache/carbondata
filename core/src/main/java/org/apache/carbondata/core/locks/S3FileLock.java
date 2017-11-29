@@ -36,19 +36,11 @@ public class S3FileLock extends AbstractCarbonLock {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(S3FileLock.class.getName());
   /**
-   * location hdfs file location
+   * location s3 file location
    */
   private String location;
 
   private DataOutputStream dataOutputStream;
-
-  /**
-   * @param lockFilePath
-   */
-  public S3FileLock(String lockFilePath) {
-    this.location = lockFilePath;
-    initRetry();
-  }
 
   /**
    * @param tableIdentifier

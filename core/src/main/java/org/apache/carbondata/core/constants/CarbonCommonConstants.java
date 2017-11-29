@@ -156,6 +156,7 @@ public final class CarbonCommonConstants {
 
   public static final String HDFSURL_PREFIX = "hdfs://";
 
+  public static final String LOCAL_FILE_PREFIX = "file://";
 
   public static final String VIEWFSURL_PREFIX = "viewfs://";
 
@@ -166,12 +167,22 @@ public final class CarbonCommonConstants {
   public static final String S3N_PREFIX = "s3n://";
 
   public static final String S3A_PREFIX = "s3a://";
-
-
   /**
-   * VIEWS3URL_PREFIX
+   * Access Key for s3n
    */
-  public static final String S3URL_PREFIX = "s3a://";
+  public static final String S3N_ACCESS_KEY = "fs.s3n.awsAccessKeyId";
+  /**
+   * Secret Key for s3n
+   */
+  public static final String S3N_SECRET_KEY = "fs.s3n.awsSecretAccessKey";
+  /**
+   * Access Key for s3
+   */
+  public static final String S3_ACCESS_KEY = "fs.s3.awsAccessKeyId";
+  /**
+   * Secret Key for s3
+   */
+  public static final String S3_SECRET_KEY = "fs.s3.awsSecretAccessKey";
 
   /**
    * FS_DEFAULT_FS
@@ -928,7 +939,7 @@ public final class CarbonCommonConstants {
   public static final String CARBON_LOCK_TYPE_HDFS = "HDFSLOCK";
 
   /**
-   * HDFSLOCK TYPE
+   * S3LOCK TYPE
    */
   public static final String CARBON_LOCK_TYPE_S3 = "S3LOCK";
 
@@ -1307,7 +1318,6 @@ public final class CarbonCommonConstants {
 
   public static final String MAJOR = "major";
 
-  public static final String LOCAL_FILE_PREFIX = "file://";
   @CarbonProperty
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION = "carbon.custom.block.distribution";
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT = "false";
@@ -1404,7 +1414,7 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_UPDATE_SEGMENT_PARALLELISM =
-          "carbon.update.segment.parallelism";
+      "carbon.update.segment.parallelism";
 
   /**
    * In default we will not optimize the update
@@ -1427,35 +1437,6 @@ public final class CarbonCommonConstants {
   public static final String CARBON_UPDATE_SYNC_FOLDER = "carbon.update.sync.folder";
 
   public static final String CARBON_UPDATE_SYNC_FOLDER_DEFAULT = "/tmp/carbondata";
-
-  /**
-   * S3 Constants
-   */
-
-  public static final String S3_ACCESS_KEY = "fs.s3a.access.key";
-
-  public static final String S3_SECRET_KEY = "fs.s3a.secret.key";
-
-  public static final String S3_IMPLEMENTATION = "fs.s3a.impl";
-
-  public static final String S3_SSL_ENABLED = "carbon.s3.ssl.enabled";
-
-  public static final String S3_MAX_ERROR_RETRIES = "carbon.s3.max-error-retries";
-
-  public static final String S3_MAX_CLIENT_RETRIES = "carbon.s3.max-client-retries";
-
-  public static final String S3_MAX_CONNECTIONS = "carbon.s3.max-connections";
-
-  public static final String S3_STAGING_DIRECTORY = "carbon.s3.staging-directory";
-
-  public static final String S3_USE_INSTANCE_CREDENTIALS = "carbon.s3.use-instance-credentials";
-
-  public static final String S3_PIN_CLIENT_TO_CURRENT_REGION =
-          "carbon.s3.pin-client-to-current-region";
-
-  public static final String S3_SSE_ENABLED = "carbon.s3.sse.enabled";
-
-  public static final String PATH_SEPARATOR = "/";
 
   /**
    * this will be used to pass bitset value in filter to another filter for
