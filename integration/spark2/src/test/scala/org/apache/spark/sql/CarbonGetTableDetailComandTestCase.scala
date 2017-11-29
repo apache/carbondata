@@ -34,7 +34,7 @@ class CarbonGetTableDetailCommandTestCase extends QueryTest with BeforeAndAfterA
   }
 
   test("collect the information of tables") {
-    val logicalPlan = CarbonGetTableDetailCommand("default", Seq("table_info1", "table_info2"))
+    val logicalPlan = CarbonGetTableDetailCommand("default", Some(Seq("table_info1", "table_info2")))
     val result =new QueryExecution(sqlContext.sparkSession, logicalPlan)
       .executedPlan
       .execute
