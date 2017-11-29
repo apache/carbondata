@@ -98,9 +98,9 @@ public abstract class EncodingFactory {
       metadata.readFields(in);
       return new RLECodec().createDecoder(metadata);
     } else if (encoding == BOOL_BYTE) {
-      RLEEncoderMeta metadata = new RLEEncoderMeta();
+      ColumnPageEncoderMeta metadata = new ColumnPageEncoderMeta();
       metadata.readFields(in);
-      return new RLECodec().createDecoder(metadata);
+      return new DirectCompressCodec(metadata.getStoreDataType()).createDecoder(metadata);
     } else {
       // for backward compatibility
       ValueEncoderMeta metadata = CarbonUtil.deserializeEncoderMetaV3(encoderMeta);
