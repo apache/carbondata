@@ -16,6 +16,8 @@
  */
 package org.apache.spark.sql.hive
 
+import java.lang.reflect.Constructor
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, ExperimentalMethods, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -27,6 +29,7 @@ import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser.CreateTableContext
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
+import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.{SparkOptimizer, SparkSqlAstBuilder}
 import org.apache.spark.sql.execution.command.datamap.{DataMapDropTablePostListener, DropDataMapPostListener}
 import org.apache.spark.sql.execution.command.preaaggregate._
@@ -35,11 +38,11 @@ import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStr
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.{CarbonHelperSqlAstBuilder, CarbonSpark2SqlParser, CarbonSparkSqlParser}
+import org.apache.spark.util.Utils
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.events._
 
 /**
  * This class will have carbon catalog and refresh the relation from cache if the carbontable in
@@ -147,22 +150,30 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
 
   override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)
 
+  def extendedAnalyzerRules: Seq[Rule[LogicalPlan]] = Nil
+  def internalAnalyzerRules: Seq[Rule[LogicalPlan]] = {
+    catalog.ParquetConversions ::
+    catalog.OrcConversions ::
+    CarbonPreInsertionCasts(sparkSession) ::
+    CarbonPreAggregateQueryRules(sparkSession) ::
+    CarbonIUDAnalysisRule(sparkSession) ::
+    AnalyzeCreateTable(sparkSession) ::
+    PreprocessTableInsertion(conf) ::
+    DataSourceAnalysis(conf) ::
+    (if (conf.runSQLonFile) {
+      new ResolveDataSource(sparkSession) :: Nil
+    } else {  Nil }
+      )
+  }
+
   override lazy val analyzer: Analyzer = {
     new Analyzer(catalog, conf) {
       override val extendedResolutionRules =
-        catalog.ParquetConversions ::
-        catalog.OrcConversions ::
-        CarbonPreInsertionCasts(sparkSession) ::
-        CarbonPreAggregateQueryRules(sparkSession) ::
-        CarbonIUDAnalysisRule(sparkSession) ::
-        AnalyzeCreateTable(sparkSession) ::
-        PreprocessTableInsertion(conf) ::
-        DataSourceAnalysis(conf) ::
-        (if (conf.runSQLonFile) {
-          new ResolveDataSource(sparkSession) :: Nil
-        } else {  Nil }
-           )
-
+        if (extendedAnalyzerRules.nonEmpty) {
+          extendedAnalyzerRules ++ internalAnalyzerRules
+        } else {
+          internalAnalyzerRules
+        }
       override val extendedCheckRules = Seq(
         PreWriteCheck(conf, catalog))
     }
@@ -190,8 +201,15 @@ class CarbonOptimizer(
   extends SparkOptimizer(catalog, conf, experimentalMethods) {
 
   override def execute(plan: LogicalPlan): LogicalPlan = {
-    // In case scalar subquery add flag in relation to skip the decoder plan in optimizer rule, And
-    // optimize whole plan at once.
+    val transFormedPlan: LogicalPlan = CarbonOptimizerUtil.transformForScalarSubQuery(plan)
+    super.execute(transFormedPlan)
+  }
+}
+
+object CarbonOptimizerUtil {
+  def transformForScalarSubQuery(plan: LogicalPlan) : LogicalPlan = {
+    // In case scalar subquery add flag in relation to skip the decoder plan in optimizer rule,
+    // And optimize whole plan at once.
     val transFormedPlan = plan.transform {
       case filter: Filter =>
         filter.transformExpressions {
@@ -213,7 +231,7 @@ class CarbonOptimizer(
             PredicateSubquery(tPlan, p.children, p.nullAware, p.exprId)
         }
     }
-    super.execute(transFormedPlan)
+    transFormedPlan
   }
 }
 

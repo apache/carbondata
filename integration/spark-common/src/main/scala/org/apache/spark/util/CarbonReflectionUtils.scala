@@ -28,6 +28,7 @@ import org.apache.spark.sql.catalyst.parser.AstBuilder
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
  * Reflection APIs
@@ -140,12 +141,15 @@ object CarbonReflectionUtils {
 
   def getSessionState(sparkContext: SparkContext, carbonSession: Object): Any = {
     if (sparkContext.version.startsWith("2.1")) {
-      createObject("org.apache.spark.sql.hive.CarbonSessionState", carbonSession)._1
+      val className = sparkContext.conf.get(
+        CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
+        "org.apache.spark.sql.hive.CarbonSessionState")
+      createObject(className, carbonSession)._1
     } else if (sparkContext.version.startsWith("2.2")) {
-      val tuple =
-        createObject("org.apache.spark.sql.hive.CarbonSessionStateBuilder",
-          carbonSession,
-          None)
+      val className = sparkContext.conf.get(
+        CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
+        "org.apache.spark.sql.hive.CarbonSessionStateBuilder")
+      val tuple = createObject(className, carbonSession, None)
       val method = tuple._2.getMethod("build")
       method.invoke(tuple._1)
     } else {
