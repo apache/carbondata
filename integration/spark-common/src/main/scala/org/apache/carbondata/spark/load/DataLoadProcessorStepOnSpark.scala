@@ -128,7 +128,7 @@ object DataLoadProcessorStepOnSpark {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
     val conf = DataLoadProcessBuilder.createConfiguration(model)
     val sortParameters = SortParameters.createSortParameters(conf)
-
+    val sortStepRowUtil = new SortStepRowUtil(sortParameters)
     TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
       wrapException(e, model)
     }
@@ -138,7 +138,7 @@ object DataLoadProcessorStepOnSpark {
 
       override def next(): CarbonRow = {
         val row =
-          new CarbonRow(SortStepRowUtil.convertRow(rows.next().getData, sortParameters))
+          new CarbonRow(sortStepRowUtil.convertRow(rows.next().getData))
         rowCounter.add(1)
         row
       }
