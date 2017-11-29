@@ -58,9 +58,8 @@ case class CarbonCleanFilesCommand(
       cleanGarbageDataInAllTables(sparkSession)
     }
     val cleanFilesPostEvent: CleanFilesPostEvent =
-      CleanFilesPostEvent(carbonTable,
-        sparkSession)
-    OperationListenerBus.getInstance.fireEvent(cleanFilesPreEvent)
+      CleanFilesPostEvent(carbonTable, sparkSession)
+    OperationListenerBus.getInstance.fireEvent(cleanFilesPostEvent)
     Seq.empty
   }
 
