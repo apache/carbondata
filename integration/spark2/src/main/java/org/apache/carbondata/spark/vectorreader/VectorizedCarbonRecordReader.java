@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.vectorreader;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -116,6 +117,14 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
       queryExecutor = QueryExecutorFactory.getQueryExecutor(queryModel);
       iterator = (AbstractDetailQueryResultIterator) queryExecutor.execute(queryModel);
     } catch (QueryExecutionException e) {
+      Throwable ext = e;
+      while (ext != null) {
+        if (ext instanceof FileNotFoundException) {
+          throw new InterruptedException(
+              e.getMessage() + ". insert overwrite may be in progress.Please check");
+        }
+        ext = ext.getCause();
+      }
       throw new InterruptedException(e.getMessage());
     }
   }
