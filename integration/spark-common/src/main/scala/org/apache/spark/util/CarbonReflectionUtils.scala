@@ -25,6 +25,7 @@ import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.catalyst.parser.AstBuilder
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 
@@ -153,6 +154,22 @@ object CarbonReflectionUtils {
       val tuple = createObject(className, carbonSession, None)
       val method = tuple._2.getMethod("build")
       method.invoke(tuple._1)
+    } else {
+      throw new UnsupportedOperationException("Spark version not supported")
+    }
+  }
+
+  def hasPredicateSubquery(filterExp: Expression) : Boolean = {
+    if (SPARK_VERSION.startsWith("2.1")) {
+      val tuple = Class.forName("org.apache.spark.sql.catalyst.expressions.PredicateSubquery")
+      val method = tuple.getMethod("hasPredicateSubquery", classOf[Expression])
+      val hasSubquery : Boolean = method.invoke(tuple, filterExp).asInstanceOf[Boolean]
+      hasSubquery
+    } else if (SPARK_VERSION.startsWith("2.2")) {
+      val tuple = Class.forName("org.apache.spark.sql.catalyst.expressions.SubqueryExpression")
+      val method = tuple.getMethod("hasInOrExistsSubquery", classOf[Expression])
+      val hasSubquery : Boolean = method.invoke(tuple, filterExp).asInstanceOf[Boolean]
+      hasSubquery
     } else {
       throw new UnsupportedOperationException("Spark version not supported")
     }

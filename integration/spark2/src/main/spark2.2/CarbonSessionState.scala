@@ -16,18 +16,23 @@
  */
 package org.apache.spark.sql.hive
 
+
+import scala.collection.generic.SeqFactory
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, FunctionRegistry}
 import org.apache.spark.sql.catalyst.catalog._
-import org.apache.spark.sql.catalyst.expressions.ScalarSubquery
+import org.apache.spark.sql.catalyst.expressions.{Exists, In, ListQuery, ScalarSubquery}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.parser.ParserUtils.string
-import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{CreateHiveTableContext, CreateTableContext}
+import org.apache.spark.sql.catalyst.parser.SqlBaseParser.{AddTableColumnsContext, ChangeColumnContext, CreateHiveTableContext, CreateTableContext}
 import org.apache.spark.sql.catalyst.plans.logical.{Filter, LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.catalyst.rules.Rule
+import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand}
 import org.apache.spark.sql.execution.datasources.{FindDataSourceTable, LogicalRelation, PreWriteCheck, ResolveSQLOnFile, _}
 import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStrategy, StreamingTableStrategy}
 import org.apache.spark.sql.execution.{SparkOptimizer, SparkSqlAstBuilder}
@@ -35,10 +40,12 @@ import org.apache.spark.sql.hive.client.HiveClient
 import org.apache.spark.sql.internal.{SQLConf, SessionState}
 import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
 import org.apache.spark.sql.parser.{CarbonHelperSqlAstBuilder, CarbonSpark2SqlParser, CarbonSparkSqlParser}
+import org.apache.spark.sql.types.DecimalType
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
  * This class will have carbon catalog and refresh the relation from cache if the carbontable in
@@ -135,6 +142,18 @@ class CarbonSessionCatalog(
   }
 }
 
+
+class CarbonAnalyzer(catalog: SessionCatalog,
+    conf: SQLConf,
+    sparkSession: SparkSession,
+    analyzer: Analyzer) extends Analyzer(catalog, conf) {
+  override def execute(plan: LogicalPlan): LogicalPlan = {
+    val logicalPlan = analyzer.execute(plan)
+    CarbonPreAggregateQueryRules(sparkSession).apply(logicalPlan)
+  }
+}
+
+
 /**
  * Session state implementation to override sql parser and adding strategies
  *
@@ -186,7 +205,7 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
 
   override lazy val optimizer: Optimizer = new CarbonOptimizer(catalog, conf, experimentalMethods)
 
-  override protected def analyzer: Analyzer = {
+  override protected def analyzer: Analyzer = new CarbonAnalyzer(catalog, conf, sparkSession,
     new Analyzer(catalog, conf) {
 
       override val extendedResolutionRules: Seq[Rule[LogicalPlan]] =
@@ -194,7 +213,7 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
         new FindDataSourceTable(session) +:
         new ResolveSQLOnFile(session) +:
         new CarbonIUDAnalysisRule(sparkSession) +:
-        new CarbonPreAggregateQueryRules(sparkSession) +:
+        CarbonPreAggregateDataLoadingRules +:
         new CarbonPreInsertionCasts(sparkSession) +: customResolutionRules
 
       override val extendedCheckRules: Seq[LogicalPlan => Unit] =
@@ -209,7 +228,7 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
         HiveAnalysis +:
         customPostHocResolutionRules
     }
-  }
+  )
 
   override protected def newBuilder: NewBuilder = new CarbonSessionStateBuilder(_, _)
 
@@ -236,6 +255,23 @@ class CarbonOptimizer(
                 lr
             }
             ScalarSubquery(tPlan, s.children, s.exprId)
+          case e: Exists =>
+            val tPlan = e.plan.transform {
+              case lr: LogicalRelation
+                if lr.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+                lr.relation.asInstanceOf[CarbonDatasourceHadoopRelation].isSubquery += true
+                lr
+            }
+            Exists(tPlan, e.children.map(_.canonicalized), e.exprId)
+
+          case In(value, Seq(l@ListQuery(sub, _, exprId))) =>
+            val tPlan = sub.transform {
+              case lr: LogicalRelation
+                if lr.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+                lr.relation.asInstanceOf[CarbonDatasourceHadoopRelation].isSubquery += true
+                lr
+            }
+            In(value, Seq(ListQuery(tPlan, l.children , exprId)))
         }
     }
     super.execute(transFormedPlan)
@@ -264,6 +300,57 @@ class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser) extends
     } else {
       super.visitCreateHiveTable(ctx)
     }
+  }
+
+  override def visitChangeColumn(ctx: ChangeColumnContext): LogicalPlan = {
+
+    val newColumn = visitColType(ctx.colType)
+    if (!ctx.identifier.getText.equalsIgnoreCase(newColumn.name)) {
+      throw new MalformedCarbonCommandException(
+        "Column names provided are different. Both the column names should be same")
+    }
+
+    val (typeString, values) : (String, Option[List[(Int, Int)]]) = newColumn.dataType match {
+      case d:DecimalType => ("decimal", Some(List((d.precision, d.scale))))
+      case _ => (newColumn.dataType.typeName.toLowerCase, None)
+    }
+
+    val alterTableChangeDataTypeModel =
+      AlterTableDataTypeChangeModel(new CarbonSpark2SqlParser().parseDataType(typeString, values),
+        new CarbonSpark2SqlParser()
+          .convertDbNameToLowerCase(Option(ctx.tableIdentifier().db).map(_.getText)),
+        ctx.tableIdentifier().table.getText.toLowerCase,
+        ctx.identifier.getText.toLowerCase,
+        newColumn.name.toLowerCase)
+
+    CarbonAlterTableDataTypeChangeCommand(alterTableChangeDataTypeModel)
+  }
+
+
+  override def visitAddTableColumns(ctx: AddTableColumnsContext): LogicalPlan = {
+
+    val cols = Option(ctx.columns).toSeq.flatMap(visitColTypeList)
+    val fields = parser.getFields(cols)
+    val tblProperties = scala.collection.mutable.Map.empty[String, String]
+    val tableModel = new CarbonSpark2SqlParser().prepareTableModel (false,
+      new CarbonSpark2SqlParser().convertDbNameToLowerCase(Option(ctx.tableIdentifier().db)
+        .map(_.getText)),
+      ctx.tableIdentifier.table.getText.toLowerCase,
+      fields,
+      Seq.empty,
+      tblProperties,
+      None,
+      true)
+
+    val alterTableAddColumnsModel = AlterTableAddColumnsModel(
+      Option(ctx.tableIdentifier().db).map(_.getText),
+      ctx.tableIdentifier.table.getText,
+      tblProperties.toMap,
+      tableModel.dimCols,
+      tableModel.msrCols,
+      tableModel.highcardinalitydims.getOrElse(Seq.empty))
+
+    CarbonAlterTableAddColumnCommand(alterTableAddColumnsModel)
   }
 
   override def visitCreateTable(ctx: CreateTableContext): LogicalPlan = {

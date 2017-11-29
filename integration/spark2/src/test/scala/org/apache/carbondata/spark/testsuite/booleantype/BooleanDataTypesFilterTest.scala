@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.testsuite.booleantype
 import java.io.File
 
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -79,24 +80,43 @@ class BooleanDataTypesFilterTest extends QueryTest with BeforeAndAfterEach with 
     checkAnswer(sql("select count(*) from carbon_table where booleanField = true"),
       Row(4))
 
-//    checkAnswer(sql("select count(*) from carbon_table where booleanField = 'true'"),
-//      Row(0))
+    if (!Spark2TestQueryExecutor.spark.version.startsWith("2.2")) {
+      checkAnswer(sql("select count(*) from carbon_table where booleanField = 'true'"),
+        Row(0))
 
-    checkAnswer(sql(
-      s"""
-         |select count(*)
-         |from carbon_table where booleanField = \"true\"
-         |""".stripMargin),
-      Row(0))
+      checkAnswer(sql(
+        s"""
+           |select count(*)
+           |from carbon_table where booleanField = \"true\"
+           |""".stripMargin),
+        Row(0))
+
+      checkAnswer(sql("select count(*) from carbon_table where booleanField = 'false'"),
+        Row(0))
+
+    } else {
+      // On Spark-2.2 onwards the filter values are eliminated from quotes and pushed to carbon
+      // layer. So 'true' will be converted to true and pushed to carbon layer. So in case of
+      // condition 'true' and true both output same results.
+      checkAnswer(sql("select count(*) from carbon_table where booleanField = 'true'"),
+        Row(4))
+
+      checkAnswer(sql(
+        s"""
+           |select count(*)
+           |from carbon_table where booleanField = \"true\"
+           |""".stripMargin),
+        Row(4))
+
+      checkAnswer(sql("select count(*) from carbon_table where booleanField = 'false'"),
+        Row(4))
+    }
 
     checkAnswer(sql("select * from carbon_table where booleanField = false"),
       Seq(Row(false), Row(false), Row(false), Row(false)))
 
     checkAnswer(sql("select count(*) from carbon_table where booleanField = false"),
       Row(4))
-
-    checkAnswer(sql("select count(*) from carbon_table where booleanField = 'false'"),
-      Row(0))
 
     checkAnswer(sql("select count(*) from carbon_table where booleanField = null"),
       Row(0))

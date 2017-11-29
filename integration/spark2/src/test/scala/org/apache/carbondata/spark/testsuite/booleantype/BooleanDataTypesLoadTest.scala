@@ -21,6 +21,7 @@ import java.io.File
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
@@ -270,30 +271,51 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     checkAnswer(sql("select count(*) from boolean_table where booleanField = true"),
       Row(4))
 
-//    checkAnswer(sql("select count(*) from boolean_table where booleanField = 'true'"),
-//      Row(0))
-
-    checkAnswer(sql(
-      s"""
-         |select count(*)
-         |from boolean_table where booleanField = \"true\"
-         |""".stripMargin),
-      Row(0))
-
     checkAnswer(sql("select booleanField from boolean_table where booleanField = false"),
       Seq(Row(false), Row(false), Row(false), Row(false), Row(false), Row(false)))
 
     checkAnswer(sql("select count(*) from boolean_table where booleanField = false"),
       Row(6))
 
-    checkAnswer(sql("select count(*) from boolean_table where booleanField = 'false'"),
-      Row(0))
-
     checkAnswer(sql("select count(*) from boolean_table where booleanField = null"),
       Row(0))
 
     checkAnswer(sql("select count(*) from boolean_table where booleanField = false or booleanField = true"),
       Row(10))
+
+    if (!Spark2TestQueryExecutor.spark.version.startsWith("2.2")) {
+      checkAnswer(sql("select count(*) from boolean_table where booleanField = 'true'"),
+        Row(0))
+
+      checkAnswer(sql(
+        s"""
+           |select count(*)
+           |from boolean_table where booleanField = \"true\"
+           |""".stripMargin),
+        Row(0))
+
+      checkAnswer(sql("select count(*) from boolean_table where booleanField = 'false'"),
+        Row(0))
+
+    } else {
+      // On Spark-2.2 onwards the filter values are eliminated from quotes and pushed to carbon
+      // layer. So 'true' will be converted to true and pushed to carbon layer. So in case of
+      // condition 'true' and true both output same results.
+
+      checkAnswer(sql("select count(*) from boolean_table where booleanField = 'true'"),
+        Row(4))
+
+      checkAnswer(sql(
+        s"""
+           |select count(*)
+           |from boolean_table where booleanField = \"true\"
+           |""".stripMargin),
+        Row(4))
+
+      checkAnswer(sql("select count(*) from boolean_table where booleanField = 'false'"),
+        Row(6))
+
+    }
   }
 
   test("Loading table: load with DELIMITER, QUOTECHAR, COMMENTCHAR, MULTILINE, ESCAPECHAR, COMPLEX_DELIMITER_LEVEL_1, SINGLE_PASS") {
@@ -339,30 +361,50 @@ class BooleanDataTypesLoadTest extends QueryTest with BeforeAndAfterEach with Be
     checkAnswer(sql("select count(*) from boolean_table where booleanField = true"),
       Row(4))
 
-//    checkAnswer(sql("select count(*) from boolean_table where booleanField = 'true'"),
-//      Row(0))
-
-    checkAnswer(sql(
-      s"""
-         |select count(*)
-         |from boolean_table where booleanField = \"true\"
-         |""".stripMargin),
-      Row(0))
-
     checkAnswer(sql("select booleanField from boolean_table where booleanField = false"),
       Seq(Row(false), Row(false), Row(false), Row(false), Row(false), Row(false)))
 
     checkAnswer(sql("select count(*) from boolean_table where booleanField = false"),
       Row(6))
 
-    checkAnswer(sql("select count(*) from boolean_table where booleanField = 'false'"),
-      Row(0))
-
     checkAnswer(sql("select count(*) from boolean_table where booleanField = null"),
       Row(0))
 
     checkAnswer(sql("select count(*) from boolean_table where booleanField = false or booleanField = true"),
       Row(10))
+
+    if (!Spark2TestQueryExecutor.spark.version.startsWith("2.2")) {
+      checkAnswer(sql("select count(*) from boolean_table where booleanField = 'true'"),
+        Row(0))
+
+      checkAnswer(sql(
+        s"""
+           |select count(*)
+           |from boolean_table where booleanField = \"true\"
+           |""".stripMargin),
+        Row(0))
+
+      checkAnswer(sql("select count(*) from boolean_table where booleanField = 'false'"),
+        Row(0))
+
+    } else {
+      // On Spark-2.2 onwards the filter values are eliminated from quotes and pushed to carbon
+      // layer. So 'true' will be converted to true and pushed to carbon layer. So in case of
+      // condition 'true' and true both output same results.
+
+      checkAnswer(sql("select count(*) from boolean_table where booleanField = 'true'"),
+        Row(4))
+
+      checkAnswer(sql(
+        s"""
+           |select count(*)
+           |from boolean_table where booleanField = \"true\"
+           |""".stripMargin),
+        Row(4))
+
+      checkAnswer(sql("select count(*) from boolean_table where booleanField = 'false'"),
+        Row(6))
+    }
   }
 
   test("Loading table: bad_records_action is FORCE") {
