@@ -55,7 +55,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   private AbstractQueue<SortTempChunkHolder> recordHolderHeapLocal;
 
   private SortParameters parameters;
-
+  private SortStepRowUtil sortStepRowUtil;
   /**
    * tempFileLocation
    */
@@ -68,6 +68,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
   public UnsafeSingleThreadFinalSortFilesMerger(SortParameters parameters,
       String[] tempFileLocation) {
     this.parameters = parameters;
+    this.sortStepRowUtil = new SortStepRowUtil(parameters);
     this.tempFileLocation = tempFileLocation;
     this.tableName = parameters.getTableName();
   }
@@ -184,7 +185,7 @@ public class UnsafeSingleThreadFinalSortFilesMerger extends CarbonIterator<Objec
    * @return sorted row
    */
   public Object[] next() {
-    return SortStepRowUtil.convertRow(getSortedRecordFromFile(), parameters);
+    return sortStepRowUtil.convertRow(getSortedRecordFromFile());
   }
 
   /**
