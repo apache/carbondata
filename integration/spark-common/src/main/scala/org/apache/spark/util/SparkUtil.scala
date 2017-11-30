@@ -31,10 +31,10 @@ import org.apache.carbondata.processing.loading.csvinput.BlockDetails
 object SparkUtil {
 
   def setTaskContext(context: TaskContext): Unit = {
-    val localThreadContext = TaskContext.get()
-    if (localThreadContext == null) {
-      TaskContext.setTaskContext(context)
-    }
+    // scalastyle:off println
+    println(s"--------------------------------------: $context")
+    // scalastyle:on println
+    TaskContext.setTaskContext(context)
   }
 
   /**
