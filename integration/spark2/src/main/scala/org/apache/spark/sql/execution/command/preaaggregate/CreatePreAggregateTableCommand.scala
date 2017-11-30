@@ -112,7 +112,11 @@ case class CreatePreAggregateTableCommand(
     // load child table if parent table has existing segments
     val dbName = CarbonEnv.getDatabaseName(parentTableIdentifier.database)(sparkSession)
     val tableName = tableIdentifier.table
-    val metastorePath = CarbonEnv.getMetadataPath(Some(dbName), tableName)(sparkSession)
+    val metastorePath = CarbonEnv.getMetadataPath(Some(dbName),
+      parentTableIdentifier.table)(sparkSession)
+    // This will be used to check if the parent table has any segments or not. If not then no
+    // need to fire load for pre-aggregate table. Therefore reading the load details for PARENT
+    // table.
     val loadAvailable = SegmentStatusManager.readLoadMetadata(metastorePath).nonEmpty
     if (loadAvailable) {
       sparkSession.sql(s"insert into $dbName.$tableName $queryString")
