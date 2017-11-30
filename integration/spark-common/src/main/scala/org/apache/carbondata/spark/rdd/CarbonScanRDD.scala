@@ -38,6 +38,7 @@ import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.TableInfo
 import org.apache.carbondata.core.scan.expression.Expression
+import org.apache.carbondata.core.scan.expression.logical.AndExpression
 import org.apache.carbondata.core.scan.model.QueryModel
 import org.apache.carbondata.core.stats.{QueryStatistic, QueryStatisticsConstants, QueryStatisticsRecorder}
 import org.apache.carbondata.core.statusmanager.FileFormat
@@ -408,5 +409,13 @@ class CarbonScanRDD(
   // TODO find the better way set it.
   def setVectorReaderSupport(boolean: Boolean): Unit = {
     vectorReader = boolean
+  }
+
+  def setFilterExpression(expressionVal: Expression): Unit = {
+    if (null == filterExpression) {
+      filterExpression = expressionVal
+    } else {
+      filterExpression = new AndExpression(filterExpression, expressionVal)
+    }
   }
 }
