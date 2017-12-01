@@ -847,12 +847,20 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
         attrExpression.aggregateFunction match {
           case Sum(attr: AttributeReference) =>
             (attr.name + "_sum", alias) :: Nil
-          case Sum(Cast(attr: AttributeReference, _)) =>
-            (attr.name + "_sum", alias) :: Nil
+          case Sum(cast: Cast) =>
+            cast.child match {
+              case attr: AttributeReference =>
+                (attr.name + "_sum", alias) :: Nil
+              case _ => Seq(("", alias))
+            }
           case Count(Seq(attr: AttributeReference)) =>
             (attr.name + "_count", alias) :: Nil
-          case Count(Seq(Cast(attr: AttributeReference, _))) =>
-            (attr.name + "_count", alias) :: Nil
+          case Count(Seq(cast: Cast)) =>
+            cast.child match {
+              case attr: AttributeReference =>
+                (attr.name + "_count", alias) :: Nil
+              case _ => Seq(("", alias))
+            }
           case Average(attr: AttributeReference) =>
             Seq((attr.name + "_sum", Alias(attrExpression
               .copy(aggregateFunction = Sum(attr),
@@ -860,14 +868,18 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
               (attr.name, Alias(attrExpression
                 .copy(aggregateFunction = Count(attr),
                   resultId = NamedExpression.newExprId), attr.name + "_count")()))
-          case Average(cast@Cast(attr: AttributeReference, _)) =>
-            Seq((attr.name + "_sum", Alias(attrExpression
-              .copy(aggregateFunction = Sum(cast),
-                resultId = NamedExpression.newExprId),
-              attr.name + "_sum")()),
-              (attr.name, Alias(attrExpression
-                .copy(aggregateFunction = Count(cast),
-                  resultId = NamedExpression.newExprId), attr.name + "_count")()))
+          case Average(cast: Cast) =>
+            cast.child match {
+              case attr: AttributeReference =>
+                Seq((attr.name + "_sum", Alias(attrExpression
+                  .copy(aggregateFunction = Sum(cast),
+                    resultId = NamedExpression.newExprId),
+                  attr.name + "_sum")()),
+                  (attr.name, Alias(attrExpression
+                    .copy(aggregateFunction = Count(cast),
+                      resultId = NamedExpression.newExprId), attr.name + "_count")()))
+              case _ => Seq(("", alias))
+            }
           case _ => Seq(("", alias))
         }
 
