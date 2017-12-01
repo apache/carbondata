@@ -35,7 +35,7 @@ class V3offheapvectorTestCase extends QueryTest with BeforeAndAfterAll {
   //Check query reponse for select * query with no filters
   test("V3_01_Query_01_033", Include) {
      dropTable("3lakh_uniqdata")
-     sql(s"""CREATE TABLE 3lakh_uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128','include_dictionary'='BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,CUST_ID')""").collect
+     sql(s"""CREATE TABLE 3lakh_uniqdata (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128','dictionary_include'='BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,CUST_ID')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/3Lakh.csv' into table 3lakh_uniqdata OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select count(*) from 3lakh_uniqdata""",
       Seq(Row(300635)), "V3offheapvectorTestCase_V3_01_Query_01_033")
@@ -289,7 +289,7 @@ class V3offheapvectorTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Check impact on load and query reading when larger value (1 lakh length) present in the column
   ignore("V3_01_Stress_01_008", Include) {
-     sql(s"""create table t_carbn1c (name string) stored by 'carbondata' TBLPROPERTIES('table_blocksize'='128','include_dictionary'='name')""").collect
+     sql(s"""create table t_carbn1c (name string) stored by 'carbondata' TBLPROPERTIES('table_blocksize'='128','dictionary_include'='name')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/1lakh.csv' into table t_carbn1c OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='name')""").collect
     checkAnswer(s"""select count(*) from t_carbn1c""",
       Seq(Row(1)), "V3offheapvectorTestCase_V3_01_Stress_01_008")
@@ -309,7 +309,7 @@ class V3offheapvectorTestCase extends QueryTest with BeforeAndAfterAll {
   //Check join query when the table is having v3 format
   test("V3_01_Query_01_064", Include) {
     dropTable("3lakh_uniqdata2")
-     sql(s"""CREATE TABLE 3lakh_uniqdata2 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128','include_dictionary'='BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,CUST_ID')""").collect
+     sql(s"""CREATE TABLE 3lakh_uniqdata2 (CUST_ID int,CUST_NAME String,ACTIVE_EMUI_VERSION string, DOB timestamp, DOJ timestamp, BIGINT_COLUMN1 bigint,BIGINT_COLUMN2 bigint,DECIMAL_COLUMN1 decimal(30,10), DECIMAL_COLUMN2 decimal(36,10),Double_COLUMN1 double, Double_COLUMN2 double,INTEGER_COLUMN1 int) STORED BY 'carbondata' TBLPROPERTIES('table_blocksize'='128','dictionary_include'='BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1,CUST_ID')""").collect
    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/3Lakh.csv' into table 3lakh_uniqdata2 OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_ACTION'='FORCE','FILEHEADER'='CUST_ID,CUST_NAME,ACTIVE_EMUI_VERSION,DOB,DOJ,BIGINT_COLUMN1,BIGINT_COLUMN2,DECIMAL_COLUMN1,DECIMAL_COLUMN2,Double_COLUMN1,Double_COLUMN2,INTEGER_COLUMN1')""").collect
     checkAnswer(s"""select a.cust_id, b.cust_name from 3lakh_uniqdata a, 3lakh_uniqdata2 b where a.cust_id = b.cust_id and a.cust_name = b.cust_name and a.cust_id in (29000, 59000, 69000,15000,250000, 310000)""",
       Seq(Row(29000,"CUST_NAME_20000"),Row(250000,"CUST_NAME_241000"),Row(310000,"CUST_NAME_301000"),Row(59000,"CUST_NAME_50000"),Row(69000,"CUST_NAME_60000")), "V3offheapvectorTestCase_V3_01_Query_01_064")
