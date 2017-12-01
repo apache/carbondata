@@ -40,6 +40,7 @@ import org.apache.carbondata.processing.sort.sortdata.SingleThreadFinalSortFiles
 import org.apache.carbondata.processing.sort.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sort.sortdata.SortIntermediateFileMerger;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
+import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 /**
@@ -80,11 +81,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
         File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     finalMerger =
         new SingleThreadFinalSortFilesMerger(dataFolderLocations, sortParameters.getTableName(),
-            sortParameters.getDimColCount(),
-            sortParameters.getComplexDimColCount(), sortParameters.getMeasureColCount(),
-            sortParameters.getNoDictionaryCount(), sortParameters.getMeasureDataType(),
-            sortParameters.getNoDictionaryDimnesionColumn(),
-            sortParameters.getNoDictionarySortColumn());
+            new TableFieldStat(sortParameters));
   }
 
   @Override

@@ -34,20 +34,7 @@ public abstract class AbstractTempSortFileWriter implements TempSortFileWriter {
    */
   protected int writeBufferSize;
 
-  /**
-   * Measure count
-   */
-  protected int measureCount;
-
-  /**
-   * Measure count
-   */
-  protected int dimensionCount;
-
-  /**
-   * complexDimension count
-   */
-  protected int complexDimensionCount;
+  protected TableFieldStat tableFieldStat;
 
   /**
    * stream
@@ -55,24 +42,14 @@ public abstract class AbstractTempSortFileWriter implements TempSortFileWriter {
   protected DataOutputStream stream;
 
   /**
-   * noDictionaryCount
-   */
-  protected int noDictionaryCount;
-
-  /**
    * AbstractTempSortFileWriter
    *
+   * @param tableFieldStat
    * @param writeBufferSize
-   * @param dimensionCount
-   * @param measureCount
    */
-  public AbstractTempSortFileWriter(int dimensionCount, int complexDimensionCount, int measureCount,
-      int noDictionaryCount, int writeBufferSize) {
+  public AbstractTempSortFileWriter(TableFieldStat tableFieldStat, int writeBufferSize) {
+    this.tableFieldStat = tableFieldStat;
     this.writeBufferSize = writeBufferSize;
-    this.dimensionCount = dimensionCount;
-    this.complexDimensionCount = complexDimensionCount;
-    this.measureCount = measureCount;
-    this.noDictionaryCount = noDictionaryCount;
   }
 
   /**
@@ -83,6 +60,7 @@ public abstract class AbstractTempSortFileWriter implements TempSortFileWriter {
     try {
       stream = new DataOutputStream(
           new BufferedOutputStream(new FileOutputStream(file), writeBufferSize));
+      // note: this is the total size of the records in this file
       stream.writeInt(entryCount);
     } catch (FileNotFoundException e1) {
       throw new CarbonSortKeyAndGroupByException(e1);

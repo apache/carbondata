@@ -39,6 +39,7 @@ import org.apache.carbondata.processing.loading.sort.unsafe.holder.SortTempChunk
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeSortTempFileChunkHolder;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
+import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
 import org.apache.carbondata.processing.sort.sortdata.TempSortFileWriter;
 import org.apache.carbondata.processing.sort.sortdata.TempSortFileWriterFactory;
 
@@ -80,7 +81,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
 
   private File outPutFile;
 
-  private boolean[] noDictionarycolumnMapping;
+  private TableFieldStat tableFieldStat;
 
   private long[] nullSetWords;
 
@@ -97,7 +98,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     this.fileCounter = intermediateFiles.length;
     this.intermediateFiles = intermediateFiles;
     this.outPutFile = outPutFile;
-    noDictionarycolumnMapping = mergerParameters.getNoDictionaryDimnesionColumn();
+    this.tableFieldStat = new TableFieldStat(mergerParameters);
     this.nullSetWords = new long[((mergerParameters.getMeasureColCount() - 1) >> 6) + 1];
     // Take size of 2 MB for each row. I think it is high enough to use
     rowData = ByteBuffer.allocate(2 * 1024 * 1024);
@@ -164,9 +165,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     } else {
       writer = TempSortFileWriterFactory.getInstance()
           .getTempSortFileWriter(mergerParameters.isSortFileCompressionEnabled(),
-              mergerParameters.getDimColCount(), mergerParameters.getComplexDimColCount(),
-              mergerParameters.getMeasureColCount(), mergerParameters.getNoDictionaryCount(),
-              mergerParameters.getFileWriteBufferSize());
+              tableFieldStat, mergerParameters.getFileWriteBufferSize());
       writer.initiaize(outPutFile, totalNumberOfRecords);
     }
   }
@@ -278,15 +277,16 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
 
   /**
    * Below method will be used to write data to file
+   * todo: this can be optimized later
    *
    * @throws CarbonSortKeyAndGroupByException problem while writing
    */
   private void writeDataTofile(Object[] row) throws CarbonSortKeyAndGroupByException, IOException {
     int dimCount = 0;
     int size = 0;
-    DataType[] type = mergerParameters.getMeasureDataType();
-    for (; dimCount < noDictionarycolumnMapping.length; dimCount++) {
-      if (noDictionarycolumnMapping[dimCount]) {
+    DataType[] type = tableFieldStat.getMeasureDataType();
+    for (; dimCount < tableFieldStat.getIsDimNoDictFlags().length; dimCount++) {
+      if (tableFieldStat.getIsDimNoDictFlags()[dimCount]) {
         byte[] col = (byte[]) row[dimCount];
         rowData.putShort((short) col.length);
         size += 2;
@@ -300,8 +300,8 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
 
     // write complex dimensions here.
     int dimensionSize =
-        mergerParameters.getDimColCount() + mergerParameters.getComplexDimColCount();
-    int measureSize = mergerParameters.getMeasureColCount();
+        tableFieldStat.getDimCnt() + tableFieldStat.getComplexDimCnt();
+    int measureSize = tableFieldStat.getMeasureCnt();
     for (; dimCount < dimensionSize; dimCount++) {
       byte[] col = (byte[]) row[dimCount];
       rowData.putShort((short)col.length);
