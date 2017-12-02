@@ -149,8 +149,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
       case SubqueryAlias(_, c) if SPARK_VERSION.startsWith("2.2") &&
       (c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
        c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
-       c.getClass.getName
-         .equals("org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
+       c.getClass.getName.equals(
+         "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
         val catalogTable = CarbonReflectionUtils.getFieldOfCatalogTable(
           "tableMeta",
           c).asInstanceOf[CatalogTable]
