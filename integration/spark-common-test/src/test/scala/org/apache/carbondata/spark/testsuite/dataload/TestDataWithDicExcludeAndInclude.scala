@@ -17,7 +17,9 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import org.apache.spark.sql.AnalysisException
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
@@ -86,6 +88,56 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
     checkAnswer(
       sql("select ID from exclude_include_t3"), sql("select ID from exclude_include_hive_t3")
     )
+  }
+
+  test("test create table with dictionary property when dictionary is disabled") {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.ENABLE_DICTIONARY_SUPPORT,
+      "false")
+    intercept[AnalysisException](
+      sql(
+        """
+          | CREATE TABLE t1 (id string, value int)
+          | STORED BY 'carbondata'
+          | TBLPROPERTIES ('dictionary_include'='id')
+        """.stripMargin)
+    )
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.ENABLE_DICTIONARY_SUPPORT,
+      CarbonCommonConstants.ENABLE_DICTIONARY_SUPPORT_DEFAULT)
+  }
+
+  test("test create external table should fail") {
+    intercept[AnalysisException](
+      sql(
+        """
+          | CREATE EXTERNAL TABLE t1 (id string, value int)
+          | STORED BY 'carbondata'
+        """.stripMargin)
+    )
+  }
+
+  test("test create table with complex type when complex type is disabled") {
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.ENABLE_COMPLEX_TYPE_SUPPORT,
+      "false")
+    intercept[AnalysisException](
+      sql(
+        """
+          | CREATE TABLE t1 (id string, complex array<string>, value int)
+          | STORED BY 'carbondata'
+        """.stripMargin)
+    )
+    intercept[AnalysisException](
+      sql(
+        """
+          | CREATE TABLE t1 (id string, complex struct<a1:string>, value int)
+          | STORED BY 'carbondata'
+        """.stripMargin)
+    )
+    CarbonProperties.getInstance().addProperty(
+      CarbonCommonConstants.ENABLE_COMPLEX_TYPE_SUPPORT,
+      CarbonCommonConstants.ENABLE_COMPLEX_TYPE_SUPPORT_DEFAULT)
   }
 
   override def afterAll {

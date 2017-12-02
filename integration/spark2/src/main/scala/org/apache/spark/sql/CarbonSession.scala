@@ -31,6 +31,7 @@ import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
 import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.events._
@@ -58,7 +59,12 @@ class CarbonSession(@transient val sc: SparkContext,
    */
   @transient
  override lazy val sharedState: SharedState = {
-    existingSharedState.getOrElse(new SharedState(sparkContext))
+    if (existingSharedState.isDefined) {
+      val ss = existingSharedState.get
+      if (ss == null) new SharedState(sparkContext) else ss
+    } else {
+      new SharedState(sparkContext)
+    }
   }
 
   override def newSession(): SparkSession = {
@@ -170,8 +176,15 @@ object CarbonSession {
         }
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
-        CommonUtil.cleanInProgressSegments(
-          carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION), sparkContext)
+        try {
+          CommonUtil.cleanInProgressSegments(
+            carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION), sparkContext)
+        } catch {
+          case e: Throwable =>
+            // catch all exceptions to avoid CarbonSession initialization failure
+          LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+              .error(e, "Failed to clean in progress segments")
+        }
         // Register a successfully instantiated context to the singleton. This should be at the
         // end of the class definition so that the singleton is updated only if there is no
         // exception in the construction of the instance.

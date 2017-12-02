@@ -18,6 +18,7 @@ package org.apache.spark.sql.parser
 
 import scala.collection.mutable
 
+import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.spark.sql.{CarbonSession, SparkSession}
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
@@ -31,6 +32,8 @@ import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
@@ -142,7 +145,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
       partitionColumns: ColTypeListContext,
       columns : ColTypeListContext,
       tablePropertyList : TablePropertyListContext,
-      tableComment : Option[String]) : LogicalPlan = {
+      tableComment : Option[String],
+      ctas: TerminalNode) : LogicalPlan = {
     // val parser = new CarbonSpark2SqlParser
 
     val (name, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
@@ -158,7 +162,12 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     if (bucketSpecContext != null) {
       operationNotAllowed("CREATE TABLE ... CLUSTERED BY", bucketSpecContext)
     }
-
+    if (external) {
+      operationNotAllowed("CREATE EXTERNAL TABLE", tableHeader)
+    }
+    if (ctas != null && columns != null) {
+      operationNotAllowed("CREATE TABLE AS SELECT", tableHeader)
+    }
 
     val cols = Option(columns).toSeq.flatMap(visitColTypeList)
     val properties = getPropertyKeyValues(tablePropertyList)
@@ -173,10 +182,15 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
                           duplicateColumns.mkString("[", ",", "]"), columns)
     }
 
-
-
     val tableProperties = mutable.Map[String, String]()
     properties.foreach{property => tableProperties.put(property._1, property._2)}
+
+    if (tableProperties.contains(CarbonCommonConstants.DICTIONARY_INCLUDE) ||
+        tableProperties.contains(CarbonCommonConstants.DICTIONARY_EXCLUDE)) {
+      if (!CarbonProperties.isDictionaryEnabled) {
+        operationNotAllowed("Dictionary related property is not enabled", tablePropertyList)
+      }
+    }
 
     // validate partition clause
     val (partitionByStructFields, partitionFields) =
@@ -195,7 +209,20 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
           partitionColumns)
       }
     }
+
     val fields = parser.getFields(cols ++ partitionByStructFields)
+
+    // check if there are any complex type
+    if (fields.exists { field =>
+      val dataType = field.dataType.get
+      dataType.equalsIgnoreCase("struct") || dataType.equalsIgnoreCase("array") ||
+      dataType.equalsIgnoreCase("map")}) {
+      if (!CarbonProperties.isComplexTypeEnabled) {
+        operationNotAllowed("Complex data type is not enabled", columns)
+      }
+    }
+
+
     val options = new CarbonOption(properties)
     // validate tblProperties
     val bucketFields = parser.getBucketFields(tableProperties, fields, options)
