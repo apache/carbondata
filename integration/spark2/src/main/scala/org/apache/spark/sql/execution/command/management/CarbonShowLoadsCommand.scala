@@ -33,8 +33,8 @@ case class CarbonShowLoadsCommand(
   override def output: Seq[Attribute] = {
     Seq(AttributeReference("SegmentSequenceId", StringType, nullable = false)(),
       AttributeReference("Status", StringType, nullable = false)(),
-      AttributeReference("Load Start Time", TimestampType, nullable = false)(),
-      AttributeReference("Load End Time", TimestampType, nullable = true)(),
+      AttributeReference("Load Start Time (GMT+0)", TimestampType, nullable = false)(),
+      AttributeReference("Load End Time (GMT+0)", TimestampType, nullable = true)(),
       AttributeReference("Merged To", StringType, nullable = false)(),
       AttributeReference("File Format", StringType, nullable = false)())
   }
