@@ -307,7 +307,7 @@ public class CarbonTableReader {
       // get the store path of the table.
 
       AbsoluteTableIdentifier absoluteTableIdentifier =
-          new AbsoluteTableIdentifier(tablePath, cache.carbonTableIdentifier);
+          AbsoluteTableIdentifier.from(tablePath, cache.carbonTableIdentifier);
       cache.carbonTablePath =
           PathFactory.getInstance().getCarbonTablePath(absoluteTableIdentifier, null);
       // cache the table
@@ -336,8 +336,6 @@ public class CarbonTableReader {
       TableInfo wrapperTableInfo = schemaConverter
           .fromExternalToWrapperTableInfo(tableInfo, table.getSchemaName(), table.getTableName(),
               tablePath);
-      wrapperTableInfo.setMetaDataFilepath(
-              CarbonTablePath.getFolderContainingFile(cache.carbonTablePath.getSchemaFilePath()));
 
       // Step 4: Load metadata info into CarbonMetadata
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);

@@ -47,6 +47,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.complextypes.ArrayQueryType;
@@ -408,19 +409,17 @@ public class QueryUtil {
 
   public static AbsoluteTableIdentifier getTableIdentifierForColumn(CarbonDimension carbonDimension,
       AbsoluteTableIdentifier absoluteTableIdentifier) {
-    String parentTableName =
-        carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
-            .getRelationIdentifier().getTableName();
-    String parentDatabaseName =
-        carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
-            .getRelationIdentifier().getDatabaseName();
-    String parentTableId = carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0)
-        .getRelationIdentifier().getTableId();
-    CarbonTableIdentifier carbonTableIdentifier =
-        new CarbonTableIdentifier(parentDatabaseName, parentTableName, parentTableId);
+    RelationIdentifier relation = carbonDimension.getColumnSchema()
+        .getParentColumnTableRelations()
+        .get(0)
+        .getRelationIdentifier();
+    String parentTableName = relation.getTableName();
+    String parentDatabaseName = relation.getDatabaseName();
+    String parentTableId = relation.getTableId();
     CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
-    String newTablePath = CarbonUtil.getNewTablePath(carbonTablePath, carbonTableIdentifier);
-    return new AbsoluteTableIdentifier(newTablePath, carbonTableIdentifier);
+    String newTablePath = CarbonUtil.getNewTablePath(carbonTablePath, parentTableName);
+    return AbsoluteTableIdentifier.from(newTablePath, parentDatabaseName, parentTableName,
+        parentTableId);
   }
 
   /**

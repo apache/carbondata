@@ -24,7 +24,7 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
-import org.apache.spark.sql.execution.command.{DataLoadTableFileMapping, DataProcessOperation, RunnableCommand, UpdateTableModel}
+import org.apache.spark.sql.execution.command.{DataCommand, DataLoadTableFileMapping, DataProcessOperation, RunnableCommand, UpdateTableModel}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.{CausedBy, FileUtils}
 
@@ -59,11 +59,7 @@ case class CarbonLoadDataCommand(
     dataFrame: Option[DataFrame] = None,
     updateModel: Option[UpdateTableModel] = None,
     var tableInfoOp: Option[TableInfo] = None)
-  extends RunnableCommand with DataProcessOperation {
-
-  override def run(sparkSession: SparkSession): Seq[Row] = {
-    processData(sparkSession)
-  }
+  extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -74,8 +70,6 @@ case class CarbonLoadDataCommand(
         return Seq.empty
       }
     }
-
-    val dbName = databaseNameOp.getOrElse(sparkSession.catalog.currentDatabase)
 
     val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
     carbonProperty.addProperty("zookeeper.enable.lock", "false")
@@ -99,6 +93,7 @@ case class CarbonLoadDataCommand(
     // update the property with new value
     carbonProperty.addProperty(CarbonCommonConstants.NUM_CORES_LOADING, numCoresLoading)
 
+    val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val hadoopConf = sparkSession.sessionState.newHadoopConf()
     try {
       val table = if (tableInfoOp.isDefined) {
@@ -218,8 +213,7 @@ case class CarbonLoadDataCommand(
                                   table.getTableName + "/"
           val fileType = FileFactory.getFileType(partitionLocation)
           if (FileFactory.isFileExist(partitionLocation, fileType)) {
-            val file = FileFactory
-              .getCarbonFile(partitionLocation, fileType)
+            val file = FileFactory.getCarbonFile(partitionLocation, fileType)
             CarbonUtil.deleteFoldersAndFiles(file)
           }
         } catch {
@@ -267,7 +261,6 @@ case class CarbonLoadDataCommand(
         dimensions,
         carbonLoadModel,
         sparkSession.sqlContext,
-        carbonLoadModel.getTablePath,
         dictFolderPath)
     }
     if (!StringUtils.isEmpty(carbonLoadModel.getAllDictPath)) {
@@ -275,7 +268,6 @@ case class CarbonLoadDataCommand(
       GlobalDictionaryUtil
         .generateDictionaryFromDictionaryFiles(sparkSession.sqlContext,
           carbonLoadModel,
-          carbonLoadModel.getTablePath,
           carbonTableIdentifier,
           dictFolderPath,
           dimensions,
@@ -334,10 +326,11 @@ case class CarbonLoadDataCommand(
       val getSegIdUDF = udf((tupleId: String) =>
         CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID))
       // getting all fields except tupleId field as it is not required in the value
-      var otherFields = fields.toSeq
-        .filter(field => !field.name
-          .equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))
-        .map(field => new Column(field.name))
+      var otherFields = fields.toSeq.filter { field =>
+        !field.name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)
+      }.map { field =>
+        new Column(field.name)
+      }
 
       // extract tupleId field which will be used as a key
       val segIdColumn = getSegIdUDF(new Column(UnresolvedAttribute
@@ -356,10 +349,10 @@ case class CarbonLoadDataCommand(
     GlobalDictionaryUtil.generateGlobalDictionary(
       sparkSession.sqlContext,
       carbonLoadModel,
-      carbonLoadModel.getTablePath,
       hadoopConf,
       dictionaryDataFrame)
-    CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
+    CarbonDataRDDFactory.loadCarbonData(
+      sparkSession.sqlContext,
       carbonLoadModel,
       carbonLoadModel.getTablePath,
       columnar,

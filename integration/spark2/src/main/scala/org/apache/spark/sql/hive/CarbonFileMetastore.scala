@@ -215,13 +215,8 @@ class CarbonFileMetastore extends CarbonMetaStore {
       val tableUniqueName = CarbonTable.buildUniqueName(dbName, tableName)
       val tableInfo: TableInfo = CarbonUtil.readSchemaFile(tableMetadataFile)
       val schemaConverter = new ThriftWrapperSchemaConverterImpl
-      val wrapperTableInfo = schemaConverter
-        .fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, tablePath)
-      val schemaFilePath = CarbonStorePath
-        .getCarbonTablePath(tablePath, carbonTableIdentifier).getSchemaFilePath
-      wrapperTableInfo.setTablePath(tablePath)
-      wrapperTableInfo
-        .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
+      val wrapperTableInfo =
+        schemaConverter.fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, tablePath)
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
       val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
       metadata.carbonTables += carbonTable
@@ -233,38 +228,31 @@ class CarbonFileMetastore extends CarbonMetaStore {
 
   /**
    * This method will overwrite the existing schema and update it with the given details
-   *
-   * @param newTableIdentifier
-   * @param thriftTableInfo
-   * @param schemaEvolutionEntry
-   * @param tablePath
-   * @param sparkSession
    */
-  def updateTableSchemaForAlter(newTableIdentifier: CarbonTableIdentifier,
+  def updateTableSchemaForAlter(
+      newTableIdentifier: CarbonTableIdentifier,
       oldTableIdentifier: CarbonTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       schemaEvolutionEntry: SchemaEvolutionEntry,
       tablePath: String) (sparkSession: SparkSession): String = {
-    val absoluteTableIdentifier = new AbsoluteTableIdentifier(tablePath, oldTableIdentifier)
+    val absoluteTableIdentifier = AbsoluteTableIdentifier.from(tablePath, oldTableIdentifier)
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     if (schemaEvolutionEntry != null) {
       thriftTableInfo.fact_table.schema_evolution.schema_evolution_history.add(schemaEvolutionEntry)
     }
-    val oldCarbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)
-    val newAbsoluteTableIdentifier = new AbsoluteTableIdentifier(CarbonUtil
-      .getNewTablePath(oldCarbonTablePath, newTableIdentifier), newTableIdentifier)
-    val wrapperTableInfo = schemaConverter
-      .fromExternalToWrapperTableInfo(thriftTableInfo,
-        newTableIdentifier.getDatabaseName,
-        newTableIdentifier.getTableName,
-        newAbsoluteTableIdentifier.getTablePath)
-    val identifier =
-      new CarbonTableIdentifier(newTableIdentifier.getDatabaseName,
-        newTableIdentifier.getTableName,
-        wrapperTableInfo.getFactTable.getTableId)
-    val path = createSchemaThriftFile(wrapperTableInfo,
+    val oldTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)
+    val newTablePath = CarbonUtil.getNewTablePath(oldTablePath, newTableIdentifier.getTableName)
+    val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
       thriftTableInfo,
-      identifier)
+      newTableIdentifier.getDatabaseName,
+      newTableIdentifier.getTableName,
+      newTablePath)
+    val newAbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
+      newTablePath,
+      newTableIdentifier.getDatabaseName,
+      newTableIdentifier.getTableName,
+      oldTableIdentifier.getTableId)
+    val path = createSchemaThriftFile(newAbsoluteTableIdentifier, thriftTableInfo)
     addTableCache(wrapperTableInfo, newAbsoluteTableIdentifier)
     path
   }
@@ -280,40 +268,33 @@ class CarbonFileMetastore extends CarbonMetaStore {
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       absoluteTableIdentifier: AbsoluteTableIdentifier)(sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
-    val wrapperTableInfo = schemaConverter
-      .fromExternalToWrapperTableInfo(thriftTableInfo,
-        carbonTableIdentifier.getDatabaseName,
-        carbonTableIdentifier.getTableName,
-        absoluteTableIdentifier.getTablePath)
+    val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
+      thriftTableInfo,
+      carbonTableIdentifier.getDatabaseName,
+      carbonTableIdentifier.getTableName,
+      absoluteTableIdentifier.getTablePath)
     val evolutionEntries = thriftTableInfo.fact_table.schema_evolution.schema_evolution_history
     evolutionEntries.remove(evolutionEntries.size() - 1)
-    wrapperTableInfo.setTablePath(absoluteTableIdentifier.getTablePath)
-    val path = createSchemaThriftFile(wrapperTableInfo,
-      thriftTableInfo,
-      absoluteTableIdentifier.getCarbonTableIdentifier)
+    val path = createSchemaThriftFile(absoluteTableIdentifier, thriftTableInfo)
     addTableCache(wrapperTableInfo, absoluteTableIdentifier)
     path
   }
 
-  override def revertTableSchemaForPreAggCreationFailure(absoluteTableIdentifier:
-  AbsoluteTableIdentifier,
+  override def revertTableSchemaForPreAggCreationFailure(
+      absoluteTableIdentifier: AbsoluteTableIdentifier,
       thriftTableInfo: org.apache.carbondata.format.TableInfo)
     (sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
-    val wrapperTableInfo = schemaConverter
-      .fromExternalToWrapperTableInfo(thriftTableInfo,
-        absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
-        absoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
-        absoluteTableIdentifier.getTablePath)
+    val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
+      thriftTableInfo,
+      absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
+      absoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
+      absoluteTableIdentifier.getTablePath)
     val childSchemaList = wrapperTableInfo.getDataMapSchemaList
     childSchemaList.remove(childSchemaList.size() - 1)
-    wrapperTableInfo.setTablePath(absoluteTableIdentifier.getTablePath)
-    val path = createSchemaThriftFile(wrapperTableInfo,
-      thriftTableInfo,
-      absoluteTableIdentifier.getCarbonTableIdentifier)
+    val path = createSchemaThriftFile(absoluteTableIdentifier, thriftTableInfo)
     addTableCache(wrapperTableInfo, absoluteTableIdentifier)
     path
-
   }
 
   /**
@@ -326,26 +307,19 @@ class CarbonFileMetastore extends CarbonMetaStore {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
     val dbName = tableInfo.getDatabaseName
     val tableName = tableInfo.getFactTable.getTableName
-    val thriftTableInfo = schemaConverter
-      .fromWrapperToExternalTableInfo(tableInfo, dbName, tableName)
+    val thriftTableInfo = schemaConverter.fromWrapperToExternalTableInfo(
+      tableInfo, dbName, tableName)
     val identifier = AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
-    tableInfo.setTablePath(identifier.getTablePath)
-    createSchemaThriftFile(tableInfo,
-      thriftTableInfo,
-      identifier.getCarbonTableIdentifier)
+    createSchemaThriftFile(identifier, thriftTableInfo)
     LOGGER.info(s"Table $tableName for Database $dbName created successfully.")
   }
 
   /**
    * Generates schema string from TableInfo
    */
-  override def generateTableSchemaString(tableInfo: schema.table.TableInfo,
+  override def generateTableSchemaString(
+      tableInfo: schema.table.TableInfo,
       absoluteTableIdentifier: AbsoluteTableIdentifier): String = {
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)
-    val schemaMetadataPath =
-      CarbonTablePath.getFolderContainingFile(carbonTablePath.getSchemaFilePath)
-    tableInfo.setMetaDataFilepath(schemaMetadataPath)
-    tableInfo.setTablePath(absoluteTableIdentifier.getTablePath)
     val schemaEvolutionEntry = new schema.SchemaEvolutionEntry
     schemaEvolutionEntry.setTimeStamp(tableInfo.getLastUpdatedTime)
     tableInfo.getFactTable.getSchemaEvalution.getSchemaEvolutionEntryList.add(schemaEvolutionEntry)
@@ -357,19 +331,13 @@ class CarbonFileMetastore extends CarbonMetaStore {
 
   /**
    * This method will write the schema thrift file in carbon store and load table metadata
-   *
-   * @param tableInfo
-   * @param thriftTableInfo
-   * @return
    */
-  private def createSchemaThriftFile(tableInfo: schema.table.TableInfo,
-      thriftTableInfo: TableInfo,
-      carbonTableIdentifier: CarbonTableIdentifier): String = {
-    val carbonTablePath = CarbonStorePath.
-      getCarbonTablePath(tableInfo.getTablePath, carbonTableIdentifier)
+  private def createSchemaThriftFile(
+      identifier: AbsoluteTableIdentifier,
+      thriftTableInfo: TableInfo): String = {
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier)
     val schemaFilePath = carbonTablePath.getSchemaFilePath
     val schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath)
-    tableInfo.setMetaDataFilepath(schemaMetadataPath)
     val fileType = FileFactory.getFileType(schemaMetadataPath)
     if (!FileFactory.isFileExist(schemaMetadataPath, fileType)) {
       FileFactory.mkdirs(schemaMetadataPath, fileType)
@@ -382,8 +350,9 @@ class CarbonFileMetastore extends CarbonMetaStore {
     carbonTablePath.getPath
   }
 
-  protected def addTableCache(tableInfo: table.TableInfo,
-      absoluteTableIdentifier: AbsoluteTableIdentifier) = {
+  protected def addTableCache(
+      tableInfo: table.TableInfo,
+      absoluteTableIdentifier: AbsoluteTableIdentifier): ArrayBuffer[CarbonTable] = {
     val identifier = absoluteTableIdentifier.getCarbonTableIdentifier
     CarbonMetadata.getInstance.removeTable(tableInfo.getTableUniqueName)
     removeTableFromMetadata(identifier.getDatabaseName, identifier.getTableName)
@@ -427,15 +396,11 @@ class CarbonFileMetastore extends CarbonMetaStore {
 
   def updateMetadataByThriftTable(schemaFilePath: String,
       tableInfo: TableInfo, dbName: String, tableName: String, tablePath: String): Unit = {
-
     tableInfo.getFact_table.getSchema_evolution.getSchema_evolution_history.get(0)
       .setTime_stamp(System.currentTimeMillis())
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
-    val wrapperTableInfo = schemaConverter
-      .fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, tablePath)
-    wrapperTableInfo
-      .setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath))
-    wrapperTableInfo.setTablePath(tablePath)
+    val wrapperTableInfo =
+      schemaConverter.fromExternalToWrapperTableInfo(tableInfo, dbName, tableName, tablePath)
     updateMetadataByWrapperTable(wrapperTableInfo)
   }
 

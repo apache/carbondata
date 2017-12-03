@@ -67,7 +67,7 @@ class CarbonMergerRDD[K, V](
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   var storeLocation: String = null
   var mergeResult: String = null
-  val hdfsStoreLocation = carbonMergerMapping.hdfsStoreLocation
+  val tablePath = carbonMergerMapping.hdfsStoreLocation
   val metadataFilePath = carbonMergerMapping.metadataFilePath
   val mergedLoadName = carbonMergerMapping.mergedLoadName
   val databaseName = carbonMergerMapping.databaseName
@@ -167,7 +167,7 @@ class CarbonMergerRDD[K, V](
         val dataFileMetadataSegMapping: java.util.Map[String, List[DataFileFooter]] =
           CarbonCompactionUtil.createDataFileFooterMappingForSegments(tableBlockInfoList)
 
-        carbonLoadModel.setTablePath(hdfsStoreLocation)
+        carbonLoadModel.setTablePath(tablePath)
         // check for restructured block
         // TODO: only in case of add and drop this variable should be true
         val restructuredBlockExists: Boolean = CarbonCompactionUtil
@@ -260,8 +260,8 @@ class CarbonMergerRDD[K, V](
 
   override def getPartitions: Array[Partition] = {
     val startTime = System.currentTimeMillis()
-    val absoluteTableIdentifier: AbsoluteTableIdentifier = new AbsoluteTableIdentifier(
-      hdfsStoreLocation, new CarbonTableIdentifier(databaseName, factTableName, tableId)
+    val absoluteTableIdentifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
+      tablePath, new CarbonTableIdentifier(databaseName, factTableName, tableId)
     )
     val updateStatusManager: SegmentUpdateStatusManager = new SegmentUpdateStatusManager(
       absoluteTableIdentifier)

@@ -245,7 +245,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       tableName: String,
       fields: Seq[Field],
       partitionCols: Seq[PartitionerField],
-      tableProperties: mutable.Map[String, String],
+      tableProperties: Map[String, String],
       bucketFields: Option[BucketFields],
       isAlterFlow: Boolean = false,
       tableComment: Option[String] = None): TableModel = {
@@ -276,10 +276,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
 
     TableModel(
       ifNotExistPresent,
-      dbName.getOrElse(CarbonCommonConstants.DATABASE_DEFAULT_NAME),
       dbName,
       tableName,
-      tableProperties,
+      tableProperties.toMap,
       reorderDimensions(dims.map(f => normalizeType(f)).map(f => addParent(f))),
       msrs.map(f => normalizeType(f)),
       Option(sortKeyDims),

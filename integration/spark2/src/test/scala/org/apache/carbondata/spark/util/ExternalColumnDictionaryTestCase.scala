@@ -145,7 +145,8 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
       .asInstanceOf[CarbonRelation]
   }
 
-  def buildCarbonLoadModel(relation: CarbonRelation,
+  def buildCarbonLoadModel(
+      relation: CarbonRelation,
       filePath: String,
       header: String,
       extColFilePath: String,
@@ -157,6 +158,7 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     val carbonSchema = new CarbonDataLoadSchema(table)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTableName(table.getTableName)
+    carbonLoadModel.setTablePath(relation.carbonTable.getTablePath)
     carbonLoadModel.setCarbonDataLoadSchema(carbonSchema)
     carbonLoadModel.setFactFilePath(filePath)
     carbonLoadModel.setCsvHeader(header)
@@ -201,7 +203,6 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     GlobalDictionaryUtil.generateGlobalDictionary(
       sqlContext,
       carbonLoadModel,
-      extComplexRelation.carbonTable.getTablePath,
       FileFactory.getConfiguration)
     // check whether the dictionary is generated
     DictionaryTestCaseUtil.checkDictionary(
@@ -213,7 +214,6 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     GlobalDictionaryUtil.generateGlobalDictionary(
       sqlContext,
       carbonLoadModel,
-      extComplexRelation.carbonTable.getTablePath,
       FileFactory.getConfiguration)
     // check the old dictionary and whether the new distinct value is generated
     DictionaryTestCaseUtil.checkDictionary(
@@ -229,7 +229,6 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     GlobalDictionaryUtil.generateGlobalDictionary(
       sqlContext,
       carbonLoadModel,
-      extComplexRelation.carbonTable.getTablePath,
       FileFactory.getConfiguration)
     // check whether the dictionary is generated
     DictionaryTestCaseUtil.checkDictionary(
@@ -241,7 +240,6 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     GlobalDictionaryUtil.generateGlobalDictionary(
       sqlContext,
       carbonLoadModel,
-      verticalDelimiteRelation.carbonTable.getTablePath,
       FileFactory.getConfiguration)
     // check whether the dictionary is generated
     DictionaryTestCaseUtil.checkDictionary(

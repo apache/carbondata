@@ -127,8 +127,6 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
     } else {
       updatedSelectPlan
     }
-    val tid = CarbonTableIdentifierImplicit.toTableIdentifier(Seq(table.tableIdentifier.toString()))
-    val tidSeq = Seq(GetDB.getDatabaseName(tid.database, sparkSession))
     val destinationTable =
       CarbonReflectionUtils.getUnresolvedRelation(
         table.tableIdentifier,
@@ -142,8 +140,6 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
   def processDeleteRecordsQuery(selectStmt: String,
       alias: Option[String],
       table: UnresolvedRelation): LogicalPlan = {
-    val tidSeq = Seq(GetDB.getDatabaseName(table.tableIdentifier.database, sparkSession),
-      table.tableIdentifier.table)
     var addedTupleId = false
     val parsePlan = parser.parsePlan(selectStmt)
 
@@ -160,7 +156,8 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
     }
     CarbonProjectForDeleteCommand(
       selectPlan,
-      tidSeq,
+      table.tableIdentifier.database,
+      table.tableIdentifier.table,
       System.currentTimeMillis().toString)
   }
 

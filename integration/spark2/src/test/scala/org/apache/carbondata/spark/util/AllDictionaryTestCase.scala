@@ -45,6 +45,7 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     val carbonLoadModel = new CarbonLoadModel
     carbonLoadModel.setTableName(relation.carbonTable.getDatabaseName)
     carbonLoadModel.setDatabaseName(relation.carbonTable.getTableName)
+    carbonLoadModel.setTablePath(relation.metaData.carbonTable.getTablePath)
     val table = relation.carbonTable
     val carbonSchema = new CarbonDataLoadSchema(table)
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
@@ -145,7 +146,6 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     GlobalDictionaryUtil.generateGlobalDictionary(
       sqlContext,
       carbonLoadModel,
-      sampleRelation.carbonTable.getTablePath,
       FileFactory.getConfiguration)
 
     DictionaryTestCaseUtil.
@@ -158,7 +158,6 @@ class AllDictionaryTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     GlobalDictionaryUtil.generateGlobalDictionary(
       sqlContext,
       carbonLoadModel,
-      complexRelation.carbonTable.getTablePath,
       FileFactory.getConfiguration)
 
     DictionaryTestCaseUtil.

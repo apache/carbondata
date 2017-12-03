@@ -60,7 +60,6 @@ import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
 import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
@@ -2152,14 +2151,14 @@ public final class CarbonUtil {
    * tableName to the parent
    *
    * @param carbonTablePath       Old tablePath
-   * @param carbonTableIdentifier new carbonTableIdentifier
+   * @param newTableName          new table name
    * @return the new table path
    */
-  public static String getNewTablePath(Path carbonTablePath,
-      CarbonTableIdentifier carbonTableIdentifier) {
+  public static String getNewTablePath(
+      Path carbonTablePath,
+      String newTableName) {
     Path parentPath = carbonTablePath.getParent();
-    return parentPath.toString() + CarbonCommonConstants.FILE_SEPARATOR + carbonTableIdentifier
-        .getTableName();
+    return parentPath.toString() + CarbonCommonConstants.FILE_SEPARATOR + newTableName;
   }
 
   /*

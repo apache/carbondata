@@ -108,8 +108,9 @@ public class FieldEncoderFactory {
                   dataField.getColumn().getDataType());
           CarbonTablePath carbonTablePath =
               CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
-          AbsoluteTableIdentifier parentAbsoluteTableIdentifier = new AbsoluteTableIdentifier(
-              CarbonUtil.getNewTablePath(carbonTablePath, parentTableIdentifier),
+          AbsoluteTableIdentifier parentAbsoluteTableIdentifier =
+              AbsoluteTableIdentifier.from(
+              CarbonUtil.getNewTablePath(carbonTablePath, parentTableIdentifier.getTableName()),
               parentTableIdentifier);
           identifier = new DictionaryColumnUniqueIdentifier(parentAbsoluteTableIdentifier,
               parentColumnIdentifier, dataField.getColumn().getDataType(),

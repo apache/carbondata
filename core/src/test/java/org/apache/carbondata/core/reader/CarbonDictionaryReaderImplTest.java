@@ -25,11 +25,11 @@ import java.util.UUID;
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.service.impl.PathFactory;
-import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
+import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.PathService;
+import org.apache.carbondata.core.service.impl.PathFactory;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 
 import mockit.Mock;
@@ -49,7 +49,7 @@ public class CarbonDictionaryReaderImplTest {
   @BeforeClass public static void setUp() throws Exception {
     columnIdentifier = new ColumnIdentifier("1", null, null);
     absoluteTableIdentifier =
-        new AbsoluteTableIdentifier("storePath",
+        AbsoluteTableIdentifier.from("tablePath",
             new CarbonTableIdentifier("dbName", "tableName", UUID.randomUUID().toString()));
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,

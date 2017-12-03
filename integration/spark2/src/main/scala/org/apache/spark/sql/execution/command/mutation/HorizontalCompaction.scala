@@ -46,7 +46,7 @@ object HorizontalCompaction {
    */
   def tryHorizontalCompaction(
       sparkSession: SparkSession,
-      carbonRelation: CarbonRelation,
+      carbonTable: CarbonTable,
       isUpdateOperation: Boolean): Unit = {
 
     if (!CarbonDataMergerUtil.isHorizontalCompactionEnabled) {
@@ -54,7 +54,6 @@ object HorizontalCompaction {
     }
 
     var compactionTypeIUD = CompactionType.IUD_UPDDEL_DELTA
-    val carbonTable = carbonRelation.carbonTable
     val absTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val updateTimeStamp = System.currentTimeMillis()
     // To make sure that update and delete timestamps are not same,

@@ -17,21 +17,17 @@
 
 package org.apache.carbondata.spark
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 
 /**
  * Contains all options for Spark data source
  */
 class CarbonOption(options: Map[String, String]) {
-  def tableIdentifier: String = options.getOrElse("tableName", s"$dbName.$tableName")
 
-  def dbName: String = options.getOrElse("dbName", CarbonCommonConstants.DATABASE_DEFAULT_NAME)
+  def dbName: Option[String] = options.get("dbName")
 
   def tableName: String = options.getOrElse("tableName", "default_table")
 
-  def tablePath: String = s"$dbName/$tableName"
-
-  def tableId: String = options.getOrElse("tableId", "default_table_id")
+  def tablePath: Option[String] = options.get("tablePath")
 
   def partitionCount: String = options.getOrElse("partitionCount", "1")
 

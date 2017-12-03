@@ -19,22 +19,17 @@ package org.apache.spark.sql.execution.command.table
 
 import scala.collection.mutable.ListBuffer
 
-import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
-import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
 
 case class CarbonDropTableCommand(
@@ -44,49 +39,28 @@ case class CarbonDropTableCommand(
     dropChildTable: Boolean = false)
   extends AtomicRunnableCommand {
 
+  var carbonTable: CarbonTable = _
+
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-    val dbName = GetDB.getDatabaseName(databaseNameOp, sparkSession)
-    val identifier = TableIdentifier(tableName, Option(dbName))
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.DROP_TABLE_LOCK)
-    val carbonEnv = CarbonEnv.getInstance(sparkSession)
-    val catalog = carbonEnv.carbonMetastore
-    val databaseLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
-      CarbonProperties.getStorePath)
-    val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName.toLowerCase
-    val absoluteTableIdentifier =
-      AbsoluteTableIdentifier.from(tablePath, dbName.toLowerCase, tableName.toLowerCase)
-    catalog.checkSchemasModifiedTimeAndReloadTables()
+    val identifier = CarbonEnv.getIdentifier(databaseNameOp, tableName)(sparkSession)
+    val dbName = identifier.getCarbonTableIdentifier.getDatabaseName
     val carbonLocks: scala.collection.mutable.ListBuffer[ICarbonLock] = ListBuffer()
     try {
       locksToBeAcquired foreach {
-        lock => carbonLocks += CarbonLockUtil.getLockObject(absoluteTableIdentifier, lock)
+        lock => carbonLocks += CarbonLockUtil.getLockObject(identifier, lock)
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
-      val carbonTable: Option[CarbonTable] =
-        catalog.getTableFromMetadataCache(dbName, tableName) match {
-          case Some(carbonTable) => Some(carbonTable)
-          case None => try {
-            Some(catalog.lookupRelation(identifier)(sparkSession)
-              .asInstanceOf[CarbonRelation].metaData.carbonTable)
-          } catch {
-            case ex: NoSuchTableException =>
-              if (!ifExistsSet) {
-                throw ex
-              }
-              None
-          }
-        }
-      if (carbonTable.isDefined) {
-        val relationIdentifiers = carbonTable.get.getTableInfo.getParentRelationIdentifiers
-        if (relationIdentifiers != null && !relationIdentifiers.isEmpty) {
-          if (!dropChildTable) {
-            if (!ifExistsSet) {
-              throw new Exception("Child table which is associated with datamap cannot " +
-                                  "be dropped, use DROP DATAMAP command to drop")
-            } else {
-              return Seq.empty
-            }
+      carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+      val relationIdentifiers = carbonTable.getTableInfo.getParentRelationIdentifiers
+      if (relationIdentifiers != null && !relationIdentifiers.isEmpty) {
+        if (!dropChildTable) {
+          if (!ifExistsSet) {
+            throw new Exception("Child table which is associated with datamap cannot " +
+                                "be dropped, use DROP DATAMAP command to drop")
+          } else {
+            return Seq.empty
           }
         }
       }
@@ -97,8 +71,7 @@ case class CarbonDropTableCommand(
           ifExistsSet,
           sparkSession)
       OperationListenerBus.getInstance.fireEvent(dropTablePreEvent, operationContext)
-      CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .dropTable(absoluteTableIdentifier)(sparkSession)
+      CarbonEnv.getInstance(sparkSession).carbonMetastore.dropTable(identifier)(sparkSession)
 
       // fires the event after dropping main table
       val dropTablePostEvent: DropTablePostEvent =
@@ -108,7 +81,12 @@ case class CarbonDropTableCommand(
           sparkSession)
       OperationListenerBus.getInstance.fireEvent(dropTablePostEvent, operationContext)
       LOGGER.audit(s"Deleted table [$tableName] under database [$dbName]")
+
     } catch {
+      case ex: NoSuchTableException =>
+        if (!ifExistsSet) {
+          throw ex
+        }
       case ex: Exception =>
         LOGGER.error(ex, s"Dropping table $dbName.$tableName failed")
         CarbonException.analysisException(
@@ -125,23 +103,16 @@ case class CarbonDropTableCommand(
   }
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    // delete the table folder
-    val dbName = GetDB.getDatabaseName(databaseNameOp, sparkSession)
-    val databaseLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
-      CarbonProperties.getStorePath)
-    val tablePath = databaseLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName.toLowerCase
-    val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
-    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(dbName, tableName)
     if (carbonTable != null) {
       // clear driver side index and dictionary cache
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
-    }
-    val metadataFilePath =
-      CarbonStorePath.getCarbonTablePath(tableIdentifier).getMetadataDirectoryPath
-    val fileType = FileFactory.getFileType(metadataFilePath)
-    if (FileFactory.isFileExist(metadataFilePath, fileType)) {
-      val file = FileFactory.getCarbonFile(metadataFilePath, fileType)
-      CarbonUtil.deleteFoldersAndFilesSilent(file.getParentFile)
+      // delete the table folder
+      val tablePath = carbonTable.getTablePath
+      val fileType = FileFactory.getFileType(tablePath)
+      if (FileFactory.isFileExist(tablePath, fileType)) {
+        val file = FileFactory.getCarbonFile(tablePath, fileType)
+        CarbonUtil.deleteFoldersAndFilesSilent(file)
+      }
     }
     Seq.empty
   }

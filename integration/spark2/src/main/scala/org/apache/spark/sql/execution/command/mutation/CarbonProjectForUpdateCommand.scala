@@ -22,7 +22,6 @@ import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, Project}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -35,11 +34,12 @@ import org.apache.carbondata.processing.loading.FailureCauses
 
 private[sql] case class CarbonProjectForUpdateCommand(
     plan: LogicalPlan,
-    tableIdentifier: Seq[String])
+    databaseNameOp: Option[String],
+    tableName: String)
   extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
-    val LOGGER = LogServiceFactory.getLogService(CarbonProjectForUpdateCommand.getClass.getName)
+    val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     IUDCommonUtil.checkIfSegmentListIsSet(sparkSession, plan)
     val res = plan find {
       case relation: LogicalRelation if relation.relation
@@ -51,10 +51,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
     if (res.isEmpty) {
       return Seq.empty
     }
-    val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(DeleteExecution.getTableIdentifier(tableIdentifier))(sparkSession).
-      asInstanceOf[CarbonRelation]
-    val carbonTable = relation.carbonTable
+    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
 
     // trigger event for Update table
     val operationContext = new OperationContext
@@ -94,22 +91,35 @@ private[sql] case class CarbonProjectForUpdateCommand(
       CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
       // do delete operation.
-      DeleteExecution.deleteDeltaExecution(tableIdentifier, sparkSession, dataSet.rdd,
-        currentTime + "", isUpdateOperation = true, executionErrors)
+      DeleteExecution.deleteDeltaExecution(
+        databaseNameOp,
+        tableName,
+        sparkSession,
+        dataSet.rdd,
+        currentTime + "",
+        isUpdateOperation = true,
+        executionErrors)
 
-      if(executionErrors.failureCauses != FailureCauses.NONE) {
+      if (executionErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executionErrors.errorMsg)
       }
 
       // do update operation.
-      performUpdate(dataSet, tableIdentifier, plan, sparkSession, currentTime, executionErrors)
+      performUpdate(dataSet,
+        databaseNameOp,
+        tableName,
+        plan,
+        sparkSession,
+        currentTime,
+        executionErrors)
 
-      if(executionErrors.failureCauses != FailureCauses.NONE) {
+      if (executionErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executionErrors.errorMsg)
       }
 
       // Do IUD Compaction.
-      HorizontalCompaction.tryHorizontalCompaction(sparkSession, relation, isUpdateOperation = true)
+      HorizontalCompaction.tryHorizontalCompaction(
+        sparkSession, carbonTable, isUpdateOperation = true)
 
       // trigger event for Update table
       val updateTablePostEvent: UpdateTablePostEvent =
@@ -150,21 +160,21 @@ private[sql] case class CarbonProjectForUpdateCommand(
 
   private def performUpdate(
       dataFrame: Dataset[Row],
-      tableIdentifier: Seq[String],
+      databaseNameOp: Option[String],
+      tableName: String,
       plan: LogicalPlan,
       sparkSession: SparkSession,
       currentTime: Long,
       executorErrors: ExecutionErrors): Unit = {
 
     def isDestinationRelation(relation: CarbonDatasourceHadoopRelation): Boolean = {
-
-      val tableName = relation.identifier.getCarbonTableIdentifier.getTableName
-      val dbName = relation.identifier.getCarbonTableIdentifier.getDatabaseName
-      (tableIdentifier.size > 1 &&
-       tableIdentifier(0) == dbName &&
-       tableIdentifier(1) == tableName) ||
-      (tableIdentifier(0) == tableName)
+      val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
+      (databaseNameOp.isDefined &&
+       databaseNameOp.get == dbName &&
+       tableName == relation.identifier.getCarbonTableIdentifier.getTableName) ||
+      (tableName == relation.identifier.getCarbonTableIdentifier.getTableName)
     }
+
     def getHeader(relation: CarbonDatasourceHadoopRelation, plan: LogicalPlan): String = {
       var header = ""
       var found = false

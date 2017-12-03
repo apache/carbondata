@@ -33,14 +33,14 @@ public class AbsoluteTableIdentifierTest {
   static AbsoluteTableIdentifier absoluteTableIdentifier4;
 
   @BeforeClass public static void setup() {
-    absoluteTableIdentifier = new AbsoluteTableIdentifier("storePath/databaseName/tableName",
+    absoluteTableIdentifier = AbsoluteTableIdentifier.from("storePath/databaseName/tableName",
         new CarbonTableIdentifier("databaseName", "tableName", "tableId"));
-    absoluteTableIdentifier1 = new AbsoluteTableIdentifier("dummy", null);
-    absoluteTableIdentifier2 = new AbsoluteTableIdentifier("dumgfhmy", null);
+    absoluteTableIdentifier1 = AbsoluteTableIdentifier.from("dummy", null);
+    absoluteTableIdentifier2 = AbsoluteTableIdentifier.from("dumgfhmy", null);
     absoluteTableIdentifier3 =
-        new AbsoluteTableIdentifier("duhgmmy/dumy/dmy/",
+        AbsoluteTableIdentifier.from("duhgmmy/dumy/dmy/",
             new CarbonTableIdentifier("dummy", "dumy", "dmy"));
-    absoluteTableIdentifier4 = new AbsoluteTableIdentifier("storePath/databaseName/tableName",
+    absoluteTableIdentifier4 = AbsoluteTableIdentifier.from("storePath/databaseName/tableName",
         new CarbonTableIdentifier("databaseName", "tableName", "tableId"));
   }
 

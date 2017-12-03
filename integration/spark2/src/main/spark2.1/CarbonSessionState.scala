@@ -251,6 +251,7 @@ class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser) extends
           ctx.partitionColumns,
           ctx.columns,
           ctx.tablePropertyList,
+          ctx.locationSpec,
           Option(ctx.STRING()).map(string),
           ctx.AS)
     } else {
