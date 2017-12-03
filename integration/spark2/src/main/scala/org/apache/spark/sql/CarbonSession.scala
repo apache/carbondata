@@ -59,11 +59,16 @@ class CarbonSession(@transient val sc: SparkContext,
    */
   @transient
  override lazy val sharedState: SharedState = {
-    if (existingSharedState.isDefined) {
-      val ss = existingSharedState.get
-      if (ss == null) new SharedState(sparkContext) else ss
-    } else {
-      new SharedState(sparkContext)
+    existingSharedState match {
+      case Some(_) =>
+        val ss = existingSharedState.get
+        if (ss == null) {
+          new SharedState(sparkContext)
+        } else {
+          ss
+        }
+      case None =>
+        new SharedState(sparkContext)
     }
   }
 
