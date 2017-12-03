@@ -1434,14 +1434,6 @@ public final class CarbonCommonConstants {
    */
   public static final long HANDOFF_SIZE_DEFAULT = 1024L * 1024 * 1024;
 
-  public static final String ENABLE_DICTIONARY_SUPPORT = "carbon.enable.dictionary";
-
-  public static final String ENABLE_DICTIONARY_SUPPORT_DEFAULT = "true";
-
-  public static final String ENABLE_COMPLEX_TYPE_SUPPORT = "carbon.enable.complexType";
-
-  public static final String ENABLE_COMPLEX_TYPE_SUPPORT_DEFAULT = "true";
-
   private CarbonCommonConstants() {
   }
 }

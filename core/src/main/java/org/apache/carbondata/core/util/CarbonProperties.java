@@ -990,23 +990,4 @@ public final class CarbonProperties {
     return addedProperty;
   }
 
-  /**
-   * Return true if global dictionary support is enabled
-   */
-  public static boolean isDictionaryEnabled() {
-    String support = getInstance().getProperty(
-        CarbonCommonConstants.ENABLE_DICTIONARY_SUPPORT,
-        CarbonCommonConstants.ENABLE_DICTIONARY_SUPPORT_DEFAULT);
-    return support.equalsIgnoreCase("true");
-  }
-
-  /**
-   * Return true if complex type support is enabled
-   */
-  public static boolean isComplexTypeEnabled() {
-    String support = getInstance().getProperty(
-        CarbonCommonConstants.ENABLE_COMPLEX_TYPE_SUPPORT,
-        CarbonCommonConstants.ENABLE_COMPLEX_TYPE_SUPPORT_DEFAULT);
-    return support.equalsIgnoreCase("true");
-  }
 }

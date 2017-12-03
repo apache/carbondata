@@ -185,13 +185,6 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     val tableProperties = mutable.Map[String, String]()
     properties.foreach{property => tableProperties.put(property._1, property._2)}
 
-    if (tableProperties.contains(CarbonCommonConstants.DICTIONARY_INCLUDE) ||
-        tableProperties.contains(CarbonCommonConstants.DICTIONARY_EXCLUDE)) {
-      if (!CarbonProperties.isDictionaryEnabled) {
-        operationNotAllowed("Dictionary related property is not enabled", tablePropertyList)
-      }
-    }
-
     // validate partition clause
     val (partitionByStructFields, partitionFields) =
       validateParitionFields(partitionColumns, colNames, tableProperties)
@@ -211,18 +204,6 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     }
 
     val fields = parser.getFields(cols ++ partitionByStructFields)
-
-    // check if there are any complex type
-    if (fields.exists { field =>
-      val dataType = field.dataType.get
-      dataType.equalsIgnoreCase("struct") || dataType.equalsIgnoreCase("array") ||
-      dataType.equalsIgnoreCase("map")}) {
-      if (!CarbonProperties.isComplexTypeEnabled) {
-        operationNotAllowed("Complex data type is not enabled", columns)
-      }
-    }
-
-
     val options = new CarbonOption(properties)
     // validate tblProperties
     val bucketFields = parser.getBucketFields(tableProperties, fields, options)
