@@ -28,8 +28,7 @@ import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.ExecutionErrors
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -50,16 +49,9 @@ import org.apache.carbondata.spark.DeleteDelataResultImpl
 object DeleteExecution {
   val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
 
-  def getTableIdentifier(tableIdentifier: Seq[String]): TableIdentifier = {
-    if (tableIdentifier.size > 1) {
-      TableIdentifier(tableIdentifier(1), Some(tableIdentifier(0)))
-    } else {
-      TableIdentifier(tableIdentifier(0), None)
-    }
-  }
-
   def deleteDeltaExecution(
-      identifier: Seq[String],
+      databaseNameOp: Option[String],
+      tableName: String,
       sparkSession: SparkSession,
       dataRdd: RDD[Row],
       timestamp: String,
@@ -67,12 +59,10 @@ object DeleteExecution {
       executorErrors: ExecutionErrors): Boolean = {
 
     var res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]] = null
-    val tableName = getTableIdentifier(identifier).table
-    val database = GetDB.getDatabaseName(getTableIdentifier(identifier).database, sparkSession)
-    val carbonTable = CarbonEnv.getCarbonTable(Some(database), tableName)(sparkSession)
+    val database = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
+    val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
-    val carbonTablePath = CarbonStorePath
-      .getCarbonTablePath(absoluteTableIdentifier)
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)
     val factPath = carbonTablePath.getFactDir
 
     var deleteStatus = true
@@ -85,7 +75,6 @@ object DeleteExecution {
         .map(row => Row(row.get(row.fieldIndex(
           CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))))
       sparkSession.createDataFrame(rdd, schema).rdd
-      // sqlContext.createDataFrame(rdd, schema).rdd
     } else {
       dataRdd
     }

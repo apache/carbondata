@@ -43,8 +43,6 @@ object CarbonStore {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def showSegments(
-      dbName: String,
-      tableName: String,
       limit: Option[String],
       tableFolderPath: String): Seq[Row] = {
     val loadMetadataDetailsArray = SegmentStatusManager.readLoadMetadata(tableFolderPath)
@@ -149,6 +147,7 @@ object CarbonStore {
     }
   }
 
+  // TODO: move dbName and tableName to caller, caller should handle the log and error
   def deleteLoadById(
       loadids: Seq[String],
       dbName: String,
@@ -175,6 +174,7 @@ object CarbonStore {
     Seq.empty
   }
 
+  // TODO: move dbName and tableName to caller, caller should handle the log and error
   def deleteLoadByDate(
       timestamp: String,
       dbName: String,

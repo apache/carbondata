@@ -47,7 +47,7 @@ public class CarbonStreamOutputFormatTest extends TestCase {
   private Configuration hadoopConf;
   private TaskAttemptID taskAttemptId;
   private CarbonLoadModel carbonLoadModel;
-  private String storePath;
+  private String tablePath;
 
   @Override protected void setUp() throws Exception {
     super.setUp();
@@ -62,11 +62,13 @@ public class CarbonStreamOutputFormatTest extends TestCase {
     hadoopConf.setBoolean("mapred.task.is.map", true);
     hadoopConf.setInt("mapred.task.partition", 0);
 
-    storePath = new File("target/stream_output").getCanonicalPath();
+    tablePath = new File("target/stream_output").getCanonicalPath();
     String dbName = "default";
     String tableName = "stream_table_output";
-    AbsoluteTableIdentifier identifier = new AbsoluteTableIdentifier(storePath,
-        new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
+    AbsoluteTableIdentifier identifier =
+        AbsoluteTableIdentifier.from(
+            tablePath,
+            new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
 
     CarbonTable table = StoreCreator.createTable(identifier);
 
@@ -112,8 +114,8 @@ public class CarbonStreamOutputFormatTest extends TestCase {
 
   @Override protected void tearDown() throws Exception {
     super.tearDown();
-    if (storePath != null) {
-      FileFactory.deleteAllFilesOfDir(new File(storePath));
+    if (tablePath != null) {
+      FileFactory.deleteAllFilesOfDir(new File(tablePath));
     }
   }
 }

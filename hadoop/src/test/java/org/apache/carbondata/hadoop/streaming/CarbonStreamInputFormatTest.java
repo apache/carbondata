@@ -51,14 +51,15 @@ public class CarbonStreamInputFormatTest extends TestCase {
   private TaskAttemptContext taskAttemptContext;
   private Configuration hadoopConf;
   private AbsoluteTableIdentifier identifier;
-  private String storePath;
+  private String tablePath;
 
 
   @Override protected void setUp() throws Exception {
-    storePath = new File("target/stream_input").getCanonicalPath();
+    tablePath = new File("target/stream_input").getCanonicalPath();
     String dbName = "default";
     String tableName = "stream_table_input";
-    identifier = new AbsoluteTableIdentifier(storePath,
+    identifier = AbsoluteTableIdentifier.from(
+        tablePath,
         new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
 
     JobID jobId = CarbonInputFormatUtil.getJobId(new Date(), 0);
@@ -91,8 +92,8 @@ public class CarbonStreamInputFormatTest extends TestCase {
 
   @Override protected void tearDown() throws Exception {
     super.tearDown();
-    if (storePath != null) {
-      FileFactory.deleteAllFilesOfDir(new File(storePath));
+    if (tablePath != null) {
+      FileFactory.deleteAllFilesOfDir(new File(tablePath));
     }
   }
 }

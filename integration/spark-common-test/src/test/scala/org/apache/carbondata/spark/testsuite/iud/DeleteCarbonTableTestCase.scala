@@ -105,7 +105,7 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Records more than one pagesize after delete operation ") {
-    sql("DROP TABLE IF EXISTS default.carbon2")
+    sql("DROP TABLE IF EXISTS carbon2")
     import sqlContext.implicits._
     val df = sqlContext.sparkContext.parallelize(1 to 2000000)
       .map(x => (x+"a", "b", x))
@@ -118,15 +118,15 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
       .mode(SaveMode.Overwrite)
       .save()
 
-    checkAnswer(sql("select count(*) from default.carbon2"), Seq(Row(2000000)))
+    checkAnswer(sql("select count(*) from carbon2"), Seq(Row(2000000)))
 
-    sql("delete from default.carbon2 where c1 = '99999a'").show()
+    sql("delete from carbon2 where c1 = '99999a'").show()
 
-    checkAnswer(sql("select count(*) from default.carbon2"), Seq(Row(1999999)))
+    checkAnswer(sql("select count(*) from carbon2"), Seq(Row(1999999)))
 
-    checkAnswer(sql("select * from default.carbon2 where c1 = '99999a'"), Seq())
+    checkAnswer(sql("select * from carbon2 where c1 = '99999a'"), Seq())
 
-    sql("DROP TABLE IF EXISTS default.carbon2")
+    sql("DROP TABLE IF EXISTS carbon2")
   }
 
   test("test if delete is unsupported for pre-aggregate tables") {

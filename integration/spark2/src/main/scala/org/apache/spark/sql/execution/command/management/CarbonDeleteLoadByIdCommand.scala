@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 
 import org.apache.carbondata.api.CarbonStore
@@ -42,7 +42,7 @@ case class CarbonDeleteLoadByIdCommand(
 
     CarbonStore.deleteLoadById(
       loadIds,
-      GetDB.getDatabaseName(databaseNameOp, sparkSession),
+      CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
       tableName,
       carbonTable
     )

@@ -69,16 +69,11 @@ public class TableInfo implements Serializable, Writable {
   private long lastUpdatedTime;
 
   /**
-   * metadata file path (check if it is really required )
-   */
-  private String metaDataFilepath;
-
-  /**
-   * store location
+   * store location of the table, it will be set in identifier.tablePath also
    */
   private String tablePath;
 
-  // this idenifier is a lazy field which will be created when it is used first time
+  // this identifier is a lazy field which will be created when it is used first time
   private AbsoluteTableIdentifier identifier;
 
   private List<DataMapSchema> dataMapSchemaList;
@@ -162,24 +157,6 @@ public class TableInfo implements Serializable, Writable {
     this.lastUpdatedTime = lastUpdatedTime;
   }
 
-  /**
-   * @return
-   */
-  public String getMetaDataFilepath() {
-    return metaDataFilepath;
-  }
-
-  /**
-   * @param metaDataFilepath
-   */
-  public void setMetaDataFilepath(String metaDataFilepath) {
-    this.metaDataFilepath = metaDataFilepath;
-  }
-
-  public String getTablePath() {
-    return tablePath;
-  }
-
   public void setTablePath(String tablePath) {
     this.tablePath = tablePath;
   }
@@ -258,8 +235,7 @@ public class TableInfo implements Serializable, Writable {
     out.writeUTF(tableUniqueName);
     factTable.write(out);
     out.writeLong(lastUpdatedTime);
-    out.writeUTF(metaDataFilepath);
-    out.writeUTF(tablePath);
+    out.writeUTF(getOrCreateAbsoluteTableIdentifier().getTablePath());
     boolean isChildSchemaExists =
         null != dataMapSchemaList && dataMapSchemaList.size() > 0;
     out.writeBoolean(isChildSchemaExists);
@@ -286,7 +262,6 @@ public class TableInfo implements Serializable, Writable {
     this.factTable = new TableSchema();
     this.factTable.readFields(in);
     this.lastUpdatedTime = in.readLong();
-    this.metaDataFilepath = in.readUTF();
     this.tablePath = in.readUTF();
     boolean isChildSchemaExists = in.readBoolean();
     this.dataMapSchemaList = new ArrayList<>();
@@ -303,11 +278,11 @@ public class TableInfo implements Serializable, Writable {
         dataMapSchemaList.add(dataMapSchema);
       }
     }
-    boolean isParentTableRelationIndentifierExists = in.readBoolean();
-    if (isParentTableRelationIndentifierExists) {
-      short parentTableIndentifiersListSize = in.readShort();
+    boolean isParentTableRelationIdentifierExists = in.readBoolean();
+    if (isParentTableRelationIdentifierExists) {
+      short parentTableIdentifiersListSize = in.readShort();
       this.parentRelationIdentifiers = new ArrayList<>();
-      for (int i = 0; i < parentTableIndentifiersListSize; i++) {
+      for (int i = 0; i < parentTableIdentifiersListSize; i++) {
         RelationIdentifier relationIdentifier = new RelationIdentifier(null, null, null);
         relationIdentifier.readFields(in);
         this.parentRelationIdentifiers.add(relationIdentifier);
@@ -319,7 +294,7 @@ public class TableInfo implements Serializable, Writable {
     if (identifier == null) {
       CarbonTableIdentifier carbontableIdentifier =
           new CarbonTableIdentifier(databaseName, factTable.getTableName(), factTable.getTableId());
-      identifier = new AbsoluteTableIdentifier(tablePath, carbontableIdentifier);
+      identifier = AbsoluteTableIdentifier.from(tablePath, carbontableIdentifier);
     }
     return identifier;
   }

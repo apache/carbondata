@@ -19,7 +19,7 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 
 import org.antlr.v4.runtime.tree.TerminalNode
-import org.apache.spark.sql.{CarbonSession, SparkSession}
+import org.apache.spark.sql.{CarbonEnv, CarbonSession, SparkSession}
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
@@ -145,11 +145,12 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
       partitionColumns: ColTypeListContext,
       columns : ColTypeListContext,
       tablePropertyList : TablePropertyListContext,
+      locationSpecContext: SqlBaseParser.LocationSpecContext,
       tableComment : Option[String],
       ctas: TerminalNode) : LogicalPlan = {
     // val parser = new CarbonSpark2SqlParser
 
-    val (name, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
+    val (tableIdentifier, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
     // TODO: implement temporary tables
     if (temp) {
       throw new ParseException(
@@ -178,8 +179,14 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
       val duplicateColumns = colNames.groupBy(identity).collect {
         case (x, ys) if ys.length > 1 => "\"" + x + "\""
       }
-      operationNotAllowed(s"Duplicated column names found in table definition of $name: " +
-                          duplicateColumns.mkString("[", ",", "]"), columns)
+      operationNotAllowed(s"Duplicated column names found in table definition of " +
+                          s"$tableIdentifier: ${duplicateColumns.mkString("[", ",", "]")}", columns)
+    }
+
+    val tablePath = if (locationSpecContext != null) {
+      Some(visitLocationSpec(locationSpecContext))
+    } else {
+      None
     }
 
     val tableProperties = mutable.Map[String, String]()
@@ -211,9 +218,10 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     validateStreamingProperty(options)
 
     // prepare table model of the collected tokens
-    val tableModel: TableModel = parser.prepareTableModel(ifNotExists,
-      convertDbNameToLowerCase(name.database),
-      name.table.toLowerCase,
+    val tableModel: TableModel = parser.prepareTableModel(
+      ifNotExists,
+      convertDbNameToLowerCase(tableIdentifier.database),
+      tableIdentifier.table.toLowerCase,
       fields,
       partitionFields,
       tableProperties,
@@ -221,7 +229,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
       isAlterFlow = false,
       tableComment)
 
-    CarbonCreateTableCommand(tableModel)
+    CarbonCreateTableCommand(tableModel, tablePath)
   }
 
   private def validateStreamingProperty(carbonOption: CarbonOption): Unit = {

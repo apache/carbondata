@@ -32,9 +32,9 @@ object DataMapDropTablePostListener extends OperationEventListener {
     val dropPostEvent = event.asInstanceOf[DropTablePostEvent]
     val carbonTable = dropPostEvent.carbonTable
     val sparkSession = dropPostEvent.sparkSession
-    if (carbonTable.isDefined && carbonTable.get.hasDataMapSchema) {
+    if (carbonTable.hasDataMapSchema) {
       // drop all child tables
-      val childSchemas = carbonTable.get.getTableInfo.getDataMapSchemaList
+      val childSchemas = carbonTable.getTableInfo.getDataMapSchemaList
       childSchemas.asScala
         .filter(_.getRelationIdentifier != null)
         .foreach { childSchema =>

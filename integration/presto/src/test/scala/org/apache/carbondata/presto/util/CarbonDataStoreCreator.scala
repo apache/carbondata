@@ -70,7 +70,7 @@ object CarbonDataStoreCreator {
       logger.info("Creating The Carbon Store")
       val dbName: String = "testdb"
       val tableName: String = "testtable"
-      val absoluteTableIdentifier = new AbsoluteTableIdentifier(
+      val absoluteTableIdentifier = AbsoluteTableIdentifier.from(
         storePath + "/"+ dbName + "/" + tableName,
         new CarbonTableIdentifier(dbName,
           tableName,
@@ -297,7 +297,6 @@ object CarbonDataStoreCreator {
     val schemaFilePath: String = carbonTablePath.getSchemaFilePath
     val schemaMetadataPath: String =
       CarbonTablePath.getFolderContainingFile(schemaFilePath)
-    tableInfo.setMetaDataFilepath(schemaMetadataPath)
     CarbonMetadata.getInstance.loadTableMetadata(tableInfo)
     val schemaConverter: SchemaConverter =
       new ThriftWrapperSchemaConverterImpl()

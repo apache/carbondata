@@ -27,6 +27,7 @@ import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
  * Below command class will be used to create pre-aggregate table
@@ -72,7 +73,9 @@ case class CreatePreAggregateTableCommand(
     // also get updated
     tableModel.parentTable = Some(parentTable)
     tableModel.dataMapRelation = Some(fieldRelationMap)
-    CarbonCreateTableCommand(tableModel).run(sparkSession)
+    val tablePath =
+      CarbonEnv.getTablePath(tableModel.databaseNameOp, tableModel.tableName)(sparkSession)
+    CarbonCreateTableCommand(tableModel, Some(tablePath)).run(sparkSession)
 
     val table = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
     val tableInfo = table.getTableInfo
@@ -112,8 +115,10 @@ case class CreatePreAggregateTableCommand(
     // load child table if parent table has existing segments
     val dbName = CarbonEnv.getDatabaseName(parentTableIdentifier.database)(sparkSession)
     val tableName = tableIdentifier.table
-    val metastorePath = CarbonEnv.getMetadataPath(Some(dbName),
-      parentTableIdentifier.table)(sparkSession)
+    val metastorePath = CarbonTablePath.getMetadataPath(
+      CarbonEnv.getTablePath(
+        parentTableIdentifier.database,
+        parentTableIdentifier.table)(sparkSession))
     // This will be used to check if the parent table has any segments or not. If not then no
     // need to fire load for pre-aggregate table. Therefore reading the load details for PARENT
     // table.

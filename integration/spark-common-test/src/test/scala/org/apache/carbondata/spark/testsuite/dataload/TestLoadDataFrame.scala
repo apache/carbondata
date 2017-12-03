@@ -17,11 +17,12 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import java.io.File
 import java.math.BigDecimal
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types._
-import org.apache.spark.sql.{DataFrame, Row, SaveMode}
+import org.apache.spark.sql.{AnalysisException, DataFrame, Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
 
 class TestLoadDataFrame extends QueryTest with BeforeAndAfterAll {
@@ -220,6 +221,26 @@ test("test the boolean data type"){
     checkAnswer(
       sql("select count(*) from carbon9 where c3 > 500"), Row(500)
     )
+  }
+
+  test("test datasource table with specified table path") {
+    val path = "./source"
+    df2.write
+      .format("carbondata")
+      .option("tableName", "carbon10")
+      .option("tablePath", path)
+      .mode(SaveMode.Overwrite)
+      .save()
+    assert(new File(path).exists())
+    checkAnswer(
+      sql("select count(*) from carbon10 where c3 > 500"), Row(500)
+    )
+    sql("drop table carbon10")
+    assert(! new File(path).exists())
+    assert(intercept[AnalysisException](
+      sql("select count(*) from carbon10 where c3 > 500"))
+      .message
+      .contains("not found"))
   }
 
   override def afterAll {

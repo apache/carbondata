@@ -33,6 +33,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDim
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * Mapping class for Carbon actual table
@@ -48,11 +49,6 @@ public class CarbonTable implements Serializable {
    * serialization id
    */
   private static final long serialVersionUID = 8696507171227156445L;
-
-  /**
-   * Absolute table identifier
-   */
-  private AbsoluteTableIdentifier absoluteTableIdentifier;
 
   /**
    * TableName, Dimensions list. This map will contain allDimensions which are visible
@@ -102,11 +98,6 @@ public class CarbonTable implements Serializable {
   private String tableUniqueName;
 
   /**
-   * metadata file path (check if it is really required )
-   */
-  private String metaDataFilepath;
-
-  /**
    * last updated time
    */
   private long tableLastUpdatedTime;
@@ -149,9 +140,6 @@ public class CarbonTable implements Serializable {
     table.blockSize = tableInfo.getTableBlockSizeInMB();
     table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();
     table.tableUniqueName = tableInfo.getTableUniqueName();
-    table.metaDataFilepath = tableInfo.getMetaDataFilepath();
-    table.absoluteTableIdentifier = tableInfo.getOrCreateAbsoluteTableIdentifier();
-
     table.fillDimensionsAndMeasuresForTables(tableInfo.getFactTable());
     table.fillCreateOrderColumn(tableInfo.getFactTable().getTableName());
     if (tableInfo.getFactTable().getBucketingInfo() != null) {
@@ -343,14 +331,14 @@ public class CarbonTable implements Serializable {
    * @return the databaseName
    */
   public String getDatabaseName() {
-    return absoluteTableIdentifier.getCarbonTableIdentifier().getDatabaseName();
+    return tableInfo.getDatabaseName();
   }
 
   /**
    * @return the tabelName
    */
   public String getTableName() {
-    return absoluteTableIdentifier.getCarbonTableIdentifier().getTableName();
+    return tableInfo.getFactTable().getTableName();
   }
 
   /**
@@ -375,14 +363,14 @@ public class CarbonTable implements Serializable {
    * @return the metaDataFilepath
    */
   public String getMetaDataFilepath() {
-    return metaDataFilepath;
+    return CarbonTablePath.getMetadataPath(getTablePath());
   }
 
   /**
    * @return storepath
    */
   public String getTablePath() {
-    return absoluteTableIdentifier.getTablePath();
+    return tableInfo.getOrCreateAbsoluteTableIdentifier().getTablePath();
   }
 
   /**
@@ -430,16 +418,6 @@ public class CarbonTable implements Serializable {
    */
   public List<CarbonMeasure> getMeasureByTableName(String tableName) {
     return tableMeasuresMap.get(tableName);
-  }
-
-  /**
-   * to get the all dimension of a table
-   *
-   * @param tableName
-   * @return all dimension of a table
-   */
-  public List<CarbonDimension> getImplicitDimensionByTableName(String tableName) {
-    return tableImplicitDimensionsMap.get(tableName);
   }
 
   /**
@@ -589,14 +567,14 @@ public class CarbonTable implements Serializable {
    * @return absolute table identifier
    */
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier() {
-    return absoluteTableIdentifier;
+    return tableInfo.getOrCreateAbsoluteTableIdentifier();
   }
 
   /**
    * @return carbon table identifier
    */
   public CarbonTableIdentifier getCarbonTableIdentifier() {
-    return absoluteTableIdentifier.getCarbonTableIdentifier();
+    return tableInfo.getOrCreateAbsoluteTableIdentifier().getCarbonTableIdentifier();
   }
 
   /**

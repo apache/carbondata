@@ -330,9 +330,7 @@ class CarbonScanRDD(
   private def prepareInputFormatForDriver(conf: Configuration): CarbonTableInputFormat[Object] = {
     CarbonTableInputFormat.setTableInfo(conf, tableInfo)
     CarbonTableInputFormat.setDatabaseName(conf, tableInfo.getDatabaseName)
-    CarbonTableInputFormat
-      .setTableName(conf,
-        tableInfo.getOrCreateAbsoluteTableIdentifier().getCarbonTableIdentifier.getTableName)
+    CarbonTableInputFormat.setTableName(conf, tableInfo.getFactTable.getTableName)
     createInputFormat(conf)
   }
 
@@ -341,9 +339,7 @@ class CarbonScanRDD(
     val tableInfo1 = getTableInfo
     CarbonTableInputFormat.setTableInfo(conf, tableInfo1)
     CarbonTableInputFormat.setDatabaseName(conf, tableInfo1.getDatabaseName)
-    CarbonTableInputFormat
-      .setTableName(conf,
-        tableInfo1.getOrCreateAbsoluteTableIdentifier().getCarbonTableIdentifier.getTableName)
+    CarbonTableInputFormat.setTableName(conf, tableInfo1.getFactTable.getTableName)
     CarbonTableInputFormat.setDataTypeConverter(conf, new SparkDataTypeConverterImpl)
     createInputFormat(conf)
   }

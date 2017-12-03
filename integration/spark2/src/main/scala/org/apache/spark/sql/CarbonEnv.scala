@@ -17,18 +17,18 @@
 
 package org.apache.spark.sql
 
-import java.util.Map
 import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.hive.{CarbonMetaStore, CarbonMetaStoreFactory, CarbonRelation, CarbonSessionCatalog, CarbonSQLConf}
+import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.hive._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util._
-import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.events.{CarbonEnvInitPreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
@@ -99,8 +99,7 @@ class CarbonEnv {
 
 object CarbonEnv {
 
-  val carbonEnvMap: Map[SparkSession, CarbonEnv] =
-    new ConcurrentHashMap[SparkSession, CarbonEnv]
+  val carbonEnvMap = new ConcurrentHashMap[SparkSession, CarbonEnv]
 
   def getInstance(sparkSession: SparkSession): CarbonEnv = {
     if (sparkSession.isInstanceOf[CarbonSession]) {
@@ -117,18 +116,24 @@ object CarbonEnv {
   }
 
   /**
-   * Return carbon table instance by looking up table in `sparkSession`
+   * Return carbon table instance from cache or by looking up table in `sparkSession`
    */
   def getCarbonTable(
       databaseNameOp: Option[String],
       tableName: String)
     (sparkSession: SparkSession): CarbonTable = {
-    CarbonEnv
-      .getInstance(sparkSession)
-      .carbonMetastore
-      .lookupRelation(databaseNameOp, tableName)(sparkSession)
-      .asInstanceOf[CarbonRelation]
-      .carbonTable
+    val databaseName = getDatabaseName(databaseNameOp)(sparkSession)
+    val catalog = getInstance(sparkSession).carbonMetastore
+    // refresh cache
+    catalog.checkSchemasModifiedTimeAndReloadTables()
+
+    // try to get it from catch, otherwise lookup in catalog
+    catalog.getTableFromMetadataCache(databaseName, tableName)
+      .getOrElse(
+        catalog
+          .lookupRelation(databaseNameOp, tableName)(sparkSession)
+          .asInstanceOf[CarbonRelation]
+          .carbonTable)
   }
 
   /**
@@ -137,12 +142,7 @@ object CarbonEnv {
   def getCarbonTable(
       tableIdentifier: TableIdentifier)
     (sparkSession: SparkSession): CarbonTable = {
-    CarbonEnv
-      .getInstance(sparkSession)
-      .carbonMetastore
-      .lookupRelation(tableIdentifier)(sparkSession)
-      .asInstanceOf[CarbonRelation]
-      .carbonTable
+    getCarbonTable(tableIdentifier.database, tableIdentifier.table)(sparkSession)
   }
 
   /**
@@ -155,32 +155,62 @@ object CarbonEnv {
   }
 
   /**
-   * Return table path for specified table
+   * The method returns the database location
+   * if carbon.storeLocation does  point to spark.sql.warehouse.dir then returns
+   * the database locationUri as database location else follows the old behaviour
+   * making database location from carbon fixed store and database name.
+   * @return database location
+   */
+  def getDatabaseLocation(dbName: String, sparkSession: SparkSession): String = {
+    var databaseLocation =
+      sparkSession.sessionState.catalog.asInstanceOf[HiveSessionCatalog].getDatabaseMetadata(dbName)
+        .locationUri.toString
+    // for default database and db ends with .db
+    // check whether the carbon store and hive store is same or different.
+    if (dbName.equals("default") || databaseLocation.endsWith(".db")) {
+      val properties = CarbonProperties.getInstance()
+      val carbonStorePath =
+        FileFactory.getUpdatedFilePath(properties.getProperty(CarbonCommonConstants.STORE_LOCATION))
+      val hiveStorePath =
+        FileFactory.getUpdatedFilePath(sparkSession.conf.get("spark.sql.warehouse.dir"))
+      // if carbon.store does not point to spark.sql.warehouse.dir then follow the old table path
+      // format
+      if (!hiveStorePath.equals(carbonStorePath)) {
+        databaseLocation = CarbonProperties.getStorePath +
+                           CarbonCommonConstants.FILE_SEPARATOR +
+                           dbName
+      }
+    }
+
+    FileFactory.getUpdatedFilePath(databaseLocation)
+  }
+
+  /**
+   * Return table path from carbon table. If table does not exist, construct it using
+   * database location and table name
    */
   def getTablePath(
       databaseNameOp: Option[String],
       tableName: String
   )(sparkSession: SparkSession): String = {
-    val dbLocation = GetDB.getDatabaseLocation(
-      databaseNameOp.getOrElse(sparkSession.sessionState.catalog.getCurrentDatabase),
-      sparkSession,
-      CarbonProperties.getStorePath)
-    dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    try {
+      getCarbonTable(databaseNameOp, tableName)(sparkSession).getTablePath
+    } catch {
+      case _: NoSuchTableException =>
+        val dbName = getDatabaseName(databaseNameOp)(sparkSession)
+        val dbLocation = getDatabaseLocation(dbName, sparkSession)
+        dbLocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    }
   }
 
-  /**
-   * Return metadata path for specified table
-   */
-  def getMetadataPath(
+  def getIdentifier(
       databaseNameOp: Option[String],
       tableName: String
-  )(sparkSession: SparkSession): String = {
-    val absoluteTableIdentifier = AbsoluteTableIdentifier.from(
+  )(sparkSession: SparkSession): AbsoluteTableIdentifier = {
+    AbsoluteTableIdentifier.from(
       getTablePath(databaseNameOp, tableName)(sparkSession),
       getDatabaseName(databaseNameOp)(sparkSession),
       tableName)
-    val carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)
-    val schemaFilePath = carbonTablePath.getSchemaFilePath
-    CarbonTablePath.getFolderContainingFile(schemaFilePath)
   }
+
 }

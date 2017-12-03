@@ -20,7 +20,7 @@ package org.apache.carbondata.events
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel}
 
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
@@ -35,7 +35,7 @@ trait DatabaseEventInfo {
  * event for table related operations
  */
 trait TableEventInfo {
-  val carbonTableIdentifier: CarbonTableIdentifier
+  val identifier: AbsoluteTableIdentifier
 }
 
 /**
@@ -57,7 +57,7 @@ trait LookupRelationEventInfo {
  * event for drop table
  */
 trait DropTableEventInfo {
-  val carbonTable: Option[CarbonTable]
+  val carbonTable: CarbonTable
   val ifExistsSet: Boolean
 }
 
