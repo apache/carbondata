@@ -24,17 +24,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -372,6 +362,47 @@ public final class CarbonLoaderUtil {
     return escapeCharacter;
   }
 
+
+  public static void readAndUpdateLoadProgressInTableMeta(CarbonLoadModel model,
+      boolean insertOverwrite) throws IOException, InterruptedException {
+    LoadMetadataDetails newLoadMetaEntry = new LoadMetadataDetails();
+    SegmentStatus status = SegmentStatus.INSERT_IN_PROGRESS;
+    if (insertOverwrite) {
+      status = SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS;
+    }
+
+    // reading the start time of data load.
+    long loadStartTime = CarbonUpdateUtil.readCurrentTime();
+    model.setFactTimeStamp(loadStartTime);
+    CarbonLoaderUtil
+        .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp(), false);
+    boolean entryAdded =
+        CarbonLoaderUtil.recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite);
+    if (!entryAdded) {
+      throw new IOException("Failed to add entry in table status for " + model.getTableName());
+    }
+  }
+
+  /**
+   * This method will update the load failure entry in the table status file
+   */
+  public static void updateTableStatusForFailure(CarbonLoadModel model)
+      throws IOException, InterruptedException {
+    // in case if failure the load status should be "Marked for delete" so that it will be taken
+    // care during clean up
+    SegmentStatus loadStatus = SegmentStatus.MARKED_FOR_DELETE;
+    // always the last entry in the load metadata details will be the current load entry
+    LoadMetadataDetails loadMetaEntry =
+        model.getLoadMetadataDetails().get(model.getLoadMetadataDetails().size() - 1);
+    CarbonLoaderUtil
+        .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp(), true);
+    boolean updationStatus =
+        CarbonLoaderUtil.recordNewLoadMetadata(loadMetaEntry, model, false, false);
+    if (!updationStatus) {
+      throw new IOException(
+          "Failed to update failure entry in table status for " + model.getTableName());
+    }
+  }
 
   public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier)
       throws IOException {

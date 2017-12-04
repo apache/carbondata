@@ -514,51 +514,6 @@ object CommonUtil {
     parsedPropertyValueString
   }
 
-  def readAndUpdateLoadProgressInTableMeta(model: CarbonLoadModel,
-      insertOverwrite: Boolean): Unit = {
-    val newLoadMetaEntry = new LoadMetadataDetails
-    val status = if (insertOverwrite) {
-      SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
-    } else {
-      SegmentStatus.INSERT_IN_PROGRESS
-    }
-
-    // reading the start time of data load.
-    val loadStartTime = CarbonUpdateUtil.readCurrentTime
-    model.setFactTimeStamp(loadStartTime)
-    CarbonLoaderUtil.populateNewLoadMetaEntry(
-      newLoadMetaEntry, status, model.getFactTimeStamp, false)
-    val entryAdded: Boolean =
-      CarbonLoaderUtil.recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite)
-    if (!entryAdded) {
-      sys.error(s"Failed to add entry in table status for " +
-                s"${ model.getDatabaseName }.${model.getTableName}")
-    }
-  }
-
-  /**
-   * This method will update the load failure entry in the table status file
-   *
-   * @param model
-   */
-  def updateTableStatusForFailure(
-      model: CarbonLoadModel): Unit = {
-    // in case if failure the load status should be "Marked for delete" so that it will be taken
-    // care during clean up
-    val loadStatus = SegmentStatus.MARKED_FOR_DELETE
-    // always the last entry in the load metadata details will be the current load entry
-    val loadMetaEntry = model.getLoadMetadataDetails.get(model.getLoadMetadataDetails.size - 1)
-    CarbonLoaderUtil
-      .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp, true)
-    val updationStatus = CarbonLoaderUtil.recordNewLoadMetadata(loadMetaEntry, model, false, false)
-    if (!updationStatus) {
-      sys
-        .error(s"Failed to update failure entry in table status for ${
-          model
-            .getDatabaseName
-        }.${ model.getTableName }")
-    }
-  }
 
   def readLoadMetadataDetails(model: CarbonLoadModel): Unit = {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath

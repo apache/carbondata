@@ -46,6 +46,7 @@ import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
+import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, DataLoadingUtil, GlobalDictionaryUtil}
@@ -153,7 +154,7 @@ case class CarbonLoadDataCommand(
         GlobalDictionaryUtil.updateTableMetadataFunc = updateTableMetadata
         // add the start entry for the new load in the table status file
         if (updateModel.isEmpty) {
-          CommonUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, isOverwriteTable)
+          CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, isOverwriteTable)
         }
         if (isOverwriteTable) {
           LOGGER.info(s"Overwrite of carbon table with $dbName.$tableName is in progress")
@@ -197,12 +198,12 @@ case class CarbonLoadDataCommand(
       } catch {
         case CausedBy(ex: NoRetryException) =>
           // update the load entry in table status file for changing the status to marked for delete
-          CommonUtil.updateTableStatusForFailure(carbonLoadModel)
+          CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
           LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")
           throw new RuntimeException(s"Dataload failure for $dbName.$tableName, ${ex.getMessage}")
         case ex: Exception =>
           // update the load entry in table status file for changing the status to marked for delete
-          CommonUtil.updateTableStatusForFailure(carbonLoadModel)
+          CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
           LOGGER.error(ex)
           LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
           throw ex
