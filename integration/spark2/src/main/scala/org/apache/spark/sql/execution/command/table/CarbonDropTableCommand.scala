@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.command.table
 
 import scala.collection.mutable.ListBuffer
+
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
@@ -31,6 +32,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
+import org.apache.carbondata.spark.util.CommonUtil
 
 case class CarbonDropTableCommand(
     ifExistsSet: Boolean,

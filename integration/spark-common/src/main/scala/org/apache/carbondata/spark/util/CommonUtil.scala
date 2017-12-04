@@ -877,4 +877,24 @@ object CommonUtil {
     }
   }
 
+  /**
+   * This function checks if any load or insert overwrite is in progress before dropping that table
+   * @return
+   */
+  def checkLoadInProgressForTable(carbonTable: CarbonTable): Boolean = {
+    var canDropTable = true
+    val metaPath = carbonTable.getMetaDataFilepath
+    val listOfLoadFolderDetailsArray = SegmentStatusManager.readLoadMetadata(metaPath)
+    if (listOfLoadFolderDetailsArray.nonEmpty) {
+      for (loaddetail <- listOfLoadFolderDetailsArray) {
+        val segmentStatus = loaddetail.getSegmentStatus
+        if (segmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
+          segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+          canDropTable = false
+        }
+      }
+    }
+    canDropTable
+  }
+
 }
