@@ -43,7 +43,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
        | stringField STRING
        | )
        | STORED BY 'carbondata'
-       | TBLPROPERTIES('SORT_COLUMN'='stringField')
+       | TBLPROPERTIES('SORT_COLUMNS'='stringField')
        """.stripMargin)
 
     val exception_loaddata_sortscope: Exception = intercept[Exception] {
@@ -61,7 +61,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | stringField STRING
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMN'='stringField', 'SORT_SCOPE'='GLOBAL_SORT')
+         | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='GLOBAL_SORT')
        """.stripMargin)
 
     checkExistence(sql("DESCRIBE FORMATTED tableWithGlobalSort"), true, "global_sort")
@@ -73,7 +73,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | stringField STRING
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMN'='stringField', 'SORT_SCOPE'='LOCAL_SORT')
+         | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='LOCAL_SORT')
        """.stripMargin)
 
     sql("DESCRIBE FORMATTED tableWithLocalSort")
@@ -87,7 +87,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | stringField STRING
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMN'='stringField', 'SORT_SCOPE'='BATCH_SORT')
+         | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='BATCH_SORT')
        """.stripMargin)
 
     checkExistence(sql("DESCRIBE FORMATTED tableWithBatchSort"), true, "batch_sort")
@@ -99,7 +99,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
          | stringField STRING
          | )
          | STORED BY 'carbondata'
-         | TBLPROPERTIES('SORT_COLUMN'='stringField', 'SORT_SCOPE'='NO_SORT')
+         | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='NO_SORT')
        """.stripMargin)
 
     checkExistence(sql("DESCRIBE FORMATTED tableWithNoSort"), true, "no_sort")
@@ -114,7 +114,7 @@ class TestCreateTableWithSortScope extends QueryTest with BeforeAndAfterAll {
            | stringField STRING
            | )
            | STORED BY 'carbondata'
-           | TBLPROPERTIES('SORT_COLUMN'='stringField', 'SORT_SCOPE'='abc')
+           | TBLPROPERTIES('SORT_COLUMNS'='stringField', 'SORT_SCOPE'='abc')
        """.stripMargin)
     }
     assert(exception_unsupported_sortscope.getMessage.contains(
