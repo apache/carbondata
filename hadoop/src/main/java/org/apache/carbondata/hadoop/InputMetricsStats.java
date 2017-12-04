@@ -38,5 +38,5 @@ public interface InputMetricsStats extends Serializable {
   /**
    * update metric by `value`, it can be ColumnarBatch or InternalRow
    */
-  void updateByRow(Object value);
+  void updateByValue(Object value);
 }

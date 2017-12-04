@@ -77,7 +77,7 @@ class CarbonInputMetrics extends InitInputMetrics{
     }
   }
 
-  override def updateByRow(value: Object): Unit = {
+  override def updateByValue(value: Object): Unit = {
     inputMetrics.incRecordsRead(value.asInstanceOf[ColumnarBatch].numRows())
   }
 }
