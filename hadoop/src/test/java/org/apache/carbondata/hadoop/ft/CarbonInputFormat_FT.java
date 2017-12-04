@@ -19,7 +19,6 @@ package org.apache.carbondata.hadoop.ft;
 
 import java.util.List;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
