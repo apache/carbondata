@@ -453,7 +453,7 @@ object CarbonDataRDDFactory {
       return
     }
     if (loadStatus == SegmentStatus.LOAD_FAILURE) {
-      // update the load entry in table status file for changing the status to failure
+      // update the load entry in table status file for changing the status to marked for delete
       CommonUtil.updateTableStatusForFailure(carbonLoadModel)
       LOGGER.info("********starting clean up**********")
       CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
@@ -468,7 +468,7 @@ object CarbonDataRDDFactory {
       if (loadStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS &&
           status(0)._2._2.failureCauses == FailureCauses.BAD_RECORDS &&
           carbonLoadModel.getBadRecordsAction.split(",")(1) == LoggerAction.FAIL.name) {
-        // update the load entry in table status file for changing the status to failure
+        // update the load entry in table status file for changing the status to marked for delete
         CommonUtil.updateTableStatusForFailure(carbonLoadModel)
         LOGGER.info("********starting clean up**********")
         CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
@@ -480,7 +480,7 @@ object CarbonDataRDDFactory {
       // if segment is empty then fail the data load
       if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap &&
           !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
-        // update the load entry in table status file for changing the status to failure
+        // update the load entry in table status file for changing the status to marked for delete
         CommonUtil.updateTableStatusForFailure(carbonLoadModel)
         LOGGER.info("********starting clean up**********")
         CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
