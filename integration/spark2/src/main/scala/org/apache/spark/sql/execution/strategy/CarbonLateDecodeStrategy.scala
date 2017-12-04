@@ -25,16 +25,19 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.catalyst.expressions
 import org.apache.spark.sql.catalyst.expressions.{Attribute, _}
-import org.apache.spark.sql.catalyst.planning.PhysicalOperation
-import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.catalyst.planning.{ExtractEquiJoinKeys, PhysicalOperation}
+import org.apache.spark.sql.catalyst.plans.Inner
+import org.apache.spark.sql.catalyst.plans.logical.{BroadcastHint, Filter => LogicalFilter, LogicalPlan}
 import org.apache.spark.sql.catalyst.plans.physical.{HashPartitioning, Partitioning, UnknownPartitioning}
 import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.execution.joins.{BroadCastFilterPushJoin, BuildLeft, BuildRight}
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
 import org.apache.spark.sql.types.{AtomicType, IntegerType, StringType}
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -51,6 +54,8 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
 private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
   val PUSHED_FILTERS = "PushedFilters"
 
+  val LOGGER = LogServiceFactory.getLogService("CarbonLateDecodeStrategy")
+
   def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
       case PhysicalOperation(projects, filters, l: LogicalRelation)
@@ -62,6 +67,39 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
           filters,
           (a, f, needDecoder) => toCatalystRDD(l, a, relation.buildScan(
             a.map(_.name).toArray, f), needDecoder)) :: Nil
+      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition,
+      left, right)
+        if (isCarbonPlan(left) &&
+            canPushDownJoin(right, condition)) =>
+        LOGGER.info(s"pushing down for ExtractEquiJoinKeys:right")
+        val carbon = apply(left).head
+        val pushedDownJoin =
+          BroadCastFilterPushJoin(
+            leftKeys: Seq[Expression],
+            rightKeys: Seq[Expression],
+            Inner,
+            BuildRight,
+            carbon,
+            planLater(right),
+            condition)
+        condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
+      case ExtractEquiJoinKeys(Inner, leftKeys, rightKeys, condition, left,
+      right)
+        if (isCarbonPlan(right) &&
+            canPushDownJoin(left, condition)) =>
+        LOGGER.info(s"pushing down for ExtractEquiJoinKeys:left")
+        val carbon = planLater(right)
+
+        val pushedDownJoin =
+          BroadCastFilterPushJoin(
+            leftKeys: Seq[Expression],
+            rightKeys: Seq[Expression],
+            Inner,
+            BuildLeft,
+            planLater(left),
+            carbon,
+            condition)
+        condition.map(FilterExec(_, pushedDownJoin)).getOrElse(pushedDownJoin) :: Nil
       case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
         if ((profile.isInstanceOf[IncludeProfile] && profile.isEmpty) ||
             !CarbonDictionaryDecoder.
@@ -101,6 +139,41 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       false
     } else {
       true
+    }
+  }
+
+  private def isCarbonPlan(plan: LogicalPlan): Boolean = {
+    plan match {
+      case CarbonDictionaryCatalystDecoder(relations, profile, aliasMap, _, child) =>
+        return true
+      case PhysicalOperation(_, _,
+      LogicalRelation(_: CarbonDatasourceHadoopRelation, _, _)) =>
+        return true
+      case LogicalFilter(_, LogicalRelation(_: CarbonDatasourceHadoopRelation, _, _)) =>
+        return true
+      case others => false
+    }
+    false
+  }
+
+  private def canPushDownJoin(otherRDDPlan: LogicalPlan,
+      joinCondition: Option[Expression]): Boolean = {
+    val session = SparkSession.getActiveSession.get
+    val pushdowmJoinEnabled = session.sparkContext.getConf
+      .getBoolean("spark.carbon.pushdown.join.as.filter", defaultValue = true)
+
+    if (!pushdowmJoinEnabled) {
+      return false
+    }
+
+    otherRDDPlan match {
+      case BroadcastHint(p) => true
+      case p if session.sqlContext.conf.autoBroadcastJoinThreshold > 0 &&
+                p.statistics.sizeInBytes <=
+                session.sqlContext.conf.autoBroadcastJoinThreshold =>
+        LOGGER.info("canPushDownJoin statistics:" + p.statistics.sizeInBytes)
+        true
+      case _ => false
     }
   }
 

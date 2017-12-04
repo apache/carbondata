@@ -1434,6 +1434,17 @@ public final class CarbonCommonConstants {
    */
   public static final long HANDOFF_SIZE_DEFAULT = 1024L * 1024 * 1024;
 
+  /**
+   * key to get broadcast record size from properties
+   */
+  @CarbonProperty
+  public static final String BROADCAST_RECORD_SIZE = "broadcast.record.size";
+
+  /**
+   * default broadcast record size
+   */
+  public static final String DEFAULT_BROADCAST_RECORD_SIZE = "100";
+
   private CarbonCommonConstants() {
   }
 }

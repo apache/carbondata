@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.optimizer
 
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.CastExpressionOptimization
 import org.apache.spark.sql.CarbonBoundReference
@@ -412,5 +414,10 @@ object CarbonFilters {
 
       case _ => expressions
     }
+  }
+
+  def getFilterExpression(extraPreds: Seq[Expression],
+    unKnownExpr: ArrayBuffer[Expression] = new ArrayBuffer[Expression]()): CarbonExpression = {
+    transformExpression(preProcessExpressions(extraPreds).head)
   }
 }
