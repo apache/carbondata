@@ -74,8 +74,8 @@ case class CarbonDropTableCommand(
           sparkSession)
       OperationListenerBus.getInstance.fireEvent(dropTablePreEvent, operationContext)
       if (SegmentStatusManager.checkIfAnyLoadInProgressForTable(carbonTable)) {
-        throw new AnalysisException(s"Cannot drop table, load or insert overwrite is " +
-          s"in progress for the table $tableName")
+        throw new AnalysisException(s"Data loading is in progress for table $tableName, drop " +
+                                    s"table operation is not allowed")
       }
       CarbonEnv.getInstance(sparkSession).carbonMetastore.dropTable(identifier)(sparkSession)
 

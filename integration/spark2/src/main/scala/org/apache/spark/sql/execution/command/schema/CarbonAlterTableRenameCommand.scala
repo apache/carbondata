@@ -36,7 +36,6 @@ import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{AlterTableRenamePostEvent, AlterTableRenamePreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.util.CommonUtil
 
 private[sql] case class CarbonAlterTableRenameCommand(
     alterTableRenameModel: AlterTableRenameModel)
@@ -87,8 +86,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
         .asInstanceOf[CarbonRelation].carbonTable
       // if any load is in progress for table, do not allow rename table
       if (SegmentStatusManager.checkIfAnyLoadInProgressForTable(carbonTable)) {
-        throw new AnalysisException(s"alter rename failed, load, insert or insert " +
-          s"overwrite is in progress for the table $oldTableName")
+        throw new AnalysisException(s"Data loading is in progress for table $oldTableName, alter " +
+                                    s"table rename operation is not allowed")
       }
       // invalid data map for the old table, see CARBON-1690
       val oldTableIdentifier = carbonTable.getAbsoluteTableIdentifier
