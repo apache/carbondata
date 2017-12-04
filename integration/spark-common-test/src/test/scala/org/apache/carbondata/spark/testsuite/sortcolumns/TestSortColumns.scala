@@ -21,8 +21,9 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.metadata.schema.table.MalformedCarbonCommandException
 
 class TestSortColumns extends QueryTest with BeforeAndAfterAll {
 

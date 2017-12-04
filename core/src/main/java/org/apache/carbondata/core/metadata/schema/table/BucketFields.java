@@ -14,23 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.spark
 
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+package org.apache.carbondata.core.metadata.schema.table;
 
- /**
-  * Carbon column validator
-  */
-class CarbonColumnValidator extends ColumnValidator {
-  def validateColumns(allColumns: Seq[ColumnSchema]) {
-    allColumns.foreach { columnSchema =>
-      val colWithSameId = allColumns.filter { x =>
-        x.getColumnUniqueId.equals(columnSchema.getColumnUniqueId)
+import java.util.List;
+
+public class BucketFields {
+  private List<String> bucketColumns;
+  private int numberOfBuckets;
+
+  public BucketFields(List<String> bucketColumns, String numberOfBuckets)
+      throws MalformedCarbonCommandException {
+    this.bucketColumns = bucketColumns;
+    try {
+      this.numberOfBuckets = Integer.parseInt(numberOfBuckets);
+      if (this.numberOfBuckets <= 0) {
+        throw new MalformedCarbonCommandException("BUCKETNUMBER must be positive value");
       }
-      if (colWithSameId.size > 1) {
-        throw new MalformedCarbonCommandException("Two column can not have same columnId")
-      }
+    } catch (NumberFormatException e) {
+      throw new MalformedCarbonCommandException("BUCKETNUMBER must be integer value");
     }
+  }
+
+  public List<String> getBucketColumns() {
+    return bucketColumns;
+  }
+
+  public int getNumberOfBuckets() {
+    return numberOfBuckets;
   }
 }

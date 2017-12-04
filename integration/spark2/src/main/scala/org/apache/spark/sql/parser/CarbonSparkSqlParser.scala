@@ -16,27 +16,34 @@
  */
 package org.apache.spark.sql.parser
 
+import java.text.SimpleDateFormat
+
+import scala.collection.JavaConverters._
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 import org.antlr.v4.runtime.tree.TerminalNode
 import org.apache.spark.sql.{CarbonEnv, CarbonSession, SparkSession}
+import org.apache.spark.sql.{CarbonOption, CarbonSession, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.parser.{AbstractSqlParser, ParseException, SqlBaseParser}
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
 import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
-import org.apache.spark.sql.execution.command.{PartitionerField, TableModel}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
-import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
-import org.apache.spark.util.CarbonReflectionUtils
+import org.apache.spark.util.{CarbonReflectionUtils, PartitionUtils}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes, StructField => CarbonStructField}
+import org.apache.carbondata.core.metadata.schema.PartitionInfo
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.metadata.schema.table.{BucketFields, MalformedCarbonCommandException, PartitionerField}
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.CarbonOption
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 /**
  * Concrete parser for Spark SQL stateENABLE_INMEMORY_MERGE_SORT_DEFAULTments and carbon specific
@@ -107,8 +114,6 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     }
   }
 
-
-
   def needToConvertToLowerCase(key: String): Boolean = {
     val noConvertList = Array("LIST_INFO", "RANGE_INFO")
     !noConvertList.exists(x => x.equalsIgnoreCase(key));
@@ -122,7 +127,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     val badKeys = props.filter { case (_, v) => v == null }.keys
     if (badKeys.nonEmpty) {
       operationNotAllowed(
-        s"Values must be specified for key(s): ${badKeys.mkString("[", ",", "]")}", ctx)
+        s"Values must be specified for key(s): ${ badKeys.mkString("[", ",", "]") }", ctx)
     }
     props.map { case (key, value) =>
       if (needToConvertToLowerCase(key)) {
@@ -133,13 +138,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     }
   }
 
-  def getPropertyKeyValues(ctx: TablePropertyListContext): Map[String, String]
-  = {
-    Option(ctx).map(visitPropertyKeyValues)
-      .getOrElse(Map.empty)
-  }
-
-  def createCarbonTable(tableHeader: CreateTableHeaderContext,
+  def createCarbonTable(
+      tableHeader: CreateTableHeaderContext,
       skewSpecContext: SkewSpecContext,
       bucketSpecContext: BucketSpecContext,
       partitionColumns: ColTypeListContext,
@@ -148,7 +148,6 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
       locationSpecContext: SqlBaseParser.LocationSpecContext,
       tableComment : Option[String],
       ctas: TerminalNode) : LogicalPlan = {
-    // val parser = new CarbonSpark2SqlParser
 
     val (tableIdentifier, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
     // TODO: implement temporary tables
@@ -170,66 +169,123 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
       operationNotAllowed("CREATE TABLE AS SELECT", tableHeader)
     }
 
-    val cols = Option(columns).toSeq.flatMap(visitColTypeList)
-    val properties = getPropertyKeyValues(tablePropertyList)
-
-    // Ensuring whether no duplicate name is used in table definition
-    val colNames = cols.map(_.name)
-    if (colNames.length != colNames.distinct.length) {
-      val duplicateColumns = colNames.groupBy(identity).collect {
-        case (x, ys) if ys.length > 1 => "\"" + x + "\""
-      }
-      operationNotAllowed(s"Duplicated column names found in table definition of " +
-                          s"$tableIdentifier: ${duplicateColumns.mkString("[", ",", "]")}", columns)
-    }
-
     val tablePath = if (locationSpecContext != null) {
       Some(visitLocationSpec(locationSpecContext))
     } else {
       None
     }
+    // validate schema
+    val (colsStructFields, colNames) = validateAndExtractSchema(columns, tableIdentifier)
 
     val tableProperties = mutable.Map[String, String]()
-    properties.foreach{property => tableProperties.put(property._1, property._2)}
+    val properties = Option(tablePropertyList).map(visitPropertyKeyValues).getOrElse(Map.empty)
+    properties.foreach { property => tableProperties.put(property._1, property._2) }
+
+    val options = new CarbonOption(null, properties)
+
+    // validate streaming table property
+    validateStreamingProperty(options)
 
     // validate partition clause
     val (partitionByStructFields, partitionFields) =
       validateParitionFields(partitionColumns, colNames, tableProperties)
+    val partitionInfo = createPartitionInfo(partitionFields, tableProperties)
 
-    // validate partition clause
-    if (partitionFields.nonEmpty) {
-      if (!CommonUtil.validatePartitionColumns(tableProperties, partitionFields)) {
-        throw new MalformedCarbonCommandException("Error: Invalid partition definition")
-      }
-      // partition columns should not be part of the schema
-      val badPartCols = partitionFields.map(_.partitionColumn).toSet.intersect(colNames.toSet)
-      if (badPartCols.nonEmpty) {
-        operationNotAllowed(s"Partition columns should not be specified in the schema: " +
-                            badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"),
-          partitionColumns)
+    val fields = colsStructFields ++ partitionByStructFields
+    fields.zipWithIndex.foreach { case (field, index) =>
+      field.setSchemaOrdinal(index)
+    }
+    val schema = CarbonDataTypes.createStructType(fields.asJava)
+
+    // update the schema to change all float field to double, since carbon does not support
+    // float data type currently
+    // TODO: remove this limitation
+    val updatedFields = schema.getFields.asScala.map { field =>
+      if (field.getDataType == CarbonDataTypes.FLOAT) {
+        CarbonDataTypes.createStructField(field.getFieldName, CarbonDataTypes.DOUBLE)
+      } else {
+        field
       }
     }
 
-    val fields = parser.getFields(cols ++ partitionByStructFields)
-    val options = new CarbonOption(properties)
-    // validate tblProperties
-    val bucketFields = parser.getBucketFields(tableProperties, fields, options)
+    // validate and get bucket fields
+    val bucketFields: Option[BucketFields] = parser.createBucketFields(tableProperties, options)
 
-    validateStreamingProperty(options)
+    val tableSchema = CarbonDataTypes.createStructType(updatedFields.asJava)
 
-    // prepare table model of the collected tokens
-    val tableModel: TableModel = parser.prepareTableModel(
-      ifNotExists,
-      convertDbNameToLowerCase(tableIdentifier.database),
-      tableIdentifier.table.toLowerCase,
-      fields,
-      partitionFields,
-      tableProperties,
-      bucketFields,
-      isAlterFlow = false,
-      tableComment)
+    CarbonCreateTableCommand(
+      databaseNameOp = tableIdentifier.database,
+      tableName = tableIdentifier.table,
+      tableProperties = tableProperties,
+      tableSchema = tableSchema,
+      ifNotExists = ifNotExists,
+      tableLocation = tablePath,
+      bucketFields = bucketFields,
+      partitionInfo = partitionInfo,
+      tableComment = tableComment)
+  }
 
-    CarbonCreateTableCommand(tableModel, tablePath)
+
+  /**
+   * @param partitionCols
+   * @param tableProperties
+   */
+  private def createPartitionInfo(
+      partitionCols: Seq[PartitionerField],
+      tableProperties: mutable.Map[String, String]): Option[PartitionInfo] = {
+    val timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+    val dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance
+      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+    if (partitionCols.isEmpty) {
+      None
+    } else {
+      var partitionType: String = ""
+      var numPartitions = 0
+      var rangeInfo = List[String]()
+      var listInfo = List[List[String]]()
+
+      val columnDataType = partitionCols.head.getDataType
+      if (tableProperties.get(CarbonCommonConstants.PARTITION_TYPE).isDefined) {
+        partitionType = tableProperties(CarbonCommonConstants.PARTITION_TYPE)
+      }
+      if (tableProperties.get(CarbonCommonConstants.NUM_PARTITIONS).isDefined) {
+        numPartitions = tableProperties(CarbonCommonConstants.NUM_PARTITIONS)
+          .toInt
+      }
+      if (tableProperties.get(CarbonCommonConstants.RANGE_INFO).isDefined) {
+        rangeInfo = tableProperties(CarbonCommonConstants.RANGE_INFO).split(",")
+          .map(_.trim()).toList
+        CommonUtil.validateRangeInfo(rangeInfo, columnDataType, timestampFormatter, dateFormatter)
+      }
+      if (tableProperties.get(CarbonCommonConstants.LIST_INFO).isDefined) {
+        val originListInfo = tableProperties(CarbonCommonConstants.LIST_INFO)
+        listInfo = PartitionUtils.getListInfo(originListInfo)
+        CommonUtil.validateListInfo(listInfo)
+      }
+      val cols: ArrayBuffer[ColumnSchema] = new ArrayBuffer[ColumnSchema]()
+      partitionCols.foreach(partition_col => {
+        val columnSchema = new ColumnSchema
+        columnSchema.setDataType(partition_col.getDataType)
+        columnSchema.setColumnName(partition_col.getPartitionColumn)
+        cols += columnSchema
+      })
+
+      var partitionInfo: PartitionInfo = null
+      partitionType.toUpperCase() match {
+        case "HASH" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.HASH)
+          partitionInfo.initialize(numPartitions)
+        case "RANGE" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.RANGE)
+          partitionInfo.setRangeInfo(rangeInfo.asJava)
+          partitionInfo.initialize(rangeInfo.size + 1)
+        case "LIST" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
+          partitionInfo.setListInfo(listInfo.map(_.asJava).asJava)
+          partitionInfo.initialize(listInfo.size + 1)
+      }
+      Some(partitionInfo)
+    }
   }
 
   private def validateStreamingProperty(carbonOption: CarbonOption): Unit = {
@@ -242,20 +298,32 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     }
   }
 
+  /**
+   * Return partition column fields and PartitionerField object
+   */
   private def validateParitionFields(
       partitionColumns: ColTypeListContext,
       colNames: Seq[String],
-      tableProperties: mutable.Map[String, String]): (Seq[StructField], Seq[PartitionerField]) = {
-    val partitionByStructFields = Option(partitionColumns).toSeq.flatMap(visitColTypeList)
+      tableProperties: mutable.Map[String, String]
+  ): (Seq[CarbonStructField], Seq[PartitionerField]) = {
+    val partitionByStructFields: Seq[CarbonStructField] =
+      Option(partitionColumns)
+        .toSeq
+        .flatMap(visitColTypeList)
+        .map { field =>
+          CarbonDataTypes.createStructField(
+            field.name,
+            CarbonScalaUtil.convertSparkToCarbonDataType(field.dataType))
+        }
     val partitionerFields = partitionByStructFields.map { structField =>
-      PartitionerField(structField.name, Some(structField.dataType.toString), null)
+      new PartitionerField(structField.getFieldName, structField.getDataType, null)
     }
     if (partitionerFields.nonEmpty) {
       if (!CommonUtil.validatePartitionColumns(tableProperties, partitionerFields)) {
         throw new MalformedCarbonCommandException("Error: Invalid partition definition")
       }
       // partition columns should not be part of the schema
-      val badPartCols = partitionerFields.map(_.partitionColumn).toSet.intersect(colNames.toSet)
+      val badPartCols = partitionerFields.map(_.getPartitionColumn).toSet.intersect(colNames.toSet)
       if (badPartCols.nonEmpty) {
         operationNotAllowed(s"Partition columns should not be specified in the schema: " +
                             badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]")
@@ -265,10 +333,36 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     (partitionByStructFields, partitionerFields)
   }
 
+  /**
+   * Return column fields and column names
+   */
+  private def validateAndExtractSchema(
+      columns : ColTypeListContext,
+      identifier: TableIdentifier): (Seq[CarbonStructField], Seq[String]) = {
+    // Validate schema, ensuring whether no duplicate name is used in table definition
+    val cols: Seq[CarbonStructField] =
+      Option(columns)
+        .toSeq
+        .flatMap(visitColTypeList)
+        .map { field =>
+          CarbonDataTypes.createStructField(
+            field.name,
+            CarbonScalaUtil.convertSparkToCarbonDataType(field.dataType),
+            field.getComment().getOrElse(""))
+        }
+    val colNames = cols.map(_.getFieldName)
+    if (colNames.length != colNames.distinct.length) {
+      val duplicateColumns = colNames.groupBy(identity).collect {
+        case (x, ys) if ys.length > 1 => "\"" + x + "\""
+      }
+      throw new MalformedCarbonCommandException(
+        s"Duplicated column names found in table definition of $identifier: " +
+        duplicateColumns.mkString("[", ",", "]"))
+    }
+    (cols, colNames)
+  }
 }
 
 trait CarbonAstTrait {
-  def getFileStorage (createFileFormat : CreateFileFormatContext): String
+  def getFileStorage(createFileFormat: CreateFileFormatContext): String
 }
-
-

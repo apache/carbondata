@@ -31,6 +31,12 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.TablePropertyInfo;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.metadata.datatype.StructField;
+import org.apache.carbondata.core.metadata.datatype.StructType;
+import org.apache.carbondata.core.metadata.schema.BucketingInfo;
+import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
 
@@ -314,6 +320,263 @@ public class TableInfo implements Serializable, Writable {
 
   public List<RelationIdentifier> getParentRelationIdentifiers() {
     return parentRelationIdentifiers;
+  }
+
+  public static TableInfoBuilder builder() {
+    return new TableInfo.TableInfoBuilder();
+  }
+
+  public static class TableInfoBuilder {
+
+    // following members are required to build TableInfo
+
+    private String databaseName;
+    private String tableName;
+    private List<ColumnSchema> allColumns;
+    private String tablePath;
+    private List<DataMapSchema> dataMapSchemaList = new ArrayList<>();
+    private Map<String, String> tableProperties;
+    private BucketingInfo bucketingInfo;
+    private PartitionInfo partitionInfo;
+
+    // parent table object, which can be used during dropping of pre-aggreate table as
+    // parent table will also get updated
+    private CarbonTable parentTable;
+
+    // column name -> DataMapField
+    private Map<String, DataMapField> dataMapFields;
+
+    private TableInfoBuilder() {
+    }
+
+    public TableInfo create() throws MalformedCarbonCommandException {
+      if (databaseName == null || tablePath == null) {
+        throw new IllegalArgumentException("parameter must not be null");
+      }
+      TableSchema tableSchema =
+          TableSchema.builder()
+              .tableName(tableName)
+              .allColumns(allColumns)
+              .tableProperties(tableProperties)
+              .partitionInfo(partitionInfo)
+              .bucketingInfo(bucketingInfo)
+              .create();
+      TableInfo tableInfo = new TableInfo();
+      tableInfo.setDatabaseName(databaseName);
+      tableInfo.setTableUniqueName(databaseName + "_" + tableName);
+      tableInfo.setFactTable(tableSchema);
+      tableInfo.setTablePath(tablePath);
+      tableInfo.setLastUpdatedTime(System.currentTimeMillis());
+      tableInfo.setDataMapSchemaList(dataMapSchemaList);
+      tableInfo.getOrCreateAbsoluteTableIdentifier();
+      return tableInfo;
+    }
+
+    public TableInfoBuilder databaseName(String databaseName) {
+      this.databaseName = databaseName;
+      return this;
+    }
+
+    public TableInfoBuilder tableName(String tableName) {
+      this.tableName = tableName;
+      return this;
+    }
+
+    public TableInfoBuilder tableProperties(Map<String, String> tableProperties) {
+      this.tableProperties = tableProperties;
+      return this;
+    }
+
+    // check whether there are duplicated column
+    private void validateSchema(StructType schema) throws MalformedCarbonCommandException {
+      Set<String> fieldNames = new HashSet<>();
+      List<StructField> fields = schema.getFields();
+      for (StructField field : fields) {
+        if (fieldNames.contains(field.getFieldName())) {
+          throw new MalformedCarbonCommandException(
+              "Duplicated column found, column name " + field.getFieldName());
+        }
+        fieldNames.add(field.getFieldName());
+      }
+    }
+
+    // check columns defined in table property should be exist in schema
+    private void validateTableProperty(StructType schema) throws MalformedCarbonCommandException {
+      List<String> columnNames = new ArrayList<>();
+      for (StructField field : schema.getFields()) {
+        columnNames.add(field.getFieldName());
+      }
+      String sortColumnString = tableProperties.get(CarbonCommonConstants.SORT_COLUMNS);
+      if (sortColumnString != null && !sortColumnString.isEmpty()) {
+        String[] sortColumns = sortColumnString.split(",");
+        for (String sortColumn : sortColumns) {
+          if (!columnNames.contains(sortColumn.trim())) {
+            throw new MalformedCarbonCommandException(
+                "SORT_COLUMN " + sortColumn + " is not found in table schema");
+          }
+        }
+      }
+      String dictColumnString = tableProperties.get(CarbonCommonConstants.DICTIONARY_INCLUDE);
+      if (dictColumnString != null && !dictColumnString.isEmpty()) {
+        String[] dictColumns = dictColumnString.split(",");
+        for (String dictColumn : dictColumns) {
+          if (!columnNames.contains(dictColumn.trim())) {
+            throw new MalformedCarbonCommandException(
+                "DICTIONARY_INCLUDE " + dictColumn + " is not found in table schema");
+          }
+        }
+      }
+      String noInvertedIndexString = tableProperties.get(CarbonCommonConstants.NO_INVERTED_INDEX);
+      if (noInvertedIndexString != null && !noInvertedIndexString.isEmpty()) {
+        String[] noInvertedIndexColumns = noInvertedIndexString.split(",");
+        for (String noInvertedIndexColumn : noInvertedIndexColumns) {
+          if (!columnNames.contains(noInvertedIndexColumn.trim())) {
+            throw new MalformedCarbonCommandException(
+                "NO_INVERTED_INDEX " + noInvertedIndexColumn + " is not found in table schema");
+          }
+        }
+      }
+    }
+
+    public TableInfoBuilder schema(StructType schema) throws MalformedCarbonCommandException {
+      if (tableProperties == null) {
+        throw new IllegalArgumentException("talbeProperty should be passed before passing schema");
+      }
+      validateSchema(schema);
+      validateTableProperty(schema);
+      TablePropertyInfo tableProperty = new TablePropertyInfo(schema, tableProperties);
+      this.allColumns = createColumnsSchemas(schema, tableProperty, parentTable, dataMapFields);
+      return this;
+    }
+
+    public TableInfoBuilder tablePath(String tablePath) {
+      this.tablePath = tablePath;
+      return this;
+    }
+
+    // bucketFields must be either in sort_columns or dimension if not in sort_columns
+    public TableInfoBuilder bucketFields(BucketFields bucketFields)
+        throws MalformedCarbonCommandException {
+      if (bucketFields == null) {
+        return this;
+      }
+      List<String> allFields = new ArrayList<>();
+      for (ColumnSchema column : allColumns) {
+        allFields.add(column.getColumnName());
+      }
+      List<ColumnSchema> bucketColumns = new ArrayList<ColumnSchema>();
+      for (String bucketField : bucketFields.getBucketColumns()) {
+        if (!allFields.contains(bucketField)) {
+          String msg = "Bucket field is not present in table schema: " + bucketField;
+          LOGGER.error(msg);
+          throw new MalformedCarbonCommandException(msg);
+        }
+        for (ColumnSchema column : allColumns) {
+          if (column.getColumnName().equalsIgnoreCase(bucketField)) {
+            if (column.isDimensionColumn() && !column.getDataType().isComplexType()) {
+              bucketColumns.add(column);
+              break;
+            } else {
+              String msg = "Bucket field must be dimension column and not complex column, " +
+                  "invalid bucket field: " + bucketField;
+              LOGGER.error(msg);
+              throw new MalformedCarbonCommandException(msg);
+            }
+          }
+        }
+
+        this.bucketingInfo = new BucketingInfo(bucketColumns, bucketFields.getNumberOfBuckets());
+      }
+      return this;
+    }
+
+    // partition column can be any column
+    public TableInfoBuilder partitionInfo(PartitionInfo partitionInfo) {
+      this.partitionInfo = partitionInfo;
+      return this;
+    }
+
+    public TableInfoBuilder dataMapSchemaList(List<DataMapSchema> dataMapSchemaList) {
+      this.dataMapSchemaList = dataMapSchemaList;
+      return this;
+    }
+
+    public TableInfoBuilder parentTable(CarbonTable parentTable) {
+      this.parentTable = parentTable;
+      return this;
+    }
+
+    public TableInfoBuilder dataMapFields(Map<String, DataMapField> dataMapFields) {
+      this.dataMapFields = dataMapFields;
+      return this;
+    }
+
+    private List<ColumnSchema> createColumnsSchemas(
+        StructType schema,
+        TablePropertyInfo tableProperty,
+        CarbonTable parentTable,
+        Map<String, DataMapField> dataMapFields
+    ) throws MalformedCarbonCommandException {
+
+      // create ColumnSchema for every field in schema
+      List<ColumnSchema> allColumns = new ArrayList<>();
+      List<ColumnSchema> sortColumns = new ArrayList<>();
+      List<ColumnSchema> dimensionColumns = new ArrayList<>();
+      List<ColumnSchema> measureColumns = new ArrayList<>();
+
+      List<StructField> fields = schema.getFields();
+
+      for (StructField field : fields) {
+        List<ColumnSchema> columns = field.createColumnSchema(
+            tableProperty,
+            parentTable,
+            dataMapFields);
+        for (ColumnSchema column : columns) {
+          if (column.isSortColumn()) {
+            sortColumns.add(column);
+          } else if (column.isDimensionColumn()) {
+            dimensionColumns.add(column);
+          } else {
+            measureColumns.add(column);
+          }
+        }
+      }
+
+      allColumns.addAll(sortColumns);
+      allColumns.addAll(dimensionColumns);
+      allColumns.addAll(measureColumns);
+
+      // Adding dummy measure if no measure is provided.
+      // TODO: remove this limitation
+      if (measureColumns.size() == 0) {
+        StructField dummyField = DataTypes.createStructField(
+            CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE,
+            DataTypes.DOUBLE);
+
+        List<ColumnSchema> dummyColumn = dummyField.createColumnSchema(
+            tableProperty,
+            parentTable,
+            dataMapFields);
+        dummyColumn.get(0).setInvisible(true);
+        allColumns.addAll(dummyColumn);
+      }
+
+      validateColumns(allColumns);
+      return allColumns;
+    }
+
+    private void validateColumns(List<ColumnSchema> allColumns)
+        throws MalformedCarbonCommandException {
+      Set<String> columnIdSet = new HashSet<>();
+      for (ColumnSchema columnSchema : allColumns) {
+        columnIdSet.add(columnSchema.getColumnUniqueId());
+      }
+
+      if (columnIdSet.size() != allColumns.size()) {
+        throw new MalformedCarbonCommandException("Two column can not have same columnId");
+      }
+    }
+
   }
 
 }

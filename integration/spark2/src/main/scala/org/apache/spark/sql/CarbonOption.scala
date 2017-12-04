@@ -15,19 +15,22 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark
+package org.apache.spark.sql
+
+import org.apache.carbondata.core.metadata.schema.table.MalformedCarbonCommandException
 
 
 /**
  * Contains all options for Spark data source
  */
-class CarbonOption(options: Map[String, String]) {
+class CarbonOption(sparkSession: SparkSession, options: Map[String, String]) {
 
-  def dbName: Option[String] = options.get("dbName")
+  def dbName: String = CarbonEnv.getDatabaseName(options.get("dbName"))(sparkSession)
 
-  def tableName: String = options.getOrElse("tableName", "default_table")
+  def tableName: String = options.getOrElse(
+    "tableName", throw new MalformedCarbonCommandException("tableName must specified"))
 
-  def tablePath: Option[String] = options.get("tablePath")
+  def tablePath: Option[String] = options.get("path")
 
   def partitionCount: String = options.getOrElse("partitionCount", "1")
 
@@ -48,7 +51,7 @@ class CarbonOption(options: Map[String, String]) {
 
   def tableBlockSize: Option[String] = options.get("table_blocksize")
 
-  def bucketNumber: Int = options.getOrElse("bucketnumber", "0").toInt
+  def bucketNumber: String = options.getOrElse("bucketnumber", "0")
 
   def bucketColumns: String = options.getOrElse("bucketcolumns", "")
 

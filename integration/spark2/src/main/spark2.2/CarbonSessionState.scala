@@ -146,9 +146,6 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
   /**
    * Internal catalog for managing table and database states.
    */
-  /**
-   * Create a [[CarbonSessionCatalogBuild]].
-   */
   override protected lazy val catalog: CarbonSessionCatalog = {
     val catalog = new CarbonSessionCatalog(
       externalCatalog,

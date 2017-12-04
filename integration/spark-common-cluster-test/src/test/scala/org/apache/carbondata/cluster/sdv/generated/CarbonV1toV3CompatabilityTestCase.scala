@@ -19,7 +19,7 @@ package org.apache.carbondata.cluster.sdv.generated
 
 import org.apache.spark.sql.common.util.QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
-import org.apache.spark.sql.{CarbonEnv, CarbonSession, Row, SparkSession}
+import org.apache.spark.sql.{CarbonSession, Row, SparkSession}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants

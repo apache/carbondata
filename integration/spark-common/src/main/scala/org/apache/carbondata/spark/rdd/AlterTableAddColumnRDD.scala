@@ -70,8 +70,7 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
         // create dictionary file if it is a dictionary column
         if (columnSchema.hasEncoding(Encoding.DICTIONARY) &&
             !columnSchema.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
-          val carbonTablePath = CarbonStorePath
-            .getCarbonTablePath(absoluteTableIdentifier)
+          val carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)
           var rawData: String = null
           if (null != columnSchema.getDefaultValue) {
             rawData = new String(columnSchema.getDefaultValue,
@@ -84,11 +83,11 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
           if (!FileFactory.isFileExist(metadataDirectoryPath, fileType)) {
             FileFactory.mkdirs(metadataDirectoryPath, fileType)
           }
-          GlobalDictionaryUtil
-            .loadDefaultDictionaryValueForNewColumn(carbonTablePath,
-              columnSchema,
-              absoluteTableIdentifier,
-              rawData)
+          GlobalDictionaryUtil.loadDefaultDictionaryValueForNewColumn(
+            carbonTablePath,
+            columnSchema,
+            absoluteTableIdentifier,
+            rawData)
         }
       } catch {
         case ex: Exception =>

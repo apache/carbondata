@@ -127,8 +127,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
     } else {
       results ++= Seq(("ADAPTIVE", "", ""))
     }
-    results ++= Seq(("SORT_COLUMNS", relation.metaData.carbonTable.getSortColumns(
-      relation.carbonTable.getTableName).asScala
+    results ++= Seq(("SORT_COLUMNS", relation.metaData.carbonTable.getSortColumns.asScala
       .map(column => column).mkString(","), ""))
     val dimension = carbonTable
       .getDimensionByTableName(relation.carbonTable.getTableName)

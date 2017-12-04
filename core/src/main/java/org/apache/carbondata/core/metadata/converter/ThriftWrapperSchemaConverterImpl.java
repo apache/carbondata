@@ -144,6 +144,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return org.apache.carbondata.format.DataType.LONG;
     } else if (dataType.getId() == DataTypes.DOUBLE.getId()) {
       return org.apache.carbondata.format.DataType.DOUBLE;
+    } else if (dataType.getId() == DataTypes.FLOAT.getId()) {
+      return org.apache.carbondata.format.DataType.DOUBLE;
     } else if (DataTypes.isDecimal(dataType)) {
       return org.apache.carbondata.format.DataType.DECIMAL;
     } else if (dataType.getId() == DataTypes.DATE.getId()) {
@@ -155,7 +157,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     } else if (DataTypes.isStructType(dataType)) {
       return org.apache.carbondata.format.DataType.STRUCT;
     } else {
-      return org.apache.carbondata.format.DataType.STRING;
+      throw new UnsupportedOperationException("unsupported type: " + dataType);
     }
   }
 
@@ -491,11 +493,11 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     wrapperColumnSchema.setColumnUniqueId(externalColumnSchema.getColumn_id());
     wrapperColumnSchema.setColumnName(externalColumnSchema.getColumn_name());
     wrapperColumnSchema.setColumnar(externalColumnSchema.isColumnar());
-    wrapperColumnSchema.setDataType(
-        fromExternalToWrapperDataType(
-            externalColumnSchema.data_type,
-            externalColumnSchema.precision,
-            externalColumnSchema.scale));
+    DataType dataType = fromExternalToWrapperDataType(
+        externalColumnSchema.data_type,
+        externalColumnSchema.precision,
+        externalColumnSchema.scale);
+    wrapperColumnSchema.setDataType(dataType);
     wrapperColumnSchema.setDimensionColumn(externalColumnSchema.isDimension());
     List<Encoding> encoders = new ArrayList<Encoding>();
     for (org.apache.carbondata.format.Encoding encoder : externalColumnSchema.getEncoders()) {

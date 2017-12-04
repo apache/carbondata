@@ -40,8 +40,7 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     val tableName = alterTableDropColumnModel.tableName
-    val dbName = alterTableDropColumnModel.databaseName
-      .getOrElse(sparkSession.catalog.currentDatabase)
+    val dbName = CarbonEnv.getDatabaseName(alterTableDropColumnModel.databaseName)(sparkSession)
     LOGGER.audit(s"Alter table drop columns request has been received for $dbName.$tableName")
     var locks = List.empty[ICarbonLock]
     var timeStamp = 0L
@@ -49,8 +48,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
     // get the latest carbon table and check for column existence
     var carbonTable: CarbonTable = null
     try {
-      locks = AlterTableUtil
-        .validateTableAndAcquireLock(dbName, tableName, locksToBeAcquired)(sparkSession)
+      locks = AlterTableUtil.validateTableAndAcquireLock(
+        dbName, tableName, locksToBeAcquired)(sparkSession)
       val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
       carbonTable = CarbonEnv.getCarbonTable(Some(dbName), tableName)(sparkSession)
       val partitionInfo = carbonTable.getPartitionInfo(tableName)
@@ -67,8 +66,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
         }
       }
       val tableColumns = carbonTable.getCreateOrderColumn(tableName).asScala
-      var dictionaryColumns = Seq[org.apache.carbondata.core.metadata.schema.table.column
-      .ColumnSchema]()
+      var dictionaryColumns =
+        Seq[org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema]()
       // TODO: if deleted column list includes bucketted column throw an error
       alterTableDropColumnModel.columns.foreach { column =>
         var columnExist = false
@@ -97,8 +96,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       OperationListenerBus.getInstance().fireEvent(alterTableDropColumnPreEvent, operationContext)
 
       // read the latest schema file
-      val carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
+      val carbonTablePath = CarbonStorePath.getCarbonTablePath(
+        carbonTable.getAbsoluteTableIdentifier)
       val tableInfo: org.apache.carbondata.format.TableInfo =
         metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
       // maintain the deleted columns for schema evolution history
@@ -134,8 +133,8 @@ private[sql] case class CarbonAlterTableDropColumnCommand(
       LOGGER.info(s"Alter table for drop columns is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table for drop columns is successful for table $dbName.$tableName")
     } catch {
-      case e: Exception => LOGGER
-        .error("Alter table drop columns failed : " + e.getMessage)
+      case e: Exception =>
+        LOGGER.error("Alter table drop columns failed : " + e.getMessage)
         if (carbonTable != null) {
           AlterTableUtil.revertDropColumnChanges(dbName, tableName, timeStamp)(sparkSession)
         }

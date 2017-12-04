@@ -854,8 +854,8 @@ case class CarbonPreInsertionCasts(sparkSession: SparkSession) extends Rule[Logi
     if (child.output.size >= relation.carbonRelation.output.size) {
       val newChildOutput = child.output.zipWithIndex.map { columnWithIndex =>
         columnWithIndex._1 match {
-          case attr: Alias =>
-            Alias(attr.child, s"col${ columnWithIndex._2 }")(attr.exprId)
+          case alias: Alias =>
+            Alias(alias.child, s"col${ columnWithIndex._2 }")(alias.exprId)
           case attr: Attribute =>
             Alias(attr, s"col${ columnWithIndex._2 }")(NamedExpression.newExprId)
           case attr => attr

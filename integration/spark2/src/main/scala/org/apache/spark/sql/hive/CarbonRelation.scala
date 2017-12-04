@@ -89,46 +89,46 @@ case class CarbonRelation(
       .asInstanceOf[this.type]
   }
 
-  val dimensionsAttr: Seq[AttributeReference] = {
-    val sett = new LinkedHashSet(
-      carbonTable.getDimensionByTableName(carbonTable.getTableName)
-        .asScala.asJava)
-    sett.asScala.toSeq.map(dim => {
-      val dimval = metaData.carbonTable
-        .getDimensionByName(metaData.carbonTable.getTableName, dim.getColName)
-      val output: DataType = dimval.getDataType.getName.toLowerCase match {
-        case "array" =>
-          CarbonMetastoreTypes.toDataType(s"array<${ getArrayChildren(dim.getColName) }>")
-        case "struct" =>
-          CarbonMetastoreTypes.toDataType(s"struct<${ getStructChildren(dim.getColName) }>")
-        case dType =>
-          val dataType = addDecimalScaleAndPrecision(dimval, dType)
-          CarbonMetastoreTypes.toDataType(dataType)
-      }
-
-      AttributeReference(
-        dim.getColName,
-        output,
-        nullable = true)()
-    })
-  }
-
-  val measureAttr = {
-    val factTable = carbonTable.getTableName
-    new LinkedHashSet(
-      carbonTable.getMeasureByTableName(carbonTable.getTableName).asScala.asJava).asScala.toSeq
-      .map { x =>
-      val metastoreType = metaData.carbonTable.getMeasureByName(factTable, x.getColName)
-        .getDataType.getName.toLowerCase match {
-        case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
-        case others => others
-      }
-      AttributeReference(
-        x.getColName,
-        CarbonMetastoreTypes.toDataType(metastoreType),
-        nullable = true)()
-    }
-  }
+//  val dimensionsAttr: Seq[AttributeReference] = {
+//    val sett = new LinkedHashSet(
+//      carbonTable.getDimensionByTableName(carbonTable.getTableName)
+//        .asScala.asJava)
+//    sett.asScala.toSeq.map(dim => {
+//      val dimval = metaData.carbonTable
+//        .getDimensionByName(metaData.carbonTable.getTableName, dim.getColName)
+//      val output: DataType = dimval.getDataType.getName.toLowerCase match {
+//        case "array" =>
+//          CarbonMetastoreTypes.toDataType(s"array<${ getArrayChildren(dim.getColName) }>")
+//        case "struct" =>
+//          CarbonMetastoreTypes.toDataType(s"struct<${ getStructChildren(dim.getColName) }>")
+//        case dType =>
+//          val dataType = addDecimalScaleAndPrecision(dimval, dType)
+//          CarbonMetastoreTypes.toDataType(dataType)
+//      }
+//
+//      AttributeReference(
+//        dim.getColName,
+//        output,
+//        nullable = true)()
+//    })
+//  }
+//
+//  val measureAttr = {
+//    val factTable = carbonTable.getTableName
+//    new LinkedHashSet(
+//      carbonTable.getMeasureByTableName(carbonTable.getTableName).asScala.asJava).asScala.toSeq
+//      .map { x =>
+//      val metastoreType = metaData.carbonTable.getMeasureByName(factTable, x.getColName)
+//        .getDataType.getName.toLowerCase match {
+//        case "decimal" => "decimal(" + x.getPrecision + "," + x.getScale + ")"
+//        case others => others
+//      }
+//      AttributeReference(
+//        x.getColName,
+//        CarbonMetastoreTypes.toDataType(metastoreType),
+//        nullable = true)()
+//    }
+//  }
 
   override val output = {
     val columns = carbonTable.getCreateOrderColumn(carbonTable.getTableName)

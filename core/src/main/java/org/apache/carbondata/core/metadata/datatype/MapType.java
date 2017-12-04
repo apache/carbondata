@@ -32,4 +32,17 @@ public class MapType extends DataType {
   public boolean isComplexType() {
     return true;
   }
+
+  @Override
+  public int getNumOfChild() {
+    return keyType.getNumOfChild() + valueType.getNumOfChild();
+  }
+
+  public DataType getKeyType() {
+    return keyType;
+  }
+
+  public DataType getValueType() {
+    return valueType;
+  }
 }

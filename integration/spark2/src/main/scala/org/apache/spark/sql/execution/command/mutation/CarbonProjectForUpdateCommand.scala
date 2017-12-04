@@ -105,7 +105,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
       }
 
       // do update operation.
-      performUpdate(dataSet,
+      performUpdate(
+        dataSet,
         databaseNameOp,
         tableName,
         plan,

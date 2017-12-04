@@ -16,8 +16,9 @@
  */
 package org.apache.spark.sql.execution.command.preaaggregate
 
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.collection.JavaConverters._
+import scala.collection.mutable
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
@@ -26,7 +27,6 @@ import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFuncti
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, NamedExpression, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField, Field}
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.types.DataType
@@ -35,12 +35,12 @@ import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, StructField}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, ColumnTableRelation, DataMapField, DataMapSchema, MalformedCarbonCommandException}
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.TableInfo
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.util.CommonUtil
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil}
 
 /**
  * Utility class for keeping all the utility method for pre-aggregate
@@ -72,8 +72,9 @@ object PreAggregateUtil {
    * @param selectStmt
    * @return list of fields
    */
-  def validateActualSelectPlanAndGetAttributes(plan: LogicalPlan,
-      selectStmt: String): scala.collection.mutable.LinkedHashMap[Field, DataMapField] = {
+  def validateActualSelectPlanAndGetAttributes(
+      plan: LogicalPlan,
+      selectStmt: String): mutable.Map[StructField, DataMapField] = {
     plan match {
       case Aggregate(groupByExp, aggExp, SubqueryAlias(_, logicalRelation: LogicalRelation)) =>
         getFieldsFromPlan(groupByExp, aggExp, logicalRelation, selectStmt)
@@ -94,10 +95,12 @@ object PreAggregateUtil {
    *                   select statement
    * @return fields from expressions
    */
-  def getFieldsFromPlan(groupByExp: Seq[Expression],
-      aggExp: Seq[NamedExpression], logicalRelation: LogicalRelation, selectStmt: String):
-  scala.collection.mutable.LinkedHashMap[Field, DataMapField] = {
-    val fieldToDataMapFieldMap = scala.collection.mutable.LinkedHashMap.empty[Field, DataMapField]
+  def getFieldsFromPlan(
+      groupByExp: Seq[Expression],
+      aggExp: Seq[NamedExpression],
+      logicalRelation: LogicalRelation,
+      selectStmt: String): mutable.Map[StructField, DataMapField] = {
+    val fieldToDataMapFieldMap = mutable.LinkedHashMap.empty[StructField, DataMapField]
     if (!logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) {
       throw new MalformedCarbonCommandException("Un-supported table")
     }
@@ -116,11 +119,13 @@ object PreAggregateUtil {
     }
     groupByExp.map {
       case attr: AttributeReference =>
-        fieldToDataMapFieldMap += getField(attr.name,
+        fieldToDataMapFieldMap += getField(
+          attr.name,
           attr.dataType,
           parentColumnId = carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
           parentTableName = parentTableName,
-          parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
+          parentDatabaseName = parentDatabaseName,
+          parentTableId = parentTableId)
       case _ =>
         throw new MalformedCarbonCommandException(s"Unsupported Function in select Statement:${
           selectStmt } ")
@@ -175,8 +180,8 @@ object PreAggregateUtil {
       aggFunctions: AggregateFunction,
       parentTableName: String,
       parentDatabaseName: String,
-      parentTableId: String) : scala.collection.mutable.ListBuffer[(Field, DataMapField)] = {
-    val list = scala.collection.mutable.ListBuffer.empty[(Field, DataMapField)]
+      parentTableId: String) : mutable.ListBuffer[(StructField, DataMapField)] = {
+    val list = mutable.ListBuffer.empty[(StructField, DataMapField)]
     aggFunctions match {
       case sum@Sum(attr: AttributeReference) =>
         list += getField(attr.name,
@@ -284,34 +289,23 @@ object PreAggregateUtil {
       parentColumnId: String,
       parentTableName: String,
       parentDatabaseName: String,
-      parentTableId: String): (Field, DataMapField) = {
+      parentTableId: String): (StructField, DataMapField) = {
     val actualColumnName = if (aggregateType.equals("")) {
       parentTableName + '_' + columnName
     } else {
       parentTableName + '_' + columnName + '_' + aggregateType
     }
-    val rawSchema = '`' + actualColumnName + '`' + ' ' + dataType.typeName
-    val columnTableRelation = ColumnTableRelation(parentColumnName = columnName,
-      parentColumnId = parentColumnId,
-      parentTableName = parentTableName,
-      parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
-    val dataMapField = DataMapField(aggregateType, Some(columnTableRelation))
-    if (dataType.typeName.startsWith("decimal")) {
-      val (precision, scale) = CommonUtil.getScaleAndPrecision(dataType.catalogString)
-      (Field(column = actualColumnName,
-        dataType = Some(dataType.typeName),
-        name = Some(actualColumnName),
-        children = None,
-        precision = precision,
-        scale = scale,
-        rawSchema = rawSchema), dataMapField)
-    } else {
-      (Field(column = actualColumnName,
-        dataType = Some(dataType.typeName),
-        name = Some(actualColumnName),
-        children = None,
-        rawSchema = rawSchema), dataMapField)
-    }
+    val columnTableRelation = new ColumnTableRelation(
+      columnName,
+      parentColumnId,
+      parentTableName,
+      parentDatabaseName,
+      parentTableId)
+    val dataMapField = new DataMapField(aggregateType, columnTableRelation)
+    (DataTypes.createStructField(
+      actualColumnName,
+      CarbonScalaUtil.convertSparkToCarbonDataType(dataType)),
+      dataMapField)
   }
 
   /**

@@ -58,8 +58,38 @@ public class DataType implements Serializable {
     return id;
   }
 
+  /**
+   * return true if it is complex data type
+   */
   public boolean isComplexType() {
     return false;
+  }
+
+  /**
+   * return true if it is allow in sort_columns property
+   */
+  public boolean allowInSortColumns() {
+    return !(isComplexType() || DataTypes.isDecimal(this) ||
+        this == DataTypes.DOUBLE || this == DataTypes.FLOAT);
+  }
+
+  /**
+   * return true if it is allow in dictionary_exclude property
+   */
+  public boolean allowInDictionaryExclude() {
+    return this == DataTypes.STRING || this == DataTypes.TIMESTAMP ||
+        this == DataTypes.INT || this == DataTypes.LONG;
+  }
+
+  /**
+   * Return the number of children wrapped in this data type.
+   * For primitive type, it is 0,
+   * for array type, it is 1 + numElements of child data type
+   * for struct type, it is all numElements of child data type accumulated
+   * for map type, it is numElements of child data type of key and value
+   */
+  public int getNumOfChild() {
+    return 0;
   }
 
   @Override

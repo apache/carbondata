@@ -18,7 +18,7 @@
 
  import org.apache.spark.sql.{CarbonEnv, SparkSession}
 
-import org.apache.carbondata.api.CarbonStore
+ import org.apache.carbondata.api.CarbonStore
 
 /**
  * delete segments before some date

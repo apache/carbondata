@@ -15,37 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.core.metadata.datatype;
+package org.apache.carbondata.core.metadata.schema.table;
 
-import java.util.List;
+public class DataMapField {
+  private String aggregateFunction = "";
 
-public class StructType extends DataType {
+  // can be null
+  private ColumnTableRelation columnTableRelation;
 
-  private List<StructField> fields;
-
-  StructType(List<StructField> fields) {
-    super(DataTypes.STRUCT_TYPE_ID, 10, "STRUCT", -1);
-    this.fields = fields;
+  public DataMapField(String aggregateFunction, ColumnTableRelation columnTableRelation) {
+    this.aggregateFunction = aggregateFunction;
+    this.columnTableRelation = columnTableRelation;
   }
 
-  @Override
-  public boolean isComplexType() {
-    return true;
+  public String getAggregateFunction() {
+    return aggregateFunction;
   }
 
-  public List<StructField> getFields() {
-    return fields;
-  }
-
-  public int getNumOfChild() {
-    int numOfChild = 0;
-    for (StructField field : fields) {
-      if (field.getDataType().isComplexType()) {
-        numOfChild += field.getDataType().getNumOfChild();
-      } else {
-        numOfChild += 1;
-      }
-    }
-    return numOfChild;
+  public ColumnTableRelation getColumnTableRelation() {
+    return columnTableRelation;
   }
 }

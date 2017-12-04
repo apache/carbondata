@@ -19,9 +19,8 @@ package org.apache.carbondata.spark.load
 
 import java.text.SimpleDateFormat
 
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, MalformedCarbonCommandException}
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object ValidateUtil {
 

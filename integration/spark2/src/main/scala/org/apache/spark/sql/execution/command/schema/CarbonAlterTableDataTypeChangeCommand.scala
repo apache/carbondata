@@ -83,8 +83,9 @@ private[sql] case class CarbonAlterTableDataTypeChangeCommand(
       columnSchemaList.foreach { columnSchema =>
         if (columnSchema.column_name.equalsIgnoreCase(columnName)) {
           deletedColumnSchema = columnSchema.deepCopy
-          columnSchema.setData_type(DataTypeConverterUtil
-            .convertToThriftDataType(alterTableDataTypeChangeModel.dataTypeInfo.dataType))
+          columnSchema.setData_type(
+            DataTypeConverterUtil.convertToThriftDataType(
+              alterTableDataTypeChangeModel.dataTypeInfo.dataType))
           columnSchema.setPrecision(alterTableDataTypeChangeModel.dataTypeInfo.precision)
           columnSchema.setScale(alterTableDataTypeChangeModel.dataTypeInfo.scale)
           addColumnSchema = columnSchema

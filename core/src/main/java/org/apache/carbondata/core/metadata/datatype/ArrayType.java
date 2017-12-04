@@ -30,4 +30,13 @@ public class ArrayType extends DataType {
   public boolean isComplexType() {
     return true;
   }
+
+  @Override
+  public int getNumOfChild() {
+    return 1;
+  }
+
+  public DataType getElementType() {
+    return elementType;
+  }
 }

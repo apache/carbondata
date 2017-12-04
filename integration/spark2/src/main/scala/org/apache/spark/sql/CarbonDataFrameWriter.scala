@@ -27,7 +27,6 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonType}
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.CarbonOption
 
 class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
 
@@ -36,7 +35,9 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
   def saveAsCarbonFile(parameters: Map[String, String] = Map()): Unit = {
     // create a new table using dataframe's schema and write its content into the table
     sqlContext.sparkSession.sql(
-      makeCreateTableString(dataFrame.schema, new CarbonOption(parameters)))
+      makeCreateTableString(
+        dataFrame.schema,
+        new CarbonOption(sqlContext.sparkSession, parameters)))
     writeToCarbonFile(parameters)
   }
 
@@ -45,7 +46,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
   }
 
   private def writeToCarbonFile(parameters: Map[String, String] = Map()): Unit = {
-    val options = new CarbonOption(parameters)
+    val options = new CarbonOption(sqlContext.sparkSession, parameters)
     if (options.tempCSV) {
       loadTempCSV(options)
     } else {
@@ -64,7 +65,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
     val tempCSVFolder = new StringBuilder(storePath).append(CarbonCommonConstants.FILE_SEPARATOR)
       .append("tempCSV")
       .append(CarbonCommonConstants.UNDERSCORE)
-      .append(CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession))
+      .append(options.dbName)
       .append(CarbonCommonConstants.UNDERSCORE)
       .append(options.tableName)
       .append(CarbonCommonConstants.UNDERSCORE)
@@ -137,7 +138,7 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
   private def loadDataFrame(options: CarbonOption): Unit = {
     val header = dataFrame.columns.mkString(",")
     CarbonLoadDataCommand(
-      Some(CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)),
+      Some(options.dbName),
       options.tableName,
       null,
       Seq(),
@@ -172,9 +173,8 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
       "DICTIONARY_EXCLUDE" -> options.dictionaryExclude,
       "TABLE_BLOCKSIZE" -> options.tableBlockSize
     ).filter(_._2.isDefined).map(p => s"'${p._1}' = '${p._2.get}'").mkString(",")
-    val dbName = CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)
     s"""
-       | CREATE TABLE IF NOT EXISTS $dbName.${options.tableName}
+       | CREATE TABLE IF NOT EXISTS ${options.dbName}.${options.tableName}
        | (${ carbonSchema.mkString(", ") })
        | STORED BY 'carbondata'
        | ${ if (property.nonEmpty) "TBLPROPERTIES (" + property + ")" else "" }
@@ -183,10 +183,9 @@ class CarbonDataFrameWriter(sqlContext: SQLContext, val dataFrame: DataFrame) {
   }
 
   private def makeLoadString(csvFolder: String, options: CarbonOption): String = {
-    val dbName = CarbonEnv.getDatabaseName(options.dbName)(sqlContext.sparkSession)
     s"""
        | LOAD DATA INPATH '$csvFolder'
-       | INTO TABLE $dbName.${options.tableName}
+       | INTO TABLE ${options.dbName}.${options.tableName}
        | OPTIONS ('FILEHEADER' = '${dataFrame.columns.mkString(",")}',
        | 'SINGLE_PASS' = '${options.singlePass}')
      """.stripMargin

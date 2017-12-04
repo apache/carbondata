@@ -34,11 +34,10 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, MalformedCarbonCommandException}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 object AlterTableUtil {
 
@@ -123,13 +122,10 @@ object AlterTableUtil {
   }
 
   /**
-   * @param carbonTable
-   * @param schemaEvolutionEntry
-   * @param thriftTable
-   * @param sparkSession
-   * @param sessionState
+   * Refresh `carbonTable` as metadata in catalog
    */
-  def updateSchemaInfo(carbonTable: CarbonTable,
+  def updateSchemaInfo(
+      carbonTable: CarbonTable,
       schemaEvolutionEntry: SchemaEvolutionEntry,
       thriftTable: TableInfo)(sparkSession: SparkSession): Unit = {
     val dbName = carbonTable.getDatabaseName
@@ -243,9 +239,9 @@ object AlterTableUtil {
       LOGGER.info(s"Reverting changes for $dbName.$tableName")
       val addedSchemas = evolutionEntryList.get(evolutionEntryList.size() - 1).added
       thriftTable.fact_table.table_columns.removeAll(addedSchemas)
-      metastore
-        .revertTableSchemaInAlterFailure(carbonTable.getCarbonTableIdentifier,
-          thriftTable, carbonTable.getAbsoluteTableIdentifier)(sparkSession)
+      metastore.revertTableSchemaInAlterFailure(
+        carbonTable.getCarbonTableIdentifier,
+        thriftTable, carbonTable.getAbsoluteTableIdentifier)(sparkSession)
     }
   }
 

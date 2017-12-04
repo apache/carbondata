@@ -226,8 +226,12 @@ public class LocalCarbonFile implements CarbonFile {
   @Override public boolean renameForce(String changetoName) {
     File destFile = new File(changetoName);
     if (destFile.exists()) {
+      LOGGER.warn("File already exists: " + destFile + ". Trying to delete it");
       if (destFile.delete()) {
         return file.renameTo(new File(changetoName));
+      } else {
+        LOGGER.error("Failed to delete file: " + destFile);
+        return false;
       }
     }
 

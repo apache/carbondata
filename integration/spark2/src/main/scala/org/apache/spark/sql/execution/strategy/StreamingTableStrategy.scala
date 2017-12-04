@@ -25,7 +25,7 @@ import org.apache.spark.sql.execution.command.AlterTableRenameCommand
 import org.apache.spark.sql.execution.command.mutation.{CarbonProjectForDeleteCommand, CarbonProjectForUpdateCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
 
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.core.metadata.schema.table.MalformedCarbonCommandException
 
 /**
  * Strategy for streaming table, like blocking unsupported operation
@@ -44,9 +44,10 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
           TableIdentifier(tableName, databaseNameOp),
           "Date delete")
         Nil
-      case CarbonAlterTableAddColumnCommand(model) =>
+      case CarbonAlterTableAddColumnCommand(databaseNameOp, tableName, newFields, tableProperties)
+      =>
         rejectIfStreamingTable(
-          new TableIdentifier(model.tableName, model.databaseName),
+          new TableIdentifier(tableName, databaseNameOp),
           "Alter table add column")
         Nil
       case CarbonAlterTableDropColumnCommand(model) =>

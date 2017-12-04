@@ -92,8 +92,8 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
 
   ignore ("test add timestamp no dictionary column") {
     sql(
-      "alter table restructure add columns(tmpstmp timestamp) TBLPROPERTIES ('DEFAULT.VALUE" +
-      ".tmpstmp'= '17-01-2007')")
+      "alter table restructure add columns(tmpstmp timestamp) " +
+      "TBLPROPERTIES ('DEFAULT.VALUE.tmpstmp'= '2007-01-17 00:00:00')")
     sql("select tmpstmp from restructure").show(200,false)
     sql("select distinct(tmpstmp) from restructure").show(200,false)
     checkAnswer(sql("select distinct(tmpstmp) from restructure"),
@@ -114,8 +114,8 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("create table table1(name string) stored by 'carbondata'")
     sql("insert into table1 select 'abc'")
     sql("alter table table1 add columns(tmpstmp timestamp) TBLPROPERTIES " +
-        "('DEFAULT.VALUE.tmpstmp'='17-01-3007','DICTIONARY_INCLUDE'= 'tmpstmp')")
-    sql("insert into table1 select 'name','17-01-2007'")
+        "('DEFAULT.VALUE.tmpstmp'='3007-01-17 00:00:00','DICTIONARY_INCLUDE'= 'tmpstmp')")
+    sql("insert into table1 select 'name','2007-01-17 00:00:00'")
     checkAnswer(sql("select * from table1"),
       Seq(Row("abc",null),
         Row("name",Timestamp.valueOf("2007-01-17 00:00:00.0"))))
@@ -136,10 +136,9 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   ignore("test add all datatype supported dictionary column") {
     sql(
       "alter table restructure add columns(strfld string, datefld date, tptfld timestamp, " +
-      "shortFld smallInt, " +
-      "intFld int, longFld bigint, dblFld double,dcml decimal(5,4))TBLPROPERTIES" +
-      "('DICTIONARY_INCLUDE'='datefld,shortFld,intFld,longFld,dblFld,dcml', 'DEFAULT.VALUE" +
-      ".dblFld'= '12345')")
+      "shortFld smallInt, intFld int, longFld bigint, dblFld double,dcml decimal(5,4))" +
+      "TBLPROPERTIES('DICTIONARY_INCLUDE'='datefld,shortFld,intFld,longFld,dblFld,dcml', " +
+      "'DEFAULT.VALUE.dblFld'= '12345')")
     checkAnswer(sql("select distinct(dblFld) from restructure"),
       Row(java.lang.Double.parseDouble("12345")))
     checkExistence(sql("desc restructure"), true, "strfldstring")
@@ -321,7 +320,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("alter table restructure drop columns(designation)")
     sql(
       "alter table restructure add columns(designation timestamp) TBLPROPERTIES ('DEFAULT.VALUE" +
-      ".designation'= '17-01-2007')")
+      ".designation'= '2007-01-17 00:00:00')")
     checkAnswer(sql("select distinct(designation) from restructure"),
       Row(new java.sql.Timestamp(107, 0, 17, 0, 0, 0, 0)))
     // drop and add msr column
@@ -405,11 +404,16 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   }
 
   test("test to check if bad record folder name is changed") {
+    sql("drop table if exists restructure_badnew")
+    val oldLocation = CarbonProperties.getStorePath + "/restructure_bad"
+    val newLocation = CarbonProperties.getStorePath + "/restructure_badnew"
+    new File(newLocation).delete()
+    assert(! new File(newLocation).exists())
     sql("alter table restructure_bad rename to restructure_badnew")
-    val oldLocation = new File("./target/test/badRecords/default/restructure_bad")
-    val newLocation = new File("./target/test/badRecords/default/restructure_badnew")
-    assert(!oldLocation.exists())
-    assert(newLocation.exists())
+    assert(! new File(oldLocation).exists())
+    assert(new File(newLocation).exists())
+    sql("drop table if exists restructure_badnew")
+    sql("drop table if exists restructure_bad")
   }
 
   test("test to rename table with invalid table name") {
@@ -454,10 +458,13 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   }
 
   test("test to check if the lock file is successfully deleted") {
-      sql("create table lock_check(id int, name string) stored by 'carbondata'")
+    sql("drop table if exists lock_check")
+    sql("drop table if exists lock_rename")
+    sql("create table lock_check(id int, name string) stored by 'carbondata'")
     sql("alter table lock_check rename to lock_rename")
-    assert(!new File(s"${ CarbonCommonConstants.STORE_LOCATION } + /lock_rename/meta.lock")
-      .exists())
+    assert(!new File(s"${ CarbonCommonConstants.STORE_LOCATION } + /lock_rename/meta.lock").exists())
+    sql("drop table if exists lock_rename")
+    sql("drop table if exists lock_rename")
   }
 
   test("table rename with dbname in Camel Case") {
@@ -472,6 +479,9 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   // test query before&after renaming, see CARBONDATA-1690
   test("RenameTable_query_before_and_after_renaming") {
     try {
+      sql(s"""drop table if exists test1""")
+      sql(s"""drop table if exists test3""")
+      sql(s"""drop table if exists test2""")
       sql(s"""create table test1 (name string, id int) stored by 'carbondata'""").collect
       sql(s"""create table test2 (name string, id int) stored by 'carbondata'""").collect
       sql(s"""insert into test1 select 'xx1',1""").collect
@@ -484,29 +494,35 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
       checkAnswer(sql(s"""select * from test1"""), Seq(Row("xx2", 2)))
     } catch {
       case e: Exception =>
+        e.printStackTrace()
         assert(false)
     } finally {
-      sql(s"""drop table if exists test1""").collect
-      sql(s"""drop table if exists test3""").collect
-      sql(s"""drop table if exists test2""").collect
+      sql(s"""drop table if exists test1""")
+      sql(s"""drop table if exists test3""")
+      sql(s"""drop table if exists test2""")
     }
   }
 
   test("describe formatted for default sort_columns pre and post alter") {
+    sql("DROP TABLE IF EXISTS defaultSortColumnsWithAlter")
     sql("CREATE TABLE defaultSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' " +
         "tblproperties('DICTIONARY_INCLUDE'='empno','DICTIONARY_EXCLUDE'='role')")
     sql("alter table defaultSortColumnsWithAlter drop columns (designation)")
     sql("alter table defaultSortColumnsWithAlter add columns (designation12 String)")
     checkExistence(sql("describe formatted defaultSortColumnsWithAlter"),true,"SORT_COLUMNS")
     checkExistence(sql("describe formatted defaultSortColumnsWithAlter"),true,"empno,empname,role,doj")
+    sql("DROP TABLE IF EXISTS defaultSortColumnsWithAlter")
   }
+
   test("describe formatted for specified sort_columns pre and post alter") {
+    sql("drop table if exists specifiedSortColumnsWithAlter")
     sql("CREATE TABLE specifiedSortColumnsWithAlter (empno int, empname String, designation String,role String, doj Timestamp) STORED BY 'org.apache.carbondata.format' " +
         "tblproperties('sort_columns'='empno,empname,designation,role,doj','DICTIONARY_INCLUDE'='empno','DICTIONARY_EXCLUDE'='role')")
     sql("alter table specifiedSortColumnsWithAlter drop columns (designation)")
     sql("alter table specifiedSortColumnsWithAlter add columns (designation12 String)")
     checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"SORT_COLUMNS")
     checkExistence(sql("describe formatted specifiedSortColumnsWithAlter"),true,"empno,empname,role,doj")
+    sql("drop table if exists specifiedSortColumnsWithAlter")
   }
 
   test("test to check if new parent table name is reflected in pre-aggregate tables") {

@@ -23,6 +23,7 @@ import java.util
 import java.util.regex.{Matcher, Pattern}
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 import scala.collection.mutable.Map
 
 import org.apache.commons.lang3.StringUtils
@@ -31,7 +32,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.{Row, RowFactory}
 import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
-import org.apache.spark.sql.execution.command.{ColumnProperty, Field, PartitionerField}
+import org.apache.spark.sql.execution.command.ColumnProperty
 import org.apache.spark.sql.types.{MetadataBuilder, StringType}
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.FileUtils
@@ -42,10 +43,10 @@ import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.memory.{UnsafeMemoryManager, UnsafeSortMemoryManager}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
+import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType, StructField}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, MalformedCarbonCommandException, PartitionerField}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
@@ -56,7 +57,6 @@ import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.CarbonMergeFilesRDD
 
 object CommonUtil {
@@ -65,71 +65,11 @@ object CommonUtil {
   val FIXED_DECIMAL = """decimal\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
   val FIXED_DECIMALTYPE = """decimaltype\(\s*(\d+)\s*,\s*(\-?\d+)\s*\)""".r
 
-  def validateColumnGroup(colGroup: String, noDictionaryDims: Seq[String],
-      msrs: Seq[Field], retrievedColGrps: Seq[String], dims: Seq[Field]) {
-    val colGrpCols = colGroup.split(',').map(_.trim)
-    colGrpCols.foreach { x =>
-      // if column is no dictionary
-      if (noDictionaryDims.contains(x)) {
-        throw new MalformedCarbonCommandException(
-          "Column group is not supported for no dictionary columns:" + x)
-      } else if (msrs.exists(msr => msr.column.equals(x))) {
-        // if column is measure
-        throw new MalformedCarbonCommandException("Column group is not supported for measures:" + x)
-      } else if (foundIndExistingColGrp(x)) {
-        throw new MalformedCarbonCommandException("Column is available in other column group:" + x)
-      } else if (isComplex(x, dims)) {
-        throw new MalformedCarbonCommandException(
-          "Column group doesn't support Complex column:" + x)
-      } else if (isTimeStampColumn(x, dims)) {
-        throw new MalformedCarbonCommandException(
-          "Column group doesn't support Timestamp datatype:" + x)
-      }// if invalid column is
-      else if (!dims.exists(dim => dim.column.equalsIgnoreCase(x))) {
-        // present
-        throw new MalformedCarbonCommandException(
-          "column in column group is not a valid column: " + x
-        )
-      }
-    }
-    // check if given column is present in other groups
-    def foundIndExistingColGrp(colName: String): Boolean = {
-      retrievedColGrps.foreach { colGrp =>
-        if (colGrp.split(",").contains(colName)) {
-          return true
-        }
-      }
-      false
-    }
-
-  }
-
-
-  def isTimeStampColumn(colName: String, dims: Seq[Field]): Boolean = {
+  def isTimeStampColumn(colName: String, dims: Seq[StructField]): Boolean = {
     dims.foreach { dim =>
-      if (dim.column.equalsIgnoreCase(colName)) {
-        if (dim.dataType.isDefined && null != dim.dataType.get &&
-            "timestamp".equalsIgnoreCase(dim.dataType.get)) {
+      if (dim.getFieldName.equalsIgnoreCase(colName)) {
+        if (dim.getDataType == DataTypes.TIMESTAMP) {
           return true
-        }
-      }
-    }
-    false
-  }
-
-  def isComplex(colName: String, dims: Seq[Field]): Boolean = {
-    dims.foreach { x =>
-      if (x.children.isDefined && null != x.children.get && x.children.get.nonEmpty) {
-        val children = x.children.get
-        if (x.column.equals(colName)) {
-          return true
-        } else {
-          children.foreach { child =>
-            val fieldName = x.column + "." + child.column
-            if (fieldName.equalsIgnoreCase(colName)) {
-              return true
-            }
-          }
         }
       }
     }
@@ -154,19 +94,6 @@ object CommonUtil {
     }
   }
 
-  def validateTblProperties(tableProperties: Map[String, String], fields: Seq[Field]): Boolean = {
-    val itr = tableProperties.keys
-    var isValid: Boolean = true
-    tableProperties.foreach {
-      case (key, value) =>
-        if (!validateFields(key, fields)) {
-          isValid = false
-          throw new MalformedCarbonCommandException(s"Invalid table properties ${ key }")
-        }
-    }
-    isValid
-  }
-
   /**
    * 1. If partitioned by clause exists, then partition_type should be defined
    * 2. If partition_type is Hash, then num_partitions should be defined
@@ -177,7 +104,8 @@ object CommonUtil {
    * @param partitionerFields
    * @return partition clause and definition in tblproperties are valid or not
    */
-  def validatePartitionColumns(tableProperties: Map[String, String],
+  def validatePartitionColumns(
+      tableProperties: mutable.Map[String, String],
       partitionerFields: Seq[PartitionerField]): Boolean = {
     var isValid: Boolean = true
     val partitionType = tableProperties.get(CarbonCommonConstants.PARTITION_TYPE)
@@ -215,102 +143,46 @@ object CommonUtil {
     isValid
   }
 
-  def validateTypeConvertForSpark2(partitionerField: PartitionerField, value: String): Boolean = {
-    val result = partitionerField.dataType.get.toLowerCase match {
-      case "integertype" =>
-        scala.util.Try(value.toInt).isSuccess
-      case "stringtype" =>
-        scala.util.Try(value.toString).isSuccess
-      case "longtype" =>
-        scala.util.Try(value.toLong).isSuccess
-      case "floattype" =>
-        scala.util.Try(value.toFloat).isSuccess
-      case "doubletype" =>
-        scala.util.Try(value.toDouble).isSuccess
-      case "numerictype" =>
-        scala.util.Try(value.toDouble).isSuccess
-      case "smallinttype" =>
-        scala.util.Try(value.toShort).isSuccess
-      case "tinyinttype" =>
-        scala.util.Try(value.toShort).isSuccess
-      case "shorttype" =>
-        scala.util.Try(value.toShort).isSuccess
-      case FIXED_DECIMALTYPE(_, _) =>
-        val parField = partitionerField.dataType.get.split(",")
-        val precision = parField(0).substring(12).toInt
-        val scale = parField(1).substring(0, parField(1).length - 1).toInt
-        val pattern = "^([-]?[0-9]{0," + (precision - scale) +
-                      "})([.][0-9]{1," + scale + "})?$"
-        value.matches(pattern)
-      case "timestamptype" =>
-        val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-        scala.util.Try(timeStampFormat.parse(value)).isSuccess
-      case "datetype" =>
-        val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
-        scala.util.Try(dateFormat.parse(value)).isSuccess
-      case others =>
-       if (others != null && others.startsWith("char")) {
-         scala.util.Try(value.toString).isSuccess
-        } else if (others != null && others.startsWith("varchar")) {
-         scala.util.Try(value.toString).isSuccess
-        } else {
-          throw new MalformedCarbonCommandException(
-            "UnSupported partition type: " + partitionerField.dataType)
-        }
-    }
-    result
-  }
-
   def validateTypeConvert(partitionerField: PartitionerField, value: String): Boolean = {
-    val result = partitionerField.dataType.get.toLowerCase() match {
-      case "int" =>
-        scala.util.Try(value.toInt).isSuccess
-      case "string" =>
-        scala.util.Try(value.toString).isSuccess
-      case "bigint" =>
-        scala.util.Try(value.toLong).isSuccess
-      case "long" =>
-        scala.util.Try(value.toLong).isSuccess
-      case "float" =>
-        scala.util.Try(value.toFloat).isSuccess
-      case "double" =>
-        scala.util.Try(value.toDouble).isSuccess
-      case "numeric" =>
-        scala.util.Try(value.toDouble).isSuccess
-      case "smallint" =>
-        scala.util.Try(value.toShort).isSuccess
-      case "tinyint" =>
-        scala.util.Try(value.toShort).isSuccess
-      case "boolean" =>
-        scala.util.Try(value.toBoolean).isSuccess
-      case FIXED_DECIMAL(_, _) =>
-        val parField = partitionerField.dataType.get.split(",")
-        val precision = parField(0).substring(8).toInt
-        val scale = parField(1).substring(0, parField(1).length - 1).toInt
-        val pattern = "^([-]?[0-9]{0," + (precision - scale) +
-                      "})([.][0-9]{1," + scale + "})?$"
-        value.matches(pattern)
-      case "timestamp" =>
-        val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+    val result =
+    if (partitionerField.getDataType == DataTypes.INT) {
+      scala.util.Try(value.toInt).isSuccess
+    } else if (partitionerField.getDataType == DataTypes.STRING) {
+      scala.util.Try(value.toString).isSuccess
+    } else if (partitionerField.getDataType == DataTypes.LONG) {
+      scala.util.Try(value.toLong).isSuccess
+    } else if (partitionerField.getDataType == DataTypes.FLOAT) {
+      scala.util.Try(value.toFloat).isSuccess
+    } else if (partitionerField.getDataType == DataTypes.DOUBLE) {
+      scala.util.Try(value.toDouble).isSuccess
+    } else if (partitionerField.getDataType == DataTypes.SHORT) {
+      scala.util.Try(value.toShort).isSuccess
+    } else if (partitionerField.getDataType == DataTypes.BOOLEAN) {
+      scala.util.Try(value.toBoolean).isSuccess
+    } else if (DataTypes.isDecimal(partitionerField.getDataType)) {
+      val decimalType = partitionerField.getDataType.asInstanceOf[DecimalType]
+      val precision = decimalType.getPrecision
+      val scale = decimalType.getScale
+      val pattern = "^([-]?[0-9]{0," + (precision - scale) +
+                    "})([.][0-9]{1," + scale + "})?$"
+      value.matches(pattern)
+    } else if (partitionerField.getDataType == DataTypes.TIMESTAMP) {
+      val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
           CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-        scala.util.Try(timeStampFormat.parse(value)).isSuccess
-      case "date" =>
-        val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
-        scala.util.Try(dateFormat.parse(value)).isSuccess
-      case _ =>
-        validateTypeConvertForSpark2(partitionerField, value)
+      scala.util.Try(timeStampFormat.parse(value)).isSuccess
+    } else if (partitionerField.getDataType == DataTypes.DATE) {
+      val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+      scala.util.Try(dateFormat.parse(value)).isSuccess
+    } else {
+      false
     }
 
-    if(!result) {
+    if (!result) {
       throw new MalformedCarbonCommandException(s"Invalid Partition Values for partition " +
-        s"column: ${partitionerField.partitionColumn}")
+        s"column: ${partitionerField.getPartitionColumn}")
     } else {
       result
     }
@@ -396,34 +268,6 @@ object CommonUtil {
     }
   }
 
-  def validateFields(key: String, fields: Seq[Field]): Boolean = {
-    var isValid: Boolean = false
-    fields.foreach { field =>
-      if (field.children.isDefined && field.children.get != null) {
-        field.children.foreach(fields => {
-          fields.foreach(complexfield => {
-            val column = if ("val" == complexfield.column) {
-              field.column
-            } else {
-              field.column + "." + complexfield.column
-            }
-            if (validateColumnProperty(key, column)) {
-              isValid = true
-            }
-          }
-          )
-        }
-        )
-      } else {
-        if (validateColumnProperty(key, field.column)) {
-          isValid = true
-        }
-      }
-
-    }
-    isValid
-  }
-
   def validateColumnProperty(key: String, column: String): Boolean = {
     if (!key.startsWith(CarbonCommonConstants.COLUMN_PROPERTIES)) {
       return true
@@ -441,7 +285,7 @@ object CommonUtil {
    * @param dims
    * @return columns of column groups in schema order
    */
-  def arrangeColGrpsInSchemaOrder(colGrps: Seq[String], dims: Seq[Field]): Seq[String] = {
+  def arrangeColGrpsInSchemaOrder(colGrps: Seq[String], dims: Seq[StructField]): Seq[String] = {
     def sortByIndex(colGrp1: String, colGrp2: String) = {
       val firstCol1 = colGrp1.split(",")(0)
       val firstCol2 = colGrp2.split(",")(0)
@@ -458,10 +302,10 @@ object CommonUtil {
    * @param dims
    * @return return index for given column in dims
    */
-  def getDimIndex(colName: String, dims: Seq[Field]): Int = {
+  def getDimIndex(colName: String, dims: Seq[StructField]): Int = {
     var index: Int = -1
     dims.zipWithIndex.foreach { h =>
-      if (h._1.column.equalsIgnoreCase(colName)) {
+      if (h._1.getFieldName.equalsIgnoreCase(colName)) {
         index = h._2.toInt
       }
     }

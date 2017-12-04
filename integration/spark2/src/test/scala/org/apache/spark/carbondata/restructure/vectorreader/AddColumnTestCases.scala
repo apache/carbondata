@@ -27,8 +27,8 @@ import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.schema.table.MalformedCarbonCommandException
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -372,7 +372,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
         |TIMESTAMP, DOJ TIMESTAMP, BIGINT_COLUMN1 BIGINT,BIGINT_COLUMN2 BIGINT,DECIMAL_COLUMN1
         |decimal(30,10), DECIMAL_COLUMN2 DECIMAL(36,10),Double_COLUMN1 double, Double_COLUMN2
         |double,INTEGER_COLUMN1 INT) STORED BY 'org.apache.carbondata.format' TBLPROPERTIES
-        |("TABLE_BLOCKSIZE"= "256 MB")""".stripMargin)
+        |("TABLE_BLOCKSIZE"= "256")""".stripMargin)
     sql("ALTER TABLE carbon_new DROP COLUMNS(CUST_NAME)")
     sql(s"LOAD DATA INPATH '$resourcesPath/restructure/data_2000.csv' INTO TABLE " +
         "carbon_new OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='\"','BAD_RECORDS_ACTION'='FORCE'," +
@@ -631,6 +631,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       """)
 
     sql("alter table NO_INVERTED_CARBON add columns(col1 string,col2 string) tblproperties('NO_INVERTED_INDEX'='col2')")
+    sql("desc formatted NO_INVERTED_CARBON").show(100, false)
     checkExistenceCount(sql("desc formatted NO_INVERTED_CARBON"),2,"NOINVERTEDINDEX")
   }
 
@@ -643,7 +644,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
       " a,sum(b) from PreAggMain group by a")
     assert(intercept[RuntimeException] {
       sql("alter table preaggmain_preagg1 add columns(d string)")
-    }.getMessage.contains("Cannot add columns"))
+    }.getMessage.contains("Alter table add column is not supported for table with datamap created"))
     sql("drop table if exists preaggMain")
     sql("drop table if exists preagg1")
   }

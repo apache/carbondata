@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.spark.exception;
+package org.apache.carbondata.core.metadata.schema.table;
 
 // After parsing carbon query successfully , if any validation fails then
 // use MalformedCarbonCommandException

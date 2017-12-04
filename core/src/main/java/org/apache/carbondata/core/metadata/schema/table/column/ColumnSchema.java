@@ -89,11 +89,11 @@ public class ColumnSchema implements Serializable, Writable {
   private int columnGroupId = -1;
 
   /**
-   * Used when this column contains decimal data.
+   * By default it is -1, assign it when this column contain decimal data.
    */
-  private int scale;
+  private int scale = -1;
 
-  private int precision;
+  private int precision = -1;
 
   private int schemaOrdinal;
   /**
@@ -214,6 +214,7 @@ public class ColumnSchema implements Serializable, Writable {
   }
 
   /**
+   * this field is obsoleted, columnGroupId should be always -1
    */
   public void setColumnGroup(int columnGroupId) {
     this.columnGroupId = columnGroupId;

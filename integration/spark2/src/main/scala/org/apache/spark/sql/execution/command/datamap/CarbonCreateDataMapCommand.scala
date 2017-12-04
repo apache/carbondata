@@ -24,8 +24,7 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.preaaggregate.{CreatePreAggregateTableCommand, PreAggregateUtil}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, MalformedCarbonCommandException}
 
 /**
  * Below command class will be used to create datamap on table

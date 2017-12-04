@@ -14,23 +14,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.carbondata.spark
 
-import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+package org.apache.carbondata.core.metadata.schema.table;
 
- /**
-  * Carbon column validator
-  */
-class CarbonColumnValidator extends ColumnValidator {
-  def validateColumns(allColumns: Seq[ColumnSchema]): Unit = {
-    allColumns.foreach { columnSchema =>
-      val colWithSameId = allColumns.filter { x =>
-        x.getColumnUniqueId.equals(columnSchema.getColumnUniqueId)
-      }
-      if (colWithSameId.size > 1) {
-        throw new MalformedCarbonCommandException("Two column can not have same columnId")
-      }
-    }
+import org.apache.carbondata.core.metadata.datatype.DataType;
+
+public class PartitionerField {
+  private String partitionColumn;
+  private DataType dataType;
+  private String columnComment;
+
+  public PartitionerField(String partitionColumn, DataType dataType, String columnComment) {
+    this.partitionColumn = partitionColumn;
+    this.dataType = dataType;
+    this.columnComment = columnComment;
+  }
+
+  public String getPartitionColumn() {
+    return partitionColumn;
+  }
+
+  public DataType getDataType() {
+    return dataType;
+  }
+
+  public String getColumnComment() {
+    return columnComment;
   }
 }

@@ -17,9 +17,11 @@
 
 package org.apache.spark.sql.parser
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 import scala.language.implicitConversions
 
+import org.apache.spark.sql.{CarbonOption, DeleteRecords, SparkSession, UpdateTable}
 import org.apache.spark.sql.{DeleteRecords, SparkSession, UpdateTable}
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
@@ -37,8 +39,8 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.spark.CarbonOption
-import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.core.metadata.datatype.{DataTypes, DecimalType, StructField, StructType}
+import org.apache.carbondata.core.metadata.schema.table.{BucketFields, MalformedCarbonCommandException}
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
@@ -438,11 +440,11 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~
     (ADD ~> COLUMNS ~> "(" ~> repsep(anyFieldDef, ",") <~ ")") ~
     (TBLPROPERTIES ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
-      case dbName ~ table ~ fields ~ tblProp =>
-        fields.foreach{ f =>
-          if (isComplexDimDictionaryExclude(f.dataType.get)) {
+      case dbName ~ tableName ~ newFields ~ tblProp =>
+        newFields.foreach{ f =>
+          if (f.getDataType.isComplexType) {
             throw new MalformedCarbonCommandException(
-              s"Add column is unsupported for complex datatype column: ${f.column}")
+              s"Add column is unsupported for complex datatype column: ${f.getFieldName}")
           }
         }
         val tableProps = if (tblProp.isDefined) {
@@ -451,11 +453,11 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
               val name = f._1.toLowerCase
               val colName = name.substring(14)
               if (name.startsWith("default.value.") &&
-                  fields.count(p => p.column.equalsIgnoreCase(colName)) == 1) {
+                  newFields.count(p => p.getFieldName.equalsIgnoreCase(colName)) == 1) {
                 LOGGER.error(s"Duplicate default value exist for new column: ${ colName }")
                 LOGGER.audit(
                   s"Validation failed for Create/Alter Table Operation " +
-                  s"for ${ table }. " +
+                  s"for ${ tableName }. " +
                   s"Duplicate default value exist for new column: ${ colName }")
                 sys.error(s"Duplicate default value exist for new column: ${ colName }")
               }
@@ -469,7 +471,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
               throw new MalformedCarbonCommandException(
                 s"Unsupported Table property in add column: ${ f._1 }")
             } else if (f._1.toLowerCase.startsWith("default.value.")) {
-              if (fields.count(field => checkFieldDefaultValue(field.column,
+              if (newFields.count(field => checkFieldDefaultValue(field.getFieldName,
                 f._1.toLowerCase)) == 1) {
                  f._1 -> f._2
             } else {
@@ -485,33 +487,13 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           scala.collection.mutable.Map.empty[String, String]
         }
 
-        val tableModel = prepareTableModel (false,
-          convertDbNameToLowerCase(dbName),
-          table.toLowerCase,
-          fields.map(convertFieldNamesToLowercase),
-          Seq.empty,
-          tableProps,
-          None,
-          true)
-
-        val alterTableAddColumnsModel = AlterTableAddColumnsModel(
-          convertDbNameToLowerCase(dbName),
-          table,
-          tableProps.toMap,
-          tableModel.dimCols,
-          tableModel.msrCols,
-          tableModel.highcardinalitydims.getOrElse(Seq.empty))
-        CarbonAlterTableAddColumnCommand(alterTableAddColumnsModel)
+        CarbonAlterTableAddColumnCommand(dbName, tableName, newFields, tableProps)
     }
 
   private def checkFieldDefaultValue(fieldName: String, defaultValueColumnName: String): Boolean = {
     defaultValueColumnName.equalsIgnoreCase("default.value." + fieldName)
   }
 
-  private def convertFieldNamesToLowercase(field: Field): Field = {
-    val name = field.column.toLowerCase
-    field.copy(column = name, name = Some(name))
-  }
   protected lazy val alterTableDropColumn: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident ~ DROP ~ COLUMNS ~
     ("(" ~> rep1sep(ident, ",") <~ ")") <~ opt(";") ^^ {
@@ -522,49 +504,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
             throw new MalformedCarbonCommandException(s"$x is duplicate. Duplicate columns not " +
                                                       s"allowed")
         }
-        val alterTableDropColumnModel = AlterTableDropColumnModel(convertDbNameToLowerCase(dbName),
-          table.toLowerCase,
+        val alterTableDropColumnModel = AlterTableDropColumnModel(
+          convertDbNameToLowerCase(dbName),
+          table,
           values.map(_.toLowerCase))
         CarbonAlterTableDropColumnCommand(alterTableDropColumnModel)
     }
-
-  def getFields(schema: Seq[StructField]): Seq[Field] = {
-    schema.map { col =>
-      var columnComment: String = ""
-      if (col.getComment().isDefined) {
-        columnComment = " comment \"" + col.getComment().get + "\""
-      }
-      val x =
-        if (col.dataType.catalogString == "float") {
-          '`' + col.name + '`' + " double" + columnComment
-        } else {
-          '`' + col.name + '`' + ' ' + col.dataType.catalogString + columnComment
-        }
-      val f: Field = anyFieldDef(new lexical.Scanner(x.toLowerCase))
-      match {
-        case Success(field, _) => field.asInstanceOf[Field]
-        case failureOrError => throw new MalformedCarbonCommandException(
-          s"Unsupported data type: ${ col.dataType }")
-      }
-      // the data type of the decimal type will be like decimal(10,0)
-      // so checking the start of the string and taking the precision and scale.
-      // resetting the data type with decimal
-      if (f.dataType.getOrElse("").startsWith("decimal")) {
-        val (precision, scale) = CommonUtil.getScaleAndPrecision(col.dataType.catalogString)
-        f.precision = precision
-        f.scale = scale
-        f.dataType = Some("decimal")
-      }
-      if (f.dataType.getOrElse("").startsWith("char")) {
-        f.dataType = Some("char")
-      }
-      else if (f.dataType.getOrElse("").startsWith("float")) {
-        f.dataType = Some("double")
-      }
-      f.rawSchema = x
-      f
-    }
-  }
 
   def addPreAggFunction(sql: String): String = {
     addPreAgg(new lexical.Scanner(sql.toLowerCase)) match {
@@ -582,21 +527,17 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
     }
   }
 
-  def getBucketFields(
+  def createBucketFields(
       properties: mutable.Map[String, String],
-      fields: Seq[Field],
       options: CarbonOption): Option[BucketFields] = {
-    if (!CommonUtil.validateTblProperties(properties,
-      fields)) {
-      throw new MalformedCarbonCommandException("Invalid table properties")
-    }
     if (options.isBucketingEnabled) {
       if (options.bucketNumber.toString.contains("-") ||
           options.bucketNumber.toString.contains("+") ||  options.bucketNumber == 0) {
         throw new MalformedCarbonCommandException("INVALID NUMBER OF BUCKETS SPECIFIED")
       }
       else {
-        Some(BucketFields(options.bucketColumns.toLowerCase.split(",").map(_.trim),
+        Some(new BucketFields(
+          options.bucketColumns.toLowerCase.split(",").map(_.trim).toSeq.asJava,
           options.bucketNumber))
       }
     } else {

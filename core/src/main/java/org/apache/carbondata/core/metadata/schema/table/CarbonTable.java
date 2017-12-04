@@ -60,6 +60,9 @@ public class CarbonTable implements Serializable {
    */
   private List<CarbonDimension> allDimensions;
 
+  /**
+   * Table name map to list of all columns
+   */
   private Map<String, List<CarbonColumn>> createOrderColumn;
 
   /**
@@ -163,18 +166,11 @@ public class CarbonTable implements Serializable {
     List<CarbonColumn> columns = new ArrayList<CarbonColumn>();
     List<CarbonDimension> dimensions = this.tableDimensionsMap.get(tableName);
     List<CarbonMeasure> measures = this.tableMeasuresMap.get(tableName);
-    Iterator<CarbonDimension> dimItr = dimensions.iterator();
-    while (dimItr.hasNext()) {
-      columns.add(dimItr.next());
-    }
-    Iterator<CarbonMeasure> msrItr = measures.iterator();
-    while (msrItr.hasNext()) {
-      columns.add(msrItr.next());
-    }
+    columns.addAll(dimensions);
+    columns.addAll(measures);
     Collections.sort(columns, new Comparator<CarbonColumn>() {
 
       @Override public int compare(CarbonColumn o1, CarbonColumn o2) {
-
         return Integer.compare(o1.getSchemaOrdinal(), o2.getSchemaOrdinal());
       }
 
@@ -655,12 +651,11 @@ public class CarbonTable implements Serializable {
   /**
    * Method to get the list of sort columns
    *
-   * @param tableName
    * @return List of Sort column
    */
-  public List<String> getSortColumns(String tableName) {
+  public List<String> getSortColumns() {
     List<String> sort_columsList = new ArrayList<String>(allDimensions.size());
-    List<CarbonDimension> carbonDimensions = tableDimensionsMap.get(tableName);
+    List<CarbonDimension> carbonDimensions = tableDimensionsMap.get(getTableName());
     for (CarbonDimension dim : carbonDimensions) {
       if (dim.isSortColumn()) {
         sort_columsList.add(dim.getColName());

@@ -634,8 +634,8 @@ public final class DataTypeUtil {
             return ByteUtil.toBytes(dateToStr.getTime());
           } catch (ParseException e) {
             LOGGER.error(
-                "Cannot convert value to Time/Long type value. Value is considered as null" + e
-                    .getMessage());
+                "Cannot convert value to Time/Long type value. Value is considered as null. " +
+                    e.getMessage());
             return null;
           }
         }

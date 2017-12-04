@@ -24,11 +24,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.metadata.schema.SchemaEvolution;
+import org.apache.carbondata.core.metadata.schema.SchemaEvolutionEntry;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 /**
@@ -52,7 +54,12 @@ public class TableSchema implements Serializable, Writable {
   private String tableName;
 
   /**
-   * Columns in the table
+   * this list:
+   * 1. contains all columns in the table after expansion for complex type.
+   * 2. the order of columns in the list is as following:
+   *    a. columns in sort_columns property
+   *    b. dimension columns. see {@code StructField.isDimension}
+   *    c. measure columns
    */
   private List<ColumnSchema> listOfColumns;
 
@@ -284,6 +291,76 @@ public class TableSchema implements Serializable, Writable {
     dataMapSchema.setChildSchema(this);
     dataMapSchema.setRelationIdentifier(relationIdentifier);
     return dataMapSchema;
+  }
+
+  /**
+   * Return builder to build TableSchema.
+   * Note that this should be called by TableInfoBuilder only, it is not public method
+   */
+  static TableSchemaBuilder builder() {
+    return new TableSchema.TableSchemaBuilder();
+  }
+
+  static class TableSchemaBuilder {
+
+    // following member is required to build TableSchema
+
+    private String tableName;
+    private List<ColumnSchema> allColumns;
+    private Map<String, String> tableProperties;
+    private BucketingInfo bucketingInfo;
+    private PartitionInfo partitionInfo;
+
+    private TableSchemaBuilder() {
+    }
+
+    TableSchemaBuilder tableName(String tableName) {
+      this.tableName = tableName;
+      return this;
+    }
+
+    TableSchemaBuilder tableProperties(Map<String, String> tableProperties) {
+      this.tableProperties = tableProperties;
+      return this;
+    }
+
+    TableSchemaBuilder bucketingInfo(BucketingInfo bucketingInfo) {
+      this.bucketingInfo = bucketingInfo;
+      return this;
+    }
+
+    TableSchemaBuilder partitionInfo(PartitionInfo partitionInfo) {
+      this.partitionInfo = partitionInfo;
+      return this;
+    }
+
+    TableSchemaBuilder allColumns(List<ColumnSchema> allColumns) {
+      this.allColumns = allColumns;
+      return this;
+    }
+
+    TableSchema create() throws MalformedCarbonCommandException {
+      if (tableName == null || tableProperties == null ||
+          allColumns == null) {
+        throw new IllegalArgumentException("parameter must not be null");
+      }
+      TableSchema tableSchema = new TableSchema();
+      tableSchema.setTableId(UUID.randomUUID().toString());
+      tableSchema.setTableName(tableName);
+      tableSchema.setListOfColumns(allColumns);
+      SchemaEvolution schemaEvolution = new SchemaEvolution();
+      List<SchemaEvolutionEntry> entries = new ArrayList<>();
+      SchemaEvolutionEntry schemaEvolutionEntry = new SchemaEvolutionEntry();
+      schemaEvolutionEntry.setTimeStamp(System.currentTimeMillis());
+      entries.add(schemaEvolutionEntry);
+      schemaEvolution.setSchemaEvolutionEntryList(entries);
+      tableSchema.setSchemaEvalution(schemaEvolution);
+      tableSchema.setTableProperties(tableProperties);
+      tableSchema.setBucketingInfo(bucketingInfo);
+      tableSchema.setPartitionInfo(partitionInfo);
+      return tableSchema;
+    }
+
   }
 
 }

@@ -41,7 +41,8 @@ object DataTypeConverterUtil {
       case "double" => DataTypes.DOUBLE
       case "float" => DataTypes.DOUBLE
       case "decimal" => DataTypes.createDefaultDecimalType
-      case FIXED_DECIMAL(_, _) => DataTypes.createDefaultDecimalType
+      case FIXED_DECIMAL(precision, scale) =>
+        DataTypes.createDecimalType(precision.toInt, scale.toInt)
       case "timestamp" => DataTypes.TIMESTAMP
       case "date" => DataTypes.DATE
       case "array" => DataTypes.createDefaultArrayType
@@ -50,7 +51,7 @@ object DataTypeConverterUtil {
     }
   }
 
-  def convertToCarbonTypeForSpark2(dataType: String): DataType = {
+  private def convertToCarbonTypeForSpark2(dataType: String): DataType = {
     dataType.toLowerCase match {
       case "booleantype" => DataTypes.BOOLEAN
       case "stringtype" => DataTypes.STRING
@@ -64,7 +65,8 @@ object DataTypeConverterUtil {
       case "doubletype" => DataTypes.DOUBLE
       case "floattype" => DataTypes.DOUBLE
       case "decimaltype" => DataTypes.createDefaultDecimalType
-      case FIXED_DECIMALTYPE(_, _) => DataTypes.createDefaultDecimalType
+      case FIXED_DECIMALTYPE(precision, scale) =>
+        DataTypes.createDecimalType(precision.toInt, scale.toInt)
       case "timestamptype" => DataTypes.TIMESTAMP
       case "datetype" => DataTypes.DATE
       case others =>
@@ -79,28 +81,6 @@ object DataTypeConverterUtil {
         } else {
           CarbonException.analysisException(s"Unsupported data type: $dataType")
         }
-    }
-  }
-
-  def convertToString(dataType: DataType): String = {
-    if (DataTypes.isDecimal(dataType)) {
-      "decimal"
-    } else if (DataTypes.isArrayType(dataType)) {
-      "array"
-    } else if (DataTypes.isStructType(dataType)) {
-      "struct"
-    } else {
-      dataType match {
-        case DataTypes.BOOLEAN => "boolean"
-      case DataTypes.STRING => "string"
-        case DataTypes.SHORT => "smallint"
-        case DataTypes.INT => "int"
-        case DataTypes.LONG => "bigint"
-        case DataTypes.DOUBLE => "double"
-        case DataTypes.FLOAT => "double"
-        case DataTypes.TIMESTAMP => "timestamp"
-        case DataTypes.DATE => "date"
-      }
     }
   }
 
