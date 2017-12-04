@@ -20,6 +20,7 @@ import java.lang.Long
 
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.executor.InputMetrics
+import org.apache.spark.sql.execution.vectorized.ColumnarBatch
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.util.TaskMetricsMap
@@ -73,6 +74,14 @@ class CarbonInputMetrics extends InitInputMetrics{
         case e: java.io.IOException =>
           LOGGER.warn("Unable to get input size to set InputMetrics for task:" + e.getMessage)
       }
+    }
+  }
+
+  override def updateByValue(value: Object): Unit = {
+    value match {
+      case batch: ColumnarBatch =>
+        inputMetrics.incRecordsRead(batch.numRows())
+      case _ =>
     }
   }
 }
