@@ -107,7 +107,9 @@ public class StoreCreator {
       String dbName = "testdb";
       String tableName = "testtable";
       absoluteTableIdentifier =
-          new AbsoluteTableIdentifier(storePath +"/testdb/testtable", new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
+          AbsoluteTableIdentifier.from(
+              storePath +"/testdb/testtable",
+              new CarbonTableIdentifier(dbName, tableName, UUID.randomUUID().toString()));
     } catch (IOException ex) {
 
     }
@@ -276,16 +278,16 @@ public class StoreCreator {
     );
     tableInfo.setLastUpdatedTime(System.currentTimeMillis());
     tableInfo.setFactTable(tableSchema);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(absoluteTableIdentifier);
+    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
     String schemaFilePath = carbonTablePath.getSchemaFilePath();
     String schemaMetadataPath = CarbonTablePath.getFolderContainingFile(schemaFilePath);
-    tableInfo.setMetaDataFilepath(schemaMetadataPath);
     CarbonMetadata.getInstance().loadTableMetadata(tableInfo);
 
     SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-    org.apache.carbondata.format.TableInfo thriftTableInfo = schemaConverter
-        .fromWrapperToExternalTableInfo(tableInfo, tableInfo.getDatabaseName(),
+    org.apache.carbondata.format.TableInfo thriftTableInfo =
+        schemaConverter.fromWrapperToExternalTableInfo(
+            tableInfo,
+            tableInfo.getDatabaseName(),
             tableInfo.getFactTable().getTableName());
     org.apache.carbondata.format.SchemaEvolutionEntry schemaEvolutionEntry =
         new org.apache.carbondata.format.SchemaEvolutionEntry(tableInfo.getLastUpdatedTime());

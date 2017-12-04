@@ -60,7 +60,7 @@ case class CarbonCreateDataMapCommand(
     } else {
       val dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
       dataMapSchema.setProperties(new java.util.HashMap[String, String](dmproperties.asJava))
-      val dbName = GetDB.getDatabaseName(tableIdentifier.database, sparkSession)
+      val dbName = CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession)
       // upadting the parent table about dataschema
       PreAggregateUtil.updateMainTable(dbName, tableIdentifier.table, dataMapSchema, sparkSession)
     }

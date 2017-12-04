@@ -41,7 +41,7 @@ object DictionaryTestCaseUtil {
     val table = relation.carbonTable
     val dimension = table.getDimensionByName(table.getTableName, columnName)
     val tableIdentifier = new CarbonTableIdentifier(table.getDatabaseName, table.getTableName, "uniqueid")
-    val  absoluteTableIdentifier = new AbsoluteTableIdentifier(table.getTablePath, tableIdentifier)
+    val  absoluteTableIdentifier = AbsoluteTableIdentifier.from(table.getTablePath, tableIdentifier)
     val columnIdentifier = new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
       dimension.getColumnIdentifier, dimension.getDataType,
       CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier)

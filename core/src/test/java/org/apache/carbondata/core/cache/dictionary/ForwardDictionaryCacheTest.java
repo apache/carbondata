@@ -28,14 +28,15 @@ import java.util.UUID;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -57,7 +58,7 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
     carbonTableIdentifier =
         new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
     absoluteTableIdentifier =
-        new AbsoluteTableIdentifier(carbonStorePath + "/" + databaseName + "/" + tableName,
+        AbsoluteTableIdentifier.from(carbonStorePath + "/" + databaseName + "/" + tableName,
             carbonTableIdentifier);
     columnIdentifiers = new String[] { "name", "place" };
     deleteStorePath();

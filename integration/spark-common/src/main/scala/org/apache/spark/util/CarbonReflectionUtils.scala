@@ -54,7 +54,8 @@ object CarbonReflectionUtils {
       .map(l => im.reflectField(l.asTerm).get).getOrElse(null)
   }
 
-  def getUnresolvedRelation(tableIdentifier: TableIdentifier,
+  def getUnresolvedRelation(
+      tableIdentifier: TableIdentifier,
       version: String,
       tableAlias: Option[String] = None): UnresolvedRelation = {
     val className = "org.apache.spark.sql.catalyst.analysis.UnresolvedRelation"

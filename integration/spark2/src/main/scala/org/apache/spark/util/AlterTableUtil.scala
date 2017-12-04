@@ -194,11 +194,10 @@ object AlterTableUtil {
       oldTableIdentifier.table, tableId)
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(tablePath, oldCarbonTableIdentifier)
     val newCarbonTableIdentifier = new CarbonTableIdentifier(database, newTableName, tableId)
-    val newTablePath = CarbonUtil.getNewTablePath(new Path(tablePath), newCarbonTableIdentifier)
+    val newTablePath = CarbonUtil.getNewTablePath(new Path(tablePath), newTableName)
     val metastore = CarbonEnv.getInstance(sparkSession).carbonMetastore
-    val tableMetadataFile = carbonTablePath.getPath
-    val fileType = FileFactory.getFileType(tableMetadataFile)
-    if (FileFactory.isFileExist(tableMetadataFile, fileType)) {
+    val fileType = FileFactory.getFileType(tablePath)
+    if (FileFactory.isFileExist(tablePath, fileType)) {
       val tableInfo = if (metastore.isReadFromHiveMetaStore) {
         // In case of hive metastore we first update the carbonschema inside old table only.
         metastore.getThriftTableInfo(CarbonStorePath.getCarbonTablePath(tablePath,
@@ -213,7 +212,8 @@ object AlterTableUtil {
         FileFactory.getCarbonFile(carbonTablePath.getPath, fileType)
           .renameForce(carbonTablePath.getParent.toString + CarbonCommonConstants.FILE_SEPARATOR +
                        oldTableIdentifier.table)
-        val absoluteTableIdentifier = new AbsoluteTableIdentifier(newTablePath,
+        val absoluteTableIdentifier = AbsoluteTableIdentifier.from(
+          newTablePath,
           newCarbonTableIdentifier)
         metastore.revertTableSchemaInAlterFailure(oldCarbonTableIdentifier,
           tableInfo, absoluteTableIdentifier)(sparkSession)

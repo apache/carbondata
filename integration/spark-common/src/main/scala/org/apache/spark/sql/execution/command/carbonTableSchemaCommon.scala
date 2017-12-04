@@ -21,7 +21,6 @@ import java.util
 import java.util.UUID
 
 import scala.collection.JavaConverters._
-import scala.collection.mutable.Map
 
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SQLContext
@@ -30,7 +29,7 @@ import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
@@ -48,7 +47,6 @@ import org.apache.carbondata.spark.util.DataTypeConverterUtil
 
 case class TableModel(
     ifNotExistsSet: Boolean,
-    var databaseName: String,
     databaseNameOp: Option[String],
     tableName: String,
     tableProperties: Map[String, String],
@@ -58,8 +56,7 @@ case class TableModel(
     highcardinalitydims: Option[Seq[String]],
     noInvertedIdxCols: Option[Seq[String]],
     columnGroups: Seq[String],
-    colProps: Option[util.Map[String,
-    util.List[ColumnProperty]]] = None,
+    colProps: Option[util.Map[String, util.List[ColumnProperty]]] = None,
     bucketFields: Option[BucketFields],
     partitionInfo: Option[PartitionInfo],
     tableComment: Option[String] = None,
@@ -322,8 +319,14 @@ class AlterTableColumnSchemaGenerator(
 
 // TODO: move this to carbon store API
 object TableNewProcessor {
-  def apply(cm: TableModel): TableInfo = {
-    new TableNewProcessor(cm).process
+  def apply(
+      cm: TableModel,
+      identifier: AbsoluteTableIdentifier): TableInfo = {
+    new TableNewProcessor(
+      cm,
+      identifier.getDatabaseName,
+      identifier.getTableName,
+      identifier.getTablePath).process
   }
 
   def createColumnSchema(
@@ -356,7 +359,7 @@ object TableNewProcessor {
     }
     columnSchema.setEncodingList(encoders)
     val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
-    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(databaseName, columnSchema)
+    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(columnSchema)
     columnSchema.setColumnUniqueId(columnUniqueId)
     columnSchema.setColumnReferenceId(columnUniqueId)
     columnSchema.setColumnar(true)
@@ -370,7 +373,7 @@ object TableNewProcessor {
   }
 }
 
-class TableNewProcessor(cm: TableModel) {
+class TableNewProcessor(cm: TableModel, dbName: String, tableName: String, tablePath: String) {
 
   def getAllChildren(fieldChildren: Option[List[Field]]): Seq[ColumnSchema] = {
     var allColumns: Seq[ColumnSchema] = Seq[ColumnSchema]()
@@ -420,8 +423,7 @@ class TableNewProcessor(cm: TableModel) {
     }
     columnSchema.setEncodingList(encoders)
     val colUniqueIdGenerator = CarbonCommonFactory.getColumnUniqueIdGenerator
-    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(cm.databaseName,
-      columnSchema)
+    val columnUniqueId = colUniqueIdGenerator.generateUniqueId(columnSchema)
     columnSchema.setColumnUniqueId(columnUniqueId)
     columnSchema.setColumnReferenceId(columnUniqueId)
     columnSchema.setDimensionColumn(isDimensionCol)
@@ -529,7 +531,6 @@ class TableNewProcessor(cm: TableModel) {
         LOGGER.error(s"Duplicate column found with name: $name")
         LOGGER.audit(
           s"Validation failed for Create/Alter Table Operation " +
-          s"for ${ cm.databaseName }.${ cm.tableName }" +
           s"Duplicate column found with name: $name")
         CarbonException.analysisException(s"Duplicate dimensions found with name: $name")
       }
@@ -621,11 +622,12 @@ class TableNewProcessor(cm: TableModel) {
       partitionInfo.setColumnSchemaList(partitionCols)
       tableSchema.setPartitionInfo(partitionInfo)
     }
-    tableSchema.setTableName(cm.tableName)
+    tableSchema.setTableName(tableName)
     tableSchema.setListOfColumns(allColumns.asJava)
     tableSchema.setSchemaEvalution(schemaEvol)
-    tableInfo.setDatabaseName(cm.databaseName)
-    tableInfo.setTableUniqueName(CarbonTable.buildUniqueName(cm.databaseName, cm.tableName))
+    tableInfo.setTablePath(tablePath)
+    tableInfo.setDatabaseName(dbName)
+    tableInfo.setTableUniqueName(CarbonTable.buildUniqueName(dbName, tableName))
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
     tableInfo

@@ -59,11 +59,11 @@ public class SchemaReader {
       thriftReader.close();
 
       SchemaConverter schemaConverter = new ThriftWrapperSchemaConverterImpl();
-      TableInfo wrapperTableInfo = schemaConverter
-          .fromExternalToWrapperTableInfo(tableInfo,
-              identifier.getCarbonTableIdentifier().getDatabaseName(), tableName,
-              identifier.getTablePath());
-      wrapperTableInfo.setMetaDataFilepath(CarbonTablePath.getFolderContainingFile(schemaFilePath));
+      TableInfo wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
+          tableInfo,
+          identifier.getCarbonTableIdentifier().getDatabaseName(),
+          tableName,
+          identifier.getTablePath());
       CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo);
       return CarbonMetadata.getInstance().getCarbonTable(
           identifier.getCarbonTableIdentifier().getTableUniqueName());

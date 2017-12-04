@@ -608,14 +608,15 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
    * convert from external to wrapper tableinfo
    */
   @Override public TableInfo fromExternalToWrapperTableInfo(
-      org.apache.carbondata.format.TableInfo externalTableInfo, String dbName, String tableName,
+      org.apache.carbondata.format.TableInfo externalTableInfo,
+      String dbName,
+      String tableName,
       String tablePath) {
     TableInfo wrapperTableInfo = new TableInfo();
     List<org.apache.carbondata.format.SchemaEvolutionEntry> schemaEvolutionList =
         externalTableInfo.getFact_table().getSchema_evolution().getSchema_evolution_history();
     wrapperTableInfo.setLastUpdatedTime(
-        schemaEvolutionList.get(schemaEvolutionList.size() - 1)
-            .getTime_stamp());
+        schemaEvolutionList.get(schemaEvolutionList.size() - 1).getTime_stamp());
     wrapperTableInfo.setDatabaseName(dbName);
     wrapperTableInfo.setTableUniqueName(CarbonTable.buildUniqueName(dbName, tableName));
     wrapperTableInfo.setTablePath(tablePath);

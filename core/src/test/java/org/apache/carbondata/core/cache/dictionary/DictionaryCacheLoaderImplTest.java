@@ -49,7 +49,7 @@ public class DictionaryCacheLoaderImplTest {
 
   @BeforeClass public static void setUp() {
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("db", "table1", "1");
-    AbsoluteTableIdentifier absoluteTableIdentifier = new AbsoluteTableIdentifier("/tmp",
+    AbsoluteTableIdentifier absoluteTableIdentifier = AbsoluteTableIdentifier.from("/tmp",
         carbonTableIdentifier);
     Map<String, String> columnProperties = new HashMap<>();
     columnProperties.put("prop1", "value1");

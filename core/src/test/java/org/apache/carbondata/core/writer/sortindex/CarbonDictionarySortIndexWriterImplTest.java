@@ -59,7 +59,7 @@ public class CarbonDictionarySortIndexWriterImplTest {
     String tablePath =
         storePath + "/" + carbonTableIdentifier.getDatabaseName() + "/" + carbonTableIdentifier
             .getTableName();
-    absoluteTableIdentifier = new AbsoluteTableIdentifier(tablePath, carbonTableIdentifier);
+    absoluteTableIdentifier = AbsoluteTableIdentifier.from(tablePath, carbonTableIdentifier);
     columnIdentifier = new ColumnIdentifier("Name", null, null);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,

@@ -504,9 +504,9 @@ class CarbonDecoderRDD(
   }
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
-    val absoluteTableIdentifiers = relations.map { relation =>
-      val tableInfo = getTableInfo
-      (tableInfo.getFactTable.getTableName, tableInfo.getOrCreateAbsoluteTableIdentifier)
+    val tableInfo = getTableInfo
+    val absoluteTableIdentifiers = relations.map { _ =>
+      (tableInfo.getFactTable.getTableName, tableInfo.getOrCreateAbsoluteTableIdentifier())
     }.toMap
 
     val cacheProvider: CacheProvider = CacheProvider.getInstance

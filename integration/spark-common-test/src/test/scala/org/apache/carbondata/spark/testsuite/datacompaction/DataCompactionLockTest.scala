@@ -21,6 +21,7 @@ package org.apache.carbondata.spark.testsuite.datacompaction
 import scala.collection.JavaConverters._
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -35,8 +36,8 @@ import org.apache.spark.sql.test.util.QueryTest
   */
 class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
 
-  val absoluteTableIdentifier: AbsoluteTableIdentifier = new
-      AbsoluteTableIdentifier(
+  val absoluteTableIdentifier: AbsoluteTableIdentifier =
+      AbsoluteTableIdentifier.from(
         CarbonProperties.getInstance.getProperty(CarbonCommonConstants.STORE_LOCATION),
         new CarbonTableIdentifier(
           CarbonCommonConstants.DATABASE_DEFAULT_NAME, "compactionlocktesttable", "1")

@@ -494,9 +494,10 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           None,
           true)
 
-        val alterTableAddColumnsModel = AlterTableAddColumnsModel(convertDbNameToLowerCase(dbName),
+        val alterTableAddColumnsModel = AlterTableAddColumnsModel(
+          convertDbNameToLowerCase(dbName),
           table,
-          tableProps,
+          tableProps.toMap,
           tableModel.dimCols,
           tableModel.msrCols,
           tableModel.highcardinalitydims.getOrElse(Seq.empty))

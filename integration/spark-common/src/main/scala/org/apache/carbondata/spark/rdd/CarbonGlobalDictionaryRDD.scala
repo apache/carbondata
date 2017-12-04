@@ -505,7 +505,6 @@ class CarbonColumnDictPatition(id: Int, dimension: CarbonDimension)
  * @param sparkContext    spark context
  * @param table           carbon table identifier
  * @param dimensions      carbon dimenisons having predefined dict
- * @param hdfsLocation    carbon base store path
  * @param dictFolderPath  path of dictionary folder
  */
 class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
@@ -513,7 +512,6 @@ class CarbonColumnDictGenerateRDD(carbonLoadModel: CarbonLoadModel,
     sparkContext: SparkContext,
     table: CarbonTableIdentifier,
     dimensions: Array[CarbonDimension],
-    hdfsLocation: String,
     dictFolderPath: String)
   extends CarbonRDD[(Int, ColumnDistinctValues)](sparkContext, Nil) {
 

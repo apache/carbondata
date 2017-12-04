@@ -293,7 +293,7 @@ object StreamHandoffRDD {
         SegmentStatus.INSERT_IN_PROGRESS,
         carbonLoadModel.getFactTimeStamp,
         false)
-      CarbonLoaderUtil.recordLoadMetadata(newMetaEntry, carbonLoadModel, true, false)
+      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, carbonLoadModel, true, false)
       // convert a streaming segment to columnar segment
       val status = new StreamHandoffRDD(
         sqlContext.sparkContext,

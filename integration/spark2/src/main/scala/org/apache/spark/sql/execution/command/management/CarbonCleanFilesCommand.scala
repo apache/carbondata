@@ -17,14 +17,12 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import org.apache.spark.sql.{CarbonEnv, GetDB, Row, SparkSession}
-import org.apache.spark.sql.execution.command.{Checker, DataCommand, DataProcessOperation, RunnableCommand}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 
 import org.apache.carbondata.api.CarbonStore
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{CleanFilesPostEvent, CleanFilesPreEvent, OperationContext, OperationListenerBus}
-import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Clean data in table
@@ -65,9 +63,8 @@ case class CarbonCleanFilesCommand(
 
   private def deleteAllData(sparkSession: SparkSession,
       databaseNameOp: Option[String], tableName: String): Unit = {
-    val dbName = GetDB.getDatabaseName(databaseNameOp, sparkSession)
-    val databaseLocation = GetDB.getDatabaseLocation(dbName, sparkSession,
-      CarbonProperties.getStorePath)
+    val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
+    val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
     CarbonStore.cleanFiles(
       dbName,
       tableName,
@@ -85,16 +82,14 @@ case class CarbonCleanFilesCommand(
     OperationListenerBus.getInstance.fireEvent(cleanFilesPreEvent)
 
     CarbonStore.cleanFiles(
-      GetDB.getDatabaseName(databaseNameOp, sparkSession),
+      CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
       tableName,
       CarbonProperties.getStorePath,
       carbonTable,
       forceTableClean)
 
-    val cleanFilesPostEvent: CleanFilesPostEvent =
-      CleanFilesPostEvent(carbonTable,
-        sparkSession)
-    OperationListenerBus.getInstance.fireEvent(cleanFilesPreEvent)
+    val cleanFilesPostEvent: CleanFilesPostEvent = CleanFilesPostEvent(carbonTable, sparkSession)
+    OperationListenerBus.getInstance.fireEvent(cleanFilesPostEvent)
   }
 
   private def cleanGarbageDataInAllTables(sparkSession: SparkSession): Unit = {

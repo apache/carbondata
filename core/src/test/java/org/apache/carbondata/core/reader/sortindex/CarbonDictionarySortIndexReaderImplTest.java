@@ -23,17 +23,18 @@ import java.util.List;
 import java.util.UUID;
 
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
+import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriterImpl;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
+
 import org.apache.commons.lang.ArrayUtils;
 import org.junit.After;
 import org.junit.Assert;
@@ -65,7 +66,7 @@ public class CarbonDictionarySortIndexReaderImplTest {
     CarbonTableIdentifier carbonTableIdentifier = new CarbonTableIdentifier("testSchema", "carbon",
     		UUID.randomUUID().toString());
     AbsoluteTableIdentifier absoluteTableIdentifier =
-        new AbsoluteTableIdentifier(storePath+"/testSchema/carbon", carbonTableIdentifier);
+        AbsoluteTableIdentifier.from(storePath+"/testSchema/carbon", carbonTableIdentifier);
     ColumnIdentifier columnIdentifier = new ColumnIdentifier("Name", null, null);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,

@@ -22,9 +22,8 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command.AlterTableRenameCommand
-import org.apache.spark.sql.execution.command.mutation.{CarbonProjectForDeleteCommand, CarbonProjectForUpdateCommand, DeleteExecution}
+import org.apache.spark.sql.execution.command.mutation.{CarbonProjectForDeleteCommand, CarbonProjectForUpdateCommand}
 import org.apache.spark.sql.execution.command.schema.{CarbonAlterTableAddColumnCommand, CarbonAlterTableDataTypeChangeCommand, CarbonAlterTableDropColumnCommand}
-import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -35,14 +34,14 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
 
   override def apply(plan: LogicalPlan): Seq[SparkPlan] = {
     plan match {
-      case CarbonProjectForUpdateCommand(_, tableIdentifier) =>
+      case CarbonProjectForUpdateCommand(_, databaseNameOp, tableName) =>
         rejectIfStreamingTable(
-          DeleteExecution.getTableIdentifier(tableIdentifier),
+          TableIdentifier(tableName, databaseNameOp),
           "Data update")
         Nil
-      case CarbonProjectForDeleteCommand(_, tableIdentifier, _) =>
+      case CarbonProjectForDeleteCommand(_, databaseNameOp, tableName, timestamp) =>
         rejectIfStreamingTable(
-          DeleteExecution.getTableIdentifier(tableIdentifier),
+          TableIdentifier(tableName, databaseNameOp),
           "Date delete")
         Nil
       case CarbonAlterTableAddColumnCommand(model) =>
@@ -73,11 +72,9 @@ private[sql] class StreamingTableStrategy(sparkSession: SparkSession) extends Sp
    * Validate whether Update operation is allowed for specified table in the command
    */
   private def rejectIfStreamingTable(tableIdentifier: TableIdentifier, operation: String): Unit = {
-    val streaming = CarbonEnv.getInstance(sparkSession).carbonMetastore
-      .lookupRelation(tableIdentifier)(sparkSession)
-      .asInstanceOf[CarbonRelation]
-      .carbonTable
-      .isStreamingTable
+    val streaming =
+      CarbonEnv.getCarbonTable(tableIdentifier.database, tableIdentifier.table)(sparkSession)
+        .isStreamingTable
     if (streaming) {
       throw new MalformedCarbonCommandException(
         s"$operation is not allowed for streaming table")

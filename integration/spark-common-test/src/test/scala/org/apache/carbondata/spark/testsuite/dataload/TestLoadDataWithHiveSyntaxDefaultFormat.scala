@@ -19,8 +19,9 @@ package org.apache.carbondata.spark.testsuite.dataload
 
 import java.io.File
 
-import org.apache.spark.sql.Row
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
@@ -685,6 +686,47 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       s"load data local inpath '$resourcesPath/double.csv' into table double_test options" +
       "('FILEHEADER'='empno,salary')")
     checkAnswer(sql("select salary from double_test limit 1"),Row(7.756787654567891E23))
+  }
+
+  test("test table with specified table path") {
+    val path = "./source"
+    sql("drop table if exists table_path_test")
+    sql(
+      "CREATE table table_path_test (empno string, salary double) STORED BY 'carbondata' " +
+      s"LOCATION '$path'"
+    )
+    sql(
+      s"load data local inpath '$resourcesPath/double.csv' into table table_path_test options" +
+      "('FILEHEADER'='empno,salary')")
+    assert(new File(path).exists())
+    checkAnswer(sql("select salary from table_path_test limit 1"),Row(7.756787654567891E23))
+    sql("drop table table_path_test")
+    assert(! new File(path).exists())
+    assert(intercept[AnalysisException](
+      sql("select salary from table_path_test limit 1"))
+      .message
+      .contains("not found"))
+  }
+
+  test("test table with specified database and table path") {
+    val path = "./source"
+    sql("drop database if exists test cascade")
+    sql("create database if not exists test")
+    sql("CREATE table test.table_path_test (empno string, salary double) " +
+        "STORED BY 'carbondata'" +
+        s"LOCATION '$path'")
+    sql(
+      s"load data local inpath '$resourcesPath/double.csv' into table test.table_path_test options" +
+      "('FILEHEADER'='empno,salary')")
+    assert(new File(path).exists())
+    checkAnswer(sql("select salary from test.table_path_test limit 1"),Row(7.756787654567891E23))
+    sql("drop table test.table_path_test")
+    assert(! new File(path).exists())
+    assert(intercept[AnalysisException](
+      sql("select salary from test.table_path_test limit 1"))
+      .message
+      .contains("not found"))
+    sql("drop database if exists test cascade")
   }
 
   override def afterAll {

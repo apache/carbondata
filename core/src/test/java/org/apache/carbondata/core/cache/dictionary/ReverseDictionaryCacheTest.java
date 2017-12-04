@@ -59,9 +59,8 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
     this.carbonStorePath = props.getProperty("storePath", "carbonStore");
     carbonTableIdentifier =
         new CarbonTableIdentifier(databaseName, tableName, UUID.randomUUID().toString());
-    absoluteTableIdentifier =
-        new AbsoluteTableIdentifier(carbonStorePath + "/" + databaseName + "/" + tableName,
-            carbonTableIdentifier);
+    absoluteTableIdentifier = AbsoluteTableIdentifier.from(
+        carbonStorePath + "/" + databaseName + "/" + tableName, carbonTableIdentifier);
     columnIdentifiers = new String[] { "name", "place" };
     deleteStorePath();
     prepareDataSet();
