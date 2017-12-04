@@ -188,7 +188,7 @@ object CarbonSession {
           case e: Throwable =>
             // catch all exceptions to avoid CarbonSession initialization failure
           LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-              .error(e, "Failed to clean in progress segments")
+            .error(e, "Failed to clean in progress segments")
         }
         // Register a successfully instantiated context to the singleton. This should be at the
         // end of the class definition so that the singleton is updated only if there is no
