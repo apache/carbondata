@@ -2156,21 +2156,6 @@ public final class CarbonUtil {
     return parentPath.toString() + CarbonCommonConstants.FILE_SEPARATOR + newTableName;
   }
 
-  /*
-   * This method will add data size and index size into tablestatus for each segment
-   */
-  public static void addDataIndexSizeIntoMetaEntry(LoadMetadataDetails loadMetadataDetails,
-      String segmentId, CarbonTable carbonTable) throws IOException {
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath((carbonTable.getAbsoluteTableIdentifier()));
-    Map<String, Long> dataIndexSize =
-        CarbonUtil.getDataSizeAndIndexSize(carbonTablePath, segmentId);
-    loadMetadataDetails
-        .setDataSize(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE).toString());
-    loadMetadataDetails
-        .setIndexSize(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE).toString());
-  }
-
   /**
    * This method will calculate the data size and index size for carbon table
    */
