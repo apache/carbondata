@@ -60,7 +60,8 @@ class CarbonScanRDD(
     var filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
     @transient serializedTableInfo: Array[Byte],
-    @transient tableInfo: TableInfo, inputMetricsStats: InitInputMetrics)
+    @transient tableInfo: TableInfo,
+    inputMetricsStats: InitInputMetrics)
   extends CarbonRDDWithTableInfo[InternalRow](sc, Nil, serializedTableInfo) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
