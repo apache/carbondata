@@ -238,31 +238,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     val invalidOptions = StringBuilder.newBuilder
     val tableProperties = Seq("DICTIONARY_INCLUDE", "DICTIONARY_EXCLUDE", "NO_INVERTED_INDEX",
       "SORT_COLUMNS", "TABLE_BLOCKSIZE", "STREAMING", "SORT_SCOPE", "COMMENT", "PARTITION_TYPE",
-      "NUM_PARTITIONS", "RANGE_INFO", "LIST_INFO", "BUCKETNUMBER", "BUCKETCOLUMNS")
-    val tblProperties: Map[String, String] = properties.filter { property =>
-      if (!(tableProperties.exists(prop => prop.equalsIgnoreCase(property._1))
-            || property._1.toUpperCase.startsWith("DEFAULT.VALUE")
-            || property._1.toUpperCase.startsWith("COLUMNPROPERTIES"))) {
-      isSupported = false
-      invalidOptions.append(property._1)
-        false
-    } else {
-      true
-    }
-    }
-    if (!isSupported) {
-      val errorMessage = "Error: Invalid option(s): " + invalidOptions.toString()
-      throw new MalformedCarbonCommandException(errorMessage)
-    }
-    tblProperties
-  }
-
-  private def validateTableProperties(properties: Map[String, String]): Map[String, String] = {
-    var isSupported = true
-    val invalidOptions = StringBuilder.newBuilder
-    val tableProperties = Seq("DICTIONARY_INCLUDE", "DICTIONARY_EXCLUDE", "NO_INVERTED_INDEX",
-      "SORT_COLUMNS", "TABLE_BLOCKSIZE", "STREAMING", "SORT_SCOPE", "COMMENT", "PARTITION_TYPE",
-      "NUM_PARTITIONS", "RANGE_INFO", "LIST_INFO", "BUCKETNUMBER", "BUCKETCOLUMNS")
+      "NUM_PARTITIONS", "RANGE_INFO", "LIST_INFO", "BUCKETNUMBER", "BUCKETCOLUMNS", "TABLENAME")
     val tblProperties: Map[String, String] = properties.filter { property =>
       if (!(tableProperties.exists(prop => prop.equalsIgnoreCase(property._1))
             || property._1.toUpperCase.startsWith("DEFAULT.VALUE")
