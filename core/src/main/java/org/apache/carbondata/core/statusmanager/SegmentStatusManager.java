@@ -43,6 +43,7 @@ import org.apache.carbondata.core.locks.ICarbonLock;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
@@ -672,4 +673,26 @@ public class SegmentStatusManager {
       return listOfStreamSegments;
     }
   }
+
+  /**
+   * This function checks if any load or insert overwrite is in progress before dropping that table
+   * @return
+   */
+  public static Boolean checkIfAnyLoadInProgressForTable(CarbonTable carbonTable) {
+    Boolean loadInProgress = false;
+    String metaPath = carbonTable.getMetaDataFilepath();
+    LoadMetadataDetails[] listOfLoadFolderDetailsArray =
+              SegmentStatusManager.readLoadMetadata(metaPath);
+    if (listOfLoadFolderDetailsArray.length != 0) {
+      for (LoadMetadataDetails loaddetail :listOfLoadFolderDetailsArray) {
+        SegmentStatus segmentStatus = loaddetail.getSegmentStatus();
+        if (segmentStatus == SegmentStatus.INSERT_IN_PROGRESS ||
+                segmentStatus == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS) {
+          loadInProgress = true;
+        }
+      }
+    }
+    return loadInProgress;
+  }
+
 }
