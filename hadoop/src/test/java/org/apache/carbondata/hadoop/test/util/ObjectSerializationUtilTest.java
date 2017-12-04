@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.hadoop.test.util;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;

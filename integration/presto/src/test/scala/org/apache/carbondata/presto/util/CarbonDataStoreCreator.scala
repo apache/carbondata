@@ -25,7 +25,7 @@ import java.util.{ArrayList, Date, List, UUID}
 
 import scala.collection.JavaConversions._
 
-import com.google.gson.{Gson, GsonBuilder}
+import com.google.gson.Gson
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable

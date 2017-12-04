@@ -16,9 +16,7 @@
  */
 package org.apache.carbondata.core.writer.sortindex;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.metadata.datatype.DecimalType;
 
 import org.junit.Test;
 

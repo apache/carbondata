@@ -17,7 +17,6 @@
 package org.apache.carbondata.core.carbon;
 
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 
 import org.junit.BeforeClass;
