@@ -79,7 +79,8 @@ case class CarbonDatasourceHadoopRelation(
       filterExpression.orNull,
       identifier,
       carbonTable.getTableInfo.serialize(),
-      carbonTable.getTableInfo, inputMetricsStats)
+      carbonTable.getTableInfo,
+      inputMetricsStats)
   }
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)

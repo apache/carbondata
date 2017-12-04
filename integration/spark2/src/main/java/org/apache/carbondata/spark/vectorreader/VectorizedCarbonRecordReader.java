@@ -165,7 +165,9 @@ class VectorizedCarbonRecordReader extends AbstractRecordReader<Object> {
     if (returnColumnarBatch) {
       int value = columnarBatch.numValidRows();
       rowCount += value;
-      inputMetricsStats.incrementRecordRead((long)value);
+      if (inputMetricsStats != null) {
+        inputMetricsStats.incrementRecordRead((long) value);
+      }
       return columnarBatch;
     }
     rowCount += 1;

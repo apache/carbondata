@@ -307,6 +307,7 @@ class CarbonScanRDD(
           }
           havePair = false
           val value = reader.getCurrentValue
+          inputMetricsStats.updateByRow(value)
           value
         }
 
