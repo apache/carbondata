@@ -156,6 +156,7 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
     catalog.OrcConversions ::
     CarbonPreInsertionCasts(sparkSession) ::
     CarbonPreAggregateQueryRules(sparkSession) ::
+    CarbonPreAggregateDataLoadingRules ::
     CarbonIUDAnalysisRule(sparkSession) ::
     AnalyzeCreateTable(sparkSession) ::
     PreprocessTableInsertion(conf) ::

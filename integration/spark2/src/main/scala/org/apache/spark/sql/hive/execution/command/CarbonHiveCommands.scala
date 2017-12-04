@@ -96,6 +96,10 @@ object CarbonSetCommand {
       sessionParams.addProperty(key.toLowerCase(), value)
     }
   }
+
+  def unsetValue(sessionParams: SessionParams, key: String): Unit = {
+    sessionParams.removeProperty(key)
+  }
 }
 
 case class CarbonResetCommand()

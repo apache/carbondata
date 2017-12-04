@@ -1006,6 +1006,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         "select preAGG() as preAgg, " + query
     }
 
+  lazy val addPreAggLoad: Parser[String] =
+    SELECT ~> restInput <~ opt(";") ^^ {
+      case query =>
+        "select preAggLoad() as preAggLoad, " + query
+    }
+
   protected lazy val primitiveFieldType: Parser[Field] =
     primitiveTypes ^^ {
       case e1 =>

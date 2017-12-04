@@ -199,6 +199,13 @@ object PreAggregateUtil {
           carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
           parentTableName,
           parentDatabaseName, parentTableId = parentTableId)
+      case count@Count(Seq(Cast(attr: AttributeReference, _))) =>
+        list += getField(attr.name,
+          attr.dataType,
+          count.prettyName,
+          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
+          parentTableName,
+          parentDatabaseName, parentTableId = parentTableId)
       case min@Min(attr: AttributeReference) =>
         list += getField(attr.name,
           attr.dataType,
@@ -253,8 +260,9 @@ object PreAggregateUtil {
           carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
           parentTableName,
           parentDatabaseName, parentTableId = parentTableId)
-      case _ =>
-        throw new MalformedCarbonCommandException("Un-Supported Aggregation Type")
+      case others@_ =>
+        throw new MalformedCarbonCommandException(s"Un-Supported Aggregation Type: ${
+          others.prettyName}")
     }
   }
 
