@@ -123,6 +123,7 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   public boolean renameTo(String changetoName) {
+    changetoName = getUpdatedFilePath(changetoName);
     return file.renameTo(new File(changetoName));
   }
 
@@ -318,6 +319,7 @@ public class LocalCarbonFile implements CarbonFile {
   @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
       throws IOException {
     path = path.replace("\\", "/");
+    path = getUpdatedFilePath(path);
     return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
   }
 
