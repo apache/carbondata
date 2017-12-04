@@ -150,6 +150,46 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     val df = sql("select L_RETURNFLAG,L_LINESTATUS,sum(L_QUANTITY),sum(L_EXTENDEDPRICE) from lineitem group by L_RETURNFLAG, L_LINESTATUS")
     preAggTableValidator(df.queryExecution.analyzed, "lineitem_agr_lineitem")
   }
+  test("test PreAggregate table selection 20") {
+    val df = sql("select name from mainTable group by name order by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
+  }
+
+  test("test PreAggregate table selection 21") {
+    val df = sql("select name as NewName from mainTable group by name order by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
+  }
+
+  test("test PreAggregate table selection 22") {
+    val df = sql("select name, sum(age) from mainTable group by name order by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg1")
+  }
+
+  test("test PreAggregate table selection 23") {
+    val df = sql("select name as NewName, sum(age) as sum from mainTable group by name order by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg1")
+  }
+
+  test("test PreAggregate table selection 24") {
+    val df = sql("select name as NewName, sum(age) as sum from mainTable where name='vishal' group by name order by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg1")
+  }
+
+  test("test PreAggregate table selection 25") {
+    val df = sql("select name as NewName, sum(age) as sum from mainTable where city = 'Bangalore' group by name order by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable")
+  }
+
+  test("test PreAggregate table selection 26") {
+    val df = sql("select name from mainTable where name='vishal' group by name order by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
+  }
+
+  test("test PreAggregate table selection 27") {
+    val df = sql("select name as NewName from mainTable where name='vishal' group by name order by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
+  }
+
 
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit ={
     var isValidPlan = false

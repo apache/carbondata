@@ -67,4 +67,28 @@ public class QueryColumn {
   public boolean isFilterColumn() {
     return isFilterColumn;
   }
+
+  @Override public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    QueryColumn that = (QueryColumn) o;
+    if (isFilterColumn != that.isFilterColumn) {
+      return false;
+    }
+    if (!columnSchema.equals(that.columnSchema)) {
+      return false;
+    }
+    return aggFunction != null ? aggFunction.equals(that.aggFunction) : that.aggFunction == null;
+  }
+
+  @Override public int hashCode() {
+    int result = columnSchema.hashCode();
+    result = 31 * result + (aggFunction != null ? aggFunction.hashCode() : 0);
+    result = 31 * result + (isFilterColumn ? 1 : 0);
+    return result;
+  }
 }

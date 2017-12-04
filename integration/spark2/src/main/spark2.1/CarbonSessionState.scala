@@ -20,7 +20,7 @@ import java.lang.reflect.Constructor
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, ExperimentalMethods, SparkSession}
-import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.{CatalystConf, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, FunctionRegistry}
 import org.apache.spark.sql.catalyst.catalog.{FunctionResourceLoader, GlobalTempViewManager, SessionCatalog}
 import org.apache.spark.sql.catalyst.expressions.{PredicateSubquery, ScalarSubquery}
@@ -155,7 +155,6 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
     catalog.ParquetConversions ::
     catalog.OrcConversions ::
     CarbonPreInsertionCasts(sparkSession) ::
-    CarbonPreAggregateQueryRules(sparkSession) ::
     CarbonPreAggregateDataLoadingRules ::
     CarbonIUDAnalysisRule(sparkSession) ::
     AnalyzeCreateTable(sparkSession) ::
@@ -163,22 +162,22 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
     DataSourceAnalysis(conf) ::
     (if (conf.runSQLonFile) {
       new ResolveDataSource(sparkSession) :: Nil
-    } else {  Nil }
-      )
+    } else {  Nil })
   }
 
-  override lazy val analyzer: Analyzer = {
-    new Analyzer(catalog, conf) {
-      override val extendedResolutionRules =
-        if (extendedAnalyzerRules.nonEmpty) {
-          extendedAnalyzerRules ++ internalAnalyzerRules
-        } else {
-          internalAnalyzerRules
-        }
-      override val extendedCheckRules = Seq(
-        PreWriteCheck(conf, catalog))
-    }
-  }
+  override lazy val analyzer: Analyzer =
+    new CarbonAnalyzer(catalog, conf, sparkSession,
+      new Analyzer(catalog, conf) {
+        override val extendedResolutionRules =
+          if (extendedAnalyzerRules.nonEmpty) {
+            extendedAnalyzerRules ++ internalAnalyzerRules
+          } else {
+            internalAnalyzerRules
+          }
+        override val extendedCheckRules = Seq(
+          PreWriteCheck(conf, catalog))
+      }
+  )
 
   /**
    * Internal catalog for managing table and database states.
@@ -192,6 +191,16 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
       functionRegistry,
       conf,
       newHadoopConf())
+  }
+}
+
+class CarbonAnalyzer(catalog: SessionCatalog,
+    conf: CatalystConf,
+    sparkSession: SparkSession,
+    analyzer: Analyzer) extends Analyzer(catalog, conf) {
+  override def execute(plan: LogicalPlan): LogicalPlan = {
+    val logicalPlan = analyzer.execute(plan)
+    CarbonPreAggregateQueryRules(sparkSession).apply(logicalPlan)
   }
 }
 
