@@ -16,6 +16,8 @@
  */
 package org.apache.carbondata.presto.readers;
 
+import org.apache.carbondata.core.cache.dictionary.Dictionary;
+
 import com.facebook.presto.spi.block.SliceArrayBlock;
 import com.facebook.presto.spi.type.DateType;
 import com.facebook.presto.spi.type.DecimalType;
@@ -32,39 +34,61 @@ import io.airlift.slice.Slice;
 public final class StreamReaders {
   /**
    * This function select Stream readers based on Type and use it.
+   *
    * @param type
-   * @param dictionary
+   * @param dictionarySliceArrayBlock
    * @return StreamReader
    */
-  public static StreamReader createStreamReader(Type type, SliceArrayBlock dictionary) {
+  public static StreamReader createStreamReader(Type type,
+      SliceArrayBlock dictionarySliceArrayBlock, Dictionary dictionary) {
     Class<?> javaType = type.getJavaType();
-    if (javaType == long.class) {
-      if(type instanceof IntegerType || type instanceof DateType) {
-        return new IntegerStreamReader();
-      } else if (type instanceof DecimalType) {
-        return new DecimalSliceStreamReader();
-      } else if (type instanceof SmallintType) {
-        return new ShortStreamReader();
-      } else if (type instanceof TimestampType) {
-        return new TimestampStreamReader();
-      }
-      return new LongStreamReader();
-    } else if (javaType == double.class) {
-      return new DoubleStreamReader();
-    } else if (javaType == Slice.class) {
-      if (type instanceof DecimalType) {
-       return new DecimalSliceStreamReader();
-      } else {
-        if(dictionary != null) {
-          return new SliceStreamReader(true, dictionary);
-        } else {
-        return new SliceStreamReader();
-      }
+    if (dictionary != null) {
+      if (javaType == long.class) {
+        if (type instanceof IntegerType || type instanceof DateType) {
+          return new IntegerStreamReader(true, dictionary);
+        } else if (type instanceof DecimalType) {
+          return new DecimalSliceStreamReader(true, dictionary);
+        } else if (type instanceof SmallintType) {
+          return new ShortStreamReader(true, dictionary);
+        }
+        return new LongStreamReader(true, dictionary);
 
+      } else if (javaType == double.class) {
+        return new DoubleStreamReader(true, dictionary);
+      } else if (javaType == Slice.class) {
+        if (type instanceof DecimalType) {
+          return new DecimalSliceStreamReader(true, dictionary);
+        } else {
+          return new SliceStreamReader(true, dictionarySliceArrayBlock);
+        }
+      } else {
+        return new ObjectStreamReader();
       }
     } else {
-      return new ObjectStreamReader();
+      if (javaType == long.class) {
+        if (type instanceof IntegerType || type instanceof DateType) {
+          return new IntegerStreamReader();
+        } else if (type instanceof DecimalType) {
+          return new DecimalSliceStreamReader();
+        } else if (type instanceof SmallintType) {
+          return new ShortStreamReader();
+        } else if (type instanceof TimestampType) {
+          return new TimestampStreamReader();
+        }
+        return new LongStreamReader();
+
+      } else if (javaType == double.class) {
+        return new DoubleStreamReader();
+      } else if (javaType == Slice.class) {
+        if (type instanceof DecimalType) {
+          return new DecimalSliceStreamReader();
+        } else {
+          return new SliceStreamReader();
+        }
+      } else {
+        return new ObjectStreamReader();
+      }
+
     }
   }
-
 }

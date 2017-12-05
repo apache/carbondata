@@ -27,7 +27,7 @@ import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
-import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
 
 /**
@@ -42,8 +42,7 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
    * This initialization is done inside executor task
    * for column dictionary involved in decoding.
    *
-   * @param carbonColumns           column list
-   * @param absoluteTableIdentifier table identifier
+   * @param carbonColumns column list
    */
 
   override def initialize(carbonColumns: Array[CarbonColumn], carbonTable: CarbonTable) {
@@ -66,9 +65,12 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
         dictionaries(index) = forwardDictionaryCache
           .get(new DictionaryColumnUniqueIdentifier(carbonTable.getAbsoluteTableIdentifier,
             carbonColumn.getColumnIdentifier, dataTypes(index), dictionaryPath))
-        dictionarySliceArray(index) = createSliceArrayBlock(dictionaries(index))
-
+        // in case of string data type create dictionarySliceArray same as that of presto code
+        if (dataTypes(index).equals(DataTypes.STRING)) {
+          dictionarySliceArray(index) = createSliceArrayBlock(dictionaries(index))
+        }
       }
+
       else {
         dataTypes(index) = carbonColumn.getDataType
       }
@@ -86,17 +88,12 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
     val chunks: DictionaryChunksWrapper = dictionaryData.getDictionaryChunks
     val sliceArray = new Array[Slice](chunks.getSize + 1)
     // Initialize Slice Array with Empty Slice as per Presto's code
-    sliceArray(0) = (Slices.EMPTY_SLICE)
+    sliceArray(0) = Slices.EMPTY_SLICE
     var count = 1
     while (chunks.hasNext) {
       {
         val value: Array[Byte] = chunks.next
-        if (count == 1) {
-          sliceArray(count + 1) = null
-        }
-        else {
-          sliceArray(count) = wrappedBuffer(value, 0, value.length)
-        }
+        sliceArray(count) = wrappedBuffer(value, 0, value.length)
         count += 1
       }
     }
@@ -104,20 +101,7 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
   }
 
   override def readRow(data: Array[AnyRef]): T = {
-    throw new RuntimeException("UnSupported Method Call Convert Column Instead")
-  }
-
-  def convertColumn(data: Array[AnyRef], columnNo: Int): T = {
-    val convertedData = if (Option(dictionaries(columnNo)).isDefined) {
-      data.map { value =>
-        DataTypeUtil
-          .getDataBasedOnDataType(dictionaries(columnNo)
-            .getDictionaryValueForKey(value.asInstanceOf[Int]), DataTypes.STRING)
-      }
-    } else {
-      data
-    }
-    convertedData.asInstanceOf[T]
+    throw new RuntimeException("UnSupported Method")
   }
 
   /**
@@ -128,6 +112,10 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
    */
   def getSliceArrayBlock(columnNo: Int): SliceArrayBlock = {
     dictionarySliceArray(columnNo)
+  }
+
+  def getDictionaries: Array[Dictionary] = {
+    dictionaries
   }
 
   /**
