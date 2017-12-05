@@ -170,4 +170,21 @@ class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
     }.getMessage.equalsIgnoreCase("Cannot insert/load data directly into pre-aggregate table"))
   }
 
+  test("test whether all segments are loaded into pre-aggregate table if segments are set on main table") {
+    sql("DROP TABLE IF EXISTS maintable")
+    sql(
+      """
+        | CREATE TABLE maintable(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"insert into maintable values(1, 'xyz', 'bengaluru', 26)")
+    sql(s"insert into maintable values(1, 'xyz', 'bengaluru', 26)")
+    sql("set carbon.input.segments.default.maintable=0")
+    sql(
+      s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id, sum(age) from maintable group by id"""
+        .stripMargin)
+    sql("reset")
+    checkAnswer(sql("select * from maintable_preagg_sum"), Row(1, 52))
+  }
+
 }
