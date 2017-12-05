@@ -75,7 +75,7 @@ case class CarbonCreateTableCommand(
 
     val operationContext = new OperationContext
     val createTablePreExecutionEvent: CreateTablePreExecutionEvent =
-      CreateTablePreExecutionEvent(sparkSession, tableIdentifier)
+      CreateTablePreExecutionEvent(sparkSession, tableIdentifier, Some(tableInfo))
     OperationListenerBus.getInstance.fireEvent(createTablePreExecutionEvent, operationContext)
     val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
     val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tableIdentifier)

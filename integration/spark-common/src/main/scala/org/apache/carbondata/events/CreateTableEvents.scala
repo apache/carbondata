@@ -20,6 +20,7 @@ package org.apache.carbondata.events
 import org.apache.spark.sql._
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.schema.table.TableInfo
 
 /**
  * Class for handling operations before start of a load process.
@@ -27,7 +28,8 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
  */
 case class CreateTablePreExecutionEvent(
     sparkSession: SparkSession,
-    identifier: AbsoluteTableIdentifier) extends Event with TableEventInfo
+    identifier: AbsoluteTableIdentifier,
+    tableInfo: Option[TableInfo]) extends Event with TableEventInfo
 
 /**
  * Class for handling operations after data load completion and before final
