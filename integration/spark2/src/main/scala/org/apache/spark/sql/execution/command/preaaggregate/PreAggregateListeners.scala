@@ -70,10 +70,10 @@ object AlterPreAggregateTableCompactionPostListener extends OperationEventListen
    * @param operationContext
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val compactionEvent = event.asInstanceOf[AlterTableCompactionPostEvent]
+    val compactionEvent = event.asInstanceOf[AlterTableCompactionPreStatusUpdateEvent]
     val carbonTable = compactionEvent.carbonTable
     val compactionType = compactionEvent.carbonMergerMapping.campactionType
-    val sparkSession = compactionEvent.sQLContext.sparkSession
+    val sparkSession = compactionEvent.sparkSession
     if (carbonTable.hasDataMapSchema) {
       carbonTable.getTableInfo.getDataMapSchemaList.asScala.foreach { dataMapSchema =>
         val childRelationIdentifier = dataMapSchema.getRelationIdentifier

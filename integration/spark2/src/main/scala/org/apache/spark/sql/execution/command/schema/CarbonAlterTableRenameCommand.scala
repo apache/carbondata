@@ -17,7 +17,9 @@
 
 package org.apache.spark.sql.execution.command.schema
 
+import org.apache.hadoop.fs.Path
 import org.apache.spark.sql._
+import org.apache.spark.sql.{CarbonEnv, CarbonSession, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{AlterTableRenameModel, MetadataCommand}
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog, HiveExternalCatalog}
@@ -170,12 +172,14 @@ private[sql] case class CarbonAlterTableRenameCommand(
       AlterTableUtil.releaseLocks(locks)
       // case specific to rename table as after table rename old table path will not be found
       if (carbonTable != null) {
+        val newTablePath = CarbonUtil
+          .getNewTablePath(new Path(carbonTable.getTablePath), newTableName)
         AlterTableUtil
           .releaseLocksManually(locks,
             locksToBeAcquired,
             oldDatabaseName,
             newTableName,
-            carbonTable.getTablePath)
+            newTablePath)
       }
     }
     Seq.empty

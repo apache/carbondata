@@ -39,8 +39,7 @@ import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.statusmanager.SegmentStatus
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.events.{LoadTablePostExecutionEvent, OperationContext}
-import org.apache.carbondata.events.{LoadTablePreExecutionEvent, OperationListenerBus}
+import org.apache.carbondata.events.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.format
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.exception.NoRetryException
@@ -190,14 +189,16 @@ case class CarbonLoadDataCommand(
             carbonLoadModel,
             columnar,
             partitionStatus,
-            hadoopConf)
+            hadoopConf,
+            operationContext)
         } else {
           loadData(
             sparkSession,
             carbonLoadModel,
             columnar,
             partitionStatus,
-            hadoopConf)
+            hadoopConf,
+            operationContext)
         }
         val loadTablePostExecutionEvent: LoadTablePostExecutionEvent =
           new LoadTablePostExecutionEvent(sparkSession,
@@ -253,7 +254,8 @@ case class CarbonLoadDataCommand(
       carbonLoadModel: CarbonLoadModel,
       columnar: Boolean,
       partitionStatus: SegmentStatus,
-      hadoopConf: Configuration): Unit = {
+      hadoopConf: Configuration,
+      operationContext: OperationContext): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val carbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       .getCarbonTableIdentifier
@@ -314,14 +316,14 @@ case class CarbonLoadDataCommand(
     }
     CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
       carbonLoadModel,
-      carbonLoadModel.getTablePath,
       columnar,
       partitionStatus,
       server,
       isOverwriteTable,
       hadoopConf,
       dataFrame,
-      updateModel)
+      updateModel,
+      operationContext)
   }
 
   private def loadData(
@@ -329,7 +331,8 @@ case class CarbonLoadDataCommand(
       carbonLoadModel: CarbonLoadModel,
       columnar: Boolean,
       partitionStatus: SegmentStatus,
-      hadoopConf: Configuration): Unit = {
+      hadoopConf: Configuration,
+      operationContext: OperationContext): Unit = {
     val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
       val fields = dataFrame.get.schema.fields
       import org.apache.spark.sql.functions.udf
@@ -365,14 +368,14 @@ case class CarbonLoadDataCommand(
     }
     CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
       carbonLoadModel,
-      carbonLoadModel.getTablePath,
       columnar,
       partitionStatus,
       None,
       isOverwriteTable,
       hadoopConf,
       loadDataFrame,
-      updateModel)
+      updateModel,
+      operationContext)
   }
 
   private def updateTableMetadata(

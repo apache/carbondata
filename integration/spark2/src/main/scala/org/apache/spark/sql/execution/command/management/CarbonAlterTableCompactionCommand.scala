@@ -31,6 +31,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.events.{AlterTableCompactionPostEvent, AlterTableCompactionPreEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
@@ -83,12 +84,18 @@ case class CarbonAlterTableCompactionCommand(
       CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
       System.getProperty("java.io.tmpdir"))
     storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
+    // trigger event for compaction
+    val operationContext = new OperationContext
+    val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
+      AlterTableCompactionPreEvent(sparkSession, table, null, null)
+    OperationListenerBus.getInstance.fireEvent(alterTableCompactionPreEvent, operationContext)
     try {
       alterTableForCompaction(
         sparkSession.sqlContext,
         alterTableModel,
         carbonLoadModel,
-        storeLocation)
+        storeLocation,
+        operationContext)
     } catch {
       case e: Exception =>
         if (null != e.getMessage) {
@@ -99,13 +106,18 @@ case class CarbonAlterTableCompactionCommand(
             "Exception in compaction. Please check logs for more info.")
         }
     }
+    // trigger event for compaction
+    val alterTableCompactionPostEvent: AlterTableCompactionPostEvent =
+      AlterTableCompactionPostEvent(sparkSession, table, null, null)
+    OperationListenerBus.getInstance.fireEvent(alterTableCompactionPostEvent, operationContext)
     Seq.empty
   }
 
   private def alterTableForCompaction(sqlContext: SQLContext,
       alterTableModel: AlterTableModel,
       carbonLoadModel: CarbonLoadModel,
-      storeLocation: String): Unit = {
+      storeLocation: String,
+      operationContext: OperationContext): Unit = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
     val compactionType = CompactionType.valueOf(alterTableModel.compactionType.toUpperCase)
     val compactionSize: Long = CarbonDataMergerUtil.getCompactionSize(compactionType)
@@ -167,7 +179,8 @@ case class CarbonAlterTableCompactionCommand(
         storeLocation,
         compactionType,
         carbonTable,
-        compactionModel
+        compactionModel,
+        operationContext
       )
     } else {
       // normal flow of compaction
@@ -194,7 +207,8 @@ case class CarbonAlterTableCompactionCommand(
             carbonLoadModel,
             storeLocation,
             compactionModel,
-            lock
+            lock,
+            operationContext
           )
         } catch {
           case e: Exception =>
