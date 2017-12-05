@@ -31,8 +31,10 @@ case class LoadTablePreExecutionEvent(sparkSession: SparkSession,
     carbonLoadModel: CarbonLoadModel,
     factPath: String,
     isDataFrameDefined: Boolean,
-    optionsFinal: scala.collection
-    .mutable.Map[String, String]) extends Event with LoadEventInfo
+    optionsFinal: scala.collection.mutable.Map[String, String],
+    // userProvidedOptions are needed if we need only the load options given by user
+    userProvidedOptions: Map[String, String],
+    isOverWriteTable: Boolean) extends Event with LoadEventInfo
 
 /**
  * Class for handling operations after data load completion and before final
