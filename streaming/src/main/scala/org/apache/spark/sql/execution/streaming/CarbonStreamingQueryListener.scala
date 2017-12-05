@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.streaming
 import java.util
 import java.util.UUID
 
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.streaming.StreamingQueryListener
 
@@ -33,7 +34,16 @@ class CarbonStreamingQueryListener(spark: SparkSession) extends StreamingQueryLi
   private val cache = new util.HashMap[UUID, ICarbonLock]()
 
   override def onQueryStarted(event: StreamingQueryListener.QueryStartedEvent): Unit = {
-    val qry = spark.streams.get(event.id).asInstanceOf[StreamExecution]
+    val streamQuery = spark.streams.get(event.id)
+    val qry = if (SPARK_VERSION.startsWith("2.1")) {
+      // adapt spark 2.1
+      streamQuery.asInstanceOf[StreamExecution]
+    } else {
+      // adapt spark 2.2 and later version
+      val clazz = Class.forName("org.apache.spark.sql.execution.streaming.StreamingQueryWrapper")
+      val method = clazz.getMethod("streamingQuery")
+      method.invoke(streamQuery).asInstanceOf[StreamExecution]
+    }
     if (qry.sink.isInstanceOf[CarbonAppendableStreamSink]) {
       LOGGER.info("Carbon streaming query started: " + event.id)
       val sink = qry.sink.asInstanceOf[CarbonAppendableStreamSink]
