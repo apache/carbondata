@@ -359,14 +359,20 @@ class CarbonScanRDD(
     }
     val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (carbonSessionInfo != null) {
-      CarbonTableInputFormat.setAggeragateTableSegments(conf, carbonSessionInfo.getSessionParams
-        .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-                     identifier.getCarbonTableIdentifier.getDatabaseName + "." +
-                     identifier.getCarbonTableIdentifier.getTableName, ""))
-      CarbonTableInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getSessionParams
-          .getProperty(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-                       identifier.getCarbonTableIdentifier.getDatabaseName + "." +
-                       identifier.getCarbonTableIdentifier.getTableName, "true").toBoolean)
+      val segmentsToScan = carbonSessionInfo.getSessionParams.getProperty(
+        CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+        identifier.getCarbonTableIdentifier.getDatabaseName + "." +
+        identifier.getCarbonTableIdentifier.getTableName)
+      if (segmentsToScan != null) {
+        CarbonTableInputFormat.setAggeragateTableSegments(conf, segmentsToScan)
+      }
+      val validateSegments = carbonSessionInfo.getSessionParams.getProperty(
+        CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+        identifier.getCarbonTableIdentifier.getDatabaseName + "." +
+        identifier.getCarbonTableIdentifier.getTableName)
+      if (validateSegments != null) {
+        CarbonTableInputFormat.setValidateSegmentsToAccess(conf, validateSegments.toBoolean)
+      }
     }
     format
   }

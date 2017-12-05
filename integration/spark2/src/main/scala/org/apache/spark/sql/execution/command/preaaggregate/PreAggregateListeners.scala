@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.CarbonSession
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -40,41 +41,15 @@ object LoadPostAggregateListener extends OperationEventListener {
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     if (table.hasDataMapSchema) {
       for (dataMapSchema: DataMapSchema <- table.getTableInfo.getDataMapSchemaList.asScala) {
-        CarbonSession.threadSet(
-          CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-          carbonLoadModel.getDatabaseName + "." +
-          carbonLoadModel.getTableName,
-          carbonLoadModel.getSegmentId)
-        CarbonSession.threadSet(
-          CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-          carbonLoadModel.getDatabaseName + "." +
-          carbonLoadModel.getTableName, "false")
         val childTableName = dataMapSchema.getRelationIdentifier.getTableName
         val childDatabaseName = dataMapSchema.getRelationIdentifier.getDatabaseName
-        val childDataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
-          s"${ dataMapSchema.getProperties.get("CHILD_SELECT QUERY") } ")).drop("preAggLoad")
-        val headers = dataMapSchema.getChildSchema.getListOfColumns.
-          asScala.map(_.getColumnName).mkString(",")
-        try {
-          CarbonLoadDataCommand(Some(childDatabaseName),
-            childTableName,
-            null,
-            Nil,
-            Map("fileheader" -> headers),
-            isOverwriteTable = false,
-            dataFrame = Some(childDataFrame),
-            internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true")).
-            run(sparkSession)
-        } finally {
-          CarbonSession.threadUnset(
-            CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-            carbonLoadModel.getDatabaseName + "." +
-            carbonLoadModel.getTableName)
-          CarbonSession.threadUnset(
-            CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-            carbonLoadModel.getDatabaseName + "." +
-            carbonLoadModel.getTableName)
-        }
+        PreAggregateUtil.startDataLoadForDataMap(
+            table,
+            TableIdentifier(childTableName, Some(childDatabaseName)),
+            dataMapSchema.getProperties.get("CHILD_SELECT QUERY"),
+            carbonLoadModel.getSegmentId,
+            validateSegments = false,
+            sparkSession)
       }
     }
   }
