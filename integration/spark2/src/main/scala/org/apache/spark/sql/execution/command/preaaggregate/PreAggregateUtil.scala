@@ -237,7 +237,7 @@ object PreAggregateUtil {
           parentTableName,
           parentDatabaseName, parentTableId = parentTableId)
       case Average(attr: AttributeReference) =>
-        getField(attr.name,
+        list += getField(attr.name,
           attr.dataType,
           "sum",
           carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,

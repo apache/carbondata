@@ -22,8 +22,10 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.preaaggregate.{CreatePreAggregateTableCommand, PreAggregateUtil}
+import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
@@ -50,13 +52,30 @@ case class CarbonCreateDataMapCommand(
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     if (dmClassName.equals("org.apache.carbondata.datamap.AggregateDataMapHandler") ||
         dmClassName.equalsIgnoreCase("preaggregate")) {
-      CreatePreAggregateTableCommand(
-        dataMapName,
-        tableIdentifier,
-        dmClassName,
-        dmproperties,
-        queryString.get
-      ).processMetadata(sparkSession)
+      val timeHierarchyString = dmproperties.get(CarbonCommonConstants.TIMESERIES_HIERARCHY)
+      if (timeHierarchyString.isDefined) {
+        val details = TimeSeriesUtil
+          .validateAndGetTimeSeriesHierarchyDetails(
+            timeHierarchyString.get)
+        val updatedDmProperties = dmproperties - CarbonCommonConstants.TIMESERIES_HIERARCHY
+        details.foreach { f =>
+          CreatePreAggregateTableCommand(dataMapName + '_' + f._1,
+            tableIdentifier,
+            dmClassName,
+            updatedDmProperties,
+            queryString.get,
+            Some(f._1)).run(sparkSession)
+        }
+      }
+      else {
+        CreatePreAggregateTableCommand(
+          dataMapName,
+          tableIdentifier,
+          dmClassName,
+          dmproperties,
+          queryString.get
+        ).processMetadata(sparkSession)
+      }
     } else {
       val dataMapSchema = new DataMapSchema(dataMapName, dmClassName)
       dataMapSchema.setProperties(new java.util.HashMap[String, String](dmproperties.asJava))

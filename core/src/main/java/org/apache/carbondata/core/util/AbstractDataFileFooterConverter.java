@@ -42,6 +42,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.RelationIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
+import org.apache.carbondata.core.preagg.TimeSeriesUDF;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
@@ -289,7 +290,15 @@ public abstract class AbstractDataFileFooterConverter {
         wrapperColumnSchema.setSortColumn(true);
       }
     }
-    wrapperColumnSchema.setAggFunction(externalColumnSchema.getAggregate_function());
+    if (null != externalColumnSchema.getAggregate_function()) {
+      if (TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION
+          .contains(externalColumnSchema.getAggregate_function().toLowerCase())) {
+        wrapperColumnSchema
+            .setTimeSeriesFunction(externalColumnSchema.getAggregate_function().toLowerCase());
+      } else {
+        wrapperColumnSchema.setAggFunction(externalColumnSchema.getAggregate_function());
+      }
+    }
     List<org.apache.carbondata.format.ParentColumnTableRelation> parentColumnTableRelation =
         externalColumnSchema.getParentColumnTableRelations();
     if (null != parentColumnTableRelation) {
