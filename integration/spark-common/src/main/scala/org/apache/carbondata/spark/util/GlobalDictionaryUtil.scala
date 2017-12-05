@@ -175,8 +175,7 @@ object GlobalDictionaryUtil {
         DictionaryColumnUniqueIdentifier(
       model.table,
       model.columnIdentifier(columnIndex),
-      model.columnIdentifier(columnIndex).getDataType,
-      CarbonStorePath.getCarbonTablePath(model.table))
+      model.columnIdentifier(columnIndex).getDataType)
     val writer: CarbonDictionaryWriter = dictService
       .getDictionaryWriter(dictionaryColumnUniqueIdentifier)
     try {
@@ -215,8 +214,7 @@ object GlobalDictionaryUtil {
           DictionaryColumnUniqueIdentifier(
             model.table,
             model.columnIdentifier(i),
-            model.columnIdentifier(i).getDataType,
-            CarbonStorePath.getCarbonTablePath(model.table))
+            model.columnIdentifier(i).getDataType)
       val set = new HashSet[String]
       if (model.dictFileExists(i)) {
         val reader: CarbonDictionaryReader = dictService.getDictionaryReader(
@@ -854,8 +852,7 @@ object GlobalDictionaryUtil {
           DictionaryColumnUniqueIdentifier(
             absoluteTableIdentifier,
             columnIdentifier,
-            columnIdentifier.getDataType,
-            carbonTablePath)
+            columnIdentifier.getDataType)
       val parsedValue = DataTypeUtil.normalizeColumnValueForItsDataType(defaultValue, columnSchema)
       val valuesBuffer = new mutable.HashSet[String]
       if (null != parsedValue) {

@@ -106,8 +106,7 @@ public class CarbonDictionaryWriterImplTest {
     absoluteTableIdentifier = AbsoluteTableIdentifier.from(carbonStorePath, carbonTableIdentifier);
     this.dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
-            columnIdentifier.getDataType(),
-            CarbonStorePath.getCarbonTablePath(carbonStorePath, carbonTableIdentifier));
+            columnIdentifier.getDataType());
     deleteStorePath();
     prepareDataSet();
   }

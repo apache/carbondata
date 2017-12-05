@@ -433,8 +433,7 @@ public final class CarbonLoaderUtil {
       ColumnIdentifier columnIdentifier, DataType dataType)
       throws IOException {
     return getDictionary(
-        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier, dataType,
-            CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)));
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier, dataType));
   }
 
   /**

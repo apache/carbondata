@@ -347,8 +347,7 @@ class CarbonGlobalDictionaryGenerateRDD(
           DictionaryColumnUniqueIdentifier(
         model.table,
         model.columnIdentifier(split.index),
-        model.columnIdentifier(split.index).getDataType,
-        CarbonStorePath.getCarbonTablePath(model.table))
+        model.columnIdentifier(split.index).getDataType)
       val pathService: PathService = CarbonCommonFactory.getPathService
       val carbonTablePath: CarbonTablePath =
         pathService

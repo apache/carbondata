@@ -101,8 +101,6 @@ import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 import org.apache.commons.lang.ArrayUtils;
 import org.roaringbitmap.RoaringBitmap;
@@ -1240,18 +1238,18 @@ public final class FilterUtil {
    * @return
    */
   public static Dictionary getForwardDictionaryCache(
-      AbsoluteTableIdentifier absoluteTableIdentifier,
+      AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier,
       CarbonDimension carbonDimension, TableProvider tableProvider) throws IOException {
-    CarbonTablePath carbonTablePath = null;
+    String dictionaryPath = null;
     if (null != tableProvider) {
-      CarbonTable carbonTable =
-          tableProvider.getCarbonTable(absoluteTableIdentifier.getCarbonTableIdentifier());
-      carbonTablePath =
-          CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
+      CarbonTable carbonTable = tableProvider
+          .getCarbonTable(dictionarySourceAbsoluteTableIdentifier.getCarbonTableIdentifier());
+      dictionaryPath = carbonTable.getTableInfo().getFactTable().getTableProperties()
+          .get(CarbonCommonConstants.DICTIONARY_PATH);
     }
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
-        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
-            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(), carbonTablePath);
+        new DictionaryColumnUniqueIdentifier(dictionarySourceAbsoluteTableIdentifier,
+            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(), dictionaryPath);
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);

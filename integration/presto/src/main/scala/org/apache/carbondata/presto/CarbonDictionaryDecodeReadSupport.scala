@@ -22,9 +22,10 @@ import io.airlift.slice.Slices._
 
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryChunksWrapper, DictionaryColumnUniqueIdentifier}
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes}
 import org.apache.carbondata.core.metadata.encoder.Encoding
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport
@@ -45,8 +46,7 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
    * @param absoluteTableIdentifier table identifier
    */
 
-  override def initialize(carbonColumns: Array[CarbonColumn],
-      absoluteTableIdentifier: AbsoluteTableIdentifier) {
+  override def initialize(carbonColumns: Array[CarbonColumn], carbonTable: CarbonTable) {
 
     dictionaries = new Array[Dictionary](carbonColumns.length)
     dataTypes = new Array[DataType](carbonColumns.length)
@@ -61,9 +61,11 @@ class CarbonDictionaryDecodeReadSupport[T] extends CarbonReadSupport[T] {
           cacheProvider
             .createCache(CacheType.FORWARD_DICTIONARY)
         dataTypes(index) = carbonColumn.getDataType
+        val dictionaryPath: String = carbonTable.getTableInfo.getFactTable.getTableProperties
+          .get(CarbonCommonConstants.DICTIONARY_PATH)
         dictionaries(index) = forwardDictionaryCache
-          .get(new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
-            carbonColumn.getColumnIdentifier))
+          .get(new DictionaryColumnUniqueIdentifier(carbonTable.getAbsoluteTableIdentifier,
+            carbonColumn.getColumnIdentifier, dataTypes(index), dictionaryPath))
         dictionarySliceArray(index) = createSliceArrayBlock(dictionaries(index))
 
       }

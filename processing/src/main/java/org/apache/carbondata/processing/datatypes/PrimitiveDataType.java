@@ -43,7 +43,6 @@ import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.processing.loading.dictionary.DictionaryServerClientDictionary;
 import org.apache.carbondata.processing.loading.dictionary.DirectDictionary;
 import org.apache.carbondata.processing.loading.dictionary.PreCreatedDictionary;
@@ -130,8 +129,7 @@ public class PrimitiveDataType implements GenericDataType<Object> {
     this.carbonDimension = carbonDimension;
     DictionaryColumnUniqueIdentifier identifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
-            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(),
-            CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier));
+            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType());
     try {
       if (carbonDimension.hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         dictionaryGenerator = new DirectDictionary(DirectDictionaryKeyGeneratorFactory

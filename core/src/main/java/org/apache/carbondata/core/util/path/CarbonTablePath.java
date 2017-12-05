@@ -139,6 +139,15 @@ public class CarbonTablePath extends Path {
   }
 
   /**
+   * @param dictionaryPath
+   * @param columnId unique column identifier
+   * @return absolute path of dictionary file
+   */
+  public String getDictionaryFilePath(String dictionaryPath, String columnId) {
+    return dictionaryPath + File.separator + getDictionaryFileName(columnId);
+  }
+
+  /**
    * This method will return the metadata directory location for a table
    *
    * @return
@@ -163,11 +172,29 @@ public class CarbonTablePath extends Path {
   }
 
   /**
+   * @param dictionaryPath
+   * @param columnId unique column identifier
+   * @return absolute path of dictionary file
+   */
+  public String getDictionaryMetaFilePath(String dictionaryPath, String columnId) {
+    return dictionaryPath + File.separator + columnId + DICTIONARY_META_EXT;
+  }
+
+  /**
    * @param columnId unique column identifier
    * @return absolute path of sort index file
    */
   public String getSortIndexFilePath(String columnId) {
     return getMetaDataDir() + File.separator + columnId + SORT_INDEX_EXT;
+  }
+
+  /**
+   * @param dictionaryPath
+   * @param columnId unique column identifier
+   * @return absolute path of dictionary file
+   */
+  public String getSortIndexFilePath(String dictionaryPath, String columnId) {
+    return dictionaryPath + File.separator + columnId + SORT_INDEX_EXT;
   }
 
   /**
@@ -178,6 +205,16 @@ public class CarbonTablePath extends Path {
    */
   public String getSortIndexFilePath(String columnId, long dictOffset) {
     return getMetaDataDir() + File.separator + columnId + "_" + dictOffset + SORT_INDEX_EXT;
+  }
+
+  /**
+   * @param dictionaryPath
+   * @param columnId unique column identifier
+   * @param dictOffset
+   * @return absolute path of dictionary file
+   */
+  public String getSortIndexFilePath(String dictionaryPath, String columnId, long dictOffset) {
+    return dictionaryPath + File.separator + columnId + "_" + dictOffset + SORT_INDEX_EXT;
   }
 
   /**
@@ -526,7 +563,8 @@ public class CarbonTablePath extends Path {
    * @param columnUniqueId   columnunique id
    * @return sort index carbon files
    */
-  public CarbonFile[] getSortIndexFiles(CarbonFile sortIndexDir, final String columnUniqueId) {
+  public static CarbonFile[] getSortIndexFiles(CarbonFile sortIndexDir,
+      final String columnUniqueId) {
     return sortIndexDir.listFiles(new CarbonFileFilter() {
       @Override public boolean accept(CarbonFile file) {
         return file.getName().startsWith(columnUniqueId) && file.getName().endsWith(SORT_INDEX_EXT);
