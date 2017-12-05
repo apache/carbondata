@@ -148,7 +148,8 @@ class CarbonAnalyzer(catalog: SessionCatalog,
     sparkSession: SparkSession,
     analyzer: Analyzer) extends Analyzer(catalog, conf) {
   override def execute(plan: LogicalPlan): LogicalPlan = {
-    val logicalPlan = analyzer.execute(plan)
+    var logicalPlan = analyzer.execute(plan)
+    logicalPlan = CarbonPreAggregateDataLoadingRules(logicalPlan)
     CarbonPreAggregateQueryRules(sparkSession).apply(logicalPlan)
   }
 }
@@ -215,7 +216,6 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
         new FindDataSourceTable(session) +:
         new ResolveSQLOnFile(session) +:
         new CarbonIUDAnalysisRule(sparkSession) +:
-        CarbonPreAggregateDataLoadingRules +:
         new CarbonPreInsertionCasts(sparkSession) +: customResolutionRules
 
       override val extendedCheckRules: Seq[LogicalPlan => Unit] =

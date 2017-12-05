@@ -20,21 +20,34 @@ package org.apache.carbondata.core.preagg;
 /**
  * enum for timeseries function
  */
-public enum TimeSeriesFunction {
-  SECOND("second"),
-  MINUTE("minute"),
-  HOUR("hour"),
-  DAY("day"),
-  MONTH("month"),
-  YEAR("year");
+public enum TimeSeriesFunctionEnum {
+  SECOND("second", 0),
+  MINUTE("minute", 1),
+  HOUR("hour", 2),
+  DAY("day", 3),
+  MONTH("month", 4),
+  YEAR("year", 5);
 
+  /**
+   * name of the function
+   */
   private String name;
 
-  TimeSeriesFunction(String name) {
+  /**
+   * ordinal for function
+   */
+  private int ordinal;
+
+  TimeSeriesFunctionEnum(String name, int ordinal) {
     this.name = name;
+    this.ordinal = ordinal;
   }
 
   public String getName() {
     return name;
+  }
+
+  public int getOrdinal() {
+    return ordinal;
   }
 }

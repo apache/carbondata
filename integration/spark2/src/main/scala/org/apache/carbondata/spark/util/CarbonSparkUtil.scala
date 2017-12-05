@@ -25,6 +25,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.util.CarbonUtil
 
 case class TransformHolder(rdd: Any, mataData: CarbonMetaData)
 
@@ -41,7 +42,11 @@ object CarbonSparkUtil {
             f.hasEncoding(Encoding.DICTIONARY) && !f.hasEncoding(Encoding.DIRECT_DICTIONARY) &&
                 !f.getDataType.isComplexType)
       }
-    CarbonMetaData(dimensionsAttr, measureAttr, carbonTable, DictionaryMap(dictionary.toMap))
+    CarbonMetaData(dimensionsAttr,
+      measureAttr,
+      carbonTable,
+      DictionaryMap(dictionary.toMap),
+      CarbonUtil.hasAggregationDataMap(carbonTable))
   }
 
   def createCarbonRelation(tableInfo: TableInfo, tablePath: String): CarbonRelation = {

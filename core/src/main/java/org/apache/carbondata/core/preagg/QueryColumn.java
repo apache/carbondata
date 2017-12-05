@@ -44,12 +44,18 @@ public class QueryColumn {
    */
   private boolean isFilterColumn;
 
+  /**
+   * timeseries udf applied on column
+   */
+  private String timeseriesFunction;
+
   public QueryColumn(ColumnSchema columnSchema, String changedDataType, String aggFunction,
-      boolean isFilterColumn) {
+      boolean isFilterColumn, String timeseriesFunction) {
     this.columnSchema = columnSchema;
     this.changedDataType = changedDataType;
     this.aggFunction = aggFunction;
     this.isFilterColumn = isFilterColumn;
+    this.timeseriesFunction = timeseriesFunction;
   }
 
   public ColumnSchema getColumnSchema() {
@@ -68,6 +74,10 @@ public class QueryColumn {
     return isFilterColumn;
   }
 
+  public String getTimeseriesFunction() {
+    return timeseriesFunction;
+  }
+
   @Override public boolean equals(Object o) {
     if (this == o) {
       return true;
@@ -82,12 +92,18 @@ public class QueryColumn {
     if (!columnSchema.equals(that.columnSchema)) {
       return false;
     }
-    return aggFunction != null ? aggFunction.equals(that.aggFunction) : that.aggFunction == null;
+    if (!(aggFunction != null ? aggFunction.equals(that.aggFunction) : that.aggFunction == null)) {
+      return false;
+    }
+    return timeseriesFunction != null ?
+        timeseriesFunction.equals(that.timeseriesFunction) :
+        that.timeseriesFunction == null;
   }
 
   @Override public int hashCode() {
     int result = columnSchema.hashCode();
     result = 31 * result + (aggFunction != null ? aggFunction.hashCode() : 0);
+    result = 31 * result + (timeseriesFunction != null ? timeseriesFunction.hashCode() : 0);
     result = 31 * result + (isFilterColumn ? 1 : 0);
     return result;
   }

@@ -169,7 +169,6 @@ class CarbonSessionState(sparkSession: SparkSession) extends HiveSessionState(sp
     catalog.ParquetConversions ::
     catalog.OrcConversions ::
     CarbonPreInsertionCasts(sparkSession) ::
-    CarbonPreAggregateDataLoadingRules ::
     CarbonIUDAnalysisRule(sparkSession) ::
     AnalyzeCreateTable(sparkSession) ::
     PreprocessTableInsertion(conf) ::
@@ -213,7 +212,8 @@ class CarbonAnalyzer(catalog: SessionCatalog,
     sparkSession: SparkSession,
     analyzer: Analyzer) extends Analyzer(catalog, conf) {
   override def execute(plan: LogicalPlan): LogicalPlan = {
-    val logicalPlan = analyzer.execute(plan)
+    var logicalPlan = analyzer.execute(plan)
+    logicalPlan = CarbonPreAggregateDataLoadingRules(logicalPlan)
     CarbonPreAggregateQueryRules(sparkSession).apply(logicalPlan)
   }
 }
