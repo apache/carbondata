@@ -128,4 +128,12 @@ public interface DataRefNode {
    * @return
    */
   int numberOfPages();
+
+  /**
+   * Return the number of rows for a give page
+   *
+   * @param pageNumber
+   * @return
+   */
+  int getPageRowCount(int pageNumber);
 }

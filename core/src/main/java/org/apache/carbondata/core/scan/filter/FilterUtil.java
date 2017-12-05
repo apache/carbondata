@@ -73,6 +73,7 @@ import org.apache.carbondata.core.scan.filter.executer.DimColumnExecuterFilterIn
 import org.apache.carbondata.core.scan.filter.executer.ExcludeColGroupFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.ExcludeFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.ImplicitIncludeFilterExecutorImpl;
 import org.apache.carbondata.core.scan.filter.executer.IncludeColGroupFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.IncludeFilterExecuterImpl;
 import org.apache.carbondata.core.scan.filter.executer.MeasureColumnExecuterFilterInfo;
@@ -225,23 +226,30 @@ public final class FilterUtil {
             msrColResolvedFilterInfo, true);
       }
     }
-    if (null != dimColResolvedFilterInfo && dimColResolvedFilterInfo.getDimension().isColumnar()) {
-      CarbonDimension dimensionFromCurrentBlock =
-          segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
-      if (null != dimensionFromCurrentBlock) {
-        // update dimension and column index according to the dimension position in current block
-        DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
-            dimColResolvedFilterInfo.getCopyObject();
-        dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
-        dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
-        return new IncludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
-            segmentProperties, false);
+    if (null != dimColResolvedFilterInfo) {
+      CarbonDimension dimension = dimColResolvedFilterInfo.getDimension();
+      if (dimension.hasEncoding(Encoding.IMPLICIT)) {
+        return new ImplicitIncludeFilterExecutorImpl(dimColResolvedFilterInfo);
+      } else if (dimension.isColumnar()) {
+        CarbonDimension dimensionFromCurrentBlock =
+            segmentProperties.getDimensionFromCurrentBlock(dimColResolvedFilterInfo.getDimension());
+        if (null != dimensionFromCurrentBlock) {
+          // update dimension and column index according to the dimension position in current block
+          DimColumnResolvedFilterInfo dimColResolvedFilterInfoCopyObject =
+              dimColResolvedFilterInfo.getCopyObject();
+          dimColResolvedFilterInfoCopyObject.setDimension(dimensionFromCurrentBlock);
+          dimColResolvedFilterInfoCopyObject.setColumnIndex(dimensionFromCurrentBlock.getOrdinal());
+          return new IncludeFilterExecuterImpl(dimColResolvedFilterInfoCopyObject, null,
+              segmentProperties, false);
+        } else {
+          return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
+              msrColResolvedFilterInfo, false);
+        }
       } else {
-        return new RestructureIncludeFilterExecutorImpl(dimColResolvedFilterInfo,
-            msrColResolvedFilterInfo, false);
+        return new IncludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
       }
     } else {
-      return new IncludeColGroupFilterExecuterImpl(dimColResolvedFilterInfo, segmentProperties);
+      return new IncludeColGroupFilterExecuterImpl(null, segmentProperties);
     }
   }
 
@@ -1782,5 +1790,23 @@ public final class FilterUtil {
         }
       }
     }
+  }
+
+  /**
+   * This method will get the no dictionary data based on filters and same
+   * will be in DimColumnFilterInfo
+   *
+   * @param evaluateResultListFinal
+   * @param isIncludeFilter
+   * @return
+   */
+  public static ColumnFilterInfo getImplicitColumnFilterList(List<String> evaluateResultListFinal,
+      boolean isIncludeFilter) {
+    ColumnFilterInfo columnFilterInfo = new ColumnFilterInfo();
+    columnFilterInfo.setIncludeFilter(isIncludeFilter);
+    if (null != evaluateResultListFinal) {
+      columnFilterInfo.setImplicitColumnFilterList(evaluateResultListFinal);
+    }
+    return columnFilterInfo;
   }
 }
