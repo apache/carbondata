@@ -16,12 +16,16 @@
  */
 package org.apache.carbondata.events
 
+import java.util
+
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel, CarbonMergerMapping}
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.processing.merger.CompactionType
 
 /**
  *
@@ -144,37 +148,53 @@ case class AlterTableRenameAbortEvent(
     sparkSession: SparkSession) extends Event with AlterTableRenameEventInfo
 
 
-case class AlterTableCompactionPreEvent(
+/**
+ * Event for handling pre compaction operations, lister has to implement this event on pre execution
+ *
+ * @param sparkSession
+ * @param carbonTable
+ */
+case class AlterTableCompactionPreEvent(sparkSession: SparkSession,
     carbonTable: CarbonTable,
     carbonMergerMapping: CarbonMergerMapping,
-    mergedLoadName: String,
-    sqlContext: SQLContext) extends Event with AlterTableCompactionEventInfo
-
+    mergedLoadName: String) extends Event with AlterTableCompactionEventInfo
 
 /**
+ * Compaction Event for handling pre update status file opeartions, lister has to implement this
+ * event before updating the table status file
+ * @param sparkSession
+ * @param carbonTable
+ * @param carbonMergerMapping
+ * @param mergedLoadName
+ */
+case class AlterTableCompactionPostEvent(sparkSession: SparkSession,
+    carbonTable: CarbonTable,
+    carbonMergerMapping: CarbonMergerMapping,
+    mergedLoadName: String) extends Event with AlterTableCompactionEventInfo
+/**
+ * Compaction Event for handling pre update status file opeartions, lister has to implement this
+ * event before updating the table status file
+ * @param sparkSession
+ * @param carbonTable
+ * @param carbonMergerMapping
+ * @param carbonLoadModel
+ * @param mergedLoadName
+ */
+case class AlterTableCompactionPreStatusUpdateEvent(sparkSession: SparkSession,
+    carbonTable: CarbonTable,
+    carbonMergerMapping: CarbonMergerMapping,
+    carbonLoadModel: CarbonLoadModel,
+    mergedLoadName: String) extends Event with AlterTableCompactionStatusUpdateEventInfo
+
+/**
+ * Compaction Event for handling clean up in case of any compaction failure and abort the
+ * operation, lister has to implement this event to handle failure scenarios
  *
  * @param carbonTable
  * @param carbonMergerMapping
  * @param mergedLoadName
- * @param sQLContext
  */
-case class AlterTableCompactionPostEvent(
+case class AlterTableCompactionAbortEvent(sparkSession: SparkSession,
     carbonTable: CarbonTable,
     carbonMergerMapping: CarbonMergerMapping,
-    mergedLoadName: String,
-    sQLContext: SQLContext) extends Event with AlterTableCompactionEventInfo
-
-
-/**
- * Class for handling clean up in case of any failure and abort the operation
- *
- * @param carbonTable
- * @param carbonMergerMapping
- * @param mergedLoadName
- * @param sQLContext
- */
-case class AlterTableCompactionAbortEvent(
-    carbonTable: CarbonTable,
-    carbonMergerMapping: CarbonMergerMapping,
-    mergedLoadName: String,
-    sQLContext: SQLContext) extends Event with AlterTableCompactionEventInfo
+    mergedLoadName: String) extends Event with AlterTableCompactionEventInfo

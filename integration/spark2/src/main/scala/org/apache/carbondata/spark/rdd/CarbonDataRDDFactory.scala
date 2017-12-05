@@ -81,7 +81,8 @@ object CarbonDataRDDFactory {
       storeLocation: String,
       compactionType: CompactionType,
       carbonTable: CarbonTable,
-      compactionModel: CompactionModel): Unit = {
+      compactionModel: CompactionModel,
+      operationContext: OperationContext): Unit = {
     // taking system level lock at the mdt file location
     var configuredMdtPath = CarbonProperties.getInstance().getProperty(
       CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
@@ -114,7 +115,8 @@ object CarbonDataRDDFactory {
           carbonLoadModel,
           storeLocation,
           compactionModel,
-          lock
+          lock,
+          operationContext
         )
       } catch {
         case e: Exception =>
@@ -150,7 +152,8 @@ object CarbonDataRDDFactory {
       carbonLoadModel: CarbonLoadModel,
       storeLocation: String,
       compactionModel: CompactionModel,
-      compactionLock: ICarbonLock): Unit = {
+      compactionLock: ICarbonLock,
+      operationContext: OperationContext): Unit = {
     val executor: ExecutorService = Executors.newFixedThreadPool(1)
     // update the updated table status.
     if (compactionModel.compactionType != CompactionType.IUD_UPDDEL_DELTA) {
@@ -280,14 +283,15 @@ object CarbonDataRDDFactory {
   def loadCarbonData(
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      storePath: String,
       columnar: Boolean,
       partitionStatus: SegmentStatus = SegmentStatus.SUCCESS,
       result: Option[DictionaryServer],
       overwriteTable: Boolean,
       hadoopConf: Configuration,
       dataFrame: Option[DataFrame] = None,
-      updateModel: Option[UpdateTableModel] = None): Unit = {
+      updateModel: Option[UpdateTableModel] = None,
+      operationContext: OperationContext): Unit = {
+    val storePath: String = carbonLoadModel.getTablePath
     LOGGER.audit(s"Data load request has been received for table" +
                  s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     // Check if any load need to be deleted before loading new data
@@ -494,10 +498,12 @@ object CarbonDataRDDFactory {
         throw new Exception("No Data to load")
       }
       writeDictionary(carbonLoadModel, result, writeAll = false)
-      val loadTablePreStatusUpdateEvent = LoadTablePreStatusUpdateEvent(sqlContext.sparkSession,
+      val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
+        LoadTablePreStatusUpdateEvent(
+        sqlContext.sparkSession,
         carbonTable.getCarbonTableIdentifier,
         carbonLoadModel)
-      OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent)
+      OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
       val done = updateTableStatus(status, carbonLoadModel, loadStatus, overwriteTable)
       if (!done) {
         CommonUtil.updateTableStatusForFailure(carbonLoadModel)
@@ -518,7 +524,7 @@ object CarbonDataRDDFactory {
       }
       try {
         // compaction handling
-        handleSegmentMerging(sqlContext, carbonLoadModel, carbonTable)
+        handleSegmentMerging(sqlContext, carbonLoadModel, carbonTable, operationContext)
       } catch {
         case e: Exception =>
           throw new Exception(
@@ -682,7 +688,8 @@ object CarbonDataRDDFactory {
   private def handleSegmentMerging(
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
-      carbonTable: CarbonTable
+      carbonTable: CarbonTable,
+      operationContext: OperationContext
   ): Unit = {
     LOGGER.info(s"compaction need status is" +
                 s" ${ CarbonDataMergerUtil.checkIfAutoLoadMergingRequired() }")
@@ -717,7 +724,8 @@ object CarbonDataRDDFactory {
           storeLocation,
           CompactionType.MINOR,
           carbonTable,
-          compactionModel
+          compactionModel,
+          operationContext
         )
       } else {
         val lock = CarbonLockFactory.getCarbonLockObj(
@@ -731,7 +739,8 @@ object CarbonDataRDDFactory {
               carbonLoadModel,
               storeLocation,
               compactionModel,
-              lock
+              lock,
+              operationContext
             )
           } catch {
             case e: Exception =>

@@ -93,10 +93,18 @@ trait AlterTableAddColumnEventInfo {
 /**
  * event for alter_table_rename
  */
-trait AlterTableCompactionEventInfo {
+trait AlterTableCompactionStatusUpdateEventInfo {
   val carbonTable: CarbonTable
   val carbonMergerMapping: CarbonMergerMapping
   val mergedLoadName: String
+}
+
+/**
+ * event for alter_table_compaction
+ */
+trait AlterTableCompactionEventInfo {
+  val sparkSession: SparkSession
+  val carbonTable: CarbonTable
 }
 
 /**
