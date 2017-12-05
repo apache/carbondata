@@ -121,12 +121,8 @@ public class CarbonInputFormatUtil {
 
   public static void processFilterExpression(Expression filterExpression, CarbonTable carbonTable,
       boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
-    List<CarbonDimension> dimensions =
-        carbonTable.getDimensionByTableName(carbonTable.getTableName());
-    List<CarbonMeasure> measures =
-        carbonTable.getMeasureByTableName(carbonTable.getTableName());
-    QueryModel.processFilterExpression(filterExpression, dimensions, measures,
-        isFilterDimensions, isFilterMeasures);
+    QueryModel.processFilterExpression(carbonTable, filterExpression, isFilterDimensions,
+        isFilterMeasures);
 
     if (null != filterExpression) {
       // Optimize Filter Expression and fit RANGE filters is conditions apply.

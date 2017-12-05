@@ -28,6 +28,7 @@ import org.apache.spark.util.PartitionUtils
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.partition.spliter.RowResultProcessor
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.AlterPartitionResult
@@ -119,7 +120,7 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
                     case e: Exception =>
                         sys.error(s"Exception when executing Row result processor ${e.getMessage}")
                 } finally {
-                    CarbonLoaderUtil
+                    TableProcessingOperations
                       .deleteLocalDataLoadFolderLocation(carbonLoadModel, false, true)
                 }
             }

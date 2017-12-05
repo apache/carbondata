@@ -990,4 +990,12 @@ public final class CarbonProperties {
     return addedProperty;
   }
 
+  /**
+   * to add external property
+   *
+   * @param externalPropertySet
+   */
+  public void addPropertyToPropertySet(Set<String> externalPropertySet) {
+    propertySet.addAll(externalPropertySet);
+  }
 }

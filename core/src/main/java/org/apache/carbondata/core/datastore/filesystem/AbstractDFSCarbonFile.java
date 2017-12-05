@@ -63,7 +63,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
       fs = path.getFileSystem(this.hadoopConf);
       fileStatus = fs.getFileStatus(path);
     } catch (IOException e) {
-      LOGGER.error("Exception occurred:" + e.getMessage());
+      LOGGER.debug("Exception occurred:" + e.getMessage());
     }
   }
 
@@ -78,7 +78,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
       fs = path.getFileSystem(this.hadoopConf);
       fileStatus = fs.getFileStatus(path);
     } catch (IOException e) {
-      LOGGER.error("Exception occurred:" + e.getMessage());
+      LOGGER.debug("Exception occurred:" + e.getMessage());
     }
   }
 

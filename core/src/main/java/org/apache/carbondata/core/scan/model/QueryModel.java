@@ -122,10 +122,9 @@ public class QueryModel implements Serializable {
   public static QueryModel createModel(AbsoluteTableIdentifier absoluteTableIdentifier,
       CarbonQueryPlan queryPlan, CarbonTable carbonTable, DataTypeConverter converter) {
     QueryModel queryModel = new QueryModel();
-    String factTableName = carbonTable.getTableName();
     queryModel.setAbsoluteTableIdentifier(absoluteTableIdentifier);
 
-    fillQueryModel(queryPlan, carbonTable, queryModel, factTableName);
+    fillQueryModel(queryPlan, carbonTable, queryModel);
 
     queryModel.setForcedDetailRawQuery(queryPlan.isRawDetailQuery());
     queryModel.setQueryId(queryPlan.getQueryId());
@@ -134,7 +133,7 @@ public class QueryModel implements Serializable {
   }
 
   private static void fillQueryModel(CarbonQueryPlan queryPlan, CarbonTable carbonTable,
-      QueryModel queryModel, String factTableName) {
+      QueryModel queryModel) {
     queryModel.setAbsoluteTableIdentifier(carbonTable.getAbsoluteTableIdentifier());
     queryModel.setQueryDimension(queryPlan.getDimensions());
     queryModel.setQueryMeasures(queryPlan.getMeasures());
@@ -142,9 +141,8 @@ public class QueryModel implements Serializable {
       boolean[] isFilterDimensions = new boolean[carbonTable.getDimensionOrdinalMax()];
       boolean[] isFilterMeasures =
           new boolean[carbonTable.getNumberOfMeasures(carbonTable.getTableName())];
-      processFilterExpression(queryPlan.getFilterExpression(),
-          carbonTable.getDimensionByTableName(factTableName),
-          carbonTable.getMeasureByTableName(factTableName), isFilterDimensions, isFilterMeasures);
+      processFilterExpression(carbonTable, queryPlan.getFilterExpression(), isFilterDimensions,
+          isFilterMeasures);
       queryModel.setIsFilterDimensions(isFilterDimensions);
       queryModel.setIsFilterMeasures(isFilterMeasures);
     }
@@ -153,8 +151,7 @@ public class QueryModel implements Serializable {
     queryModel.setTable(carbonTable);
   }
 
-  public static void processFilterExpression(Expression filterExpression,
-      List<CarbonDimension> dimensions, List<CarbonMeasure> measures,
+  public static void processFilterExpression(CarbonTable carbonTable, Expression filterExpression,
       final boolean[] isFilterDimensions, final boolean[] isFilterMeasures) {
     if (null != filterExpression) {
       if (null != filterExpression.getChildren() && filterExpression.getChildren().size() == 0) {
@@ -162,24 +159,22 @@ public class QueryModel implements Serializable {
           List<ColumnExpression> listOfCol =
               ((ConditionalExpression) filterExpression).getColumnList();
           for (ColumnExpression expression : listOfCol) {
-            setDimAndMsrColumnNode(dimensions, measures, expression, isFilterDimensions,
-                isFilterMeasures);
+            setDimAndMsrColumnNode(carbonTable, expression, isFilterDimensions, isFilterMeasures);
           }
         }
       }
       for (Expression expression : filterExpression.getChildren()) {
         if (expression instanceof ColumnExpression) {
-          setDimAndMsrColumnNode(dimensions, measures, (ColumnExpression) expression,
-              isFilterDimensions, isFilterMeasures);
+          setDimAndMsrColumnNode(carbonTable, (ColumnExpression) expression, isFilterDimensions,
+              isFilterMeasures);
         } else if (expression instanceof UnknownExpression) {
           UnknownExpression exp = ((UnknownExpression) expression);
           List<ColumnExpression> listOfColExpression = exp.getAllColumnList();
           for (ColumnExpression col : listOfColExpression) {
-            setDimAndMsrColumnNode(dimensions, measures, col, isFilterDimensions, isFilterMeasures);
+            setDimAndMsrColumnNode(carbonTable, col, isFilterDimensions, isFilterMeasures);
           }
         } else {
-          processFilterExpression(expression, dimensions, measures, isFilterDimensions,
-              isFilterMeasures);
+          processFilterExpression(carbonTable, expression, isFilterDimensions, isFilterMeasures);
         }
       }
     }
@@ -195,15 +190,16 @@ public class QueryModel implements Serializable {
     return null;
   }
 
-  private static void setDimAndMsrColumnNode(List<CarbonDimension> dimensions,
-      List<CarbonMeasure> measures, ColumnExpression col, boolean[] isFilterDimensions,
-      boolean[] isFilterMeasures) {
+  private static void setDimAndMsrColumnNode(CarbonTable carbonTable, ColumnExpression col,
+      boolean[] isFilterDimensions, boolean[] isFilterMeasures) {
     CarbonDimension dim;
     CarbonMeasure msr;
     String columnName;
     columnName = col.getColumnName();
-    dim = CarbonUtil.findDimension(dimensions, columnName);
-    msr = getCarbonMetadataMeasure(columnName, measures);
+    dim = CarbonUtil
+        .findDimension(carbonTable.getDimensionByTableName(carbonTable.getTableName()), columnName);
+    msr = getCarbonMetadataMeasure(columnName,
+        carbonTable.getMeasureByTableName(carbonTable.getTableName()));
     col.setDimension(false);
     col.setMeasure(false);
 
@@ -215,13 +211,21 @@ public class QueryModel implements Serializable {
       if (null != isFilterDimensions) {
         isFilterDimensions[dim.getOrdinal()] = true;
       }
-    } else {
+    } else if (msr != null) {
       col.setCarbonColumn(msr);
       col.setMeasure(msr);
       col.setMeasure(true);
       if (null != isFilterMeasures) {
         isFilterMeasures[msr.getOrdinal()] = true;
       }
+    } else {
+      // check if this is an implicit dimension
+      dim = CarbonUtil
+          .findDimension(carbonTable.getImplicitDimensionByTableName(carbonTable.getTableName()),
+              columnName);
+      col.setCarbonColumn(dim);
+      col.setDimension(dim);
+      col.setDimension(true);
     }
   }
 

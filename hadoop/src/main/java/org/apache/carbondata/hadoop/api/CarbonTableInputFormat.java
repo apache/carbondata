@@ -280,14 +280,6 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     configuration.set(CarbonTableInputFormat.VALIDATE_INPUT_SEGMENT_IDs, validate.toString());
   }
 
-  public static void setAggeragateTableSegments(Configuration configuration, String segments) {
-    configuration.set(CarbonCommonConstants.CARBON_INPUT_SEGMENTS, segments);
-  }
-
-  private static String getAggeragateTableSegments(Configuration configuration) {
-    return configuration.get(CarbonCommonConstants.CARBON_INPUT_SEGMENTS);
-  }
-
   /**
    * get list of segment to access
    */
@@ -330,14 +322,13 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     if (null == carbonTable) {
       throw new IOException("Missing/Corrupt schema file for table.");
     }
-    String aggregateTableSegments = getAggeragateTableSegments(job.getConfiguration());
     TableDataMap blockletMap =
         DataMapStoreManager.getInstance().getDataMap(identifier, BlockletDataMap.NAME,
             BlockletDataMapFactory.class.getName());
     List<String> invalidSegments = new ArrayList<>();
     List<UpdateVO> invalidTimestampsList = new ArrayList<>();
     List<String> streamSegments = null;
-    List<String> filteredSegmentToAccess = null;
+
     if (getValidateSegmentsToAccess(job.getConfiguration())) {
       // get all valid segments and set them into the configuration
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(identifier);
@@ -349,7 +340,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         return getSplitsOfStreaming(job, identifier, streamSegments);
       }
 
-      filteredSegmentToAccess = getFilteredSegment(job, validSegments);
+      List<String> filteredSegmentToAccess = getFilteredSegment(job, validSegments);
       if (filteredSegmentToAccess.size() == 0) {
         return new ArrayList<>(0);
       } else {
@@ -363,10 +354,10 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       if (invalidSegments.size() > 0) {
         blockletMap.clear(invalidSegments);
       }
-    } else {
-      filteredSegmentToAccess = Arrays.asList(aggregateTableSegments.split(","));
     }
 
+    // get updated filtered list
+    List<String> filteredSegmentToAccess = Arrays.asList(getSegmentsToAccess(job));
     // Clean the updated segments from memory if the update happens on segments
     List<String> toBeCleanedSegments = new ArrayList<>();
     for (SegmentUpdateDetails segmentUpdateDetail : updateStatusManager
