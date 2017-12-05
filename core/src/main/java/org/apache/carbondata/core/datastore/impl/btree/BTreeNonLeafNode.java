@@ -254,4 +254,9 @@ public class BTreeNonLeafNode implements BTreeNode {
     // TODO Auto-generated method stub
     throw new UnsupportedOperationException("Unsupported operation");
   }
+
+  @Override
+  public int getPageRowCount(int pageNumber) {
+    throw new UnsupportedOperationException("Unsupported operation");
+  }
 }

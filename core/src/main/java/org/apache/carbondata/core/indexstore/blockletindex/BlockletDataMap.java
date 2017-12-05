@@ -57,6 +57,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecutor;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
@@ -366,9 +367,12 @@ public class BlockletDataMap implements DataMap, Cacheable {
           FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
       while (startIndex <= endIndex) {
         DataMapRow unsafeRow = unsafeMemoryDMStore.getUnsafeRow(startIndex);
-        BitSet bitSet = filterExecuter.isScanRequired(getMinMaxValue(unsafeRow, MAX_VALUES_INDEX),
-            getMinMaxValue(unsafeRow, MIN_VALUES_INDEX));
-        if (!bitSet.isEmpty()) {
+        String filePath = new String(unsafeRow.getByteArray(FILE_PATH_INDEX),
+            CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+        boolean isValid =
+            addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(unsafeRow, MAX_VALUES_INDEX),
+                getMinMaxValue(unsafeRow, MIN_VALUES_INDEX), filePath);
+        if (isValid) {
           blocklets.add(createBlocklet(unsafeRow, startIndex));
         }
         startIndex++;
@@ -376,6 +380,32 @@ public class BlockletDataMap implements DataMap, Cacheable {
     }
 
     return blocklets;
+  }
+
+  /**
+   * select the blocks based on column min and max value
+   *
+   * @param filterExecuter
+   * @param maxValue
+   * @param minValue
+   * @param filePath
+   * @return
+   */
+  private boolean addBlockBasedOnMinMaxValue(FilterExecuter filterExecuter, byte[][] maxValue,
+      byte[][] minValue, String filePath) {
+    BitSet bitSet = null;
+    if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
+      String uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
+      bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
+          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath);
+    } else {
+      bitSet = filterExecuter.isScanRequired(maxValue, minValue);
+    }
+    if (!bitSet.isEmpty()) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   public ExtendedBlocklet getDetailedBlocklet(String blockletId) {

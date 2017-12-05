@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datastore.impl.btree;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.datastore.BTreeBuilderInfo;
 import org.apache.carbondata.core.datastore.FileHolder;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
@@ -46,6 +47,8 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    * number of pages in blocklet
    */
   private int numberOfPages;
+
+  private int[] pageRowCount;
 
   /**
    * Create a leaf node
@@ -82,6 +85,17 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
     this.nodeNumber = nodeNumber;
     this.numberOfPages =
         builderInfos.getFooterList().get(0).getBlockletList().get(leafIndex).getNumberOfPages();
+    this.pageRowCount = new int[numberOfPages];
+    int numberOfPagesCompletelyFilled =
+        numberOfKeys / CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+    int lastPageRowCount =
+        numberOfKeys % CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+    for (int i = 0; i < numberOfPagesCompletelyFilled; i++) {
+      pageRowCount[i] = CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
+    }
+    if (lastPageRowCount > 0) {
+      pageRowCount[pageRowCount.length - 1] = lastPageRowCount;
+    }
   }
 
   /**
@@ -137,5 +151,9 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
    */
   @Override public int numberOfPages() {
     return numberOfPages;
+  }
+
+  @Override public int getPageRowCount(int pageNumber) {
+    return this.pageRowCount[pageNumber];
   }
 }
