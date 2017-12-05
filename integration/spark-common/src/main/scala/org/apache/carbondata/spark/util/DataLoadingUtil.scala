@@ -209,7 +209,7 @@ object DataLoadingUtil {
     val single_pass = optionsFinal("single_pass")
     val bad_records_logger_enable = optionsFinal("bad_records_logger_enable")
     val bad_records_action = optionsFinal("bad_records_action")
-    val bad_record_path = optionsFinal("bad_record_path")
+    var bad_record_path = optionsFinal("bad_record_path")
     val global_sort_partitions = optionsFinal("global_sort_partitions")
     val timestampformat = optionsFinal("timestampformat")
     val dateFormat = optionsFinal("dateformat")
@@ -224,6 +224,7 @@ object DataLoadingUtil {
 
     if (bad_records_logger_enable.toBoolean ||
         LoggerAction.REDIRECT.name().equalsIgnoreCase(bad_records_action)) {
+      bad_record_path = CarbonUtil.checkAndAppendHDFSUrl(bad_record_path)
       if (!CarbonUtil.isValidBadStorePath(bad_record_path)) {
         CarbonException.analysisException("Invalid bad records location.")
       }
