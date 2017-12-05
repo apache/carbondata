@@ -28,7 +28,7 @@ import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSes
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.catalyst.catalog.{CatalogRelation, CatalogTable}
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.util.CarbonReflectionUtils
@@ -61,7 +61,8 @@ case class MetaData(var carbonTables: ArrayBuffer[CarbonTable]) {
 case class CarbonMetaData(dims: Seq[String],
     msrs: Seq[String],
     carbonTable: CarbonTable,
-    dictionaryMap: DictionaryMap)
+    dictionaryMap: DictionaryMap,
+    hasAggregateDataMapSchema: Boolean)
 
 case class DictionaryMap(dictionaryMap: Map[String, Boolean]) {
   def get(name: String): Option[Boolean] = {

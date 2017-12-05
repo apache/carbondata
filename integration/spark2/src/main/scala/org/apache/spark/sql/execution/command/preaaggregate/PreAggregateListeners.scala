@@ -18,19 +18,15 @@
 package org.apache.spark.sql.execution.command.preaaggregate
 
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
-import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonLoadDataCommand}
-import org.apache.spark.sql.execution.command.AlterTableModel
-import org.apache.spark.sql.CarbonSession
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.parser.CarbonSpark2SqlParser
+import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand}
+import org.apache.spark.sql.execution.command.AlterTableModel
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
-import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema}
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
-import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
 object LoadPostAggregateListener extends OperationEventListener {
   /**
@@ -43,20 +39,47 @@ object LoadPostAggregateListener extends OperationEventListener {
     val sparkSession = loadEvent.sparkSession
     val carbonLoadModel = loadEvent.carbonLoadModel
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    if (table.hasDataMapSchema) {
-      for (dataMapSchema: DataMapSchema <- table.getTableInfo.getDataMapSchemaList.asScala) {
+    if (CarbonUtil.hasAggregationDataMap(table)) {
+      // getting all the aggergate datamap schema
+      val aggregationDataMapList = table.getTableInfo.getDataMapSchemaList.asScala
+        .filter(_.isInstanceOf[AggregationDataMapSchema])
+        .asInstanceOf[mutable.ArrayBuffer[AggregationDataMapSchema]]
+      // sorting the datamap for timeseries rollup
+      val sortedList = aggregationDataMapList.sortBy(_.getOrdinal)
+      val parentTableName = table.getTableName
+      val databasename = table.getDatabaseName
+      val list = scala.collection.mutable.ListBuffer.empty[AggregationDataMapSchema]
+      for (dataMapSchema: AggregationDataMapSchema <- sortedList) {
         val childTableName = dataMapSchema.getRelationIdentifier.getTableName
         val childDatabaseName = dataMapSchema.getRelationIdentifier.getDatabaseName
+        val childSelectQuery = if (!dataMapSchema.isTimeseriesDataMap) {
+          dataMapSchema.getProperties.get("CHILD_SELECT QUERY")
+        } else {
+          // for timeseries rollup policy
+          val tableSelectedForRollup = PreAggregateUtil.getRollupDataMapNameForTimeSeries(list,
+            dataMapSchema)
+          // if non of the rollup data map is selected hit the maintable and prepare query
+          if (tableSelectedForRollup.isEmpty) {
+            PreAggregateUtil.createTimeSeriesSelectQueryFromMain(dataMapSchema.getChildSchema,
+              parentTableName,
+              databasename)
+          } else {
+            // otherwise hit the select rollup datamap schema
+            PreAggregateUtil.createTimeseriesSelectQueryForRollup(dataMapSchema.getChildSchema,
+              tableSelectedForRollup.get,
+              databasename)
+          }
+        }
         PreAggregateUtil.startDataLoadForDataMap(
             table,
             TableIdentifier(childTableName, Some(childDatabaseName)),
-            dataMapSchema.getProperties.get("CHILD_SELECT QUERY"),
+            childSelectQuery,
             carbonLoadModel.getSegmentId,
             validateSegments = false,
             sparkSession)
+        }
       }
     }
-  }
 }
 
 /**
@@ -74,7 +97,7 @@ object AlterPreAggregateTableCompactionPostListener extends OperationEventListen
     val carbonTable = compactionEvent.carbonTable
     val compactionType = compactionEvent.carbonMergerMapping.campactionType
     val sparkSession = compactionEvent.sparkSession
-    if (carbonTable.hasDataMapSchema) {
+    if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
       carbonTable.getTableInfo.getDataMapSchemaList.asScala.foreach { dataMapSchema =>
         val childRelationIdentifier = dataMapSchema.getRelationIdentifier
         val alterTableModel = AlterTableModel(Some(childRelationIdentifier.getDatabaseName),
@@ -120,7 +143,7 @@ object PreAggregateDataTypeChangePreListener extends OperationEventListener {
     val carbonTable = dataTypeChangePreListener.carbonTable
     val alterTableDataTypeChangeModel = dataTypeChangePreListener.alterTableDataTypeChangeModel
     val columnToBeAltered: String = alterTableDataTypeChangeModel.columnName
-    if (carbonTable.hasDataMapSchema) {
+    if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
       val dataMapSchemas = carbonTable.getTableInfo.getDataMapSchemaList
       dataMapSchemas.asScala.foreach { dataMapSchema =>
         val childColumns = dataMapSchema.getChildSchema.getListOfColumns
@@ -170,7 +193,7 @@ object PreAggregateDeleteSegmentByDatePreListener extends OperationEventListener
     val deleteSegmentByDatePreEvent = event.asInstanceOf[DeleteSegmentByDatePreEvent]
     val carbonTable = deleteSegmentByDatePreEvent.carbonTable
     if (carbonTable != null) {
-      if (carbonTable.hasDataMapSchema) {
+      if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
         throw new UnsupportedOperationException(
           "Delete segment operation is not supported on tables which have a pre-aggregate table. " +
           "Drop pre-aggregation table to continue")
@@ -194,7 +217,7 @@ object PreAggregateDeleteSegmentByIdPreListener extends OperationEventListener {
     val tableEvent = event.asInstanceOf[DeleteSegmentByIdPreEvent]
     val carbonTable = tableEvent.carbonTable
     if (carbonTable != null) {
-      if (carbonTable.hasDataMapSchema) {
+      if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
         throw new UnsupportedOperationException(
           "Delete segment operation is not supported on tables which have a pre-aggregate table")
       }
@@ -219,7 +242,7 @@ object PreAggregateDropColumnPreListener extends OperationEventListener {
     val carbonTable = dataTypeChangePreListener.carbonTable
     val alterTableDropColumnModel = dataTypeChangePreListener.alterTableDropColumnModel
     val columnsToBeDropped = alterTableDropColumnModel.columns
-    if (carbonTable.hasDataMapSchema) {
+    if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
       val dataMapSchemas = carbonTable.getTableInfo.getDataMapSchemaList
       dataMapSchemas.asScala.foreach { dataMapSchema =>
         val parentColumnNames = dataMapSchema.getChildSchema.getListOfColumns.asScala
@@ -257,7 +280,7 @@ object PreAggregateRenameTablePreListener extends OperationEventListener {
       throw new UnsupportedOperationException(
         "Rename operation for pre-aggregate table is not supported.")
     }
-    if (carbonTable.hasDataMapSchema) {
+    if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
       throw new UnsupportedOperationException(
         "Rename operation is not supported for table with pre-aggregate tables")
     }
@@ -275,7 +298,7 @@ object UpdatePreAggregatePreListener extends OperationEventListener {
     val tableEvent = event.asInstanceOf[UpdateTablePreEvent]
     val carbonTable = tableEvent.carbonTable
     if (carbonTable != null) {
-      if (carbonTable.hasDataMapSchema) {
+      if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
         throw new UnsupportedOperationException(
           "Update operation is not supported for tables which have a pre-aggregate table. Drop " +
           "pre-aggregate tables to continue.")
@@ -299,7 +322,7 @@ object DeletePreAggregatePreListener extends OperationEventListener {
     val tableEvent = event.asInstanceOf[DeleteFromTablePreEvent]
     val carbonTable = tableEvent.carbonTable
     if (carbonTable != null) {
-      if (carbonTable.hasDataMapSchema) {
+      if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
         throw new UnsupportedOperationException(
           "Delete operation is not supported for tables which have a pre-aggregate table. Drop " +
           "pre-aggregate tables to continue.")

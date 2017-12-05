@@ -20,7 +20,7 @@ package org.apache.spark.sql
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
-import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Expression}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Cast, Expression, ScalaUDF}
 import org.apache.spark.sql.catalyst.plans.logical.{LogicalPlan, SubqueryAlias}
 import org.apache.spark.sql.execution.command.DescribeTableCommand
 import org.apache.spark.sql.types.DataType
@@ -81,6 +81,20 @@ object CarbonExpressions {
         case u: UnresolvedRelation =>
           Some(u.tableIdentifier)
         case _ => None
+      }
+    }
+  }
+
+  /**
+   * unapply method of Scala UDF
+   */
+  object CarbonScalaUDF {
+    def unapply(expression: Expression): Option[(ScalaUDF)] = {
+      expression match {
+        case a: ScalaUDF =>
+          Some(a)
+        case _ =>
+          None
       }
     }
   }

@@ -38,7 +38,7 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableSchema}
+import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema, TableSchema}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.TableInfo
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -544,8 +544,10 @@ object PreAggregateUtil {
   def createChildSelectQuery(tableSchema: TableSchema, databaseName: String): String = {
     val aggregateColumns = scala.collection.mutable.ArrayBuffer.empty[String]
     val groupingExpressions = scala.collection.mutable.ArrayBuffer.empty[String]
-    tableSchema.getListOfColumns.asScala.foreach {
-      a => if (a.getAggFunction.nonEmpty) {
+    val columns = tableSchema.getListOfColumns.asScala
+      .filter(f => !f.getColumnName.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE))
+    columns.foreach { a =>
+      if (a.getAggFunction.nonEmpty) {
         aggregateColumns += s"${a.getAggFunction match {
           case "count" => "sum"
           case _ => a.getAggFunction}}(${a.getColumnName})"
@@ -558,4 +560,101 @@ object PreAggregateUtil {
       groupingExpressions.mkString(",") }"
   }
 
+  /**
+   * Below method will be used to get the select query when rollup policy is
+   * applied in case of timeseries table
+   * @param tableSchema
+   *                    main data map schema
+   * @param selectedDataMapSchema
+   *                              selected data map schema for rollup
+   * @return select query based on rolloup
+   */
+  def createTimeseriesSelectQueryForRollup(
+      tableSchema: TableSchema,
+      selectedDataMapSchema: AggregationDataMapSchema,
+      databaseName: String): String = {
+    val aggregateColumns = scala.collection.mutable.ArrayBuffer.empty[String]
+    val groupingExpressions = scala.collection.mutable.ArrayBuffer.empty[String]
+    val columns = tableSchema.getListOfColumns.asScala
+      .filter(f => !f.getColumnName.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE))
+    columns.foreach { a =>
+      if (a.getAggFunction.nonEmpty) {
+        aggregateColumns += s"${a.getAggFunction match {
+          case "count" => "sum"
+          case others@_ => others}}(${selectedDataMapSchema.getAggChildColByParent(
+          a.getParentColumnTableRelations.get(0).getColumnName, a.getAggFunction).getColumnName})"
+      } else if (a.getTimeSeriesFunction.nonEmpty) {
+        groupingExpressions += s"timeseries(${
+          selectedDataMapSchema
+            .getNonAggChildColBasedByParent(a.getParentColumnTableRelations.
+              get(0).getColumnName).getColumnName
+        } , '${ a.getTimeSeriesFunction }')"
+      } else {
+        groupingExpressions += selectedDataMapSchema
+          .getNonAggChildColBasedByParent(a.getParentColumnTableRelations.
+            get(0).getColumnName).getColumnName
+      }
+    }
+    s"select ${ groupingExpressions.mkString(",") },${ aggregateColumns.mkString(",")
+    } from $databaseName.${selectedDataMapSchema.getChildSchema.getTableName } " +
+    s"group by ${ groupingExpressions.mkString(",") }"
+  }
+
+  /**
+   * Below method will be used to creating select query for timeseries
+   * for lowest level for aggergation like second level, in that case it will
+   * hit the maintable
+   * @param tableSchema
+   *                    data map schema
+   * @param parentTableName
+   *                        parent schema
+   * @return select query for loading
+   */
+  def createTimeSeriesSelectQueryFromMain(tableSchema: TableSchema,
+      parentTableName: String,
+      databaseName: String): String = {
+    val aggregateColumns = scala.collection.mutable.ArrayBuffer.empty[String]
+    val groupingExpressions = scala.collection.mutable.ArrayBuffer.empty[String]
+    val columns = tableSchema.getListOfColumns.asScala
+      .filter(f => !f.getColumnName.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE))
+    columns.foreach {a =>
+        if (a.getAggFunction.nonEmpty) {
+          aggregateColumns +=
+          s"${ a.getAggFunction }(${ a.getParentColumnTableRelations.get(0).getColumnName })"
+        } else if (a.getTimeSeriesFunction.nonEmpty) {
+          groupingExpressions +=
+          s"timeseries(${ a.getParentColumnTableRelations.get(0).getColumnName },'${
+            a.getTimeSeriesFunction}')"
+        } else {
+          groupingExpressions += a.getParentColumnTableRelations.get(0).getColumnName
+        }
+    }
+    s"select ${ groupingExpressions.mkString(",") },${
+      aggregateColumns.mkString(",")
+    } from $databaseName.${ parentTableName } group by ${ groupingExpressions.mkString(",") }"
+
+  }
+    /**
+   * Below method will be used to select rollup table in case of
+   * timeseries data map loading
+   * @param list
+   *             list of timeseries datamap
+   * @param dataMapSchema
+   *                      datamap schema
+   * @return select table name
+   */
+  def getRollupDataMapNameForTimeSeries(
+      list: scala.collection.mutable.ListBuffer[AggregationDataMapSchema],
+      dataMapSchema: AggregationDataMapSchema): Option[AggregationDataMapSchema] = {
+    if (list.isEmpty) {
+      None
+    } else {
+      val rollupDataMapSchema = scala.collection.mutable.ListBuffer.empty[AggregationDataMapSchema]
+      list.foreach{f =>
+        if (dataMapSchema.canSelectForRollup(f)) {
+          rollupDataMapSchema += f
+        } }
+      rollupDataMapSchema.lastOption
+    }
+  }
 }
