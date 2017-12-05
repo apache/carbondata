@@ -1440,6 +1440,10 @@ public final class CarbonCommonConstants {
    */
   public static final long HANDOFF_SIZE_DEFAULT = 1024L * 1024 * 1024;
 
+  public static final String TIMESERIES_EVENTTIME = "timeseries.eventtime";
+
+  public static final String TIMESERIES_HIERARCHY = "timeseries.hierarchy";
+
   private CarbonCommonConstants() {
   }
 }

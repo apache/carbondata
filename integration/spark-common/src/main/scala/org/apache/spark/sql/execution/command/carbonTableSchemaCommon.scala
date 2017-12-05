@@ -76,7 +76,7 @@ case class Field(column: String, var dataType: Option[String], name: Option[Stri
   override def hashCode : Int = column.hashCode
 }
 
-case class DataMapField(aggregateFunction: String = "",
+case class DataMapField(var aggregateFunction: String = "",
     columnTableRelation: Option[ColumnTableRelation] = None) {
 }
 
