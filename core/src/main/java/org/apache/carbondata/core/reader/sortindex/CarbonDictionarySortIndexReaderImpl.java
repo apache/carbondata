@@ -27,9 +27,6 @@ import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.apache.carbondata.core.reader.ThriftReader;
-import org.apache.carbondata.core.service.CarbonCommonFactory;
-import org.apache.carbondata.core.service.PathService;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.ColumnSortInfo;
 
 import org.apache.thrift.TBase;
@@ -135,24 +132,17 @@ public class CarbonDictionarySortIndexReaderImpl implements CarbonDictionarySort
   }
 
   protected void initPath() {
-    PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getAbsoluteCarbonTableIdentifier(),
-            dictionaryColumnUniqueIdentifier);
     try {
       CarbonDictionaryColumnMetaChunk chunkMetaObjectForLastSegmentEntry =
           getChunkMetaObjectForLastSegmentEntry();
       long dictOffset = chunkMetaObjectForLastSegmentEntry.getEnd_offset();
-      this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(
-          dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId(), dictOffset);
+      this.sortIndexFilePath = dictionaryColumnUniqueIdentifier.getSortIndexFilePath(dictOffset);
       if (!FileFactory
           .isFileExist(this.sortIndexFilePath, FileFactory.getFileType(this.sortIndexFilePath))) {
-        this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(
-            dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
+        this.sortIndexFilePath = dictionaryColumnUniqueIdentifier.getSortIndexFilePath();
       }
     } catch (IOException e) {
-      this.sortIndexFilePath = carbonTablePath.getSortIndexFilePath(
-          dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
+      this.sortIndexFilePath = dictionaryColumnUniqueIdentifier.getSortIndexFilePath();
     }
 
   }

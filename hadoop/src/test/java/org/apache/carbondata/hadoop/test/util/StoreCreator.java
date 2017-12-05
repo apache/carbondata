@@ -334,9 +334,7 @@ public class StoreCreator {
       ColumnIdentifier columnIdentifier = new ColumnIdentifier(dims.get(i).getColumnId(), null, null);
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
           new DictionaryColumnUniqueIdentifier(table.getAbsoluteTableIdentifier(), columnIdentifier,
-              columnIdentifier.getDataType(), CarbonStorePath
-              .getCarbonTablePath(table.getAbsoluteTableIdentifier().getTablePath(),
-                  table.getCarbonTableIdentifier()));
+              columnIdentifier.getDataType());
       CarbonDictionaryWriter writer =
           new CarbonDictionaryWriterImpl(dictionaryColumnUniqueIdentifier);
       for (String value : set[i]) {
@@ -346,9 +344,7 @@ public class StoreCreator {
       writer.commit();
       Dictionary dict = (Dictionary) dictCache.get(
           new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
-        		  columnIdentifier, dims.get(i).getDataType(),CarbonStorePath
-              .getCarbonTablePath(table.getAbsoluteTableIdentifier().getTablePath(),
-                  table.getCarbonTableIdentifier())));
+        		  columnIdentifier, dims.get(i).getDataType()));
       CarbonDictionarySortInfoPreparator preparator =
           new CarbonDictionarySortInfoPreparator();
       List<String> newDistinctValues = new ArrayList<String>();

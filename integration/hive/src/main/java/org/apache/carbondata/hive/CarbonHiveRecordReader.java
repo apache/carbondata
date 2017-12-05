@@ -80,7 +80,7 @@ class CarbonHiveRecordReader extends CarbonRecordReader<ArrayWritable>
     List<TableBlockInfo> tableBlockInfoList = CarbonHiveInputSplit.createBlocks(splitList);
     queryModel.setTableBlockInfos(tableBlockInfoList);
     readSupport
-        .initialize(queryModel.getProjectionColumns(), queryModel.getAbsoluteTableIdentifier());
+        .initialize(queryModel.getProjectionColumns(), queryModel.getTable());
     try {
       carbonIterator = new ChunkRowIterator(queryExecutor.execute(queryModel));
     } catch (QueryExecutionException e) {

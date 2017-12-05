@@ -30,10 +30,8 @@ import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.DictionaryService;
-import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.ObjectSizeCalculator;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
  * Abstract class which implements methods common to reverse and forward dictionary cache
@@ -141,12 +139,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    */
   private CarbonFile getDictionaryMetaCarbonFile(
       DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier) throws IOException {
-    PathService pathService = CarbonCommonFactory.getPathService();
-    CarbonTablePath carbonTablePath = pathService
-        .getCarbonTablePath(dictionaryColumnUniqueIdentifier.getAbsoluteCarbonTableIdentifier(),
-            dictionaryColumnUniqueIdentifier);
-    String dictionaryFilePath = carbonTablePath.getDictionaryMetaFilePath(
-        dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
+    String dictionaryFilePath = dictionaryColumnUniqueIdentifier.getDictionaryFilePath();
     FileFactory.FileType fileType = FileFactory.getFileType(dictionaryFilePath);
     CarbonFile dictFile = FileFactory.getCarbonFile(dictionaryFilePath, fileType);
     // When rename table triggered parallely with select query, dictionary files may not exist

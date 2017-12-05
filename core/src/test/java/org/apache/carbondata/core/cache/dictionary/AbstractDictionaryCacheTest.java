@@ -108,8 +108,7 @@ public class AbstractDictionaryCacheTest {
       String columnId) {
 	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, DataTypes.STRING);
     return new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
-        DataTypes.STRING,
-        CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier));
+        DataTypes.STRING);
   }
 
   /**
@@ -132,8 +131,7 @@ public class AbstractDictionaryCacheTest {
 	ColumnIdentifier columnIdentifier = new ColumnIdentifier(columnId, null, null);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
-            columnIdentifier.getDataType(),
-            CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier));
+            columnIdentifier.getDataType());
     CarbonDictionaryWriter carbonDictionaryWriter =
         new CarbonDictionaryWriterImpl(dictionaryColumnUniqueIdentifier);
     CarbonTablePath carbonTablePath =

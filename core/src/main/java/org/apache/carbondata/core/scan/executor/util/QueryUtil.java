@@ -385,23 +385,24 @@ public class QueryUtil {
       CarbonDimension dimension = CarbonMetadata.getInstance()
           .getCarbonDimensionBasedOnColIdentifier(carbonTable, columnId);
       if (dimension != null) {
-        AbsoluteTableIdentifier newCarbonTableIdentifier;
+        AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier;
         ColumnIdentifier columnIdentifier;
         if (null != dimension.getColumnSchema().getParentColumnTableRelations() && !dimension
             .getColumnSchema().getParentColumnTableRelations().isEmpty()) {
-          newCarbonTableIdentifier = getTableIdentifierForColumn(dimension,
+          dictionarySourceAbsoluteTableIdentifier = getTableIdentifierForColumn(dimension,
               carbonTable.getAbsoluteTableIdentifier());
           columnIdentifier = new ColumnIdentifier(
               dimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
               dimension.getColumnProperties(), dimension.getDataType());
         } else {
-          newCarbonTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
+          dictionarySourceAbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
           columnIdentifier = dimension.getColumnIdentifier();
         }
+        String dictionaryPath = carbonTable.getTableInfo().getFactTable().getTableProperties()
+            .get(CarbonCommonConstants.DICTIONARY_PATH);
         dictionaryColumnUniqueIdentifiers.add(
-            new DictionaryColumnUniqueIdentifier(newCarbonTableIdentifier, columnIdentifier,
-                dimension.getDataType(),
-                CarbonStorePath.getCarbonTablePath(newCarbonTableIdentifier)));
+            new DictionaryColumnUniqueIdentifier(dictionarySourceAbsoluteTableIdentifier,
+                columnIdentifier, dimension.getDataType(), dictionaryPath));
       }
     }
     return dictionaryColumnUniqueIdentifiers;

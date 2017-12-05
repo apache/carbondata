@@ -57,8 +57,7 @@ public class DictionaryCacheLoaderImplTest {
     columnIdentifier = new ColumnIdentifier("1", columnProperties, DataTypes.STRING);
     dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
-            columnIdentifier.getDataType(), CarbonStorePath.getCarbonTablePath("/tmp",
-            carbonTableIdentifier));
+            columnIdentifier.getDataType());
     dictionaryCacheLoader = new DictionaryCacheLoaderImpl(dictionaryColumnUniqueIdentifier);
     dictionaryInfo = new ColumnDictionaryInfo(DataTypes.STRING);
     new MockUp<CarbonDictionaryReaderImpl>() {
