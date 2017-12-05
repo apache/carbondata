@@ -46,6 +46,7 @@ import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUt
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSplitTaskInfo}
+import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger._
 import org.apache.carbondata.processing.splits.TableSplit
@@ -233,7 +234,7 @@ class CarbonMergerRDD[K, V](
         // delete temp location data
         try {
           val isCompactionFlow = true
-          CarbonLoaderUtil
+          TableProcessingOperations
             .deleteLocalDataLoadFolderLocation(carbonLoadModel, isCompactionFlow, false)
         } catch {
           case e: Exception =>

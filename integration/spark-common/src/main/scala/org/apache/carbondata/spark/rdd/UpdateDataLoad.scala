@@ -24,11 +24,9 @@ import org.apache.spark.sql.Row
 
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
+import org.apache.carbondata.processing.loading.{DataLoadExecutor, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.loading.DataLoadExecutor
-import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
 /**
  * Data load in case of update command .
@@ -65,7 +63,7 @@ object UpdateDataLoad {
         LOGGER.error(e)
         throw e
     } finally {
-      CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(carbonLoadModel, false, false)
+      TableProcessingOperations.deleteLocalDataLoadFolderLocation(carbonLoadModel, false, false)
     }
   }
 

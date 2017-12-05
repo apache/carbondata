@@ -24,9 +24,9 @@ import org.apache.spark.sql.execution.command.CompactionModel
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
+import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.CarbonDataMergerUtil
-import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
 abstract class Compactor(carbonLoadModel: CarbonLoadModel,
     compactionModel: CompactionModel,
@@ -52,7 +52,8 @@ abstract class Compactor(carbonLoadModel: CarbonLoadModel,
     // status.
     // so deleting those folders.
     try {
-      CarbonLoaderUtil.deletePartialLoadDataIfExist(carbonLoadModel, true)
+      TableProcessingOperations
+        .deletePartialLoadDataIfExist(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable, true)
     } catch {
       case e: Exception =>
         LOGGER.error(s"Exception in compaction thread while clean up of stale segments" +
