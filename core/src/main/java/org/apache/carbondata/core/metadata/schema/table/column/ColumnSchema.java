@@ -126,7 +126,15 @@ public class ColumnSchema implements Serializable, Writable {
    */
   private String aggFunction = "";
 
+  /**
+   * list of parent column relations
+   */
   private List<ParentColumnTableRelation> parentColumnTableRelations;
+
+  /**
+   * timeseries function applied on column
+   */
+  private String timeSeriesFunction = "";
 
   /**
    * @return the columnName
@@ -439,6 +447,16 @@ public class ColumnSchema implements Serializable, Writable {
     this.aggFunction = aggFunction;
   }
 
+  public String getTimeSeriesFunction() {
+    return timeSeriesFunction;
+  }
+
+  public void setTimeSeriesFunction(String timeSeriesFunction) {
+    if (null != timeSeriesFunction) {
+      this.timeSeriesFunction = timeSeriesFunction;
+    }
+  }
+
   @Override
   public void write(DataOutput out) throws IOException {
     out.writeShort(dataType.getId());
@@ -476,6 +494,7 @@ public class ColumnSchema implements Serializable, Writable {
     out.writeBoolean(invisible);
     out.writeBoolean(isSortColumn);
     out.writeUTF(null != aggFunction ? aggFunction : "");
+    out.writeUTF(timeSeriesFunction);
     boolean isParentTableColumnRelationExists =
         null != parentColumnTableRelations && parentColumnTableRelations.size() > 0;
     out.writeBoolean(isParentTableColumnRelationExists);
@@ -521,6 +540,7 @@ public class ColumnSchema implements Serializable, Writable {
     this.invisible = in.readBoolean();
     this.isSortColumn = in.readBoolean();
     this.aggFunction = in.readUTF();
+    this.timeSeriesFunction = in.readUTF();
     boolean isParentTableColumnRelationExists = in.readBoolean();
     if (isParentTableColumnRelationExists) {
       short parentColumnTableRelationSize = in.readShort();

@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.datamap.CarbonDropDataMapCommand
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
+import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -44,7 +45,8 @@ case class CreatePreAggregateTableCommand(
     parentTableIdentifier: TableIdentifier,
     dmClassName: String,
     dmProperties: Map[String, String],
-    queryString: String)
+    queryString: String,
+    timeSeriesFunction: Option[String] = None)
   extends AtomicRunnableCommand {
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
@@ -74,6 +76,15 @@ case class CreatePreAggregateTableCommand(
     // updating the relation identifier, this will be stored in child table
     // which can be used during dropping of pre-aggreate table as parent table will
     // also get updated
+    if(timeSeriesFunction.isDefined) {
+      TimeSeriesUtil.validateTimeSeriesEventTime(dmProperties, parentTable)
+      TimeSeriesUtil.validateEventTimeColumnExitsInSelect(
+        fieldRelationMap,
+        dmProperties.get(CarbonCommonConstants.TIMESERIES_EVENTTIME).get)
+      TimeSeriesUtil.updateTimeColumnSelect(fieldRelationMap,
+        dmProperties.get(CarbonCommonConstants.TIMESERIES_EVENTTIME).get,
+      timeSeriesFunction.get)
+    }
     tableModel.parentTable = Some(parentTable)
     tableModel.dataMapRelation = Some(fieldRelationMap)
     val tablePath =

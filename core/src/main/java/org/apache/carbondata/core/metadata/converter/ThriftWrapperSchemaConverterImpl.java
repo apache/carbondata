@@ -38,6 +38,7 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
+import org.apache.carbondata.core.preagg.TimeSeriesUDF;
 
 /**
  * Thrift schema to carbon schema converter and vice versa
@@ -198,6 +199,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       thriftColumnSchema.setColumnProperties(properties);
     }
     thriftColumnSchema.setAggregate_function(wrapperColumnSchema.getAggFunction());
+    if (null != wrapperColumnSchema.getTimeSeriesFunction() && !wrapperColumnSchema
+        .getTimeSeriesFunction().isEmpty()) {
+      thriftColumnSchema.setAggregate_function(wrapperColumnSchema.getTimeSeriesFunction());
+    }
     List<ParentColumnTableRelation> parentColumnTableRelations =
         wrapperColumnSchema.getParentColumnTableRelations();
     if (null != parentColumnTableRelations) {
@@ -518,7 +523,15 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         wrapperColumnSchema.setSortColumn(true);
       }
     }
-    wrapperColumnSchema.setAggFunction(externalColumnSchema.getAggregate_function());
+    if (null != externalColumnSchema.getAggregate_function().toLowerCase()) {
+      if (TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION
+          .contains(externalColumnSchema.getAggregate_function().toLowerCase())) {
+        wrapperColumnSchema
+            .setTimeSeriesFunction(externalColumnSchema.getAggregate_function().toLowerCase());
+      } else {
+        wrapperColumnSchema.setAggFunction(externalColumnSchema.getAggregate_function());
+      }
+    }
     List<org.apache.carbondata.format.ParentColumnTableRelation> parentColumnTableRelation =
         externalColumnSchema.getParentColumnTableRelations();
     if (null != parentColumnTableRelation) {
