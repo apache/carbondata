@@ -21,7 +21,6 @@ import java.io.{File, PrintWriter}
 import java.net.ServerSocket
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.streaming.{ProcessingTime, StreamingQuery}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -169,7 +168,7 @@ object StreamExample {
             .format("carbondata")
             .trigger(ProcessingTime("5 seconds"))
             .option("checkpointLocation", tablePath.getStreamingCheckpointDir)
-            .option("tablePath", tablePath.getPath)
+            .option("dbName", "default")
             .option("tableName", "stream_table")
             .start()
 
