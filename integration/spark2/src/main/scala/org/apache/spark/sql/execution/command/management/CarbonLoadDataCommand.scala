@@ -160,7 +160,7 @@ case class CarbonLoadDataCommand(
         if (isOverwriteTable) {
           LOGGER.info(s"Overwrite of carbon table with $dbName.$tableName is in progress")
         }
-        if (carbonLoadModel.getLoadMetadataDetails.isEmpty && carbonLoadModel.getUseOnePass &&
+        if (carbonLoadModel.getLoadMetadataDetails.size() == 1 && carbonLoadModel.getUseOnePass &&
             StringUtils.isEmpty(carbonLoadModel.getColDictFilePath) &&
             StringUtils.isEmpty(carbonLoadModel.getAllDictPath)) {
           LOGGER.info(s"Cannot use single_pass=true for $dbName.$tableName during the first load")
