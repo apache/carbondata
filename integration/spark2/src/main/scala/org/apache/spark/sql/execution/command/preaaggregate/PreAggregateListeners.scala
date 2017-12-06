@@ -31,7 +31,6 @@ import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentSta
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.merger.CompactionType
 
 object LoadPostAggregateListener extends OperationEventListener {
   /**
@@ -43,12 +42,6 @@ object LoadPostAggregateListener extends OperationEventListener {
     val loadEvent = event.asInstanceOf[LoadTablePreStatusUpdateEvent]
     val sparkSession = loadEvent.sparkSession
     val carbonLoadModel = loadEvent.carbonLoadModel
-    // After load has completed, need to check whether it was for compaction or not. If it was
-    // then mark all the compacted segments as COMPACTED and write the updated details into
-    // status file.
-    if (carbonLoadModel.getCompactionType != CompactionType.NONE) {
-      markSegmentsAsCompacted(carbonLoadModel)
-    }
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     if (table.hasDataMapSchema) {
       for (dataMapSchema: DataMapSchema <- table.getTableInfo.getDataMapSchemaList.asScala) {
@@ -64,29 +57,6 @@ object LoadPostAggregateListener extends OperationEventListener {
       }
     }
   }
-
-  /**
-   * mark the merged segments as COMPACTED and write load details into table status.
-   *
-   * @param carbonLoadModel
-   */
-  private def markSegmentsAsCompacted(carbonLoadModel: CarbonLoadModel): Unit = {
-    val loadMetadataDetailsIterator = carbonLoadModel.getLoadMetadataDetails.iterator()
-    while(loadMetadataDetailsIterator.hasNext) {
-      val loadMetaDataDetail = loadMetadataDetailsIterator.next()
-      if (loadMetaDataDetail.getMergedLoadName == carbonLoadModel.getSegmentId) {
-        loadMetaDataDetail.setSegmentStatus(SegmentStatus.COMPACTED)
-      }
-    }
-    val carbonTablePath = CarbonStorePath
-      .getCarbonTablePath(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-        .getAbsoluteTableIdentifier)
-    SegmentStatusManager
-      .writeLoadDetailsIntoFile(carbonTablePath.getTableStatusFilePath,
-        carbonLoadModel.getLoadMetadataDetails
-          .toArray(new Array[LoadMetadataDetails](carbonLoadModel.getLoadMetadataDetails.size)))
-  }
-
 }
 
 /**

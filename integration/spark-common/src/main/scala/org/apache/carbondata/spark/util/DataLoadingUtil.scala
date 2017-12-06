@@ -26,13 +26,15 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.constants.LoggerAction
-import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, CarbonLockUtil, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
-import org.apache.carbondata.processing.util.TableOptionConstant
+import org.apache.carbondata.processing.util.{CarbonLoaderUtil, DeleteLoadFolders, TableOptionConstant}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.load.ValidateUtil
 
@@ -40,6 +42,8 @@ import org.apache.carbondata.spark.load.ValidateUtil
  * the util object of data loading
  */
 object DataLoadingUtil {
+
+  val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   /**
    * get data loading options and initialise default value
@@ -320,4 +324,70 @@ object DataLoadingUtil {
       CommonUtil.readLoadMetadataDetails(carbonLoadModel)
     }
   }
+
+  private def isLoadDeletionRequired(metaDataLocation: String): Boolean = {
+    val details = SegmentStatusManager.readLoadMetadata(metaDataLocation)
+    if (details != null && details.nonEmpty) for (oneRow <- details) {
+      if ((SegmentStatus.MARKED_FOR_DELETE == oneRow.getSegmentStatus ||
+           SegmentStatus.COMPACTED == oneRow.getSegmentStatus) &&
+          oneRow.getVisibility.equalsIgnoreCase("true")) {
+        return true
+      }
+    }
+    false
+  }
+
+  def deleteLoadsAndUpdateMetadata(
+      isForceDeletion: Boolean,
+      carbonTable: CarbonTable): Unit = {
+    if (isLoadDeletionRequired(carbonTable.getMetaDataFilepath)) {
+      val details = SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath)
+      val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
+      val carbonTableStatusLock =
+        CarbonLockFactory.getCarbonLockObj(
+          absoluteTableIdentifier,
+          LockUsage.TABLE_STATUS_LOCK
+        )
+
+      // Delete marked loads
+      val isUpdationRequired =
+        DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
+          absoluteTableIdentifier,
+          isForceDeletion,
+          details
+        )
+
+      if (isUpdationRequired) {
+        try {
+          // Update load metadate file after cleaning deleted nodes
+          if (carbonTableStatusLock.lockWithRetries()) {
+            LOGGER.info("Table status lock has been successfully acquired.")
+
+            // read latest table status again.
+            val latestMetadata = SegmentStatusManager
+              .readLoadMetadata(carbonTable.getMetaDataFilepath)
+
+            // update the metadata details from old to new status.
+            val latestStatus = CarbonLoaderUtil
+              .updateLoadMetadataFromOldToNew(details, latestMetadata)
+
+            CarbonLoaderUtil.writeLoadMetadata(absoluteTableIdentifier, latestStatus)
+          } else {
+            val dbName = absoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName
+            val tableName = absoluteTableIdentifier.getCarbonTableIdentifier.getTableName
+            val errorMsg = "Clean files request is failed for " +
+                           s"$dbName.$tableName" +
+                           ". Not able to acquire the table status lock due to other operation " +
+                           "running in the background."
+            LOGGER.audit(errorMsg)
+            LOGGER.error(errorMsg)
+            throw new Exception(errorMsg + " Please try after some time.")
+          }
+        } finally {
+          CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK)
+        }
+      }
+    }
+  }
+
 }

@@ -24,7 +24,6 @@ import java.util.List;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
-import org.apache.carbondata.processing.merger.CompactionType;
 
 public class CarbonLoadModel implements Serializable {
 
@@ -172,16 +171,6 @@ public class CarbonLoadModel implements Serializable {
   private String globalSortPartitions;
 
   private boolean isAggLoadRequest;
-
-  private CompactionType compactionType = CompactionType.NONE;
-
-  public CompactionType getCompactionType() {
-    return compactionType;
-  }
-
-  public void setCompactionType(CompactionType compactionType) {
-    this.compactionType = compactionType;
-  }
 
   public boolean isAggLoadRequest() {
     return isAggLoadRequest;

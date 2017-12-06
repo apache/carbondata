@@ -66,7 +66,7 @@ import org.apache.carbondata.processing.merger.{CarbonCompactionUtil, CarbonData
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.{DataLoadResultImpl, PartitionFactory, _}
 import org.apache.carbondata.spark.load._
-import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, Util}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, DataLoadingUtil, Util}
 
 /**
  * This is the factory class which can create different RDD depends on user needs.
@@ -161,18 +161,18 @@ object CarbonDataRDDFactory {
 
     val compactionThread = new Thread {
       override def run(): Unit = {
+        val compactor = CompactionFactory.getCompactor(
+          carbonLoadModel,
+          compactionModel,
+          executor,
+          sqlContext,
+          storeLocation)
         try {
           // compaction status of the table which is triggered by the user.
           var triggeredCompactionStatus = false
           var exception: Exception = null
           try {
-            DataManagementFunc.executeCompaction(
-              carbonLoadModel,
-              compactionModel,
-              executor,
-              sqlContext,
-              storeLocation
-            )
+            compactor.executeCompaction()
             triggeredCompactionStatus = true
           } catch {
             case e: Exception =>
@@ -211,10 +211,12 @@ object CarbonDataRDDFactory {
               )
               // proceed for compaction
               try {
-                DataManagementFunc.executeCompaction(newCarbonLoadModel,
+                CompactionFactory.getCompactor(
+                  newCarbonLoadModel,
                   newcompactionModel,
-                  executor, sqlContext, storeLocation
-                )
+                  executor,
+                  sqlContext,
+                  storeLocation).executeCompaction()
               } catch {
                 case e: Exception =>
                   LOGGER.error("Exception in compaction thread for table " +
@@ -248,7 +250,7 @@ object CarbonDataRDDFactory {
           }
         } finally {
           executor.shutdownNow()
-          DataManagementFunc.deletePartialLoadsInCompaction(carbonLoadModel)
+          compactor.deletePartialLoadsInCompaction()
           compactionLock.unlock()
         }
       }
@@ -290,7 +292,7 @@ object CarbonDataRDDFactory {
                  s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     // Check if any load need to be deleted before loading new data
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    DataManagementFunc.deleteLoadsAndUpdateMetadata(isForceDeletion = false, carbonTable)
+    DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false, carbonTable)
     var status: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
     var res: Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = null
 

@@ -19,12 +19,10 @@ package org.apache.spark.sql.execution.command.management
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonEnv, CarbonSession, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, DataCommand}
-import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -158,19 +156,10 @@ case class CarbonAlterTableCompactionCommand(
       )
       .equalsIgnoreCase("true")
 
-    // If the carbon table is a child datamap then start compaction for the same using Load
-    // command instead of the normal compaction flow.
-    if (carbonTable.isChildDataMap) {
-      carbonLoadModel.setCompactionType(alterTableModel.compactionType.toUpperCase match {
-        case "MINOR" => CompactionType.MINOR
-        case "MAJOR" => CompactionType.MAJOR
-        case others@_ => CompactionType.valueOf(others)
-      })
-      startCompactionForDataMap(carbonLoadModel, sqlContext.sparkSession)
-    } else if (!isConcurrentCompactionAllowed) {
-      // if system level compaction is enabled then only one compaction can run in the system
-      // if any other request comes at this time then it will create a compaction request file.
-      // so that this will be taken up by the compaction process which is executing.
+    // if system level compaction is enabled then only one compaction can run in the system
+    // if any other request comes at this time then it will create a compaction request file.
+    // so that this will be taken up by the compaction process which is executing.
+    if (!isConcurrentCompactionAllowed) {
       LOGGER.info("System level compaction lock is enabled.")
       CarbonDataRDDFactory.handleCompactionForSystemLocking(
         sqlContext,
@@ -220,68 +209,6 @@ case class CarbonAlterTableCompactionCommand(
                      s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         CarbonException.analysisException(
           "Table is already locked for compaction. Please try after some time.")
-      }
-    }
-  }
-
-  private def startCompactionForDataMap(
-      carbonLoadModel: CarbonLoadModel,
-      sparkSession: SparkSession): Unit = {
-    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val loadMetaDataDetails = CarbonDataMergerUtil
-      .identifySegmentsToBeMerged(carbonLoadModel,
-        CarbonDataMergerUtil.getCompactionSize(CompactionType.MAJOR),
-        carbonLoadModel.getLoadMetadataDetails,
-        carbonLoadModel.getCompactionType)
-    val segments = loadMetaDataDetails.asScala.map(_.getLoadName)
-    if (segments.nonEmpty) {
-      CarbonSession.threadSet(
-        CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-        carbonLoadModel.getDatabaseName + "." +
-        carbonLoadModel.getTableName,
-        segments.mkString(","))
-      CarbonSession.threadSet(
-        CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-        carbonLoadModel.getDatabaseName + "." +
-        carbonLoadModel.getTableName, "false")
-      val headers = carbonTable.getTableInfo.getFactTable.getListOfColumns.asScala
-        .map(_.getColumnName).mkString(",")
-      // Creating a new query string to insert data into pre-aggregate table from that same table.
-      // For example: To compact preaggtable1 we can fire a query like insert into preaggtable1
-      // select * from preaggtable1
-      // The following code will generate the select query with a load UDF that will be used to
-      // apply DataLoadingRules
-      val childDataFrame = sparkSession.sql(new CarbonSpark2SqlParser()
-        // adding the aggregation load UDF
-        .addPreAggLoadFunction(PreAggregateUtil
-          // creating the select query on the bases on table schema
-          .createChildSelectQuery(carbonTable.getTableInfo.getFactTable))).drop("preAggLoad")
-      try {
-        CarbonLoadDataCommand(
-          Some(carbonTable.getDatabaseName),
-          carbonTable.getTableName,
-          null,
-          Nil,
-          Map("fileheader" -> headers),
-          isOverwriteTable = false,
-          dataFrame = Some(childDataFrame),
-          internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true",
-            "compactionType" -> carbonLoadModel.getCompactionType.toString)).run(sparkSession)
-      } finally {
-        // check if any other segments needs compaction on in case of MINOR_COMPACTION.
-        // For example: after 8.1 creation 0.1, 4.1, 8.1 have to be merged to 0.2 if threshhold
-        // allows it.
-        if (!carbonLoadModel.getCompactionType.equals(CompactionType.MAJOR)) {
-          CommonUtil.readLoadMetadataDetails(carbonLoadModel)
-          startCompactionForDataMap(carbonLoadModel, sparkSession)
-        }
-        CarbonSession
-          .threadUnset(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-                       carbonLoadModel.getDatabaseName + "." +
-                       carbonLoadModel.getTableName)
-        CarbonSession.threadUnset(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-                                  carbonLoadModel.getDatabaseName + "." +
-                                  carbonLoadModel.getTableName)
       }
     }
   }

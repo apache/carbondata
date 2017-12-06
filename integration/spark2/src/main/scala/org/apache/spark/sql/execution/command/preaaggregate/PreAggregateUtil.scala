@@ -495,7 +495,53 @@ object PreAggregateUtil {
     updatedPlan
   }
 
-  def createChildSelectQuery(tableSchema: TableSchema): String = {
+  /**
+   * This method will start load process on the data map
+   */
+  def startDataLoadForDataMap(
+      parentCarbonTable: CarbonTable,
+      dataMapIdentifier: TableIdentifier,
+      queryString: String,
+      segmentToLoad: String,
+      validateSegments: Boolean,
+      sparkSession: SparkSession): Unit = {
+    CarbonSession.threadSet(
+      CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+      parentCarbonTable.getDatabaseName + "." +
+      parentCarbonTable.getTableName,
+      segmentToLoad)
+    CarbonSession.threadSet(
+      CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+      parentCarbonTable.getDatabaseName + "." +
+      parentCarbonTable.getTableName, validateSegments.toString)
+    val headers = parentCarbonTable.getTableInfo.getDataMapSchemaList.asScala.
+      find(_.getChildSchema.getTableName.equals(dataMapIdentifier.table)).get.getChildSchema.
+      getListOfColumns.asScala.map(_.getColumnName).mkString(",")
+    val dataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
+      queryString)).drop("preAggLoad")
+    try {
+      CarbonLoadDataCommand(dataMapIdentifier.database,
+        dataMapIdentifier.table,
+        null,
+        Nil,
+        Map("fileheader" -> headers),
+        isOverwriteTable = false,
+        dataFrame = Some(dataFrame),
+        internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true")).
+        run(sparkSession)
+    } finally {
+      CarbonSession.threadUnset(
+        CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+        parentCarbonTable.getDatabaseName + "." +
+        parentCarbonTable.getTableName)
+      CarbonSession.threadUnset(
+        CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+        parentCarbonTable.getDatabaseName + "." +
+        parentCarbonTable.getTableName)
+    }
+  }
+
+  def createChildSelectQuery(tableSchema: TableSchema, databaseName: String): String = {
     val aggregateColumns = scala.collection.mutable.ArrayBuffer.empty[String]
     val groupingExpressions = scala.collection.mutable.ArrayBuffer.empty[String]
     tableSchema.getListOfColumns.asScala.foreach {
@@ -508,7 +554,8 @@ object PreAggregateUtil {
       }
     }
     s"select ${ groupingExpressions.mkString(",") },${ aggregateColumns.mkString(",")
-    } from ${ tableSchema.getTableName } group by ${ groupingExpressions.mkString(",") }"
+    } from $databaseName.${ tableSchema.getTableName } group by ${
+      groupingExpressions.mkString(",") }"
   }
 
 }

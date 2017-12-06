@@ -18,16 +18,17 @@
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
 import org.apache.spark.sql.test.util.QueryTest
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatest.Matchers._
 
-class TestPreAggregateCompaction extends QueryTest with BeforeAndAfterEach {
+class TestPreAggregateCompaction extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
 
   val testData = s"$resourcesPath/sample.csv"
 
   override def beforeEach(): Unit = {
-    sql("DROP TABLE IF EXISTS maintable")
-    sql("drop table if exists testtable")
+    sql("drop database if exists compaction cascade")
+    sql("create database if not exists compaction")
+    sql("use compaction")
     sql("create table testtable (id int, name string, city string, age int) STORED BY 'org.apache.carbondata.format'")
     sql(
       """
@@ -170,6 +171,11 @@ class TestPreAggregateCompaction extends QueryTest with BeforeAndAfterEach {
     sql("alter table maintable_preagg_sum compact 'major'")
     segmentNamesSum = sql("show segments for table maintable_preagg_sum").collect().map(_.get(0).toString)
     segmentNamesSum.sorted should equal (Array("0", "0.1", "0.2", "1", "2", "3", "4", "5", "6", "7"))
+  }
+
+  override def afterAll(): Unit = {
+    sql("drop database if exists compaction cascade")
+    sql("use default")
   }
 
 }

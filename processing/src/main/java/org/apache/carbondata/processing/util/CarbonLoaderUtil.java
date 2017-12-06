@@ -62,8 +62,6 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
-import org.apache.carbondata.processing.merger.CarbonDataMergerUtil;
-import org.apache.carbondata.processing.merger.CompactionType;
 import org.apache.carbondata.processing.merger.NodeBlockRelation;
 import org.apache.carbondata.processing.merger.NodeMultiBlockRelation;
 
@@ -237,21 +235,6 @@ public final class CarbonLoaderUtil {
 
   }
 
-  private static String getCompactedSegmentName(CarbonLoadModel carbonLoadModel) {
-    List<LoadMetadataDetails> loadMetadataDetails = CarbonDataMergerUtil
-        .identifySegmentsToBeMerged(carbonLoadModel,
-            CarbonDataMergerUtil.getCompactionSize(CompactionType.MAJOR),
-            carbonLoadModel.getLoadMetadataDetails(),
-            carbonLoadModel.getCompactionType());
-    String mergedSegmentName =
-        CarbonDataMergerUtil.getMergedLoadName(loadMetadataDetails).split("_")[1];
-    for (LoadMetadataDetails loadMetadataDetail : loadMetadataDetails) {
-      loadMetadataDetail.setMergedLoadName(mergedSegmentName);
-      loadMetadataDetail.setModificationOrdeletionTimesStamp(System.currentTimeMillis());
-    }
-    return mergedSegmentName;
-  }
-
   /**
    * This API will write the load level metadata for the loadmanagement module inorder to
    * manage the load and query execution management smoothly.
@@ -292,11 +275,15 @@ public final class CarbonLoaderUtil {
           String segmentId =
               String.valueOf(SegmentStatusManager.createNewSegmentId(listOfLoadFolderDetailsArray));
           loadModel.setLoadMetadataDetails(listOfLoadFolderDetails);
-          if (loadModel.getCompactionType() != CompactionType.NONE) {
-            segmentId = getCompactedSegmentName(loadModel);
+          // Segment id would be provided in case this is compaction flow for aggregate data map.
+          // If that is true then used the segment id as the load name.
+          if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !loadModel
+              .getSegmentId().isEmpty()) {
+            newMetaEntry.setLoadName(loadModel.getSegmentId());
+          } else {
+            newMetaEntry.setLoadName(segmentId);
+            loadModel.setSegmentId(segmentId);
           }
-          newMetaEntry.setLoadName(segmentId);
-          loadModel.setSegmentId(segmentId);
           // Exception should be thrown if:
           // 1. If insert overwrite is in progress and any other load or insert operation
           // is triggered

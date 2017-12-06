@@ -130,12 +130,8 @@ case class CarbonLoadDataCommand(
       }
       carbonLoadModel.setFactFilePath(factPath)
       carbonLoadModel.setAggLoadRequest(
-        internalOptions.getOrElse(
-          CarbonCommonConstants.IS_INTERNAL_LOAD_CALL,
-          "false").toBoolean)
-      carbonLoadModel
-        .setCompactionType(CompactionType.valueOf(internalOptions
-          .getOrElse("compactionType", CompactionType.NONE.toString).toUpperCase))
+        internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL, "false").toBoolean)
+      carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
       DataLoadingUtil.buildCarbonLoadModel(
         table,
         carbonProperty,
