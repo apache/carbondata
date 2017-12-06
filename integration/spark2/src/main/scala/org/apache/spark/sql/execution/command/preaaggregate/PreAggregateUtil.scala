@@ -19,7 +19,7 @@ package org.apache.spark.sql.execution.command.preaaggregate
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, SparkSession}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSession, DataFrame, SparkSession}
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFunction, UnresolvedRelation}
@@ -31,12 +31,14 @@ import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.types.DataType
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
+import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
+import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
-import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.TableInfo
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -491,6 +493,52 @@ object PreAggregateUtil {
         Aggregate(groupByExp, buffer, l)
     }
     updatedPlan
+  }
+
+  /**
+   * This method will start load process on the data map
+   */
+  def startDataLoadForDataMap(
+      parentCarbonTable: CarbonTable,
+      dataMapIdentifier: TableIdentifier,
+      queryString: String,
+      segmentToLoad: String,
+      validateSegments: Boolean,
+      sparkSession: SparkSession): Unit = {
+    CarbonSession.threadSet(
+      CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+      parentCarbonTable.getDatabaseName + "." +
+      parentCarbonTable.getTableName,
+      segmentToLoad)
+    CarbonSession.threadSet(
+      CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+      parentCarbonTable.getDatabaseName + "." +
+      parentCarbonTable.getTableName, validateSegments.toString)
+    val headers = parentCarbonTable.getTableInfo.getDataMapSchemaList.asScala.
+      find(_.getChildSchema.getTableName.equals(dataMapIdentifier.table)).get.getChildSchema.
+      getListOfColumns.asScala.map(_.getColumnName).mkString(",")
+    val dataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
+      queryString)).drop("preAggLoad")
+    try {
+      CarbonLoadDataCommand(dataMapIdentifier.database,
+        dataMapIdentifier.table,
+        null,
+        Nil,
+        Map("fileheader" -> headers),
+        isOverwriteTable = false,
+        dataFrame = Some(dataFrame),
+        internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true")).
+        run(sparkSession)
+    } finally {
+      CarbonSession.threadUnset(
+        CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+        parentCarbonTable.getDatabaseName + "." +
+        parentCarbonTable.getTableName)
+      CarbonSession.threadUnset(
+        CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+        parentCarbonTable.getDatabaseName + "." +
+        parentCarbonTable.getTableName)
+    }
   }
 
 }

@@ -23,13 +23,13 @@ import scala.collection.mutable
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.execution.command.datamap.CarbonDropDataMapCommand
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
-import org.apache.spark.sql.execution.command.table.{CarbonCreateTableCommand, CarbonDropTableCommand}
+import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.path.CarbonTablePath
 
 /**
  * Below command class will be used to create pre-aggregate table
@@ -69,7 +69,8 @@ case class CreatePreAggregateTableCommand(
       None)
 
     val parentTable = PreAggregateUtil.getParentCarbonTable(df.logicalPlan)
-    assert(parentTable.getTableName.equalsIgnoreCase(parentTableIdentifier.table))
+    assert(parentTable.getTableName.equalsIgnoreCase(parentTableIdentifier.table),
+      "Parent table name is different in select and create")
     // updating the relation identifier, this will be stored in child table
     // which can be used during dropping of pre-aggreate table as parent table will
     // also get updated
@@ -102,14 +103,11 @@ case class CreatePreAggregateTableCommand(
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
     // drop child table and undo the change in table info of main table
-    CarbonDropTableCommand(
+    CarbonDropDataMapCommand(
+      dataMapName,
       ifExistsSet = true,
-      tableIdentifier.database,
-      tableIdentifier.table
-    ).run(sparkSession)
-
-    // TODO: undo the change in table info of main table
-
+      parentTableIdentifier.database,
+      parentTableIdentifier.table).run(sparkSession)
     Seq.empty
   }
 
@@ -124,19 +122,15 @@ case class CreatePreAggregateTableCommand(
     val loadAvailable = SegmentStatusManager.readLoadMetadata(parentCarbonTable.getMetaDataFilepath)
       .nonEmpty
     if (loadAvailable) {
-      val headers = parentCarbonTable.getTableInfo.getFactTable.getListOfColumns.
-        asScala.map(_.getColumnName).mkString(",")
-      val childDataFrame = sparkSession.sql(
-        new CarbonSpark2SqlParser().addPreAggLoadFunction(queryString))
-      CarbonLoadDataCommand(tableIdentifier.database,
-        tableIdentifier.table,
-        null,
-        Nil,
-        Map("fileheader" -> headers),
-        isOverwriteTable = false,
-        dataFrame = Some(childDataFrame),
-        internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true")).
-        run(sparkSession)
+      // Passing segmentToLoad as * because we want to load all the segments into the
+      // pre-aggregate table even if the user has set some segments on the parent table.
+      PreAggregateUtil.startDataLoadForDataMap(
+          parentCarbonTable,
+          tableIdentifier,
+          queryString,
+          segmentToLoad = "*",
+          validateSegments = true,
+          sparkSession = sparkSession)
     }
     Seq.empty
   }
