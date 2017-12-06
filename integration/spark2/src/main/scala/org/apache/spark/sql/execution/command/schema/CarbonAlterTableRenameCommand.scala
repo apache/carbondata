@@ -20,7 +20,7 @@ package org.apache.spark.sql.execution.command.schema
 import org.apache.spark.sql.{CarbonEnv, CarbonSession, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{AlterTableRenameModel, MetadataCommand}
-import org.apache.spark.sql.hive.{CarbonRelation, HiveExternalCatalog}
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog, HiveExternalCatalog}
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -109,8 +109,8 @@ private[sql] case class CarbonAlterTableRenameCommand(
         newTableName, carbonTable.getCarbonTableIdentifier.getTableId)
       var newTablePath = CarbonUtil.getNewTablePath(oldTablePath, newTableIdentifier.getTableName)
       metastore.removeTableFromMetadata(oldDatabaseName, oldTableName)
-      val hiveClient = sparkSession.asInstanceOf[CarbonSession].sharedState.externalCatalog
-        .asInstanceOf[HiveExternalCatalog].client
+      val hiveClient = sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
+        .getClient()
       hiveClient.runSqlHive(
           s"ALTER TABLE $oldDatabaseName.$oldTableName RENAME TO $oldDatabaseName.$newTableName")
       hiveClient.runSqlHive(
