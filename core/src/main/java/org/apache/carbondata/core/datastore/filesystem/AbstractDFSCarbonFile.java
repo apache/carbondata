@@ -138,23 +138,29 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   public boolean renameTo(String changetoName) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(hadoopConf);
-      return fs.rename(fileStatus.getPath(), new Path(changetoName));
+      if (null != fileStatus) {
+        fs = fileStatus.getPath().getFileSystem(hadoopConf);
+        return fs.rename(fileStatus.getPath(), new Path(changetoName));
+      }
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
       return false;
     }
+    return false;
   }
 
   public boolean delete() {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(hadoopConf);
-      return fs.delete(fileStatus.getPath(), true);
+      if (null != fileStatus) {
+        fs = fileStatus.getPath().getFileSystem(hadoopConf);
+        return fs.delete(fileStatus.getPath(), true);
+      }
     } catch (IOException e) {
       LOGGER.error("Exception occurred:" + e.getMessage());
       return false;
     }
+    return false;
   }
 
   @Override public long getLastModifiedTime() {
@@ -164,8 +170,10 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   @Override public boolean setLastModifiedTime(long timestamp) {
     FileSystem fs;
     try {
-      fs = fileStatus.getPath().getFileSystem(hadoopConf);
-      fs.setTimes(fileStatus.getPath(), timestamp, timestamp);
+      if (null != fileStatus) {
+        fs = fileStatus.getPath().getFileSystem(hadoopConf);
+        fs.setTimes(fileStatus.getPath(), timestamp, timestamp);
+      }
     } catch (IOException e) {
       return false;
     }
