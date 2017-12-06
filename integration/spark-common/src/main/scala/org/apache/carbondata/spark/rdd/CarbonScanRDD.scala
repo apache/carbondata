@@ -328,7 +328,7 @@ class CarbonScanRDD(
     iterator.asInstanceOf[Iterator[InternalRow]]
   }
 
-  private def prepareInputFormatForDriver(conf: Configuration): CarbonTableInputFormat[Object] = {
+  def prepareInputFormatForDriver(conf: Configuration): CarbonTableInputFormat[Object] = {
     CarbonTableInputFormat.setTableInfo(conf, tableInfo)
     CarbonTableInputFormat.setDatabaseName(conf, tableInfo.getDatabaseName)
     CarbonTableInputFormat.setTableName(conf, tableInfo.getFactTable.getTableName)

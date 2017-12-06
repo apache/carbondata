@@ -42,6 +42,13 @@ public interface DataMap {
    */
   List<Blocklet> prune(FilterResolverIntf filterExp);
 
+  /**
+   * Validate whether the current segment needs to be fetching the required data
+   *
+   * @param filterExp
+   * @return
+   */
+  boolean isScanRequired(FilterResolverIntf filterExp);
 
   /**
    * Clear complete index table and release memory.
