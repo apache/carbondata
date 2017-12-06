@@ -95,7 +95,9 @@ public final class DeleteLoadFolders {
         }
 
       } else {
-        status = false;
+        LOGGER.warn("Files are not found in segment " + path
+            + " it seems, files are already being deleted");
+        status = true;
       }
     } catch (IOException e) {
       LOGGER.warn("Unable to delete the file as per delete command " + path);
