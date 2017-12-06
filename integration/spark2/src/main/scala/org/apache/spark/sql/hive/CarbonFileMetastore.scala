@@ -23,15 +23,14 @@ import java.util.concurrent.atomic.AtomicLong
 import scala.collection.mutable.ArrayBuffer
 
 import org.apache.hadoop.fs.permission.{FsAction, FsPermission}
-import org.apache.spark.sql.CarbonDatasourceHadoopRelation
+import org.apache.spark.SPARK_VERSION
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonSource, SparkSession}
 import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
-import org.apache.spark.sql.CarbonSource
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.catalyst.catalog.{CatalogRelation, CatalogTable}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -147,7 +146,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       case LogicalRelation(
       carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
         carbonDatasourceHadoopRelation.carbonRelation
-      case SubqueryAlias(_, c: CatalogRelation) if sparkSession.version.startsWith("2.2") =>
+      case SubqueryAlias(_, c: CatalogRelation) if SPARK_VERSION.startsWith("2.2") =>
         val catalogTable = CarbonReflectionUtils.getFieldOfCatalogTable(
           "tableMeta",
           c).asInstanceOf[CatalogTable]

@@ -20,6 +20,7 @@ package org.apache.spark.util
 import scala.reflect.runtime._
 import scala.reflect.runtime.universe._
 
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -77,13 +78,13 @@ object CarbonReflectionUtils {
       relation: LogicalPlan,
       view: Option[TableIdentifier]): SubqueryAlias = {
     val className = "org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias"
-    if (sparkSession.version.startsWith("2.1")) {
+    if (SPARK_VERSION.startsWith("2.1")) {
       createObject(
         className,
         alias.getOrElse(""),
         relation,
         Option(view))._1.asInstanceOf[SubqueryAlias]
-    } else if (sparkSession.version.startsWith("2.2")) {
+    } else if (SPARK_VERSION.startsWith("2.2")) {
       createObject(
         className,
         alias.getOrElse(""),
@@ -130,7 +131,7 @@ object CarbonReflectionUtils {
   def getAstBuilder(conf: Object,
       sqlParser: Object,
       sparkSession: SparkSession): AstBuilder = {
-    if (sparkSession.version.startsWith("2.1") || sparkSession.version.startsWith("2.2")) {
+    if (SPARK_VERSION.startsWith("2.1") || SPARK_VERSION.startsWith("2.2")) {
       createObject(
         "org.apache.spark.sql.hive.CarbonSqlAstBuilder",
         conf,
