@@ -18,7 +18,11 @@
 package org.apache.carbondata.core.scan.filter;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 public class ColumnFilterInfo implements Serializable {
 
@@ -33,6 +37,7 @@ public class ColumnFilterInfo implements Serializable {
    */
   private List<String> implicitColumnFilterList;
   private List<Integer> excludeFilterList;
+  private transient Set<String> implicitDriverColumnFilterList;
   /**
    * maintain the no dictionary filter values list.
    */
@@ -86,6 +91,7 @@ public class ColumnFilterInfo implements Serializable {
 
   public void setImplicitColumnFilterList(List<String> implicitColumnFilterList) {
     this.implicitColumnFilterList = implicitColumnFilterList;
+    populateBlockIdListForDriverBlockPruning();
   }
 
   public List<Object> getMeasuresFilterValuesList() {
@@ -94,5 +100,19 @@ public class ColumnFilterInfo implements Serializable {
 
   public void setMeasuresFilterValuesList(List<Object> measuresFilterValuesList) {
     this.measuresFilterValuesList = measuresFilterValuesList;
+  }
+
+  public Set<String> getImplicitDriverColumnFilterList() {
+    return implicitDriverColumnFilterList;
+  }
+
+  private void populateBlockIdListForDriverBlockPruning() {
+    implicitDriverColumnFilterList = new HashSet<>(implicitColumnFilterList.size());
+    String blockId = null;
+    for (String blockletId : implicitColumnFilterList) {
+      blockId =
+          blockletId.substring(0, blockletId.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
+      implicitDriverColumnFilterList.add(blockId);
+    }
   }
 }

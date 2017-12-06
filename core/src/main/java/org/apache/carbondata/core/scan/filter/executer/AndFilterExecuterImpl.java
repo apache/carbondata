@@ -24,7 +24,7 @@ import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
 import org.apache.carbondata.core.util.BitSetGroup;
 
-public class AndFilterExecuterImpl implements FilterExecuter {
+public class AndFilterExecuterImpl implements FilterExecuter, ImplicitColumnFilterExecutor {
 
   private FilterExecuter leftExecuter;
   private FilterExecuter rightExecuter;
@@ -72,5 +72,64 @@ public class AndFilterExecuterImpl implements FilterExecuter {
   @Override public void readBlocks(BlocksChunkHolder blocksChunkHolder) throws IOException {
     leftExecuter.readBlocks(blocksChunkHolder);
     rightExecuter.readBlocks(blocksChunkHolder);
+  }
+
+  @Override
+  public BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
+      String uniqueBlockPath) {
+    BitSet leftFilters = null;
+    if (leftExecuter instanceof ImplicitColumnFilterExecutor) {
+      leftFilters = ((ImplicitColumnFilterExecutor) leftExecuter)
+          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue,uniqueBlockPath);
+    } else {
+      leftFilters = leftExecuter
+          .isScanRequired(maxValue, minValue);
+    }
+    if (leftFilters.isEmpty()) {
+      return leftFilters;
+    }
+    BitSet rightFilter = null;
+    if (rightExecuter instanceof ImplicitColumnFilterExecutor) {
+      rightFilter = ((ImplicitColumnFilterExecutor) rightExecuter)
+          .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath);
+    } else {
+      rightFilter = rightExecuter
+          .isScanRequired(maxValue, minValue);
+    }
+    if (rightFilter.isEmpty()) {
+      return rightFilter;
+    }
+    leftFilters.and(rightFilter);
+    return leftFilters;
+  }
+
+  @Override
+  public Boolean isFilterValuesPresentInAbstractIndex(byte[][] maxValue, byte[][] minValue) {
+    Boolean leftRes;
+    BitSet tempFilter;
+    if (leftExecuter instanceof ImplicitColumnFilterExecutor) {
+      leftRes = ((ImplicitColumnFilterExecutor) leftExecuter)
+          .isFilterValuesPresentInAbstractIndex(maxValue, minValue);
+    } else {
+      tempFilter = leftExecuter
+          .isScanRequired(maxValue, minValue);
+      leftRes = !tempFilter.isEmpty();
+    }
+    if (!leftRes) {
+      return leftRes;
+    }
+
+    Boolean rightRes = null;
+    if (rightExecuter instanceof ImplicitColumnFilterExecutor) {
+      rightRes = ((ImplicitColumnFilterExecutor) rightExecuter)
+          .isFilterValuesPresentInAbstractIndex(maxValue, minValue);
+    } else {
+      tempFilter = rightExecuter
+          .isScanRequired(maxValue, minValue);
+      rightRes = !tempFilter.isEmpty();
+    }
+
+    // Equivalent to leftRes && rightRes.
+    return rightRes;
   }
 }

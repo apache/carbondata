@@ -35,6 +35,8 @@ public class FilterInfoTypeVisitorFactory {
     if (exp instanceof RangeExpression) {
       if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
         return new RangeDirectDictionaryVisitor();
+      } else if (columnExpression.getDimension().hasEncoding(Encoding.IMPLICIT)) {
+        return new ImplicitColumnVisitor();
       } else if (!columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
         return new RangeNoDictionaryTypeVisitor();
       } else if (columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
@@ -45,6 +47,8 @@ public class FilterInfoTypeVisitorFactory {
       if (null != columnExpression.getDimension()) {
         if (columnExpression.getDimension().hasEncoding(Encoding.DIRECT_DICTIONARY)) {
           return new CustomTypeDictionaryVisitor();
+        } else if (columnExpression.getDimension().hasEncoding(Encoding.IMPLICIT)) {
+          return new ImplicitColumnVisitor();
         } else if (!columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {
           return new NoDictionaryTypeVisitor();
         } else if (columnExpression.getDimension().hasEncoding(Encoding.DICTIONARY)) {

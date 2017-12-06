@@ -239,4 +239,9 @@ public abstract class AbstractBTreeLeafNode implements BTreeNode {
   public BlockletLevelDeleteDeltaDataCache getDeleteDeltaDataCache() {
     return deleteDeltaDataCache;
   }
+
+  @Override
+  public int getPageRowCount(int pageNumber) {
+    throw new UnsupportedOperationException("Unsupported operation");
+  }
 }
