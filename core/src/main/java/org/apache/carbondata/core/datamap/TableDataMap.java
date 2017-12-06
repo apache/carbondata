@@ -165,4 +165,22 @@ public final class TableDataMap implements OperationEventListener {
   @Override public void onEvent(Event event, OperationContext opContext) {
     dataMapFactory.fireEvent(event);
   }
+
+  /**
+   * Method to check whether the current segment need to be scanned or not for the queried data
+   *
+   * @param segmentId
+   * @param filterExp
+   * @return
+   * @throws IOException
+   */
+  public boolean isScanRequired(String segmentId, FilterResolverIntf filterExp) throws IOException {
+    List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
+    for (DataMap dataMap : dataMaps) {
+      if (dataMap.isScanRequired(filterExp)) {
+        return true;
+      }
+    }
+    return false;
+  }
 }

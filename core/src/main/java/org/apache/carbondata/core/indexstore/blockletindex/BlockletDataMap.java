@@ -55,6 +55,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecutor;
@@ -62,6 +63,7 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
 /**
  * Datamap implementation for blocklet.
@@ -134,6 +136,11 @@ public class BlockletDataMap implements DataMap, Cacheable {
     int[] minMaxLen = segmentProperties.getColumnsValueSize();
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     CarbonRowSchema[] schema = unsafeMemoryDMStore.getSchema();
+    DataMapRow taskMinMaxRow = null;
+    // Add one row to maintain task level min max for segment pruning
+    if (!blockletList.isEmpty()) {
+      taskMinMaxRow = new DataMapRowImpl(schema);
+    }
     for (int index = 0; index < blockletList.size(); index++) {
       DataMapRow row = new DataMapRowImpl(schema);
       int ordinal = 0;
@@ -143,11 +150,17 @@ public class BlockletDataMap implements DataMap, Cacheable {
       row.setByteArray(blockletInfo.getBlockletIndex().getBtreeIndex().getStartKey(), ordinal++);
 
       BlockletMinMaxIndex minMaxIndex = blockletInfo.getBlockletIndex().getMinMaxIndex();
-      row.setRow(addMinMax(minMaxLen, schema[ordinal],
-          updateMinValues(minMaxIndex.getMinValues(), minMaxLen)), ordinal);
+      byte[][] minValues = updateMinValues(minMaxIndex.getMinValues(), minMaxLen);
+      row.setRow(addMinMax(minMaxLen, schema[ordinal], minValues), ordinal);
+      // compute and set task level min values
+      addTaskMinMaxValues(taskMinMaxRow, minMaxLen, schema[ordinal], minValues, MIN_VALUES_INDEX,
+          true);
       ordinal++;
-      row.setRow(addMinMax(minMaxLen, schema[ordinal],
-          updateMaxValues(minMaxIndex.getMaxValues(), minMaxLen)), ordinal);
+      byte[][] maxValues = updateMaxValues(minMaxIndex.getMaxValues(), minMaxLen);
+      row.setRow(addMinMax(minMaxLen, schema[ordinal], maxValues), ordinal);
+      // compute and set task level max values
+      addTaskMinMaxValues(taskMinMaxRow, minMaxLen, schema[ordinal], maxValues, MAX_VALUES_INDEX,
+          false);
       ordinal++;
 
       row.setInt(blockletInfo.getNumberOfRows(), ordinal++);
@@ -178,6 +191,26 @@ public class BlockletDataMap implements DataMap, Cacheable {
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
+    }
+    // write the task level min/max row to unsafe memory store
+    if (null != taskMinMaxRow) {
+      addRowToUnsafeMemoryStore(taskMinMaxRow);
+    }
+  }
+
+  private void addRowToUnsafeMemoryStore(DataMapRow row) {
+    try {
+      List<Integer> indexesToAccess =
+          new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+      // key index is added because unsafe row is written in schema order and
+      // order always starts from 0. While reconstructing the row position is
+      // calculated starting from 0. Therefore key index need to be added
+      indexesToAccess.add(KEY_INDEX);
+      indexesToAccess.add(MIN_VALUES_INDEX);
+      indexesToAccess.add(MAX_VALUES_INDEX);
+      unsafeMemoryDMStore.addTaskMinMaxRowToUnsafe(row, indexesToAccess);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -270,6 +303,47 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return minRow;
   }
 
+  /**
+   * This method will compute min/max values at task level
+   *
+   * @param taskMinMaxRow
+   * @param minMaxLen
+   * @param carbonRowSchema
+   * @param minMaxValue
+   * @param ordinal
+   * @param isMinValueComparison
+   */
+  private void addTaskMinMaxValues(DataMapRow taskMinMaxRow, int[] minMaxLen,
+      CarbonRowSchema carbonRowSchema, byte[][] minMaxValue, int ordinal,
+      boolean isMinValueComparison) {
+    DataMapRow row = taskMinMaxRow.getRow(ordinal);
+    byte[][] updatedMinMaxValues = minMaxValue;
+    if (null == row) {
+      CarbonRowSchema[] minSchemas =
+          ((CarbonRowSchema.StructCarbonRowSchema) carbonRowSchema).getChildSchemas();
+      row = new DataMapRowImpl(minSchemas);
+    } else {
+      byte[][] existingMinMaxValues = getMinMaxValue(taskMinMaxRow, ordinal);
+      // Compare and update min max values
+      SerializableComparator comparator =
+          org.apache.carbondata.core.util.comparator.Comparator.getComparator(DataTypes.BYTE);
+      for (int i = 0; i < minMaxLen.length; i++) {
+        int compare = comparator.compare(existingMinMaxValues[i], minMaxValue[i]);
+        if (isMinValueComparison && compare < 0) {
+          updatedMinMaxValues[i] = existingMinMaxValues[i];
+        } else if (compare > 0) {
+          updatedMinMaxValues[i] = existingMinMaxValues[i];
+        }
+      }
+    }
+    int minMaxOrdinal = 0;
+    // min/max value adding
+    for (int i = 0; i < minMaxLen.length; i++) {
+      row.setByteArray(updatedMinMaxValues[i], minMaxOrdinal++);
+    }
+    taskMinMaxRow.setRow(row, ordinal);
+  }
+
   private void createSchema(SegmentProperties segmentProperties) throws MemoryException {
     List<CarbonRowSchema> indexSchemas = new ArrayList<>();
 
@@ -313,6 +387,21 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
     unsafeMemoryDMStore =
         new UnsafeMemoryDMStore(indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]));
+  }
+
+  @Override
+  public boolean isScanRequired(FilterResolverIntf filterExp) {
+    FilterExecuter filterExecuter =
+        FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
+    DataMapRow unsafeRow =
+        unsafeMemoryDMStore.getUnsafeRow(unsafeMemoryDMStore.getRowCount());
+    boolean isScanRequired = FilterExpressionProcessor
+        .isScanRequired(filterExecuter, getMinMaxValue(unsafeRow, MAX_VALUES_INDEX),
+            getMinMaxValue(unsafeRow, MIN_VALUES_INDEX));
+    if (isScanRequired) {
+      return true;
+    }
+    return false;
   }
 
   @Override

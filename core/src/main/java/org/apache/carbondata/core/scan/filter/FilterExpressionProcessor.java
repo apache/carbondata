@@ -529,4 +529,18 @@ public class FilterExpressionProcessor implements FilterProcessor {
     }
     return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
   }
+
+  public static boolean isScanRequired(FilterExecuter filterExecuter, byte[][] maxValue,
+      byte[][] minValue) {
+    /* if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
+      return ((ImplicitColumnFilterExecutor) filterExecuter)
+          .isFilterValuesPresentInAbstractIndex(maxValue, minValue);
+    } else {
+      // otherwise decide based on min/max value
+      BitSet bitSet = filterExecuter.isScanRequired(maxValue, minValue);
+      return !bitSet.isEmpty();
+    } */
+    BitSet bitSet = filterExecuter.isScanRequired(maxValue, minValue);
+    return !bitSet.isEmpty();
+  }
 }
