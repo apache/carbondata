@@ -17,7 +17,6 @@
 
 package org.apache.carbondata.core.scan.expression.logical;
 
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;

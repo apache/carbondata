@@ -21,7 +21,6 @@ import java.nio.ByteBuffer;
 import org.apache.carbondata.core.cache.dictionary.ColumnDictionaryInfo;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.ForwardDictionary;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.Bits;
