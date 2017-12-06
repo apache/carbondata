@@ -20,6 +20,7 @@ package org.apache.spark.sql.execution.command.schema
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
+import org.apache.spark.sql.hive.CarbonSessionCatalog
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -38,7 +39,8 @@ private[sql] case class CarbonAlterTableUnsetCommand(
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     AlterTableUtil.modifyTableProperties(tableIdentifier, Map.empty[String, String],
-      propKeys, false)(sparkSession)
+      propKeys, false)(sparkSession,
+      sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog])
     Seq.empty
   }
 }

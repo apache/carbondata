@@ -25,7 +25,7 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.SparkConf
 import org.apache.spark.sql.{CarbonEnv, CarbonSession, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.hive.{CarbonRelation, HiveExternalCatalog}
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog, HiveExternalCatalog}
 import org.apache.spark.sql.hive.HiveExternalCatalog._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -127,11 +127,11 @@ object AlterTableUtil {
    * @param schemaEvolutionEntry
    * @param thriftTable
    * @param sparkSession
-   * @param sessionState
+   * @param catalog
    */
   def updateSchemaInfo(carbonTable: CarbonTable,
       schemaEvolutionEntry: SchemaEvolutionEntry,
-      thriftTable: TableInfo)(sparkSession: SparkSession): Unit = {
+      thriftTable: TableInfo)(sparkSession: SparkSession, catalog: CarbonSessionCatalog): Unit = {
     val dbName = carbonTable.getDatabaseName
     val tableName = carbonTable.getTableName
     CarbonEnv.getInstance(sparkSession).carbonMetastore
@@ -145,8 +145,7 @@ object AlterTableUtil {
     val schema = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tableIdentifier)(sparkSession).schema.json
     val schemaParts = prepareSchemaJsonForAlterTable(sparkSession.sparkContext.getConf, schema)
-    val hiveClient = sparkSession.asInstanceOf[CarbonSession].sharedState.externalCatalog
-      .asInstanceOf[HiveExternalCatalog].client
+    val hiveClient = catalog.getClient();
     hiveClient.runSqlHive(s"ALTER TABLE $dbName.$tableName SET TBLPROPERTIES($schemaParts)")
     sparkSession.catalog.refreshTable(tableIdentifier.quotedString)
   }
@@ -326,11 +325,11 @@ object AlterTableUtil {
    * @param propKeys
    * @param set
    * @param sparkSession
-   * @param sessionState
+   * @param catalog
    */
   def modifyTableProperties(tableIdentifier: TableIdentifier, properties: Map[String, String],
-                            propKeys: Seq[String], set: Boolean)
-                           (sparkSession: SparkSession): Unit = {
+      propKeys: Seq[String], set: Boolean)
+    (sparkSession: SparkSession, catalog: CarbonSessionCatalog): Unit = {
     val tableName = tableIdentifier.table
     val dbName = tableIdentifier.database.getOrElse(sparkSession.catalog.currentDatabase)
     LOGGER.audit(s"Alter table properties request has been received for $dbName.$tableName")
@@ -385,7 +384,7 @@ object AlterTableUtil {
 
       updateSchemaInfo(carbonTable,
         schemaConverter.fromWrapperToExternalSchemaEvolutionEntry(schemaEvolutionEntry),
-        thriftTable)(sparkSession)
+        thriftTable)(sparkSession, catalog)
       LOGGER.info(s"Alter table properties is successful for table $dbName.$tableName")
       LOGGER.audit(s"Alter table properties is successful for table $dbName.$tableName")
     } catch {
