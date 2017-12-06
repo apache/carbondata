@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datamap.dev.DataMap;
 import org.apache.carbondata.core.datamap.dev.DataMapFactory;
 import org.apache.carbondata.core.indexstore.Blocklet;
@@ -167,20 +168,27 @@ public final class TableDataMap implements OperationEventListener {
   }
 
   /**
-   * Method to check whether the current segment need to be scanned or not for the queried data
+   * Method to prune the segments based on task min/max values
    *
-   * @param segmentId
+   * @param segmentIds
    * @param filterExp
    * @return
    * @throws IOException
    */
-  public boolean isScanRequired(String segmentId, FilterResolverIntf filterExp) throws IOException {
-    List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
-    for (DataMap dataMap : dataMaps) {
-      if (dataMap.isScanRequired(filterExp)) {
-        return true;
+  public List<String> pruneSegments(List<String> segmentIds, FilterResolverIntf filterExp)
+      throws IOException {
+    List<String> prunedSegments = new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    for (String segmentId : segmentIds) {
+      List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
+      for (DataMap dataMap : dataMaps) {
+        if (dataMap.isScanRequired(filterExp)) {
+          // If any one task in a given segment contains the data that means the segment need to
+          // be scanned and we need to validate further data maps in the same segment
+          prunedSegments.add(segmentId);
+          break;
+        }
       }
     }
-    return false;
+    return prunedSegments;
   }
 }

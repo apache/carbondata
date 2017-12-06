@@ -48,6 +48,7 @@ import org.apache.carbondata.core.scan.expression.conditional.LessThanExpression
 import org.apache.carbondata.core.scan.expression.conditional.ListExpression;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
+import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecutor;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 import org.apache.carbondata.core.scan.filter.partition.AndFilterImpl;
 import org.apache.carbondata.core.scan.filter.partition.EqualToFilterImpl;
@@ -532,15 +533,13 @@ public class FilterExpressionProcessor implements FilterProcessor {
 
   public static boolean isScanRequired(FilterExecuter filterExecuter, byte[][] maxValue,
       byte[][] minValue) {
-    /* if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
+    if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
       return ((ImplicitColumnFilterExecutor) filterExecuter)
           .isFilterValuesPresentInAbstractIndex(maxValue, minValue);
     } else {
       // otherwise decide based on min/max value
       BitSet bitSet = filterExecuter.isScanRequired(maxValue, minValue);
       return !bitSet.isEmpty();
-    } */
-    BitSet bitSet = filterExecuter.isScanRequired(maxValue, minValue);
-    return !bitSet.isEmpty();
+    }
   }
 }

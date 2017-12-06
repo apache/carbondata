@@ -16,8 +16,6 @@
  */
 package org.apache.carbondata.core.indexstore;
 
-import java.util.List;
-
 import org.apache.carbondata.core.indexstore.row.DataMapRow;
 import org.apache.carbondata.core.indexstore.row.UnsafeDataMapRow;
 import org.apache.carbondata.core.indexstore.schema.CarbonRowSchema;
@@ -103,25 +101,6 @@ public class UnsafeMemoryDMStore {
     pointers[rowCount++] = pointer;
   }
 
-  /**
-   * Add the task min/max row to unsafe.
-   *
-   * @param taskMinMaxRow
-   * @return
-   */
-  public void addTaskMinMaxRowToUnsafe(DataMapRow taskMinMaxRow, List<Integer> indexesToAccess)
-      throws MemoryException {
-    // First calculate the required memory to keep the row in unsafe
-    int rowSize = taskMinMaxRow.getTotalSizeInBytes();
-    // Check whether allocated memory is sufficient or not.
-    ensureSize(rowSize);
-    int pointer = runningLength;
-    for (int i = 0; i < indexesToAccess.size(); i++) {
-      addToUnsafe(schema[indexesToAccess.get(i)], taskMinMaxRow, indexesToAccess.get(i));
-    }
-    pointers[rowCount++] = pointer;
-  }
-
   private void addToUnsafe(CarbonRowSchema schema, DataMapRow row, int index) {
     switch (schema.getSchemaType()) {
       case FIXED:
@@ -168,15 +147,11 @@ public class UnsafeMemoryDMStore {
         break;
       case VARIABLE:
         byte[] data = row.getByteArray(index);
-        int dataSize = 0;
-        if (null != data) {
-          dataSize = data.length;
-        }
-        getUnsafe().putShort(memoryBlock.getBaseOffset() + runningLength, (short) dataSize);
+        getUnsafe().putShort(memoryBlock.getBaseOffset() + runningLength, (short) data.length);
         runningLength += 2;
         getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
-            memoryBlock.getBaseOffset() + runningLength, dataSize);
-        runningLength += dataSize;
+            memoryBlock.getBaseOffset() + runningLength, data.length);
+        runningLength += data.length;
         break;
       case STRUCT:
         CarbonRowSchema[] childSchemas =
@@ -230,14 +205,7 @@ public class UnsafeMemoryDMStore {
   }
 
   public int getRowCount() {
-    // At least one blocklet should exist for adding task level min max index.
-    // If not then rowCount should not be decremented by 1. If done it can result in exception
-    if (rowCount <= 1) {
-      return rowCount;
-    }
-    // Row count is decremented by 1 because last row stored will be task level min/max index row
-    // which does not correspond to blocklet count
-    return rowCount - 1;
+    return rowCount;
   }
 
 }
