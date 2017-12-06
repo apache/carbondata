@@ -17,9 +17,9 @@
 
 package org.apache.spark.sql.hive
 
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql._
 import org.apache.spark.sql.CarbonExpressions.CarbonUnresolvedRelation
-import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute, UnresolvedFunction, UnresolvedRelation, UnresolvedStar}
 import org.apache.spark.sql.catalyst.expressions.Alias
 import org.apache.spark.sql.catalyst.plans.Inner
@@ -127,11 +127,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
     } else {
       updatedSelectPlan
     }
-    val destinationTable =
-      CarbonReflectionUtils.getUnresolvedRelation(
-        table.tableIdentifier,
-        sparkSession.version,
-        alias)
+    val destinationTable = CarbonReflectionUtils.getUnresolvedRelation(table.tableIdentifier, alias)
 
     ProjectForUpdate(destinationTable, columns, Seq(finalPlan))
   }
