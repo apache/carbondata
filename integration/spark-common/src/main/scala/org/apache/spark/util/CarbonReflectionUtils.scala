@@ -20,6 +20,7 @@ package org.apache.spark.util
 import scala.reflect.runtime._
 import scala.reflect.runtime.universe._
 
+import org.apache.spark.SPARK_VERSION
 import org.apache.spark.SparkContext
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
@@ -56,20 +57,19 @@ object CarbonReflectionUtils {
 
   def getUnresolvedRelation(
       tableIdentifier: TableIdentifier,
-      version: String,
       tableAlias: Option[String] = None): UnresolvedRelation = {
     val className = "org.apache.spark.sql.catalyst.analysis.UnresolvedRelation"
-    if (version.startsWith("2.1")) {
+    if (SPARK_VERSION.startsWith("2.1")) {
       createObject(
         className,
         tableIdentifier,
         tableAlias)._1.asInstanceOf[UnresolvedRelation]
-    } else if (version.startsWith("2.2")) {
+    } else if (SPARK_VERSION.startsWith("2.2")) {
       createObject(
         className,
         tableIdentifier)._1.asInstanceOf[UnresolvedRelation]
     } else {
-      throw new UnsupportedOperationException(s"Unsupported Spark version $version")
+      throw new UnsupportedOperationException(s"Unsupported Spark version $SPARK_VERSION")
     }
   }
 
@@ -77,13 +77,13 @@ object CarbonReflectionUtils {
       relation: LogicalPlan,
       view: Option[TableIdentifier]): SubqueryAlias = {
     val className = "org.apache.spark.sql.catalyst.plans.logical.SubqueryAlias"
-    if (sparkSession.version.startsWith("2.1")) {
+    if (SPARK_VERSION.startsWith("2.1")) {
       createObject(
         className,
         alias.getOrElse(""),
         relation,
         Option(view))._1.asInstanceOf[SubqueryAlias]
-    } else if (sparkSession.version.startsWith("2.2")) {
+    } else if (SPARK_VERSION.startsWith("2.2")) {
       createObject(
         className,
         alias.getOrElse(""),
@@ -130,7 +130,7 @@ object CarbonReflectionUtils {
   def getAstBuilder(conf: Object,
       sqlParser: Object,
       sparkSession: SparkSession): AstBuilder = {
-    if (sparkSession.version.startsWith("2.1") || sparkSession.version.startsWith("2.2")) {
+    if (SPARK_VERSION.startsWith("2.1") || SPARK_VERSION.startsWith("2.2")) {
       createObject(
         "org.apache.spark.sql.hive.CarbonSqlAstBuilder",
         conf,
@@ -141,12 +141,12 @@ object CarbonReflectionUtils {
   }
 
   def getSessionState(sparkContext: SparkContext, carbonSession: Object): Any = {
-    if (sparkContext.version.startsWith("2.1")) {
+    if (SPARK_VERSION.startsWith("2.1")) {
       val className = sparkContext.conf.get(
         CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
         "org.apache.spark.sql.hive.CarbonSessionState")
       createObject(className, carbonSession)._1
-    } else if (sparkContext.version.startsWith("2.2")) {
+    } else if (SPARK_VERSION.startsWith("2.2")) {
       val className = sparkContext.conf.get(
         CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
         "org.apache.spark.sql.hive.CarbonSessionStateBuilder")
