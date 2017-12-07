@@ -127,11 +127,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
     } else {
       updatedSelectPlan
     }
-    val destinationTable =
-      CarbonReflectionUtils.getUnresolvedRelation(
-        table.tableIdentifier,
-        SPARK_VERSION,
-        alias)
+    val destinationTable = CarbonReflectionUtils.getUnresolvedRelation(table.tableIdentifier, alias)
 
     ProjectForUpdate(destinationTable, columns, Seq(finalPlan))
   }
