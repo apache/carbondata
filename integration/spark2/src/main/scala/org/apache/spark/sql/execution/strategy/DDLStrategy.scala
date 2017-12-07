@@ -29,7 +29,7 @@ import org.apache.spark.sql.execution.command.table.{CarbonDescribeFormattedComm
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
 import org.apache.spark.sql.execution.datasources.RefreshTable
-import org.apache.spark.util.FileUtils
+import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.util.CarbonProperties
@@ -134,17 +134,26 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         } else {
           throw new MalformedCarbonCommandException("Unsupported alter operation on hive table")
         }
-      case desc@DescribeTableCommand(identifier, partitionSpec, isExtended)
-        if CarbonEnv.getInstance(sparkSession).carbonMetastore
-          .tableExists(identifier)(sparkSession) =>
-        val resolvedTable =
-          sparkSession.sessionState.executePlan(UnresolvedRelation(identifier)).analyzed
-        val resultPlan = sparkSession.sessionState.executePlan(resolvedTable).executedPlan
-        ExecutedCommandExec(
-          CarbonDescribeFormattedCommand(
-            resultPlan,
-            plan.output,
-            identifier)) :: Nil
+      case desc@DescribeTableCommand(identifier, partitionSpec, isExtended) =>
+        val isFormatted: Boolean = if (sparkSession.version.startsWith("2.1")) {
+          CarbonReflectionUtils
+            .getDescribeTableFormattedField(desc.asInstanceOf[DescribeTableCommand])
+        } else {
+          false
+        }
+        if (CarbonEnv.getInstance(sparkSession).carbonMetastore
+              .tableExists(identifier)(sparkSession) && (isExtended || isFormatted)) {
+          val resolvedTable =
+            sparkSession.sessionState.executePlan(UnresolvedRelation(identifier)).analyzed
+          val resultPlan = sparkSession.sessionState.executePlan(resolvedTable).executedPlan
+          ExecutedCommandExec(
+            CarbonDescribeFormattedCommand(
+              resultPlan,
+              plan.output,
+              identifier)) :: Nil
+        } else {
+          Nil
+        }
       case ShowPartitionsCommand(t, cols) =>
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(t)(sparkSession)

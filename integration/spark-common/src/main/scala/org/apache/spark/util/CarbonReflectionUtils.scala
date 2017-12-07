@@ -175,6 +175,14 @@ object CarbonReflectionUtils {
     }
   }
 
+  def getDescribeTableFormattedField[T: TypeTag : reflect.ClassTag](obj: T): Boolean = {
+    val im = rm.reflect(obj)
+    val isFormatted = im.symbol.typeSignature.members
+      .find(_.name.toString.equalsIgnoreCase("isFormatted"))
+      .map(l => im.reflectField(l.asTerm).get).getOrElse("false").asInstanceOf[Boolean]
+    isFormatted
+  }
+
   def createObject(className: String, conArgs: Object*): (Any, Class[_]) = {
     val clazz = Utils.classForName(className)
     val ctor = clazz.getConstructors.head
