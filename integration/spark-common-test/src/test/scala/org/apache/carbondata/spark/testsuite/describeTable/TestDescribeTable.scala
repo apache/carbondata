@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.describeTable
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -34,8 +35,11 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
     sql("CREATE TABLE Desc2(Dec2Col1 BigInt, Dec2Col2 String, Dec2Col3 Bigint, Dec2Col4 Decimal) stored by 'carbondata'")
   }
 
-  ignore("test describe table") {
-    checkAnswer(sql("DESC Desc1"), sql("DESC Desc2"))
+  test("test describe table") {
+    checkAnswer(sql("DESC Desc1"), Seq(Row("dec2col1","bigint",null),
+      Row("dec2col2","string",null),
+      Row("dec2col3","bigint",null),
+      Row("dec2col4","decimal(10,0)",null)))
   }
 
   test("test describe formatted table") {
