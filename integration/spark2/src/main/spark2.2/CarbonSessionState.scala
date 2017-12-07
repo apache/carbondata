@@ -38,7 +38,7 @@ import org.apache.spark.sql.execution.strategy.{CarbonLateDecodeStrategy, DDLStr
 import org.apache.spark.sql.execution.{SparkOptimizer, SparkSqlAstBuilder}
 import org.apache.spark.sql.hive.client.HiveClient
 import org.apache.spark.sql.internal.{SQLConf, SessionState}
-import org.apache.spark.sql.optimizer.CarbonLateDecodeRule
+import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.parser.{CarbonHelperSqlAstBuilder, CarbonSpark2SqlParser, CarbonSparkSqlParser}
 import org.apache.spark.sql.types.DecimalType
 
@@ -170,7 +170,9 @@ class CarbonSessionStateBuilder(sparkSession: SparkSession,
         new CarbonLateDecodeStrategy,
         new DDLStrategy(sparkSession)
     )
-  experimentalMethods.extraOptimizations = Seq(new CarbonLateDecodeRule)
+  experimentalMethods.extraOptimizations = Seq(new CarbonIUDRule,
+    new CarbonUDFTransformRule,
+    new CarbonLateDecodeRule)
 
   /**
    * Internal catalog for managing table and database states.

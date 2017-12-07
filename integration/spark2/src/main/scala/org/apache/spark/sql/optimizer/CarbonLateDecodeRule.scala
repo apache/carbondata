@@ -46,35 +46,14 @@ import org.apache.carbondata.spark.CarbonAliasDecoderRelation
  */
 class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
   val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
+
   private var relations: Seq[CarbonDecoderRelation] = _
 
-  private def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDecoderRelation] = {
-    plan collect {
-      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        CarbonDecoderRelation(l.attributeMap,
-          l.relation.asInstanceOf[CarbonDatasourceHadoopRelation])
-    }
-  }
-
   def apply(plan: LogicalPlan): LogicalPlan = {
-    relations = collectCarbonRelation(plan)
-    if (relations.nonEmpty && !isOptimized(plan)) {
-      // In case scalar subquery skip the transformation and update the flag.
-      if (relations.exists(_.carbonRelation.isSubquery.nonEmpty)) {
-        relations.foreach{carbonDecoderRelation =>
-          if (carbonDecoderRelation.carbonRelation.isSubquery.nonEmpty) {
-            carbonDecoderRelation.carbonRelation.isSubquery.remove(0)
-          }
-        }
-        LOGGER.info("Skip CarbonOptimizer for scalar/predicate sub query")
-        return plan
-      }
-      LOGGER.info("Starting to optimize plan")
-      val iudPlan = processPlan(plan)
-      val udfTransformedPlan = pushDownUDFToJoinLeftRelation(iudPlan)
+    if (checkIfRuleNeedToBeApplied(plan, true)) {
       val recorder = CarbonTimeStatisticsFactory.createExecutorRecorder("")
       val queryStatistic = new QueryStatistic()
-      val result = transformCarbonPlan(udfTransformedPlan, relations)
+      val result = transformCarbonPlan(plan, relations)
       queryStatistic.addStatistics("Time taken for Carbon Optimizer to optimize: ",
         System.currentTimeMillis)
       recorder.recordStatistics(queryStatistic)
@@ -86,62 +65,37 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     }
   }
 
-  private def pushDownUDFToJoinLeftRelation(plan: LogicalPlan): LogicalPlan = {
-    val output = plan.transform {
-      case proj@Project(cols, Join(
-      left, right, jointype: org.apache.spark.sql.catalyst.plans.JoinType, condition)) =>
-        var projectionToBeAdded: Seq[org.apache.spark.sql.catalyst.expressions.Alias] = Seq.empty
-        var udfExists = false
-        val newCols = cols.map {
-          case a@Alias(s: ScalaUDF, name)
-            if name.equalsIgnoreCase(CarbonCommonConstants.POSITION_ID) ||
-               name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) =>
-            udfExists = true
-            projectionToBeAdded :+= a
-            AttributeReference(name, StringType, nullable = true)().withExprId(a.exprId)
-          case other => other
-        }
-        if (udfExists) {
-          val newLeft = left match {
-            case Project(columns, logicalPlan) =>
-              Project(columns ++ projectionToBeAdded, logicalPlan)
-            case filter: Filter =>
-              Project(filter.output ++ projectionToBeAdded, filter)
-            case relation: LogicalRelation =>
-              Project(relation.output ++ projectionToBeAdded, relation)
-            case other => other
-          }
-          Project(newCols, Join(newLeft, right, jointype, condition))
-        } else {
-          proj
-        }
-      case other => other
-    }
-    output
-  }
-
-  private def processPlan(plan: LogicalPlan): LogicalPlan = {
-    plan transform {
-      case ProjectForUpdate(table, cols, Seq(updatePlan)) =>
-        var isTransformed = false
-        val newPlan = updatePlan transform {
-          case Project(pList, child) if !isTransformed =>
-            val (dest: Seq[NamedExpression], source: Seq[NamedExpression]) = pList
-              .splitAt(pList.size - cols.size)
-            val diff = cols.diff(dest.map(_.name.toLowerCase))
-            if (diff.nonEmpty) {
-              sys.error(s"Unknown column(s) ${diff.mkString(",")} in table ${table.tableName}")
+  def checkIfRuleNeedToBeApplied(plan: LogicalPlan, removeSubQuery: Boolean = false): Boolean = {
+    relations = collectCarbonRelation(plan);
+    if (relations.nonEmpty && !isOptimized(plan)) {
+      // In case scalar subquery skip the transformation and update the flag.
+      if (relations.exists(_.carbonRelation.isSubquery.nonEmpty)) {
+        if (removeSubQuery) {
+          relations.foreach { carbonDecoderRelation =>
+            if (carbonDecoderRelation.carbonRelation.isSubquery.nonEmpty) {
+              carbonDecoderRelation.carbonRelation.isSubquery.remove(0)
             }
-            isTransformed = true
-            Project(dest.filter(a => !cols.contains(a.name.toLowerCase)) ++ source, child)
+          }
         }
-        CarbonProjectForUpdateCommand(
-          newPlan, table.tableIdentifier.database, table.tableIdentifier.table)
+        LOGGER.info("skip CarbonOptimizer for scalar/predicate sub query")
+        return false
+      }
+      true
+    } else {
+      LOGGER.info("skip CarbonOptimizer")
+      false
     }
   }
 
+  private def collectCarbonRelation(plan: LogicalPlan): Seq[CarbonDecoderRelation] = {
+    plan collect {
+      case l: LogicalRelation if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
+        CarbonDecoderRelation(l.attributeMap,
+          l.relation.asInstanceOf[CarbonDatasourceHadoopRelation])
+    }
+  }
 
-  def isOptimized(plan: LogicalPlan): Boolean = {
+  private def isOptimized(plan: LogicalPlan): Boolean = {
     plan find {
       case cd: CarbonDictionaryCatalystDecoder => true
       case other => false
@@ -150,7 +104,7 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
 
   case class ExtraNodeInfo(var hasCarbonRelation: Boolean)
 
-  def fillNodeInfo(
+  private def fillNodeInfo(
       plan: LogicalPlan,
       extraNodeInfos: java.util.HashMap[LogicalPlan, ExtraNodeInfo]): ExtraNodeInfo = {
     plan match {
@@ -573,6 +527,22 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
     updateProjection(updateTempDecoder(transFormedPlan, aliasMap, attrMap))
   }
 
+  private def isDictionaryEncoded(attribute: Attribute,
+      attributeMap: util.HashMap[AttributeReferenceWrapper, CarbonDecoderRelation],
+      aliasMap: CarbonAliasDecoderRelation): Boolean = {
+
+    val uattr = aliasMap.getOrElse(attribute, attribute)
+    val relation = Option(attributeMap.get(AttributeReferenceWrapper(uattr)))
+    if (relation.isDefined) {
+      relation.get.dictionaryMap.get(uattr.name) match {
+        case Some(true) => true
+        case _ => false
+      }
+    } else {
+      false
+    }
+  }
+
   private def updateTempDecoder(plan: LogicalPlan,
       aliasMapOriginal: CarbonAliasDecoderRelation,
       attrMap: java.util.HashMap[AttributeReferenceWrapper, CarbonDecoderRelation]):
@@ -815,21 +785,6 @@ class CarbonLateDecodeRule extends Rule[LogicalPlan] with PredicateHelper {
       }
     } else {
       attr
-    }
-  }
-
-  private def isDictionaryEncoded(attr: Attribute,
-      attrMap: java.util.HashMap[AttributeReferenceWrapper, CarbonDecoderRelation],
-      aliasMap: CarbonAliasDecoderRelation): Boolean = {
-    val uAttr = aliasMap.getOrElse(attr, attr)
-    val relation = Option(attrMap.get(AttributeReferenceWrapper(uAttr)))
-    if (relation.isDefined) {
-      relation.get.dictionaryMap.get(uAttr.name) match {
-        case Some(true) => true
-        case _ => false
-      }
-    } else {
-      false
     }
   }
 
