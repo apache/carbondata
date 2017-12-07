@@ -49,8 +49,8 @@ public class RowComparatorForNormalDims implements Comparator<Object[]> {
 
     for (int i = 0; i < numberOfSortColumns; i++) {
 
-      int dimFieldA = NonDictionaryUtil.getDimension(i, rowA);
-      int dimFieldB = NonDictionaryUtil.getDimension(i, rowB);
+      int dimFieldA = NonDictionaryUtil.getDictDimension(i, rowA);
+      int dimFieldB = NonDictionaryUtil.getDictDimension(i, rowB);
 
       diff = dimFieldA - dimFieldB;
       if (diff != 0) {

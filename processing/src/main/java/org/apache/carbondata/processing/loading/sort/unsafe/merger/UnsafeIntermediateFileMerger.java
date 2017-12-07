@@ -23,24 +23,20 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
-import java.nio.ByteBuffer;
 import java.util.AbstractQueue;
-import java.util.Arrays;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
-import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
+import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.SortTempChunkHolder;
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeSortTempFileChunkHolder;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
+import org.apache.carbondata.processing.sort.sortdata.SortTempFileChunkWriter;
+import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
 import org.apache.carbondata.processing.sort.sortdata.TempSortFileWriter;
 import org.apache.carbondata.processing.sort.sortdata.TempSortFileWriterFactory;
 
@@ -70,7 +66,8 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    * totalNumberOfRecords
    */
   private int totalNumberOfRecords;
-
+  private Object[][] records;
+  private int entryCount = 0;
   /**
    * writer
    */
@@ -82,13 +79,10 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
 
   private File outPutFile;
 
-  private boolean[] noDictionarycolumnMapping;
-
-  private long[] nullSetWords;
-
-  private ByteBuffer rowData;
+  private TableFieldStat tableFieldStat;
 
   private Throwable throwable;
+  private SortStepRowHandler sortStepRowHandler;
 
   /**
    * IntermediateFileMerger Constructor
@@ -99,10 +93,8 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     this.fileCounter = intermediateFiles.length;
     this.intermediateFiles = intermediateFiles;
     this.outPutFile = outPutFile;
-    noDictionarycolumnMapping = mergerParameters.getNoDictionaryDimnesionColumn();
-    this.nullSetWords = new long[((mergerParameters.getMeasureColCount() - 1) >> 6) + 1];
-    // Take size of 2 MB for each row. I think it is high enough to use
-    rowData = ByteBuffer.allocate(2 * 1024 * 1024);
+    this.tableFieldStat = new TableFieldStat(mergerParameters);
+    this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
   }
 
   @Override public Void call() throws Exception {
@@ -125,8 +117,10 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     } finally {
       CarbonUtil.closeStreams(this.stream);
       if (null != writer) {
+        writer.writeSortTempFile(records);
         writer.finish();
       }
+      records = null;
       if (null == throwable) {
         try {
           finish();
@@ -164,13 +158,27 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
         throw new CarbonSortKeyAndGroupByException("Problem while writing the data to file", e);
       }
     } else {
-      writer = TempSortFileWriterFactory.getInstance()
-          .getTempSortFileWriter(mergerParameters.isSortFileCompressionEnabled(),
-              mergerParameters.getDimColCount(), mergerParameters.getComplexDimColCount(),
-              mergerParameters.getMeasureColCount(), mergerParameters.getNoDictionaryCount(),
-              mergerParameters.getFileWriteBufferSize());
+      writer = getWriter();
       writer.initiaize(outPutFile, totalNumberOfRecords);
     }
+  }
+
+  /**
+   * get writer for writing temp sort file
+   * @return
+   */
+  private TempSortFileWriter getWriter() {
+    TempSortFileWriter chunkWriter = null;
+    TempSortFileWriter writer = TempSortFileWriterFactory.getInstance()
+        .getTempSortFileWriter(mergerParameters.isSortFileCompressionEnabled(),
+            tableFieldStat, mergerParameters.getFileWriteBufferSize());
+    if (mergerParameters.isPrefetch() && !mergerParameters.isSortFileCompressionEnabled()) {
+      chunkWriter = new SortTempFileChunkWriter(writer, mergerParameters.getBufferSize());
+    } else {
+      chunkWriter = new SortTempFileChunkWriter(writer,
+          mergerParameters.getSortTempFileNoOFRecordsInCompression());
+    }
+    return chunkWriter;
   }
 
   /**
@@ -284,82 +292,21 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException problem while writing
    */
   private void writeDataTofile(Object[] row) throws CarbonSortKeyAndGroupByException, IOException {
-    int dimCount = 0;
-    int size = 0;
-    DataType[] type = mergerParameters.getMeasureDataType();
-    for (; dimCount < noDictionarycolumnMapping.length; dimCount++) {
-      if (noDictionarycolumnMapping[dimCount]) {
-        byte[] col = (byte[]) row[dimCount];
-        rowData.putShort((short) col.length);
-        size += 2;
-        rowData.put(col);
-        size += col.length;
-      } else {
-        rowData.putInt((int) row[dimCount]);
-        size += 4;
+    // for compressed temp sort file, just add the rows to holder and write them in the enc
+    if (mergerParameters.isSortFileCompressionEnabled() || mergerParameters.isPrefetch()) {
+      if (entryCount == 0) {
+        records = new Object[totalNumberOfRecords][];
       }
+      records[entryCount++] = row;
+      return;
     }
-
-    // write complex dimensions here.
-    int dimensionSize =
-        mergerParameters.getDimColCount() + mergerParameters.getComplexDimColCount();
-    int measureSize = mergerParameters.getMeasureColCount();
-    for (; dimCount < dimensionSize; dimCount++) {
-      byte[] col = (byte[]) row[dimCount];
-      rowData.putShort((short)col.length);
-      size += 2;
-      rowData.put(col);
-      size += col.length;
-    }
-    Arrays.fill(nullSetWords, 0);
-    int nullSetSize = nullSetWords.length * 8;
-    int nullLoc = size;
-    size += nullSetSize;
-    for (int mesCount = 0; mesCount < measureSize; mesCount++) {
-      Object value = row[mesCount + dimensionSize];
-      if (null != value) {
-        DataType dataType = type[mesCount];
-        if (dataType == DataTypes.SHORT) {
-          rowData.putShort(size, (Short) value);
-          size += 2;
-        } else if (dataType == DataTypes.INT) {
-          rowData.putInt(size, (Integer) value);
-          size += 4;
-        } else if (dataType == DataTypes.LONG) {
-          rowData.putLong(size, (Long) value);
-          size += 8;
-        } else if (dataType == DataTypes.DOUBLE) {
-          rowData.putDouble(size, (Double) value);
-          size += 8;
-        } else if (DataTypes.isDecimal(dataType)) {
-          byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(((BigDecimal) value));
-          rowData.putShort(size, (short) bigDecimalInBytes.length);
-          size += 2;
-          for (int i = 0; i < bigDecimalInBytes.length; i++) {
-            rowData.put(size++, bigDecimalInBytes[i]);
-          }
-        }
-        UnsafeCarbonRowPage.set(nullSetWords, mesCount);
-      } else {
-        UnsafeCarbonRowPage.unset(nullSetWords, mesCount);
-      }
-    }
-    for (int i = 0; i < nullSetWords.length; i++) {
-      rowData.putLong(nullLoc, nullSetWords[i]);
-      nullLoc += 8;
-    }
-    byte[] rowBytes = new byte[size];
-    rowData.position(0);
-    rowData.get(rowBytes);
-    stream.write(rowBytes);
-    rowData.clear();
+    sortStepRowHandler.writePartedRowToOutputStream(row, stream);
   }
 
   private void finish() throws CarbonSortKeyAndGroupByException {
     clear();
     try {
       CarbonUtil.deleteFiles(intermediateFiles);
-      rowData.clear();
     } catch (IOException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while deleting the intermediate files");
     }

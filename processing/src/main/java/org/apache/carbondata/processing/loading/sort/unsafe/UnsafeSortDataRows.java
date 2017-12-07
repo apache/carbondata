@@ -49,6 +49,10 @@ import org.apache.carbondata.processing.loading.sort.unsafe.sort.TimSort;
 import org.apache.carbondata.processing.loading.sort.unsafe.sort.UnsafeIntSortDataFormat;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
+import org.apache.carbondata.processing.sort.sortdata.SortTempFileChunkWriter;
+import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
+import org.apache.carbondata.processing.sort.sortdata.TempSortFileWriter;
+import org.apache.carbondata.processing.sort.sortdata.TempSortFileWriterFactory;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
 public class UnsafeSortDataRows {
@@ -70,6 +74,7 @@ public class UnsafeSortDataRows {
    */
 
   private SortParameters parameters;
+  private TableFieldStat tableFieldStat;
 
   private UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger;
 
@@ -95,6 +100,7 @@ public class UnsafeSortDataRows {
   public UnsafeSortDataRows(SortParameters parameters,
       UnsafeIntermediateMerger unsafeInMemoryIntermediateFileMerger, int inMemoryChunkSize) {
     this.parameters = parameters;
+    this.tableFieldStat = new TableFieldStat(parameters);
 
     this.unsafeInMemoryIntermediateFileMerger = unsafeInMemoryIntermediateFileMerger;
 
@@ -128,11 +134,7 @@ public class UnsafeSortDataRows {
     if (isMemoryAvailable) {
       UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(baseBlock.size());
     }
-    this.rowPage = new UnsafeCarbonRowPage(parameters.getNoDictionaryDimnesionColumn(),
-        parameters.getNoDictionarySortColumn(),
-        parameters.getDimColCount() + parameters.getComplexDimColCount(),
-        parameters.getMeasureColCount(), parameters.getMeasureDataType(), baseBlock,
-        !isMemoryAvailable, taskId);
+    this.rowPage = new UnsafeCarbonRowPage(tableFieldStat, baseBlock, !isMemoryAvailable, taskId);
     // Delete if any older file exists in sort temp folder
     deleteSortLocationIfExists();
 
@@ -195,14 +197,7 @@ public class UnsafeSortDataRows {
           if (!saveToDisk) {
             UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(memoryBlock.size());
           }
-          rowPage = new UnsafeCarbonRowPage(
-                  parameters.getNoDictionaryDimnesionColumn(),
-                  parameters.getNoDictionarySortColumn(),
-                  parameters.getDimColCount() + parameters.getComplexDimColCount(),
-                  parameters.getMeasureColCount(),
-                  parameters.getMeasureDataType(),
-                  memoryBlock,
-                  saveToDisk, taskId);
+          rowPage = new UnsafeCarbonRowPage(tableFieldStat, memoryBlock, saveToDisk, taskId);
           bytesAdded += rowPage.addRow(rowBatch[i]);
         } catch (Exception e) {
           LOGGER.error(
@@ -236,12 +231,7 @@ public class UnsafeSortDataRows {
         if (!saveToDisk) {
           UnsafeSortMemoryManager.INSTANCE.allocateDummyMemory(memoryBlock.size());
         }
-        rowPage = new UnsafeCarbonRowPage(
-            parameters.getNoDictionaryDimnesionColumn(),
-            parameters.getNoDictionarySortColumn(),
-            parameters.getDimColCount(), parameters.getMeasureColCount(),
-            parameters.getMeasureDataType(), memoryBlock,
-            saveToDisk, taskId);
+        rowPage = new UnsafeCarbonRowPage(tableFieldStat, memoryBlock, saveToDisk, taskId);
         rowPage.addRow(row);
       } catch (Exception e) {
         LOGGER.error(
@@ -277,6 +267,64 @@ public class UnsafeSortDataRows {
       rowPage.freeMemory();
     }
     startFileBasedMerge();
+  }
+
+  /**
+   * write row page to sort temp file
+   * @param rowPage row page
+   * @param file file
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  private void writeDataToFile(UnsafeCarbonRowPage rowPage, File file)
+    throws CarbonSortKeyAndGroupByException {
+    if (parameters.isSortFileCompressionEnabled() || parameters.isPrefetch()) {
+      writeSortTempFile(rowPage, file);
+      return;
+    }
+    writeData(rowPage, file);
+  }
+
+  /**
+   * write carbon row to compressed sort temp file
+   * @param rowPage row page
+   * @param file sort temp file
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  private void writeSortTempFile(UnsafeCarbonRowPage rowPage, File file)
+      throws CarbonSortKeyAndGroupByException {
+    TempSortFileWriter writer = null;
+    try {
+      writer = getWriter();
+      Object[][] rowsInPage = rowPage.getAllRows();
+      writer.initiaize(file, rowsInPage.length);
+      writer.writeSortTempFile(rowsInPage);
+    } catch (CarbonSortKeyAndGroupByException e) {
+      LOGGER.error("Encounter problem while writing the sort temp file");
+      throw e;
+    } finally {
+      if (null != writer) {
+        writer.finish();
+      }
+    }
+
+  }
+
+  /**
+   * get writer for writing sort temp file
+   * @return writer
+   */
+  private TempSortFileWriter getWriter() {
+    TempSortFileWriter chunkWriter = null;
+    TempSortFileWriter writer = TempSortFileWriterFactory.getInstance()
+        .getTempSortFileWriter(parameters.isSortFileCompressionEnabled(),
+            new TableFieldStat(parameters), parameters.getFileWriteBufferSize());
+    if (parameters.isPrefetch() && !parameters.isSortFileCompressionEnabled()) {
+      chunkWriter = new SortTempFileChunkWriter(writer, parameters.getBufferSize());
+    } else {
+      chunkWriter =
+          new SortTempFileChunkWriter(writer, parameters.getSortTempFileNoOFRecordsInCompression());
+    }
+    return chunkWriter;
   }
 
   private void writeData(UnsafeCarbonRowPage rowPage, File file)
@@ -372,7 +420,7 @@ public class UnsafeSortDataRows {
           File sortTempFile = new File(
               tmpDir + File.separator + parameters.getTableName()
                   + System.nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
-          writeData(page, sortTempFile);
+          writeDataToFile(page, sortTempFile);
           LOGGER.info("Time taken to sort row page with size" + page.getBuffer().getActualSize()
               + " and write is: " + (System.currentTimeMillis() - startTime) + ": location:"
               + sortTempFile);

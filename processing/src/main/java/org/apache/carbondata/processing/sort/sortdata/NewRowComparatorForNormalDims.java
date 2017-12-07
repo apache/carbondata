@@ -18,6 +18,8 @@ package org.apache.carbondata.processing.sort.sortdata;
 
 import java.util.Comparator;
 
+import org.apache.carbondata.core.util.NonDictionaryUtil;
+
 /**
  * This class is used as comparator for comparing dims which are non high cardinality dims.
  * Here the dims will be in form of int[] (surrogates) so directly comparing the integers.
@@ -46,9 +48,8 @@ public class NewRowComparatorForNormalDims implements Comparator<Object[]> {
     int diff = 0;
 
     for (int i = 0; i < numberOfSortColumns; i++) {
-
-      int dimFieldA = (int)rowA[i];
-      int dimFieldB = (int)rowB[i];
+      int dimFieldA = NonDictionaryUtil.getDictDimension(i, rowA);
+      int dimFieldB = NonDictionaryUtil.getDictDimension(i, rowB);
       diff = dimFieldA - dimFieldB;
       if (diff != 0) {
         return diff;

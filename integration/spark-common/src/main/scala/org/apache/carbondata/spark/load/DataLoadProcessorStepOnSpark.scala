@@ -33,9 +33,8 @@ import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.loading.parser.impl.RowParserImpl
-import org.apache.carbondata.processing.loading.sort.SortStepRowUtil
+import org.apache.carbondata.processing.loading.sort.SortStepRowHandler
 import org.apache.carbondata.processing.loading.steps.{DataConverterProcessorStepImpl, DataWriterProcessorStepImpl}
-import org.apache.carbondata.processing.sort.sortdata.SortParameters
 import org.apache.carbondata.processing.store.{CarbonFactHandler, CarbonFactHandlerFactory}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.rdd.{NewRddIterator, StringArrayRow}
@@ -61,6 +60,14 @@ object DataLoadProcessorStepOnSpark {
     }
   }
 
+  /**
+   * parse input row
+   * @param rows input rows
+   * @param index taskNo
+   * @param modelBroadcast loadModel
+   * @param rowCounter counter for input rows
+   * @return parsed rows
+   */
   def inputFunc(
       rows: Iterator[Array[AnyRef]],
       index: Int,
@@ -85,6 +92,15 @@ object DataLoadProcessorStepOnSpark {
     }
   }
 
+  /**
+   * convert row such as convert dictionary column use global dictionary
+   * @param rows input rows
+   * @param index taskNo
+   * @param modelBroadcast loadModel
+   * @param partialSuccessAccum counter for bad record
+   * @param rowCounter counter for converted rows
+   * @return converted rows
+   */
   def convertFunc(
       rows: Iterator[CarbonRow],
       index: Int,
@@ -120,31 +136,39 @@ object DataLoadProcessorStepOnSpark {
     }
   }
 
+  /**
+   * convert carbon row from raw format to 3-parted format
+   * @param rawRow rawRow
+   * @param index taskNo
+   * @param modelBroadcast loadModel
+   * @param sortStepRowHandler handler used to convert rows
+   * @param rowCounter row counter for sorted rows
+   * @return row in 3-parts
+   */
   def convertTo3Parts(
-      rows: Iterator[CarbonRow],
+      rawRow: CarbonRow,
       index: Int,
       modelBroadcast: Broadcast[CarbonLoadModel],
-      rowCounter: Accumulator[Int]): Iterator[CarbonRow] = {
+      sortStepRowHandler: SortStepRowHandler,
+      rowCounter: Accumulator[Int]): CarbonRow = {
     val model: CarbonLoadModel = modelBroadcast.value.getCopyWithTaskNo(index.toString)
-    val conf = DataLoadProcessBuilder.createConfiguration(model)
-    val sortParameters = SortParameters.createSortParameters(conf)
-    val sortStepRowUtil = new SortStepRowUtil(sortParameters)
+
     TaskContext.get().addTaskFailureListener { (t: TaskContext, e: Throwable) =>
       wrapException(e, model)
     }
 
-    new Iterator[CarbonRow] {
-      override def hasNext: Boolean = rows.hasNext
-
-      override def next(): CarbonRow = {
-        val row =
-          new CarbonRow(sortStepRowUtil.convertRow(rows.next().getData))
-        rowCounter.add(1)
-        row
-      }
-    }
+    val row = new CarbonRow(sortStepRowHandler.convertRawRowTo3Parts(rawRow.getData))
+    rowCounter.add(1)
+    row
   }
 
+  /**
+   * write rows to carbon datafile
+   * @param rows rows
+   * @param index taskNo
+   * @param modelBroadcast loadModel
+   * @param rowCounter row counter for written rows
+   */
   def writeFunc(
       rows: Iterator[CarbonRow],
       index: Int,

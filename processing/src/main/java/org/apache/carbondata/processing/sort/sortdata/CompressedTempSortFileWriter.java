@@ -26,18 +26,24 @@ import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 
+/**
+ * For the compressed temp sort file, the file structure looks like below:
+ * | total number of entry in this file | batch of row | batch of row | ... |
+ * For each 'batch of row', the structure look like below:
+ * | number of entry in this batch | content length in bytes | content (compressed) in bytes |
+ * For each 'content (compressed) in bytes', the structure looks like below after de-compressed:
+ * | 3-parted row | 3-parted row | ... |
+ */
 public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
 
   /**
    * CompressedTempSortFileWriter
    *
+   * @param tableFieldStat
    * @param writeBufferSize
-   * @param dimensionCount
-   * @param measureCount
    */
-  public CompressedTempSortFileWriter(int dimensionCount, int complexDimensionCount,
-      int measureCount, int noDictionaryCount, int writeBufferSize) {
-    super(dimensionCount, complexDimensionCount, measureCount, noDictionaryCount, writeBufferSize);
+  public CompressedTempSortFileWriter(TableFieldStat tableFieldStat, int writeBufferSize) {
+    super(tableFieldStat, writeBufferSize);
   }
 
   /**
@@ -51,21 +57,27 @@ public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
     int totalSize = 0;
     int recordSize = 0;
     try {
-      recordSize = (measureCount * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE) + (dimensionCount
-          * CarbonCommonConstants.INT_SIZE_IN_BYTE);
+      // todo: maybe the length can be optimized
+      recordSize =
+          (tableFieldStat.getMeasureCnt() * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE) + (
+              tableFieldStat.getDimCnt() * CarbonCommonConstants.INT_SIZE_IN_BYTE);
       totalSize = records.length * recordSize;
 
       blockDataArray = new ByteArrayOutputStream(totalSize);
       dataOutputStream = new DataOutputStream(blockDataArray);
 
-      UnCompressedTempSortFileWriter
-          .writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount,
-              noDictionaryCount, complexDimensionCount);
+      // the records are 3 parted
+      for (int rowIdx = 0; rowIdx < records.length; rowIdx++) {
+        this.sortStepRowHandler.writePartedRowToOutputStream(records[rowIdx], dataOutputStream);
+      }
 
+      // write entry count for this batch
       stream.writeInt(records.length);
       byte[] byteArray = CompressorFactory.getInstance().getCompressor()
           .compressByte(blockDataArray.toByteArray());
+      // write compressed content length
       stream.writeInt(byteArray.length);
+      // write compressed content
       stream.write(byteArray);
 
     } catch (IOException e) {

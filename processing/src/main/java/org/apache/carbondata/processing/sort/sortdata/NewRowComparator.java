@@ -20,6 +20,7 @@ package org.apache.carbondata.processing.sort.sortdata;
 import java.util.Comparator;
 
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
+import org.apache.carbondata.core.util.NonDictionaryUtil;
 
 public class NewRowComparator implements Comparator<Object[]> {
 
@@ -41,31 +42,31 @@ public class NewRowComparator implements Comparator<Object[]> {
   public int compare(Object[] rowA, Object[] rowB) {
     int diff = 0;
 
-    int index = 0;
+    int dictIndex = 0;
+    int nonDictIndex = 0;
 
     for (boolean isNoDictionary : noDictionarySortColumnMaping) {
 
       if (isNoDictionary) {
-        byte[] byteArr1 = (byte[]) rowA[index];
-
-        byte[] byteArr2 = (byte[]) rowB[index];
+        byte[] byteArr1 = NonDictionaryUtil.getNoDictOrComplex(nonDictIndex, rowA);
+        byte[] byteArr2 = NonDictionaryUtil.getNoDictOrComplex(nonDictIndex, rowB);
+        nonDictIndex++;
 
         int difference = UnsafeComparer.INSTANCE.compareTo(byteArr1, byteArr2);
         if (difference != 0) {
           return difference;
         }
       } else {
-        int dimFieldA = (int) rowA[index];
-        int dimFieldB = (int) rowB[index];
+        int dimFieldA = NonDictionaryUtil.getDictDimension(dictIndex, rowA);
+        int dimFieldB = NonDictionaryUtil.getDictDimension(dictIndex, rowB);
+        dictIndex++;
+
         diff = dimFieldA - dimFieldB;
         if (diff != 0) {
           return diff;
         }
       }
-
-      index++;
     }
-
     return diff;
   }
 }

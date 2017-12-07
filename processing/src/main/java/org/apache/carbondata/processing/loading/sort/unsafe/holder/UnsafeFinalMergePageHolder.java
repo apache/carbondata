@@ -42,17 +42,14 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
 
   private Object[] currentRow;
 
-  private int columnSize;
-
   public UnsafeFinalMergePageHolder(UnsafeInMemoryIntermediateDataMerger merger,
-      boolean[] noDictSortColumnMapping, int columnSize) {
+      boolean[] noDictSortColumnMapping) {
     this.actualSize = merger.getEntryCount();
     this.mergedAddresses = merger.getMergedAddresses();
     this.rowPageIndexes = merger.getRowPageIndexes();
     this.rowPages = merger.getUnsafeCarbonRowPages();
     LOGGER.audit("Processing unsafe inmemory rows page with size : " + actualSize);
     this.comparator = new NewRowComparator(noDictSortColumnMapping);
-    this.columnSize = columnSize;
   }
 
   public boolean hasNext() {
@@ -63,8 +60,7 @@ public class UnsafeFinalMergePageHolder implements SortTempChunkHolder {
   }
 
   public void readRow() {
-    currentRow = new Object[columnSize];
-    rowPages[rowPageIndexes[counter]].getRow(mergedAddresses[counter], currentRow);
+    currentRow = rowPages[rowPageIndexes[counter]].getRow(mergedAddresses[counter]);
     counter++;
   }
 

@@ -22,7 +22,6 @@ import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -33,12 +32,10 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
+import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -70,6 +67,7 @@ public class SortDataRows {
   private Semaphore semaphore;
 
   private SortParameters parameters;
+  private SortStepRowHandler sortStepRowHandler;
 
   private int sortBufferSize;
 
@@ -80,6 +78,7 @@ public class SortDataRows {
   public SortDataRows(SortParameters parameters,
       SortIntermediateFileMerger intermediateFileMerger) {
     this.parameters = parameters;
+    this.sortStepRowHandler = new SortStepRowHandler(parameters);
 
     this.intermediateFileMerger = intermediateFileMerger;
 
@@ -113,7 +112,7 @@ public class SortDataRows {
   /**
    * This method will be used to add new row
    *
-   * @param row new row
+   * @param row raw row
    * @throws CarbonSortKeyAndGroupByException problem while writing
    */
   public void addRow(Object[] row) throws CarbonSortKeyAndGroupByException {
@@ -131,15 +130,15 @@ public class SortDataRows {
         semaphore.acquire();
         dataSorterAndWriterExecutorService.execute(new DataSorterAndWriter(recordHolderListLocal));
       } catch (InterruptedException e) {
-        LOGGER.error(e,
-            "exception occurred while trying to acquire a semaphore lock: ");
+        LOGGER.error(e, "exception occurred while trying to acquire a semaphore lock");
         throw new CarbonSortKeyAndGroupByException(e);
       }
       // create the new holder Array
       this.recordHolderList = new Object[this.sortBufferSize][];
       this.entryCount = 0;
     }
-    recordHolderList[entryCount++] = row;
+    // convert to 3-part
+    recordHolderList[entryCount++] = sortStepRowHandler.convertRawRowTo3Parts(row);
   }
 
   /**
@@ -151,6 +150,11 @@ public class SortDataRows {
   public void addRowBatch(Object[][] rowBatch, int size) throws CarbonSortKeyAndGroupByException {
     // if record holder list size is equal to sort buffer size then it will
     // sort the list and then write current list data to file
+
+    Object[][] threePartedRowBatch = new Object[size][3];
+    for (int i = 0; i < size; i++) {
+      threePartedRowBatch[i] = sortStepRowHandler.convertRawRowTo3Parts(rowBatch[i]);
+    }
     synchronized (addRowsLock) {
       int sizeLeft = 0;
       if (entryCount + size >= sortBufferSize) {
@@ -159,9 +163,10 @@ public class SortDataRows {
         }
         intermediateFileMerger.startMergingIfPossible();
         Object[][] recordHolderListLocal = recordHolderList;
-        sizeLeft = sortBufferSize - entryCount ;
+        sizeLeft = sortBufferSize - entryCount;
         if (sizeLeft > 0) {
-          System.arraycopy(rowBatch, 0, recordHolderListLocal, entryCount, sizeLeft);
+          System.arraycopy(threePartedRowBatch, 0, recordHolderListLocal,
+              entryCount, sizeLeft);
         }
         try {
           semaphore.acquire();
@@ -180,7 +185,7 @@ public class SortDataRows {
           return;
         }
       }
-      System.arraycopy(rowBatch, sizeLeft, recordHolderList, entryCount, size);
+      System.arraycopy(threePartedRowBatch, sizeLeft, recordHolderList, entryCount, size);
       entryCount += size;
     }
   }
@@ -253,6 +258,12 @@ public class SortDataRows {
     }
   }
 
+  /**
+   * @param recordHolderList
+   * @param entryCountLocal
+   * @param file
+   * @throws CarbonSortKeyAndGroupByException
+   */
   private void writeData(Object[][] recordHolderList, int entryCountLocal, File file)
       throws CarbonSortKeyAndGroupByException {
     DataOutputStream stream = null;
@@ -263,60 +274,9 @@ public class SortDataRows {
 
       // write number of entries to the file
       stream.writeInt(entryCountLocal);
-      int complexDimColCount = parameters.getComplexDimColCount();
-      int dimColCount = parameters.getDimColCount() + complexDimColCount;
-      DataType[] type = parameters.getMeasureDataType();
-      boolean[] noDictionaryDimnesionMapping = parameters.getNoDictionaryDimnesionColumn();
-      Object[] row = null;
+
       for (int i = 0; i < entryCountLocal; i++) {
-        // get row from record holder list
-        row = recordHolderList[i];
-        int dimCount = 0;
-        // write dictionary and non dictionary dimensions here.
-        for (; dimCount < noDictionaryDimnesionMapping.length; dimCount++) {
-          if (noDictionaryDimnesionMapping[dimCount]) {
-            byte[] col = (byte[]) row[dimCount];
-            stream.writeShort(col.length);
-            stream.write(col);
-          } else {
-            stream.writeInt((int)row[dimCount]);
-          }
-        }
-        // write complex dimensions here.
-        for (; dimCount < dimColCount; dimCount++) {
-          byte[] value = (byte[])row[dimCount];
-          stream.writeShort(value.length);
-          stream.write(value);
-        }
-        // as measures are stored in separate array.
-        for (int mesCount = 0;
-             mesCount < parameters.getMeasureColCount(); mesCount++) {
-          Object value = row[mesCount + dimColCount];
-          if (null != value) {
-            stream.write((byte) 1);
-            DataType dataType = type[mesCount];
-            if (dataType == DataTypes.BOOLEAN) {
-              stream.writeBoolean((boolean) value);
-            } else if (dataType == DataTypes.SHORT) {
-              stream.writeShort((Short) value);
-            } else if (dataType == DataTypes.INT) {
-              stream.writeInt((Integer) value);
-            } else if (dataType == DataTypes.LONG) {
-              stream.writeLong((Long) value);
-            } else if (dataType == DataTypes.DOUBLE) {
-              stream.writeDouble((Double) value);
-            } else if (DataTypes.isDecimal(dataType)) {
-              BigDecimal val = (BigDecimal) value;
-              byte[] bigDecimalInBytes = DataTypeUtil.bigDecimalToByte(val);
-              stream.writeInt(bigDecimalInBytes.length);
-              stream.write(bigDecimalInBytes);
-            } else {
-              throw new IllegalArgumentException("unsupported data type:" + type[mesCount]);
-            }
-          } else {
-            stream.write((byte) 0);
-          }
-        }
+        sortStepRowHandler.writePartedRowToOutputStream(recordHolderList[i], stream);
       }
     } catch (IOException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
@@ -330,9 +290,7 @@ public class SortDataRows {
     TempSortFileWriter chunkWriter = null;
     TempSortFileWriter writer = TempSortFileWriterFactory.getInstance()
         .getTempSortFileWriter(parameters.isSortFileCompressionEnabled(),
-            parameters.getDimColCount(), parameters.getComplexDimColCount(),
-            parameters.getMeasureColCount(), parameters.getNoDictionaryCount(),
-            parameters.getFileWriteBufferSize());
+            new TableFieldStat(parameters), parameters.getFileWriteBufferSize());
 
     if (parameters.isPrefetch() && !parameters.isSortFileCompressionEnabled()) {
       chunkWriter = new SortTempFileChunkWriter(writer, parameters.getBufferSize());

@@ -23,7 +23,6 @@ import java.io.IOException;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.NonDictionaryUtil;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 
 public class UnCompressedTempSortFileWriter extends AbstractTempSortFileWriter {
@@ -31,49 +30,23 @@ public class UnCompressedTempSortFileWriter extends AbstractTempSortFileWriter {
   /**
    * UnCompressedTempSortFileWriter
    *
+   * @param tableFieldStat
    * @param writeBufferSize
-   * @param dimensionCount
-   * @param measureCount
    */
-  public UnCompressedTempSortFileWriter(int dimensionCount, int complexDimensionCount,
-      int measureCount, int noDictionaryCount, int writeBufferSize) {
-    super(dimensionCount, complexDimensionCount, measureCount, noDictionaryCount, writeBufferSize);
+  public UnCompressedTempSortFileWriter(TableFieldStat tableFieldStat, int writeBufferSize) {
+    super(tableFieldStat, writeBufferSize);
   }
 
-  public static void writeDataOutputStream(Object[][] records, DataOutputStream dataOutputStream,
-      int measureCount, int dimensionCount, int noDictionaryCount, int complexDimensionCount)
+  /**
+   * write records to stream
+   * @param records records
+   * @param dataOutputStream out stream
+   * @throws IOException
+   */
+  private void writeDataOutputStream(Object[][] records, DataOutputStream dataOutputStream)
       throws IOException {
-    Object[] row;
-    for (int recordIndex = 0; recordIndex < records.length; recordIndex++) {
-      row = records[recordIndex];
-      int fieldIndex = 0;
-
-      for (int counter = 0; counter < dimensionCount; counter++) {
-        dataOutputStream.writeInt((Integer) NonDictionaryUtil.getDimension(fieldIndex++, row));
-      }
-
-      //write byte[] of high card dims
-      if (noDictionaryCount > 0) {
-        dataOutputStream.write(NonDictionaryUtil.getByteArrayForNoDictionaryCols(row));
-      }
-      fieldIndex = 0;
-      for (int counter = 0; counter < complexDimensionCount; counter++) {
-        int complexByteArrayLength = ((byte[]) row[fieldIndex]).length;
-        dataOutputStream.writeInt(complexByteArrayLength);
-        dataOutputStream.write(((byte[]) row[fieldIndex++]));
-      }
-
-      for (int counter = 0; counter < measureCount; counter++) {
-        if (null != row[fieldIndex]) {
-          dataOutputStream.write((byte) 1);
-          dataOutputStream.writeDouble((Double) NonDictionaryUtil.getMeasure(fieldIndex, row));
-        } else {
-          dataOutputStream.write((byte) 0);
-        }
-
-        fieldIndex++;
-      }
-
+    for (int rowIdx = 0; rowIdx < records.length; rowIdx++) {
+      this.sortStepRowHandler.writePartedRowToOutputStream(records[rowIdx], dataOutputStream);
     }
   }
 
@@ -88,15 +61,15 @@ public class UnCompressedTempSortFileWriter extends AbstractTempSortFileWriter {
     int totalSize = 0;
     int recordSize = 0;
     try {
-      recordSize = (measureCount * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE) + (dimensionCount
-          * CarbonCommonConstants.INT_SIZE_IN_BYTE);
+      recordSize =
+          (tableFieldStat.getMeasureCnt() * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE) + (
+              tableFieldStat.getDimCnt() * CarbonCommonConstants.INT_SIZE_IN_BYTE);
       totalSize = records.length * recordSize;
 
       blockDataArray = new ByteArrayOutputStream(totalSize);
       dataOutputStream = new DataOutputStream(blockDataArray);
 
-      writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount,
-          noDictionaryCount, complexDimensionCount);
+      writeDataOutputStream(records, dataOutputStream);
       stream.writeInt(records.length);
       byte[] byteArray = blockDataArray.toByteArray();
       stream.writeInt(byteArray.length);
