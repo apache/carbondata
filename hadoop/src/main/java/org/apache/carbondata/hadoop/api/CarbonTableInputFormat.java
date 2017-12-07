@@ -159,7 +159,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Get the cached CarbonTable or create it by TableInfo in `configuration`
    */
-  private CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
+  public CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
     if (carbonTable == null) {
       // carbon table should be created either from deserialized table info (schema saved in
       // hive metastore) or by reading schema in HDFS (schema saved in HDFS)
@@ -303,7 +303,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     configuration.set(INPUT_FILES, CarbonUtil.getSegmentString(validFiles));
   }
 
-  private AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
+  public AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
       throws IOException {
     String tablePath = configuration.get(INPUT_DIR, "");
     try {
@@ -887,7 +887,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * return valid segment to access
    */
-  private String[] getSegmentsToAccess(JobContext job) {
+  public String[] getSegmentsToAccess(JobContext job) {
     String segmentString = job.getConfiguration().get(INPUT_SEGMENT_NUMBERS, "");
     if (segmentString.trim().isEmpty()) {
       return new String[0];

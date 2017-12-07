@@ -55,10 +55,12 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
+import org.apache.carbondata.core.scan.filter.FilterExpressionProcessor;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
 import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecutor;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
+import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -91,7 +93,13 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private static int BLOCK_INFO_INDEX = 8;
 
+  private static int TASK_MIN_VALUES_INDEX = 0;
+
+  private static int TASK_MAX_VALUES_INDEX = 1;
+
   private UnsafeMemoryDMStore unsafeMemoryDMStore;
+
+  private UnsafeMemoryDMStore unsafeMemoryTaskMinMaxDMStore;
 
   private SegmentProperties segmentProperties;
 
@@ -111,6 +119,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
         columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
         segmentProperties = new SegmentProperties(columnInTable, columnCardinality);
         createSchema(segmentProperties);
+        createTaskMinMaxSchema(segmentProperties);
       }
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
       if (fileFooter.getBlockletList() == null || fileFooter.getBlockletList().size() == 0) {
@@ -124,6 +133,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
     if (unsafeMemoryDMStore != null) {
       unsafeMemoryDMStore.finishWriting();
     }
+    if (null != unsafeMemoryTaskMinMaxDMStore) {
+      unsafeMemoryTaskMinMaxDMStore.finishWriting();
+    }
     LOGGER.info(
         "Time taken to load blocklet datamap from file : " + dataMapModel.getFilePath() + "is " + (
             System.currentTimeMillis() - startTime));
@@ -134,27 +146,41 @@ public class BlockletDataMap implements DataMap, Cacheable {
     int[] minMaxLen = segmentProperties.getColumnsValueSize();
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     CarbonRowSchema[] schema = unsafeMemoryDMStore.getSchema();
+    DataMapRow taskMinMaxRow = null;
+    // Add one row to maintain task level min max for segment pruning
+    if (!blockletList.isEmpty()) {
+      taskMinMaxRow = new DataMapRowImpl(unsafeMemoryTaskMinMaxDMStore.getSchema());
+    }
     for (int index = 0; index < blockletList.size(); index++) {
       DataMapRow row = new DataMapRowImpl(schema);
       int ordinal = 0;
+      int taskMinMaxOrdinal = 0;
       BlockletInfo blockletInfo = blockletList.get(index);
 
       // add start key as index key
       row.setByteArray(blockletInfo.getBlockletIndex().getBtreeIndex().getStartKey(), ordinal++);
 
       BlockletMinMaxIndex minMaxIndex = blockletInfo.getBlockletIndex().getMinMaxIndex();
-      row.setRow(addMinMax(minMaxLen, schema[ordinal],
-          updateMinValues(minMaxIndex.getMinValues(), minMaxLen)), ordinal);
+      byte[][] minValues = updateMinValues(minMaxIndex.getMinValues(), minMaxLen);
+      row.setRow(addMinMax(minMaxLen, schema[ordinal], minValues), ordinal);
+      // compute and set task level min values
+      addTaskMinMaxValues(taskMinMaxRow, minMaxLen,
+          unsafeMemoryTaskMinMaxDMStore.getSchema()[taskMinMaxOrdinal], minValues,
+          TASK_MIN_VALUES_INDEX, true);
       ordinal++;
-      row.setRow(addMinMax(minMaxLen, schema[ordinal],
-          updateMaxValues(minMaxIndex.getMaxValues(), minMaxLen)), ordinal);
+      taskMinMaxOrdinal++;
+      byte[][] maxValues = updateMaxValues(minMaxIndex.getMaxValues(), minMaxLen);
+      row.setRow(addMinMax(minMaxLen, schema[ordinal], maxValues), ordinal);
+      // compute and set task level max values
+      addTaskMinMaxValues(taskMinMaxRow, minMaxLen,
+          unsafeMemoryTaskMinMaxDMStore.getSchema()[taskMinMaxOrdinal], maxValues,
+          TASK_MAX_VALUES_INDEX, false);
       ordinal++;
 
       row.setInt(blockletInfo.getNumberOfRows(), ordinal++);
 
       // add file path
-      byte[] filePathBytes =
-          filePath.getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+      byte[] filePathBytes = filePath.getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
       row.setByteArray(filePathBytes, ordinal++);
 
       // add pages
@@ -178,6 +204,18 @@ public class BlockletDataMap implements DataMap, Cacheable {
       } catch (Exception e) {
         throw new RuntimeException(e);
       }
+    }
+    // write the task level min/max row to unsafe memory store
+    if (null != taskMinMaxRow) {
+      addTaskMinMaxRowToUnsafeMemoryStore(taskMinMaxRow);
+    }
+  }
+
+  private void addTaskMinMaxRowToUnsafeMemoryStore(DataMapRow taskMinMaxRow) {
+    try {
+      unsafeMemoryTaskMinMaxDMStore.addIndexRowToUnsafe(taskMinMaxRow);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
     }
   }
 
@@ -270,28 +308,54 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return minRow;
   }
 
+  /**
+   * This method will compute min/max values at task level
+   *
+   * @param taskMinMaxRow
+   * @param minMaxLen
+   * @param carbonRowSchema
+   * @param minMaxValue
+   * @param ordinal
+   * @param isMinValueComparison
+   */
+  private void addTaskMinMaxValues(DataMapRow taskMinMaxRow, int[] minMaxLen,
+      CarbonRowSchema carbonRowSchema, byte[][] minMaxValue, int ordinal,
+      boolean isMinValueComparison) {
+    DataMapRow row = taskMinMaxRow.getRow(ordinal);
+    byte[][] updatedMinMaxValues = minMaxValue;
+    if (null == row) {
+      CarbonRowSchema[] minSchemas =
+          ((CarbonRowSchema.StructCarbonRowSchema) carbonRowSchema).getChildSchemas();
+      row = new DataMapRowImpl(minSchemas);
+    } else {
+      byte[][] existingMinMaxValues = getMinMaxValue(taskMinMaxRow, ordinal);
+      // Compare and update min max values
+      for (int i = 0; i < minMaxLen.length; i++) {
+        int compare =
+            ByteUtil.UnsafeComparer.INSTANCE.compareTo(existingMinMaxValues[i], minMaxValue[i]);
+        if (isMinValueComparison) {
+          if (compare < 0) {
+            updatedMinMaxValues[i] = existingMinMaxValues[i];
+          }
+        } else if (compare > 0) {
+          updatedMinMaxValues[i] = existingMinMaxValues[i];
+        }
+      }
+    }
+    int minMaxOrdinal = 0;
+    // min/max value adding
+    for (int i = 0; i < minMaxLen.length; i++) {
+      row.setByteArray(updatedMinMaxValues[i], minMaxOrdinal++);
+    }
+    taskMinMaxRow.setRow(row, ordinal);
+  }
+
   private void createSchema(SegmentProperties segmentProperties) throws MemoryException {
     List<CarbonRowSchema> indexSchemas = new ArrayList<>();
 
     // Index key
     indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
-    int[] minMaxLen = segmentProperties.getColumnsValueSize();
-    // do it 2 times, one for min and one for max.
-    for (int k = 0; k < 2; k++) {
-      CarbonRowSchema[] mapSchemas = new CarbonRowSchema[minMaxLen.length];
-      for (int i = 0; i < minMaxLen.length; i++) {
-        if (minMaxLen[i] <= 0) {
-          mapSchemas[i] = new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY);
-        } else {
-          mapSchemas[i] =
-              new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, minMaxLen[i]);
-        }
-      }
-      CarbonRowSchema mapSchema =
-          new CarbonRowSchema.StructCarbonRowSchema(DataTypes.createDefaultStructType(),
-              mapSchemas);
-      indexSchemas.add(mapSchema);
-    }
+    getMinMaxSchema(segmentProperties, indexSchemas);
 
     // for number of rows.
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.INT));
@@ -313,6 +377,51 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
     unsafeMemoryDMStore =
         new UnsafeMemoryDMStore(indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]));
+  }
+
+  private void createTaskMinMaxSchema(SegmentProperties segmentProperties) throws MemoryException {
+    List<CarbonRowSchema> taskMinMaxSchemas = new ArrayList<>(2);
+    getMinMaxSchema(segmentProperties, taskMinMaxSchemas);
+    unsafeMemoryTaskMinMaxDMStore = new UnsafeMemoryDMStore(
+        taskMinMaxSchemas.toArray(new CarbonRowSchema[taskMinMaxSchemas.size()]));
+  }
+
+  private void getMinMaxSchema(SegmentProperties segmentProperties,
+      List<CarbonRowSchema> minMaxSchemas) {
+    // Index key
+    int[] minMaxLen = segmentProperties.getColumnsValueSize();
+    // do it 2 times, one for min and one for max.
+    for (int k = 0; k < 2; k++) {
+      CarbonRowSchema[] mapSchemas = new CarbonRowSchema[minMaxLen.length];
+      for (int i = 0; i < minMaxLen.length; i++) {
+        if (minMaxLen[i] <= 0) {
+          mapSchemas[i] = new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY);
+        } else {
+          mapSchemas[i] =
+              new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, minMaxLen[i]);
+        }
+      }
+      CarbonRowSchema mapSchema =
+          new CarbonRowSchema.StructCarbonRowSchema(DataTypes.createDefaultStructType(),
+              mapSchemas);
+      minMaxSchemas.add(mapSchema);
+    }
+  }
+
+  @Override
+  public boolean isScanRequired(FilterResolverIntf filterExp) {
+    FilterExecuter filterExecuter =
+        FilterUtil.getFilterExecuterTree(filterExp, segmentProperties, null);
+    for (int i = 0; i < unsafeMemoryTaskMinMaxDMStore.getRowCount(); i++) {
+      DataMapRow unsafeRow = unsafeMemoryTaskMinMaxDMStore.getUnsafeRow(i);
+      boolean isScanRequired = FilterExpressionProcessor
+          .isScanRequired(filterExecuter, getMinMaxValue(unsafeRow, TASK_MAX_VALUES_INDEX),
+              getMinMaxValue(unsafeRow, TASK_MIN_VALUES_INDEX));
+      if (isScanRequired) {
+        return true;
+      }
+    }
+    return false;
   }
 
   @Override
@@ -562,6 +671,11 @@ public class BlockletDataMap implements DataMap, Cacheable {
       unsafeMemoryDMStore = null;
       segmentProperties = null;
     }
+    // clear task min/max unsafe memory
+    if (null != unsafeMemoryTaskMinMaxDMStore) {
+      unsafeMemoryTaskMinMaxDMStore.freeMemory();
+      unsafeMemoryTaskMinMaxDMStore = null;
+    }
   }
 
   @Override
@@ -576,11 +690,14 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   @Override
   public long getMemorySize() {
+    long memoryUsed = 0L;
     if (unsafeMemoryDMStore != null) {
-      return unsafeMemoryDMStore.getMemoryUsed();
-    } else {
-      return 0;
+      memoryUsed += unsafeMemoryDMStore.getMemoryUsed();
     }
+    if (null != unsafeMemoryTaskMinMaxDMStore) {
+      memoryUsed += unsafeMemoryTaskMinMaxDMStore.getMemoryUsed();
+    }
+    return memoryUsed;
   }
 
 }
