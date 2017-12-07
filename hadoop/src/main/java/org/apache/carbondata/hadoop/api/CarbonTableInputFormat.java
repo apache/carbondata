@@ -826,8 +826,9 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     // set the filter to the query model in order to filter blocklet before scan
     Expression filter = getFilterPredicates(configuration);
     boolean[] isFilterDimensions = new boolean[carbonTable.getDimensionOrdinalMax()];
+    // getAllMeasures returns list of visible and invisible columns
     boolean[] isFilterMeasures =
-        new boolean[carbonTable.getNumberOfMeasures(carbonTable.getTableName())];
+        new boolean[carbonTable.getAllMeasures().size()];
     CarbonInputFormatUtil.processFilterExpression(filter, carbonTable, isFilterDimensions,
         isFilterMeasures);
     queryModel.setIsFilterDimensions(isFilterDimensions);
