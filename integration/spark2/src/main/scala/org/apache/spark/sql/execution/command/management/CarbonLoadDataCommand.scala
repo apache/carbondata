@@ -96,6 +96,7 @@ case class CarbonLoadDataCommand(
 
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val hadoopConf = sparkSession.sessionState.newHadoopConf()
+    val carbonLoadModel = new CarbonLoadModel()
     try {
       val table = if (tableInfoOp.isDefined) {
         CarbonTable.buildFromTableInfo(tableInfoOp.get)
@@ -120,7 +121,6 @@ case class CarbonLoadDataCommand(
           carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
             CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
 
-      val carbonLoadModel = new CarbonLoadModel()
       val factPath = if (dataFrame.isDefined) {
         ""
       } else {
@@ -138,7 +138,6 @@ case class CarbonLoadDataCommand(
         carbonLoadModel,
         hadoopConf
       )
-
 
       try {
         val operationContext = new OperationContext
@@ -205,9 +204,13 @@ case class CarbonLoadDataCommand(
         OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
       } catch {
         case CausedBy(ex: NoRetryException) =>
+          // update the load entry in table status file for changing the status to marked for delete
+          CommonUtil.updateTableStatusForFailure(carbonLoadModel)
           LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")
           throw new RuntimeException(s"Dataload failure for $dbName.$tableName, ${ex.getMessage}")
         case ex: Exception =>
+          // update the load entry in table status file for changing the status to marked for delete
+          CommonUtil.updateTableStatusForFailure(carbonLoadModel)
           LOGGER.error(ex)
           LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
           throw ex

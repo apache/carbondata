@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.command.schema
 
-import org.apache.spark.sql.{CarbonEnv, CarbonSession, Row, SparkSession}
+import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{AlterTableRenameModel, MetadataCommand}
 import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog, HiveExternalCatalog}
@@ -30,6 +30,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{AlterTableRenamePostEvent, AlterTableRenamePreEvent, OperationContext, OperationListenerBus}
@@ -83,6 +84,11 @@ private[sql] case class CarbonAlterTableRenameCommand(
           sparkSession)
       carbonTable = metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
         .asInstanceOf[CarbonRelation].carbonTable
+      // if any load is in progress for table, do not allow rename table
+      if (SegmentStatusManager.checkIfAnyLoadInProgressForTable(carbonTable)) {
+        throw new AnalysisException(s"Data loading is in progress for table $oldTableName, alter " +
+                                    s"table rename operation is not allowed")
+      }
       // invalid data map for the old table, see CARBON-1690
       val oldTableIdentifier = carbonTable.getAbsoluteTableIdentifier
       DataMapStoreManager.getInstance().clearDataMaps(oldTableIdentifier)
