@@ -146,14 +146,14 @@ class CarbonFileMetastore extends CarbonMetaStore {
       case LogicalRelation(
       carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
         carbonDatasourceHadoopRelation.carbonRelation
-      case SubqueryAlias(_, c) if SPARK_VERSION.startsWith("2.2") &&
-      (c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
-       c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
-       c.getClass.getName.equals(
-         "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
-        val catalogTable = CarbonReflectionUtils.getFieldOfCatalogTable(
-          "tableMeta",
-          c).asInstanceOf[CatalogTable]
+      case SubqueryAlias(_, c)
+        if SPARK_VERSION.startsWith("2.2") &&
+           (c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
+            c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
+            c.getClass.getName.equals(
+              "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
+        val catalogTable =
+          CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta", c).asInstanceOf[CatalogTable]
         catalogTable.provider match {
           case Some(name) if name.equals("org.apache.spark.sql.CarbonSource") => name
           case _ => throw new NoSuchTableException(database, tableIdentifier.table)
