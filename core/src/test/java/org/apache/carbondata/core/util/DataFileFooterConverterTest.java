@@ -250,7 +250,6 @@ public class DataFileFooterConverterTest {
     SegmentInfo segmentInfo = new SegmentInfo();
     int[] arr = { 1, 2, 3 };
     segmentInfo.setColumnCardinality(arr);
-    segmentInfo.setNumberOfColumns(segmentInfo1.getNum_cols());
     dataFileFooter.setNumberOfRows(3);
     dataFileFooter.setSegmentInfo(segmentInfo);
     TableBlockInfo info = new TableBlockInfo("/file.carbondata", 1, "0", new String[0], 1, ColumnarFormatVersion.V1, null);

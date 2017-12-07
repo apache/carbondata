@@ -18,6 +18,7 @@ package org.apache.carbondata.core.cache;
 
 import mockit.Mock;
 import mockit.MockUp;
+import org.apache.carbondata.core.util.CarbonProperties;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -58,6 +59,13 @@ public class CarbonLRUCacheTest {
   @Test public void testRemove() {
     carbonLRUCache.remove("Column2");
     assertNull(carbonLRUCache.get("Column2"));
+  }
+
+  @Test public void testInvalidLRUCacheValue() {
+    CarbonProperties.getInstance().addProperty("prop1", "prop1");
+    CarbonLRUCache carbonLRUCache1 = new CarbonLRUCache("prop1", "2");
+    assertNull(carbonLRUCache1.get("Column2"));
+    carbonLRUCache1.clear();
   }
 
   @AfterClass public static void cleanUp() {

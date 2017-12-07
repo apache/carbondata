@@ -118,7 +118,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       case DIRECT_DICTIONARY:
         return org.apache.carbondata.format.Encoding.DIRECT_DICTIONARY;
       default:
-        return org.apache.carbondata.format.Encoding.DICTIONARY;
+        throw new IllegalArgumentException("unsupported encoding scheme:" + encoder);
     }
   }
 
@@ -227,7 +227,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       case RANGE_INTERVAL:
         return org.apache.carbondata.format.PartitionType.RANGE_INTERVAL;
       default:
-        return org.apache.carbondata.format.PartitionType.HASH;
+        throw new IllegalArgumentException("unsupported partition type:" + wrapperPartitionType);
     }
   }
 
@@ -431,8 +431,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return null;
     }
     switch (encoder) {
-      case DICTIONARY:
-        return Encoding.DICTIONARY;
       case DELTA:
         return Encoding.DELTA;
       case RLE:
@@ -443,6 +441,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return Encoding.BIT_PACKED;
       case DIRECT_DICTIONARY:
         return Encoding.DIRECT_DICTIONARY;
+      case DICTIONARY:
       default:
         return Encoding.DICTIONARY;
     }
@@ -462,8 +461,6 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     switch (dataType) {
       case BOOLEAN:
         return DataTypes.BOOLEAN;
-      case STRING:
-        return DataTypes.STRING;
       case INT:
         return DataTypes.INT;
       case SHORT:
@@ -482,6 +479,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return DataTypes.createDefaultArrayType();
       case STRUCT:
         return DataTypes.createDefaultStructType();
+      case STRING:
       default:
         return DataTypes.STRING;
     }
@@ -548,14 +546,13 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       return null;
     }
     switch (externalPartitionType) {
-      case HASH:
-        return PartitionType.HASH;
       case LIST:
         return PartitionType.LIST;
       case RANGE:
         return PartitionType.RANGE;
       case RANGE_INTERVAL:
         return PartitionType.RANGE_INTERVAL;
+      case HASH:
       default:
         return PartitionType.HASH;
     }

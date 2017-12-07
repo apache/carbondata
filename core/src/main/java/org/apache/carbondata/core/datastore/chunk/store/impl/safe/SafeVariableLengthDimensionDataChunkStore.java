@@ -145,7 +145,8 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
     if ((!(dt instanceof StringType) && length == 0) || ByteUtil.UnsafeComparer.INSTANCE
         .equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, 0,
             CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY.length, data, currentDataOffset,
-            length)) {
+            length)
+        || (!(dt instanceof StringType) && length == 0)) {
       vector.putNull(vectorRow);
     } else {
       if (dt instanceof StringType) {
