@@ -45,8 +45,8 @@ case class LoadTablePostExecutionEvent(sparkSession: SparkSession,
     carbonLoadModel: CarbonLoadModel) extends Event with LoadEventInfo
 
 /**
- * Class for handling operations after data load completion and before final commit of load
- * operation. Example usage: For loading pre-aggregate tables
+ * Event for handling operations after data load completion and before final
+ * commit of load operation. Example usage: For loading pre-aggregate tables
  */
 case class LoadTablePreStatusUpdateEvent(sparkSession: SparkSession,
     carbonTableIdentifier: CarbonTableIdentifier,
