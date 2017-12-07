@@ -527,6 +527,26 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
     sql("drop table if exists preaggmain_new")
     sql("drop table if exists preaggMain_preagg1")
   }
+  test("test to check select columns after alter commands with null values"){
+    sql("drop table if exists restructure")
+    sql("drop table if exists restructure1")
+    sql(
+      "CREATE TABLE restructure (empno int, empname String, designation String, doj Timestamp, " +
+      "workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, " +
+      "projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int," +
+      "utilization int,salary int) STORED BY 'org.apache.carbondata.format'")
+    sql(
+      s"""LOAD DATA LOCAL INPATH '$resourcesPath/data.csv' INTO TABLE restructure OPTIONS
+         |('DELIMITER'= ',', 'QUOTECHAR'= '\"')""".stripMargin)
+    sql("ALTER TABLE restructure rename to restructure1")
+    sql("ALTER TABLE restructure1 ADD COLUMNS (projId int)")
+    sql("ALTER TABLE restructure1 DROP COLUMNS (projId)")
+    sql("ALTER TABLE restructure1 CHANGE empno empno BIGINT")
+    sql("ALTER TABLE restructure1 ADD COLUMNS (a1 INT, b1 STRING) TBLPROPERTIES('DICTIONARY_EXCLUDE'='b1')")
+    checkAnswer(sql("select a1,b1,empname from restructure1 where a1 is null and b1 is null and empname='arvind'"),Row(null,null,"arvind"))
+    sql("drop table if exists restructure1")
+    sql("drop table if exists restructure")
+  }
 
   override def afterAll {
     sql("DROP TABLE IF EXISTS restructure")
