@@ -43,9 +43,7 @@ object DictionaryTestCaseUtil {
     val tableIdentifier = new CarbonTableIdentifier(table.getDatabaseName, table.getTableName, "uniqueid")
     val  absoluteTableIdentifier = AbsoluteTableIdentifier.from(table.getTablePath, tableIdentifier)
     val columnIdentifier = new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
-      dimension.getColumnIdentifier, dimension.getDataType,
-      CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier)
-    )
+      dimension.getColumnIdentifier, dimension.getDataType)
     val dict = CarbonLoaderUtil.getDictionary(columnIdentifier)
     assert(dict.getSurrogateKey(value) != CarbonCommonConstants.INVALID_SURROGATE_KEY)
   }

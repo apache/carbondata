@@ -357,10 +357,7 @@ object CarbonDataStoreCreator {
         new DictionaryColumnUniqueIdentifier(
           table.getAbsoluteTableIdentifier,
           columnIdentifier,
-          columnIdentifier.getDataType,
-          CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier.getTablePath,
-            table.getCarbonTableIdentifier)
-        )
+          columnIdentifier.getDataType)
       val writer: CarbonDictionaryWriter = new CarbonDictionaryWriterImpl(
         dictionaryColumnUniqueIdentifier)
       for (value <- set(i)) {
@@ -373,10 +370,8 @@ object CarbonDataStoreCreator {
           new DictionaryColumnUniqueIdentifier(
             absoluteTableIdentifier,
             columnIdentifier,
-            dims.get(i).getDataType,
-            CarbonStorePath.getCarbonTablePath(table.getAbsoluteTableIdentifier.getTablePath,
-              table.getCarbonTableIdentifier)
-          ))
+            dims.get(i).getDataType)
+          )
         .asInstanceOf[Dictionary]
       val preparator: CarbonDictionarySortInfoPreparator =
         new CarbonDictionarySortInfoPreparator()

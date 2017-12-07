@@ -41,8 +41,6 @@ import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.DictionaryService;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
-import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonDictionaryWriter;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortInfo;
@@ -116,15 +114,13 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
 
   @Override public void writeDictionaryData() throws IOException {
     // initialize params
-    CarbonTablePath carbonTablePath =
-        CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
     AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     ColumnIdentifier columnIdentifier = dimension.getColumnIdentifier();
     DictionaryService dictionaryService = CarbonCommonFactory.getDictionaryService();
     // create dictionary cache from dictionary File
     DictionaryColumnUniqueIdentifier identifier =
-            new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
-                    columnIdentifier.getDataType(), carbonTablePath);
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
+            columnIdentifier.getDataType());
     Boolean isDictExists = CarbonUtil.isFileExistsForGivenColumn(identifier);
     Dictionary dictionary = null;
     long t1 = System.currentTimeMillis();
@@ -216,10 +212,9 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
                               AbsoluteTableIdentifier absoluteTableIdentifier,
                               ColumnIdentifier columnIdentifier) throws IOException {
     CarbonDictionarySortIndexWriter carbonDictionarySortIndexWriter = null;
-    CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
-            columnIdentifier.getDataType(), carbonTablePath);
+            columnIdentifier.getDataType());
     try {
       CarbonDictionarySortInfoPreparator preparator = new CarbonDictionarySortInfoPreparator();
       CarbonDictionarySortInfo dictionarySortInfo =

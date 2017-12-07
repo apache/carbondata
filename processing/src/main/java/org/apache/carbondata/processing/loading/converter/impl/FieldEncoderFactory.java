@@ -89,8 +89,7 @@ public class FieldEncoderFactory {
         if (null == dataField.getColumn().getColumnSchema().getParentColumnTableRelations()
             || dataField.getColumn().getColumnSchema().getParentColumnTableRelations().isEmpty()) {
           identifier = new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier,
-              dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType(),
-              CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier));
+              dataField.getColumn().getColumnIdentifier(), dataField.getColumn().getDataType());
           return new DictionaryFieldConverterImpl(dataField, cache, absoluteTableIdentifier,
               nullFormat, index, client, useOnePass, localCache, isEmptyBadRecord,
               identifier);
@@ -113,8 +112,7 @@ public class FieldEncoderFactory {
               CarbonUtil.getNewTablePath(carbonTablePath, parentTableIdentifier.getTableName()),
               parentTableIdentifier);
           identifier = new DictionaryColumnUniqueIdentifier(parentAbsoluteTableIdentifier,
-              parentColumnIdentifier, dataField.getColumn().getDataType(),
-              CarbonStorePath.getCarbonTablePath(parentAbsoluteTableIdentifier));
+              parentColumnIdentifier, dataField.getColumn().getDataType());
           return new DictionaryFieldConverterImpl(dataField, cache, parentAbsoluteTableIdentifier,
               nullFormat, index, null, false, null, isEmptyBadRecord, identifier);
         }

@@ -53,8 +53,7 @@ public class CarbonDictionaryReaderImplTest {
             new CarbonTableIdentifier("dbName", "tableName", UUID.randomUUID().toString()));
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier,
-            columnIdentifier.getDataType(),
-        CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier));
+            columnIdentifier.getDataType());
     carbonDictionaryReaderImpl =
         new CarbonDictionaryReaderImpl(dictionaryColumnUniqueIdentifier);
   }

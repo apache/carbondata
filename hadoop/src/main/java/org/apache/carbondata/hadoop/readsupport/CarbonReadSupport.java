@@ -18,7 +18,7 @@ package org.apache.carbondata.hadoop.readsupport;
 
 import java.io.IOException;
 
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 
 /**
@@ -30,10 +30,9 @@ public interface CarbonReadSupport<T> {
    * Initialization if needed based on the projected column list
    *
    * @param carbonColumns column list
-   * @param absoluteTableIdentifier table identifier
+   * @param carbonTable table identifier
    */
-  void initialize(CarbonColumn[] carbonColumns,
-      AbsoluteTableIdentifier absoluteTableIdentifier) throws IOException;
+  void initialize(CarbonColumn[] carbonColumns, CarbonTable carbonTable) throws IOException;
 
   /**
    * convert column data back to row representation
