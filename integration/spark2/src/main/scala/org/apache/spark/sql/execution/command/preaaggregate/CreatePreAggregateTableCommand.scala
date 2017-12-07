@@ -30,6 +30,7 @@ import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 
 /**
@@ -89,7 +90,8 @@ case class CreatePreAggregateTableCommand(
     tableModel.dataMapRelation = Some(fieldRelationMap)
     val tablePath =
       CarbonEnv.getTablePath(tableModel.databaseNameOp, tableModel.tableName)(sparkSession)
-    CarbonCreateTableCommand(tableModel, Some(tablePath)).run(sparkSession)
+    CarbonCreateTableCommand(TableNewProcessor(tableModel),
+      tableModel.ifNotExistsSet, Some(tablePath)).run(sparkSession)
 
     val table = CarbonEnv.getCarbonTable(tableIdentifier)(sparkSession)
     val tableInfo = table.getTableInfo

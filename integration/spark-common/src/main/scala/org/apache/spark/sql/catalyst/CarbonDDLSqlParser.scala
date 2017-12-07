@@ -1044,48 +1044,48 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     dataType match {
       case "string" =>
         Field(field.column, Some("String"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.columnComment)
       case "smallint" =>
         Field(field.column, Some("SmallInt"), field.name, Some(null),
           field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema)
+          field.precision, field.scale, field.rawSchema, field.columnComment)
       case "integer" | "int" =>
         Field(field.column, Some("Integer"), field.name, Some(null),
           field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema)
+          field.precision, field.scale, field.rawSchema, field.columnComment)
       case "long" => Field(field.column, Some("Long"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.columnComment)
       case "double" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.columnComment)
       case "float" => Field(field.column, Some("Double"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.columnComment)
       case "timestamp" =>
         Field(field.column, Some("Timestamp"), field.name, Some(null),
           field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema)
+          field.precision, field.scale, field.rawSchema, field.columnComment)
       case "numeric" => Field(field.column, Some("Numeric"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.columnComment)
       case "array" =>
         Field(field.column, Some("Array"), field.name,
           field.children.map(f => f.map(normalizeType(_))),
           field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema)
+          field.precision, field.scale, field.rawSchema, field.columnComment)
       case "struct" =>
         Field(field.column, Some("Struct"), field.name,
           field.children.map(f => f.map(normalizeType(_))),
           field.parent, field.storeType, field.schemaOrdinal,
-          field.precision, field.scale, field.rawSchema)
+          field.precision, field.scale, field.rawSchema, field.columnComment)
       case "bigint" => Field(field.column, Some("BigInt"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.columnComment)
       case "decimal" => Field(field.column, Some("Decimal"), field.name, Some(null), field.parent,
-        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema
-      )
+        field.storeType, field.schemaOrdinal, field.precision, field.scale, field.rawSchema,
+        field.columnComment)
       // checking if the nested data type contains the child type as decimal(10,0),
       // if it is present then extracting the precision and scale. resetting the data type
       // with Decimal.
@@ -1098,7 +1098,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
           field.parent,
           field.storeType, field.schemaOrdinal, precision,
           scale,
-          field.rawSchema
+          field.rawSchema,
+          field.columnComment
         )
       case _ =>
         field
@@ -1109,10 +1110,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     field.dataType.getOrElse("NIL") match {
       case "Array" => Field(field.column, Some("Array"), field.name,
         field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
-        field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema)
+        field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema,
+        columnComment = field.columnComment)
       case "Struct" => Field(field.column, Some("Struct"), field.name,
         field.children.map(f => f.map(appendParentForEachChild(_, field.column))), field.parent,
-        field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema)
+        field.storeType, field.schemaOrdinal, rawSchema = field.rawSchema,
+        columnComment = field.columnComment)
       case _ => field
     }
   }

@@ -194,9 +194,12 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
     thriftColumnSchema.setColumnReferenceId(wrapperColumnSchema.getColumnReferenceId());
     thriftColumnSchema.setSchemaOrdinal(wrapperColumnSchema.getSchemaOrdinal());
     if (wrapperColumnSchema.isSortColumn()) {
-      Map<String, String> properties = new HashMap<String, String>();
+      Map<String, String> properties = wrapperColumnSchema.getColumnProperties();
+      if (null == properties) {
+        properties = new HashMap<String, String>();
+        thriftColumnSchema.setColumnProperties(properties);
+      }
       properties.put(CarbonCommonConstants.SORT_COLUMNS, "true");
-      thriftColumnSchema.setColumnProperties(properties);
     }
     thriftColumnSchema.setAggregate_function(wrapperColumnSchema.getAggFunction());
     if (null != wrapperColumnSchema.getTimeSeriesFunction() && !wrapperColumnSchema
