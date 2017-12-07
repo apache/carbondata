@@ -32,7 +32,7 @@ import org.apache.spark.sql.execution._
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.optimizer.CarbonDecoderRelation
 import org.apache.spark.sql.sources.{BaseRelation, Filter}
-import org.apache.spark.sql.types.{AtomicType, IntegerType, StringType}
+import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -40,6 +40,7 @@ import org.apache.carbondata.core.metadata.schema.BucketingInfo
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.format.DataType
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.rdd.CarbonScanRDD
 import org.apache.carbondata.spark.util.CarbonScalaUtil
@@ -409,9 +410,23 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     }
   }
 
+  private def isComplexAttribute(attribute: Attribute) = attribute.dataType match {
+    case ArrayType(dataType, _) => true
+    case StructType(_) => true
+    case _ => false
+  }
+
   protected[sql] def selectFilters(
       relation: BaseRelation,
       predicates: Seq[Expression]): (Seq[Expression], Seq[Filter]) = {
+
+    // In case of ComplexType dataTypes no filters should be pushed down. IsNotNull is being
+    // explicitly added by spark and pushed. That also has to be handled and pushed back to
+    // Spark for handling.
+    val predicatesWithoutComplex = predicates.filter(predicate =>
+      predicate.collect {
+      case a: Attribute if isComplexAttribute(a) => a
+    }.size == 0 )
 
     // For conciseness, all Catalyst filter expressions of type `expressions.Expression` below are
     // called `predicate`s, while all data source filters of type `sources.Filter` are simply called
@@ -419,12 +434,14 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
 
     val translated: Seq[(Expression, Filter)] =
       for {
-        predicate <- predicates
+        predicate <- predicatesWithoutComplex
         filter <- translateFilter(predicate)
       } yield predicate -> filter
 
+
     // A map from original Catalyst expressions to corresponding translated data source filters.
     val translatedMap: Map[Expression, Filter] = translated.toMap
+
 
     // Catalyst predicate expressions that cannot be translated to data source filters.
     val unrecognizedPredicates = predicates.filterNot(translatedMap.contains)

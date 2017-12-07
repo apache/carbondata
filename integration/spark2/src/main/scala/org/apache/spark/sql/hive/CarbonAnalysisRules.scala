@@ -49,10 +49,26 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
 
       val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
 
+      val tableRelation = if (SPARK_VERSION.startsWith("2.1")) {
+        relation
+      } else if (SPARK_VERSION.startsWith("2.2")) {
+        alias match {
+          case Some(a) =>
+            CarbonReflectionUtils.getSubqueryAlias(
+              sparkSession,
+              alias,
+              relation,
+              Some(table.tableIdentifier))
+          case _ => relation
+        }
+      } else {
+        throw new UnsupportedOperationException("Unsupported Spark version.")
+      }
+
       CarbonReflectionUtils.getSubqueryAlias(
         sparkSession,
         alias,
-        Project(projList, relation),
+        Project(projList, tableRelation),
         Some(table.tableIdentifier))
     }
 
@@ -148,7 +164,22 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
 
         val projList = Seq(UnresolvedAlias(UnresolvedStar(alias.map(Seq(_)))), tupleId)
         // include tuple id in subquery
-        Project(projList, relation)
+        if (SPARK_VERSION.startsWith("2.1")) {
+          Project(projList, relation)
+        } else if (SPARK_VERSION.startsWith("2.2")) {
+          alias match {
+            case Some(a) =>
+              val subqueryAlias = CarbonReflectionUtils.getSubqueryAlias(
+                sparkSession,
+                alias,
+                relation,
+                Some(table.tableIdentifier))
+              Project(projList, subqueryAlias)
+            case _ => Project(projList, relation)
+          }
+        } else {
+          throw new UnsupportedOperationException("Unsupported Spark version.")
+        }
     }
     CarbonProjectForDeleteCommand(
       selectPlan,

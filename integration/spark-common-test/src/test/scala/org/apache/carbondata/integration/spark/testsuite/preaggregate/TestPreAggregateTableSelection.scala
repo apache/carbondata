@@ -16,8 +16,10 @@
  */
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
+import org.apache.spark.sql.catalyst.catalog.CatalogRelation
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Row}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
@@ -52,7 +54,7 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
 
   test("test sum and avg on same column should give proper results") {
     val df = sql("select name, sum(id), avg(id) from maintable group by name")
-    checkAnswer(df, Seq(Row("david",1,1.0), Row("jarry",6,3.0), Row("kunal",4,4.0), Row("eason",2,2.0),Row("vishal",4,4.0)))
+    checkAnswer(df, Seq(Row("david",1,1.0), Row("jarry",6,3.0), Row("kunal",4,4.0), Row("eason",2,2.0), Row("vishal",4,4.0)))
   }
 
 
@@ -61,12 +63,12 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
   }
 
-  ignore("test PreAggregate table selection 2") {
+  test("test PreAggregate table selection 2") {
     val df = sql("select name from mainTable where name in (select name from mainTable) group by name")
     preAggTableValidator(df.queryExecution.analyzed, "mainTable")
   }
 
-  ignore("test PreAggregate table selection 3") {
+  test("test PreAggregate table selection 3") {
     val df = sql("select name from mainTable where name in (select name from mainTable group by name) group by name")
     preAggTableValidator(df.queryExecution.analyzed, "mainTable")
   }
@@ -196,6 +198,14 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     plan.transform {
       // first check if any preaTable1 scala function is applied it is present is in plan
       // then call is from create preaTable1regate table class so no need to transform the query plan
+      case ca:CarbonRelation =>
+        if (ca.isInstanceOf[CarbonDatasourceHadoopRelation]) {
+          val relation = ca.asInstanceOf[CarbonDatasourceHadoopRelation]
+          if(relation.carbonTable.getTableName.equalsIgnoreCase(actualTableName)) {
+            isValidPlan = true
+          }
+        }
+        ca
       case logicalRelation:LogicalRelation =>
         if(logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) {
           val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]

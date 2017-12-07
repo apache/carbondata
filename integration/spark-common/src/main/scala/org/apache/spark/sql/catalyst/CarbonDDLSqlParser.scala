@@ -1171,7 +1171,7 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
    * @param values
    * @return
    */
-  protected def parseDataType(dataType: String, values: Option[List[(Int, Int)]]): DataTypeInfo = {
+  def parseDataType(dataType: String, values: Option[List[(Int, Int)]]): DataTypeInfo = {
     dataType match {
       case "bigint" | "long" =>
         if (values.isDefined) {
