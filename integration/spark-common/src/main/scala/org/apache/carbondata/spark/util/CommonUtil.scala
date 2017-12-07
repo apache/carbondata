@@ -760,10 +760,10 @@ object CommonUtil {
   /**
    * The in-progress segments which are left when the driver is down will be marked as deleted
    * when driver is initializing.
-   * @param storePath
-   * @param sparkContext
+   * @param databaseLocation
+   * @param dbName
    */
-  def cleanInProgressSegments(storePath: String, sparkContext: SparkContext): Unit = {
+  def cleanInProgressSegments(databaseLocation: String, dbName: String): Unit = {
     val loaderDriver = CarbonProperties.getInstance().
       getProperty(CarbonCommonConstants.DATA_MANAGEMENT_DRIVER,
         CarbonCommonConstants.DATA_MANAGEMENT_DRIVER_DEFAULT).toBoolean
@@ -771,18 +771,17 @@ object CommonUtil {
       return
     }
     try {
-      val fileType = FileFactory.getFileType(storePath)
-      if (FileFactory.isFileExist(storePath, fileType)) {
-        val file = FileFactory.getCarbonFile(storePath, fileType)
-        val databaseFolders = file.listFiles()
-        databaseFolders.foreach { databaseFolder =>
-          if (databaseFolder.isDirectory) {
-            val tableFolders = databaseFolder.listFiles()
+      val fileType = FileFactory.getFileType(databaseLocation)
+      if (FileFactory.isFileExist(databaseLocation, fileType)) {
+        val file = FileFactory.getCarbonFile(databaseLocation, fileType)
+          if (file.isDirectory) {
+            val tableFolders = file.listFiles()
             tableFolders.foreach { tableFolder =>
               if (tableFolder.isDirectory) {
+                val tablePath = databaseLocation +
+                                CarbonCommonConstants.FILE_SEPARATOR + tableFolder.getName
                 val identifier =
-                  AbsoluteTableIdentifier.from(storePath,
-                    databaseFolder.getName, tableFolder.getName)
+                  AbsoluteTableIdentifier.from(tablePath, dbName, tableFolder.getName)
                 val carbonTablePath = CarbonStorePath.getCarbonTablePath(identifier)
                 val tableStatusFile = carbonTablePath.getTableStatusFilePath
                 if (FileFactory.isFileExist(tableStatusFile, fileType)) {
@@ -826,7 +825,6 @@ object CommonUtil {
               }
             }
           }
-        }
       }
     } catch {
       case s: java.io.FileNotFoundException =>
