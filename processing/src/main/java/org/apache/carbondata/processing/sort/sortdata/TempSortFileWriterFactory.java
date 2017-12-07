@@ -28,14 +28,12 @@ public final class TempSortFileWriterFactory {
     return WRITERFACTORY;
   }
 
-  public TempSortFileWriter getTempSortFileWriter(boolean isCompressionEnabled, int dimensionCount,
-      int complexDimensionCount, int measureCount, int noDictionaryCount, int writeBufferSize) {
+  public TempSortFileWriter getTempSortFileWriter(boolean isCompressionEnabled,
+      TableFieldStat tableFieldStat, int writeBufferSize) {
     if (isCompressionEnabled) {
-      return new CompressedTempSortFileWriter(dimensionCount, complexDimensionCount, measureCount,
-          noDictionaryCount, writeBufferSize);
+      return new CompressedTempSortFileWriter(tableFieldStat, writeBufferSize);
     } else {
-      return new UnCompressedTempSortFileWriter(dimensionCount, complexDimensionCount, measureCount,
-          noDictionaryCount, writeBufferSize);
+      return new UnCompressedTempSortFileWriter(tableFieldStat, writeBufferSize);
     }
   }
 }

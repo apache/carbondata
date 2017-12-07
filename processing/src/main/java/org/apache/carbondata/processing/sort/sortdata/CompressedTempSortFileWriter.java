@@ -31,13 +31,11 @@ public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
   /**
    * CompressedTempSortFileWriter
    *
+   * @param tableFieldStat
    * @param writeBufferSize
-   * @param dimensionCount
-   * @param measureCount
    */
-  public CompressedTempSortFileWriter(int dimensionCount, int complexDimensionCount,
-      int measureCount, int noDictionaryCount, int writeBufferSize) {
-    super(dimensionCount, complexDimensionCount, measureCount, noDictionaryCount, writeBufferSize);
+  public CompressedTempSortFileWriter(TableFieldStat tableFieldStat,  int writeBufferSize) {
+    super(tableFieldStat, writeBufferSize);
   }
 
   /**
@@ -51,21 +49,25 @@ public class CompressedTempSortFileWriter extends AbstractTempSortFileWriter {
     int totalSize = 0;
     int recordSize = 0;
     try {
-      recordSize = (measureCount * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE) + (dimensionCount
-          * CarbonCommonConstants.INT_SIZE_IN_BYTE);
+      // todo: maybe the length can be optimized
+      recordSize =
+          (tableFieldStat.getMeasureCnt() * CarbonCommonConstants.DOUBLE_SIZE_IN_BYTE) + (
+              tableFieldStat.getDimCnt() * CarbonCommonConstants.INT_SIZE_IN_BYTE);
       totalSize = records.length * recordSize;
 
       blockDataArray = new ByteArrayOutputStream(totalSize);
       dataOutputStream = new DataOutputStream(blockDataArray);
 
       UnCompressedTempSortFileWriter
-          .writeDataOutputStream(records, dataOutputStream, measureCount, dimensionCount,
-              noDictionaryCount, complexDimensionCount);
+          .writeDataOutputStream(records, dataOutputStream, tableFieldStat);
 
+      // write entry count for this batch
       stream.writeInt(records.length);
       byte[] byteArray = CompressorFactory.getInstance().getCompressor()
           .compressByte(blockDataArray.toByteArray());
+      // write compressed content length
       stream.writeInt(byteArray.length);
+      // write compressed content
       stream.write(byteArray);
 
     } catch (IOException e) {

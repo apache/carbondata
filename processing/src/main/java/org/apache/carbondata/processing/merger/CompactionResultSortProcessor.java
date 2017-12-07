@@ -40,6 +40,7 @@ import org.apache.carbondata.processing.sort.sortdata.SingleThreadFinalSortFiles
 import org.apache.carbondata.processing.sort.sortdata.SortDataRows;
 import org.apache.carbondata.processing.sort.sortdata.SortIntermediateFileMerger;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
+import org.apache.carbondata.processing.sort.sortdata.TableFieldStat;
 import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.CarbonFactHandler;
 import org.apache.carbondata.processing.store.CarbonFactHandlerFactory;
@@ -118,6 +119,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    * dimension count excluding complex dimension and no dictionary column count
    */
   private int dimensionColumnCount;
+  private SortParameters sortParameters;
   /**
    * whether the allocated tasks has any record
    */
@@ -336,11 +338,11 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       noDictionaryCount++;
     }
     dimensionColumnCount = dimensions.size();
-    SortParameters parameters = createSortParameters();
-    intermediateFileMerger = new SortIntermediateFileMerger(parameters);
+    sortParameters = createSortParameters();
+    intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);
     // TODO: Now it is only supported onheap merge, but we can have unsafe merge
     // as well by using UnsafeSortDataRows.
-    this.sortDataRows = new SortDataRows(parameters, intermediateFileMerger);
+    this.sortDataRows = new SortDataRows(sortParameters, intermediateFileMerger);
     try {
       this.sortDataRows.initialize();
     } catch (CarbonSortKeyAndGroupByException e) {
@@ -376,13 +378,13 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       System.arraycopy(noDictionaryColMapping, 0,
           noDictionarySortColumnMapping, 0, noDictionarySortColumnMapping.length);
     }
+    sortParameters.setNoDictionarySortColumn(noDictionarySortColumnMapping);
 
     String[] sortTempFileLocation = CarbonDataProcessorUtil.arrayAppend(tempStoreLocation,
         CarbonCommonConstants.FILE_SEPARATOR, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     finalMerger =
-        new SingleThreadFinalSortFilesMerger(sortTempFileLocation, tableName, dimensionColumnCount,
-            segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
-            dataTypes, noDictionaryColMapping, noDictionarySortColumnMapping);
+        new SingleThreadFinalSortFilesMerger(sortTempFileLocation, tableName,
+            new TableFieldStat(sortParameters));
   }
 
   /**

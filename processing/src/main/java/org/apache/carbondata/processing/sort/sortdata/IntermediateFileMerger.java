@@ -90,8 +90,7 @@ public class IntermediateFileMerger implements Callable<Void> {
 
   private File outPutFile;
 
-  private boolean[] noDictionarycolumnMapping;
-
+  private TableFieldStat tableFieldStat;
   private Throwable throwable;
 
   /**
@@ -103,7 +102,7 @@ public class IntermediateFileMerger implements Callable<Void> {
     this.fileCounter = intermediateFiles.length;
     this.intermediateFiles = intermediateFiles;
     this.outPutFile = outPutFile;
-    noDictionarycolumnMapping = mergerParameters.getNoDictionaryDimnesionColumn();
+    this.tableFieldStat = new TableFieldStat(mergerParameters);
   }
 
   @Override public Void call() throws Exception {
@@ -180,9 +179,7 @@ public class IntermediateFileMerger implements Callable<Void> {
     } else {
       writer = TempSortFileWriterFactory.getInstance()
           .getTempSortFileWriter(mergerParameters.isSortFileCompressionEnabled(),
-              mergerParameters.getDimColCount(), mergerParameters.getComplexDimColCount(),
-              mergerParameters.getMeasureColCount(), mergerParameters.getNoDictionaryCount(),
-              mergerParameters.getFileWriteBufferSize());
+              tableFieldStat, mergerParameters.getFileWriteBufferSize());
       writer.initiaize(outPutFile, totalNumberOfRecords);
 
       if (mergerParameters.isPrefetch()) {
@@ -256,12 +253,8 @@ public class IntermediateFileMerger implements Callable<Void> {
     for (File tempFile : intermediateFiles) {
       // create chunk holder
       sortTempFileChunkHolder =
-          new SortTempFileChunkHolder(tempFile, mergerParameters.getDimColCount(),
-              mergerParameters.getComplexDimColCount(), mergerParameters.getMeasureColCount(),
-              mergerParameters.getFileBufferSize(), mergerParameters.getNoDictionaryCount(),
-              mergerParameters.getMeasureDataType(),
-              mergerParameters.getNoDictionaryDimnesionColumn(),
-              mergerParameters.getNoDictionarySortColumn(), mergerParameters.getTableName());
+          new SortTempFileChunkHolder(tempFile, mergerParameters.getFileBufferSize(),
+              tableFieldStat, mergerParameters.getTableName());
 
       // initialize
       sortTempFileChunkHolder.initialize();
@@ -308,6 +301,7 @@ public class IntermediateFileMerger implements Callable<Void> {
 
   /**
    * Below method will be used to write data to file
+   * todo: to optimize it later
    *
    * @throws CarbonSortKeyAndGroupByException problem while writing
    */
@@ -328,13 +322,13 @@ public class IntermediateFileMerger implements Callable<Void> {
       return;
     }
     try {
-      DataType[] measureDataType = mergerParameters.getMeasureDataType();
+      DataType[] measureDataType = tableFieldStat.getMeasureDataType();
       int[] mdkArray = (int[]) row[0];
       byte[][] nonDictArray = (byte[][]) row[1];
       int mdkIndex = 0;
       int nonDictKeyIndex = 0;
       // write dictionary and non dictionary dimensions here.
-      for (boolean nodictinary : noDictionarycolumnMapping) {
+      for (boolean nodictinary : tableFieldStat.getIsDimNoDictFlags()) {
         if (nodictinary) {
           byte[] col = nonDictArray[nonDictKeyIndex++];
           stream.writeShort(col.length);
@@ -345,7 +339,7 @@ public class IntermediateFileMerger implements Callable<Void> {
       }
 
       int fieldIndex = 0;
-      for (int counter = 0; counter < mergerParameters.getMeasureColCount(); counter++) {
+      for (int counter = 0; counter < tableFieldStat.getMeasureCnt(); counter++) {
         if (null != NonDictionaryUtil.getMeasure(fieldIndex, row)) {
           stream.write((byte) 1);
           DataType dataType = measureDataType[counter];
