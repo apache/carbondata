@@ -182,8 +182,11 @@ object CarbonSession {
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
         try {
-          CommonUtil.cleanInProgressSegments(
-            carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION), sparkContext)
+          val databases = session.sessionState.catalog.listDatabases()
+          databases.foreach(dbName => {
+            val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, session)
+            CommonUtil.cleanInProgressSegments(databaseLocation, dbName)
+          })
         } catch {
           case e: Throwable =>
             // catch all exceptions to avoid CarbonSession initialization failure

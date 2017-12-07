@@ -1302,7 +1302,7 @@ public final class CarbonCommonConstants {
    */
   public static final String DATA_MANAGEMENT_DRIVER = "spark.carbon.datamanagement.driver";
 
-  public static final String DATA_MANAGEMENT_DRIVER_DEFAULT = "false";
+  public static final String DATA_MANAGEMENT_DRIVER_DEFAULT = "true";
 
   public static final String CARBON_SESSIONSTATE_CLASSNAME = "spark.carbon.sessionstate.classname";
 
