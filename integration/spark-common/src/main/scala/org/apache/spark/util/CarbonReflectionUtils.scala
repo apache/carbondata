@@ -57,20 +57,19 @@ object CarbonReflectionUtils {
 
   def getUnresolvedRelation(
       tableIdentifier: TableIdentifier,
-      version: String,
       tableAlias: Option[String] = None): UnresolvedRelation = {
     val className = "org.apache.spark.sql.catalyst.analysis.UnresolvedRelation"
-    if (version.startsWith("2.1")) {
+    if (SPARK_VERSION.startsWith("2.1")) {
       createObject(
         className,
         tableIdentifier,
         tableAlias)._1.asInstanceOf[UnresolvedRelation]
-    } else if (version.startsWith("2.2")) {
+    } else if (SPARK_VERSION.startsWith("2.2")) {
       createObject(
         className,
         tableIdentifier)._1.asInstanceOf[UnresolvedRelation]
     } else {
-      throw new UnsupportedOperationException(s"Unsupported Spark version $version")
+      throw new UnsupportedOperationException(s"Unsupported Spark version $SPARK_VERSION")
     }
   }
 
@@ -142,12 +141,12 @@ object CarbonReflectionUtils {
   }
 
   def getSessionState(sparkContext: SparkContext, carbonSession: Object): Any = {
-    if (sparkContext.version.startsWith("2.1")) {
+    if (SPARK_VERSION.startsWith("2.1")) {
       val className = sparkContext.conf.get(
         CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
         "org.apache.spark.sql.hive.CarbonSessionState")
       createObject(className, carbonSession)._1
-    } else if (sparkContext.version.startsWith("2.2")) {
+    } else if (SPARK_VERSION.startsWith("2.2")) {
       val className = sparkContext.conf.get(
         CarbonCommonConstants.CARBON_SESSIONSTATE_CLASSNAME,
         "org.apache.spark.sql.hive.CarbonSessionStateBuilder")

@@ -20,8 +20,7 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-import org.apache.spark.SPARK_VERSION
-import org.apache.spark.sql.{DeleteRecords, SparkSession, UpdateTable}
+import org.apache.spark.sql.{DeleteRecords, UpdateTable}
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -245,12 +244,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         }
         // Use Reflection to choose between Spark2.1 and Spark2.2
         // Move UnresolvedRelation(tableIdentifier, tableAlias) to reflection.
-        val unresolvedrelation =
-        CarbonReflectionUtils.getUnresolvedRelation(
-          tableIdentifier,
-          SPARK_VERSION,
-          tableAlias)
-        unresolvedrelation
+        CarbonReflectionUtils.getUnresolvedRelation(tableIdentifier, tableAlias)
     }
   }
 
@@ -274,11 +268,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
 
         // Use Reflection to choose between Spark2.1 and Spark2.2
         // Move (UnresolvedRelation(tableIdent, alias), tableIdent, alias) to reflection.
-        val unresolvedRelation =
-        CarbonReflectionUtils.getUnresolvedRelation(
-          tableIdentifier,
-          SPARK_VERSION,
-          alias)
+        val unresolvedRelation = CarbonReflectionUtils.getUnresolvedRelation(tableIdentifier, alias)
 
         (unresolvedRelation, tableIdent, alias, tableIdentifier)
     }
