@@ -38,8 +38,6 @@ import org.apache.carbondata.core.datastore.columnar.ColumnGroupModel;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
-import org.apache.carbondata.core.keygenerator.columnar.ColumnarSplitter;
-import org.apache.carbondata.core.keygenerator.columnar.impl.MultiDimKeyVarLengthEquiSplitGenerator;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -47,7 +45,6 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
 import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
@@ -371,22 +368,6 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     }
     LOGGER.info("Number of rows per column blocklet " + pageSize);
     dataRows = new ArrayList<>(this.pageSize);
-    int dimSet =
-        Integer.parseInt(CarbonCommonConstants.DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE);
-    // if at least one dimension is present then initialize column splitter otherwise null
-    int noOfColStore = colGrpModel.getNoOfColumnStore();
-    int[] keyBlockSize = new int[noOfColStore + getExpandedComplexColsCount()];
-
-    if (model.getDimLens().length > 0) {
-      //Using Variable length variable split generator
-      //This will help in splitting mdkey to columns. variable split is required because all
-      // columns which are part of
-      //row store will be in single column store
-      //e.g if {0,1,2,3,4,5} is dimension and {0,1,2) is row store dimension
-      //than below splitter will return column as {0,1,2}{3}{4}{5}
-      ColumnarSplitter columnarSplitter = model.getSegmentProperties().getFixedLengthKeySplitter();
-      System.arraycopy(columnarSplitter.getBlockKeySize(), 0, keyBlockSize, 0, noOfColStore);
-    }
 
     // agg type
     List<Integer> otherMeasureIndexList =
@@ -411,43 +392,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
       customMeasureIndex[i] = customMeasureIndexList.get(i);
     }
     setComplexMapSurrogateIndex(model.getDimensionCount());
-    int[] blockKeySize = getBlockKeySizeWithComplexTypes(new MultiDimKeyVarLengthEquiSplitGenerator(
-        CarbonUtil.getIncrementedCardinalityFullyFilled(model.getDimLens().clone()), (byte) dimSet)
-        .getBlockKeySize());
-    System.arraycopy(blockKeySize, noOfColStore, keyBlockSize, noOfColStore,
-        blockKeySize.length - noOfColStore);
     this.dataWriter = getFactDataWriter();
     // initialize the channel;
     this.dataWriter.initializeWriter();
-  }
-
-  /**
-   * This method combines primitive dimensions with complex metadata columns
-   *
-   * @param primitiveBlockKeySize
-   * @return all dimensions cardinality including complex dimension metadata column
-   */
-  private int[] getBlockKeySizeWithComplexTypes(int[] primitiveBlockKeySize) {
-    int allColsCount = getExpandedComplexColsCount();
-    int[] blockKeySizeWithComplexTypes =
-        new int[this.colGrpModel.getNoOfColumnStore() + allColsCount];
-
-    List<Integer> blockKeySizeWithComplex =
-        new ArrayList<Integer>(blockKeySizeWithComplexTypes.length);
-    int dictDimensionCount = model.getDimensionCount();
-    for (int i = 0; i < dictDimensionCount; i++) {
-      GenericDataType complexDataType = model.getComplexIndexMap().get(i);
-      if (complexDataType != null) {
-        complexDataType.fillBlockKeySize(blockKeySizeWithComplex, primitiveBlockKeySize);
-      } else {
-        blockKeySizeWithComplex.add(primitiveBlockKeySize[i]);
-      }
-    }
-    for (int i = 0; i < blockKeySizeWithComplexTypes.length; i++) {
-      blockKeySizeWithComplexTypes[i] = blockKeySizeWithComplex.get(i);
-    }
-
-    return blockKeySizeWithComplexTypes;
   }
 
   /**

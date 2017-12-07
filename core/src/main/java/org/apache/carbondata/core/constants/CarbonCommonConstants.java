@@ -46,14 +46,6 @@ public final class CarbonCommonConstants {
    * byte to KB conversion factor
    */
   public static final int BYTE_TO_KB_CONVERSION_FACTOR = 1024;
-  /**
-   * BYTE_ENCODING
-   */
-  public static final String BYTE_ENCODING = "ISO-8859-1";
-  /**
-   * measure meta data file name
-   */
-  public static final String MEASURE_METADATA_FILE_NAME = "/msrMetaData_";
 
   /**
    * set the segment ids to query from the table
@@ -179,22 +171,6 @@ public final class CarbonCommonConstants {
 
   public static final int BYTEBUFFER_SIZE = 24 * 1024;
   /**
-   * Average constant
-   */
-  public static final String AVERAGE = "avg";
-  /**
-   * Count constant
-   */
-  public static final String COUNT = "count";
-  /**
-   * SUM
-   */
-  public static final String SUM = "sum";
-  /**
-   * DUMMY aggregation function
-   */
-  public static final String DUMMY = "dummy";
-  /**
    * MEMBER_DEFAULT_VAL
    */
   public static final String MEMBER_DEFAULT_VAL = "@NU#LL$!";
@@ -234,17 +210,9 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_BADRECORDS_LOC_DEFAULT_VAL = "";
   /**
-   * HIERARCHY_FILE_EXTENSION
-   */
-  public static final String HIERARCHY_FILE_EXTENSION = ".hierarchy";
-  /**
    * SORT_TEMP_FILE_LOCATION
    */
   public static final String SORT_TEMP_FILE_LOCATION = "sortrowtmp";
-  /**
-   * CARBON_RESULT_SIZE_DEFAULT
-   */
-  public static final String LEVEL_FILE_EXTENSION = ".level";
   /**
    * FACT_FILE_EXT
    */
@@ -260,35 +228,6 @@ public final class CarbonCommonConstants {
    */
   public static final String UPDATE_DELTA_FILE_EXT = FACT_FILE_EXT;
   /**
-   * MEASUREMETADATA_FILE_EXT
-   */
-  public static final String MEASUREMETADATA_FILE_EXT = ".msrmetadata";
-  /**
-   * GRAPH_ROWSET_SIZE
-   */
-  @CarbonProperty
-  public static final String GRAPH_ROWSET_SIZE = "carbon.graph.rowset.size";
-  /**
-   * GRAPH_ROWSET_SIZE_DEFAULT
-   */
-  public static final String GRAPH_ROWSET_SIZE_DEFAULT = "500";
-  /**
-   * Comment for <code>TYPE_MYSQL</code>
-   */
-  public static final String TYPE_MYSQL = "MYSQL";
-  /**
-   * Comment for <code>TYPE_MSSQL</code>
-   */
-  public static final String TYPE_MSSQL = "MSSQL";
-  /**
-   * Comment for <code>TYPE_ORACLE</code>
-   */
-  public static final String TYPE_ORACLE = "ORACLE";
-  /**
-   * Comment for <code>TYPE_SYBASE</code>
-   */
-  public static final String TYPE_SYBASE = "SYBASE";
-  /**
    * SORT_INTERMEDIATE_FILES_LIMIT
    */
   @CarbonProperty
@@ -298,10 +237,6 @@ public final class CarbonCommonConstants {
    */
   public static final String SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE = "20";
   /**
-   * BAD_RECORD_KEY_VALUE
-   */
-  public static final String BAD_RECORD_KEY = "BADRECORD";
-  /**
    * MERGERD_EXTENSION
    */
   public static final String MERGERD_EXTENSION = ".merge";
@@ -310,15 +245,6 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String SORT_FILE_BUFFER_SIZE = "carbon.sort.file.buffer.size";
-  /**
-   * no.of records after which counter to be printed
-   */
-  @CarbonProperty
-  public static final String DATA_LOAD_LOG_COUNTER = "carbon.load.log.counter";
-  /**
-   * DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER
-   */
-  public static final String DATA_LOAD_LOG_COUNTER_DEFAULT_COUNTER = "500000";
   /**
    * SORT_FILE_WRITE_BUFFER_SIZE
    */
@@ -405,18 +331,6 @@ public final class CarbonCommonConstants {
    */
   public static final String SEMICOLON_SPC_CHARACTER = ";#!@:SEMIC:@!#;";
   /**
-   * AMPERSAND_SPC_CHARATER
-   */
-  public static final String AMPERSAND_SPC_CHARACTER = "&#!@:AMPER:@!#&";
-  /**
-   * ATTHERATE_SPC_CHARATER
-   */
-  public static final String COMA_SPC_CHARACTER = ",#!:COMA:!#,";
-  /**
-   * HYPHEN_SPC_CHARACTER
-   */
-  public static final String HYPHEN_SPC_CHARACTER = "-#!:HYPHEN:!#-";
-  /**
    * SORT_TEMP_FILE_EXT
    */
   public static final String SORT_TEMP_FILE_EXT = ".sorttemp";
@@ -485,26 +399,9 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String STORE_LOCATION_TEMP_PATH = "carbon.tempstore.location";
   /**
-   * IS_COLUMNAR_STORAGE_DEFAULTVALUE
-   */
-  public static final String IS_COLUMNAR_STORAGE_DEFAULTVALUE = "true";
-  /**
-   * DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE
-   */
-  public static final String DIMENSION_SPLIT_VALUE_IN_COLUMNAR_DEFAULTVALUE = "1";
-  /**
    * IS_FULLY_FILLED_BITS_DEFAULT_VALUE
    */
   public static final String IS_FULLY_FILLED_BITS_DEFAULT_VALUE = "true";
-  /**
-   * IS_INT_BASED_INDEXER
-   */
-  @CarbonProperty
-  public static final String AGGREAGATE_COLUMNAR_KEY_BLOCK = "aggregate.columnar.keyblock";
-  /**
-   * IS_INT_BASED_INDEXER_DEFAULTVALUE
-   */
-  public static final String AGGREAGATE_COLUMNAR_KEY_BLOCK_DEFAULTVALUE = "true";
   /**
    * ENABLE_QUERY_STATISTICS
    */
@@ -540,10 +437,6 @@ public final class CarbonCommonConstants {
    * UNDERSCORE
    */
   public static final String UNDERSCORE = "_";
-  /**
-   * DASH
-   */
-  public static final String DASH = "-";
   /**
    * POINT
    */
@@ -621,16 +514,6 @@ public final class CarbonCommonConstants {
   public static final String TIMESTAMP = "Timestamp";
   public static final String ARRAY = "array";
   public static final String STRUCT = "struct";
-  public static final String FROM = "from";
-  /**
-   * FACT_UPDATE_EXTENSION.
-   */
-  public static final String FACT_UPDATE_EXTENSION = ".carbondata_update";
-  public static final String FACT_DELETE_EXTENSION = "_delete";
-  /**
-   * MARKED_FOR_UPDATION
-   */
-  public static final String FACT_FILE_UPDATED = "update";
   /**
    * MAX_QUERY_EXECUTION_TIME
    */
@@ -663,16 +546,10 @@ public final class CarbonCommonConstants {
    */
   @CarbonProperty
   public static final String CARBON_MAX_DRIVER_LRU_CACHE_SIZE = "carbon.max.driver.lru.cache.size";
-  public static final String POSITION_REFERENCE = "positionReference";
   /**
    * implicit column which will be added to each carbon table
    */
   public static final String POSITION_ID = "positionId";
-  /**
-   * max driver lru cache size upto which lru cache will be loaded in memory
-   */
-  @CarbonProperty
-  public static final String CARBON_MAX_LEVEL_CACHE_SIZE = "carbon.max.level.cache.size";
   /**
    * max executor lru cache size upto which lru cache will be loaded in memory
    */
@@ -1023,16 +900,6 @@ public final class CarbonCommonConstants {
   public static final String UPDATE_INDEX_FILE_EXT = ".carbonindex";
 
   /**
-   * Key word for true
-   */
-  public static final String KEYWORD_TRUE = "TRUE";
-
-  /**
-   * Key word for false
-   */
-  public static final String KEYWORD_FALSE = "FALSE";
-
-  /**
    * hyphen
    */
   public static final String HYPHEN = "-";
@@ -1041,11 +908,6 @@ public final class CarbonCommonConstants {
    * columns which gets updated in update will have header ends with this extension.
    */
   public static final String UPDATED_COL_EXTENSION = "-updatedColumn";
-
-  /**
-   * appending the key to differentiate the update flow with insert flow.
-   */
-  public static final String RDDUTIL_UPDATE_KEY = "UPDATE_";
 
   /**
    * to determine to use the rdd persist or not.
@@ -1094,10 +956,6 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_DATA_FILE_DEFAULT_VERSION = "V3";
 
-  /**
-   * data file version header
-   */
-  public static final String CARBON_DATA_VERSION_HEADER = "CARBONDATAVERSION#";
   /**
    * Maximum no of column supported
    */
@@ -1196,12 +1054,13 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String LOAD_BATCH_SORT_SIZE_INMB = "carbon.load.batch.sort.size.inmb";
   public static final String LOAD_BATCH_SORT_SIZE_INMB_DEFAULT = "0";
-  @CarbonProperty
+
   /**
    * The Number of partitions to use when shuffling data for sort. If user don't configurate or
    * configurate it less than 1, it uses the number of map tasks as reduce tasks. In general, we
    * recommend 2-3 tasks per CPU core in your cluster.
    */
+  @CarbonProperty
   public static final String LOAD_GLOBAL_SORT_PARTITIONS = "carbon.load.global.sort.partitions";
 
   public static final String LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT = "0";
@@ -1228,11 +1087,6 @@ public final class CarbonCommonConstants {
   public static final String IS_DRIVER_INSTANCE = "is.driver.instance";
 
   /**
-   * maximum length of column
-   */
-  public static final int DEFAULT_COLUMN_LENGTH = 100000;
-
-  /**
    * property for enabling unsafe based query processing
    */
   @CarbonProperty
@@ -1242,17 +1096,6 @@ public final class CarbonCommonConstants {
    * default property of unsafe processing
    */
   public static final String ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE = "false";
-
-  /**
-   * property for offheap based processing
-   */
-  @CarbonProperty
-  public static final String USE_OFFHEAP_IN_QUERY_PROCSSING = "use.offheap.in.query.processing";
-
-  /**
-   * default value of offheap based processing
-   */
-  public static final String USE_OFFHEAP_IN_QUERY_PROCSSING_DEFAULT = "true";
 
   /**
    * whether to prefetch data while loading.
