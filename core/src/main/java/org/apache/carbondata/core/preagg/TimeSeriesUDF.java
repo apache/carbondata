@@ -66,8 +66,9 @@ public class TimeSeriesUDF {
     Calendar calendar = calanderThreadLocal.get();
     calendar.clear();
     calendar.setTimeInMillis(data.getTime());
-    TimeSeriesFunction timeSeriesFunction = TimeSeriesFunction.valueOf(function);
-    switch (timeSeriesFunction) {
+    TimeSeriesFunctionEnum timeSeriesFunctionEnum =
+        TimeSeriesFunctionEnum.valueOf(function.toUpperCase());
+    switch (timeSeriesFunctionEnum) {
       case SECOND:
         calendar.set(Calendar.MILLISECOND, 0);
         break;

@@ -22,22 +22,22 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql._
-import org.apache.spark.sql.CarbonExpressions.CarbonSubqueryAlias
+import org.apache.spark.sql.CarbonExpressions.{CarbonScalaUDF, CarbonSubqueryAlias, MatchCast}
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Divide, Expression, NamedExpression, ScalaUDF, SortOrder}
+import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute}
+import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Divide, Expression, Literal, NamedExpression, ScalaUDF, SortOrder}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.catalyst.rules.Rule
 import org.apache.spark.sql.execution.datasources.{FindDataSourceTable, LogicalRelation}
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.util.CarbonException
-import org.apache.spark.sql.CarbonExpressions.MatchCast
-import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute}
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.preagg.{AggregateTableSelector, QueryColumn, QueryPlan}
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
@@ -69,6 +69,9 @@ import org.apache.carbondata.spark.util.CarbonScalaUtil
  * 5. Order By Query rules.
  *    5.1 Update project list based on updated aggregate expression
  *    5.2 Update sort order attributes based on pre aggregate table
+ * 6. timeseries function
+ *    6.1 validate maintable has timeseries datamap
+ *    6.2 timeseries function is valid function or not
  *
  * @param sparkSession
  * spark session
@@ -115,8 +118,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           // only carbon query plan is supported checking whether logical relation is
           // is for carbon
           if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation]   &&
-             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
-               .hasDataMapSchema =>
+             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+               metaData.hasAggregateDataMapSchema =>
           val (carbonTable, tableName) = getCarbonTableAndTableName(logicalRelation)
           // if it is valid plan then extract the query columns
           isValidPlan = extractQueryColumnsFromAggExpression(groupingExp,
@@ -136,8 +139,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           // only carbon query plan is supported checking whether logical relation is
           // is for carbon
           if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation]   &&
-             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
-               .hasDataMapSchema =>
+             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+               metaData.hasAggregateDataMapSchema =>
           val (carbonTable, tableName) = getCarbonTableAndTableName(logicalRelation)
           // if it is valid plan then extract the query columns
           isValidPlan = extractQueryColumnsFromAggExpression(groupingExp,
@@ -148,11 +151,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(filterExp)
           // getting the columns from filter expression
           if(isValidPlan) {
-            filterExp.transform {
-              case attr: AttributeReference =>
-                list += getQueryColumn(attr.name, carbonTable, tableName, isFilterColumn = true)
-                attr
-            }
+            isValidPlan = extractQueryColumnFromFilterExp(filterExp, list, carbonTable, tableName)
           }
           carbonTable
 
@@ -162,8 +161,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           // only carbon query plan is supported checking whether logical relation is
           // is for carbon
           if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
-               .hasDataMapSchema =>
+             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+               metaData.hasAggregateDataMapSchema =>
           val (carbonTable, tableName) = getCarbonTableAndTableName(logicalRelation)
           // if it is valid plan then extract the query columns
           isValidPlan = extractQueryColumnsFromAggExpression(groupingExp,
@@ -180,8 +179,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
               aggregateExp,
               CarbonSubqueryAlias(_, logicalRelation: LogicalRelation))))
           if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
-               .hasDataMapSchema =>
+             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+               metaData.hasAggregateDataMapSchema =>
           val (carbonTable, tableName) = getCarbonTableAndTableName(logicalRelation)
           isValidPlan = extractQueryColumnsFromAggExpression(groupingExp,
             aggregateExp,
@@ -201,8 +200,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
               aggregateExp,
               Filter(filterExp, CarbonSubqueryAlias(_, logicalRelation: LogicalRelation)))))
           if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
-               .hasDataMapSchema =>
+             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+               metaData.hasAggregateDataMapSchema =>
           val (carbonTable, tableName) = getCarbonTableAndTableName(logicalRelation)
           isValidPlan = extractQueryColumnsFromAggExpression(groupingExp,
             aggregateExp,
@@ -213,11 +212,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           if (isValidPlan) {
             list ++
             extractQueryColumnForOrderBy(Some(projectList), sortOrders, carbonTable, tableName)
-            filterExp.transform {
-              case attr: AttributeReference =>
-                list += getQueryColumn(attr.name, carbonTable, tableName, isFilterColumn = true)
-                attr
-            }
+            isValidPlan = extractQueryColumnFromFilterExp(filterExp, list, carbonTable, tableName)
           }
           carbonTable
         // case for handling aggregation with order by when only projection column exits
@@ -227,8 +222,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             aggregateExp,
             CarbonSubqueryAlias(_, logicalRelation: LogicalRelation)))
           if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
-               .hasDataMapSchema =>
+             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+               metaData.hasAggregateDataMapSchema =>
           val (carbonTable, tableName) = getCarbonTableAndTableName(logicalRelation)
           isValidPlan = extractQueryColumnsFromAggExpression(groupingExp,
             aggregateExp,
@@ -248,8 +243,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             aggregateExp,
             Filter(filterExp, CarbonSubqueryAlias(_, logicalRelation: LogicalRelation))))
           if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
-               .hasDataMapSchema =>
+             logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+               metaData.hasAggregateDataMapSchema =>
           val (carbonTable, tableName) = getCarbonTableAndTableName(logicalRelation)
           isValidPlan = extractQueryColumnsFromAggExpression(groupingExp,
             aggregateExp,
@@ -261,11 +256,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             list ++ extractQueryColumnForOrderBy(sortOrders = sortOrders,
               carbonTable = carbonTable,
               tableName = tableName)
-            filterExp.transform {
-              case attr: AttributeReference =>
-                list += getQueryColumn(attr.name, carbonTable, tableName, isFilterColumn = true)
-                attr
-            }
+            isValidPlan = extractQueryColumnFromFilterExp(filterExp, list, carbonTable, tableName)
           }
           carbonTable
         case _ =>
@@ -320,6 +311,65 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     }
   }
 
+  /**
+   * Below method will be used to extract the query columns from
+   * filter expression
+   * @param filterExp
+   *                  filter expression
+   * @param set
+   *             query column list
+   * @param carbonTable
+   *                    parent table
+   * @param tableName
+   *                  table name
+   * @return isvalid filter expression for aggregate
+   */
+  def extractQueryColumnFromFilterExp(filterExp: Expression,
+      set: scala.collection.mutable.HashSet[QueryColumn],
+      carbonTable: CarbonTable, tableName: String): Boolean = {
+    // map to maintain attribute reference present in the filter to timeseries function
+    // if applied this is added to avoid duplicate column
+    val mapOfColumnSeriesFun = scala.collection.mutable.HashMap.empty[AttributeReference, String]
+    var isValidPlan = true
+    filterExp.transform {
+      case attr: AttributeReference =>
+        if (!mapOfColumnSeriesFun.get(attr).isDefined) {
+          mapOfColumnSeriesFun.put(attr, null)
+        }
+        attr
+      case udf@CarbonScalaUDF(_) =>
+        // for handling timeseries function
+        if (udf.asInstanceOf[ScalaUDF].function.getClass.getName.equalsIgnoreCase(
+          "org.apache.spark.sql.execution.command.timeseries.TimeseriesFunction") &&
+            CarbonUtil.hasTimeSeriesDataMap(carbonTable)) {
+          mapOfColumnSeriesFun.put(udf.children(0).asInstanceOf[AttributeReference],
+            udf.children(1).asInstanceOf[Literal].value.toString)
+        } else {
+          // for any other scala udf
+          udf.transform {
+            case attr: AttributeReference =>
+              if (!mapOfColumnSeriesFun.get(attr).isDefined) {
+                mapOfColumnSeriesFun.put(attr, null)
+              }
+              attr
+          }
+        }
+        udf
+    }
+    mapOfColumnSeriesFun.foreach { f =>
+        if (f._2 == null) {
+          set +=
+          getQueryColumn(f._1.name, carbonTable, tableName, isFilterColumn = true)
+        } else {
+          set += getQueryColumn(f._1.name,
+            carbonTable,
+            carbonTable.getTableName,
+            isFilterColumn = true,
+            timeseriesFunction = f._2)
+        }
+    }
+    isValidPlan
+  }
   /**
    * Below method will be used to extract columns from order by expression
    * @param projectList
@@ -383,13 +433,18 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       attributeReference: AttributeReference,
       attributes: Seq[AttributeReference],
       aggFunction: String = "",
-      canBeNull: Boolean = false): AttributeReference = {
+      canBeNull: Boolean = false,
+      timeseriesFunction: String = ""): AttributeReference = {
     val aggregationDataMapSchema = dataMapSchema.asInstanceOf[AggregationDataMapSchema];
-    val columnSchema = if (aggFunction.isEmpty) {
+    val columnSchema = if (aggFunction.isEmpty && timeseriesFunction.isEmpty) {
       aggregationDataMapSchema.getChildColByParentColName(attributeReference.name.toLowerCase)
-    } else {
+    } else if (!aggFunction.isEmpty) {
       aggregationDataMapSchema.getAggChildColByParent(attributeReference.name.toLowerCase,
-        aggFunction.toLowerCase)
+        aggFunction)
+    } else {
+      aggregationDataMapSchema
+        .getTimeseriesChildColByParent(attributeReference.name.toLowerCase,
+          timeseriesFunction)
     }
     // here column schema cannot be null, if it is null then aggregate table selection
     // logic has some problem
@@ -427,6 +482,9 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * 5. Order by plan rules.
    *    5.1 Update project list based on updated aggregate expression
    *    5.2 Update sort order attributes based on pre aggregate table
+   * 6. timeseries function
+   *    6.1 validate parent table has timeseries datamap
+   *    6.2 timeseries function is valid function or not
    *
    * @param logicalPlan
    * parent logical plan
@@ -444,7 +502,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       // case for aggregation query
       case Aggregate(grExp, aggExp, child@CarbonSubqueryAlias(_, l: LogicalRelation))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable.hasDataMapSchema =>
+           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+             metaData.hasAggregateDataMapSchema =>
         val (updatedGroupExp, updatedAggExp, newChild, None) =
           getUpdatedExpressions(grExp,
             aggExp,
@@ -461,7 +520,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         aggExp,
         Filter(expression, child@CarbonSubqueryAlias(_, l: LogicalRelation)))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable.hasDataMapSchema =>
+           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+             metaData.hasAggregateDataMapSchema =>
         val (updatedGroupExp, updatedAggExp, newChild, updatedFilterExpression) =
           getUpdatedExpressions(grExp,
             aggExp,
@@ -477,7 +537,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         // case for aggregation query
       case Aggregate(grExp, aggExp, l: LogicalRelation)
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable.hasDataMapSchema =>
+           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+             metaData.hasAggregateDataMapSchema =>
         val (updatedGroupExp, updatedAggExp, newChild, None) =
           getUpdatedExpressions(grExp,
             aggExp,
@@ -497,7 +558,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             aggregateExp,
             subQuery@CarbonSubqueryAlias(_, l: LogicalRelation))))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable.hasDataMapSchema =>
+           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+             metaData.hasAggregateDataMapSchema =>
         val (updatedGroupExp, updatedAggExp, newChild, None) =
           getUpdatedExpressions(groupingExp,
             aggregateExp,
@@ -520,7 +582,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             aggregateExp,
             Filter(expression, subQuery@CarbonSubqueryAlias(_, l: LogicalRelation)))))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable.hasDataMapSchema =>
+           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+             metaData.hasAggregateDataMapSchema =>
         val (updatedGroupExp, updatedAggExp, newChild, updatedFilterExpression) =
           getUpdatedExpressions(groupingExp,
             aggregateExp,
@@ -544,8 +607,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           aggregateExp,
           subQuery@CarbonSubqueryAlias(_, logicalRelation: LogicalRelation)))
         if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-           logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable
-             .hasDataMapSchema =>
+           logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+             metaData.hasAggregateDataMapSchema =>
         val (updatedGroupExp, updatedAggExp, newChild, None) =
           getUpdatedExpressions(groupingExp,
             aggregateExp,
@@ -566,7 +629,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           aggregateExp,
           Filter(expression, subQuery@CarbonSubqueryAlias(_, l: LogicalRelation))))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonTable.hasDataMapSchema =>
+           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+             metaData.hasAggregateDataMapSchema =>
         val (updatedGroupExp, updatedAggExp, newChild, updatedFilterExpression) =
           getUpdatedExpressions(groupingExp,
             aggregateExp,
@@ -612,6 +676,11 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         // for aggregaton column
       case alias@Alias(attr: AggregateExpression, name) =>
         updatedProjectList += AttributeReference(name, attr.dataType, attr.nullable)(alias.exprId,
+          alias.qualifier,
+          alias.isGenerated)
+        alias
+      case alias@Alias(exp: Expression, name) =>
+        updatedProjectList += AttributeReference(name, exp.dataType, exp.nullable)(alias.exprId,
           alias.qualifier,
           alias.isGenerated)
         alias
@@ -724,6 +793,31 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         Alias(aggExp,
           name)(NamedExpression.newExprId,
           alias.qualifier).asInstanceOf[NamedExpression]
+      case alias@Alias(expression: Expression, name) =>
+        val updatedExp =
+          if (expression.isInstanceOf[ScalaUDF] &&
+              expression.asInstanceOf[ScalaUDF].function.getClass.getName.equalsIgnoreCase(
+                "org.apache.spark.sql.execution.command.timeseries.TimeseriesFunction")) {
+          expression.asInstanceOf[ScalaUDF].transform {
+            case attr: AttributeReference =>
+            val childAttributeReference = getChildAttributeReference(aggDataMapSchema,
+              attr,
+              attributes,
+              timeseriesFunction =
+                expression.asInstanceOf[ScalaUDF].children(1).asInstanceOf[Literal].value.toString)
+            childAttributeReference
+          }
+        } else {
+          expression.transform{
+            case attr: AttributeReference =>
+              val childAttributeReference = getChildAttributeReference(aggDataMapSchema,
+                attr,
+                attributes)
+              childAttributeReference
+          }
+        }
+        Alias(updatedExp, name)(NamedExpression.newExprId,
+          alias.qualifier).asInstanceOf[NamedExpression]
     }
     // transformaing the logical relation
     val newChild = child.transform {
@@ -763,11 +857,18 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       // in case of alias we need to match with alias name and when alias is not present
       // we need to compare with attribute reference name
       case alias@Alias(attr: AttributeReference, name)
-        if attr.name.equals(sortOrderAttr.name) || name.equals(sortOrderAttr.name) =>
+        if attr.name.equalsIgnoreCase(sortOrderAttr.name) ||
+           name.equalsIgnoreCase(sortOrderAttr.name) =>
           AttributeReference(name,
-            attr.dataType,
-            attr.nullable,
-            attr.metadata)(alias.exprId, alias.qualifier, alias.isGenerated)
+            sortOrderAttr.dataType,
+            sortOrderAttr.nullable,
+            sortOrderAttr.metadata)(alias.exprId, alias.qualifier, alias.isGenerated)
+      case alias@Alias(_: Expression, name)
+        if name.equalsIgnoreCase(sortOrderAttr.name) =>
+          AttributeReference(name,
+          sortOrderAttr.dataType,
+          sortOrderAttr.nullable,
+          sortOrderAttr.metadata)(alias.exprId, alias.qualifier, alias.isGenerated)
     }
     // any case it will match the condition, so no need to check whether updated expression is empty
     // or not
@@ -933,7 +1034,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case attr: AttributeReference =>
         set += getQueryColumn(attr.name,
           carbonTable,
-          tableName);
+          tableName)
       case Alias(attr: AttributeReference, _) =>
         set += getQueryColumn(attr.name,
           carbonTable,
@@ -949,6 +1050,26 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           set ++= queryColumn
         } else {
           return false
+        }
+      case Alias(expression: Expression, _) =>
+        if (expression.isInstanceOf[ScalaUDF] &&
+            expression.asInstanceOf[ScalaUDF].function.getClass.getName.equalsIgnoreCase(
+              "org.apache.spark.sql.execution.command.timeseries.TimeseriesFunction") &&
+            CarbonUtil.hasTimeSeriesDataMap(carbonTable)) {
+          set += getQueryColumn(expression.asInstanceOf[ScalaUDF].children(0)
+            .asInstanceOf[AttributeReference].name,
+            carbonTable,
+            tableName,
+            timeseriesFunction = expression.asInstanceOf[ScalaUDF].children(1).asInstanceOf[Literal]
+              .value.toString)
+        } else {
+          expression.transform {
+            case attr: AttributeReference =>
+              set += getQueryColumn(attr.name,
+                carbonTable,
+                tableName)
+              attr
+          }
         }
     }
     true
@@ -1048,6 +1169,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     }
   }
 
+
+
   /**
    * Below method will be used to get the query column object which
    * will have details of the column and its property
@@ -1074,7 +1197,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       aggFunction: String = "",
       dataType: String = "",
       isChangedDataType: Boolean = false,
-      isFilterColumn: Boolean = false): QueryColumn = {
+      isFilterColumn: Boolean = false,
+      timeseriesFunction: String = ""): QueryColumn = {
     val columnSchema = carbonTable.getColumnByName(tableName, columnName.toLowerCase)
     if(null == columnSchema) {
       null
@@ -1083,11 +1207,14 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         new QueryColumn(columnSchema.getColumnSchema,
           columnSchema.getDataType.getName,
           aggFunction.toLowerCase,
-          isFilterColumn)
+          isFilterColumn,
+          timeseriesFunction.toLowerCase)
       } else {
         new QueryColumn(columnSchema.getColumnSchema,
-        CarbonScalaUtil.convertSparkToCarbonSchemaDataType(dataType),
-        aggFunction.toLowerCase, isFilterColumn)
+          CarbonScalaUtil.convertSparkToCarbonSchemaDataType(dataType),
+          aggFunction.toLowerCase,
+          isFilterColumn,
+          timeseriesFunction.toLowerCase)
       }
     }
   }

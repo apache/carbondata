@@ -17,12 +17,11 @@
 
 package org.apache.spark.sql
 
-import java.sql.Timestamp
 import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
+import org.apache.spark.sql.execution.command.timeseries.{TimeSeriesFunction}
 import org.apache.spark.sql.hive._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -65,8 +64,7 @@ class CarbonEnv {
     sparkSession.udf.register("preAggLoad", () => "")
 
     // added for handling timeseries function like hour, minute, day , month , year
-    sparkSession.udf.register("timeseries", (timestamp: Timestamp, timeSeriesFunction: String) =>
-      TimeSeriesUtil.timeSeriesUDF(timestamp, timeSeriesFunction))
+    sparkSession.udf.register("timeseries", new TimeSeriesFunction)
     synchronized {
       if (!initialized) {
         // update carbon session parameters , preserve thread parameters

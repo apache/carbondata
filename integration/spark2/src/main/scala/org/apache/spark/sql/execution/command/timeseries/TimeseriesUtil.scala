@@ -16,8 +16,6 @@
  */
 package org.apache.spark.sql.execution.command.timeseries
 
-import java.sql.Timestamp
-
 import org.apache.spark.sql.execution.command.{DataMapField, Field}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -141,19 +139,6 @@ object TimeSeriesUtil {
                        .equalsIgnoreCase(timeSeriesColumn) &&
                      obj._2.aggregateFunction.isEmpty)
     isTimeSeriesColumnExits.get._2.aggregateFunction = timeSeriesFunction
-  }
-
-  /**
-   * UDF for timeseries
-   *
-   * @param timestamp
-   *                  timestamp
-   * @param timeSeriesFunctionType
-   *                               time series function
-   * @return updated timestamp based on function
-   */
-  def timeSeriesUDF(timestamp: Timestamp, timeSeriesFunctionType: String): Timestamp = {
-    TimeSeriesUDF.INSTANCE.applyUDF(timestamp, timeSeriesFunctionType)
   }
 }
 

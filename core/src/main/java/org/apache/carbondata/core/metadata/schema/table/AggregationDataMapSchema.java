@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
+import org.apache.carbondata.core.preagg.TimeSeriesFunctionEnum;
 
 /**
  * data map schema class for pre aggregation
@@ -50,6 +51,17 @@ public class AggregationDataMapSchema extends DataMapSchema {
    */
   private Map<String, Set<String>> parentColumnToAggregationsMapping;
 
+  /**
+   * whether its a timeseries data map
+   */
+  private boolean isTimeseriesDataMap;
+
+  /**
+   * below ordinal will be used during sorting the data map
+   * to support rollup for loading
+   */
+  private int ordinal = Integer.MAX_VALUE;
+
   public AggregationDataMapSchema(String dataMapName, String className) {
     super(dataMapName, className);
   }
@@ -60,6 +72,28 @@ public class AggregationDataMapSchema extends DataMapSchema {
     fillNonAggFunctionColumns(listOfColumns);
     fillAggFunctionColumns(listOfColumns);
     fillParentNameToAggregationMapping(listOfColumns);
+  }
+
+  /**
+   * Below method will be used to get the columns on which aggregate function
+   * and time series function is not applied
+   * @param columnName
+   *                parent column name
+   * @return child column schema
+   */
+  public ColumnSchema getNonAggNonTimeseriesChildColBasedByParent(String columnName) {
+    Set<ColumnSchema> columnSchemas = parentToNonAggChildMapping.get(columnName);
+    if (null != columnSchemas) {
+      Iterator<ColumnSchema> iterator = columnSchemas.iterator();
+      while (iterator.hasNext()) {
+        ColumnSchema next = iterator.next();
+        if ((null == next.getAggFunction() || next.getAggFunction().isEmpty()) && null == next
+            .getTimeSeriesFunction() || next.getTimeSeriesFunction().isEmpty()) {
+          return next;
+        }
+      }
+    }
+    return null;
   }
 
   /**
@@ -74,7 +108,28 @@ public class AggregationDataMapSchema extends DataMapSchema {
       Iterator<ColumnSchema> iterator = columnSchemas.iterator();
       while (iterator.hasNext()) {
         ColumnSchema next = iterator.next();
-        if (null == next.getAggFunction() || next.getAggFunction().isEmpty()) {
+        if ((null == next.getAggFunction() || next.getAggFunction().isEmpty())) {
+          return next;
+        }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Below method will be used to get the columns on which aggregate function is not applied
+   *
+   * @param columnName parent column name
+   * @return child column schema
+   */
+  public ColumnSchema getTimeseriesChildColBasedByParent(String columnName,
+      String timeseriesFunction) {
+    Set<ColumnSchema> columnSchemas = parentToNonAggChildMapping.get(columnName);
+    if (null != columnSchemas) {
+      Iterator<ColumnSchema> iterator = columnSchemas.iterator();
+      while (iterator.hasNext()) {
+        ColumnSchema next = iterator.next();
+        if (timeseriesFunction.equals(next.getTimeSeriesFunction())) {
           return next;
         }
       }
@@ -120,6 +175,28 @@ public class AggregationDataMapSchema extends DataMapSchema {
         if (null != next.getAggFunction() && next.getAggFunction().equalsIgnoreCase(aggFunction)) {
           return next;
         }
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Below method will be used to get the column schema based on parent column name
+   * @param columName
+   *                parent column name
+   * @param timeseriesFunction
+   *                timeseries function applied on column
+   * @return child column schema
+   */
+  public ColumnSchema getTimeseriesChildColByParent(String columName, String timeseriesFunction) {
+    List<ColumnSchema> listOfColumns = childSchema.getListOfColumns();
+    for (ColumnSchema columnSchema : listOfColumns) {
+      List<ParentColumnTableRelation> parentColumnTableRelations =
+          columnSchema.getParentColumnTableRelations();
+      if (null != parentColumnTableRelations && parentColumnTableRelations.size() == 1
+          && parentColumnTableRelations.get(0).getColumnName().equals(columName)
+          && timeseriesFunction.equalsIgnoreCase(columnSchema.getTimeSeriesFunction())) {
+        return columnSchema;
       }
     }
     return null;
@@ -175,6 +252,15 @@ public class AggregationDataMapSchema extends DataMapSchema {
   private void fillNonAggFunctionColumns(List<ColumnSchema> listOfColumns) {
     parentToNonAggChildMapping = new HashMap<>();
     for (ColumnSchema column : listOfColumns) {
+      if (!isTimeseriesDataMap) {
+        isTimeseriesDataMap =
+            null != column.getTimeSeriesFunction() && !column.getTimeSeriesFunction().isEmpty();
+        if (isTimeseriesDataMap) {
+          this.ordinal =
+              TimeSeriesFunctionEnum.valueOf(column.getTimeSeriesFunction().toUpperCase())
+                  .getOrdinal();
+        }
+      }
       if (null == column.getAggFunction() || column.getAggFunction().isEmpty()) {
         fillMappingDetails(column, parentToNonAggChildMapping);
       }
@@ -210,4 +296,45 @@ public class AggregationDataMapSchema extends DataMapSchema {
     }
   }
 
+  public boolean isTimeseriesDataMap() {
+    return isTimeseriesDataMap;
+  }
+
+  /**
+   * Below method is to support rollup during loading the data in pre aggregate table
+   * In case of timeseries year level table data loading can be done using month level table or any
+   * time series level below year level for example day,hour minute, second.
+   * @TODO need to handle for pre aggregate table without timeseries
+   *
+   * @param aggregationDataMapSchema
+   * @return whether aggregation data map can be selected or not
+   */
+  public boolean canSelectForRollup(AggregationDataMapSchema aggregationDataMapSchema) {
+    List<ColumnSchema> listOfColumns = childSchema.getListOfColumns();
+    for (ColumnSchema column : listOfColumns) {
+      List<ParentColumnTableRelation> parentColumnTableRelations =
+          column.getParentColumnTableRelations();
+      //@TODO handle scenario when aggregate datamap columns is derive from multiple column
+      // which is not supported currently
+      if (null != parentColumnTableRelations && parentColumnTableRelations.size() == 1) {
+        if (null != column.getAggFunction() && !column.getAggFunction().isEmpty()) {
+          if (null == aggregationDataMapSchema
+              .getAggChildColByParent(parentColumnTableRelations.get(0).getColumnName(),
+                  column.getAggFunction())) {
+            return false;
+          }
+        } else {
+          if (null == aggregationDataMapSchema.getNonAggChildColBasedByParent(
+              parentColumnTableRelations.get(0).getColumnName())) {
+            return false;
+          }
+        }
+      }
+    }
+    return true;
+  }
+
+  public int getOrdinal() {
+    return ordinal;
+  }
 }
