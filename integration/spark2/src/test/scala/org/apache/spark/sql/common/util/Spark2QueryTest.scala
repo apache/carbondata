@@ -18,13 +18,13 @@
 package org.apache.spark.sql.common.util
 
 import org.apache.spark.sql.CarbonSession
-import org.apache.spark.sql.hive.HiveExternalCatalog
+import org.apache.spark.sql.hive.{CarbonSessionCatalog, HiveExternalCatalog}
 import org.apache.spark.sql.test.util.QueryTest
 
 
 class Spark2QueryTest extends QueryTest {
 
-  val hiveClient = sqlContext.sparkSession.asInstanceOf[CarbonSession].sharedState.externalCatalog
-    .asInstanceOf[HiveExternalCatalog].client
+  val hiveClient = sqlContext.sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
+    .getClient()
 
 }

@@ -125,6 +125,15 @@ class CarbonSessionCatalog(
     }
     isRefreshed
   }
+
+  /**
+   * returns hive client from session state
+   *
+   * @return
+   */
+  def getClient(): org.apache.spark.sql.hive.client.HiveClient = {
+    sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
+  }
 }
 
 /**
