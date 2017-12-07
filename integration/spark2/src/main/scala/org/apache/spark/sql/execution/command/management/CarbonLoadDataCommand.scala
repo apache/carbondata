@@ -45,6 +45,7 @@ import org.apache.carbondata.format
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
+import org.apache.carbondata.processing.merger.CompactionType
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CommonUtil, DataLoadingUtil, GlobalDictionaryUtil}
@@ -128,8 +129,9 @@ case class CarbonLoadDataCommand(
           CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser), hadoopConf)
       }
       carbonLoadModel.setFactFilePath(factPath)
-      carbonLoadModel.setAggLoadRequest(internalOptions
-          .getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL, "false").toBoolean)
+      carbonLoadModel.setAggLoadRequest(
+        internalOptions.getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL, "false").toBoolean)
+      carbonLoadModel.setSegmentId(internalOptions.getOrElse("mergedSegmentName", ""))
       DataLoadingUtil.buildCarbonLoadModel(
         table,
         carbonProperty,

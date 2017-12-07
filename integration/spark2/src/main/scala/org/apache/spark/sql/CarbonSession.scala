@@ -259,7 +259,7 @@ object CarbonSession {
   def initListeners(): Unit = {
     OperationListenerBus.getInstance()
       .addListener(classOf[DropTablePostEvent], DataMapDropTablePostListener)
-      .addListener(classOf[LoadTablePostExecutionEvent], LoadPostAggregateListener)
+      .addListener(classOf[LoadTablePreStatusUpdateEvent], LoadPostAggregateListener)
       .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
       .addListener(classOf[DeleteSegmentByDatePreEvent], PreAggregateDeleteSegmentByDatePreListener)
       .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
@@ -271,5 +271,7 @@ object CarbonSession {
       .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
       .addListener(classOf[DropDataMapPostEvent], DropDataMapPostListener)
       .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
+      .addListener(classOf[AlterTableCompactionPostEvent],
+        AlterPreAggregateTableCompactionPostListener)
   }
 }

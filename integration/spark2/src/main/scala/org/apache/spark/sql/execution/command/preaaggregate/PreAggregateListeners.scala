@@ -19,14 +19,18 @@ package org.apache.spark.sql.execution.command.preaaggregate
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
+import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonLoadDataCommand}
+import org.apache.spark.sql.execution.command.AlterTableModel
 import org.apache.spark.sql.CarbonSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.DataMapSchema
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events._
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 
 object LoadPostAggregateListener extends OperationEventListener {
   /**
@@ -35,7 +39,7 @@ object LoadPostAggregateListener extends OperationEventListener {
    * @param event
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
-    val loadEvent = event.asInstanceOf[LoadTablePostExecutionEvent]
+    val loadEvent = event.asInstanceOf[LoadTablePreStatusUpdateEvent]
     val sparkSession = loadEvent.sparkSession
     val carbonLoadModel = loadEvent.carbonLoadModel
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -50,6 +54,36 @@ object LoadPostAggregateListener extends OperationEventListener {
             carbonLoadModel.getSegmentId,
             validateSegments = false,
             sparkSession)
+      }
+    }
+  }
+}
+
+/**
+ * Listener to handle the operations that have to be done after compaction for a table has finished.
+ */
+object AlterPreAggregateTableCompactionPostListener extends OperationEventListener {
+  /**
+   * Called on a specified event occurrence
+   *
+   * @param event
+   * @param operationContext
+   */
+  override def onEvent(event: Event, operationContext: OperationContext): Unit = {
+    val compactionEvent = event.asInstanceOf[AlterTableCompactionPostEvent]
+    val carbonTable = compactionEvent.carbonTable
+    val compactionType = compactionEvent.carbonMergerMapping.campactionType
+    val sparkSession = compactionEvent.sQLContext.sparkSession
+    if (carbonTable.hasDataMapSchema) {
+      carbonTable.getTableInfo.getDataMapSchemaList.asScala.foreach { dataMapSchema =>
+        val childRelationIdentifier = dataMapSchema.getRelationIdentifier
+        val alterTableModel = AlterTableModel(Some(childRelationIdentifier.getDatabaseName),
+          childRelationIdentifier.getTableName,
+          None,
+          compactionType.toString,
+          Some(System.currentTimeMillis()),
+          "")
+        CarbonAlterTableCompactionCommand(alterTableModel).run(sparkSession)
       }
     }
   }

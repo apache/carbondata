@@ -274,9 +274,16 @@ public final class CarbonLoaderUtil {
         if (loadStartEntry) {
           String segmentId =
               String.valueOf(SegmentStatusManager.createNewSegmentId(listOfLoadFolderDetailsArray));
-          newMetaEntry.setLoadName(segmentId);
           loadModel.setLoadMetadataDetails(listOfLoadFolderDetails);
-          loadModel.setSegmentId(segmentId);
+          // Segment id would be provided in case this is compaction flow for aggregate data map.
+          // If that is true then used the segment id as the load name.
+          if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap() && !loadModel
+              .getSegmentId().isEmpty()) {
+            newMetaEntry.setLoadName(loadModel.getSegmentId());
+          } else {
+            newMetaEntry.setLoadName(segmentId);
+            loadModel.setSegmentId(segmentId);
+          }
           // Exception should be thrown if:
           // 1. If insert overwrite is in progress and any other load or insert operation
           // is triggered

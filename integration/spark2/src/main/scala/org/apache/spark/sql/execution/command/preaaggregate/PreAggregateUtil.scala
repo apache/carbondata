@@ -38,7 +38,7 @@ import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema}
+import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, DataMapSchema, TableSchema}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.TableInfo
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -539,6 +539,23 @@ object PreAggregateUtil {
         parentCarbonTable.getDatabaseName + "." +
         parentCarbonTable.getTableName)
     }
+  }
+
+  def createChildSelectQuery(tableSchema: TableSchema, databaseName: String): String = {
+    val aggregateColumns = scala.collection.mutable.ArrayBuffer.empty[String]
+    val groupingExpressions = scala.collection.mutable.ArrayBuffer.empty[String]
+    tableSchema.getListOfColumns.asScala.foreach {
+      a => if (a.getAggFunction.nonEmpty) {
+        aggregateColumns += s"${a.getAggFunction match {
+          case "count" => "sum"
+          case _ => a.getAggFunction}}(${a.getColumnName})"
+      } else {
+        groupingExpressions += a.getColumnName
+      }
+    }
+    s"select ${ groupingExpressions.mkString(",") },${ aggregateColumns.mkString(",")
+    } from $databaseName.${ tableSchema.getTableName } group by ${
+      groupingExpressions.mkString(",") }"
   }
 
 }

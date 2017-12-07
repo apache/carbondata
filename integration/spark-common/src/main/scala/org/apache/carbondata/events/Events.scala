@@ -18,7 +18,7 @@
 package org.apache.carbondata.events
 
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel}
+import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel, CarbonMergerMapping}
 
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -95,7 +95,7 @@ trait AlterTableAddColumnEventInfo {
  */
 trait AlterTableCompactionEventInfo {
   val carbonTable: CarbonTable
-  val carbonLoadModel: CarbonLoadModel
+  val carbonMergerMapping: CarbonMergerMapping
   val mergedLoadName: String
 }
 
