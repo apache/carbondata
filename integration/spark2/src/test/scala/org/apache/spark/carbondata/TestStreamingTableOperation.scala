@@ -730,6 +730,19 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       ).getMessage.contains("Streaming table does not support creating datamap"))
   }
 
+  test("check streaming property of table") {
+    checkExistence(sql("DESC FORMATTED batch_table"), true, "Streaming")
+    val result =
+      sql("DESC FORMATTED batch_table").collect().filter(_.getString(0).equals("Streaming"))
+    assertResult(1)(result.length)
+    assertResult("false")(result(0).getString(1))
+
+    checkExistence(sql("DESC FORMATTED stream_table_file"), true, "Streaming")
+    val resultStreaming =
+      sql("DESC FORMATTED stream_table_file").collect().filter(_.getString(0).equals("Streaming"))
+    assertResult(1)(resultStreaming.length)
+    assertResult("true")(resultStreaming(0).getString(1))
+  }
   def createWriteSocketThread(
       serverSocket: ServerSocket,
       writeNums: Int,

@@ -40,7 +40,7 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
 
   test("test describe formatted table") {
     checkExistence(sql("DESC FORMATTED Desc1"), true,
-      "Table Block Size :")
+      "Table Block Size")
   }
 
   override def afterAll: Unit = {
