@@ -147,7 +147,8 @@ public class UnsafeMemoryDMStore {
         break;
       case VARIABLE:
         byte[] data = row.getByteArray(index);
-        getUnsafe().putShort(memoryBlock.getBaseOffset() + runningLength, (short) data.length);
+        getUnsafe().putShort(memoryBlock.getBaseObject(),
+            memoryBlock.getBaseOffset() + runningLength, (short) data.length);
         runningLength += 2;
         getUnsafe().copyMemory(data, BYTE_ARRAY_OFFSET, memoryBlock.getBaseObject(),
             memoryBlock.getBaseOffset() + runningLength, data.length);
