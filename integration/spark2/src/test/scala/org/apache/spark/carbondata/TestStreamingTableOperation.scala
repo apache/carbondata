@@ -111,6 +111,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     // 13. handoff streaming segment
     createTable(tableName = "stream_table_handoff", streaming = true, withBatchLoad = false)
+
+    // 14. finish streaming
+    createTable(tableName = "stream_table_finish", streaming = true, withBatchLoad = true)
   }
 
   test("validate streaming property") {
@@ -192,6 +195,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists streaming.stream_table_delete")
     sql("drop table if exists streaming.stream_table_alter")
     sql("drop table if exists streaming.stream_table_handoff")
+    sql("drop table if exists streaming.stream_table_finish")
   }
 
   // normal table not support streaming ingest
@@ -718,6 +722,33 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select count(*) from streaming.stream_table_handoff"),
       Seq(Row(6 * 10000))
+    )
+  }
+
+  test("alter table finish streaming") {
+    executeStreamingIngest(
+      tableName = "stream_table_finish",
+      batchNums = 6,
+      rowNumsEachBatch = 10000,
+      intervalOfSource = 5,
+      intervalOfIngest = 10,
+      continueSeconds = 40,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      handoffSize = 1024L * 200
+    )
+    sql("alter table streaming.stream_table_finish finish streaming")
+    sql("show segments for table streaming.stream_table_finish").show(100, false)
+
+    val segments = sql("show segments for table streaming.stream_table_finish").collect()
+    assertResult(4)(segments.length)
+    assertResult("Streaming Finish")(segments(0).getString(1))
+    assertResult("Streaming Finish")(segments(1).getString(1))
+    assertResult("Streaming Finish")(segments(2).getString(1))
+    assertResult("Success")(segments(3).getString(1))
+    checkAnswer(
+      sql("select count(*) from streaming.stream_table_finish"),
+      Seq(Row(5 + 6 * 10000))
     )
   }
 
