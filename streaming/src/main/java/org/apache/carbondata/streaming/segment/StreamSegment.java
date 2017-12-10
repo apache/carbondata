@@ -29,7 +29,9 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.locks.CarbonLockFactory;
 import org.apache.carbondata.core.locks.ICarbonLock;
+import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.statusmanager.FileFormat;
@@ -176,6 +178,70 @@ public class StreamSegment {
       } else {
         LOGGER.error("Unable to unlock Table lock for table" + table.getDatabaseName() + "." + table
             .getTableName() + " during table status updation");
+      }
+    }
+  }
+
+  /**
+   * change the status of the segment from "streaming" to "streaming finish"
+   */
+  public static void finishStreaming(CarbonTable carbonTable) throws Exception {
+    ICarbonLock lock = CarbonLockFactory.getCarbonLockObj(
+        carbonTable.getTableInfo().getOrCreateAbsoluteTableIdentifier(),
+        LockUsage.TABLE_STATUS_LOCK);
+    try {
+      if (lock.lockWithRetries()) {
+        ICarbonLock streamingLock = CarbonLockFactory.getCarbonLockObj(
+            carbonTable.getTableInfo().getOrCreateAbsoluteTableIdentifier(),
+            LockUsage.STREAMING_LOCK);
+        try {
+          if (streamingLock.lockWithRetries()) {
+            LoadMetadataDetails[] details =
+                SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath());
+            boolean updated = false;
+            for (LoadMetadataDetails detail : details) {
+              if (SegmentStatus.STREAMING == detail.getSegmentStatus()) {
+                detail.setLoadEndTime(System.currentTimeMillis());
+                detail.setSegmentStatus(SegmentStatus.STREAMING_FINISH);
+                updated = true;
+              }
+            }
+            if (updated) {
+              CarbonTablePath tablePath =
+                  CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
+              SegmentStatusManager.writeLoadDetailsIntoFile(
+                  tablePath.getTableStatusFilePath(), details);
+            }
+          } else {
+            String msg = "Failed to finish streaming, because streaming is locked for table " +
+                carbonTable.getDatabaseName() + "." + carbonTable.getTableName();
+            LOGGER.error(msg);
+            throw new Exception(msg);
+          }
+        } finally {
+          if (streamingLock.unlock()) {
+            LOGGER.info("Table unlocked successfully after streaming finished" + carbonTable
+                .getDatabaseName() + "." + carbonTable.getTableName());
+          } else {
+            LOGGER.error("Unable to unlock Table lock for table " +
+                carbonTable.getDatabaseName() + "." + carbonTable.getTableName() +
+                " during streaming finished");
+          }
+        }
+      } else {
+        String msg = "Failed to acquire table status lock of " +
+            carbonTable.getDatabaseName() + "." + carbonTable.getTableName();
+        LOGGER.error(msg);
+        throw new Exception(msg);
+      }
+    } finally {
+      if (lock.unlock()) {
+        LOGGER.info("Table unlocked successfully after table status updation" +
+            carbonTable.getDatabaseName() + "." + carbonTable.getTableName());
+      } else {
+        LOGGER.error("Unable to unlock Table lock for table " +
+            carbonTable.getDatabaseName() + "." + carbonTable.getTableName() +
+            " during table status updation");
       }
     }
   }

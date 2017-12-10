@@ -66,6 +66,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   protected val COLS = carbonKeyWord("COLS")
   protected val COLUMNS = carbonKeyWord("COLUMNS")
   protected val COMPACT = carbonKeyWord("COMPACT")
+  protected val FINISH = carbonKeyWord("FINISH")
+  protected val STREAMING = carbonKeyWord("STREAMING")
   protected val CREATE = carbonKeyWord("CREATE")
   protected val CUBE = carbonKeyWord("CUBE")
   protected val CUBES = carbonKeyWord("CUBES")

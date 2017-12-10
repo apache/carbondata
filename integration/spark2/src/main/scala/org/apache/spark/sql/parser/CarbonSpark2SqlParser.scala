@@ -20,7 +20,7 @@ package org.apache.spark.sql.parser
 import scala.collection.mutable
 import scala.language.implicitConversions
 
-import org.apache.spark.sql.{DeleteRecords, UpdateTable}
+import org.apache.spark.sql.{CarbonEnv, DeleteRecords, UpdateTable}
 import org.apache.spark.sql.catalyst.{CarbonDDLSqlParser, TableIdentifier}
 import org.apache.spark.sql.catalyst.CarbonTableIdentifierImplicit._
 import org.apache.spark.sql.catalyst.plans.logical._
@@ -71,8 +71,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val start: Parser[LogicalPlan] = explainPlan | startCommand
 
   protected lazy val startCommand: Parser[LogicalPlan] =
-    loadManagement|showLoads|alterTable|restructure|updateTable|deleteRecords|
-    alterPartition|datamapManagement
+    loadManagement | showLoads | alterTable | restructure | updateTable | deleteRecords |
+    alterPartition | datamapManagement | alterTableFinishStreaming
 
   protected lazy val loadManagement: Parser[LogicalPlan] =
     deleteLoadsByID | deleteLoadsByLoadDate | cleanFiles | loadDataNew
@@ -127,6 +127,12 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           AlterTableModel(convertDbNameToLowerCase(dbName), table, None, compactType,
           Some(System.currentTimeMillis()), null)
         CarbonAlterTableCompactionCommand(altertablemodel)
+    }
+
+  protected lazy val alterTableFinishStreaming: Parser[LogicalPlan] =
+    ALTER ~> TABLE ~> (ident <~ ".").? ~ ident <~ FINISH <~ STREAMING <~ opt(";") ^^ {
+      case dbName ~ table =>
+        CarbonAlterTableFinishStreaming(dbName, table)
     }
 
   /**
