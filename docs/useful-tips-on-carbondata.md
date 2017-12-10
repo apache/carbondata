@@ -44,13 +44,13 @@
 
   - **Put the frequently-used column filter in the beginning**
 
-  For example, MSISDN filter is used in most of the query then we must put the MSISDN in the first column.
+  For example, MSISDN filter is used in most of the query then we must put the MSISDN in the first position in the properties of sort_column.
   The create table command can be modified as suggested below :
 
   ```
-  create table carbondata_table(
-    msisdn String,
+  create table carbondata_table(  
     BEGIN_TIME bigint,
+    msisdn String,
     HOST String,
     Dime_1 String,
     counter_1, Decimal
@@ -65,39 +65,38 @@
   - **Put the frequently-used columns in the order of low to high cardinality**
 
   If the table in the specified query has multiple columns which are frequently used to filter the results, it is suggested to put
-  the columns in the order of cardinality low to high. This ordering of frequently used columns improves the compression ratio and
+  the columns in the order of cardinality low to high in the properties of sort_column. This ordering of frequently used columns improves the compression ratio and
   enhances the performance of queries with filter on these columns.
 
   For example, if MSISDN, HOST and Dime_1 are frequently-used columns, then the column order of table is suggested as
-  Dime_1>HOST>MSISDN, because Dime_1 has the lowest cardinality.
+  Dime_1>HOST>MSISDN in the properties sort_column, because Dime_1 has the lowest cardinality.
   The create table command can be modified as suggested below :
 
   ```
   create table carbondata_table(
-      msisdn String,
-      BEGIN_TIME bigint,
-      HOST String,
-      Dime_1 String,
-      counter_1, Decimal
-      ...
+    BEGIN_TIME bigint,
+    msisdn String,
+    HOST String,
+    Dime_1 String,
+    counter_1, Decimal
+    ...
       
-      )STORED BY 'carbondata'
-      TBLPROPERTIES ('SORT_COLUMNS'='Dime_1, HOST, MSISDN')
+    )STORED BY 'carbondata'
+    TBLPROPERTIES ('SORT_COLUMNS'='Dime_1, HOST, MSISDN')
   ```
 
   - **For measure type columns with non high accuracy, replace Numeric(20,0) data type with Double data type**
 
   For columns of measure type, not requiring high accuracy, it is suggested to replace Numeric data type with Double to enhance query performance. 
-  The create table command can be modified as below :
+  For example the column counter_2 better use double type. The create table command can be modified as below :
 
 ```
   create table carbondata_table(
-    Dime_1 String,
     BEGIN_TIME bigint,
-    END_TIME bigint,
+    msisdn String,
     HOST String,
-    MSISDN String,
-    counter_1 decimal,
+    Dime_1 String,
+    counter_1, Decimal
     counter_2 double,
     ...
     )STORED BY 'carbondata'
@@ -107,22 +106,21 @@
 
  - **Columns of incremental character should be re-arranged at the end of dimensions**
 
-  Consider the following scenario where data is loaded each day and the begin_time is incremental for each load, it is suggested to put begin_time at the end of dimensions.
-  Incremental values are efficient in using min/max index. The create table command can be modified as below :
+  Consider the following scenario where data is loaded each day and the begin_time is incremental for each load, it is suggested to put begin_time at the end of dimensions in the properties of sort_column.
+  Incremental values are efficient in using min/max index. For example the column BEGIN_TIME is incremental. The create table command can be modified as below :
 
   ```
   create table carbondata_table(
-    Dime_1 String,
-    HOST String,
-    MSISDN String,
-    counter_1 double,
-    counter_2 double,
     BEGIN_TIME bigint,
-    END_TIME bigint,
+    msisdn String,
+    HOST String,
+    Dime_1 String,
+    counter_1, Decimal
+    counter_2 double,
     ...
     counter_100 double
     )STORED BY 'carbondata'
-    TBLPROPERTIES ('SORT_COLUMNS'='Dime_1, HOST, MSISDN')
+    TBLPROPERTIES ('SORT_COLUMNS'='Dime_1, HOST, MSISDN, BEGIN_TIME')
   ```
 
 ## Configuration for Optimizing Data Loading performance for Massive Data
