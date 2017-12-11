@@ -104,6 +104,7 @@ class QueryTest extends PlanTest {
   lazy val storeLocation = CarbonProperties.getInstance().
     getProperty(CarbonCommonConstants.STORE_LOCATION)
   val resourcesPath = TestQueryExecutor.resourcesPath
+  val metastoredb = TestQueryExecutor.metastoredb
   val integrationPath = TestQueryExecutor.integrationPath
   val dblocation = TestQueryExecutor.location
 }

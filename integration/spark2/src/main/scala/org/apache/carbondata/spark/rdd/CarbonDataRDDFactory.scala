@@ -375,7 +375,17 @@ object CarbonDataRDDFactory {
               }
           }
         } else {
-          loadStatus = SegmentStatus.LOAD_FAILURE
+          // if no value is there in data load, make load status Success
+          // and data load flow executes
+          if (dataFrame.isDefined && updateModel.isEmpty) {
+            val rdd = dataFrame.get.rdd
+            if (rdd.partitions == null || rdd.partitions.length == 0) {
+              LOGGER.warn("DataLoading finished. No data was loaded.")
+              loadStatus = SegmentStatus.SUCCESS
+            }
+          } else {
+            loadStatus = SegmentStatus.LOAD_FAILURE
+          }
         }
 
         if (loadStatus != SegmentStatus.LOAD_FAILURE &&
@@ -483,20 +493,21 @@ object CarbonDataRDDFactory {
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         throw new Exception(status(0)._2._2.errorMsg)
       }
-      // if segment is empty then fail the data load
+      // as no record loaded in new segment, new segment should be deleted
+      var newEntryLoadStatus =
       if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap &&
           !CarbonLoaderUtil.isValidSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)) {
-        // update the load entry in table status file for changing the status to marked for delete
-        CommonUtil.updateTableStatusForFailure(carbonLoadModel)
-        LOGGER.info("********starting clean up**********")
-        CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
-        LOGGER.info("********clean up done**********")
+
         LOGGER.audit(s"Data load is failed for " +
                      s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }" +
                      " as there is no data to load")
         LOGGER.warn("Cannot write load metadata file as data load failed")
-        throw new Exception("No Data to load")
+
+        SegmentStatus.MARKED_FOR_DELETE
+      } else {
+        loadStatus
       }
+
       writeDictionary(carbonLoadModel, result, writeAll = false)
       val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
         LoadTablePreStatusUpdateEvent(
@@ -505,7 +516,13 @@ object CarbonDataRDDFactory {
         carbonLoadModel)
       operationContext.setProperty("isOverwrite", overwriteTable)
       OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
-      val done = updateTableStatus(status, carbonLoadModel, loadStatus, overwriteTable)
+      val done =
+        updateTableStatus(
+          status,
+          carbonLoadModel,
+          loadStatus,
+          newEntryLoadStatus,
+          overwriteTable)
       if (!done) {
         CommonUtil.updateTableStatusForFailure(carbonLoadModel)
         LOGGER.info("********starting clean up**********")
@@ -766,17 +783,18 @@ object CarbonDataRDDFactory {
       status: Array[(String, (LoadMetadataDetails, ExecutionErrors))],
       carbonLoadModel: CarbonLoadModel,
       loadStatus: SegmentStatus,
+      newEntryLoadStatus: SegmentStatus,
       overwriteTable: Boolean
   ): Boolean = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    val metadataDetails = if (status != null && status(0) != null) {
+    val metadataDetails = if (status != null && status.size > 0 && status(0) != null) {
       status(0)._2._1
     } else {
       new LoadMetadataDetails
     }
     CarbonLoaderUtil.populateNewLoadMetaEntry(
       metadataDetails,
-      loadStatus,
+      newEntryLoadStatus,
       carbonLoadModel.getFactTimeStamp,
       true)
     CarbonUtil

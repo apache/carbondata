@@ -227,38 +227,42 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   //Data load-->Extra_Column_incsv
   test("BadRecord_Dataload_019", Include) {
-     sql(s"""CREATE TABLE exceed_column_in_Csv (CUST_NAME String,date timestamp) STORED BY 'org.apache.carbondata.format'""").collect
-  intercept[Exception] {
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/extra_column.csv' into table exceed_column_in_Csv OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_NAME,date')""").collect
-    checkAnswer(
-      s"""select count(*) from exceed_column_in_Csv """,
-      Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_019")
-  }
-     sql(s"""drop table exceed_column_in_Csv """).collect
+    sql(
+      s"""CREATE TABLE exceed_column_in_Csv (CUST_NAME String,date timestamp) STORED BY 'org.apache.carbondata.format'""".stripMargin).collect
+      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/extra_column.csv' into table exceed_column_in_Csv OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='CUST_NAME,date')""".stripMargin).collect
+      checkAnswer(s"""select count(*) from exceed_column_in_Csv """,Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_019")
+      sql(s"""drop table exceed_column_in_Csv """).collect
   }
 
 
   //Data load-->Timestamp Exceed Range
   test("BadRecord_Dataload_020", Include) {
-     sql(s"""CREATE TABLE timestamp_range (date timestamp) STORED BY 'org.apache.carbondata.format'""").collect
-    intercept[Exception] {
-      sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/timetsmap.csv' into table timestamp_range OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='date')""").collect
-    }
-    checkAnswer(s"""select count(*) from timestamp_range""",
-      Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_020")
-     sql(s"""drop table timestamp_range""").collect
+    sql(
+      s"""CREATE TABLE timestamp_range (date timestamp) STORED BY 'org.apache.carbondata.format'""".stripMargin).collect
+      sql(
+        s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/timetsmap.csv' into table timestamp_range OPTIONS('DELIMITER'=',' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='TRUE', 'BAD_RECORDS_ACTION'='REDIRECT','FILEHEADER'='date')""".stripMargin).collect
+    checkAnswer(s"""select count(*) from timestamp_range""",Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_020")
+    sql(s"""drop table timestamp_range""").collect
   }
 
 
   //Show loads-->Delimeter_check
   test("BadRecord_Dataload_021", Include) {
-     sql(s"""CREATE TABLE bad_records_test5 (String_col string,integer_col int,decimal_column decimal,date timestamp,double_col double) STORED BY 'org.apache.carbondata.format'""").collect
-  intercept[Exception] {
-    sql(s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/badrecords_test5.csv' into table bad_records_test5 OPTIONS('DELIMITER'='*' , 'QUOTECHAR'='"','BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='IGNORE','FILEHEADER'='String_col,integer_col,decimal_column,date,double_col') """).collect
-  }
-    checkAnswer(s"""select count(*) from bad_records_test5""",
+    sql(
+      s"""CREATE TABLE bad_records_test5 (String_col string,integer_col int,decimal_column
+         |decimal,date timestamp,double_col double) STORED BY 'org.apache.carbondata.format'"""
+        .stripMargin)
+      .collect
+      sql(
+        s"""LOAD DATA INPATH '$resourcesPath/Data/InsertData/badrecords_test5.csv' into table
+           |bad_records_test5 OPTIONS('DELIMITER'='*' , 'QUOTECHAR'='"',
+           |'BAD_RECORDS_LOGGER_ENABLE'='FALSE', 'BAD_RECORDS_ACTION'='IGNORE',
+           |'FILEHEADER'='String_col,integer_col,decimal_column,date,double_col') """.stripMargin)
+        .collect
+    checkAnswer(
+      s"""select count(*) from bad_records_test5""",
       Seq(Row(0)), "DataLoadingTestCase-BadRecord_Dataload_021")
-     sql(s"""drop table bad_records_test5 """).collect
+    sql(s"""drop table bad_records_test5 """).collect
   }
 
 

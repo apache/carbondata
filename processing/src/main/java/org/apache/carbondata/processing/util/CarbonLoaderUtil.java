@@ -224,17 +224,18 @@ public final class CarbonLoaderUtil {
                 entry.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
                 // For insert overwrite, we will delete the old segment folder immediately
                 // So collect the old segments here
-                String path = carbonTablePath.getCarbonDataDirectoryPath("0", entry.getLoadName());
-                // add to the deletion list only if file exist else HDFS file system will throw
-                // exception while deleting the file if file path does not exist
-                if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
-                  staleFolders.add(FileFactory.getCarbonFile(path));
-                }
+                addToStaleFolders(carbonTablePath, staleFolders, entry);
               }
             }
           }
           listOfLoadFolderDetails.set(indexToOverwriteNewMetaEntry, newMetaEntry);
         }
+        // when no records are inserted then newSegmentEntry will be SegmentStatus.MARKED_FOR_DELETE
+        // so empty segment folder should be deleted
+        if (newMetaEntry.getSegmentStatus() == SegmentStatus.MARKED_FOR_DELETE) {
+          addToStaleFolders(carbonTablePath, staleFolders, newMetaEntry);
+        }
+
         SegmentStatusManager.writeLoadDetailsIntoFile(tableStatusPath, listOfLoadFolderDetails
             .toArray(new LoadMetadataDetails[listOfLoadFolderDetails.size()]));
         // Delete all old stale segment folders
@@ -264,6 +265,16 @@ public final class CarbonLoaderUtil {
       }
     }
     return status;
+  }
+
+  private static void addToStaleFolders(CarbonTablePath carbonTablePath,
+      List<CarbonFile> staleFolders, LoadMetadataDetails entry) throws IOException {
+    String path = carbonTablePath.getCarbonDataDirectoryPath("0", entry.getLoadName());
+    // add to the deletion list only if file exist else HDFS file system will throw
+    // exception while deleting the file if file path does not exist
+    if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
+      staleFolders.add(FileFactory.getCarbonFile(path));
+    }
   }
 
   /**
