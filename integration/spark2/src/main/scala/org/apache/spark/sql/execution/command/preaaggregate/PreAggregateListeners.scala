@@ -70,12 +70,15 @@ object LoadPostAggregateListener extends OperationEventListener {
               databasename)
           }
         }
+        val isOverwrite =
+          operationContext.getProperty("isOverwrite").asInstanceOf[Boolean]
         PreAggregateUtil.startDataLoadForDataMap(
             table,
             TableIdentifier(childTableName, Some(childDatabaseName)),
             childSelectQuery,
             carbonLoadModel.getSegmentId,
             validateSegments = false,
+            isOverwrite,
             sparkSession)
         }
       }
