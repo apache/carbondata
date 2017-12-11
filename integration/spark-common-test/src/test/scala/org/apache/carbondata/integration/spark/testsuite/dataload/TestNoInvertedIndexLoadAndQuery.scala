@@ -19,9 +19,11 @@ package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for no inverted index load and query
@@ -85,7 +87,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       """)
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
 
     sql(
       s"""
@@ -118,7 +120,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
         TBLPROPERTIES('NO_INVERTED_INDEX'='ID')
         """)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
 
     sql(
       s"""
@@ -152,7 +154,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
       """)
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
 
     sql(
       s"""
@@ -184,7 +186,7 @@ class TestNoInvertedIndexLoadAndQuery extends QueryTest with BeforeAndAfterAll {
         TBLPROPERTIES('sort_columns'='ID','NO_INVERTED_INDEX'='ID')
       """)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
 
     sql(
       s"""

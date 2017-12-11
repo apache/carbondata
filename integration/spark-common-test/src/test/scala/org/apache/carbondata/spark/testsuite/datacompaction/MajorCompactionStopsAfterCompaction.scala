@@ -23,9 +23,9 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
@@ -37,7 +37,7 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
   override def beforeAll {
     sql("drop table if exists  stopmajor")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
+      .addProperty("carbon.timestamp.format", "mm/dd/yyyy")
     sql(
       "CREATE TABLE IF NOT EXISTS stopmajor (country String, ID decimal(7,4), date Timestamp, name " +
         "String, " +
@@ -137,7 +137,7 @@ class MajorCompactionStopsAfterCompaction extends QueryTest with BeforeAndAfterA
   override def afterAll {
     sql("drop table if exists  stopmajor")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 
 }

@@ -23,8 +23,8 @@ import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.{BatchedDataSourceScanExec, RowDataSourceScanExec}
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 class VectorReaderTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
@@ -33,8 +33,7 @@ class VectorReaderTestCase extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS vectorreader")
     // clean data folder
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql("CREATE TABLE vectorreader (ID Int, date Timestamp, country String, name String, phonetype String," +
         "serialname String, salary Int) STORED BY 'carbondata'")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE vectorreader")

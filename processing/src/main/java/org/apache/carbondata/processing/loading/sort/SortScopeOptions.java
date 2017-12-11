@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.processing.loading.sort;
 
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonUtil;
 
@@ -27,7 +28,7 @@ public class SortScopeOptions {
 
   public static SortScope getSortScope(String sortScope) {
     if (sortScope == null) {
-      sortScope = CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT;
+      sortScope = CarbonProperties.LOAD_SORT_SCOPE.getDefaultValue();
     }
     switch (sortScope.toUpperCase()) {
       case "BATCH_SORT":

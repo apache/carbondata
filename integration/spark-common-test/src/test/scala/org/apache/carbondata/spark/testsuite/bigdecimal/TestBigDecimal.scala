@@ -23,8 +23,9 @@ import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * Test cases for testing big decimal functionality
@@ -38,7 +39,7 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonBigDecimal_2")
     sql("DROP TABLE IF EXISTS decimal_int_test")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_SIZE, "1")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT, "2")
     sql("CREATE TABLE IF NOT EXISTS carbonTable (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary Decimal(17,2))STORED BY 'org.apache.carbondata.format'")
@@ -204,12 +205,9 @@ class TestBigDecimal extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists hiveBigDecimal")
     sql("drop table if exists carbonBigDecimal_2")
     sql("DROP TABLE IF EXISTS decimal_int_test")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_SIZE,
-      CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
-      CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)
+    CarbonProperties.getInstance().setToDefault("carbon.timestamp.format")
+    CarbonProperties.getInstance().setToDefault("carbon.sort.size")
+    CarbonProperties.getInstance().setToDefault("carbon.sort.intermediate.files.limit")
   }
 }
 

@@ -22,11 +22,12 @@ import java.io.File
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for detailed query on timestamp datatypes
@@ -50,11 +51,11 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
       CarbonProperties.getInstance().addProperty(
         CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+        .addProperty("carbon.badRecords.location",
           new File("./target/test/badRecords")
             .getCanonicalPath)
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
       var csvFilePath = ""
 
       // 1. empty data for string data type - take empty value
@@ -109,7 +110,7 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
 
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+        .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
     }
   }
 
@@ -187,6 +188,6 @@ class BadRecordEmptyDataTest extends QueryTest with BeforeAndAfterAll {
       CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
       bad_records_action)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }

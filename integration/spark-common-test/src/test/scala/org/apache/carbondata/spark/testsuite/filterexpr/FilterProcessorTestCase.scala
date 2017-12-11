@@ -21,9 +21,11 @@ import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * Test Class for filter expression query on String datatypes
@@ -47,14 +49,14 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       "STORED BY 'org.apache.carbondata.format'"
     )
      CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "MM-dd-yyyy HH:mm:ss")
+        .addProperty("carbon.timestamp.format", "MM-dd-yyyy HH:mm:ss")
 
      sql("CREATE TABLE filterTimestampDataType (ID int, date Timestamp, country String, " +
       "name String, phonetype String, serialname String, salary int) " +
         "STORED BY 'org.apache.carbondata.format'"
     )
        CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "MM-dd-yyyy HH:mm:ss")
+        .addProperty("carbon.timestamp.format", "MM-dd-yyyy HH:mm:ss")
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data2_DiffTimeFormat.csv' INTO TABLE " +
         s"filterTimestampDataType " +
@@ -62,7 +64,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
         s"'FILEHEADER'= '')"
     )
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(
       s"LOAD DATA local inpath '$resourcesPath/source.csv' INTO TABLE filtertestTables " +
         s"OPTIONS('DELIMITER'= ',', " +
@@ -95,7 +97,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
       "STORED BY 'org.apache.carbondata.format'"
     )
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+      .addProperty("carbon.timestamp.format", "yyyy-MM-dd HH:mm:ss")
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data2.csv' INTO TABLE " +
         s"filtertestTablesWithNull " +
@@ -119,7 +121,7 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
         "tblproperties(\"skip.header.line.count\"=\"1\") ")
     sql("CREATE TABLE big_int_basicc_Hive_1 (imei string,age int,task bigint,name string,country string,city string,sale int,num double,level decimal(10,3),quest bigint,productdate date,enddate date,PointId double,score decimal(10,3))row format delimited fields terminated by ',' " +
         "tblproperties(\"skip.header.line.count\"=\"1\") ")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy-MM-dd HH:mm:ss")
     sql(s"""LOAD DATA INPATH '$resourcesPath/big_int_Decimal.csv'  INTO TABLE big_int_basicc options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$$','COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')""")
     sql(s"""LOAD DATA INPATH '$resourcesPath/big_int_Decimal.csv'  INTO TABLE big_int_basicc_1 options ('DELIMITER'=',', 'QUOTECHAR'='\"', 'COMPLEX_DELIMITER_LEVEL_1'='$$','COMPLEX_DELIMITER_LEVEL_2'=':', 'FILEHEADER'= '')""")
     sql(s"load data local inpath '$resourcesPath/big_int_Decimal.csv' into table big_int_basicc_Hive")
@@ -295,6 +297,6 @@ class FilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS filtertestTablesWithNull")
     sql("DROP TABLE IF EXISTS filtertestTablesWithNullJoin")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }

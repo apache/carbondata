@@ -18,9 +18,11 @@
 package org.apache.carbondata.integration.spark.testsuite.emptyrow
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 class TestCSVHavingOnlySpaceChar extends QueryTest with BeforeAndAfterAll {
 
@@ -35,7 +37,7 @@ class TestCSVHavingOnlySpaceChar extends QueryTest with BeforeAndAfterAll {
         "(37,37),deptno decimal(18,2),Desc String) STORED BY 'org.apache.carbondata.format'"
     )
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/mm/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/mm/dd")
      csvFilePath = s"$resourcesPath/emptyrow/csvwithonlyspacechar.csv"
       }
 
@@ -54,6 +56,6 @@ class TestCSVHavingOnlySpaceChar extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table emptyRowCarbonTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }

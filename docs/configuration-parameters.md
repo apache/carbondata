@@ -99,7 +99,6 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.sort.intermediate.files.limit | 20 | Minimum number of intermediate files after which merged sort can be started. |
 | carbon.block.meta.size.reserved.percentage | 10 | Space reserved in percentage for writing block meta data in CarbonData file. |
 | carbon.csv.read.buffersize.byte | 1048576 | csv reading buffer size. |
-| high.cardinality.value | 100000 | To identify and apply compression for non-high cardinality columns. |
 | carbon.merge.sort.reader.thread | 3 | Maximum no of threads used for reading intermediate files for final merging. |
 | carbon.load.metadata.lock.retries | 3 | Maximum number of retries to get the metadata lock for loading data to table. |
 | carbon.load.metadata.lock.retry.timeout.sec | 5 | Interval between the retries to get the lock. |
@@ -127,8 +126,6 @@ This section provides the details of all the configurations required for CarbonD
   
 | Parameter | Default Value | Description |
 |---------------------------------------|---------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| high.cardinality.identify.enable | true | If the parameter is true, the high cardinality columns of the dictionary code are automatically recognized and these columns will not be used as global dictionary encoding. If the parameter is false, all dictionary encoding columns are used as dictionary encoding. The high cardinality column must meet the following requirements: value of cardinality > configured value of high.cardinality. <b> Note: </b> If SINGLE_PASS is used during data load, then this property will be disabled.|
-| high.cardinality.threshold | 1000000  | It is a threshold to identify high cardinality of the columns.If the value of columns' cardinality > the configured value, then the columns are excluded from dictionary encoding. |
 | carbon.cutOffTimestamp | 1970-01-01 05:30:00 | Sets the start date for calculating the timestamp. Java counts the number of milliseconds from start of "1970-01-01 00:00:00". This property is used to customize the start of position. For example "2000-01-01 00:00:00". The date must be in the form "carbon.timestamp.format". |
 | carbon.timegranularity | SECOND | The property used to set the data granularity level DAY, HOUR, MINUTE, or SECOND. |
   

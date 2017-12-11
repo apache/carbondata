@@ -35,7 +35,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -83,7 +83,7 @@ public class SortDataRows {
 
     this.intermediateFileMerger = intermediateFileMerger;
 
-    int batchSize = CarbonProperties.getInstance().getBatchSize();
+    int batchSize = CarbonProperties.DATA_LOAD_BATCH_SIZE.getOrDefault();
 
     this.sortBufferSize = Math.max(parameters.getSortBufferSize(), batchSize);
     // observer of writing file in thread

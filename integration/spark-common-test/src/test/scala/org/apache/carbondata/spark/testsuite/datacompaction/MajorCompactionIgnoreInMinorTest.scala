@@ -26,10 +26,10 @@ import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.hadoop.CacheClient
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
@@ -45,7 +45,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     CarbonProperties.getInstance().addProperty("carbon.compaction.level.threshold", "2,2")
     sql("drop table if exists  ignoremajor")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
+      .addProperty("carbon.timestamp.format", "mm/dd/yyyy")
     sql(
       "CREATE TABLE IF NOT EXISTS ignoremajor (country String, ID Int, date Timestamp, name " +
         "String, " +
@@ -199,7 +199,7 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
     sql("drop table if exists  ignoremajor")
     sql("drop table if exists  testmajor")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 
 }

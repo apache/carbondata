@@ -60,7 +60,7 @@ public class CarbonTablePath extends Path {
    * structure CarbonTablePath object to manage table paths
    *
    * @param carbonTableIdentifier identifier of carbon table that the segment belong to
-   * @param tablePathString the store path of the segment
+   * @param tablePathString the path of the table
    */
   public CarbonTablePath(CarbonTableIdentifier carbonTableIdentifier, String tablePathString) {
     super(tablePathString);

@@ -17,8 +17,8 @@
 
 package org.apache.carbondata.examples
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 object AllDictionaryExample {
 
@@ -32,8 +32,7 @@ object AllDictionaryExample {
     AllDictionaryUtil.extractDictionary(spark.sparkContext,
       testData, allDictFile, csvHeader, dictCol)
     // Specify date format based on raw data
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.date.format", "yyyy/MM/dd")
 
     spark.sql("DROP TABLE IF EXISTS t3")
 

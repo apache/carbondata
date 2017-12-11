@@ -29,7 +29,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
@@ -91,7 +91,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
   public Iterator<CarbonRowBatch>[] sort(Iterator<CarbonRowBatch>[] iterators)
       throws CarbonDataLoadingException {
     SortDataRows sortDataRow = new SortDataRows(sortParameters, intermediateFileMerger);
-    final int batchSize = CarbonProperties.getInstance().getBatchSize();
+    final int batchSize = CarbonProperties.DATA_LOAD_BATCH_SIZE.getOrDefault();
     try {
       sortDataRow.initialize();
     } catch (CarbonSortKeyAndGroupByException e) {

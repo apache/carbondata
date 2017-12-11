@@ -23,6 +23,13 @@ import org.apache.carbondata.core.util.CarbonProperty;
  * Load options constant
  */
 public final class CarbonLoadOptionConstants {
+
+  @CarbonProperty
+  public static final String ENABLE_UNSAFE_SORT = "enable.unsafe.sort";
+
+  @CarbonProperty
+  public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION = "carbon.custom.block.distribution";
+
   /**
    * option to enable and disable the logger
    */

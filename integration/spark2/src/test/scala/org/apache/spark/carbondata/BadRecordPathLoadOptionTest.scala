@@ -23,10 +23,10 @@ import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test Class for detailed query on timestamp datatypes
@@ -48,8 +48,7 @@ class BadRecordPathLoadOptionTest extends Spark2QueryTest with BeforeAndAfterAll
     sql(
       """CREATE TABLE IF NOT EXISTS salestest(ID BigInt, date Timestamp, country String,
           actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     val csvFilePath = s"$resourcesPath/badrecords/datasample.csv"
     sql(s"set ${CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH}=${badRecordPath}")
     sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE salestest OPTIONS" +
@@ -61,8 +60,7 @@ class BadRecordPathLoadOptionTest extends Spark2QueryTest with BeforeAndAfterAll
 
   override def afterAll {
     sql("drop table salestest")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 
   def isFilesWrittenAtBadStoreLocation: Boolean = {

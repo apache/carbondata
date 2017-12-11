@@ -288,8 +288,7 @@ public class ExpressionResultTest {
     if (value == null) {
       return null;
     }
-    SimpleDateFormat parser =
-        new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+    SimpleDateFormat parser = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
     Date dateToStr;
     try {
       dateToStr = parser.parse(value.toString());

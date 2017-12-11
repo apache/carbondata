@@ -24,8 +24,9 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * FT for data compaction scenario.
@@ -36,7 +37,7 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
     sql("drop table if exists  cardinalityTest")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
+      .addProperty("carbon.timestamp.format", "mm/dd/yyyy")
     sql(
       "CREATE TABLE IF NOT EXISTS cardinalityTest (country String, ID String, date Timestamp, name " +
         "String, " +
@@ -116,7 +117,7 @@ class DataCompactionCardinalityBoundryTest extends QueryTest with BeforeAndAfter
   override def afterAll {
     sql("drop table if exists  cardinalityTest")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
   }
 

@@ -37,7 +37,7 @@ import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
 import org.apache.carbondata.core.stats.QueryStatisticsModel;
 import org.apache.carbondata.core.util.BitSetGroup;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 /**
@@ -69,23 +69,11 @@ public class FilterScanner extends AbstractBlockletScanner {
   public FilterScanner(BlockExecutionInfo blockExecutionInfo,
       QueryStatisticsModel queryStatisticsModel) {
     super(blockExecutionInfo);
-    // to check whether min max is enabled or not
-    String minMaxEnableValue = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_QUERY_MIN_MAX_ENABLED,
-            CarbonCommonConstants.MIN_MAX_DEFAULT_VALUE);
-    if (null != minMaxEnableValue) {
-      isMinMaxEnabled = Boolean.parseBoolean(minMaxEnableValue);
-    }
+    isMinMaxEnabled = true;
     // get the filter tree
     this.filterExecuter = blockExecutionInfo.getFilterExecuterTree();
     this.queryStatisticsModel = queryStatisticsModel;
-
-    String useBitSetPipeLine = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BITSET_PIPE_LINE,
-            CarbonCommonConstants.BITSET_PIPE_LINE_DEFAULT);
-    if (null != useBitSetPipeLine) {
-      this.useBitSetPipeLine = Boolean.parseBoolean(useBitSetPipeLine);
-    }
+    this.useBitSetPipeLine = CarbonProperties.ENABLE_BITSET_PIPE_LINE.getOrDefault();
   }
 
   /**

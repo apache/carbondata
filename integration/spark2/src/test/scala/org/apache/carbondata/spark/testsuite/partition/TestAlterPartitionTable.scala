@@ -23,12 +23,12 @@ import scala.collection.mutable.ListBuffer
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
@@ -37,9 +37,9 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     dropTable
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+      .addProperty("carbon.date.format", "yyyy-MM-dd")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     /**
      * list_table_area_origin
      * list_table_area
@@ -884,10 +884,8 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll = {
     dropTable
-    CarbonProperties.getInstance()
-    .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.date.format", "yyyy-MM-dd")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
   }
 
   def dropTable {

@@ -16,12 +16,9 @@
  */
 package org.apache.carbondata.lcm.locks;
 
-import mockit.NonStrictExpectations;
-
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.locks.ZooKeeperLocking;
 import org.apache.carbondata.core.locks.ZookeeperInit;
@@ -32,7 +29,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
-import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
@@ -99,8 +95,7 @@ public class ZooKeeperLockingTest {
     ZookeeperInit zki = ZookeeperInit.getInstance("127.0.0.1:" + freePort);
 
     AbsoluteTableIdentifier tableIdentifier = AbsoluteTableIdentifier
-        .from(CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION),
-            "dbName", "tableName");
+        .from(CarbonProperties.STORE_LOCATION.getOrDefault(), "dbName", "tableName");
     ZooKeeperLocking zkl =
         new ZooKeeperLocking(tableIdentifier,
             LockUsage.METADATA_LOCK);

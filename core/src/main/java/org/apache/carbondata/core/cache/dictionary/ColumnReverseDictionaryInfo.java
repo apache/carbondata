@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 import net.jpountz.xxhash.XXHash32;
 import net.jpountz.xxhash.XXHashFactory;
@@ -46,9 +46,7 @@ public class ColumnReverseDictionaryInfo extends AbstractColumnDictionaryInfo {
    * check and initialize xxHash32 if enabled
    */
   public ColumnReverseDictionaryInfo() {
-    boolean useXXHash = Boolean.valueOf(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_XXHASH,
-            CarbonCommonConstants.ENABLE_XXHASH_DEFAULT));
+    boolean useXXHash = CarbonProperties.ENABLE_XXHASH.getOrDefault();
     if (useXXHash) {
       xxHash32 = XXHashFactory.fastestInstance().hash32();
     }

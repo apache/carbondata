@@ -25,8 +25,7 @@ import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 /**
  * Manages memory for instance.
@@ -36,21 +35,10 @@ public class UnsafeMemoryManager {
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(UnsafeMemoryManager.class.getName());
 
-  private static boolean offHeap = Boolean.parseBoolean(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_OFFHEAP_SORT,
-          CarbonCommonConstants.ENABLE_OFFHEAP_SORT_DEFAULT));
+  private static boolean offHeap = CarbonProperties.ENABLE_OFFHEAP_SORT.getOrDefault();
   private static Map<Long,Set<MemoryBlock>> taskIdToMemoryBlockMap;
   static {
-    long size;
-    try {
-      size = Long.parseLong(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB,
-              CarbonCommonConstants.UNSAFE_WORKING_MEMORY_IN_MB_DEFAULT));
-    } catch (Exception e) {
-      size = Long.parseLong(CarbonCommonConstants.IN_MEMORY_FOR_SORT_DATA_IN_MB_DEFAULT);
-      LOGGER.info("Wrong memory size given, "
-          + "so setting default value to " + size);
-    }
+    long size = CarbonProperties.UNSAFE_WORKING_MEMORY_IN_MB.getOrDefault();
     if (size < 512) {
       size = 512;
       LOGGER.info("It is not recommended to keep unsafe memory size less than 512MB, "

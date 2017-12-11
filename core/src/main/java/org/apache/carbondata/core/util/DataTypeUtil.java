@@ -30,6 +30,7 @@ import java.util.Date;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
 import org.apache.carbondata.core.datastore.page.encoding.bool.BooleanConvert;
@@ -52,19 +53,15 @@ public final class DataTypeUtil {
 
   private static final ThreadLocal<DateFormat> timeStampformatter = new ThreadLocal<DateFormat>() {
     @Override protected DateFormat initialValue() {
-      DateFormat dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
-      dateFormat.setLenient(false);
-      return dateFormat;
+      DateFormat format = new SimpleDateFormat(CarbonProperties.TIMESTAMP_FORMAT.getOrDefault());
+      format.setLenient(false);
+      return format;
     }
   };
 
   private static final ThreadLocal<DateFormat> dateformatter = new ThreadLocal<DateFormat>() {
     @Override protected DateFormat initialValue() {
-      return new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-              CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
+      return new SimpleDateFormat(CarbonProperties.DATE_FORMAT.getOrDefault());
     }
   };
 

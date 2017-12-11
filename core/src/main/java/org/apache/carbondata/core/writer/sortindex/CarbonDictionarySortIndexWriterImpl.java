@@ -24,12 +24,11 @@ import java.util.List;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.PathService;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.ThriftWriter;
@@ -157,13 +156,7 @@ public class CarbonDictionarySortIndexWriterImpl implements CarbonDictionarySort
         FileFactory.getCarbonFile(dictPath, FileFactory.getFileType(dictPath));
     CarbonFile[] files = carbonTablePath.getSortIndexFiles(dictFile.getParentFile(),
         dictionaryColumnUniqueIdentifier.getColumnIdentifier().getColumnId());
-    int maxTime;
-    try {
-      maxTime = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME));
-    } catch (NumberFormatException e) {
-      maxTime = CarbonCommonConstants.DEFAULT_MAX_QUERY_EXECUTION_TIME;
-    }
+    int maxTime = CarbonProperties.MAX_QUERY_EXECUTION_TIME.getOrDefault();
     if (null != files) {
       Arrays.sort(files, new Comparator<CarbonFile>() {
         @Override public int compare(CarbonFile o1, CarbonFile o2) {

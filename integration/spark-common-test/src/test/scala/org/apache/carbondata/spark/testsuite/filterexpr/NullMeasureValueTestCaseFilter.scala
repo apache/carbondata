@@ -18,9 +18,11 @@ package org.apache.carbondata.spark.testsuite.filterexpr
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 class NullMeasureValueTestCaseFilter extends QueryTest with BeforeAndAfterAll {
 
@@ -31,7 +33,7 @@ class NullMeasureValueTestCaseFilter extends QueryTest with BeforeAndAfterAll {
         "phonetype String, serialname String, salary Int) STORED BY 'org.apache.carbondata.format'"
     )
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/datawithnullmeasure.csv' into table t3");
   }
 
@@ -50,6 +52,6 @@ class NullMeasureValueTestCaseFilter extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table t3")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }

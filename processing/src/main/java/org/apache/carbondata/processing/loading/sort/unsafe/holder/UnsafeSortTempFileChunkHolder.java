@@ -34,7 +34,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.processing.loading.sort.unsafe.UnsafeCarbonRowPage;
@@ -166,38 +166,23 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
    * @throws CarbonSortKeyAndGroupByException problem while initializing
    */
   public void initialize() {
-    prefetch = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_MERGE_SORT_PREFETCH,
-            CarbonCommonConstants.CARBON_MERGE_SORT_PREFETCH_DEFAULT));
-    bufferSize = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
-            CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT));
-    this.isSortTempFileCompressionEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
-            CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE));
+    prefetch = CarbonProperties.ENABLE_MERGE_SORT_PREFETCH.getOrDefault();
+    bufferSize = CarbonProperties.PREFETCH_BUFFERSIZE.getOrDefault();
+    this.isSortTempFileCompressionEnabled = CarbonProperties.ENABLE_SORT_TEMP_FILE_COMPRESSION.getOrDefault();
     if (this.isSortTempFileCompressionEnabled) {
       LOGGER.info("Compression was used while writing the sortTempFile");
     }
 
-    try {
-      this.sortTempFileNoOFRecordsInCompression = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
-              CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
-      if (this.sortTempFileNoOFRecordsInCompression < 1) {
-        LOGGER.error("Invalid value for: "
-            + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-            + ": Only Positive Integer value(greater than zero) is allowed.Default value will"
-            + " be used");
+    this.sortTempFileNoOFRecordsInCompression =
+        CarbonProperties.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION.getOrDefault();
+    if (this.sortTempFileNoOFRecordsInCompression < 1) {
+      LOGGER.error("Invalid value for: "
+          + CarbonProperties.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION.getName()
+          + ": Only Positive Integer value(greater than zero) is allowed.Default value will"
+          + " be used");
 
-        this.sortTempFileNoOFRecordsInCompression = Integer.parseInt(
-            CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.error(
-          "Invalid value for: " + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-              + ", only Positive Integer value is allowed.Default value will be used");
-      this.sortTempFileNoOFRecordsInCompression = Integer
-          .parseInt(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
+      this.sortTempFileNoOFRecordsInCompression =
+          CarbonProperties.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION.getDefaultValue();
     }
 
     initialise();

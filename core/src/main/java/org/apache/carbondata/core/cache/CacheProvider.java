@@ -32,7 +32,7 @@ import org.apache.carbondata.core.datastore.SegmentTaskIndexStore;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.indexstore.BlockletDataMapIndexStore;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 /**
  * Cache provider class which will create a cache based on given type
@@ -134,25 +134,11 @@ public class CacheProvider {
    * @param cacheType
    */
   private void createLRULevelCacheInstance(CacheType cacheType) {
-    boolean isDriver = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false"));
+    boolean isDriver = CarbonProperties.IS_DRIVER_INSTANCE.getOrDefault();
     if (isDriver) {
-      carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
-          CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
+      carbonLRUCache = new CarbonLRUCache(CarbonProperties.MAX_DRIVER_LRU_CACHE_SIZE.getOrDefault());
     } else {
-      // if executor cache size is not configured then driver cache conf will be used
-      String executorCacheSize = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE);
-      if (null != executorCacheSize) {
-        carbonLRUCache =
-            new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE,
-                CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
-      } else {
-        LOGGER.info(
-            "Executor LRU cache size not configured. Initializing with driver LRU cache size.");
-        carbonLRUCache = new CarbonLRUCache(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE,
-            CarbonCommonConstants.CARBON_MAX_LRU_CACHE_SIZE_DEFAULT);
-      }
+      carbonLRUCache = new CarbonLRUCache(CarbonProperties.MAX_EXECUTOR_LRU_CACHE_SIZE.getOrDefault());
     }
   }
 

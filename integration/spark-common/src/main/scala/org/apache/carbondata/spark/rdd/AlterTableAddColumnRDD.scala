@@ -19,13 +19,13 @@ package org.apache.carbondata.spark.rdd
 
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.statusmanager.SegmentStatus
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.spark.util.GlobalDictionaryUtil
 
@@ -52,8 +52,7 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
     absoluteTableIdentifier: AbsoluteTableIdentifier)
   extends CarbonRDD[(Int, SegmentStatus)](sc, Nil) {
 
-  val lockType: String = CarbonProperties.getInstance.getProperty(CarbonCommonConstants.LOCK_TYPE,
-    CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
+  val lockType: String = CarbonProperties.LOCK_TYPE.getOrDefault()
 
   override def getPartitions: Array[Partition] = {
     newColumns.zipWithIndex.map { column =>
@@ -77,7 +76,6 @@ class AlterTableAddColumnRDD[K, V](sc: SparkContext,
             rawData = new String(columnSchema.getDefaultValue,
               CarbonCommonConstants.DEFAULT_CHARSET_CLASS)
           }
-          CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE, lockType)
           // Create table and metadata folders if not exist
           val metadataDirectoryPath = carbonTablePath.getMetadataDirectoryPath
           val fileType = FileFactory.getFileType(metadataDirectoryPath)

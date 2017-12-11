@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.core.util;
 
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.datastore.page.encoding.ColumnPageEncoderMeta;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.ValueEncoderMeta;

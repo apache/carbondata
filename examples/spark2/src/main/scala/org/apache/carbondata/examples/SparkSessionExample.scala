@@ -22,8 +22,8 @@ import java.io.File
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.SparkSession
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 object SparkSessionExample {
 
@@ -58,8 +58,8 @@ object SparkSessionExample {
     spark.sparkContext.setLogLevel("WARN")
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd HH:mm:ss")
+      .addProperty("carbon.date.format", "yyyy/MM/dd")
 
     // Create table
     spark.sql(

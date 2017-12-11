@@ -26,8 +26,9 @@ import org.apache.spark.sql.execution.command.AlterPartitionModel
 import org.apache.spark.util.PartitionUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.processing.loading.TempTablePath
 import org.apache.carbondata.processing.partition.spliter.RowResultProcessor
 import org.apache.carbondata.processing.util.{CarbonDataProcessorUtil, CarbonLoaderUtil}
 import org.apache.carbondata.spark.AlterPartitionResult
@@ -73,11 +74,7 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
                   true)
             // this property is used to determine whether temp location for carbon is inside
             // container temp dir or is yarn application directory.
-            val carbonUseLocalDir = CarbonProperties.getInstance()
-              .getProperty("carbon.use.local.dir", "false")
-
-            if (carbonUseLocalDir.equalsIgnoreCase("true")) {
-
+            if (CarbonProperties.USE_LOCAL_DIR_LOADING.getOrDefault()) {
                 val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
                 if (null != storeLocations && storeLocations.nonEmpty) {
                     storeLocation = storeLocations(Random.nextInt(storeLocations.length))
@@ -89,7 +86,7 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
                 storeLocation = System.getProperty("java.io.tmpdir")
             }
             storeLocation = storeLocation + '/' + System.nanoTime() + '/' + split.index
-            CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
+            TempTablePath.setTempTablePath(tempLocationKey, storeLocation)
             LOGGER.info(s"Temp storeLocation taken is $storeLocation")
 
             val tempStoreLoc = CarbonDataProcessorUtil.getLocalDataFolderLocation(databaseName,

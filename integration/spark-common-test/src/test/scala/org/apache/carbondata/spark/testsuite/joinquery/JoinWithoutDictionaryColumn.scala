@@ -18,9 +18,10 @@
 package org.apache.carbondata.spark.testsuite.joinquery
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test cases for testing columns having \N or \null values for non numeric columns
@@ -35,7 +36,7 @@ class JoinWithoutDictionaryColumn extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists emp_d")
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      .addProperty("carbon.timestamp.format",
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
       )
 

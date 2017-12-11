@@ -62,7 +62,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -131,12 +131,8 @@ public class StoreCreator {
     loadModel.setLoadMetadataDetails(new ArrayList<LoadMetadataDetails>());
     loadModel.setTablePath(absoluteTableIdentifier.getTablePath());
     loadModel.setDateFormat(null);
-    loadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
-        CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS));
-    loadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
-        CarbonCommonConstants.CARBON_DATE_FORMAT,
-        CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
+    loadModel.setDefaultTimestampFormat(CarbonProperties.TIMESTAMP_FORMAT.getOrDefault());
+    loadModel.setDefaultDateFormat(CarbonProperties.DATE_FORMAT.getOrDefault());
     loadModel
         .setSerializationNullFormat(
             TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName() + "," + "\\N");
@@ -168,8 +164,6 @@ public class StoreCreator {
           new File("../hadoop/src/test/resources/data.csv").getCanonicalPath();
       File storeDir = new File(storePath);
       CarbonUtil.deleteFoldersAndFiles(storeDir);
-      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS,
-          storePath);
 
       CarbonTable table = createTable(absoluteTableIdentifier);
       writeDictionary(factFilePath, table);
@@ -381,16 +375,6 @@ public class StoreCreator {
     String tableName = loadModel.getTableName();
     String tempLocationKey = databaseName + '_' + tableName + "_1";
     CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation + "/" + databaseName + "/" + tableName);
-    CarbonProperties.getInstance().addProperty("store_output_location", outPutLoc);
-    CarbonProperties.getInstance().addProperty("send.signal.load", "false");
-    CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true");
-    CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1");
-    CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true");
-    CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true");
-    CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true");
-    CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000");
-    CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false");
-    CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000");
 
     String graphPath =
         outPutLoc + File.separator + loadModel.getDatabaseName() + File.separator + tableName
@@ -408,9 +392,7 @@ public class StoreCreator {
     CSVInputFormat.setEscapeCharacter(configuration, loadModel.getEscapeChar());
     CSVInputFormat.setHeaderExtractionEnabled(configuration, true);
     CSVInputFormat.setQuoteCharacter(configuration, loadModel.getQuoteChar());
-    CSVInputFormat.setReadBufferSize(configuration, CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
-            CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT));
+    CSVInputFormat.setReadBufferSize(configuration, CarbonProperties.CSV_READ_BUFFER_SIZE.getOrDefault().toString());
     CSVInputFormat.setNumberOfColumns(configuration, String.valueOf(loadModel.getCsvHeaderColumns().length));
     CSVInputFormat.setMaxColumns(configuration, "10");
 

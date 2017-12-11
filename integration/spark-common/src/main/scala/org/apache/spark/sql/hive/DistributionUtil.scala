@@ -25,9 +25,9 @@ import org.apache.spark.SparkContext
 import org.apache.spark.scheduler.cluster.CoarseGrainedSchedulerBackend
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.Distributable
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 
 object DistributionUtil {
@@ -250,9 +250,7 @@ object DistributionUtil {
    * @return
    */
   private def calculateCounterBasedOnExecutorStartupTime(threadSleepTime: Int): Int = {
-    var executorStartUpTimeOut = CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CARBON_EXECUTOR_STARTUP_TIMEOUT,
-        CarbonCommonConstants.CARBON_EXECUTOR_WAITING_TIMEOUT_DEFAULT).toInt
+    var executorStartUpTimeOut = CarbonProperties.EXECUTOR_STARTUP_TIMEOUT.getOrDefault()
     // convert seconds into milliseconds for loop counter calculation
     executorStartUpTimeOut = executorStartUpTimeOut * 1000
     // make executor start up time exactly divisible by thread sleep time

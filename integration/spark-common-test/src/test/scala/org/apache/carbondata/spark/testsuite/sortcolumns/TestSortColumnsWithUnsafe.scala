@@ -17,9 +17,11 @@
 package org.apache.carbondata.spark.testsuite.sortcolumns
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 class TestSortColumnsWithUnsafe extends QueryTest with BeforeAndAfterAll {
 

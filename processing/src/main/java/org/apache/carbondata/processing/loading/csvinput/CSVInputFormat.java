@@ -25,7 +25,7 @@ import java.nio.charset.Charset;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 import com.univocity.parsers.csv.CsvParser;
 import com.univocity.parsers.csv.CsvParserSettings;
@@ -131,14 +131,8 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     if (skipEmptyLine != null && !skipEmptyLine.isEmpty()) {
       configuration.set(SKIP_EMPTY_LINE, skipEmptyLine);
     } else {
-      try {
-        BooleanUtils.toBoolean(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE),"true", "false");
-        configuration.set(SKIP_EMPTY_LINE, CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE));
-      } catch (Exception e) {
-        configuration.set(SKIP_EMPTY_LINE, CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT);
-      }
+      configuration.set(
+          SKIP_EMPTY_LINE, CarbonProperties.SKIP_EMPTY_LINE.getOrDefault().toString());
     }
   }
 
@@ -204,9 +198,7 @@ public class CSVInputFormat extends FileInputFormat<NullWritable, StringArrayWri
     parserSettings.setEmptyValue("");
     parserSettings.setIgnoreLeadingWhitespaces(false);
     parserSettings.setIgnoreTrailingWhitespaces(false);
-    parserSettings.setSkipEmptyLines(
-        Boolean.valueOf(job.get(SKIP_EMPTY_LINE,
-            CarbonCommonConstants.CARBON_SKIP_EMPTY_LINE_DEFAULT)));
+    parserSettings.setSkipEmptyLines(Boolean.valueOf(job.get(SKIP_EMPTY_LINE, "false")));
     parserSettings.setMaxCharsPerColumn(MAX_CHARS_PER_COLUMN_DEFAULT);
     String maxColumns = job.get(MAX_COLUMNS, "" + DEFAULT_MAX_NUMBER_OF_COLUMNS_FOR_PARSING);
     parserSettings.setMaxColumns(Integer.parseInt(maxColumns));

@@ -28,6 +28,7 @@ import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompact
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager
@@ -49,7 +50,7 @@ object HorizontalCompaction {
       carbonTable: CarbonTable,
       isUpdateOperation: Boolean): Unit = {
 
-    if (!CarbonDataMergerUtil.isHorizontalCompactionEnabled) {
+    if (!CarbonProperties.ENABLE_HORIZONTAL_COMPACTION.getOrDefault) {
       return
     }
 

@@ -24,7 +24,7 @@ import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.types._
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.api.CarbonProperties
 
 class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
   override def beforeAll(): Unit = {

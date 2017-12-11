@@ -20,8 +20,8 @@ package org.apache.spark.carbondata.query
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test cases for testing columns having \N or \null values for non numeric columns
@@ -31,10 +31,7 @@ class TestNotEqualToFilter extends Spark2QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("drop table if exists test_not_equal_to_carbon")
     sql("drop table if exists test_not_equal_to_hive")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-      )
+    CarbonProperties.getInstance().setToDefault("carbon.timestamp.format")
     sql(
       """
         CREATE TABLE IF NOT EXISTS test_not_equal_to_carbon

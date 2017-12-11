@@ -20,9 +20,11 @@ package org.apache.carbondata.spark.testsuite.aggquery
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for aggregate query on Integer datatypes

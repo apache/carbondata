@@ -21,11 +21,11 @@ import java.io.{File, FilenameFilter}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.reader.CarbonIndexFileReader
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.metadata.CarbonMetadata
 
 class TestDataLoadWithFileName extends QueryTest with BeforeAndAfterAll {

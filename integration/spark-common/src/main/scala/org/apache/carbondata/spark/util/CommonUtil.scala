@@ -37,6 +37,7 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.FileUtils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -49,7 +50,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{ByteUtil, CarbonUtil}
 import org.apache.carbondata.core.util.comparator.Comparator
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
@@ -243,14 +244,10 @@ object CommonUtil {
                       "})([.][0-9]{1," + scale + "})?$"
         value.matches(pattern)
       case "timestamptype" =>
-        val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+        val timeStampFormat = new SimpleDateFormat(CarbonProperties.TIMESTAMP_FORMAT.getOrDefault())
         scala.util.Try(timeStampFormat.parse(value)).isSuccess
       case "datetype" =>
-        val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+        val dateFormat = new SimpleDateFormat(CarbonProperties.DATE_FORMAT.getOrDefault())
         scala.util.Try(dateFormat.parse(value)).isSuccess
       case others =>
        if (others != null && others.startsWith("char")) {
@@ -295,14 +292,10 @@ object CommonUtil {
                       "})([.][0-9]{1," + scale + "})?$"
         value.matches(pattern)
       case "timestamp" =>
-        val timeStampFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+        val timeStampFormat = new SimpleDateFormat(CarbonProperties.TIMESTAMP_FORMAT.getOrDefault())
         scala.util.Try(timeStampFormat.parse(value)).isSuccess
       case "date" =>
-        val dateFormat = new SimpleDateFormat(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+        val dateFormat = new SimpleDateFormat(CarbonProperties.DATE_FORMAT.getOrDefault())
         scala.util.Try(dateFormat.parse(value)).isSuccess
       case _ =>
         validateTypeConvertForSpark2(partitionerField, value)
@@ -578,9 +571,8 @@ object CommonUtil {
     CSVInputFormat.setHeaderExtractionEnabled(configuration,
       carbonLoadModel.getCsvHeader == null || carbonLoadModel.getCsvHeader.isEmpty)
     CSVInputFormat.setQuoteCharacter(configuration, carbonLoadModel.getQuoteChar)
-    CSVInputFormat.setReadBufferSize(configuration, CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CSV_READ_BUFFER_SIZE,
-        CarbonCommonConstants.CSV_READ_BUFFER_SIZE_DEFAULT))
+    CSVInputFormat.setReadBufferSize(
+      configuration, CarbonProperties.CSV_READ_BUFFER_SIZE.getOrDefault().toString)
   }
 
   def configSplitMaxSize(context: SparkContext, filePaths: String,

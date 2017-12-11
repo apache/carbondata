@@ -19,103 +19,127 @@
 #################### System Configuration ##################
 #Mandatory. Carbon Store path
 carbon.storelocation=hdfs://hacluster/Opt/CarbonStore
+
 #Base directory for Data files
 carbon.ddl.base.hdfs.url=hdfs://hacluster/opt/data
+
 #Path where the bad records are stored
 carbon.badRecords.location=/opt/Carbon/Spark/badrecords
+
 
 #################### Performance Configuration ##################
 ######## DataLoading Configuration ########
 #File read buffer size used during sorting(in MB) :MIN=1:MAX=100
 carbon.sort.file.buffer.size=20
-#Rowset size exchanged between data load graph steps :MIN=500:MAX=1000000
-carbon.graph.rowset.size=100000
+
 #Number of cores to be used while data loading
 carbon.number.of.cores.while.loading=6
+
 #Record count to sort and write to temp intermediate files
 carbon.sort.size=500000
+
 #Algorithm for hashmap for hashkey calculation
 carbon.enableXXHash=true
+
 #Number of cores to be used for block sort while dataloading
 #carbon.number.of.cores.block.sort=7
-#max level cache size upto which level cache will be loaded in memory
-#carbon.max.level.cache.size=-1
+
 #enable prefetch of data during merge sort while reading data from sort temp files in data loading
 #carbon.merge.sort.prefetch=true
+
+
 ######## Alter Partition Configuration ########
 #Number of cores to be used while alter partition
 carbon.number.of.cores.while.alterPartition=2
+
 ######## Compaction Configuration ########
 #Number of cores to be used while compacting
 carbon.number.of.cores.while.compacting=2
+
 #For minor compaction, Number of segments to be merged in stage 1, number of compacted segments to be merged in stage 2.
 carbon.compaction.level.threshold=4,3
+
 #default size (in MB) for major compaction to be triggered
 carbon.major.compaction.size=1024
+
+
 ######## Query Configuration ########
 #Number of cores to be used for loading index into memory
 carbon.number.of.cores=4
+
 #Number of records to be in memory while querying :MIN=100000:MAX=240000
 carbon.inmemory.record.size=120000
+
 #Improves the performance of filter query
 carbon.enable.quick.filter=false
+
 ##number of core to load the blocks in driver
 #no.of.cores.to.load.blocks.in.driver=10
+
 
 #################### Extra Configuration ##################
 ##Timestamp format of input data used for timestamp data type.
 #carbon.timestamp.format=yyyy-MM-dd HH:mm:ss
+
+
 ######## Dataload Configuration ########
 ##File write buffer size used during sorting.
 #carbon.sort.file.write.buffer.size=10485760
+
 ##Locking mechanism for data loading on a table
 #carbon.lock.type=LOCALLOCK
+
 ##Minimum no of intermediate files after which sort merged to be started.
 #carbon.sort.intermediate.files.limit=20
+
 ##space reserved in percentage for writing block meta data in carbon data file
 #carbon.block.meta.size.reserved.percentage=10
+
 ##csv reading buffer size.
 #carbon.csv.read.buffersize.byte=1048576
-##To identify and apply compression for non-high cardinality columns
-#high.cardinality.value=100000
+
 ##maximum no of threads used for reading intermediate files for final merging.
 #carbon.merge.sort.reader.thread=3
+
 ##Carbon blocklet size. Note: this configuration cannot be change once store is generated
 #carbon.blocklet.size=120000
+
 ##number of retries to get the metadata lock for loading data to table
 #carbon.load.metadata.lock.retries=3
-##Minimum blocklets needed for distribution.
-#carbon.blockletdistribution.min.blocklet.size=10
+
 ##Interval between the retries to get the lock
 #carbon.load.metadata.lock.retry.timeout.sec=5
+
 ##Temporary store location, By default it will take System.getProperty("java.io.tmpdir")
 #carbon.tempstore.location=/opt/Carbon/TempStoreLoc
-##data loading records count logger
-#carbon.load.log.counter=500000
+
 ##To dissable/enable carbon block distribution
 #carbon.custom.block.distribution=false
+
+
 ######## Compaction Configuration ########
 ##to specify number of segments to be preserved from compaction
 #carbon.numberof.preserve.segments=0
+
 ##To determine the loads of number of days to be compacted
 #carbon.allowed.compaction.days=0
+
 ##To enable compaction while data loading
 #carbon.enable.auto.load.merge=false
+
+
 ######## Query Configuration ########
 ##Maximum time allowed for one query to be executed.
 #max.query.execution.time=60
+
 ##Min max is feature added to enhance query performance. To disable this feature, make it false.
 #carbon.enableMinMax=true
-######## Global Dictionary Configurations ########
-##To enable/disable identify high cardinality during first data loading
-#high.cardinality.identify.enable=true
-##threshold to identify whether high cardinality column
-#high.cardinality.threshold=1000000
-##Percentage to identify whether column cardinality is more than configured percent of total row count
-#high.cardinality.row.count.percentage=80
+
 ##The property to set the date to be considered as start date for calculating the timestamp.
 #carbon.cutOffTimestamp=2000-01-01 00:00:00
+
 ##The property to set the timestamp (ie milis) conversion to the SECOND, MINUTE, HOUR or DAY level.
 #carbon.timegranularity=SECOND
+
 ##the number of prefetched rows in sort step
 #carbon.prefetch.buffersize=1000

@@ -18,9 +18,11 @@
 package org.apache.carbondata.spark.testsuite.allqueries
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /*
  * Test Class for query without data load

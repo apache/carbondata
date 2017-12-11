@@ -19,16 +19,18 @@ package org.apache.carbondata.spark.testsuite.partition
 
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 class TestQueryForPartitionTable  extends QueryTest with BeforeAndAfterAll {
   override def beforeAll = {
     dropTable
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
     // create normal table(not a partition table)
     sql(
       """

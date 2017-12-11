@@ -26,8 +26,8 @@ import scala.util.Random
 import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types._
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * A query test case
@@ -269,10 +269,6 @@ object CompareTest {
   }
 
   private def loadCarbonTable(spark: SparkSession, input: DataFrame, tableName: String): Double = {
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_DATA_FILE_VERSION,
-      "3"
-    )
     spark.sql(s"drop table if exists $tableName")
     time {
       input.write
@@ -370,7 +366,7 @@ object CompareTest {
         .addProperty("carbon.enable.vector.reader", "true")
         .addProperty("enable.unsafe.sort", "true")
         .addProperty("carbon.blockletgroup.size.in.mb", "32")
-        .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
+        .addProperty("enable.unsafe.columnpage", "true")
     import org.apache.spark.sql.CarbonSession._
     val rootPath = new File(this.getClass.getResource("/").getPath
         + "../../../..").getCanonicalPath

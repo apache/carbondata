@@ -29,16 +29,15 @@ import org.apache.spark.sql.sources
 import org.apache.spark.sql.types.{DoubleType, IntegerType, StringType, TimestampType}
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 object CastExpressionOptimization {
 
 
   def typeCastStringToLong(v: Any): Any = {
-    val parser: SimpleDateFormat = new SimpleDateFormat(CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+    val parser: SimpleDateFormat = new SimpleDateFormat(
+      CarbonProperties.TIMESTAMP_FORMAT.getOrDefault())
     try {
       val value = parser.parse(v.toString).getTime() * 1000L
       value

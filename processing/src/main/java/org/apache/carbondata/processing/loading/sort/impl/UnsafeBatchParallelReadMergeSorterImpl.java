@@ -34,7 +34,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.memory.MemoryException;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
@@ -76,7 +76,7 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
       throws CarbonDataLoadingException {
     this.executorService = Executors.newFixedThreadPool(iterators.length);
     this.threadStatusObserver = new ThreadStatusObserver(this.executorService);
-    int batchSize = CarbonProperties.getInstance().getBatchSize();
+    int batchSize = CarbonProperties.DATA_LOAD_BATCH_SIZE.getOrDefault();
     final SortBatchHolder sortBatchHolder = new SortBatchHolder(sortParameters, iterators.length,
         this.threadStatusObserver);
 
@@ -202,7 +202,7 @@ public class UnsafeBatchParallelReadMergeSorterImpl extends AbstractMergeSorter 
     }
 
     private void createSortDataRows() {
-      int inMemoryChunkSizeInMB = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
+      int inMemoryChunkSizeInMB = CarbonProperties.OFFHEAP_SORT_CHUNK_SIZE_IN_MB.getOrDefault();
       setTempLocation(sortParameters);
       this.finalMerger = new UnsafeSingleThreadFinalSortFilesMerger(sortParameters,
           sortParameters.getTempFileLocation());

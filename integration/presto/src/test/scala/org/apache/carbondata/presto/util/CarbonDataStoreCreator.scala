@@ -34,6 +34,7 @@ import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.hadoop.mapreduce.{RecordReader, TaskType}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier, ReverseDictionary}
 import org.apache.carbondata.core.cache.{Cache, CacheProvider, CacheType}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -48,7 +49,7 @@ import org.apache.carbondata.core.metadata.schema.{SchemaEvolution, SchemaEvolut
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier, ColumnIdentifier}
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.writer.sortindex.{CarbonDictionarySortIndexWriter, CarbonDictionarySortIndexWriterImpl, CarbonDictionarySortInfo, CarbonDictionarySortInfoPreparator}
 import org.apache.carbondata.core.writer.{CarbonDictionaryWriter, CarbonDictionaryWriterImpl, ThriftWriter}
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator, StringArrayWritable}
@@ -99,14 +100,8 @@ object CarbonDataStoreCreator {
       CarbonProperties.getInstance
         .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
 
-      loadModel.setDefaultTimestampFormat(
-        CarbonProperties.getInstance.getProperty(
-          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS))
-      loadModel.setDefaultDateFormat(
-        CarbonProperties.getInstance.getProperty(
-          CarbonCommonConstants.CARBON_DATE_FORMAT,
-          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+      loadModel.setDefaultTimestampFormat(CarbonProperties.TIMESTAMP_FORMAT.getOrDefault());
+      loadModel.setDefaultDateFormat(CarbonProperties.DATE_FORMAT.getOrDefault());
       loadModel.setSerializationNullFormat(
         TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName +
         "," +
@@ -419,22 +414,6 @@ object CarbonDataStoreCreator {
     val tempLocationKey: String = databaseName + '_' + tableName + "_1"
     CarbonProperties.getInstance.addProperty(tempLocationKey, storeLocation)
     CarbonProperties.getInstance
-      .addProperty("store_output_location", outPutLoc)
-    CarbonProperties.getInstance.addProperty("send.signal.load", "false")
-    CarbonProperties.getInstance
-      .addProperty("carbon.is.columnar.storage", "true")
-    CarbonProperties.getInstance
-      .addProperty("carbon.dimension.split.value.in.columnar", "1")
-    CarbonProperties.getInstance
-      .addProperty("carbon.is.fullyfilled.bits", "true")
-    CarbonProperties.getInstance.addProperty("is.int.based.indexer", "true")
-    CarbonProperties.getInstance
-      .addProperty("aggregate.columnar.keyblock", "true")
-    CarbonProperties.getInstance
-      .addProperty("high.cardinality.value", "100000")
-    CarbonProperties.getInstance.addProperty("is.compressed.keyblock", "false")
-    CarbonProperties.getInstance.addProperty("carbon.leaf.node.size", "120000")
-    CarbonProperties.getInstance
       .addProperty("carbon.direct.dictionary", "true")
     val graphPath: String = outPutLoc + File.separator + loadModel.getDatabaseName +
                             File.separator +
@@ -548,8 +527,7 @@ object CarbonDataStoreCreator {
   }
 
   private def readCurrentTime(): String = {
-    val sdf: SimpleDateFormat = new SimpleDateFormat(
-      CarbonCommonConstants.CARBON_TIMESTAMP_MILLIS)
+    val sdf: SimpleDateFormat = new SimpleDateFormat(CarbonProperties.TIMESTAMP_FORMAT.getOrDefault())
     sdf.format(new Date())
   }
 

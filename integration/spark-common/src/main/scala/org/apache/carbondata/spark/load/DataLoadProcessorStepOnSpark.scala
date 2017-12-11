@@ -24,9 +24,9 @@ import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.Row
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException
 import org.apache.carbondata.core.datastore.row.CarbonRow
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.loading.DataLoadProcessBuilder
 import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl
 import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable
@@ -214,9 +214,7 @@ object DataLoadProcessorStepOnSpark {
     var storeLocation = ""
     // this property is used to determine whether temp location for carbon is inside
     // container temp dir or is yarn application directory.
-    val carbonUseLocalDir = CarbonProperties.getInstance()
-      .getProperty("carbon.use.local.dir", "false")
-    if (carbonUseLocalDir.equalsIgnoreCase("true")) {
+    if (CarbonProperties.USE_LOCAL_DIR_LOADING.getOrDefault()) {
       val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
       if (null != storeLocations && storeLocations.nonEmpty) {
         storeLocation = storeLocations(Random.nextInt(storeLocations.length))

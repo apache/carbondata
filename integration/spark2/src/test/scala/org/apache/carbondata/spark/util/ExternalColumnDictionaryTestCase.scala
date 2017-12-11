@@ -23,9 +23,9 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
@@ -116,10 +116,8 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     val warehouse = s"$resourcesPath/target/warehouse"
     val storeLocation = s"$resourcesPath/target/store"
     val metastoredb = s"$resourcesPath/target"
-    CarbonProperties.getInstance()
-      .addProperty("carbon.custom.distribution", "true")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,"FORCE")
+    CarbonProperties.getInstance().addProperty("carbon.custom.distribution", "true")
+    CarbonProperties.getInstance().addProperty("carbon.bad.records.action", "FORCE")
     import org.apache.spark.sql.CarbonSession._
 
     val spark = SparkSession
@@ -169,12 +167,8 @@ class ExternalColumnDictionaryTestCase extends Spark2QueryTest with BeforeAndAft
     carbonLoadModel.setQuoteChar("\"");
     carbonLoadModel.setSerializationNullFormat(
       TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + ",\\N")
-    carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-    carbonLoadModel.setDefaultDateFormat(CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+    carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.TIMESTAMP_FORMAT.getOrDefault())
+    carbonLoadModel.setDefaultDateFormat(CarbonProperties.DATE_FORMAT.getOrDefault())
     carbonLoadModel.setCsvHeaderColumns(
       CommonUtil.getCsvHeaderColumns(carbonLoadModel, FileFactory.getConfiguration))
     carbonLoadModel.setMaxColumns("100")

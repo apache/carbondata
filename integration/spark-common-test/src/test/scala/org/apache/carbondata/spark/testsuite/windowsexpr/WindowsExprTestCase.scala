@@ -18,9 +18,11 @@
 package org.apache.carbondata.spark.testsuite.windowsexpr
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * Test Class for all query on multiple datatypes
@@ -31,7 +33,7 @@ class WindowsExprTestCase extends QueryTest with BeforeAndAfterAll {
   override def beforeAll {
     sql("CREATE TABLE IF NOT EXISTS windowstable (ID double, date Timestamp, country String,name String, phonetype String, serialname String, salary double) STORED BY 'carbondata'")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,"dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format","dd-MM-yyyy")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' INTO table windowstable options('DELIMITER'= ',' ,'QUOTECHAR'= '\"', 'FILEHEADER'= 'ID,date,country,name,phonetype,serialname,salary')""")
     sql("CREATE TABLE IF NOT EXISTS hivewindowstable (ID double, date Timestamp, country String,name String, phonetype String, serialname String, salary double) row format delimited fields terminated by ','")
     sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/source_without_header.csv' INTO table hivewindowstable""")
@@ -42,7 +44,7 @@ class WindowsExprTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table hivewindowstable")
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 
   test("SELECT country,name,salary FROM (SELECT country,name,salary,dense_rank() OVER (PARTITION BY country ORDER BY salary DESC) as rank FROM windowstable) tmp WHERE rank <= 2 order by country") {

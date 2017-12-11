@@ -26,8 +26,8 @@ import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
@@ -46,7 +46,7 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/restructure/data1.csv' INTO TABLE addcolumntest " +
         s"OPTIONS('FILEHEADER'='intField,stringField,charField,timestampField,decimalField')")
     sql("CREATE TABLE hivetable STORED AS PARQUET SELECT * FROM addcolumntest")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyy")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "dd-MM-yyy")
   }
 
   test("test like query on new column") {
@@ -671,7 +671,6 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_no_dict")
     sql("drop table if exists NO_INVERTED_CARBON")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    CarbonProperties.getInstance().setToDefault("carbon.timestamp.format")
   }
 }

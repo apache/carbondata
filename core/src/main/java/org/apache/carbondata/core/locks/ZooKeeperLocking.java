@@ -24,7 +24,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
@@ -75,8 +75,7 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
   }
 
   public static void initialize() {
-    String zooKeeperUrl =
-        CarbonProperties.getInstance().getProperty(CarbonCommonConstants.ZOOKEEPER_URL);
+    String zooKeeperUrl = CarbonProperties.ZOOKEEPER_URL.getOrDefault();
     if (null == zk) {
       zk = ZookeeperInit.getInstance(zooKeeperUrl).getZookeeper();
     }

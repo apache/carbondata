@@ -16,39 +16,18 @@
  */
 package org.apache.carbondata.core.constants;
 
-import org.apache.carbondata.core.util.CarbonProperty;
 
 /**
  * Constants for V3 data format
  */
 public interface CarbonV3DataFormatConstants {
 
-  /**
-   * each blocklet group size in mb
-   */
-  @CarbonProperty
-  String BLOCKLET_SIZE_IN_MB = "carbon.blockletgroup.size.in.mb";
-
-  /**
-   * blocklet group size default value
-   */
-  String BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE = "64";
 
   /**
    * blocklet group size min value
    */
   short BLOCKLET_SIZE_IN_MB_MIN = 16;
 
-  /**
-   * number of column to be read in one IO in query
-   */
-  @CarbonProperty
-  String NUMBER_OF_COLUMN_TO_READ_IN_IO = "number.of.column.to.read.in.io";
-
-  /**
-   * number of column to be read in one IO in query default value
-   */
-  String NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE = "10";
 
   /**
    * number of column to be read in one IO in query max value

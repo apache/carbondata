@@ -98,10 +98,10 @@
 //    final Properties tbl = new Properties();
 //
 //    // Set the configuration parameters
-//    tbl.setProperty("columns", "ashort,aint,along,adouble,adecimal,astring,alist");
-//    tbl.setProperty("columns.types",
+//    tbl.set("columns", "ashort,aint,along,adouble,adecimal,astring,alist");
+//    tbl.set("columns.types",
 //        "smallint:int:bigint:double:decimal:string:array<int>");
-//    tbl.setProperty(org.apache.hadoop.hive.serde.serdeConstants.SERIALIZATION_NULL_FORMAT, "NULL");
+//    tbl.set(org.apache.hadoop.hive.serde.serdeConstants.SERIALIZATION_NULL_FORMAT, "NULL");
 //    return tbl;
 //  }
 //

@@ -23,8 +23,8 @@ import java.text.SimpleDateFormat
 import org.apache.spark.sql.SaveMode
 import org.apache.spark.sql.SparkSession
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 object DataUpdateDeleteExample {
 
@@ -52,8 +52,7 @@ object DataUpdateDeleteExample {
     spark.sparkContext.setLogLevel("WARN")
 
     // Specify date format based on raw data
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
+    CarbonProperties.getInstance().addProperty("carbon.date.format", "yyyy-MM-dd")
 
     import spark.implicits._
     // Drop table

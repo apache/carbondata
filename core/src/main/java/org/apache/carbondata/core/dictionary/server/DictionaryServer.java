@@ -18,11 +18,10 @@ package org.apache.carbondata.core.dictionary.server;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.channel.ChannelInitializer;
@@ -73,11 +72,8 @@ public class DictionaryServer {
    */
   private void startServer(int port) {
     dictionaryServerHandler = new DictionaryServerHandler();
-    String workerThreads = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.DICTIONARY_WORKER_THREADS,
-            CarbonCommonConstants.DICTIONARY_WORKER_THREADS_DEFAULT);
     boss = new NioEventLoopGroup(1);
-    worker = new NioEventLoopGroup(Integer.parseInt(workerThreads));
+    worker = new NioEventLoopGroup(CarbonProperties.DICTIONARY_WORKER_THREADS.getOrDefault());
     // Configure the server.
     bindToPort(port);
   }

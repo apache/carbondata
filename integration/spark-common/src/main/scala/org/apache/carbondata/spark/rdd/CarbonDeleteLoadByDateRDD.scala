@@ -22,6 +22,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.spark.rdd.RDD
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.processing.util.CarbonQueryUtil
@@ -60,12 +61,8 @@ class CarbonDeleteLoadByDateRDD[K, V](
 
       // TODO call CARBON delete API
       logInfo("Applying data retention as per date value " + dateValue)
-      var dateFormat = ""
-      try {
-        dateFormat = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-      } catch {
-        case e: Exception => logInfo("Unable to parse with default time format " + dateValue)
-      }
+      var dateFormat = CarbonProperties.DATE_FORMAT.getOrDefault
+
       // TODO: Implement it
       val finished = false
 

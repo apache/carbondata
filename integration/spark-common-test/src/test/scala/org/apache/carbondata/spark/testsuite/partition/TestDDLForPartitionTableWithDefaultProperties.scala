@@ -20,12 +20,12 @@ package org.apache.carbondata.spark.testsuite.partition
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.datatype.DataTypes
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
-import org.apache.carbondata.core.util.CarbonProperties
 
 class TestDDLForPartitionTableWithDefaultProperties  extends QueryTest with BeforeAndAfterAll {
 

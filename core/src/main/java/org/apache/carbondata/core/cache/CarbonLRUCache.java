@@ -26,7 +26,7 @@ import java.util.Map.Entry;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 /**
  * class which manages the lru cache
@@ -56,16 +56,10 @@ public final class CarbonLRUCache {
   private long currentSize;
 
   /**
-   * @param propertyName        property name to take the size configured
-   * @param defaultPropertyName default property in case size is not configured
+   * Initialize with `cacheSize`
    */
-  public CarbonLRUCache(String propertyName, String defaultPropertyName) {
-    try {
-      lruCacheMemorySize = Integer
-          .parseInt(CarbonProperties.getInstance().getProperty(propertyName, defaultPropertyName));
-    } catch (NumberFormatException e) {
-      lruCacheMemorySize = Integer.parseInt(defaultPropertyName);
-    }
+  public CarbonLRUCache(int cacheSize) {
+    lruCacheMemorySize = cacheSize;
     initCache();
     if (lruCacheMemorySize > 0) {
       LOGGER.info("Configured LRU cache size is " + lruCacheMemorySize + " MB");

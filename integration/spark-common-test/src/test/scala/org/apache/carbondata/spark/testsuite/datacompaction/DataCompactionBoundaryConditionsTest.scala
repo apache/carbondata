@@ -17,10 +17,12 @@
 package org.apache.carbondata.spark.testsuite.datacompaction
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * FT for data compaction Boundary condition verification.
@@ -34,7 +36,7 @@ class DataCompactionBoundaryConditionsTest extends QueryTest with BeforeAndAfter
       .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD, "2,2")
     sql("drop table if exists  boundarytest")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
+      .addProperty("carbon.timestamp.format", "mm/dd/yyyy")
     sql(
       "CREATE TABLE IF NOT EXISTS boundarytest (country String, ID Int, date " +
       "Timestamp, name " +
@@ -98,7 +100,7 @@ class DataCompactionBoundaryConditionsTest extends QueryTest with BeforeAndAfter
   override def afterAll {
     sql("drop table if exists  boundarytest")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
     CarbonProperties.getInstance().
       addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
         CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)

@@ -31,7 +31,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.loading.DataField;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
@@ -75,7 +75,7 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl extends AbstractMerg
     UnsafeSortDataRows[] sortDataRows = new UnsafeSortDataRows[bucketingInfo.getNumberOfBuckets()];
     UnsafeIntermediateMerger[] intermediateFileMergers =
         new UnsafeIntermediateMerger[sortDataRows.length];
-    int inMemoryChunkSizeInMB = CarbonProperties.getInstance().getSortMemoryChunkSizeInMB();
+    int inMemoryChunkSizeInMB = CarbonProperties.OFFHEAP_SORT_CHUNK_SIZE_IN_MB.getOrDefault();
     inMemoryChunkSizeInMB = inMemoryChunkSizeInMB / bucketingInfo.getNumberOfBuckets();
     if (inMemoryChunkSizeInMB < 5) {
       inMemoryChunkSizeInMB = 5;
@@ -95,7 +95,7 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl extends AbstractMerg
     }
     ExecutorService executorService = Executors.newFixedThreadPool(iterators.length);
     this.threadStatusObserver = new ThreadStatusObserver(executorService);
-    final int batchSize = CarbonProperties.getInstance().getBatchSize();
+    final int batchSize = CarbonProperties.DATA_LOAD_BATCH_SIZE.getOrDefault();
     try {
       for (int i = 0; i < iterators.length; i++) {
         executorService.execute(new SortIteratorThread(iterators[i], sortDataRows, this

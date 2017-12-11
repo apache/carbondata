@@ -21,10 +21,12 @@ import java.sql.Timestamp
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for Range Filters.
@@ -166,7 +168,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
         "TBLPROPERTIES ('DICTIONARY_INCLUDE'='deviceInformationId')"
     )
     //CarbonProperties.getInstance()
-    //  .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    //  .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
 
     sql(
       s"LOAD DATA local inpath '$resourcesPath/complexdata.csv' INTO table " +
@@ -200,7 +202,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
       )
 
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+        .addProperty("carbon.timestamp.format", "yyyy-MM-dd HH:mm:ss")
       val csvFilePath = s"$resourcesPath/rangedatasample.csv"
       sql("LOAD DATA local inpath '" + csvFilePath + "' INTO TABLE directDictionaryTable OPTIONS" +
           "('DELIMITER'= ',', 'QUOTECHAR'= '\"')")
@@ -208,7 +210,7 @@ class RangeFilterMyTests extends QueryTest with BeforeAndAfterAll {
 
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+        .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
     }
   }
 

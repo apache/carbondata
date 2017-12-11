@@ -20,7 +20,7 @@ package org.apache.carbondata.cluster.sdv.generated
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.spark.sql.common.util._
 import org.apache.spark.sql.execution.exchange.ShuffleExchange
 import org.scalatest.BeforeAndAfterAll
@@ -33,7 +33,7 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     threshold = sqlContext.getConf("spark.sql.autoBroadcastJoinThreshold").toInt
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", "-1")
     sql("DROP TABLE IF EXISTS bucket_table")
@@ -184,6 +184,6 @@ class BucketingTestCase extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS bucket_table")
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", threshold.toString)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, timeformat)
+      .addProperty("carbon.timestamp.format", timeformat)
   }
 }

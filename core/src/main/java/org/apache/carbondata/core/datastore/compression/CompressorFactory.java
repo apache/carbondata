@@ -17,8 +17,7 @@
 
 package org.apache.carbondata.core.datastore.compression;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 public class CompressorFactory {
 
@@ -27,8 +26,7 @@ public class CompressorFactory {
   private final Compressor snappyCompressor;
 
   private CompressorFactory() {
-    String compressorType = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.COMPRESSOR, CarbonCommonConstants.DEFAULT_COMPRESSOR);
+    String compressorType = CarbonProperties.COMPRESSOR.getOrDefault();
     switch (compressorType) {
       case "snappy":
         snappyCompressor = new SnappyCompressor();
@@ -44,7 +42,7 @@ public class CompressorFactory {
   }
 
   public Compressor getCompressor() {
-    return getCompressor(CarbonCommonConstants.DEFAULT_COMPRESSOR);
+    return getCompressor(CarbonProperties.COMPRESSOR.getOrDefault());
   }
 
   public Compressor getCompressor(String name) {

@@ -37,7 +37,7 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockDetails;
 import org.apache.carbondata.core.mutate.DeleteDeltaBlockletDetails;
 import org.apache.carbondata.core.mutate.DeleteDeltaVo;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 
 /**
@@ -65,7 +65,7 @@ public class CarbonDeleteFilesDataReader {
    * max number of threads for a job
    */
   private void initThreadPoolSize() {
-    thread_pool_size = CarbonProperties.getInstance().getNumberOfCores();
+    thread_pool_size = CarbonProperties.NUM_CORES_LOADING.getOrDefault();
   }
 
   /**

@@ -19,9 +19,11 @@ package org.apache.carbondata.spark.testsuite.filterexpr
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test cases for testing columns having \N or \null values for non numeric columns
@@ -54,6 +56,6 @@ class TestNotNullFilter extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table if exists carbonTableNotNull")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }

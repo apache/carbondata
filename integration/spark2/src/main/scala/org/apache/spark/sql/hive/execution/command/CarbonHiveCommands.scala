@@ -24,8 +24,9 @@ import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, SessionParams}
+import org.apache.carbondata.core.util.{CarbonUtil, SessionParams}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
@@ -78,12 +79,10 @@ case class CarbonSetCommand(command: SetCommand)
 
 object CarbonSetCommand {
   def validateAndSetValue(sessionParams: SessionParams, key: String, value: String): Unit = {
-
     val isCarbonProperty: Boolean = CarbonProperties.getInstance().isCarbonProperty(key)
     if (isCarbonProperty) {
       sessionParams.addProperty(key, value)
-    }
-    else if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
+    } else if (key.startsWith(CarbonCommonConstants.CARBON_INPUT_SEGMENTS)) {
       if (key.split("\\.").length == 5) {
         sessionParams.addProperty(key.toLowerCase(), value)
       }

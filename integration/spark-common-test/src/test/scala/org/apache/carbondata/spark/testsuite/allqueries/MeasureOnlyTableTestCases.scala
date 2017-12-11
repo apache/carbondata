@@ -22,9 +22,11 @@ import java.math.{BigDecimal, RoundingMode}
 
 import org.apache.spark.sql.{Row, SaveMode}
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * Test Class for all query on multiple datatypes
@@ -75,7 +77,7 @@ class MeasureOnlyTableTestCases extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     clean
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 
   test("SELECT sum(intField) FROM carbon_table where intField > 10") {

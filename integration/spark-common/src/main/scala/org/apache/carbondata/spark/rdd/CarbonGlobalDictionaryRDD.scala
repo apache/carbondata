@@ -34,6 +34,7 @@ import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.Row
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.cache.dictionary.{Dictionary, DictionaryColumnUniqueIdentifier}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
@@ -42,7 +43,7 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.service.{CarbonCommonFactory, PathService}
 import org.apache.carbondata.core.statusmanager.SegmentStatus
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, CarbonUtil}
+import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, CarbonUtil}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -354,16 +355,13 @@ class CarbonGlobalDictionaryGenerateRDD(
         pathService
           .getCarbonTablePath(model.table, dictionaryColumnUniqueIdentifier)
       if (StringUtils.isNotBlank(model.hdfsTempLocation)) {
-        CarbonProperties.getInstance.addProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION,
-          model.hdfsTempLocation)
+        CarbonProperties.getInstance.addProperty("hadoop.tmp.dir", model.hdfsTempLocation)
       }
       if (StringUtils.isNotBlank(model.lockType)) {
-        CarbonProperties.getInstance.addProperty(CarbonCommonConstants.LOCK_TYPE,
-          model.lockType)
+        CarbonProperties.getInstance.addProperty("carbon.lock.type", model.lockType)
       }
       if (StringUtils.isNotBlank(model.zooKeeperUrl)) {
-        CarbonProperties.getInstance.addProperty(CarbonCommonConstants.ZOOKEEPER_URL,
-          model.zooKeeperUrl)
+        CarbonProperties.getInstance.addProperty("spark.deploy.zookeeper.url", model.zooKeeperUrl)
       }
       val dictLock: ICarbonLock = CarbonLockFactory
         .getCarbonLockObj(model.table,

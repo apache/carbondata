@@ -26,6 +26,7 @@ import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 import org.apache.spark.sql.hive._
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -79,17 +80,16 @@ class CarbonEnv {
         carbonSessionInfo.setSessionParams(sessionParams)
         ThreadLocalSessionInfo.setCarbonSessionInfo(carbonSessionInfo)
         val config = new CarbonSQLConf(sparkSession)
-        if (sparkSession.conf.getOption(CarbonCommonConstants.ENABLE_UNSAFE_SORT).isEmpty) {
+        if (sparkSession.conf.getOption(CarbonProperties.ENABLE_UNSAFE_SORT.getName).isEmpty) {
           config.addDefaultCarbonParams()
         }
         // add session params after adding DefaultCarbonParams
         config.addDefaultCarbonSessionParams()
         carbonMetastore = {
-          val properties = CarbonProperties.getInstance()
-          var storePath = properties.getProperty(CarbonCommonConstants.STORE_LOCATION)
+          var storePath = CarbonProperties.STORE_LOCATION.getOrDefault()
           if (storePath == null) {
             storePath = sparkSession.conf.get("spark.sql.warehouse.dir")
-            properties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+            CarbonProperties.getInstance().addProperty("carbon.storelocation", storePath)
           }
           LOGGER.info(s"carbon env initial: $storePath")
           // trigger event for CarbonEnv init
@@ -100,7 +100,7 @@ class CarbonEnv {
 
           CarbonMetaStoreFactory.createCarbonMetaStore(sparkSession.conf)
         }
-        CarbonProperties.getInstance.addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true")
+        CarbonProperties.getInstance.addProperty("is.driver.instance", "true")
         initialized = true
       }
     }
@@ -178,9 +178,8 @@ object CarbonEnv {
     // for default database and db ends with .db
     // check whether the carbon store and hive store is same or different.
     if (dbName.equals("default") || databaseLocation.endsWith(".db")) {
-      val properties = CarbonProperties.getInstance()
       val carbonStorePath =
-        FileFactory.getUpdatedFilePath(properties.getProperty(CarbonCommonConstants.STORE_LOCATION))
+        FileFactory.getUpdatedFilePath(CarbonProperties.STORE_LOCATION.getOrDefault())
       val hiveStorePath =
         FileFactory.getUpdatedFilePath(sparkSession.conf.get("spark.sql.warehouse.dir"))
       // if carbon.store does not point to spark.sql.warehouse.dir then follow the old table path

@@ -26,9 +26,10 @@ import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.locks.{CarbonLockFactory, ICarbonLock, LockUsage}
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 
 /**
@@ -55,7 +56,7 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
       .addProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION, "true")
     sql("drop table if exists  compactionlocktesttable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
+      .addProperty("carbon.timestamp.format", "mm/dd/yyyy")
     sql(
       "CREATE TABLE IF NOT EXISTS compactionlocktesttable (country String, ID Int, date " +
         "Timestamp, name " +
@@ -116,7 +117,7 @@ class DataCompactionLockTest extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table if exists  compactionlocktesttable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
     carbonLock.unlock()
   }
 

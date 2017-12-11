@@ -29,7 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
@@ -71,7 +71,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
   }
 
   @Override public Iterator<CarbonRowBatch>[] execute() {
-    int batchSize = CarbonProperties.getInstance().getBatchSize();
+    int batchSize = CarbonProperties.DATA_LOAD_BATCH_SIZE.getOrDefault();
     List<CarbonIterator<Object[]>>[] readerIterators = partitionInputReaderIterators();
     Iterator<CarbonRowBatch>[] outIterators = new Iterator[readerIterators.length];
     for (int i = 0; i < outIterators.length; i++) {
@@ -88,7 +88,7 @@ public class InputProcessorStepImpl extends AbstractDataLoadProcessorStep {
    */
   private List<CarbonIterator<Object[]>>[] partitionInputReaderIterators() {
     // Get the number of cores configured in property.
-    int numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    int numberOfCores = CarbonProperties.NUM_CORES_LOADING.getOrDefault();
     // Get the minimum of number of cores and iterators size to get the number of parallel threads
     // to be launched.
     int parallelThreadNumber = Math.min(inputIterators.length, numberOfCores);

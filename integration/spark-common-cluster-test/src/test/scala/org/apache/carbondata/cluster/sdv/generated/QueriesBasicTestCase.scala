@@ -22,7 +22,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util._
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for QueriesBasicTestCase to verify all scenerios

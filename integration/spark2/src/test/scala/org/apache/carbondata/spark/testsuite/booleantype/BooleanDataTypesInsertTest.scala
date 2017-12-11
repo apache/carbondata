@@ -22,8 +22,8 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
 
@@ -949,7 +949,7 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
   }
 
   test("Inserting table with bad records, and SORT_COLUMNS is boolean column") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "true")
     sql("DROP TABLE IF EXISTS carbon_table")
     sql(
       s"""
@@ -980,9 +980,8 @@ class BooleanDataTypesInsertTest extends QueryTest with BeforeAndAfterEach with 
         Row(false), Row(false), Row(false), Row(false),
         Row(null), Row(null), Row(null), Row(null), Row(null), Row(null)))
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-        CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+    CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge",
+      CarbonProperties.ENABLE_AUTO_LOAD_MERGE.getDefaultValue.toString)
   }
 
 }

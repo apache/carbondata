@@ -23,22 +23,19 @@ import org.apache.spark.sql.{AnalysisException, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * Test Class for data loading with hive syntax and old syntax
   *
   */
 class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAfterAll {
-  val bad_records_action = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
+  val bad_records_action = CarbonProperties.BAD_RECORDS_ACTION.getOrDefault()
 
   override def beforeAll {
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
     sql("drop table if exists escapechar1")
     sql("drop table if exists escapechar2")
     sql("drop table if exists escapechar3")
@@ -428,8 +425,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
            STORED BY 'org.apache.carbondata.format'
       """
     )
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(
       s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/datawithbackslash.csv' into table escapechar1
@@ -437,8 +433,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
         """
     )
     checkAnswer(sql("select count(*) from escapechar1"), Seq(Row(10)))
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "dd-MM-yyyy")
     sql("DROP TABLE IF EXISTS escapechar1")
   }
 
@@ -548,8 +543,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
            STORED BY 'org.apache.carbondata.format'
       """)
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/lessthandatacolumndata.csv' into table collessthanschema
         """)
@@ -570,8 +564,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       """
     )
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimal.csv' into table decimalarray
         """)
@@ -592,8 +585,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       """
     )
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimal.csv' into table decimalstruct
         """)
@@ -624,8 +616,7 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
       """
     )
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimalNested.csv' into table complex_t3
         """)
@@ -758,7 +749,6 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql("drop table if exists comment_test")
     sql("drop table if exists double_test")
 
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-      bad_records_action)  }
+    CarbonProperties.getInstance().addProperty("carbon.badRecords.action", bad_records_action)
+  }
 }

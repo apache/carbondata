@@ -21,9 +21,11 @@ import java.io.File
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * Test Class for data loading with Unsafe ColumnPage
@@ -439,7 +441,7 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
       """
     )
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(
       s"""
            LOAD DATA LOCAL INPATH '$resourcesPath/datawithbackslash.csv' into table escapechar1
@@ -448,7 +450,7 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
     )
     checkAnswer(sql("select count(*) from escapechar1"), Seq(Row(10)))
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+        .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
     sql("DROP TABLE IF EXISTS escapechar1")
   }
 
@@ -559,7 +561,7 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
       """)
 
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/lessthandatacolumndata.csv' into table collessthanschema
         """)
@@ -581,7 +583,7 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
     )
 
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimal.csv' into table decimalarray
         """)
@@ -603,7 +605,7 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
     )
 
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimal.csv' into table decimalstruct
         """)
@@ -635,7 +637,7 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
     )
 
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(s"""
          LOAD DATA LOCAL INPATH '$resourcesPath/complexTypeDecimalNested.csv' into table complex_t3
         """)

@@ -29,6 +29,7 @@ import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.{CausedBy, FileUtils}
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
@@ -37,7 +38,7 @@ import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.statusmanager.SegmentStatus
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{LoadTablePostExecutionEvent, OperationContext}
 import org.apache.carbondata.events.{LoadTablePreExecutionEvent, OperationListenerBus}
@@ -72,27 +73,16 @@ case class CarbonLoadDataCommand(
       }
     }
 
-    val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
-    carbonProperty.addProperty("zookeeper.enable.lock", "false")
-
     // get the value of 'spark.executor.cores' from spark conf, default value is 1
     val sparkExecutorCores = sparkSession.sparkContext.conf.get("spark.executor.cores", "1")
     // get the value of 'carbon.number.of.cores.while.loading' from carbon properties,
     // default value is the value of 'spark.executor.cores'
-    val numCoresLoading =
-      try {
-        CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.NUM_CORES_LOADING, sparkExecutorCores)
-      } catch {
-        case exc: NumberFormatException =>
-          LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_LOADING
-              + " is wrong. Falling back to the default value "
-              + sparkExecutorCores)
-          sparkExecutorCores
-      }
+    val numCoresLoading = CarbonProperties.getInstance().getProperty(
+      "carbon.number.of.cores.while.loading", sparkExecutorCores)
 
     // update the property with new value
-    carbonProperty.addProperty(CarbonCommonConstants.NUM_CORES_LOADING, numCoresLoading)
+    CarbonProperties.getInstance().addProperty(
+      "carbon.number.of.cores.while.loading", numCoresLoading.toString)
 
     val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
     val hadoopConf = sparkSession.sessionState.newHadoopConf()
@@ -114,11 +104,15 @@ case class CarbonLoadDataCommand(
       }
 
       val tableProperties = table.getTableInfo.getFactTable.getTableProperties
-      val optionsFinal = DataLoadingUtil.getDataLoadingOptions(carbonProperty, options)
-      optionsFinal.put("sort_scope", tableProperties.asScala.getOrElse("sort_scope",
-        carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
-          carbonProperty.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-            CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
+      val optionsFinal = DataLoadingUtil.getDataLoadingOptions(options)
+      optionsFinal.put("sort_scope",
+        tableProperties.asScala.getOrElse(
+          "sort_scope",
+          CarbonProperties.getInstance.getProperty(
+            CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
+            CarbonProperties.getInstance.getProperty(
+              CarbonCommonConstants.LOAD_SORT_SCOPE,
+              CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
 
       val carbonLoadModel = new CarbonLoadModel()
       val factPath = if (dataFrame.isDefined) {
@@ -132,7 +126,6 @@ case class CarbonLoadDataCommand(
           .getOrElse(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL, "false").toBoolean)
       DataLoadingUtil.buildCarbonLoadModel(
         table,
-        carbonProperty,
         options,
         optionsFinal,
         carbonLoadModel,
@@ -181,20 +174,16 @@ case class CarbonLoadDataCommand(
           FileFactory.mkdirs(metadataDirectoryPath, fileType)
         }
         val partitionStatus = SegmentStatus.SUCCESS
-        val columnar = sparkSession.conf.get("carbon.is.columnar.storage", "true").toBoolean
         if (carbonLoadModel.getUseOnePass) {
           loadDataUsingOnePass(
             sparkSession,
-            carbonProperty,
             carbonLoadModel,
-            columnar,
             partitionStatus,
             hadoopConf)
         } else {
           loadData(
             sparkSession,
             carbonLoadModel,
-            columnar,
             partitionStatus,
             hadoopConf)
         }
@@ -244,9 +233,7 @@ case class CarbonLoadDataCommand(
 
   private def loadDataUsingOnePass(
       sparkSession: SparkSession,
-      carbonProperty: CarbonProperties,
       carbonLoadModel: CarbonLoadModel,
-      columnar: Boolean,
       partitionStatus: SegmentStatus,
       hadoopConf: Configuration): Unit = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
@@ -280,11 +267,8 @@ case class CarbonLoadDataCommand(
           carbonLoadModel.getAllDictPath)
     }
     // dictionaryServerClient dictionary generator
-    val dictionaryServerPort = carbonProperty
-      .getProperty(CarbonCommonConstants.DICTIONARY_SERVER_PORT,
-        CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT)
-    val sparkDriverHost = sparkSession.sqlContext.sparkContext.
-      getConf.get("spark.driver.host")
+    val dictionaryServerPort = CarbonProperties.DICTIONARY_SERVER_PORT.getOrDefault()
+    val sparkDriverHost = sparkSession.sqlContext.sparkContext.getConf.get("spark.driver.host")
     carbonLoadModel.setDictionaryServerHost(sparkDriverHost)
     // start dictionary server when use one pass load and dimension with DICTIONARY
     // encoding is present.
@@ -310,7 +294,6 @@ case class CarbonLoadDataCommand(
     CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
       carbonLoadModel,
       carbonLoadModel.getTablePath,
-      columnar,
       partitionStatus,
       server,
       isOverwriteTable,
@@ -322,7 +305,6 @@ case class CarbonLoadDataCommand(
   private def loadData(
       sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
-      columnar: Boolean,
       partitionStatus: SegmentStatus,
       hadoopConf: Configuration): Unit = {
     val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
@@ -361,7 +343,6 @@ case class CarbonLoadDataCommand(
     CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
       carbonLoadModel,
       carbonLoadModel.getTablePath,
-      columnar,
       partitionStatus,
       None,
       isOverwriteTable,

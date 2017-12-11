@@ -23,7 +23,7 @@ import java.util.List;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.BtreeBuilder;
 import org.apache.carbondata.core.datastore.IndexKey;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 /**
  * Abstract Btree based builder
@@ -51,9 +51,7 @@ public abstract class AbstractBTreeBuilder implements BtreeBuilder {
   protected BTreeNode root;
 
   public AbstractBTreeBuilder() {
-    maxNumberOfEntriesInNonLeafNodes = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty("org.apache.carbondata.core.datastore.internalnodesize",
-            DEFAULT_NUMBER_OF_ENTRIES_NONLEAF + ""));
+    maxNumberOfEntriesInNonLeafNodes = DEFAULT_NUMBER_OF_ENTRIES_NONLEAF;
   }
 
   /**

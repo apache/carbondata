@@ -37,7 +37,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -126,14 +126,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
     this.noDictionaryCount = noDictionaryCount;
     this.isNoDictionaryColumn = isNoDictionaryColumn;
     this.isNoDictionarySortColumn = isNoDictionarySortColumn;
-    try {
-      maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD,
-              CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE));
-    } catch (NumberFormatException e) {
-      maxThreadForSorting =
-          Integer.parseInt(CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE);
-    }
+    this.maxThreadForSorting = CarbonProperties.MERGE_SORT_READER_THREAD.getOrDefault();
     this.mergerTask = new ArrayList<>();
   }
 
@@ -188,9 +181,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
       LOGGER.info("No files to merge sort");
       return;
     }
-    this.fileBufferSize = CarbonDataProcessorUtil
-        .getFileBufferSize(this.fileCounter, CarbonProperties.getInstance(),
-            CarbonCommonConstants.CONSTANT_SIZE_TEN);
+    this.fileBufferSize = CarbonDataProcessorUtil.getFileBufferSize(this.fileCounter);
 
     LOGGER.info("Started Final Merge");
 

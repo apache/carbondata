@@ -19,10 +19,12 @@ package org.apache.carbondata.spark.testsuite.dataload
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * Test Class for table block size
@@ -91,7 +93,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
       """)
 
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
 
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData2' into table table_blocksize3
@@ -119,7 +121,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
         TBLPROPERTIES('table_blocksize'='2048 MB')
       """)
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(s"""
            LOAD DATA LOCAL INPATH '$testData2' into table table_max_block_size
            """)
@@ -140,7 +142,7 @@ class TestTableLevelBlockSize extends QueryTest with BeforeAndAfterAll{
     sql("DROP TABLE IF EXISTS table_blocksize3")
     sql("DROP TABLE IF EXISTS table_max_block_size")
     CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+        .addProperty("carbon.timestamp.format", CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
   }
 
 }

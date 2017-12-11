@@ -23,7 +23,7 @@ import org.apache.spark.sql.{CarbonEnv, CarbonSession, Row, SparkSession}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * V1 to V3 compatability test. This test has to be at last

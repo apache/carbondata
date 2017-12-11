@@ -28,14 +28,14 @@ import org.apache.spark.sql.test.Spark2TestQueryExecutor
 import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+      .addProperty("carbon.badRecords.location",
         new File("./target/test/badRecords").getCanonicalPath)
 
     sql("drop table if exists restructure")
@@ -456,7 +456,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   test("test to check if the lock file is successfully deleted") {
       sql("create table lock_check(id int, name string) stored by 'carbondata'")
     sql("alter table lock_check rename to lock_rename")
-    assert(!new File(s"${ CarbonCommonConstants.STORE_LOCATION } + /lock_rename/meta.lock")
+    assert(!new File(s"${CarbonProperties.STORE_LOCATION.getName} + /lock_rename/meta.lock")
       .exists())
   }
 

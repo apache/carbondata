@@ -43,7 +43,7 @@ import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.processing.datatypes.GenericDataType;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
@@ -141,18 +141,9 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     // in compaction flow the measure with decimal type will come as spark decimal.
     // need to convert it to byte array.
     if (model.isCompactionFlow()) {
-      try {
-        numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.NUM_CORES_COMPACTING,
-                CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
-      } catch (NumberFormatException exc) {
-        LOGGER.error("Configured value for property " + CarbonCommonConstants.NUM_CORES_COMPACTING
-            + "is wrong.Falling back to the default value "
-            + CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-        numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-      }
+      numberOfCores = CarbonProperties.NUM_CORES_COMPACTING.getOrDefault();
     } else {
-      numberOfCores = CarbonProperties.getInstance().getNumberOfCores();
+      numberOfCores = CarbonProperties.NUM_CORES_LOADING.getOrDefault();
     }
 
     if (sortScope != null && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
@@ -360,9 +351,7 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
    */
   private void setWritingConfiguration() throws CarbonDataWriterException {
     // get blocklet size
-    this.pageSize = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
+    this.pageSize =CarbonProperties.BLOCKLET_SIZE.getOrDefault();
     if (version == ColumnarFormatVersion.V3) {
       this.pageSize = CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
     }

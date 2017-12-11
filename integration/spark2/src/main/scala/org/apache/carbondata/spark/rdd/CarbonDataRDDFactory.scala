@@ -42,6 +42,7 @@ import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.{Distributable, TableBlockInfo}
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
@@ -53,7 +54,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
-import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.{ByteUtil, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{LoadTablePostExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.exception.DataLoadingException
@@ -83,9 +84,7 @@ object CarbonDataRDDFactory {
       carbonTable: CarbonTable,
       compactionModel: CompactionModel): Unit = {
     // taking system level lock at the mdt file location
-    var configuredMdtPath = CarbonProperties.getInstance().getProperty(
-      CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER,
-      CarbonCommonConstants.CARBON_UPDATE_SYNC_FOLDER_DEFAULT).trim
+    var configuredMdtPath = CarbonProperties.UPDATE_SYNC_FOLDER.getOrDefault().trim
 
     configuredMdtPath = CarbonUtil.checkAndAppendFileSystemURIScheme(configuredMdtPath)
     val lock = CarbonLockFactory.getCarbonLockObj(
@@ -180,11 +179,7 @@ object CarbonDataRDDFactory {
               exception = e
           }
           // continue in case of exception also, check for all the tables.
-          val isConcurrentCompactionAllowed = CarbonProperties.getInstance().getProperty(
-            CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
-            CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
-          ).equalsIgnoreCase("true")
-
+          val isConcurrentCompactionAllowed = CarbonProperties.ENABLE_CONCURRENT_COMPACTION.getOrDefault()
           if (!isConcurrentCompactionAllowed) {
             LOGGER.info("System level compaction lock is enabled.")
             val skipCompactionTables = ListBuffer[CarbonTableIdentifier]()
@@ -279,7 +274,6 @@ object CarbonDataRDDFactory {
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       storePath: String,
-      columnar: Boolean,
       partitionStatus: SegmentStatus = SegmentStatus.SUCCESS,
       result: Option[DictionaryServer],
       overwriteTable: Boolean,
@@ -700,12 +694,7 @@ object CarbonDataRDDFactory {
       }
       storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
 
-      val isConcurrentCompactionAllowed = CarbonProperties.getInstance().getProperty(
-        CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
-        CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
-      ).equalsIgnoreCase("true")
-
-      if (!isConcurrentCompactionAllowed) {
+      if (!CarbonProperties.ENABLE_CONCURRENT_COMPACTION.getOrDefault()) {
         handleCompactionForSystemLocking(sqlContext,
           carbonLoadModel,
           storeLocation,
@@ -813,17 +802,14 @@ object CarbonDataRDDFactory {
       if (specificTimestampFormat != null && !specificTimestampFormat.trim.isEmpty) {
         new SimpleDateFormat(specificTimestampFormat)
       } else {
-        val timestampFormatString = CarbonProperties.getInstance().getProperty(
-          CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+        val timestampFormatString = CarbonProperties.TIMESTAMP_FORMAT.getOrDefault()
         new SimpleDateFormat(timestampFormatString)
       }
 
     val dateFormat = if (specificDateFormat != null && !specificDateFormat.trim.isEmpty) {
       new SimpleDateFormat(specificDateFormat)
     } else {
-      val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-        .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      val dateFormatString = CarbonProperties.DATE_FORMAT.getOrDefault
       new SimpleDateFormat(dateFormatString)
     }
 

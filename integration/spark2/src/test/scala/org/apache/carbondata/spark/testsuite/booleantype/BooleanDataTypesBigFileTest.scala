@@ -19,10 +19,11 @@ package org.apache.carbondata.spark.testsuite.booleantype
 import java.io.{File, PrintWriter}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 
 class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
@@ -669,15 +670,11 @@ class BooleanDataTypesBigFileTest extends QueryTest with BeforeAndAfterEach with
   }
 
   def initConf(): Unit = {
-    CarbonProperties.getInstance().
-      addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
-        "true")
+    CarbonProperties.getInstance().addProperty("enable.unsafe.columnpage", "true")
   }
 
   def defaultConf(): Unit = {
-    CarbonProperties.getInstance().
-      addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
-        CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS_DEFAULT)
+    CarbonProperties.getInstance().addProperty("enable.unsafe.columnpage", "false")
   }
 }
 

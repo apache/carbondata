@@ -31,7 +31,7 @@ import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReader;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.DictionaryService;
 import org.apache.carbondata.core.service.PathService;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.ObjectSizeCalculator;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -66,7 +66,7 @@ public abstract class AbstractDictionaryCache<K extends DictionaryColumnUniqueId
    * max number of threads for a job
    */
   private void initThreadPoolSize() {
-    thread_pool_size = CarbonProperties.getInstance().getNumberOfCores();
+    thread_pool_size = CarbonProperties.NUM_CORES_LOADING.getOrDefault();
   }
 
   /**

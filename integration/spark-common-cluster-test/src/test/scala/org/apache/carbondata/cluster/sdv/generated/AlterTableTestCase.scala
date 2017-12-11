@@ -24,8 +24,8 @@ import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test Class for AlterTableTestCase to verify all scenerios
@@ -1063,12 +1063,12 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   val prop = CarbonProperties.getInstance()
-  val p1 = prop.getProperty("carbon.horizontal.compaction.enable", CarbonCommonConstants.defaultIsHorizontalCompactionEnabled)
-  val p2 = prop.getProperty("carbon.horizontal.update.compaction.threshold", CarbonCommonConstants.DEFAULT_UPDATE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
-  val p3 = prop.getProperty("carbon.horizontal.delete.compaction.threshold", CarbonCommonConstants.DEFAULT_DELETE_DELTAFILE_COUNT_THRESHOLD_IUD_COMPACTION)
-  val p4 = prop.getProperty("carbon.compaction.level.threshold", CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
-  val p5 = prop.getProperty("carbon.enable.auto.load.merge", CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
-  val p6 = prop.getProperty("carbon.bad.records.action", LoggerAction.FORCE.name())
+  val p1 = prop.getProperty("carbon.horizontal.compaction.enable")
+  val p2 = prop.getProperty("carbon.horizontal.update.compaction.threshold")
+  val p3 = prop.getProperty("carbon.horizontal.delete.compaction.threshold")
+  val p4 = prop.getProperty("carbon.compaction.level.threshold")
+  val p5 = prop.getProperty("carbon.enable.auto.load.merge")
+  val p6 = prop.getProperty("carbon.bad.records.action")
 
   override protected def beforeAll() {
     // Adding new properties
@@ -1078,7 +1078,7 @@ class AlterTableTestCase extends QueryTest with BeforeAndAfterAll {
     prop.addProperty("carbon.compaction.level.threshold", "2,1")
     prop.addProperty("carbon.enable.auto.load.merge", "false")
     prop.addProperty("carbon.bad.records.action", "FORCE")
-    prop.addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+    prop.addProperty("carbon.badRecords.location",
       TestQueryExecutor.warehouse+"/baaaaaaadrecords")
   }
 

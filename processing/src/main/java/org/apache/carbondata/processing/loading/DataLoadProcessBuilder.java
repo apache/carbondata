@@ -32,7 +32,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
@@ -139,10 +139,8 @@ public final class DataLoadProcessBuilder {
     String tempLocationKey = CarbonDataProcessorUtil
         .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
             loadModel.getTaskNo(), false, false);
-    CarbonProperties.getInstance().addProperty(tempLocationKey,
+    TempTablePath.setTempTablePath(tempLocationKey,
         StringUtils.join(storeLocation, File.pathSeparator));
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.STORE_LOCATION_HDFS, loadModel.getTablePath());
 
     return createConfiguration(loadModel);
   }
@@ -175,10 +173,10 @@ public final class DataLoadProcessBuilder {
     configuration.setDataLoadProperty(DataLoadProcessorConstants.FACT_FILE_PATH,
         loadModel.getFactFilePath());
     configuration
-        .setDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE, loadModel.getSortScope());
-    configuration.setDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
+        .setDataLoadProperty(CarbonProperties.LOAD_SORT_SCOPE.getName(), loadModel.getSortScope());
+    configuration.setDataLoadProperty(CarbonProperties.LOAD_BATCH_SORT_SIZE_INMB.getName(),
         loadModel.getBatchSortSizeInMb());
-    configuration.setDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
+    configuration.setDataLoadProperty(CarbonProperties.LOAD_GLOBAL_SORT_PARTITIONS.getName(),
         loadModel.getGlobalSortPartitions());
     configuration.setDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
         loadModel.getBadRecordsLocation());

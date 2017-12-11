@@ -18,9 +18,11 @@
 package org.apache.carbondata.spark.testsuite.singlevaluerow
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
 
@@ -40,7 +42,7 @@ class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
         "terminated by ','"
     )
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     val csvFilePath = s"$resourcesPath/emptyrow/emptyRows.csv"
 
     sql(
@@ -84,6 +86,6 @@ class TestEmptyRows extends QueryTest with BeforeAndAfterAll {
     sql("drop table emptyRowCarbonTable")
     sql("drop table emptyRowHiveTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }

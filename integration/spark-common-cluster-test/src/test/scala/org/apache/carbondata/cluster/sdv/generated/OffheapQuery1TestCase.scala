@@ -22,7 +22,7 @@ import org.apache.spark.sql.common.util._
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for OffheapQuery1TestCase to verify all scenerios
@@ -1257,8 +1257,8 @@ test("OffHeapQuery-001-TC_108", Include) {
   }
 
   val prop = CarbonProperties.getInstance()
-  val p1 = prop.getProperty("enable.unsafe.in.query.processing", CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE)
-  val p2 = prop.getProperty("use.offheap.in.query.processing", CarbonCommonConstants.USE_OFFHEAP_IN_QUERY_PROCSSING_DEFAULT)
+  val p1 = prop.getProperty("enable.unsafe.in.query.processing")
+  val p2 = prop.getProperty("use.offheap.in.query.processing")
 
   override protected def beforeAll() {
     // Adding new properties

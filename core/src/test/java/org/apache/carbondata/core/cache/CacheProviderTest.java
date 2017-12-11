@@ -24,15 +24,12 @@ import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.cache.dictionary.ForwardDictionaryCache;
 import org.apache.carbondata.core.cache.dictionary.ReverseDictionaryCache;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.BlockIndexStore;
 import org.apache.carbondata.core.datastore.SegmentTaskIndexStore;
 import org.apache.carbondata.core.datastore.TableSegmentUniqueIdentifier;
-import org.apache.carbondata.core.datastore.block.SegmentTaskIndexWrapper;
 import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
-import org.apache.avro.Schema;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -47,11 +44,9 @@ public class CacheProviderTest {
 
   @Before public void setUp() throws Exception {
     // enable lru cache by setting cache size
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
+    CarbonProperties.getInstance().addProperty("carbon.max.driver.lru.cache.size", "10");
     // enable lru cache by setting cache size
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE, "20");
+    CarbonProperties.getInstance().addProperty("carbon.max.executor.lru.cache.size", "20");
   }
 
   @Test public void getInstance() throws Exception {
@@ -89,7 +84,7 @@ public class CacheProviderTest {
     // get cache provider instance
     CacheProvider cacheProvider = CacheProvider.getInstance();
     cacheProvider.dropAllCache();
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "true");
+    CarbonProperties.getInstance().addProperty("is.driver.instance", "true");
     Cache<TableSegmentUniqueIdentifier, SegmentTaskIndexStore> driverCache =
         cacheProvider.createCache(CacheType.DRIVER_BTREE);
     Field carbonLRUCacheField = SegmentTaskIndexStore.class.getDeclaredField("lruCache");
@@ -98,13 +93,12 @@ public class CacheProviderTest {
     Field lruCacheMemorySizeField = CarbonLRUCache.class.getDeclaredField("lruCacheMemorySize");
     lruCacheMemorySizeField.setAccessible(true);
     long lruCacheMemorySize = (long) lruCacheMemorySizeField.get(carbonLRUCache);
-    String driverCacheSize = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE);
-    assertEquals(1024 * 1024 * Integer.parseInt(driverCacheSize), lruCacheMemorySize);
+    int driverCacheSize = CarbonProperties.MAX_DRIVER_LRU_CACHE_SIZE.getOrDefault();
+    assertEquals(1024 * 1024 * driverCacheSize, lruCacheMemorySize);
     // drop cache
     cacheProvider.dropAllCache();
     // validation test for the executor memory.
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.IS_DRIVER_INSTANCE, "false");
+    CarbonProperties.getInstance().addProperty("is.driver.instance", "false");
     Cache<TableBlockUniqueIdentifier, BlockIndexStore> executorCache =
         cacheProvider.createCache(CacheType.EXECUTOR_BTREE);
     carbonLRUCacheField = BlockIndexStore.class.getSuperclass().getDeclaredField("lruCache");
@@ -113,9 +107,8 @@ public class CacheProviderTest {
     lruCacheMemorySizeField = CarbonLRUCache.class.getDeclaredField("lruCacheMemorySize");
     lruCacheMemorySizeField.setAccessible(true);
     lruCacheMemorySize = (long) lruCacheMemorySizeField.get(carbonLRUCache);
-    String executorCacheSize = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE);
-    assertEquals(1024 * 1024 * Integer.parseInt(executorCacheSize), lruCacheMemorySize);
+    int executorCacheSize = CarbonProperties.MAX_EXECUTOR_LRU_CACHE_SIZE.getOrDefault();
+    assertEquals(1024 * 1024 * executorCacheSize, lruCacheMemorySize);
     cacheProvider.dropAllCache();
   }
 }

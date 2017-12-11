@@ -19,18 +19,18 @@ package org.apache.spark.sql.execution.command.management
 
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.{CarbonEnv, Row, SQLContext, SparkSession}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, DataCommand}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
@@ -79,9 +79,7 @@ case class CarbonAlterTableCompactionCommand(
     carbonLoadModel.setDatabaseName(table.getDatabaseName)
     carbonLoadModel.setTablePath(table.getTablePath)
 
-    var storeLocation = CarbonProperties.getInstance.getProperty(
-      CarbonCommonConstants.STORE_LOCATION_TEMP_PATH,
-      System.getProperty("java.io.tmpdir"))
+    var storeLocation = CarbonProperties.STORE_LOCATION_TEMP_PATH.getOrDefault
     storeLocation = storeLocation + "/carbonstore/" + System.nanoTime()
     try {
       alterTableForCompaction(
@@ -150,16 +148,10 @@ case class CarbonAlterTableCompactionCommand(
       isCompactionTriggerByDDl
     )
 
-    val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_CONCURRENT_COMPACTION,
-        CarbonCommonConstants.DEFAULT_ENABLE_CONCURRENT_COMPACTION
-      )
-      .equalsIgnoreCase("true")
-
     // if system level compaction is enabled then only one compaction can run in the system
     // if any other request comes at this time then it will create a compaction request file.
     // so that this will be taken up by the compaction process which is executing.
-    if (!isConcurrentCompactionAllowed) {
+    if (!CarbonProperties.ENABLE_CONCURRENT_COMPACTION.getOrDefault()) {
       LOGGER.info("System level compaction lock is enabled.")
       CarbonDataRDDFactory.handleCompactionForSystemLocking(
         sqlContext,
@@ -181,11 +173,13 @@ case class CarbonAlterTableCompactionCommand(
         try {
           if (compactionType == CompactionType.SEGMENT_INDEX) {
             // Just launch job to merge index and return
-            CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
+            CommonUtil.mergeIndexFiles(
+              sqlContext.sparkContext,
               CarbonDataMergerUtil.getValidSegmentList(
                 carbonTable.getAbsoluteTableIdentifier).asScala,
               carbonLoadModel.getTablePath,
-              carbonTable, true)
+              carbonTable,
+              mergeIndexProperty = true)
             lock.unlock()
             return
           }

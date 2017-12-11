@@ -24,8 +24,8 @@ import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.apache.spark.sql.SparkSession
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 object CarbonPartitionExample {
 
@@ -36,8 +36,7 @@ object CarbonPartitionExample {
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
     val testData = s"$rootPath/integration/spark-common-test/src/test/resources/partition_data.csv"
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
     import org.apache.spark.sql.CarbonSession._
 

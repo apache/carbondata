@@ -21,9 +21,11 @@ import java.util
 import java.util.concurrent.{Callable, Executors}
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * This class contains DataRetention concurrency test cases
@@ -33,7 +35,7 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
   private val executorService = Executors.newFixedThreadPool(10)
 
   override def beforeAll {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK, "1")
+    CarbonProperties.getInstance().addProperty("carbon.load.metadata.lock.retry.timeout.sec", "1")
     sql("drop table if exists concurrent")
     sql(
       "create table concurrent (ID int, date String, country String, name " +

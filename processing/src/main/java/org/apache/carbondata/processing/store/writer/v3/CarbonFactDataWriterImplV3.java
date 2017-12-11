@@ -34,7 +34,7 @@ import org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.index.BlockIndexInfo;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverterV3;
 import org.apache.carbondata.format.BlockletInfo3;
@@ -61,15 +61,13 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
   private BlockletDataHolder blockletDataHolder;
 
   /**
-   * Threshold of blocklet size in MB
+   * Threshold of blocklet size in bytes
    */
   private long blockletSizeThreshold;
 
   public CarbonFactDataWriterImplV3(CarbonDataWriterVo dataWriterVo) {
     super(dataWriterVo);
-    blockletSizeThreshold = Long.parseLong(CarbonProperties.getInstance()
-        .getProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
-            CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE))
+    blockletSizeThreshold = CarbonProperties.BLOCKLET_SIZE_IN_MB.getOrDefault()
         * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
         * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
     if (blockletSizeThreshold > fileSizeInBytes) {

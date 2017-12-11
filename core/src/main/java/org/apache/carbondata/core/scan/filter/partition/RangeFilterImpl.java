@@ -20,7 +20,6 @@ package org.apache.carbondata.core.scan.filter.partition;
 import java.text.SimpleDateFormat;
 import java.util.BitSet;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.partition.ListPartitioner;
@@ -28,7 +27,7 @@ import org.apache.carbondata.core.scan.partition.PartitionUtil;
 import org.apache.carbondata.core.scan.partition.Partitioner;
 import org.apache.carbondata.core.scan.partition.RangePartitioner;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 /**
  * the implement of Range filter(include <=, <, >=, >)
@@ -50,13 +49,11 @@ public class RangeFilterImpl implements PartitionFilterIntf {
 
   @Override public BitSet applyFilter(Partitioner partitioner) {
 
-    SimpleDateFormat timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+    SimpleDateFormat timestampFormatter = new SimpleDateFormat(
+        CarbonProperties.TIMESTAMP_FORMAT.getOrDefault());
 
-    SimpleDateFormat dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-            CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
+    SimpleDateFormat dateFormatter = new SimpleDateFormat(
+        CarbonProperties.DATE_FORMAT.getOrDefault());
 
     switch (partitionInfo.getPartitionType()) {
       case LIST:

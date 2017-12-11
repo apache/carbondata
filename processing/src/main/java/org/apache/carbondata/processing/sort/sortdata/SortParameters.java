@@ -25,7 +25,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
 
@@ -369,7 +369,6 @@ public class SortParameters implements Serializable {
     SortParameters parameters = new SortParameters();
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
-    CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setDatabaseName(tableIdentifier.getDatabaseName());
     parameters.setTableName(tableIdentifier.getTableName());
     parameters.setPartitionID(configuration.getPartitionId());
@@ -389,22 +388,18 @@ public class SortParameters implements Serializable {
     setNoDictionarySortColumnMapping(parameters);
     parameters.setObserver(new SortObserver());
     // get sort buffer size
-    parameters.setSortBufferSize(Integer.parseInt(carbonProperties
-        .getProperty(CarbonCommonConstants.SORT_SIZE,
-            CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL)));
+    parameters.setSortBufferSize(CarbonProperties.SORT_SIZE.getOrDefault());
     LOGGER.info("Sort size for table: " + parameters.getSortBufferSize());
     // set number of intermedaite file to merge
-    parameters.setNumberOfIntermediateFileToBeMerged(Integer.parseInt(carbonProperties
-        .getProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
-            CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)));
-
+    parameters.setNumberOfIntermediateFileToBeMerged(
+        CarbonProperties.SORT_INTERMEDIATE_FILES_LIMIT.getOrDefault());
     LOGGER.info("Number of intermediate file to be merged: " + parameters
         .getNumberOfIntermediateFileToBeMerged());
 
     // get file buffer size
-    parameters.setFileBufferSize(CarbonDataProcessorUtil
-        .getFileBufferSize(parameters.getNumberOfIntermediateFileToBeMerged(), carbonProperties,
-            CarbonCommonConstants.CONSTANT_SIZE_TEN));
+    parameters.setFileBufferSize(
+        CarbonDataProcessorUtil.getFileBufferSize(
+            parameters.getNumberOfIntermediateFileToBeMerged()));
 
     LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
 
@@ -418,49 +413,22 @@ public class SortParameters implements Serializable {
     parameters.setTempFileLocation(sortTempDirs);
     LOGGER.info("temp file location: " + StringUtils.join(parameters.getTempFileLocation(), ","));
 
-    int numberOfCores = carbonProperties.getNumberOfCores() / 2;
+    int numberOfCores = CarbonProperties.NUM_CORES_LOADING.getOrDefault() / 2;
     parameters.setNumberOfCores(numberOfCores > 0 ? numberOfCores : 1);
 
-    parameters.setFileWriteBufferSize(Integer.parseInt(carbonProperties
-        .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
-            CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE)));
+    parameters.setFileWriteBufferSize(CarbonProperties.SORT_FILE_WRITE_BUFFER_SIZE.getOrDefault());
+    parameters.setSortFileCompressionEnabled(
+        CarbonProperties.ENABLE_SORT_TEMP_FILE_COMPRESSION.getOrDefault());
 
-    parameters.setSortFileCompressionEnabled(Boolean.parseBoolean(carbonProperties
-        .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
-            CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE)));
-
-    int sortTempFileNoOFRecordsInCompression;
-    try {
-      sortTempFileNoOFRecordsInCompression = Integer.parseInt(carbonProperties
-          .getProperty(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
-              CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
-      if (sortTempFileNoOFRecordsInCompression < 1) {
-        LOGGER.error("Invalid value for: "
-            + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-            + ":Only Positive Integer value(greater than zero) is allowed.Default value will "
-            + "be used");
-
-        sortTempFileNoOFRecordsInCompression = Integer.parseInt(
-            CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.error(
-          "Invalid value for: " + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-              + ", only Positive Integer value is allowed. Default value will be used");
-
-      sortTempFileNoOFRecordsInCompression = Integer
-          .parseInt(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
-    }
-    parameters.setSortTempFileNoOFRecordsInCompression(sortTempFileNoOFRecordsInCompression);
+    parameters.setSortTempFileNoOFRecordsInCompression(
+        CarbonProperties.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION.getOrDefault());
 
     if (parameters.isSortFileCompressionEnabled()) {
       LOGGER.info("Compression will be used for writing the sort temp File");
     }
 
     parameters.setPrefetch(CarbonCommonConstants.CARBON_PREFETCH_IN_MERGE_VALUE);
-    parameters.setBufferSize(Integer.parseInt(carbonProperties.getProperty(
-        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
-        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
+    parameters.setBufferSize(CarbonProperties.PREFETCH_BUFFERSIZE.getOrDefault());
 
     DataType[] measureDataType = configuration.getMeasureDataType();
     parameters.setMeasureDataType(measureDataType);
@@ -489,7 +457,6 @@ public class SortParameters implements Serializable {
       int noDictionaryCount, String partitionID, String segmentId, String taskNo,
       boolean[] noDictionaryColMaping, boolean isCompactionFlow) {
     SortParameters parameters = new SortParameters();
-    CarbonProperties carbonProperties = CarbonProperties.getInstance();
     parameters.setDatabaseName(databaseName);
     parameters.setTableName(tableName);
     parameters.setPartitionID(partitionID);
@@ -504,22 +471,18 @@ public class SortParameters implements Serializable {
     parameters.setNoDictionaryDimnesionColumn(noDictionaryColMaping);
     parameters.setObserver(new SortObserver());
     // get sort buffer size
-    parameters.setSortBufferSize(Integer.parseInt(carbonProperties
-        .getProperty(CarbonCommonConstants.SORT_SIZE,
-            CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL)));
+    parameters.setSortBufferSize(CarbonProperties.SORT_SIZE.getOrDefault());
     LOGGER.info("Sort size for table: " + parameters.getSortBufferSize());
     // set number of intermedaite file to merge
-    parameters.setNumberOfIntermediateFileToBeMerged(Integer.parseInt(carbonProperties
-        .getProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
-            CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)));
+    parameters.setNumberOfIntermediateFileToBeMerged(CarbonProperties.SORT_INTERMEDIATE_FILES_LIMIT.getOrDefault());
 
     LOGGER.info("Number of intermediate file to be merged: " + parameters
         .getNumberOfIntermediateFileToBeMerged());
 
     // get file buffer size
-    parameters.setFileBufferSize(CarbonDataProcessorUtil
-        .getFileBufferSize(parameters.getNumberOfIntermediateFileToBeMerged(), carbonProperties,
-            CarbonCommonConstants.CONSTANT_SIZE_TEN));
+    parameters.setFileBufferSize(
+        CarbonDataProcessorUtil.getFileBufferSize(
+            parameters.getNumberOfIntermediateFileToBeMerged()));
 
     LOGGER.info("File Buffer Size: " + parameters.getFileBufferSize());
 
@@ -531,39 +494,14 @@ public class SortParameters implements Serializable {
     parameters.setTempFileLocation(sortTempDirs);
     LOGGER.info("temp file location: " + StringUtils.join(parameters.getTempFileLocation(), ","));
 
-    int numberOfCores = carbonProperties.getNumberOfCores() / 2;
+    int numberOfCores = CarbonProperties.NUM_CORES_LOADING.getOrDefault() / 2;
     parameters.setNumberOfCores(numberOfCores > 0 ? numberOfCores : 1);
 
-    parameters.setFileWriteBufferSize(Integer.parseInt(carbonProperties
-        .getProperty(CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE,
-            CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE)));
-
-    parameters.setSortFileCompressionEnabled(Boolean.parseBoolean(carbonProperties
-        .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
-            CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE)));
-
-    int sortTempFileNoOFRecordsInCompression;
-    try {
-      sortTempFileNoOFRecordsInCompression = Integer.parseInt(carbonProperties
-          .getProperty(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
-              CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
-      if (sortTempFileNoOFRecordsInCompression < 1) {
-        LOGGER.error("Invalid value for: "
-            + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-            + ":Only Positive Integer value(greater than zero) is allowed.Default value will "
-            + "be used");
-
-        sortTempFileNoOFRecordsInCompression = Integer.parseInt(
-            CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.error(
-          "Invalid value for: " + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-              + ", only Positive Integer value is allowed. Default value will be used");
-
-      sortTempFileNoOFRecordsInCompression = Integer
-          .parseInt(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
-    }
+    parameters.setFileWriteBufferSize(CarbonProperties.SORT_FILE_WRITE_BUFFER_SIZE.getOrDefault());
+    parameters.setSortFileCompressionEnabled(
+        CarbonProperties.ENABLE_SORT_TEMP_FILE_COMPRESSION.getOrDefault());
+    int sortTempFileNoOFRecordsInCompression =
+          CarbonProperties.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION.getOrDefault();
     parameters.setSortTempFileNoOFRecordsInCompression(sortTempFileNoOFRecordsInCompression);
 
     if (parameters.isSortFileCompressionEnabled()) {
@@ -571,9 +509,7 @@ public class SortParameters implements Serializable {
     }
 
     parameters.setPrefetch(CarbonCommonConstants. CARBON_PREFETCH_IN_MERGE_VALUE);
-    parameters.setBufferSize(Integer.parseInt(carbonProperties.getProperty(
-        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
-        CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT)));
+    parameters.setBufferSize(CarbonProperties.PREFETCH_BUFFERSIZE.getOrDefault());
 
     DataType[] type = CarbonDataProcessorUtil
         .getMeasureDataType(parameters.getMeasureColCount(), parameters.getDatabaseName(),

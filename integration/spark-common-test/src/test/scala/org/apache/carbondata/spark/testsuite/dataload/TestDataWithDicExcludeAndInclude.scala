@@ -21,8 +21,9 @@ import org.apache.spark.sql.AnalysisException
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeAndAfterAll {
   var filePath: String = _
@@ -63,7 +64,7 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
   def loadTable() = {
     try {
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
       sql(
         s"""
            LOAD DATA LOCAL INPATH '$filePath' into table exclude_include_t3
@@ -114,7 +115,7 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
   override def afterAll {
     dropTable
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }
 

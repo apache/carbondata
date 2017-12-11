@@ -21,10 +21,10 @@ import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.execution.exchange.ShuffleExchange
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
@@ -33,8 +33,7 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     threshold = sqlContext.getConf("spark.sql.autoBroadcastJoinThreshold").toInt
     sqlContext.setConf("spark.sql.autoBroadcastJoinThreshold", "-1")
     sql("DROP TABLE IF EXISTS t4")
@@ -61,12 +60,12 @@ class TableBucketingTestCase extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   test("test create table with buckets unsafe") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
+    CarbonProperties.getInstance().addProperty("enable.unsafe.sort", "true")
     sql("CREATE TABLE t10 (ID Int, date Timestamp, country String, name String, phonetype String," +
         "serialname String, salary Int) STORED BY 'carbondata' TBLPROPERTIES " +
         "('BUCKETNUMBER'='4', 'BUCKETCOLUMNS'='name')")
     sql(s"LOAD DATA INPATH '$resourcesPath/source.csv' INTO TABLE t10")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
+    CarbonProperties.getInstance().addProperty("enable.unsafe.sort", "false")
     val table: CarbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "t10")
     if (table != null && table.getBucketingInfo("t10") != null) {
       assert(true)

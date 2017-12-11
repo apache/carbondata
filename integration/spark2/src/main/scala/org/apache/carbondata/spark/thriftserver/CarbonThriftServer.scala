@@ -24,8 +24,8 @@ import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.hive.thriftserver.HiveThriftServer2
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 object CarbonThriftServer {
 

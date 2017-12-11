@@ -28,11 +28,10 @@ import java.util.UUID;
 import org.apache.carbondata.core.cache.Cache;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriter;
 import org.apache.carbondata.core.writer.sortindex.CarbonDictionarySortIndexWriterImpl;
@@ -75,11 +74,9 @@ public class ForwardDictionaryCacheTest extends AbstractDictionaryCacheTest {
 
   private void createDictionaryCacheObject() {
     // enable lru cache by setting cache size
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
+    CarbonProperties.getInstance().addProperty("carbon.max.driver.lru.cache.size", "10");
     CacheProvider cacheProvider = CacheProvider.getInstance();
-    forwardDictionaryCache =
-        cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
+    forwardDictionaryCache = cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
   }
 
   @Test public void get() throws Exception {

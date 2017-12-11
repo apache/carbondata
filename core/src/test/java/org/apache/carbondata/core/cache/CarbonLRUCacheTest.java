@@ -32,7 +32,7 @@ public class CarbonLRUCacheTest {
   private static Cacheable cacheable;
 
   @BeforeClass public static void setUp() {
-    carbonLRUCache = new CarbonLRUCache("prop1", "2");
+    carbonLRUCache = new CarbonLRUCache(2);
     cacheable = new MockUp<Cacheable>() {
       @SuppressWarnings("unused") @Mock long getMemorySize() {
         return 15L;

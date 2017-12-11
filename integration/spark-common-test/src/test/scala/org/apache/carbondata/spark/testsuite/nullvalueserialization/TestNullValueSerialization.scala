@@ -18,9 +18,11 @@
 package org.apache.carbondata.spark.testsuite.nullvalueserialization
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * Test cases for testing columns having \N or \null values for non numeric columns
@@ -31,7 +33,7 @@ class TestNullValueSerialization extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      .addProperty("carbon.timestamp.format",
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
       )
     val csvFilePath = s"$resourcesPath/nullvalueserialization.csv"
@@ -96,6 +98,6 @@ class TestNullValueSerialization extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }

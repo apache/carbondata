@@ -26,18 +26,30 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.util.CarbonProperties;
-
-import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_DAY;
-import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_HOUR;
-import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_MIN;
-import static org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants.TIME_GRAN_SEC;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 /**
  * The class provides the method to generate dictionary key and getting the actual value from
  * the dictionaryKey for direct dictionary column for TIMESTAMP type.
  */
 public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGenerator {
+
+  /**
+   * Second level key
+   */
+  private static final String TIME_GRAN_SEC = "SECOND";
+  /**
+   * minute level key
+   */
+  private static final String TIME_GRAN_MIN = "MINUTE";
+  /**
+   * hour level key
+   */
+  private static final String TIME_GRAN_HOUR = "HOUR";
+  /**
+   * day level key
+   */
+  private static final String TIME_GRAN_DAY = "DAY";
 
   private ThreadLocal<SimpleDateFormat> simpleDateFormatLocal = new ThreadLocal<>();
 
@@ -63,10 +75,8 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
    * initialization block for granularityFactor and cutOffTimeStamp
    */
   static {
-    String cutOffTimeStampString = CarbonProperties.getInstance()
-        .getProperty(TimeStampGranularityConstants.CARBON_CUTOFF_TIMESTAMP);
-    String timeGranularity = CarbonProperties.getInstance()
-        .getProperty(TimeStampGranularityConstants.CARBON_TIME_GRANULARITY, TIME_GRAN_SEC);
+    String cutOffTimeStampString = CarbonProperties.CUTOFF_TIMESTAMP.getOrDefault();
+    String timeGranularity = CarbonProperties.TIME_GRANULARITY.getOrDefault();
     long granularityFactorLocal = 1000;
     switch (timeGranularity) {
       case TIME_GRAN_SEC:
@@ -89,9 +99,8 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
       cutOffTimeStampLocal = 0;
     } else {
       try {
-        SimpleDateFormat timeParser = new SimpleDateFormat(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        SimpleDateFormat timeParser = new SimpleDateFormat(
+            CarbonProperties.TIMESTAMP_FORMAT.getOrDefault());
         timeParser.setLenient(false);
         Date dateToStr = timeParser.parse(cutOffTimeStampString);
         cutOffTimeStampLocal = dateToStr.getTime();
@@ -112,8 +121,7 @@ public class TimeStampDirectDictionaryGenerator implements DirectDictionaryGener
   }
 
   public TimeStampDirectDictionaryGenerator() {
-    this(CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+    this(CarbonProperties.TIMESTAMP_FORMAT.getOrDefault());
   }
 
   /**

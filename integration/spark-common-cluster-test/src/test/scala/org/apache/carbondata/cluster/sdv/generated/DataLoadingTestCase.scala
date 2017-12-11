@@ -27,7 +27,7 @@ import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for DataLoadingTestCase to verify all scenerios
@@ -1470,7 +1470,7 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
 
   override protected def beforeAll(): Unit = {
     sql(s"""drop table if exists uniqdata""").collect
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+    CarbonProperties.getInstance().addProperty("carbon.badRecords.location",
       TestQueryExecutor.warehouse + "/baaaaaaadrecords")
   }
 }

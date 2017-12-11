@@ -18,9 +18,11 @@
 package org.apache.carbondata.spark.testsuite.aggquery
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for aggregate query on multiple datatypes
@@ -30,7 +32,7 @@ class AllDataTypesTestCaseAggregate extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
     sql("DROP TABLE IF EXISTS alldatatypestableAGG")
     sql(
       "CREATE TABLE alldatatypestableAGG (empno int, empname String, designation String, doj " +

@@ -19,13 +19,15 @@ package org.apache.carbondata.spark.testsuite.partition
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll {
 
@@ -33,7 +35,7 @@ class TestDataLoadingForPartitionTable extends QueryTest with BeforeAndAfterAll 
     dropTable
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
     sql(
       """
         | CREATE TABLE originTable (empno int, empname String, designation String, doj Timestamp,

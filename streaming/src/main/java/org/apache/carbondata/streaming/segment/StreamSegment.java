@@ -353,7 +353,7 @@ public class StreamSegment {
   }
 
   /**
-   * calculate the size of the segment by the accumulation of data sizes in index file
+   * calculate the size in bytes of the segment by the accumulation of data sizes in index file
    */
   public static long size(String segmentDir) throws IOException {
     long size = 0;

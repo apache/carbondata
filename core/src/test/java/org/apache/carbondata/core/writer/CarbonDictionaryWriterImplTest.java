@@ -42,7 +42,7 @@ import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
 import org.apache.carbondata.core.reader.CarbonDictionaryMetadataReaderImpl;
 import org.apache.carbondata.core.reader.CarbonDictionaryReaderImpl;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -151,8 +151,7 @@ public class CarbonDictionaryWriterImplTest {
    */
   @Test public void testWriteMultipleChunksForOneSegment() throws IOException {
     deleteStorePath();
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE, "1");
+    CarbonProperties.getInstance().addProperty("carbon.dictionary.chunk.size", "1");
     // prepare dictionary writer object
     CarbonDictionaryWriterImpl writer = prepareWriter();
     writeDictionaryFile(writer, dataSet1);
@@ -178,8 +177,6 @@ public class CarbonDictionaryWriterImplTest {
     assertTrue(dataSet1.size() == actual.size());
     // validate the dictionary data
     compareDictionaryData(actual, dataSet1);
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE,
-        CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE_DEFAULT);
   }
 
   /**

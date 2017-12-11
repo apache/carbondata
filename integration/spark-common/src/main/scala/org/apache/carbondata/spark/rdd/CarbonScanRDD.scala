@@ -33,6 +33,7 @@ import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block.Distributable
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -158,9 +159,7 @@ class CarbonScanRDD(
           i += 1
           result.add(partition)
         }
-      } else if (CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
-          CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT).toBoolean) {
+      } else if (CarbonProperties.ENABLE_CUSTOM_BLOCK_DISTRIBUTION.getOrDefault) {
         // create a list of block based on split
         val blockList = splits.asScala.map(_.asInstanceOf[Distributable])
 
@@ -186,9 +185,7 @@ class CarbonScanRDD(
         }
         noOfNodes = nodeBlockMapping.size
       } else {
-        if (CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_USE_BLOCKLET_DISTRIBUTION,
-            CarbonCommonConstants.CARBON_USE_BLOCKLET_DISTRIBUTION_DEFAULT).toBoolean) {
+        if (CarbonProperties.ENABLE_BLOCKLET_DISTRIBUTION.getOrDefault()) {
           // Use blocklet distribution
           // Randomize the blocklets for better shuffling
           Random.shuffle(splits.asScala).zipWithIndex.foreach { splitWithIndex =>
@@ -352,9 +349,7 @@ class CarbonScanRDD(
     CarbonTableInputFormat.setQuerySegment(conf, identifier)
     CarbonTableInputFormat.setFilterPredicates(conf, filterExpression)
     CarbonTableInputFormat.setColumnProjection(conf, columnProjection)
-    if (CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP,
-        CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT).toBoolean) {
+    if (CarbonProperties.ENABLE_DISTRIBUTED_DATAMAP.getOrDefault()) {
       CarbonTableInputFormat.setDataMapJob(conf, new SparkDataMapJob)
     }
     val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo

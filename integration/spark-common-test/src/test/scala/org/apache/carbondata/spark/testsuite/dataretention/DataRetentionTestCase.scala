@@ -28,10 +28,10 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.spark.sql.test.util.QueryTest
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 
 /**
@@ -54,9 +54,9 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists DataRetentionTable")
     sql("drop table if exists retentionlock")
 
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK, "1")
-    CarbonProperties.getInstance.addProperty(CarbonCommonConstants.MAX_QUERY_EXECUTION_TIME, "1")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.load.metadata.lock.retry.timeout.sec", "1")
+    CarbonProperties.getInstance.addProperty("max.query.execution.time", "1")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     sql(
       "CREATE table DataRetentionTable (ID int, date String, country String, name " +
       "String," +
@@ -105,7 +105,7 @@ class DataRetentionTestCase extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table if exists DataRetentionTable")
     sql("drop table if exists retentionlock")
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 
 

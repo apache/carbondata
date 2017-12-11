@@ -20,8 +20,9 @@ package org.apache.spark.sql.hive
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.internal.SQLConf.SQLConfigBuilder
 
+import org.apache.carbondata.core.api.CarbonProperties
+import org.apache.carbondata.core.api.CarbonProperties.RuntimeProperty
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * To initialize dynamic values default param
@@ -35,18 +36,15 @@ class CarbonSQLConf(sparkSession: SparkSession) {
    */
   def addDefaultCarbonParams(): Unit = {
     val ENABLE_UNSAFE_SORT =
-        SQLConfigBuilder(CarbonCommonConstants.ENABLE_UNSAFE_SORT)
-        .doc("To enable/ disable unsafe sort.")
+        SQLConfigBuilder(CarbonProperties.ENABLE_UNSAFE_SORT.getName)
+        .doc(CarbonProperties.ENABLE_UNSAFE_SORT.getDoc)
         .booleanConf
-        .createWithDefault(carbonProperties.getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-          CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT).toBoolean)
+        .createWithDefault(CarbonProperties.ENABLE_UNSAFE_SORT.getDefaultValue)
     val CARBON_CUSTOM_BLOCK_DISTRIBUTION =
-      SQLConfigBuilder(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION)
-        .doc("To enable/ disable carbon custom block distribution.")
+      SQLConfigBuilder(CarbonProperties.ENABLE_CUSTOM_BLOCK_DISTRIBUTION.getName)
+        .doc(CarbonProperties.ENABLE_CUSTOM_BLOCK_DISTRIBUTION.getDoc)
         .booleanConf
-        .createWithDefault(carbonProperties
-          .getProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
-            CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT).toBoolean)
+        .createWithDefault(CarbonProperties.ENABLE_CUSTOM_BLOCK_DISTRIBUTION.getDefaultValue)
     val BAD_RECORDS_LOGGER_ENABLE =
       SQLConfigBuilder(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE)
         .doc("To enable/ disable carbon bad record logger.")
@@ -57,9 +55,7 @@ class CarbonSQLConf(sparkSession: SparkSession) {
       SQLConfigBuilder(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION)
         .doc("To configure the bad records action.")
         .stringConf
-        .createWithDefault(carbonProperties
-          .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-            CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT))
+        .createWithDefault(CarbonProperties.BAD_RECORDS_ACTION.getDefaultValue)
     val IS_EMPTY_DATA_BAD_RECORD =
       SQLConfigBuilder(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD)
         .doc("Property to decide weather empty data to be considered bad/ good record.")
@@ -88,8 +84,7 @@ class CarbonSQLConf(sparkSession: SparkSession) {
       SQLConfigBuilder(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH)
         .doc("Property to configure the bad record location.")
         .stringConf
-        .createWithDefault(carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-          CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))
+        .createWithDefault(CarbonProperties.BAD_RECORDS_LOCATION.getDefaultValue)
     val GLOBAL_SORT_PARTITIONS =
       SQLConfigBuilder(CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS)
         .doc("Property to configure the global sort partitions.")
@@ -108,22 +103,21 @@ class CarbonSQLConf(sparkSession: SparkSession) {
       .createWithDefault(carbonProperties
         .getProperty("carbon.input.segments.<database_name>.<table_name>", "*"))
   }
+
   /**
    * to set the dynamic properties default values
    */
   def addDefaultCarbonSessionParams(): Unit = {
-    sparkSession.conf.set(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-      carbonProperties.getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-        CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT).toBoolean)
-    sparkSession.conf.set(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
-      carbonProperties
-        .getProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
-          CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT).toBoolean)
+    sparkSession.conf.set(
+      CarbonProperties.ENABLE_UNSAFE_SORT.getName,
+      CarbonProperties.ENABLE_UNSAFE_SORT.getOrDefault())
+    sparkSession.conf.set(
+      CarbonProperties.ENABLE_CUSTOM_BLOCK_DISTRIBUTION.getName,
+      CarbonProperties.ENABLE_CUSTOM_BLOCK_DISTRIBUTION.getOrDefault())
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE,
       CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT.toBoolean)
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION,
-      carbonProperties.getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT))
+      CarbonProperties.BAD_RECORDS_ACTION.getOrDefault())
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
       CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT.toBoolean)
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
@@ -135,11 +129,7 @@ class CarbonSQLConf(sparkSession: SparkSession) {
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
       CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT.toBoolean)
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
-      carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-        CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))
-    sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
-      carbonProperties.getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-        CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))
+      CarbonProperties.BAD_RECORDS_LOCATION.getOrDefault())
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS,
       carbonProperties.getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
         CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT))

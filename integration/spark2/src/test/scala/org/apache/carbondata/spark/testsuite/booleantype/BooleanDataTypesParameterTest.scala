@@ -19,10 +19,11 @@ package org.apache.carbondata.spark.testsuite.booleantype
 import java.io.File
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   val filePath: String = s"$resourcesPath/globalsort"
@@ -44,9 +45,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
     + "../../../..").getCanonicalPath
 
   override def beforeAll(): Unit = {
-    CarbonProperties.getInstance().
-      addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD,
-        CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD)
+    CarbonProperties.getInstance().setToDefault("carbon.compaction.level.threshold")
   }
 
   override def afterAll(): Unit = {
@@ -55,7 +54,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
   }
 
   test("ENABLE_AUTO_LOAD_MERGE: false, and Inserting and selecting table: one column boolean and many rows, should support") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+    CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "false")
     sql("insert into boolean_one_column values(true)")
     sql("insert into boolean_one_column values(True)")
     sql("insert into boolean_one_column values(TRUE)")
@@ -82,12 +81,15 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
     val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(!SegmentSequenceIds.contains("0.1"))
     assert(SegmentSequenceIds.length == 14)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-      CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
+    CarbonProperties.getInstance().setToDefault("carbon.enable.auto.load.merge")
+  }
+
+  override def afterEach(): Unit = {
+    CarbonProperties.getInstance().setToDefault("carbon.enable.auto.load.merge")
   }
 
   test("ENABLE_AUTO_LOAD_MERGE: true, and Inserting and selecting table: one column boolean and many rows, should support") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "true")
     sql("insert into boolean_one_column values(true)")
     sql("insert into boolean_one_column values(True)")
     sql("insert into boolean_one_column values(TRUE)")
@@ -114,12 +116,10 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
     val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(SegmentSequenceIds.contains("0.1"))
     assert(SegmentSequenceIds.length == 18)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-      CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
   }
 
   test("ENABLE_AUTO_LOAD_MERGE: false, and Loading table: support boolean and other data type") {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+    CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "false")
     sql(
       s"""
          | CREATE TABLE boolean_table(
@@ -159,13 +159,11 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
     val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(!SegmentSequenceIds.contains("0.1"))
     assert(SegmentSequenceIds.length == 4)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-      CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
   }
 
   test("ENABLE_AUTO_LOAD_MERGE: true, and Loading table: support boolean and other data type") {
     //unfinish
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "true")
     sql(
       s"""
          | CREATE TABLE boolean_table(
@@ -204,8 +202,6 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
     val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(SegmentSequenceIds.contains("0.1"))
     assert(SegmentSequenceIds.length == 5)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-      CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
   }
 
   test("ENABLE_AUTO_LOAD_MERGE: false, and sort_columns is boolean") {
@@ -216,7 +212,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
          |STORED BY 'carbondata'
          |TBLPROPERTIES('sort_columns'='booleanField','SORT_SCOPE'='GLOBAL_SORT')
          |""".stripMargin)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+    CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "false")
     sql("insert into boolean_one_column values(true)")
     sql("insert into boolean_one_column values(True)")
     sql("insert into boolean_one_column values(TRUE)")
@@ -243,8 +239,6 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
     val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(!SegmentSequenceIds.contains("0.1"))
     assert(SegmentSequenceIds.length == 14)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-      CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
   }
 
   test("ENABLE_AUTO_LOAD_MERGE: true, and sort_columns is boolean") {
@@ -255,7 +249,7 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
          |STORED BY 'carbondata'
          |TBLPROPERTIES('sort_columns'='booleanField','SORT_SCOPE'='GLOBAL_SORT')
          |""".stripMargin)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "true")
     sql("insert into boolean_one_column values(true)")
     sql("insert into boolean_one_column values(True)")
     sql("insert into boolean_one_column values(TRUE)")
@@ -282,7 +276,5 @@ class BooleanDataTypesParameterTest extends QueryTest with BeforeAndAfterEach wi
     val SegmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(SegmentSequenceIds.contains("0.1"))
     assert(SegmentSequenceIds.length == 18)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-      CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE)
   }
 }

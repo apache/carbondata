@@ -41,6 +41,7 @@ import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -127,6 +128,8 @@ public final class CarbonUtil {
   private static final int CONST_HUNDRED = 100;
 
   private static final Configuration conf = new Configuration(true);
+
+  private static final String FS_DEFAULT_FS = "fs.defaultFS";
 
   private CarbonUtil() {
 
@@ -347,8 +350,7 @@ public final class CarbonUtil {
     String badLogStoreLocation = CarbonProperties.getInstance()
         .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH);
     if (null == badLogStoreLocation) {
-      badLogStoreLocation =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
+      badLogStoreLocation = CarbonProperties.BAD_RECORDS_LOCATION.getOrDefault();
     }
     badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
     return badLogStoreLocation;
@@ -716,9 +718,8 @@ public final class CarbonUtil {
    */
   public static String checkAndAppendHDFSUrl(String filePath) {
     String currentPath = filePath;
-    String defaultFsUrl = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
-    String baseDFSUrl = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_DDL_BASE_HDFS_URL, "");
+    String defaultFsUrl = conf.get(FS_DEFAULT_FS);
+    String baseDFSUrl = CarbonProperties.DDL_BASE_HDFS_URL.getOrDefault();
     if (checkIfPrefixExists(filePath)) {
       return currentPath;
     }
@@ -753,7 +754,7 @@ public final class CarbonUtil {
       filePath = "/" + filePath;
     }
     currentPath = filePath;
-    String defaultFsUrl = conf.get(CarbonCommonConstants.FS_DEFAULT_FS);
+    String defaultFsUrl = conf.get(FS_DEFAULT_FS);
     if (defaultFsUrl == null) {
       return currentPath;
     }
@@ -1321,18 +1322,7 @@ public final class CarbonUtil {
    * @return
    */
   public static int getDictionaryChunkSize() {
-    int dictionaryOneChunkSize = 0;
-    try {
-      dictionaryOneChunkSize = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE,
-              CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE_DEFAULT));
-    } catch (NumberFormatException e) {
-      dictionaryOneChunkSize =
-          Integer.parseInt(CarbonCommonConstants.DICTIONARY_ONE_CHUNK_SIZE_DEFAULT);
-      LOGGER.error("Dictionary chunk size not configured properly. Taking default size "
-          + dictionaryOneChunkSize);
-    }
-    return dictionaryOneChunkSize;
+    return CarbonProperties.DICTIONARY_CHUNK_SIZE.getOrDefault();
   }
 
   /**
@@ -1685,12 +1675,9 @@ public final class CarbonUtil {
    */
   public static String getFormatFromProperty(DataType dataType) {
     if (dataType.equals(DataTypes.DATE)) {
-      return CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+      return CarbonProperties.DATE_FORMAT.getOrDefault();
     } else if (dataType.equals(DataTypes.TIMESTAMP)) {
-      return CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+      return CarbonProperties.TIMESTAMP_FORMAT.getOrDefault();
     } else {
       return null;
     }
@@ -2188,10 +2175,8 @@ public final class CarbonUtil {
     boolean needUpdate = false;
     AbsoluteTableIdentifier absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
     CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
-    String isCalculated = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_CALCULATE_SIZE,
-            CarbonCommonConstants.DEFAULT_ENABLE_CALCULATE_SIZE);
-    if (isCalculated.equalsIgnoreCase("true")) {
+    boolean isCalculated = CarbonProperties.ENABLE_CALCULATE_SIZE.getOrDefault();
+    if (isCalculated) {
       SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
       ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
       try {

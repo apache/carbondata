@@ -21,8 +21,8 @@ import java.io.File
 
 import org.apache.spark.sql.SparkSession
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 object CarbonSortColumnsExample {
 
@@ -34,8 +34,8 @@ object CarbonSortColumnsExample {
     val metastoredb = s"$rootPath/examples/spark2/target"
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd HH:mm:ss")
+      .addProperty("carbon.date.format", "yyyy/MM/dd")
 
     import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession

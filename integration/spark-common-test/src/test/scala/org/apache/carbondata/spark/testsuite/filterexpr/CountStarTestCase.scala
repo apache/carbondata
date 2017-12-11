@@ -19,9 +19,11 @@ package org.apache.carbondata.spark.testsuite.filterexpr
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * Test Class for filter expression query on String datatypes
@@ -37,7 +39,7 @@ class CountStarTestCase extends QueryTest with BeforeAndAfterAll {
       "STORED BY 'org.apache.carbondata.format'"
     )
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
     var csvFilePath = s"$resourcesPath/datanullmeasurecol.csv"
       sql(
       s"LOAD DATA LOCAL INPATH '" + csvFilePath + "' INTO TABLE " +
@@ -58,6 +60,6 @@ class CountStarTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists filtertestTables")
     sql("drop table if exists filterTimestampDataType")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }

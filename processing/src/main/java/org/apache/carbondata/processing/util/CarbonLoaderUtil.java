@@ -56,11 +56,12 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.processing.loading.TempTablePath;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.merger.NodeBlockRelation;
 import org.apache.carbondata.processing.merger.NodeMultiBlockRelation;
@@ -202,7 +203,7 @@ public final class CarbonLoaderUtil {
         .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
             loadModel.getTaskNo(), isCompactionFlow, isAltPartitionFlow);
     // form local store location
-    final String localStoreLocations = CarbonProperties.getInstance().getProperty(tempLocationKey);
+    final String localStoreLocations = TempTablePath.getTempTablePath(tempLocationKey);
     if (localStoreLocations == null) {
       throw new RuntimeException("Store location not set for the key " + tempLocationKey);
     }

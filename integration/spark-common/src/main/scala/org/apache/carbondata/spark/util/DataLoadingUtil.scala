@@ -27,9 +27,10 @@ import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.TableOptionConstant
@@ -45,7 +46,6 @@ object DataLoadingUtil {
    * get data loading options and initialise default value
    */
   def getDataLoadingOptions(
-      carbonProperty: CarbonProperties,
       options: immutable.Map[String, String]): mutable.Map[String, String] = {
     val optionsFinal = scala.collection.mutable.Map[String, String]()
     optionsFinal.put("delimiter", options.getOrElse("delimiter", ","))
@@ -63,27 +63,21 @@ object DataLoadingUtil {
       "bad_records_logger_enable",
       options.getOrElse(
         "bad_records_logger_enable",
-        carbonProperty.getProperty(
+        CarbonProperties.getInstance().getProperty(
           CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE,
           CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT)))
-
-    val badRecordActionValue = carbonProperty.getProperty(
-      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
 
     optionsFinal.put(
       "bad_records_action",
       options.getOrElse(
         "bad_records_action",
-        carbonProperty.getProperty(
-          CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION,
-          badRecordActionValue)))
+        CarbonProperties.BAD_RECORDS_ACTION.getOrDefault()))
 
     optionsFinal.put(
       "is_empty_data_bad_record",
       options.getOrElse(
         "is_empty_data_bad_record",
-        carbonProperty.getProperty(
+        CarbonProperties.getInstance.getProperty(
           CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
           CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT)))
 
@@ -91,7 +85,7 @@ object DataLoadingUtil {
       "skip_empty_line",
       options.getOrElse(
         "skip_empty_line",
-        carbonProperty.getProperty(
+        CarbonProperties.getInstance.getProperty(
           CarbonLoadOptionConstants.CARBON_OPTIONS_SKIP_EMPTY_LINE)))
 
     optionsFinal.put("all_dictionary_path", options.getOrElse("all_dictionary_path", ""))
@@ -108,7 +102,7 @@ object DataLoadingUtil {
       "dateformat",
       options.getOrElse(
         "dateformat",
-        carbonProperty.getProperty(
+        CarbonProperties.getInstance.getProperty(
           CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
           CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)))
 
@@ -116,7 +110,7 @@ object DataLoadingUtil {
       "timestampformat",
       options.getOrElse(
         "timestampformat",
-        carbonProperty.getProperty(
+        CarbonProperties.getInstance.getProperty(
           CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
           CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT)))
 
@@ -124,7 +118,7 @@ object DataLoadingUtil {
       "global_sort_partitions",
       options.getOrElse(
         "global_sort_partitions",
-        carbonProperty.getProperty(
+        CarbonProperties.getInstance.getProperty(
           CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS,
           null)))
 
@@ -134,9 +128,9 @@ object DataLoadingUtil {
       "batch_sort_size_inmb",
       options.getOrElse(
         "batch_sort_size_inmb",
-        carbonProperty.getProperty(
+        CarbonProperties.getInstance.getProperty(
           CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB,
-          carbonProperty.getProperty(
+          CarbonProperties.getInstance.getProperty(
             CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
             CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))))
 
@@ -144,15 +138,13 @@ object DataLoadingUtil {
       "bad_record_path",
       options.getOrElse(
         "bad_record_path",
-        carbonProperty.getProperty(
+        CarbonProperties.getInstance.getProperty(
           CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
-          carbonProperty.getProperty(
-            CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-            CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))))
+          CarbonProperties.BAD_RECORDS_LOCATION.getOrDefault)))
 
     val useOnePass = options.getOrElse(
       "single_pass",
-      carbonProperty.getProperty(
+      CarbonProperties.getInstance.getProperty(
         CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
         CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT)).trim.toLowerCase match {
       case "true" =>
@@ -193,7 +185,6 @@ object DataLoadingUtil {
    */
   def buildCarbonLoadModel(
       table: CarbonTable,
-      carbonProperty: CarbonProperties,
       options: immutable.Map[String, String],
       optionsFinal: mutable.Map[String, String],
       carbonLoadModel: CarbonLoadModel,
@@ -265,13 +256,8 @@ object DataLoadingUtil {
 
     carbonLoadModel.setTimestampformat(timestampformat)
     carbonLoadModel.setDateFormat(dateFormat)
-    carbonLoadModel.setDefaultTimestampFormat(carbonProperty.getProperty(
-      CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
-
-    carbonLoadModel.setDefaultDateFormat(carbonProperty.getProperty(
-      CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+    carbonLoadModel.setDefaultTimestampFormat(CarbonProperties.TIMESTAMP_FORMAT.getOrDefault)
+    carbonLoadModel.setDefaultDateFormat(CarbonProperties.DATE_FORMAT.getOrDefault)
 
     carbonLoadModel.setSerializationNullFormat(
         TableOptionConstant.SERIALIZATION_NULL_FORMAT.getName + "," +

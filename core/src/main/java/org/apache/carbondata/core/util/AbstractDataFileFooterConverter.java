@@ -23,6 +23,7 @@ import java.util.BitSet;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.BlockInfo;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
@@ -202,9 +203,7 @@ public abstract class AbstractDataFileFooterConverter {
    */
   protected int getBlockletSize(BlockIndex readBlockIndexInfo) {
     long num_rows = readBlockIndexInfo.getNum_rows();
-    int blockletSize = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
+    int blockletSize = CarbonProperties.BLOCKLET_SIZE.getOrDefault();
     int remainder = (int) (num_rows % blockletSize);
     int noOfBlockLet = (int) (num_rows / blockletSize);
     // there could be some blocklets which will not

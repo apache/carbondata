@@ -18,9 +18,11 @@
 package org.apache.carbondata.spark.testsuite.bigdecimal
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * Test cases for testing columns having null value
@@ -31,7 +33,7 @@ class TestNullAndEmptyFields extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      .addProperty("carbon.timestamp.format",
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
       )
     val csvFilePath = s"$resourcesPath/nullandnonparsableValue.csv"
@@ -110,7 +112,7 @@ class TestNullAndEmptyFields extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbonTable")
     sql("drop table if exists hiveTable")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }
 

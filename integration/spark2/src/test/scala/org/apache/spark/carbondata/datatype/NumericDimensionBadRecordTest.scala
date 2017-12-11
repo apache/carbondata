@@ -24,8 +24,8 @@ import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * Test Class for detailed query on timestamp dataDataTypes
@@ -44,11 +44,10 @@ class NumericDimensionBadRecordTest extends Spark2QueryTest with BeforeAndAfterA
       sql("drop table IF EXISTS bigDecimalDataType")
       sql("drop table IF EXISTS stringDataType")
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+        .addProperty("carbon.badRecords.location",
           new File("./target/test/badRecords")
             .getCanonicalPath)
-      CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
       var csvFilePath = ""
 
       // 1. bad record int DataType dimension
@@ -93,8 +92,7 @@ class NumericDimensionBadRecordTest extends Spark2QueryTest with BeforeAndAfterA
     } catch {
       case x: Throwable => {
         System.out.println(x.getMessage)
-        CarbonProperties.getInstance()
-          .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+        CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "dd-MM-yyyy")
       }
     }
   }
@@ -176,7 +174,6 @@ class NumericDimensionBadRecordTest extends Spark2QueryTest with BeforeAndAfterA
     sql("drop table IF EXISTS stringDataType")
     sql("drop table if exists num_dic")
     sql("drop table if exists num_dicc")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }

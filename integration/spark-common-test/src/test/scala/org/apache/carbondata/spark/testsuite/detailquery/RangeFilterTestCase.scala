@@ -18,9 +18,11 @@
 package org.apache.carbondata.spark.testsuite.detailquery
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for Range Filters.
@@ -140,7 +142,7 @@ class RangeFilterTestCase extends QueryTest with BeforeAndAfterAll {
         "STORED BY 'org.apache.carbondata.format' " +  "TBLPROPERTIES('DICTIONARY_EXCLUDE'='ID')"
     )
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+      .addProperty("carbon.timestamp.format", "yyyy-MM-dd HH:mm:ss")
     sql(
       s"LOAD DATA LOCAL INPATH '$resourcesPath/data2.csv' INTO TABLE filtertestTable OPTIONS"+
       s"('DELIMITER'= ',', " +

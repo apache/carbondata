@@ -23,10 +23,9 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.hadoop.CarbonProjection;
@@ -53,8 +52,7 @@ public class CarbonInputMapperTest extends TestCase {
 
   // changed setUp to static init block to avoid un wanted multiple time store creation
   static {
-    CarbonProperties.getInstance().
-        addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
+    CarbonProperties.getInstance().addProperty("carbon.badRecords.location", "/tmp/carbon/badrecords");
     StoreCreator.createCarbonStore();
 
   }
@@ -142,14 +140,12 @@ public class CarbonInputMapperTest extends TestCase {
 
   @Override public void tearDown() throws Exception {
     super.tearDown();
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true");
+    CarbonProperties.getInstance().addProperty("enable.query.statistics", "true");
   }
 
   @Override public void setUp() throws Exception {
     super.setUp();
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false");
+    CarbonProperties.getInstance().addProperty("enable.query.statistics", "false");
     StoreCreator.createCarbonStore();
   }
 

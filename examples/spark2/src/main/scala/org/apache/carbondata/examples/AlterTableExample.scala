@@ -21,8 +21,8 @@ import java.io.File
 
 import org.apache.spark.sql.SparkSession
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * For alter table relative syntax, you can refer to DDL operation
@@ -38,8 +38,7 @@ object AlterTableExample {
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
 
     import org.apache.spark.sql.CarbonSession._
 

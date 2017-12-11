@@ -22,11 +22,10 @@ import java.io.{File, PrintWriter}
 import scala.util.Random
 
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.api.CarbonProperties
 
 class TestBooleanCompressSuite extends QueryTest with BeforeAndAfterEach with BeforeAndAfterAll {
   val rootPath = new File(this.getClass.getResource("/").getPath

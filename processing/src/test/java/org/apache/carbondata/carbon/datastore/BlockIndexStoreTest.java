@@ -26,13 +26,12 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.cache.CacheType;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.BlockIndexStore;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.processing.StoreCreator;
 
 import junit.framework.TestCase;
@@ -49,11 +48,9 @@ public class BlockIndexStoreTest extends TestCase {
           LogServiceFactory.getLogService(BlockIndexStoreTest.class.getName());
 
   @BeforeClass public void setUp() {
-    CarbonProperties.getInstance().
-        addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
+    CarbonProperties.getInstance().addProperty("carbon.badRecords.location", "/tmp/carbon/badrecords");
     StoreCreator.createCarbonStore();
-    CarbonProperties.getInstance().
-        addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
+    CarbonProperties.getInstance().addProperty("carbon.max.driver.lru.cache.size", "10");
     CacheProvider cacheProvider = CacheProvider.getInstance();
     cache = (BlockIndexStore) cacheProvider.createCache(CacheType.EXECUTOR_BTREE);
   }

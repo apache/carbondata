@@ -51,7 +51,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.CarbonMergerUtil;
 import org.apache.carbondata.core.util.CarbonMetadataUtil;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -159,16 +159,13 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     this.dataWriterVo = dataWriterVo;
     blockIndexInfoList = new ArrayList<>();
     // get max file size;
-    CarbonProperties propInstance = CarbonProperties.getInstance();
     // if blocksize=2048, then 2048*1024*1024 will beyond the range of Int
     this.fileSizeInBytes =
         (long) dataWriterVo.getTableBlocksize() * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
             * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR;
 
     // size reserved in one file for writing block meta data. It will be in percentage
-    int spaceReservedForBlockMetaSize = Integer.parseInt(propInstance
-        .getProperty(CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE,
-            CarbonCommonConstants.CARBON_BLOCK_META_RESERVED_SPACE_DEFAULT));
+    int spaceReservedForBlockMetaSize = CarbonProperties.BLOCK_META_RESERVED_SPACE.getOrDefault();
     this.blockSizeThreshold =
         fileSizeInBytes - (fileSizeInBytes * spaceReservedForBlockMetaSize) / 100;
     LOGGER.info("Total file size: " + fileSizeInBytes + " and dataBlock Size: " +
@@ -196,9 +193,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
       thriftColumnSchemaList = getColumnSchemaListAndCardinality(cardinalityList, localCardinality,
           dataWriterVo.getWrapperColumnSchemaList());
     }
-    this.numberCompressor = new NumberCompressor(Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-            CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)));
+    this.numberCompressor = new NumberCompressor(CarbonProperties.BLOCKLET_SIZE.getOrDefault());
     this.dataChunksOffsets = new ArrayList<>();
     this.dataChunksLength = new ArrayList<>();
     blockletMetadata = new ArrayList<BlockletInfo3>();

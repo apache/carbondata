@@ -23,7 +23,7 @@ import org.apache.spark.sql.common.util._
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonV3DataFormatConstants}
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for DataLoadingV3TestCase to verify all scenerios

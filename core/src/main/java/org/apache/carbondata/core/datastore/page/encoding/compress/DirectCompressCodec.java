@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
@@ -56,7 +57,7 @@ public class DirectCompressCodec implements ColumnPageCodec {
   @Override
   public ColumnPageEncoder createEncoder(Map<String, String> parameter) {
     // TODO: make compressor configurable in create table
-    return new DirectCompressor(CarbonCommonConstants.DEFAULT_COMPRESSOR);
+    return new DirectCompressor(CarbonProperties.COMPRESSOR.getOrDefault());
   }
 
   @Override

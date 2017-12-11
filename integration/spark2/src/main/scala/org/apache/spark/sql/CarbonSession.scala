@@ -32,8 +32,9 @@ import org.apache.spark.sql.internal.{SessionState, SharedState}
 import org.apache.spark.util.{CarbonReflectionUtils, Utils}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonSessionInfo, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.{CarbonSessionInfo, ThreadLocalSessionInfo}
 import org.apache.carbondata.events._
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -173,17 +174,17 @@ object CarbonSession {
         session = new CarbonSession(sparkContext)
         val carbonProperties = CarbonProperties.getInstance()
         if (storePath != null) {
-          carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+          carbonProperties.addProperty("carbon.storelocation", storePath)
           // In case if it is in carbon.properties for backward compatible
-        } else if (carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION) == null) {
-          carbonProperties.addProperty(CarbonCommonConstants.STORE_LOCATION,
+        } else if (carbonProperties.getProperty("carbon.storelocation") == null) {
+          carbonProperties.addProperty("carbon.storelocation",
             session.sessionState.conf.warehousePath)
         }
         options.foreach { case (k, v) => session.sessionState.conf.setConfString(k, v) }
         SparkSession.setDefaultSession(session)
         try {
           CommonUtil.cleanInProgressSegments(
-            carbonProperties.getProperty(CarbonCommonConstants.STORE_LOCATION), sparkContext)
+            carbonProperties.getProperty("carbon.storelocation"), sparkContext)
         } catch {
           case e: Throwable =>
             // catch all exceptions to avoid CarbonSession initialization failure

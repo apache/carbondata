@@ -19,9 +19,11 @@ package org.apache.carbondata.spark.testsuite.filterexpr
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * Test Class for filter expression query on String datatypes
@@ -51,7 +53,7 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     )
     sql("create table Test_Boundary1 (c1_int int,c2_Bigint Bigint,c3_Decimal Decimal(38,38),c4_double double,c5_string string,c6_Timestamp Timestamp,c7_Datatype_Desc string) STORED BY 'org.apache.carbondata.format'")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+      .addProperty("carbon.timestamp.format", "yyyy-MM-dd HH:mm:ss")
     var testData = s"$resourcesPath/filter/emp2.csv"
     sql(
       s"""LOAD DATA LOCAL INPATH '$testData' into table a12 OPTIONS('DELIMITER'=',',
@@ -182,6 +184,6 @@ class GrtLtFilterProcessorTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists a12_no_null")
     sql("drop table if exists Test_Boundary1")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }

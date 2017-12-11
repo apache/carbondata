@@ -31,7 +31,7 @@ import org.apache.carbondata.core.devapi.DictionaryGenerator;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 /**
  * Dictionary generation for table.
@@ -71,7 +71,7 @@ public class TableDictionaryGenerator
   }
 
   @Override public void writeDictionaryData() {
-    int numOfCores = CarbonProperties.getInstance().getNumberOfCores();
+    int numOfCores = CarbonProperties.NUM_CORES_LOADING.getOrDefault();
     long start = System.currentTimeMillis();
     ExecutorService executorService = Executors.newFixedThreadPool(numOfCores);
     for (final DictionaryGenerator generator : columnMap.values()) {

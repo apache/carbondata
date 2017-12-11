@@ -19,9 +19,11 @@ package org.apache.carbondata.spark.testsuite.detailquery
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for Range Filters.
@@ -92,7 +94,7 @@ class CastColumnTestCase extends QueryTest with BeforeAndAfterAll {
     );
 
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy-MM-dd HH:mm:ss")
+      .addProperty("carbon.timestamp.format", "yyyy-MM-dd HH:mm:ss")
   }
   test("Dictionary String ") {
     checkAnswer(

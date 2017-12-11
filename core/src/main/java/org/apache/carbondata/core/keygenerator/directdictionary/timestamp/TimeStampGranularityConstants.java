@@ -21,32 +21,5 @@ package org.apache.carbondata.core.keygenerator.directdictionary.timestamp;
  */
 public interface TimeStampGranularityConstants {
 
-  /**
-   * The property to set the date to be considered as start date for calculating the timestamp
-   * java counts the number of milliseconds from  start of "January 1, 1970", this property is
-   * customized the start of position. for example "January 1, 2000"
-   */
-  String CARBON_CUTOFF_TIMESTAMP = "carbon.cutOffTimestamp";
-  /**
-   * The property to set the timestamp (ie milis) conversion to the SECOND, MINUTE, HOUR
-   * or DAY level
-   */
-  String CARBON_TIME_GRANULARITY = "carbon.timegranularity";
 
-  /**
-   * Second level key
-   */
-  String TIME_GRAN_SEC = "SECOND";
-  /**
-   * minute level key
-   */
-  String TIME_GRAN_MIN = "MINUTE";
-  /**
-   * hour level key
-   */
-  String TIME_GRAN_HOUR = "HOUR";
-  /**
-   * day level key
-   */
-  String TIME_GRAN_DAY = "DAY";
 }

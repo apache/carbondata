@@ -22,7 +22,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.sort.impl.ParallelReadMergeSorterImpl;
 import org.apache.carbondata.processing.loading.sort.impl.ParallelReadMergeSorterWithBucketingImpl;
@@ -37,9 +37,7 @@ public class SorterFactory {
       LogServiceFactory.getLogService(SorterFactory.class.getName());
 
   public static Sorter createSorter(CarbonDataLoadConfiguration configuration, AtomicLong counter) {
-    boolean offheapsort = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT,
-            CarbonCommonConstants.ENABLE_UNSAFE_SORT_DEFAULT));
+    boolean offheapsort = CarbonProperties.ENABLE_UNSAFE_SORT.getOrDefault();
     SortScopeOptions.SortScope sortScope = CarbonDataProcessorUtil.getSortScope(configuration);
     Sorter sorter;
     if (offheapsort) {

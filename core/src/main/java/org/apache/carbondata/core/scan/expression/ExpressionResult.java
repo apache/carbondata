@@ -26,6 +26,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.TimeZone;
 
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.DateDirectDictionaryGenerator;
 import org.apache.carbondata.core.metadata.datatype.DataType;
@@ -348,7 +349,7 @@ public class ExpressionResult implements Comparable<ExpressionResult> {
         // surrogate value for filter member first it should be converted in date form as per
         // above format and needs to retrieve time stamp.
         SimpleDateFormat parser =
-            new SimpleDateFormat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+            new SimpleDateFormat(CarbonProperties.TIMESTAMP_FORMAT.getOrDefault());
         Date dateToStr;
         try {
           dateToStr = parser.parse(value.toString());

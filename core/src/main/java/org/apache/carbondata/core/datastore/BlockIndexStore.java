@@ -46,7 +46,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.scan.model.QueryModel;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.TaskMetricsMap;
 
 /**
@@ -166,14 +166,7 @@ public class BlockIndexStore<K, V> extends AbstractBlockIndexStoreCache<K, V> {
   @Override public List<AbstractIndex> getAll(List<TableBlockUniqueIdentifier> tableBlocksInfos)
       throws IndexBuilderException {
     AbstractIndex[] loadedBlock = new AbstractIndex[tableBlocksInfos.size()];
-    int numberOfCores = 1;
-    try {
-      numberOfCores = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.NUM_CORES,
-              CarbonCommonConstants.NUM_CORES_DEFAULT_VAL));
-    } catch (NumberFormatException e) {
-      numberOfCores = Integer.parseInt(CarbonCommonConstants.NUM_CORES_DEFAULT_VAL);
-    }
+    int numberOfCores = CarbonProperties.NUM_CORES.getOrDefault();
     ExecutorService executor = Executors.newFixedThreadPool(numberOfCores);
     List<Future<AbstractIndex>> blocksList = new ArrayList<Future<AbstractIndex>>();
     for (TableBlockUniqueIdentifier tableBlockUniqueIdentifier : tableBlocksInfos) {

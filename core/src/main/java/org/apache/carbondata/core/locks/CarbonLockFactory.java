@@ -21,7 +21,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 /**
  * This class is a Lock factory class which is used to provide lock objects.
@@ -93,9 +93,7 @@ public class CarbonLockFactory {
    * This method will set the zookeeper status whether zookeeper to be used for locking or not.
    */
   private static void getLockTypeConfigured() {
-    lockTypeConfigured = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.LOCK_TYPE, CarbonCommonConstants.LOCK_TYPE_DEFAULT)
-        .toUpperCase();
+    lockTypeConfigured = CarbonProperties.LOCK_TYPE.getOrDefault().toUpperCase();
     LOGGER.info("Configured lock type is: " + lockTypeConfigured);
   }
 

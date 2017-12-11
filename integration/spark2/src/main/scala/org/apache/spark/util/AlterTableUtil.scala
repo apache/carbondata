@@ -44,6 +44,10 @@ object AlterTableUtil {
 
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
+  private val SPARK_SCHEMA_STRING_LENGTH_THRESHOLD = "spark.sql.sources.schemaStringLengthThreshold"
+
+  private val SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT = 4000
+
   /**
    * Validates that the table exists and acquires meta lock on it.
    *
@@ -162,9 +166,9 @@ object AlterTableUtil {
    */
   private def prepareSchemaJsonForAlterTable(sparkConf: SparkConf,
       schemaJsonString: String): String = {
-    val threshold = sparkConf
-      .getInt(CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD,
-        CarbonCommonConstants.SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT)
+    val threshold = sparkConf.getInt(
+      SPARK_SCHEMA_STRING_LENGTH_THRESHOLD,
+      SPARK_SCHEMA_STRING_LENGTH_THRESHOLD_DEFAULT)
     // Split the JSON string.
     val parts = schemaJsonString.grouped(threshold).toSeq
     var schemaParts: Seq[String] = Seq.empty

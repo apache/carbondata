@@ -32,7 +32,7 @@ import org.apache.carbondata.core.scan.filter.ColumnFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.metadata.FilterResolverMetadata;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.ColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorIntf {
 
@@ -103,13 +103,9 @@ public class CustomTypeDictionaryVisitor implements ResolvedFilterInfoVisitorInt
       DataType dataType) {
     String timeFormat = null;
     if (dataType == DataTypes.DATE) {
-      timeFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-              CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+      timeFormat = CarbonProperties.DATE_FORMAT.getOrDefault();
     } else {
-      timeFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+      timeFormat = CarbonProperties.TIMESTAMP_FORMAT.getOrDefault();
     }
     for (String filterMember : evaluateResultListFinal) {
       surrogates

@@ -20,8 +20,8 @@ package org.apache.spark.util
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 
 /**
@@ -51,7 +51,7 @@ object TableAPIUtil {
 
   def spark(storePath: String, appName: String): SparkSession = {
     // CarbonEnv depends on CarbonProperty to get the store path, so set it here
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.STORE_LOCATION, storePath)
+    CarbonProperties.getInstance().addProperty("carbon.storelocation", storePath)
     SparkSession
         .builder
         .appName(appName)

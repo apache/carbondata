@@ -37,7 +37,7 @@ import org.apache.carbondata.core.memory.MemoryBlock;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.memory.UnsafeMemoryManager;
 import org.apache.carbondata.core.memory.UnsafeSortMemoryManager;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.ThreadLocalTaskInfo;
@@ -103,9 +103,7 @@ public class UnsafeSortDataRows {
     this.taskId = ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId();
     this.inMemoryChunkSize = inMemoryChunkSize;
     this.inMemoryChunkSize = inMemoryChunkSize * 1024L * 1024L;
-    enableInMemoryIntermediateMerge = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT,
-            CarbonCommonConstants.ENABLE_INMEMORY_MERGE_SORT_DEFAULT));
+    enableInMemoryIntermediateMerge = CarbonProperties.ENABLE_INMEMORY_MERGE_SORT.getOrDefault();
 
     this.maxSizeAllowed = parameters.getBatchSortSizeinMb();
     if (maxSizeAllowed <= 0) {

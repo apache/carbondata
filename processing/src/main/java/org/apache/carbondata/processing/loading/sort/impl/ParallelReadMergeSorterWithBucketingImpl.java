@@ -30,7 +30,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
@@ -72,8 +72,7 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
 
   @Override public void initialize(SortParameters sortParameters) {
     this.sortParameters = sortParameters;
-    int buffer = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL));
+    int buffer = CarbonProperties.SORT_SIZE.getOrDefault();
     sortBufferSize = buffer / bucketingInfo.getNumberOfBuckets();
     if (sortBufferSize < 100) {
       sortBufferSize = 100;
@@ -100,7 +99,7 @@ public class ParallelReadMergeSorterWithBucketingImpl extends AbstractMergeSorte
     }
     ExecutorService executorService = Executors.newFixedThreadPool(iterators.length);
     this.threadStatusObserver = new ThreadStatusObserver(executorService);
-    final int batchSize = CarbonProperties.getInstance().getBatchSize();
+    final int batchSize = CarbonProperties.DATA_LOAD_BATCH_SIZE.getOrDefault();
     try {
       for (int i = 0; i < iterators.length; i++) {
         executorService.execute(new SortIteratorThread(iterators[i], sortDataRows, rowCounter,

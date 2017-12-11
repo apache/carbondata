@@ -27,9 +27,9 @@ import org.apache.spark.sql.{DataFrame, SQLContext}
 import org.apache.spark.util.Utils
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * the sql executor of spark-common-test
@@ -80,15 +80,13 @@ object TestQueryExecutor {
   }
 
   val storeLocation = if (hdfsUrl.startsWith("hdfs://")) {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
-      CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
+    CarbonProperties.getInstance.addProperty("carbon.lock.type", CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
     val carbonFile = FileFactory.
       getCarbonFile(s"$hdfsUrl/store", FileFactory.getFileType(s"$hdfsUrl/store"))
     FileFactory.deleteAllCarbonFilesOfDir(carbonFile)
     s"$hdfsUrl/store_" + System.nanoTime()
   } else {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
-      CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
+    CarbonProperties.getInstance.addProperty("carbon.lock.type", CarbonCommonConstants.CARBON_LOCK_TYPE_LOCAL)
     s"$integrationPath/spark-common/target/store"
   }
   val warehouse = if (hdfsUrl.startsWith("hdfs://")) {
@@ -136,12 +134,11 @@ object TestQueryExecutor {
 
   val INSTANCE = lookupQueryExecutor.newInstance().asInstanceOf[TestQueryExecutorRegister]
   CarbonProperties.getInstance()
-    .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
-    .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, badStoreLocation)
-    .addProperty(CarbonCommonConstants.DICTIONARY_SERVER_PORT,
-      (CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT.toInt + Random.nextInt(100)) + "")
-    .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "1024")
-    .addProperty(CarbonCommonConstants.CARBON_MAX_EXECUTOR_LRU_CACHE_SIZE, "1024")
+    .addProperty("carbon.bad.records.action", "FORCE")
+    .addProperty("carbon.badRecords.location", badStoreLocation)
+    .addProperty("carbon.dictionary.server.port", (2030 + Random.nextInt(100)) + "")
+    .addProperty("carbon.max.driver.lru.cache.size", "1024")
+    .addProperty("carbon.max.executor.lru.cache.size", "1024")
 
   private def lookupQueryExecutor: Class[_] = {
     ServiceLoader.load(classOf[TestQueryExecutorRegister], Utils.getContextOrSparkClassLoader)

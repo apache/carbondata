@@ -17,12 +17,11 @@
 
 package org.apache.carbondata.core.datastore.chunk.store;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeFixedLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.safe.SafeVariableLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeFixedLengthDimensionDataChunkStore;
 import org.apache.carbondata.core.datastore.chunk.store.impl.unsafe.UnsafeVariableLengthDimesionDataChunkStore;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 /**
  * Below class will be used to get the dimension store type
@@ -40,9 +39,7 @@ public class DimensionChunkStoreFactory {
   private static final boolean isUnsafe;
 
   static {
-    isUnsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION,
-            CarbonCommonConstants.ENABLE_UNSAFE_IN_QUERY_EXECUTION_DEFAULTVALUE));
+    isUnsafe = CarbonProperties.ENABLE_UNSAFE_IN_QUERY_EXECUTION.getOrDefault();
   }
 
   private DimensionChunkStoreFactory() {

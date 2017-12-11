@@ -16,12 +16,11 @@
  */
 package org.apache.carbondata.core.datastore.chunk.reader.dimension;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.chunk.reader.DimensionColumnChunkReader;
 import org.apache.carbondata.core.datastore.compression.Compressor;
 import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.keygenerator.mdkey.NumberCompressor;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 /**
  * Class which will have all the common properties and behavior among all type
@@ -68,14 +67,7 @@ public abstract class AbstractChunkReader implements DimensionColumnChunkReader 
       int numberOfRows) {
     this.eachColumnValueSize = eachColumnValueSize;
     this.filePath = filePath;
-    int numberOfElement = 0;
-    try {
-      numberOfElement = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.BLOCKLET_SIZE,
-              CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL));
-    } catch (NumberFormatException exception) {
-      numberOfElement = Integer.parseInt(CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL);
-    }
+    int numberOfElement = CarbonProperties.BLOCKLET_SIZE.getOrDefault();
     this.numberComressor = new NumberCompressor(numberOfElement);
     this.numberOfRows = numberOfRows;
   }

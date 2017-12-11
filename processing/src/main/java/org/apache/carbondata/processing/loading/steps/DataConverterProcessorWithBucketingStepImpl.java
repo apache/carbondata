@@ -31,7 +31,7 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.BadRecordsLogger;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
@@ -190,14 +190,13 @@ public class DataConverterProcessorWithBucketingStepImpl extends AbstractDataLoa
         badRecordsLogRedirect, badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
   }
 
-  private String getBadLogStoreLocation(String storeLocation) {
+  private String getBadLogStoreLocation(String dbAndTableRelativePath) {
     String badLogStoreLocation = (String) configuration
         .getDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH);
     if (null == badLogStoreLocation) {
-      badLogStoreLocation =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
+      badLogStoreLocation = CarbonProperties.BAD_RECORDS_LOCATION.getOrDefault();
     }
-    badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
+    badLogStoreLocation = badLogStoreLocation + File.separator + dbAndTableRelativePath;
 
     return badLogStoreLocation;
   }

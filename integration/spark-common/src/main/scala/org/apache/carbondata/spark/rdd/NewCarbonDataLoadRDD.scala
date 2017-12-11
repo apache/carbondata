@@ -40,11 +40,12 @@ import org.apache.spark.util.SparkUtil
 import org.apache.carbondata.common.CarbonIterator
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.common.logging.impl.StandardLogService
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.compression.CompressorFactory
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
+import org.apache.carbondata.core.util.{CarbonTimeStatisticsFactory, ThreadLocalTaskInfo}
 import org.apache.carbondata.processing.loading.{DataLoadExecutor, FailureCauses}
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, CSVRecordReaderIterator}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
@@ -132,22 +133,11 @@ class SparkPartitionLoader(model: CarbonLoadModel,
         System.getProperty("user.dir") + '/' + "conf" + '/' + "carbon.properties")
     }
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance.initPartitonInfo(model.getPartitionId)
-    CarbonProperties.getInstance().addProperty("carbon.is.columnar.storage", "true")
-    CarbonProperties.getInstance().addProperty("carbon.dimension.split.value.in.columnar", "1")
-    CarbonProperties.getInstance().addProperty("carbon.is.fullyfilled.bits", "true")
-    CarbonProperties.getInstance().addProperty("is.int.based.indexer", "true")
-    CarbonProperties.getInstance().addProperty("aggregate.columnar.keyblock", "true")
-    CarbonProperties.getInstance().addProperty("high.cardinality.value", "100000")
-    CarbonProperties.getInstance().addProperty("is.compressed.keyblock", "false")
-    CarbonProperties.getInstance().addProperty("carbon.leaf.node.size", "120000")
 
     // this property is used to determine whether temp location for carbon is inside
     // container temp dir or is yarn application directory.
-    val isCarbonUseLocalDir = CarbonProperties.getInstance()
-      .getProperty("carbon.use.local.dir", "false").equalsIgnoreCase("true")
-
-    val isCarbonUseMultiDir = CarbonProperties.getInstance().isUseMultiTempDir
-
+    val isCarbonUseLocalDir = CarbonProperties.USE_LOCAL_DIR_LOADING.getOrDefault()
+    val isCarbonUseMultiDir = CarbonProperties.USE_MULTI_TEMP_DIR.getOrDefault()
     if (isCarbonUseLocalDir) {
       val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
 
@@ -231,9 +221,7 @@ class NewCarbonDataLoadRDD[K, V](
         loadMetadataDetails.setPartitionCount(partitionID)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS)
 
-        val preFetch = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-          .USE_PREFETCH_WHILE_LOADING, CarbonCommonConstants.USE_PREFETCH_WHILE_LOADING_DEFAULT)
-        carbonLoadModel.setPreFetch(preFetch.toBoolean)
+        carbonLoadModel.setPreFetch(CarbonProperties.ENABLE_PREFETCH_WHILE_LOADING.getOrDefault)
         val recordReaders = getInputIterators
         val loader = new SparkPartitionLoader(model,
           theSplit.index,
@@ -437,12 +425,9 @@ class NewRddIterator(rddIter: Iterator[Row],
     carbonLoadModel: CarbonLoadModel,
     context: TaskContext) extends CarbonIterator[Array[AnyRef]] {
 
-  private val timeStampformatString = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  private val timeStampformatString = CarbonProperties.TIMESTAMP_FORMAT.getOrDefault()
   private val timeStampFormat = new SimpleDateFormat(timeStampformatString)
-  private val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-    .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+  private val dateFormatString = CarbonProperties.DATE_FORMAT.getOrDefault()
   private val dateFormat = new SimpleDateFormat(dateFormatString)
   private val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
   private val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
@@ -480,13 +465,9 @@ class LazyRddIterator(serializer: SerializerInstance,
     carbonLoadModel: CarbonLoadModel,
     context: TaskContext) extends CarbonIterator[Array[AnyRef]] {
 
-  private val timeStampformatString = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-      CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+  private val timeStampformatString = CarbonProperties.TIMESTAMP_FORMAT.getOrDefault()
   private val timeStampFormat = new SimpleDateFormat(timeStampformatString)
-  private val dateFormatString = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-      CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+  private val dateFormatString = CarbonProperties.DATE_FORMAT.getOrDefault()
   private val dateFormat = new SimpleDateFormat(dateFormatString)
   private val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
   private val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2

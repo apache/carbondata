@@ -24,12 +24,12 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.execution.streaming.{CarbonAppendableStreamSink, Sink}
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.DictionaryServer
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
@@ -79,18 +79,18 @@ object StreamSinkFactory {
   }
 
   private def validateParameters(parameters: Map[String, String]): Unit = {
-    val segmentSize = parameters.get(CarbonCommonConstants.HANDOFF_SIZE)
+    val segmentSize = parameters.get(CarbonProperties.HANDOFF_SIZE.getName)
     if (segmentSize.isDefined) {
       try {
-        val value = java.lang.Long.parseLong(segmentSize.get)
+        val value = Integer.parseInt(segmentSize.get)
         if (value < CarbonCommonConstants.HANDOFF_SIZE_MIN) {
-          new CarbonStreamException(CarbonCommonConstants.HANDOFF_SIZE +
+          new CarbonStreamException(CarbonProperties.HANDOFF_SIZE.getName +
                                     "should be bigger than or equal " +
                                     CarbonCommonConstants.HANDOFF_SIZE_MIN)
         }
       } catch {
         case ex: NumberFormatException =>
-          new CarbonStreamException(CarbonCommonConstants.HANDOFF_SIZE +
+          new CarbonStreamException(CarbonProperties.HANDOFF_SIZE.getName +
                                     s" $segmentSize is an illegal number")
       }
     }
@@ -146,9 +146,7 @@ object StreamSinkFactory {
       carbonTable: CarbonTable,
       parameters: Map[String, String],
       segmentId: String): CarbonLoadModel = {
-    val carbonProperty: CarbonProperties = CarbonProperties.getInstance()
-    carbonProperty.addProperty("zookeeper.enable.lock", "false")
-    val optionsFinal = DataLoadingUtil.getDataLoadingOptions(carbonProperty, parameters)
+    val optionsFinal = DataLoadingUtil.getDataLoadingOptions(parameters)
     optionsFinal.put("sort_scope", "no_sort")
     if (parameters.get("fileheader").isEmpty) {
       optionsFinal.put("fileheader", carbonTable.getCreateOrderColumn(carbonTable.getTableName)
@@ -157,7 +155,6 @@ object StreamSinkFactory {
     val carbonLoadModel = new CarbonLoadModel()
     DataLoadingUtil.buildCarbonLoadModel(
       carbonTable,
-      carbonProperty,
       parameters,
       optionsFinal,
       carbonLoadModel,
@@ -165,10 +162,8 @@ object StreamSinkFactory {
     carbonLoadModel.setSegmentId(segmentId)
     // stream should use one pass
     val dictionaryServerPort = parameters.getOrElse(
-      CarbonCommonConstants.DICTIONARY_SERVER_PORT,
-      carbonProperty.getProperty(
-        CarbonCommonConstants.DICTIONARY_SERVER_PORT,
-        CarbonCommonConstants.DICTIONARY_SERVER_PORT_DEFAULT))
+      "carbon.dictionary.server.port",
+      CarbonProperties.DICTIONARY_SERVER_PORT.getOrDefault().toString)
     val sparkDriverHost = sparkSession.sqlContext.sparkContext.
       getConf.get("spark.driver.host")
     carbonLoadModel.setDictionaryServerHost(sparkDriverHost)

@@ -26,14 +26,14 @@ import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.CarbonMetadata
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.core.util.CarbonUtil
 
 class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
 
-  val bad_records_action = CarbonProperties.getInstance()
-    .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
+  val bad_records_action = CarbonProperties.getInstance().getProperty("carbon.badRecords.action")
 
   protected def createAndLoadInputTable(inputTableName: String, inputPath: String): Unit = {
     sql(
@@ -87,8 +87,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   override def beforeAll(): Unit = {
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, LoggerAction.FORCE.name())
+    CarbonProperties.getInstance().addProperty("carbon.badRecords.action", LoggerAction.FORCE.name())
     dropTable("csv_table")
     dropTable("carbon_table")
     dropTable("carbon_table2")
@@ -100,13 +99,13 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     dropTable("csv_table")
     dropTable("carbon_table")
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+      "carbon.badRecords.action",
       bad_records_action)
 
   }
 
   private lazy val location =
-    CarbonProperties.getInstance().getProperty(CarbonCommonConstants.STORE_LOCATION)
+    CarbonProperties.getInstance().getProperty("carbon.storelocation")
 
 
   test("delete segment by id") {

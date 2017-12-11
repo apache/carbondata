@@ -35,10 +35,9 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnIdentifier;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.reader.CarbonDictionaryColumnMetaChunk;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 import org.junit.After;
 import org.junit.Before;
@@ -75,8 +74,7 @@ public class ReverseDictionaryCacheTest extends AbstractDictionaryCacheTest {
 
   private void createDictionaryCacheObject() {
     // enable lru cache by setting cache size
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
+    CarbonProperties.getInstance().addProperty("carbon.max.driver.lru.cache.size", "10");
     CacheProvider cacheProvider = CacheProvider.getInstance();
     cacheProvider.dropAllCache();
     reverseDictionaryCache =

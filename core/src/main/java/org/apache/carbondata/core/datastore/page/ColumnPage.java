@@ -32,7 +32,7 @@ import org.apache.carbondata.core.datastore.page.statistics.SimpleStatsResult;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE;
 import static org.apache.carbondata.core.metadata.datatype.DataTypes.BYTE_ARRAY;
@@ -60,9 +60,8 @@ public abstract class ColumnPage {
   // statistics collector for this column page
   private ColumnPageStatsCollector statsCollector;
 
-  protected static final boolean unsafe = Boolean.parseBoolean(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
-          CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT));
+  protected static final boolean unsafe =
+      CarbonProperties.ENABLE_UNSAFE_COLUMN_PAGE_LOADING.getOrDefault();
 
   /**
    * Create a new column page with input data type and page size.

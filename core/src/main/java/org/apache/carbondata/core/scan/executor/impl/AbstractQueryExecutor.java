@@ -66,7 +66,7 @@ import org.apache.carbondata.core.scan.model.QueryMeasure;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.stats.QueryStatistic;
 import org.apache.carbondata.core.stats.QueryStatisticsConstants;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -322,9 +322,8 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     int[] dimensionsBlockIndexes = QueryUtil.getDimensionsBlockIndexes(currentBlockQueryDimensions,
         segmentProperties.getDimensionOrdinalToBlockMapping(), expressionDimensions,
         currentBlockFilterDimensions, allProjectionListDimensionIdexes);
-    int numberOfColumnToBeReadInOneIO = Integer.parseInt(CarbonProperties.getInstance()
-        .getProperty(CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO,
-            CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO_DEFAULTVALUE));
+    int numberOfColumnToBeReadInOneIO =
+        CarbonProperties.NUMBER_OF_COLUMN_TO_READ_IN_IO.getOrDefault();
 
     if (dimensionsBlockIndexes.length > 0) {
       numberOfElementToConsider = dimensionsBlockIndexes[dimensionsBlockIndexes.length - 1]

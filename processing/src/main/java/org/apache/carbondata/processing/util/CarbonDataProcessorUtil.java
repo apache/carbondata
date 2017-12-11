@@ -46,7 +46,7 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -56,6 +56,7 @@ import org.apache.carbondata.processing.datatypes.PrimitiveDataType;
 import org.apache.carbondata.processing.datatypes.StructDataType;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
+import org.apache.carbondata.processing.loading.TempTablePath;
 import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions;
 
@@ -76,15 +77,8 @@ public final class CarbonDataProcessorUtil {
    * @param numberOfFiles
    * @return buffer size
    */
-  public static int getFileBufferSize(int numberOfFiles, CarbonProperties instance,
-      int deafultvalue) {
-    int configuredBufferSize = 0;
-    try {
-      configuredBufferSize =
-          Integer.parseInt(instance.getProperty(CarbonCommonConstants.SORT_FILE_BUFFER_SIZE));
-    } catch (NumberFormatException e) {
-      configuredBufferSize = deafultvalue;
-    }
+  public static int getFileBufferSize(int numberOfFiles) {
+    int configuredBufferSize = CarbonProperties.SORT_FILE_BUFFER_SIZE.getOrDefault();
     int fileBufferSize = (configuredBufferSize * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR
         * CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR) / numberOfFiles;
     if (fileBufferSize < CarbonCommonConstants.BYTE_TO_KB_CONVERSION_FACTOR) {
@@ -95,18 +89,17 @@ public final class CarbonDataProcessorUtil {
 
   /**
    * @param configuration
-   * @param storeLocation
+   * @param dbAndTableRelativePath
    */
   public static void renameBadRecordsFromInProgressToNormal(
-      CarbonDataLoadConfiguration configuration, String storeLocation) {
+      CarbonDataLoadConfiguration configuration, String dbAndTableRelativePath) {
     // get the base store location
     String badLogStoreLocation = (String) configuration
         .getDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH);
     if (null == badLogStoreLocation) {
-      badLogStoreLocation =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
+      badLogStoreLocation = CarbonProperties.BAD_RECORDS_LOCATION.getOrDefault();
     }
-    badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
+    badLogStoreLocation = badLogStoreLocation + File.separator + dbAndTableRelativePath;
 
     FileType fileType = FileFactory.getFileType(badLogStoreLocation);
     try {
@@ -188,8 +181,7 @@ public final class CarbonDataProcessorUtil {
     String tempLocationKey =
         getTempStoreLocationKey(databaseName, tableName, segmentId, taskId, isCompactionFlow,
             isAltPartitionFlow);
-    String baseTempStorePath = CarbonProperties.getInstance()
-        .getProperty(tempLocationKey);
+    String baseTempStorePath = TempTablePath.getTempTablePath(tempLocationKey);
     if (baseTempStorePath == null) {
       LOGGER.warn("Location not set for the key " + tempLocationKey
           + ". This will occur during a global-sort loading,"
@@ -469,18 +461,16 @@ public final class CarbonDataProcessorUtil {
     SortScopeOptions.SortScope sortScope;
     try {
       // first check whether user input it from ddl, otherwise get from carbon properties
-      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE) == null) {
-        sortScope = SortScopeOptions.getSortScope(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-                CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT));
+      if (configuration.getDataLoadProperty(CarbonProperties.LOAD_SORT_SCOPE.getName()) == null) {
+        sortScope = SortScopeOptions.getSortScope(CarbonProperties.LOAD_SORT_SCOPE.getOrDefault());
       } else {
         sortScope = SortScopeOptions.getSortScope(
-            configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_SORT_SCOPE)
+            configuration.getDataLoadProperty(CarbonProperties.LOAD_SORT_SCOPE.getName())
                 .toString());
       }
       LOGGER.warn("sort scope is set to " + sortScope);
     } catch (Exception e) {
-      sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
+      sortScope = SortScopeOptions.getSortScope(CarbonProperties.LOAD_SORT_SCOPE.getDefaultValue());
       LOGGER.warn("Exception occured while resolving sort scope. " +
           "sort scope is set to " + sortScope);
     }
@@ -492,15 +482,13 @@ public final class CarbonDataProcessorUtil {
     try {
       // first check whether user input it from ddl, otherwise get from carbon properties
       if (sortScopeString == null) {
-        sortScope = SortScopeOptions.getSortScope(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-                CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT));
+        sortScope = SortScopeOptions.getSortScope(CarbonProperties.LOAD_SORT_SCOPE.getOrDefault());
       } else {
         sortScope = SortScopeOptions.getSortScope(sortScopeString);
       }
       LOGGER.warn("sort scope is set to " + sortScope);
     } catch (Exception e) {
-      sortScope = SortScopeOptions.getSortScope(CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT);
+      sortScope = SortScopeOptions.getSortScope(CarbonProperties.LOAD_SORT_SCOPE.getDefaultValue());
       LOGGER.warn("Exception occured while resolving sort scope. " +
           "sort scope is set to " + sortScope);
     }
@@ -516,14 +504,12 @@ public final class CarbonDataProcessorUtil {
     int batchSortSizeInMb;
     try {
       // First try get from user input from ddl , otherwise get from carbon properties.
-      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
+      if (configuration.getDataLoadProperty(CarbonProperties.LOAD_BATCH_SORT_SIZE_INMB.getName())
           == null) {
-        batchSortSizeInMb = Integer.parseInt(CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-                CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT));
+        batchSortSizeInMb = CarbonProperties.LOAD_BATCH_SORT_SIZE_INMB.getOrDefault();
       } else {
         batchSortSizeInMb = Integer.parseInt(
-            configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB)
+            configuration.getDataLoadProperty(CarbonProperties.LOAD_BATCH_SORT_SIZE_INMB.getName())
                 .toString());
       }
       LOGGER.warn("batch sort size is set to " + batchSortSizeInMb);
@@ -544,14 +530,12 @@ public final class CarbonDataProcessorUtil {
     int numPartitions;
     try {
       // First try to get the number from ddl, otherwise get it from carbon properties.
-      if (configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
+      if (configuration.getDataLoadProperty(CarbonProperties.LOAD_GLOBAL_SORT_PARTITIONS.getName())
           == null) {
-        numPartitions = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
-            CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT));
+        numPartitions = CarbonProperties.LOAD_GLOBAL_SORT_PARTITIONS.getOrDefault();
       } else {
         numPartitions = Integer.parseInt(
-          configuration.getDataLoadProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS)
+          configuration.getDataLoadProperty(CarbonProperties.LOAD_GLOBAL_SORT_PARTITIONS.getName())
             .toString());
       }
     } catch (Exception e) {

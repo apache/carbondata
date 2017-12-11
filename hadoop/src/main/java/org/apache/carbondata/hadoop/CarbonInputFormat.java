@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.DataRefNode;
 import org.apache.carbondata.core.datastore.DataRefNodeFinder;
@@ -410,8 +411,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         continue;
       }
       carbonSplits.add(CarbonInputSplit.from(segmentId, fileSplit,
-          ColumnarFormatVersion.valueOf(
-              CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION)));
+          ColumnarFormatVersion.valueOf(CarbonProperties.DATA_FILE_VERSION.getDefaultValue())));
     }
     return carbonSplits;
   }

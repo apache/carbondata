@@ -66,7 +66,7 @@ import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
 import org.apache.carbondata.core.statusmanager.FileFormat;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverter;
@@ -266,7 +266,10 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     String dbName = identifier.getCarbonTableIdentifier().getDatabaseName().toLowerCase();
     String tbName = identifier.getCarbonTableIdentifier().getTableName().toLowerCase();
     String segmentNumbersFromProperty = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbName + "." + tbName, "*");
+        .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS + dbName + "." + tbName);
+    if (segmentNumbersFromProperty == null) {
+      segmentNumbersFromProperty = "*";
+    }
     if (!segmentNumbersFromProperty.trim().equals("*")) {
       CarbonTableInputFormat
           .setSegmentsToAccess(conf, Arrays.asList(segmentNumbersFromProperty.split(",")));

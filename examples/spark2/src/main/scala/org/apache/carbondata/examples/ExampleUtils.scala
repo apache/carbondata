@@ -21,8 +21,8 @@ import java.io.File
 
 import org.apache.spark.sql.{SaveMode, SparkSession}
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 // scalastyle:off println
 
@@ -38,11 +38,8 @@ object ExampleUtils {
     val storeLocation = s"$rootPath/examples/spark2/target/store"
     val warehouse = s"$rootPath/examples/spark2/target/warehouse"
 
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd HH:mm:ss")
-      .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy/MM/dd")
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
-      .addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "")
+    CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd HH:mm:ss")
+      .addProperty("carbon.date.format", "yyyy/MM/dd")
 
     import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
@@ -51,7 +48,7 @@ object ExampleUtils {
       .appName("CarbonSessionExample")
       .config("spark.sql.warehouse.dir", warehouse)
       .config("spark.driver.host", "localhost")
-      .getOrCreateCarbonSession(storeLocation)
+      .getOrCreateCarbonSession()
     spark.sparkContext.setLogLevel("WARN")
     spark
   }

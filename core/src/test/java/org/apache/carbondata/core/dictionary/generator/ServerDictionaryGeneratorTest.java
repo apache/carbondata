@@ -20,7 +20,6 @@ package org.apache.carbondata.core.dictionary.generator;
 import java.io.File;
 import java.util.Arrays;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -29,10 +28,9 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -55,8 +53,7 @@ public class ServerDictionaryGeneratorTest {
 
   @BeforeClass public static void setUp() throws Exception {
     // enable lru cache by setting cache size
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_MAX_DRIVER_LRU_CACHE_SIZE, "10");
+    CarbonProperties.getInstance().addProperty("carbon.max.driver.lru.cache.size", "10");
 
     // Create two column schemas and dimensions for the table
     empColumnSchema = new ColumnSchema();

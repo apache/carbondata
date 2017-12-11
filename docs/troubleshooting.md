@@ -37,7 +37,7 @@ java.io.FileNotFoundException: hdfs:/localhost:9000/carbon/store/default/hdfstab
   **Procedure**
   Before creating carbonsession, sets as below:
   ```
-  import org.apache.carbondata.core.util.CarbonProperties
+  import org.apache.carbondata.core.api.CarbonProperties
   import org.apache.carbondata.core.constants.CarbonCommonConstants
   CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE, "HDFSLOCK")
   ```

@@ -95,7 +95,7 @@ import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnRes
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.BitSetGroup;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeConverterImpl;
 import org.apache.carbondata.core.util.DataTypeUtil;
@@ -436,9 +436,7 @@ public final class FilterUtil {
     String result = null;
     try {
       int length = evaluateResultListFinal.size();
-      String timeFormat = CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-              CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+      String timeFormat = CarbonProperties.TIMESTAMP_FORMAT.getOrDefault();
       for (int i = 0; i < length; i++) {
         result = evaluateResultListFinal.get(i);
         if (CarbonCommonConstants.MEMBER_DEFAULT_VAL.equals(result)) {
@@ -1574,13 +1572,9 @@ public final class FilterUtil {
         }
         String format = null;
         if (dataType == DataTypes.DATE) {
-          format = CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-                  CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT);
+          format = CarbonProperties.DATE_FORMAT.getOrDefault();
         } else {
-          format = CarbonProperties.getInstance()
-              .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-                  CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+          format = CarbonProperties.TIMESTAMP_FORMAT.getOrDefault();
         }
         SimpleDateFormat parser = new SimpleDateFormat(format);
         Date date1 = null;

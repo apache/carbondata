@@ -46,7 +46,7 @@ import org.apache.carbondata.core.scan.filter.intf.FilterExecuterType;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.MeasureColumnResolvedFilterInfo;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverImpl {
@@ -161,9 +161,7 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
     }
     List<byte[]> filterValuesList = new ArrayList<byte[]>(20);
     boolean invalidRowsPresent = false;
-    String timeFormat = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-            CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT);
+    String timeFormat = CarbonProperties.TIMESTAMP_FORMAT.getOrDefault();
     for (ExpressionResult result : listOfExpressionResults) {
       try {
         if (result.getString() == null) {
@@ -292,9 +290,10 @@ public class RowLevelRangeFilterResolverImpl extends ConditionalFilterResolverIm
       // if any filter member provided by user is invalid throw error else
       // system can display inconsistent result.
       for (ExpressionResult result : listOfExpressionResults) {
-        filterValuesList.add(directDictionaryGenerator
-            .generateDirectSurrogateKey(result.getString(),
-                CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
+        filterValuesList.add(
+            directDictionaryGenerator.generateDirectSurrogateKey(
+                result.getString(),
+                CarbonProperties.TIMESTAMP_FORMAT.getOrDefault()));
       }
     } catch (FilterIllegalMemberException e) {
       throw new FilterUnsupportedException(e);

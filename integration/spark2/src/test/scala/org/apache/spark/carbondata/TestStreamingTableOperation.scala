@@ -31,6 +31,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.types.StructType
 import org.scalatest.BeforeAndAfterAll
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
@@ -589,7 +590,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       continueSeconds = 40,
       generateBadRecords = false,
       badRecordAction = "force",
-      handoffSize = 1024L * 200
+      handoffSize = 1024 * 200
     )
     assert(sql("show segments for table streaming.stream_table_new").count() > 1)
 
@@ -609,7 +610,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       continueSeconds = 15,
       generateBadRecords = false,
       badRecordAction = "force",
-      handoffSize = 1024L * 200
+      handoffSize = 1024 * 200
     )
     val beforeDelete = sql("show segments for table streaming.stream_table_delete").collect()
     val segmentId = beforeDelete.map(_.getString(0)).mkString(",")
@@ -631,7 +632,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       continueSeconds = 15,
       generateBadRecords = false,
       badRecordAction = "force",
-      handoffSize = 1024L * 200
+      handoffSize = 1024 * 200
     )
     val beforeDelete = sql("show segments for table streaming.stream_table_delete").collect()
 
@@ -664,7 +665,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         continueSeconds = 40,
         generateBadRecords = false,
         badRecordAction = "force",
-        handoffSize = 1024L * 200
+        handoffSize = 1024 * 200
       )
       checkAnswer(
         sql("select count(*) from streaming.stream_table_alter"),
@@ -694,7 +695,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       continueSeconds = 40,
       generateBadRecords = false,
       badRecordAction = "force",
-      handoffSize = 1024L * 200
+      handoffSize = 1024 * 200
     )
     val segments = sql("show segments for table streaming.stream_table_handoff").collect()
     assertResult(3)(segments.length)
@@ -783,7 +784,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       tableIdentifier: TableIdentifier,
       badRecordAction: String = "force",
       intervalSecond: Int = 2,
-      handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT): Thread = {
+      handoffSize: Int = CarbonProperties.HANDOFF_SIZE.getDefaultValue): Thread = {
     new Thread() {
       override def run(): Unit = {
         var qry: StreamingQuery = null
@@ -802,7 +803,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .option("bad_records_action", badRecordAction)
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)
-            .option(CarbonCommonConstants.HANDOFF_SIZE, handoffSize)
+            .option("carbon.streaming.segment.max.size", handoffSize)
             .start()
           qry.awaitTermination()
         } catch {
@@ -829,7 +830,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       continueSeconds: Int,
       generateBadRecords: Boolean,
       badRecordAction: String,
-      handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT
+      handoffSize: Int = CarbonProperties.HANDOFF_SIZE.getDefaultValue
   ): Unit = {
     val identifier = new TableIdentifier(tableName, Option("streaming"))
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.lookupRelation(identifier)(spark)

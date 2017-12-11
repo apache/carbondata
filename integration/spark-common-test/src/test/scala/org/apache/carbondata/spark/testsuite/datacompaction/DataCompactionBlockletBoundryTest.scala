@@ -17,9 +17,11 @@
 package org.apache.carbondata.spark.testsuite.datacompaction
 
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * FT for data compaction scenario.
@@ -30,7 +32,7 @@ class DataCompactionBlockletBoundryTest extends QueryTest with BeforeAndAfterAll
     sql("drop table if exists  blocklettest")
     sql("drop table if exists  Carbon_automation_hive")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "mm/dd/yyyy")
+      .addProperty("carbon.timestamp.format", "mm/dd/yyyy")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
         "125")
@@ -83,7 +85,7 @@ class DataCompactionBlockletBoundryTest extends QueryTest with BeforeAndAfterAll
     sql("drop table if exists  blocklettest")
     sql("drop table if exists  Carbon_automation_hive")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.BLOCKLET_SIZE,
         "" + CarbonCommonConstants.BLOCKLET_SIZE_DEFAULT_VAL)

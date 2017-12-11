@@ -22,9 +22,9 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.test.TestQueryExecutor.{hdfsUrl, integrationPath, warehouse}
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * This class is a sql executor of unit test case for spark version 2.x.
@@ -41,14 +41,11 @@ class Spark2TestQueryExecutor extends TestQueryExecutorRegister {
 
 object Spark2TestQueryExecutor {
 
-  private val STORE_LOCATION_TEMP_PATH = "carbon.tempstore.location"
-
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
   LOGGER.info("use TestQueryExecutorImplV2")
   CarbonProperties.getInstance()
-    .addProperty(STORE_LOCATION_TEMP_PATH, System.getProperty("java.io.tmpdir"))
-    .addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FORCE")
-
+    .addProperty("carbon.tempstore.location", System.getProperty("java.io.tmpdir"))
+    .addProperty("carbon.badRecords.location", "FORCE")
 
   import org.apache.spark.sql.CarbonSession._
 
@@ -73,8 +70,8 @@ object Spark2TestQueryExecutor {
     .config("spark.sql.crossJoin.enabled", "true")
     .getOrCreateCarbonSession(null, TestQueryExecutor.metastoredb)
   if (warehouse.startsWith("hdfs://")) {
-    System.setProperty(CarbonCommonConstants.HDFS_TEMP_LOCATION, warehouse)
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.LOCK_TYPE,
+    System.setProperty("hadoop.tmp.dir", warehouse)
+    CarbonProperties.getInstance().addProperty("carbon.lock.type",
       CarbonCommonConstants.CARBON_LOCK_TYPE_HDFS)
     ResourceRegisterAndCopier.
       copyResourcesifNotExists(hdfsUrl, s"$integrationPath/spark-common-test/src/test/resources",

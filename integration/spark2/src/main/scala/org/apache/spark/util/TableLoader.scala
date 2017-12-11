@@ -26,8 +26,8 @@ import org.apache.hadoop.fs.Path
 import org.apache.spark.sql._
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 
 /**
  * load data api
@@ -53,9 +53,9 @@ object TableLoader {
   }
 
   def extractStorePath(map: immutable.Map[String, String]): String = {
-    map.get(CarbonCommonConstants.STORE_LOCATION) match {
+    map.get("carbon.storelocation") match {
       case Some(path) => path
-      case None => throw new Exception(s"${CarbonCommonConstants.STORE_LOCATION} can't be empty")
+      case None => throw new Exception(s"carbon.storelocation can't be empty")
     }
   }
 
@@ -73,7 +73,7 @@ object TableLoader {
     args.foreach(System.out.println)
     val map = extractOptions(TableAPIUtil.escape(args(0)))
     val storePath = extractStorePath(map)
-    System.out.println(s"${CarbonCommonConstants.STORE_LOCATION}:$storePath")
+    System.out.println(s"carbon.storelocation: $storePath")
     val (dbName, tableName) = TableAPIUtil.parseSchemaName(TableAPIUtil.escape(args(1)))
     System.out.println(s"table name: $dbName.$tableName")
     val inputPaths = TableAPIUtil.escape(args(2))

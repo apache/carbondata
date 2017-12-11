@@ -17,7 +17,7 @@
 
 package org.apache.carbondata.core.util;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.stats.DriverQueryStatisticsRecorderDummy;
 import org.apache.carbondata.core.stats.DriverQueryStatisticsRecorderImpl;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorder;
@@ -25,9 +25,9 @@ import org.apache.carbondata.core.stats.QueryStatisticsRecorderDummy;
 import org.apache.carbondata.core.stats.QueryStatisticsRecorderImpl;
 
 public class CarbonTimeStatisticsFactory {
-  private static String loadStatisticsInstanceType;
+  private static boolean loadStatisticsEnabled;
   private static LoadStatistics loadStatisticsInstance;
-  private static String driverRecorderType;
+  private static boolean driverRecorderEnabled;
   private static QueryStatisticsRecorder driverRecorder;
 
   static {
@@ -37,16 +37,12 @@ public class CarbonTimeStatisticsFactory {
   }
 
   private static void updateTimeStatisticsUtilStatus() {
-    loadStatisticsInstanceType = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS,
-            CarbonCommonConstants.ENABLE_DATA_LOADING_STATISTICS_DEFAULT);
-    driverRecorderType = CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-                    CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
+    loadStatisticsEnabled = CarbonProperties.ENABLE_DATA_LOADING_STATISTICS.getOrDefault();
+    driverRecorderEnabled = CarbonProperties.ENABLE_QUERY_STATISTICS.getOrDefault();
   }
 
   private static LoadStatistics genLoadStatisticsInstance() {
-    if (loadStatisticsInstanceType.equalsIgnoreCase("true")) {
+    if (loadStatisticsEnabled) {
       return CarbonLoadStatisticsImpl.getInstance();
     } else {
       return CarbonLoadStatisticsDummy.getInstance();
@@ -58,7 +54,7 @@ public class CarbonTimeStatisticsFactory {
   }
 
   private static QueryStatisticsRecorder genDriverRecorder() {
-    if (driverRecorderType.equalsIgnoreCase("true")) {
+    if (driverRecorderEnabled) {
       return DriverQueryStatisticsRecorderImpl.getInstance();
     } else {
       return DriverQueryStatisticsRecorderDummy.getInstance();
@@ -70,10 +66,7 @@ public class CarbonTimeStatisticsFactory {
   }
 
   public static QueryStatisticsRecorder createExecutorRecorder(String queryId) {
-    String queryStatisticsRecorderType = CarbonProperties.getInstance()
-            .getProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS,
-                    CarbonCommonConstants.ENABLE_QUERY_STATISTICS_DEFAULT);
-    if (queryStatisticsRecorderType.equalsIgnoreCase("true")) {
+    if (CarbonProperties.ENABLE_QUERY_STATISTICS.getOrDefault()) {
       return new QueryStatisticsRecorderImpl(queryId);
     } else {
       return new QueryStatisticsRecorderDummy();

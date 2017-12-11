@@ -18,9 +18,11 @@ package org.apache.carbondata.integration.spark.testsuite.dataload
 
 import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for data loading when there are null measures in data
@@ -39,7 +41,7 @@ class TestLoadDataWithEmptyArrayColumns extends QueryTest with BeforeAndAfterAll
 
   test("test carbon table data loading when there are empty array columns in data") {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      .addProperty("carbon.timestamp.format",
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
       )
     sql(
@@ -58,6 +60,6 @@ class TestLoadDataWithEmptyArrayColumns extends QueryTest with BeforeAndAfterAll
   override def afterAll {
     sql("drop table nest13")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format", "dd-MM-yyyy")
   }
 }

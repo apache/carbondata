@@ -34,6 +34,7 @@ import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
+import org.apache.carbondata.core.api.CarbonProperties
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.block._
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
@@ -42,10 +43,11 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.mutate.UpdateVO
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentUpdateStatusManager}
-import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil, DataTypeUtil}
+import org.apache.carbondata.core.util.{CarbonUtil, DataTypeUtil}
 import org.apache.carbondata.hadoop.{CarbonInputSplit, CarbonMultiBlockSplit}
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.util.{CarbonInputFormatUtil, CarbonInputSplitTaskInfo}
+import org.apache.carbondata.processing.loading.TempTablePath
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger._
 import org.apache.carbondata.processing.splits.TableSplit
@@ -86,11 +88,7 @@ class CarbonMergerRDD[K, V](
       }
       // this property is used to determine whether temp location for carbon is inside
       // container temp dir or is yarn application directory.
-      val carbonUseLocalDir = CarbonProperties.getInstance()
-        .getProperty("carbon.use.local.dir", "false")
-
-      if (carbonUseLocalDir.equalsIgnoreCase("true")) {
-
+      if (CarbonProperties.USE_LOCAL_DIR_LOADING.getOrDefault()) {
         val storeLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
         if (null != storeLocations && storeLocations.nonEmpty) {
           storeLocation = storeLocations(Random.nextInt(storeLocations.length))
@@ -154,7 +152,7 @@ class CarbonMergerRDD[K, V](
             carbonLoadModel.getTaskNo,
             true,
             false)
-        CarbonProperties.getInstance().addProperty(tempLocationKey, storeLocation)
+        TempTablePath.setTempTablePath(tempLocationKey, storeLocation)
         LOGGER.info(s"Temp storeLocation taken is $storeLocation")
         // get destination segment properties as sent from driver which is of last segment.
         val segmentProperties = new SegmentProperties(

@@ -20,12 +20,11 @@ package org.apache.carbondata.core.scan.partition;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.comparator.Comparator;
 import org.apache.carbondata.core.util.comparator.SerializableComparator;
 
@@ -38,14 +37,6 @@ public class RangePartitioner implements Partitioner {
   private Object[] bounds;
   private SerializableComparator comparator;
 
-  private SimpleDateFormat timestampFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT));
-
-  private SimpleDateFormat dateFormatter = new SimpleDateFormat(CarbonProperties.getInstance()
-      .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
-          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT));
-
   public RangePartitioner(PartitionInfo partitionInfo) {
     List<String> values = partitionInfo.getRangeInfo();
     DataType partitionColumnDataType = partitionInfo.getColumnSchemaList().get(0).getDataType();
@@ -56,6 +47,10 @@ public class RangePartitioner implements Partitioner {
         bounds[i] = ByteUtil.toBytes(values.get(i));
       }
     } else {
+      SimpleDateFormat timestampFormatter = new SimpleDateFormat(
+          CarbonProperties.TIMESTAMP_FORMAT.getOrDefault());
+      SimpleDateFormat dateFormatter = new SimpleDateFormat(
+          CarbonProperties.DATE_FORMAT.getOrDefault());
       for (int i = 0; i < numPartitions; i++) {
         bounds[i] = PartitionUtil.getDataBasedOnDataType(values.get(i), partitionColumnDataType,
             timestampFormatter, dateFormatter);

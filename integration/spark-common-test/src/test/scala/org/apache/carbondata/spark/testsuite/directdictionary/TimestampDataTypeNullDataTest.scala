@@ -23,10 +23,12 @@ import java.sql.Timestamp
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
   * Test Class for detailed query on timestamp datatypes
@@ -52,13 +54,13 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
       )
 
       CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+        .addProperty("carbon.timestamp.format", "yyyy/MM/dd")
       val csvFilePath = s"$resourcesPath/datasamplenull.csv"
       sql("LOAD DATA LOCAL INPATH '" + csvFilePath + "' INTO TABLE timestampTyeNullData").collect();
 
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        .addProperty("carbon.timestamp.format",
           CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     }
   }
@@ -80,7 +82,7 @@ class TimestampDataTypeNullDataTest extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("drop table timestampTyeNullData")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+      .addProperty("carbon.timestamp.format",
         CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     CarbonProperties.getInstance().addProperty("carbon.direct.dictionary", "false")
   }

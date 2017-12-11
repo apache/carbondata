@@ -22,10 +22,12 @@ import java.sql.Timestamp
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.keygenerator.directdictionary.timestamp.TimeStampGranularityConstants
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
+
+import org.apache.carbondata.core.api.CarbonProperties
 
 /**
  * Test Class for detailed query on timestamp datatypes
@@ -34,7 +36,7 @@ class TimestampNoDictionaryColumnTestCase extends QueryTest with BeforeAndAfterA
 
   override def beforeAll {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,"dd-MM-yyyy")
+      .addProperty("carbon.timestamp.format","dd-MM-yyyy")
 
     try {
       sql("drop table if exists timestamp_nodictionary")
@@ -51,7 +53,7 @@ class TimestampNoDictionaryColumnTestCase extends QueryTest with BeforeAndAfterA
           + "('DELIMITER'= ',', 'QUOTECHAR'= '\"')");
     } catch {
       case x: Throwable => CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+        .addProperty("carbon.timestamp.format",
           CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     }
   }

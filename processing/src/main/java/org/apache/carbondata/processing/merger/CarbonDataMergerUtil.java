@@ -49,7 +49,7 @@ import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
-import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.api.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -101,13 +101,7 @@ public final class CarbonDataMergerUtil {
     // moving the load merge check in early to avoid unnecessary load listing causing IOException
     // check whether carbons segment merging operation is enabled or not.
     // default will be false.
-    String isLoadMergeEnabled = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-            CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE);
-    if (isLoadMergeEnabled.equalsIgnoreCase("false")) {
-      return false;
-    }
-    return true;
+    return CarbonProperties.ENABLE_AUTO_LOAD_MERGE.getOrDefault();
   }
 
   /**
@@ -452,23 +446,15 @@ public final class CarbonDataMergerUtil {
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     long numberOfDaysAllowedToMerge = 0;
-    try {
-      numberOfDaysAllowedToMerge = Long.parseLong(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
-              CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT));
-      if (numberOfDaysAllowedToMerge < 0 || numberOfDaysAllowedToMerge > 100) {
-        LOGGER.error(
-            "The specified value for property " + CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT
-                + " is incorrect."
-                + " Correct value should be in range of 0 -100. Taking the default value.");
-        numberOfDaysAllowedToMerge =
-            Long.parseLong(CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT);
-      }
-
-    } catch (NumberFormatException e) {
-      numberOfDaysAllowedToMerge =
-          Long.parseLong(CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT);
+    numberOfDaysAllowedToMerge = CarbonProperties.DAYS_ALLOWED_TO_COMPACT.getOrDefault();
+    if (numberOfDaysAllowedToMerge < 0 || numberOfDaysAllowedToMerge > 100) {
+      LOGGER.error(
+          "The specified value for property " + CarbonProperties.DAYS_ALLOWED_TO_COMPACT.getName()
+              + " is incorrect."
+              + " Correct value should be in range of 0 -100. Taking the default value.");
+      numberOfDaysAllowedToMerge = CarbonProperties.DAYS_ALLOWED_TO_COMPACT.getDefaultValue();
     }
+
     // if true then process loads according to the load date.
     if (numberOfDaysAllowedToMerge > 0) {
 
@@ -763,7 +749,7 @@ public final class CarbonDataMergerUtil {
     // check whether the preserving of the segments from merging is enabled or not.
     // get the number of loads to be preserved.
     int numberOfSegmentsToBePreserved =
-        CarbonProperties.getInstance().getNumberOfSegmentsToBePreserved();
+        CarbonProperties.PRESERVE_LATEST_SEGMENTS_NUMBER.getOrDefault();
     // get the number of valid segments and retain the latest loads from merging.
     return CarbonDataMergerUtil
         .getValidLoadDetailsWithRetaining(segments, numberOfSegmentsToBePreserved);
@@ -815,7 +801,7 @@ public final class CarbonDataMergerUtil {
     long compactionSize = 0;
     switch (compactionType) {
       case MAJOR:
-        compactionSize = CarbonProperties.getInstance().getMajorCompactionSize();
+        compactionSize = CarbonProperties.MAJOR_COMPACTION_SIZE.getOrDefault();
         break;
       default: // this case can not come.
     }
@@ -1104,20 +1090,6 @@ public final class CarbonDataMergerUtil {
       }
     }
     return blockLists;
-  }
-
-  /**
-   * Returns true is horizontal compaction is enabled.
-   * @return
-   */
-  public static boolean isHorizontalCompactionEnabled() {
-    if ((CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.isHorizontalCompactionEnabled,
-            CarbonCommonConstants.defaultIsHorizontalCompactionEnabled)).equalsIgnoreCase("true")) {
-      return true;
-    } else {
-      return false;
-    }
   }
 
   /**
