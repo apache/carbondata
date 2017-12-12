@@ -30,7 +30,6 @@ import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.spark.sql.test.util.QueryTest
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 
 class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
@@ -189,6 +188,18 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
       case _:Exception => assert(true)
     }
 
+  }
+
+  test("test if stale folders are deleting on data load") {
+    sql("drop table if exists stale")
+    sql("create table stale(a string) stored by 'carbondata'")
+    sql("insert into stale values('k')")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "stale")
+    val tableStatusFile = new CarbonTablePath(null,
+      carbonTable.getTablePath).getTableStatusFilePath
+    FileFactory.getCarbonFile(tableStatusFile).delete()
+    sql("insert into stale values('k')")
+    checkAnswer(sql("select * from stale"), Row("k"))
   }
 
   override def afterAll {

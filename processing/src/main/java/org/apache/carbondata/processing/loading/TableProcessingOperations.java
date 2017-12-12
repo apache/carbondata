@@ -74,8 +74,7 @@ public class TableProcessingOperations {
                 CarbonTablePath.DataPathUtil.getSegmentId(path.getAbsolutePath() + "/dummy");
             boolean found = false;
             for (int j = 0; j < details.length; j++) {
-              if (details[j].getLoadName().equals(segmentId) && details[j].getPartitionCount()
-                  .equals(partitionCount)) {
+              if (details[j].getLoadName().equals(segmentId)) {
                 found = true;
                 break;
               }
