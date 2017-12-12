@@ -99,28 +99,31 @@ private[sql] case class CarbonDescribeFormattedCommand(
       colProps.toString()
     }
     results ++= Seq(("", "", ""), ("##Detailed Table Information", "", ""))
-    results ++= Seq(("Database Name: ", relation.carbonTable.getDatabaseName, "")
+    results ++= Seq(("Database Name", relation.carbonTable.getDatabaseName, "")
     )
-    results ++= Seq(("Table Name: ", relation.carbonTable.getTableName, ""))
-    results ++= Seq(("CARBON Store Path: ", CarbonProperties.getStorePath, ""))
+    results ++= Seq(("Table Name", relation.carbonTable.getTableName, ""))
+    results ++= Seq(("CARBON Store Path ", CarbonProperties.getStorePath, ""))
     val carbonTable = relation.carbonTable
     // Carbon table support table comment
     val tableComment = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
       .getOrElse(CarbonCommonConstants.TABLE_COMMENT, "")
-    results ++= Seq(("Comment: ", tableComment, ""))
-    results ++= Seq(("Table Block Size : ", carbonTable.getBlockSizeInMB + " MB", ""))
+    results ++= Seq(("Comment", tableComment, ""))
+    results ++= Seq(("Table Block Size ", carbonTable.getBlockSizeInMB + " MB", ""))
     val dataIndexSize = CarbonUtil.calculateDataIndexSize(carbonTable)
     if (!dataIndexSize.isEmpty) {
-      results ++= Seq((CarbonCommonConstants.TABLE_DATA_SIZE + ":",
+      results ++= Seq((CarbonCommonConstants.TABLE_DATA_SIZE,
         dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE).toString, ""))
-      results ++= Seq((CarbonCommonConstants.TABLE_INDEX_SIZE + ":",
+      results ++= Seq((CarbonCommonConstants.TABLE_INDEX_SIZE,
         dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE).toString, ""))
-      results ++= Seq((CarbonCommonConstants.LAST_UPDATE_TIME + ":",
+      results ++= Seq((CarbonCommonConstants.LAST_UPDATE_TIME,
         dataIndexSize.get(CarbonCommonConstants.LAST_UPDATE_TIME).toString, ""))
     }
     results ++= Seq(("SORT_SCOPE", carbonTable.getTableInfo.getFactTable
       .getTableProperties.asScala.getOrElse("sort_scope", CarbonCommonConstants
       .LOAD_SORT_SCOPE_DEFAULT), CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
+    val isStreaming = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
+      .getOrElse("streaming", "false")
+    results ++= Seq(("Streaming", isStreaming, ""))
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {
       results ++= Seq((colPropStr, "", ""))
@@ -135,7 +138,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= getColumnGroups(dimension.asScala.toList)
     if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
       results ++=
-      Seq(("Partition Columns: ", carbonTable.getPartitionInfo(carbonTable.getTableName)
+      Seq(("Partition Columns", carbonTable.getPartitionInfo(carbonTable.getTableName)
         .getColumnSchemaList.asScala.map(_.getColumnName).mkString(","), ""))
     }
     results.map {
