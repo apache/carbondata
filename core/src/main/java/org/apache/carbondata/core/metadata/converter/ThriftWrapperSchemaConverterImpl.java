@@ -38,7 +38,6 @@ import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.metadata.schema.table.TableSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.metadata.schema.table.column.ParentColumnTableRelation;
-import org.apache.carbondata.core.preagg.TimeSeriesUDF;
 
 /**
  * Thrift schema to carbon schema converter and vice versa
@@ -201,10 +200,14 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
       }
       properties.put(CarbonCommonConstants.SORT_COLUMNS, "true");
     }
-    thriftColumnSchema.setAggregate_function(wrapperColumnSchema.getAggFunction());
-    if (null != wrapperColumnSchema.getTimeSeriesFunction() && !wrapperColumnSchema
+    if (null != wrapperColumnSchema.getAggFunction() && !wrapperColumnSchema.getAggFunction()
+        .isEmpty()) {
+      thriftColumnSchema.setAggregate_function(wrapperColumnSchema.getAggFunction());
+    } else if (null != wrapperColumnSchema.getTimeSeriesFunction() && !wrapperColumnSchema
         .getTimeSeriesFunction().isEmpty()) {
       thriftColumnSchema.setAggregate_function(wrapperColumnSchema.getTimeSeriesFunction());
+    } else {
+      thriftColumnSchema.setAggregate_function("");
     }
     List<ParentColumnTableRelation> parentColumnTableRelations =
         wrapperColumnSchema.getParentColumnTableRelations();
@@ -526,15 +529,7 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         wrapperColumnSchema.setSortColumn(true);
       }
     }
-    if (null != externalColumnSchema.getAggregate_function().toLowerCase()) {
-      if (TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION
-          .contains(externalColumnSchema.getAggregate_function().toLowerCase())) {
-        wrapperColumnSchema
-            .setTimeSeriesFunction(externalColumnSchema.getAggregate_function().toLowerCase());
-      } else {
-        wrapperColumnSchema.setAggFunction(externalColumnSchema.getAggregate_function());
-      }
-    }
+    wrapperColumnSchema.setFunction(externalColumnSchema.getAggregate_function());
     List<org.apache.carbondata.format.ParentColumnTableRelation> parentColumnTableRelation =
         externalColumnSchema.getParentColumnTableRelations();
     if (null != parentColumnTableRelation) {
