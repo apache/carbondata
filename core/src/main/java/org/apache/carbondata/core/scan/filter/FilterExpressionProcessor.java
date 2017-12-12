@@ -403,6 +403,17 @@ public class FilterExpressionProcessor implements FilterProcessor {
         return new TrueConditionalResolverImpl(expression, false, false, tableIdentifier);
       case EQUALS:
         currentCondExpression = (BinaryConditionalExpression) expression;
+        // check for implicit column in the expression
+        if (currentCondExpression instanceof InExpression) {
+          CarbonColumn carbonColumn =
+              currentCondExpression.getColumnList().get(0).getCarbonColumn();
+          if (carbonColumn.hasEncoding(Encoding.IMPLICIT)) {
+            return new ConditionalFilterResolverImpl(expression, isExpressionResolve, true,
+                tableIdentifier,
+                currentCondExpression.getColumnList().get(0).getCarbonColumn().isMeasure());
+          }
+        }
+
         CarbonColumn column = currentCondExpression.getColumnList().get(0).getCarbonColumn();
         if (currentCondExpression.isSingleColumn() && ! column.getDataType().isComplexType()) {
           if (column.isMeasure()) {
