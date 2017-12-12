@@ -19,6 +19,7 @@ package org.apache.carbondata.core.constants;
 
 import java.nio.charset.Charset;
 
+import org.apache.carbondata.core.api.CarbonProperties;
 
 public final class CarbonCommonConstants {
   /**
@@ -594,6 +595,16 @@ public final class CarbonCommonConstants {
   public static final String TIMESERIES_HIERARCHY = "timeseries.hierarchy";
 
   private CarbonCommonConstants() {
+  }
+
+  public static final CarbonProperties.RuntimeProperty<String> BAD_RECORDS_ACTION =
+      newStringProperty("carbon.bad.records.action")
+          .doc("FAIL action will fail the load in case of bad records in loading data")
+          .createWithDefault("FAIL");
+
+  @SuppressWarnings("unchecked")
+  private static CarbonProperties.PropertyBuilder<String> newStringProperty(String name) {
+    return new CarbonProperties.PropertyBuilder<>(String.class, name);
   }
 }
 

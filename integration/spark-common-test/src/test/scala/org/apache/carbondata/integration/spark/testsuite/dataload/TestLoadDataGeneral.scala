@@ -155,17 +155,14 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
   test("test load data with decimal type and sort intermediate files as 1") {
     sql("drop table if exists carbon_table")
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT, "1")
-      .addProperty(CarbonCommonConstants.SORT_SIZE, "1")
-      .addProperty(CarbonCommonConstants.DATA_LOAD_BATCH_SIZE, "1")
+      .addProperty("carbon.sort.intermediate.files.limit", "1")
+      .addProperty("carbon.sort.size", "1")
+      .addProperty("carbon.load.batch.size", "1")
     sql("create table if not exists carbonBigDecimal (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary decimal(27, 10)) STORED BY 'org.apache.carbondata.format'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalBoundaryDataCarbon.csv' into table carbonBigDecimal")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
-        CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)
-      .addProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL)
-      .addProperty(CarbonCommonConstants.DATA_LOAD_BATCH_SIZE,
-        CarbonCommonConstants.DATA_LOAD_BATCH_SIZE_DEFAULT)
+    CarbonProperties.getInstance().setToDefault("carbon.sort.intermediate.files.limit")
+    CarbonProperties.getInstance().setToDefault("carbon.sort.size")
+    CarbonProperties.getInstance().setToDefault("carbon.load.batch.size")
     sql("drop table if exists carbon_table")
   }
 
@@ -194,11 +191,8 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
   override def afterAll {
     sql("DROP TABLE if exists loadtest")
     sql("drop table if exists invalidMeasures")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT,
-        CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE)
-      .addProperty(CarbonCommonConstants.SORT_SIZE, CarbonCommonConstants.SORT_SIZE_DEFAULT_VAL)
-      .addProperty(CarbonCommonConstants.DATA_LOAD_BATCH_SIZE,
-        CarbonCommonConstants.DATA_LOAD_BATCH_SIZE_DEFAULT)
+    CarbonProperties.getInstance().setToDefault("carbon.sort.intermediate.files.limit")
+    CarbonProperties.getInstance().setToDefault("carbon.sort.size")
+    CarbonProperties.getInstance().setToDefault("carbon.load.batch.size")
   }
 }

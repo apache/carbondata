@@ -42,12 +42,10 @@ class TestDimensionWithDecimalDataType extends QueryTest with BeforeAndAfterAll 
 
   test("test unsafe with bigdecimal") {
     sql("drop table if exists unsafecarbonTable")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "true")
+    CarbonProperties.getInstance().addProperty("enable.unsafe.sort", "true")
     sql("CREATE TABLE IF NOT EXISTS unsafecarbonTable (ID Int, date Timestamp, country String, name String, phonetype String, serialname String, salary Decimal(19,2))STORED BY 'org.apache.carbondata.format'")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/decimalDataWithHeader.csv' into table unsafecarbonTable")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_SORT, "false")
+    CarbonProperties.getInstance().addProperty("enable.unsafe.sort", "false")
     sql("drop table if exists unsafecarbonTable")
   }
 

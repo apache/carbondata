@@ -49,7 +49,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
         .addProperty("carbon.badRecords.location",
           new File("./target/test/badRecords").getCanonicalPath)
       CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
-      CarbonProperties.getInstance().addProperty("carbon.badRecords.action", "FAIL")
+      CarbonProperties.getInstance().addProperty(CarbonCommonConstants.BAD_RECORDS_ACTION, "FAIL")
       sql("create table data_pm(name String, dob long, weight int) " +
           "STORED BY 'org.apache.carbondata.format'")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
@@ -63,7 +63,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
       }
     }
     finally {
-      CarbonProperties.getInstance().setToDefault("carbon.badRecords.action")
+      CarbonProperties.getInstance().setToDefault("carbon.bad.records.action")
     }
   }
 
@@ -74,7 +74,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
           new File("./target/test/badRecords").getCanonicalPath)
       CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
       CarbonProperties.getInstance().addProperty("enable.unsafe.sort", "true")
-      CarbonProperties.getInstance().addProperty("carbon.badRecords.action", "FAIL")
+      CarbonProperties.getInstance().addProperty("carbon.bad.records.action", "FAIL")
       sql("create table data_um(name String, dob long, weight int) " +
           "STORED BY 'org.apache.carbondata.format'")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
@@ -89,7 +89,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
     }
     finally {
       CarbonProperties.getInstance().addProperty("enable.unsafe.sort", "false")
-      CarbonProperties.getInstance().setToDefault("carbon.badRecords.action")
+      CarbonProperties.getInstance().setToDefault("carbon.bad.records.action")
     }
   }
 
@@ -100,7 +100,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
           new File("./target/test/badRecords").getCanonicalPath)
       CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
       CarbonProperties.getInstance().addProperty("carbon.load.sort.scope", "batch_sort")
-      CarbonProperties.getInstance().addProperty("carbon.badRecords.action", "FAIL")
+      CarbonProperties.getInstance().addProperty("carbon.bad.records.action", "FAIL")
       sql("create table data_bm(name String, dob long, weight int) " +
           "STORED BY 'org.apache.carbondata.format'")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
@@ -113,7 +113,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
     }
     finally {
       CarbonProperties.getInstance().setToDefault("carbon.load.sort.scope")
-      CarbonProperties.getInstance().setToDefault("carbon.badRecords.action")
+      CarbonProperties.getInstance().setToDefault("carbon.bad.records.action")
     }
   }
 
@@ -124,7 +124,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
           new File("./target/test/badRecords").getCanonicalPath)
       CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
       CarbonProperties.getInstance().addProperty("carbon.load.sort.scope", "BATCH_SORT")
-      CarbonProperties.getInstance().addProperty("carbon.badRecords.action", "FORCE")
+      CarbonProperties.getInstance().addProperty("carbon.bad.records.action", "FORCE")
       sql("create table data_bmf(name String, dob long, weight int) " +
           "STORED BY 'org.apache.carbondata.format'")
       val testData = s"$resourcesPath/badrecords/dummy.csv"
@@ -139,7 +139,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
     }
     finally {
       CarbonProperties.getInstance().setToDefault("carbon.load.sort.scope")
-      CarbonProperties.getInstance().setToDefault("carbon.badRecords.action")
+      CarbonProperties.getInstance().setToDefault("carbon.bad.records.action")
     }
   }
 
@@ -164,7 +164,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
     }
     finally {
       CarbonProperties.getInstance().setToDefault("carbon.load.sort.scope")
-      CarbonProperties.getInstance().setToDefault("carbon.badRecords.action")
+      CarbonProperties.getInstance().setToDefault("carbon.bad.records.action")
     }
   }
 
@@ -174,7 +174,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
         .addProperty("carbon.badRecords.location",
           new File("./target/test/badRecords").getCanonicalPath)
       CarbonProperties.getInstance().addProperty("carbon.timestamp.format", "yyyy/MM/dd")
-      CarbonProperties.getInstance().addProperty("carbon.badRecords.action", "FAIL")
+      CarbonProperties.getInstance().addProperty("carbon.bad.records.action", "FAIL")
       sql("create table data_tbm(name String, dob long, weight int) " +
           "stored by 'carbondata' tblproperties('bucketnumber'='4', " +
           "'bucketcolumns'='name', 'tableName'='data_tbm')")
@@ -187,7 +187,7 @@ class DataLoadFailAllTypeSortTest extends Spark2QueryTest with BeforeAndAfterAll
       }
     }
     finally {
-      CarbonProperties.getInstance().setToDefault("carbon.badRecords.action")
+      CarbonProperties.getInstance().setToDefault("carbon.bad.records.action")
     }
   }
   //

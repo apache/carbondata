@@ -32,8 +32,7 @@ class TestLoadDataWithAutoLoadMerge extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
     sql("DROP TABLE IF EXISTS automerge")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    CarbonProperties.getInstance().addProperty("carbon.enable.auto.load.merge", "true")
     sql(
       """
          CREATE TABLE automerge(id int, name string, city string, age int)
@@ -52,7 +51,6 @@ class TestLoadDataWithAutoLoadMerge extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll: Unit = {
     sql("DROP TABLE IF EXISTS automerge")
-    CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+    CarbonProperties.getInstance().setToDefault("carbon.enable.auto.load.merge")
   }
 }

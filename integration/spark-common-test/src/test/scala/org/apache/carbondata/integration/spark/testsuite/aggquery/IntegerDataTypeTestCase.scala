@@ -79,9 +79,7 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
   }
 
   test("short int table boundary test, unsafe column page") {
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true"
-    )
+    CarbonProperties.getInstance().addProperty("enable.unsafe.columnpage", "true")
     sql(
       """
         | DROP TABLE IF EXISTS short_int_table
@@ -165,9 +163,6 @@ class IntegerDataTypeTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll {
     sql("drop table if exists integertypetableAgg")
-    CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT
-    )
+    CarbonProperties.getInstance().setToDefault("enable.unsafe.columnpage")
   }
 }

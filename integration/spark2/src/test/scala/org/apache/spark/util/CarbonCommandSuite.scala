@@ -33,7 +33,7 @@ import org.apache.carbondata.core.util.CarbonUtil
 
 class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
 
-  val bad_records_action = CarbonProperties.getInstance().getProperty("carbon.badRecords.action")
+  val bad_records_action = CarbonProperties.getInstance().getProperty("carbon.bad.records.action")
 
   protected def createAndLoadInputTable(inputTableName: String, inputPath: String): Unit = {
     sql(
@@ -87,7 +87,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
   }
 
   override def beforeAll(): Unit = {
-    CarbonProperties.getInstance().addProperty("carbon.badRecords.action", LoggerAction.FORCE.name())
+    CarbonProperties.getInstance().addProperty("carbon.bad.records.action", LoggerAction.FORCE.name())
     dropTable("csv_table")
     dropTable("carbon_table")
     dropTable("carbon_table2")
@@ -99,7 +99,7 @@ class CarbonCommandSuite extends Spark2QueryTest with BeforeAndAfterAll {
     dropTable("csv_table")
     dropTable("carbon_table")
     CarbonProperties.getInstance().addProperty(
-      "carbon.badRecords.action",
+      "carbon.bad.records.action",
       bad_records_action)
 
   }

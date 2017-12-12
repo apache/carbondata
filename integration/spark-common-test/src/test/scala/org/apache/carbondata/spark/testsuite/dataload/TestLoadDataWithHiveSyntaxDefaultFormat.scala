@@ -749,6 +749,6 @@ class TestLoadDataWithHiveSyntaxDefaultFormat extends QueryTest with BeforeAndAf
     sql("drop table if exists comment_test")
     sql("drop table if exists double_test")
 
-    CarbonProperties.getInstance().addProperty("carbon.badRecords.action", bad_records_action)
+    CarbonProperties.getInstance().addProperty("carbon.bad.records.action", bad_records_action)
   }
 }

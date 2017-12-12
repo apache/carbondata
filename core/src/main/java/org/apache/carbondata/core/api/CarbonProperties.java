@@ -144,21 +144,21 @@ public final class CarbonProperties {
     }
   }
 
-  private static class PropertyBuilder<T> {
+  public static class PropertyBuilder<T> {
     private String name;
     private Class<T> type;
     private String doc;
     private T defaultValue;
 
-    private PropertyBuilder(Class<T> type, String name) {
+    public PropertyBuilder(Class<T> type, String name) {
       this.type = type;
       this.name = name;
     }
-    private PropertyBuilder<T> doc(String doc) {
+    public PropertyBuilder<T> doc(String doc) {
       this.doc = doc;
       return this;
     }
-    private RuntimeProperty<T> createWithDefault(T value) {
+    public RuntimeProperty<T> createWithDefault(T value) {
       this.defaultValue = type.cast(value);
       return new RuntimeProperty<>(type, name, defaultValue, doc);
     }
@@ -284,7 +284,7 @@ public final class CarbonProperties {
           .addTo(properties);
 
   public static final RuntimeProperty<String> BAD_RECORDS_ACTION =
-      newStringProperty("carbon.badRecords.action")
+      newStringProperty("carbon.bad.records.action")
           .doc("FAIL action will fail the load in case of bad records in loading data")
           .createWithDefault("FAIL")
           .addTo(properties);
@@ -1103,6 +1103,16 @@ public final class CarbonProperties {
       return defaultValue;
     }
     return value;
+  }
+
+  public CarbonProperties addProperty(RuntimeProperty property, String value) {
+    if (!properties.containsKey(property.getName())) {
+      LOGGER.error("Trying to add invalid property: " + property.getName());
+      throw new IllegalArgumentException("Invalid property name: " + property);
+    }
+    properties.get(property.getName()).setValue(value);
+    addedProperty.put(property.getName(), value);
+    return this;
   }
 
   /**
