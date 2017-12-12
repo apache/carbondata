@@ -27,7 +27,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException
 import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.processing.loading.DataLoadProcessBuilder
+import org.apache.carbondata.processing.loading.{DataLoadProcessBuilder, TableProcessingOperations}
 import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl
 import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable
 import org.apache.carbondata.processing.loading.exception.CarbonDataLoadingException
@@ -206,7 +206,7 @@ object DataLoadProcessorStepOnSpark {
         dataWriter.close()
       }
       // clean up the folders and files created locally for data load operation
-      CarbonLoaderUtil.deleteLocalDataLoadFolderLocation(model, false, false)
+      TableProcessingOperations.deleteLocalDataLoadFolderLocation(model, false, false)
     }
   }
 

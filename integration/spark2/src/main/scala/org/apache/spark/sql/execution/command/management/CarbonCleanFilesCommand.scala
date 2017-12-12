@@ -57,7 +57,7 @@ case class CarbonCleanFilesCommand(
     }
     val cleanFilesPostEvent: CleanFilesPostEvent =
       CleanFilesPostEvent(carbonTable, sparkSession)
-    OperationListenerBus.getInstance.fireEvent(cleanFilesPostEvent)
+    OperationListenerBus.getInstance.fireEvent(cleanFilesPostEvent, operationContext)
     Seq.empty
   }
 
@@ -76,10 +76,6 @@ case class CarbonCleanFilesCommand(
   private def cleanGarbageData(sparkSession: SparkSession,
       databaseNameOp: Option[String], tableName: String): Unit = {
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
-    val cleanFilesPreEvent: CleanFilesPreEvent =
-      CleanFilesPreEvent(carbonTable,
-        sparkSession)
-    OperationListenerBus.getInstance.fireEvent(cleanFilesPreEvent)
 
     CarbonStore.cleanFiles(
       CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
@@ -87,9 +83,6 @@ case class CarbonCleanFilesCommand(
       CarbonProperties.getStorePath,
       carbonTable,
       forceTableClean)
-
-    val cleanFilesPostEvent: CleanFilesPostEvent = CleanFilesPostEvent(carbonTable, sparkSession)
-    OperationListenerBus.getInstance.fireEvent(cleanFilesPostEvent)
   }
 
   private def cleanGarbageDataInAllTables(sparkSession: SparkSession): Unit = {

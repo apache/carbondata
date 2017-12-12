@@ -38,13 +38,12 @@ import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetad
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
-import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.partition.SplitPartitionCallable
 
 /**
@@ -233,7 +232,9 @@ case class CarbonAlterTableSplitPartitionCommand(
     } finally {
       executor.shutdown()
       try {
-        CarbonLoaderUtil.deletePartialLoadDataIfExist(carbonLoadModel, false)
+        TableProcessingOperations
+          .deletePartialLoadDataIfExist(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable,
+            false)
       } catch {
         case e: Exception =>
           LOGGER.error(s"Exception in add/split partition thread while deleting partial load file" +

@@ -80,12 +80,7 @@ public class SessionParams implements Serializable {
    * @return properties value
    */
   public SessionParams addProperty(String key, String value) throws InvalidConfigurationException {
-    boolean isValidConf = validateKeyValue(key, value);
-    if (isValidConf) {
-      LOGGER.audit("The key " + key + " with value " + value + " added in the session param");
-      sProps.put(key, value);
-    }
-    return this;
+    return addProperty(key, value, true);
   }
 
   /**

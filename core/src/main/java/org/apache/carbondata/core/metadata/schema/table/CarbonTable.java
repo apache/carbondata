@@ -273,6 +273,16 @@ public class CarbonTable implements Serializable {
   }
 
   /**
+   * to get the all dimension of a table
+   *
+   * @param tableName
+   * @return
+   */
+  public List<CarbonDimension> getImplicitDimensionByTableName(String tableName) {
+    return tableImplicitDimensionsMap.get(tableName);
+  }
+
+  /**
    * Read all primitive/complex children and set it as list of child carbon dimension to parent
    * dimension
    *

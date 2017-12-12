@@ -18,7 +18,6 @@ package org.apache.carbondata.processing.util;
 
 import java.io.BufferedWriter;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.InetAddress;
@@ -26,9 +25,6 @@ import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -56,8 +52,6 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
-import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
@@ -66,7 +60,6 @@ import org.apache.carbondata.processing.merger.NodeBlockRelation;
 import org.apache.carbondata.processing.merger.NodeMultiBlockRelation;
 
 import com.google.gson.Gson;
-import org.apache.commons.lang3.StringUtils;
 
 public final class CarbonLoaderUtil {
 
@@ -129,52 +122,6 @@ public final class CarbonLoaderUtil {
     }
     return true;
   }
-  public static void deletePartialLoadDataIfExist(CarbonLoadModel loadModel,
-      final boolean isCompactionFlow) throws IOException {
-    CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
-    String metaDataLocation = carbonTable.getMetaDataFilepath();
-    final LoadMetadataDetails[] details = SegmentStatusManager.readLoadMetadata(metaDataLocation);
-    CarbonTablePath carbonTablePath = CarbonStorePath
-        .getCarbonTablePath(loadModel.getTablePath(), carbonTable.getCarbonTableIdentifier());
-
-    //delete folder which metadata no exist in tablestatus
-    for (int i = 0; i < carbonTable.getPartitionCount(); i++) {
-      final String partitionCount = i + "";
-      String partitionPath = carbonTablePath.getPartitionDir(partitionCount);
-      FileType fileType = FileFactory.getFileType(partitionPath);
-      if (FileFactory.isFileExist(partitionPath, fileType)) {
-        CarbonFile carbonFile = FileFactory.getCarbonFile(partitionPath, fileType);
-        CarbonFile[] listFiles = carbonFile.listFiles(new CarbonFileFilter() {
-          @Override public boolean accept(CarbonFile path) {
-            String segmentId =
-                CarbonTablePath.DataPathUtil.getSegmentId(path.getAbsolutePath() + "/dummy");
-            boolean found = false;
-            for (int j = 0; j < details.length; j++) {
-              if (details[j].getLoadName().equals(segmentId) && details[j].getPartitionCount()
-                  .equals(partitionCount)) {
-                found = true;
-                break;
-              }
-            }
-            return !found;
-          }
-        });
-        for (int k = 0; k < listFiles.length; k++) {
-          String segmentId =
-              CarbonTablePath.DataPathUtil.getSegmentId(listFiles[k].getAbsolutePath() + "/dummy");
-          if (isCompactionFlow) {
-            if (segmentId.contains(".")) {
-              deleteStorePath(listFiles[k].getAbsolutePath());
-            }
-          } else {
-            if (!segmentId.contains(".")) {
-              deleteStorePath(listFiles[k].getAbsolutePath());
-            }
-          }
-        }
-      }
-    }
-  }
 
   public static void deleteStorePath(String path) {
     try {
@@ -186,53 +133,6 @@ public final class CarbonLoaderUtil {
     } catch (IOException | InterruptedException e) {
       LOGGER.error("Unable to delete the given path :: " + e.getMessage());
     }
-  }
-
-
-  /**
-   * This method will delete the local data load folder location after data load is complete
-   *
-   * @param loadModel
-   */
-  public static void deleteLocalDataLoadFolderLocation(CarbonLoadModel loadModel,
-      boolean isCompactionFlow, boolean isAltPartitionFlow) {
-    String databaseName = loadModel.getDatabaseName();
-    String tableName = loadModel.getTableName();
-    String tempLocationKey = CarbonDataProcessorUtil
-        .getTempStoreLocationKey(databaseName, tableName, loadModel.getSegmentId(),
-            loadModel.getTaskNo(), isCompactionFlow, isAltPartitionFlow);
-    // form local store location
-    final String localStoreLocations = CarbonProperties.getInstance().getProperty(tempLocationKey);
-    if (localStoreLocations == null) {
-      throw new RuntimeException("Store location not set for the key " + tempLocationKey);
-    }
-    // submit local folder clean up in another thread so that main thread execution is not blocked
-    ExecutorService localFolderDeletionService = Executors
-        .newFixedThreadPool(1, new CarbonThreadFactory("LocalFolderDeletionPool:" + tableName));
-    try {
-      localFolderDeletionService.submit(new Callable<Void>() {
-        @Override public Void call() throws Exception {
-          long startTime = System.currentTimeMillis();
-          String[] locArray = StringUtils.split(localStoreLocations, File.pathSeparator);
-          for (String loc : locArray) {
-            try {
-              CarbonUtil.deleteFoldersAndFiles(new File(loc));
-            } catch (IOException | InterruptedException e) {
-              LOGGER.error(e,
-                  "Failed to delete local data load folder location: " + loc);
-            }
-          }
-          LOGGER.info("Deleted the local store location: " + localStoreLocations
-                + " : Time taken: " + (System.currentTimeMillis() - startTime));
-          return null;
-        }
-      });
-    } finally {
-      if (null != localFolderDeletionService) {
-        localFolderDeletionService.shutdown();
-      }
-    }
-
   }
 
   /**

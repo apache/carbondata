@@ -357,22 +357,14 @@ class CarbonScanRDD(
         CarbonCommonConstants.USE_DISTRIBUTED_DATAMAP_DEFAULT).toBoolean) {
       CarbonTableInputFormat.setDataMapJob(conf, new SparkDataMapJob)
     }
+
+    // when validate segments is disabled in thread local update it to CarbonTableInputFormat
     val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
     if (carbonSessionInfo != null) {
-      val segmentsToScan = carbonSessionInfo.getSessionParams.getProperty(
-        CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
-        identifier.getCarbonTableIdentifier.getDatabaseName + "." +
-        identifier.getCarbonTableIdentifier.getTableName)
-      if (segmentsToScan != null) {
-        CarbonTableInputFormat.setAggeragateTableSegments(conf, segmentsToScan)
-      }
-      val validateSegments = carbonSessionInfo.getSessionParams.getProperty(
-        CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
-        identifier.getCarbonTableIdentifier.getDatabaseName + "." +
-        identifier.getCarbonTableIdentifier.getTableName)
-      if (validateSegments != null) {
-        CarbonTableInputFormat.setValidateSegmentsToAccess(conf, validateSegments.toBoolean)
-      }
+      CarbonTableInputFormat.setValidateSegmentsToAccess(conf, carbonSessionInfo.getSessionParams
+          .getProperty(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+                       identifier.getCarbonTableIdentifier.getDatabaseName + "." +
+                       identifier.getCarbonTableIdentifier.getTableName, "true").toBoolean)
     }
     format
   }
