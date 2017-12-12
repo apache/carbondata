@@ -29,8 +29,6 @@ import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOp
  */
 class CarbonSQLConf(sparkSession: SparkSession) {
 
-  val carbonProperties = CarbonProperties.getInstance()
-
   /**
    * To initialize dynamic param defaults along with usage docs
    */
@@ -66,15 +64,12 @@ class CarbonSQLConf(sparkSession: SparkSession) {
       SQLConfigBuilder(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE)
         .doc("Property to specify sort scope.")
         .stringConf
-        .createWithDefault(carbonProperties.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-          CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
+        .createWithDefault(CarbonProperties.LOAD_SORT_SCOPE.getDefaultValue)
     val BATCH_SORT_SIZE_INMB =
       SQLConfigBuilder(CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB)
         .doc("Property to specify batch sort size in MB.")
         .stringConf
-        .createWithDefault(carbonProperties
-          .getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-            CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))
+        .createWithDefault(CarbonProperties.LOAD_BATCH_SORT_SIZE_INMB.getDefaultValue.toString)
     val SINGLE_PASS =
       SQLConfigBuilder(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS)
         .doc("Property to enable/disable single_pass.")
@@ -89,9 +84,7 @@ class CarbonSQLConf(sparkSession: SparkSession) {
       SQLConfigBuilder(CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS)
         .doc("Property to configure the global sort partitions.")
         .stringConf
-        .createWithDefault(carbonProperties
-          .getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
-            CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT))
+        .createWithDefault(CarbonProperties.LOAD_GLOBAL_SORT_PARTITIONS.getDefaultValue.toString)
     val DATEFORMAT =
       SQLConfigBuilder(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT)
         .doc("Property to configure data format for date type columns.")
@@ -100,7 +93,7 @@ class CarbonSQLConf(sparkSession: SparkSession) {
     val CARBON_INPUT_SEGMENTS = SQLConfigBuilder(
       "carbon.input.segments.<database_name>.<table_name>")
       .doc("Property to configure the list of segments to query.").stringConf
-      .createWithDefault(carbonProperties
+      .createWithDefault(CarbonProperties.getInstance()
         .getProperty("carbon.input.segments.<database_name>.<table_name>", "*"))
   }
 
@@ -121,18 +114,15 @@ class CarbonSQLConf(sparkSession: SparkSession) {
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
       CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT.toBoolean)
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
-      carbonProperties.getProperty(CarbonCommonConstants.LOAD_SORT_SCOPE,
-        CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
+      CarbonProperties.LOAD_SORT_SCOPE.getOrDefault())
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB,
-      carbonProperties.getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-        CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))
+      CarbonProperties.LOAD_BATCH_SORT_SIZE_INMB.getOrDefault().toString)
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
       CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT.toBoolean)
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
       CarbonProperties.BAD_RECORDS_LOCATION.getOrDefault())
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS,
-      carbonProperties.getProperty(CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS,
-        CarbonCommonConstants.LOAD_GLOBAL_SORT_PARTITIONS_DEFAULT))
+      CarbonProperties.LOAD_GLOBAL_SORT_PARTITIONS.getOrDefault().toString)
     sparkSession.conf.set(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
       CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)
   }

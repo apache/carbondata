@@ -19,7 +19,6 @@ package org.apache.carbondata.core.constants;
 
 import java.nio.charset.Charset;
 
-import org.apache.carbondata.core.util.CarbonProperty;
 
 public final class CarbonCommonConstants {
   /**

@@ -61,12 +61,11 @@ case class CarbonCreateTableCommand(
     val tableInfo: TableInfo = TableNewProcessor(cm, tableIdentifier)
 
     // Add validation for sort scope when create table
-    val sortScope = tableInfo.getFactTable.getTableProperties.asScala
-      .getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
-    if (!CarbonUtil.isValidSortOption(sortScope)) {
+    val sortScopeOp = tableInfo.getFactTable.getTableProperties.asScala.get("sort_scope")
+    if (sortScopeOp.isDefined && !CarbonUtil.isValidSortOption(sortScopeOp.get)) {
       throw new InvalidConfigurationException(
-        s"Passing invalid SORT_SCOPE '$sortScope', valid SORT_SCOPE are 'NO_SORT', 'BATCH_SORT'," +
-        s" 'LOCAL_SORT' and 'GLOBAL_SORT' ")
+        s"Passing invalid SORT_SCOPE '${sortScopeOp.get}', valid SORT_SCOPE are 'NO_SORT', " +
+        "'BATCH_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT' ")
     }
 
     if (tableInfo.getFactTable.getListOfColumns.size <= 0) {

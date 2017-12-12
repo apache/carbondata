@@ -110,9 +110,7 @@ case class CarbonLoadDataCommand(
           "sort_scope",
           CarbonProperties.getInstance.getProperty(
             CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE,
-            CarbonProperties.getInstance.getProperty(
-              CarbonCommonConstants.LOAD_SORT_SCOPE,
-              CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))))
+            CarbonProperties.LOAD_SORT_SCOPE.getOrDefault())))
 
       val carbonLoadModel = new CarbonLoadModel()
       val factPath = if (dataFrame.isDefined) {

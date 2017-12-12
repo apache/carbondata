@@ -119,9 +119,10 @@ private[sql] case class CarbonDescribeFormattedCommand(
       results ++= Seq((CarbonCommonConstants.LAST_UPDATE_TIME + ":",
         dataIndexSize.get(CarbonCommonConstants.LAST_UPDATE_TIME).toString, ""))
     }
-    results ++= Seq(("SORT_SCOPE", carbonTable.getTableInfo.getFactTable
-      .getTableProperties.asScala.getOrElse("sort_scope", CarbonCommonConstants
-      .LOAD_SORT_SCOPE_DEFAULT), CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
+    results ++= Seq(("SORT_SCOPE",
+      carbonTable.getTableInfo.getFactTable.getTableProperties.asScala.getOrElse(
+        "sort_scope", CarbonProperties.LOAD_SORT_SCOPE.getDefaultValue),
+      CarbonProperties.LOAD_SORT_SCOPE.getDefaultValue))
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {
       results ++= Seq((colPropStr, "", ""))

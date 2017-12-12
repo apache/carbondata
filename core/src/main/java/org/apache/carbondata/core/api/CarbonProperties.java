@@ -1094,16 +1094,16 @@ public final class CarbonProperties {
     return value;
   }
 
-//  /**
-//   * Return property value by name, return defaultValue if key does not exist or value is null
-//   */
-//  public String getProperty(String name, String defaultValue) {
-//    String value = getProperty(name);
-//    if (null == value) {
-//      return defaultValue;
-//    }
-//    return value;
-//  }
+  /**
+   * Return property value by name, return defaultValue if key does not exist or value is null
+   */
+  public String getProperty(String name, String defaultValue) {
+    String value = getProperty(name);
+    if (null == value) {
+      return defaultValue;
+    }
+    return value;
+  }
 
   /**
    * Set property name with value, it will throw IllegalArgumentException or

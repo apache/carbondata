@@ -130,9 +130,7 @@ object DataLoadingUtil {
         "batch_sort_size_inmb",
         CarbonProperties.getInstance.getProperty(
           CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB,
-          CarbonProperties.getInstance.getProperty(
-            CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-            CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))))
+          CarbonProperties.LOAD_BATCH_SORT_SIZE_INMB.getOrDefault().toString)))
 
     optionsFinal.put(
       "bad_record_path",
