@@ -17,8 +17,6 @@
 
 package org.apache.carbondata.spark.testsuite.partition
 
-import java.sql.Timestamp
-
 import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
 import org.scalatest.BeforeAndAfterAll
