@@ -80,7 +80,7 @@ object CarbonFilters {
         case sources.In(name, values) =>
           Some(new InExpression(getCarbonExpression(name),
             new ListExpression(
-              convertToJavaList(values.map(f => getCarbonLiteralExpression(name, f)).toList))))
+              convertToJavaList(values.filterNot(_ == null).map(f => getCarbonLiteralExpression(name, f)).toList))))
         case sources.Not(sources.In(name, values)) =>
           Some(new NotInExpression(getCarbonExpression(name),
             new ListExpression(
