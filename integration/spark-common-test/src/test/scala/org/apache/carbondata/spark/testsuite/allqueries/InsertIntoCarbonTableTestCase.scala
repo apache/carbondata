@@ -278,6 +278,18 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     assert(rowCount == sql("select imei from TCarbonSourceOverwrite").count())
   }
 
+  test("test show segments after clean files for insert overwrite") {
+    sql("drop table if exists show_insert")
+    sql("create table show_insert (name String, age int) stored by 'carbondata'")
+    sql("insert into show_insert select 'abc',1")
+    sql("insert into show_insert select 'abc',1")
+    sql("insert into show_insert select 'abc',1")
+    sql("insert overwrite table show_insert select * from show_insert")
+    assert(sql("show segments for table show_insert").collect().length == 4)
+    sql("clean files for table show_insert")
+    assert(sql("show segments for table show_insert").collect().length == 1)
+  }
+
   override def afterAll {
     sql("drop table if exists load")
     sql("drop table if exists inser")
@@ -296,6 +308,7 @@ class InsertIntoCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists carbon_table")
     sql("DROP TABLE IF EXISTS student")
     sql("DROP TABLE IF EXISTS uniqdata")
+    sql("DROP TABLE IF EXISTS show_insert")
 
     if (timeStampPropOrig != null) {
       CarbonProperties.getInstance()
