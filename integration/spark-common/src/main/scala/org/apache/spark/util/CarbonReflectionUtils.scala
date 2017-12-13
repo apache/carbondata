@@ -189,7 +189,7 @@ object CarbonReflectionUtils {
       createObject(
         "org.apache.spark.sql.hive.CarbonSqlAstBuilder",
         conf,
-        sqlParser)._1.asInstanceOf[AstBuilder]
+        sqlParser, sparkSession)._1.asInstanceOf[AstBuilder]
     } else {
       throw new UnsupportedOperationException("Spark version not supported")
     }
