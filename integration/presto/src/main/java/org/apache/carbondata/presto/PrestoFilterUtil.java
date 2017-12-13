@@ -175,7 +175,7 @@ public class PrestoFilterUtil {
       } else if (singleValues.size() > 1) {
         ListExpression candidates = null;
         List<Expression> exs = singleValues.stream()
-            .map((a) -> new LiteralExpression(ConvertDataByType(a, type), coltype))
+            .map((a) -> new LiteralExpression(a, coltype))
             .collect(Collectors.toList());
         candidates = new ListExpression(exs);
         filters.add(new InExpression(colExpression, candidates));
