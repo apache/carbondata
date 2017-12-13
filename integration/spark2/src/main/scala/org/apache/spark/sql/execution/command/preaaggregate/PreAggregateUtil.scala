@@ -504,6 +504,7 @@ object PreAggregateUtil {
       queryString: String,
       segmentToLoad: String,
       validateSegments: Boolean,
+      isOverwrite: Boolean,
       sparkSession: SparkSession): Unit = {
     CarbonSession.threadSet(
       CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
@@ -525,7 +526,7 @@ object PreAggregateUtil {
         null,
         Nil,
         Map("fileheader" -> headers),
-        isOverwriteTable = false,
+        isOverwriteTable = isOverwrite,
         dataFrame = Some(dataFrame),
         internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true")).
         run(sparkSession)

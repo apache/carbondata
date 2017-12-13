@@ -143,6 +143,7 @@ case class CreatePreAggregateTableCommand(
           queryString,
           segmentToLoad = "*",
           validateSegments = true,
+          isOverwrite = false,
           sparkSession = sparkSession)
     }
     Seq.empty

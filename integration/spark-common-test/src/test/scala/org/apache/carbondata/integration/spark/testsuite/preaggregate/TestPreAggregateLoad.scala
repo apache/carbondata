@@ -187,4 +187,20 @@ class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from maintable_preagg_sum"), Row(1, 52))
   }
 
+  test("test if pre-aagregate is overwritten if main table is inserted with insert overwrite") {
+    sql("DROP TABLE IF EXISTS maintable")
+    sql(
+      """
+        | CREATE TABLE maintable(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(
+      s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id, sum(age) from maintable group by id"""
+        .stripMargin)
+    sql(s"insert into maintable values(1, 'xyz', 'bengaluru', 26)")
+    sql(s"insert into maintable values(1, 'xyz', 'bengaluru', 26)")
+    sql(s"insert overwrite table maintable values(1, 'xyz', 'delhi', 29)")
+    checkAnswer(sql("select * from maintable_preagg_sum"), Row(1, 29))
+  }
+
 }
