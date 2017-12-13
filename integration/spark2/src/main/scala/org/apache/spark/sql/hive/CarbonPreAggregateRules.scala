@@ -37,7 +37,7 @@ import org.apache.spark.util.CarbonReflectionUtils
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.preagg.{AggregateTableSelector, QueryColumn, QueryPlan}
-import org.apache.carbondata.core.util.CarbonUtil
+import org.apache.carbondata.core.util.{CarbonUtil, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
@@ -263,6 +263,9 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           isValidPlan = false
           null
       }
+      if (isValidPlan && null != carbonTable) {
+        isValidPlan = isSpecificSegmentPresent(carbonTable)
+      }
       // if plan is valid then update the plan with child attributes
       if (isValidPlan) {
         // getting all the projection columns
@@ -308,6 +311,26 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       } else {
         plan
       }
+    }
+  }
+
+  /**
+   * Below method will be used to check whether specific segment is set for maintable
+   * if it is present then no need to transform the plan and query will be executed on
+   * maintable
+   * @param carbonTable
+   *                    parent table
+   * @return is specific segment is present in session params
+   */
+  def isSpecificSegmentPresent(carbonTable: CarbonTable) : Boolean = {
+    val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (carbonSessionInfo != null) {
+      carbonSessionInfo.getSessionParams
+        .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+                     carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier
+                       .getDatabaseName + "." + carbonTable.getTableName, "").isEmpty
+    } else {
+      true
     }
   }
 
