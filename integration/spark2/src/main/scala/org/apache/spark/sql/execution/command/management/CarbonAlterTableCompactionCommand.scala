@@ -199,22 +199,33 @@ case class CarbonAlterTableCompactionCommand(
                 carbonTable.getAbsoluteTableIdentifier).asScala,
               carbonLoadModel.getTablePath,
               carbonTable, true)
-            lock.unlock()
-            return
+
+            // trigger event for merge index
+            val operationContext = new OperationContext
+            val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
+              AlterTableCompactionPreEvent(sqlContext.sparkSession,
+                carbonTable,
+                null,
+                "")
+            OperationListenerBus.getInstance
+              .fireEvent(alterTableCompactionPreEvent, operationContext)
+
+          } else {
+            CarbonDataRDDFactory.startCompactionThreads(
+              sqlContext,
+              carbonLoadModel,
+              storeLocation,
+              compactionModel,
+              lock,
+              operationContext
+            )
           }
-          CarbonDataRDDFactory.startCompactionThreads(
-            sqlContext,
-            carbonLoadModel,
-            storeLocation,
-            compactionModel,
-            lock,
-            operationContext
-          )
         } catch {
           case e: Exception =>
             LOGGER.error(s"Exception in start compaction thread. ${ e.getMessage }")
-            lock.unlock()
             throw e
+        } finally {
+          lock.unlock()
         }
       } else {
         LOGGER.audit("Not able to acquire the compaction lock for table " +
