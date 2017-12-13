@@ -514,9 +514,16 @@ object PreAggregateUtil {
       CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
       parentCarbonTable.getDatabaseName + "." +
       parentCarbonTable.getTableName, validateSegments.toString)
-    val headers = parentCarbonTable.getTableInfo.getDataMapSchemaList.asScala.
-      find(_.getChildSchema.getTableName.equals(dataMapIdentifier.table)).get.getChildSchema.
-      getListOfColumns.asScala.map(_.getColumnName).mkString(",")
+    val dataMapSchemas = parentCarbonTable.getTableInfo.getDataMapSchemaList.asScala
+    val headers = dataMapSchemas.find(_.getChildSchema.getTableName.equalsIgnoreCase(
+      dataMapIdentifier.table)) match {
+      case Some(dataMapSchema) =>
+        dataMapSchema.getChildSchema.getListOfColumns.asScala.map(_.getColumnName).mkString(",")
+      case None =>
+        throw new RuntimeException(
+          s"${ dataMapIdentifier.table} datamap not found in DataMapSchema list: ${
+          dataMapSchemas.map(_.getChildSchema.getTableName).mkString("[", ",", "]")}")
+    }
     val dataFrame = sparkSession.sql(new CarbonSpark2SqlParser().addPreAggLoadFunction(
       queryString)).drop("preAggLoad")
     try {
