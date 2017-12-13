@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.hive
 
+import java.net.URI
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
 
@@ -527,5 +528,48 @@ class CarbonFileMetastore extends CarbonMetaStore {
     (sparkSession: SparkSession): TableInfo = {
     val tableMetadataFile = tablePath.getSchemaFilePath
     CarbonUtil.readSchemaFile(tableMetadataFile)
+  }
+
+  override def createCarbonDataSourceHadoopRelation(
+      sparkSession: SparkSession,
+      tableIdentifier: TableIdentifier): CarbonDatasourceHadoopRelation = {
+    val relation: LogicalPlan = sparkSession.sessionState.catalog.lookupRelation(tableIdentifier)
+    relation match {
+      case SubqueryAlias(_,
+      LogicalRelation(carbonDataSourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _)) =>
+        carbonDataSourceHadoopRelation
+      case LogicalRelation(
+      carbonDataSourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
+        carbonDataSourceHadoopRelation
+      case SubqueryAlias(_, c)
+        if SPARK_VERSION.startsWith("2.2") &&
+           (c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
+            c.getClass.getName
+              .equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
+            c.getClass.getName.equals(
+              "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
+        val catalogTable =
+          CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta", c).asInstanceOf[CatalogTable]
+        catalogTable.provider match {
+          case Some(name) if name.equals("org.apache.spark.sql.CarbonSource") => name
+          case _ =>
+            throw new NoSuchTableException(tableIdentifier.database.get, tableIdentifier.table)
+        }
+        val tableLocation = catalogTable.storage.locationUri match {
+          case tableLoc@Some(uri) =>
+            if (tableLoc.get.isInstanceOf[String]) {
+              FileFactory.getUpdatedFilePath(tableLoc.get.asInstanceOf[String])
+            } else if (tableLoc.get.isInstanceOf[URI]) {
+              FileFactory.getUpdatedFilePath(tableLoc.get.asInstanceOf[URI].getPath)
+            }
+          case None =>
+            CarbonEnv.getTablePath(tableIdentifier.database, tableIdentifier.table)(sparkSession)
+        }
+        CarbonDatasourceHadoopRelation(sparkSession,
+          Array(tableLocation.asInstanceOf[String]),
+          catalogTable.storage.properties,
+          Option(catalogTable.schema))
+      case _ => throw new NoSuchTableException(tableIdentifier.database.get, tableIdentifier.table)
+    }
   }
 }

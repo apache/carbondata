@@ -26,14 +26,12 @@ import org.apache.spark.sql.catalyst.parser.SqlBaseParser._
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.SparkSqlAstBuilder
 import org.apache.spark.sql.execution.command.{PartitionerField, TableModel, TableNewProcessor}
-import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
+import org.apache.spark.sql.execution.command.table.{CarbonCreateTableAsSelectCommand, CarbonCreateTableCommand}
 import org.apache.spark.sql.internal.{SQLConf, VariableSubstitution}
 import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
@@ -78,7 +76,9 @@ class CarbonSparkSqlParser(conf: SQLConf, sparkSession: SparkSession) extends Ab
   }
 }
 
-class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
+class CarbonHelperSqlAstBuilder(conf: SQLConf,
+    parser: CarbonSpark2SqlParser,
+    sparkSession: SparkSession)
   extends SparkSqlAstBuilder(conf) {
 
   def getFileStorage(createFileFormat: CreateFileFormatContext): String = {
@@ -147,7 +147,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
       tablePropertyList : TablePropertyListContext,
       locationSpecContext: SqlBaseParser.LocationSpecContext,
       tableComment : Option[String],
-      ctas: TerminalNode) : LogicalPlan = {
+      ctas: TerminalNode,
+      query: QueryContext) : LogicalPlan = {
     // val parser = new CarbonSpark2SqlParser
 
     val (tableIdentifier, temp, ifNotExists, external) = visitCreateTableHeader(tableHeader)
@@ -165,9 +166,6 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     }
     if (external) {
       operationNotAllowed("CREATE EXTERNAL TABLE", tableHeader)
-    }
-    if (ctas != null && columns != null) {
-      operationNotAllowed("CREATE TABLE AS SELECT", tableHeader)
     }
 
     val cols = Option(columns).toSeq.flatMap(visitColTypeList)
@@ -210,13 +208,33 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
       }
     }
 
-    val fields = parser.getFields(cols ++ partitionByStructFields)
     val options = new CarbonOption(properties)
+    // validate streaming property
+    validateStreamingProperty(options)
+    var fields = parser.getFields(cols ++ partitionByStructFields)
+    // validate for create table as select
+    val selectQuery = Option(query).map(plan)
+    selectQuery match {
+      case Some(q) =>
+        // create table as select does not allow creation of partitioned table
+        if (partitionFields.nonEmpty) {
+          val errorMessage = "A Create Table As Select (CTAS) statement is not allowed to " +
+                             "create a partitioned table using Carbondata file formats."
+          operationNotAllowed(errorMessage, partitionColumns)
+        }
+        // create table as select does not allow to explicitly specify schema
+        if (fields.nonEmpty) {
+          operationNotAllowed(
+            "Schema may not be specified in a Create Table As Select (CTAS) statement", columns)
+        }
+        fields = parser
+          .getFields(CarbonEnv.getInstance(sparkSession).carbonMetastore
+            .getSchemaFromUnresolvedRelation(sparkSession, Some(q).get))
+      case _ =>
+        // ignore this case
+    }
     // validate tblProperties
     val bucketFields = parser.getBucketFields(tableProperties, fields, options)
-
-    validateStreamingProperty(options)
-
     // prepare table model of the collected tokens
     val tableModel: TableModel = parser.prepareTableModel(
       ifNotExists,
@@ -228,7 +246,19 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
       bucketFields,
       isAlterFlow = false,
       tableComment)
-    CarbonCreateTableCommand(TableNewProcessor(tableModel), tableModel.ifNotExistsSet, tablePath)
+
+    selectQuery match {
+      case query@Some(q) =>
+        CarbonCreateTableAsSelectCommand(
+          TableNewProcessor(tableModel),
+          query.get,
+          tableModel.ifNotExistsSet,
+          tablePath)
+      case _ =>
+        CarbonCreateTableCommand(TableNewProcessor(tableModel),
+          tableModel.ifNotExistsSet,
+          tablePath)
+    }
   }
 
   private def validateStreamingProperty(carbonOption: CarbonOption): Unit = {
