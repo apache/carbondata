@@ -314,7 +314,6 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
    * If this option is set to TRUE then data loading will take less time.
    * If this option is set to some invalid value other than TRUE or FALSE then it uses the default value.
    * If this option is set to TRUE, then high.cardinality.identify.enable property will be disabled during data load.
-   * For first Load SINGLE_PASS loading option is disabled.
 
    Example:
 
