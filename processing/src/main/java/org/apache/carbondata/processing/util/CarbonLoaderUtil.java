@@ -24,7 +24,17 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -58,8 +68,10 @@ import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.merger.NodeBlockRelation;
 import org.apache.carbondata.processing.merger.NodeMultiBlockRelation;
+import static org.apache.carbondata.core.enums.EscapeSequences.*;
 
 import com.google.gson.Gson;
+
 
 public final class CarbonLoaderUtil {
 
@@ -328,6 +340,27 @@ public final class CarbonLoaderUtil {
 
     return date;
   }
+
+  public static boolean isValidEscapeSequence(String escapeChar) {
+    return escapeChar.equalsIgnoreCase(NEW_LINE.getName()) ||
+        escapeChar.equalsIgnoreCase(CARRIAGE_RETURN.getName()) ||
+        escapeChar.equalsIgnoreCase(TAB.getName()) ||
+        escapeChar.equalsIgnoreCase(BACKSPACE.getName());
+  }
+
+  public static String getEscapeChar(String escapeCharacter) {
+    if (escapeCharacter.equalsIgnoreCase(NEW_LINE.getName())) {
+      return NEW_LINE.getEscapeChar();
+    } else if (escapeCharacter.equalsIgnoreCase(BACKSPACE.getName())) {
+      return BACKSPACE.getEscapeChar();
+    } else if (escapeCharacter.equalsIgnoreCase(TAB.getName())) {
+      return TAB.getEscapeChar();
+    } else if (escapeCharacter.equalsIgnoreCase(CARRIAGE_RETURN.getName())) {
+      return CARRIAGE_RETURN.getEscapeChar();
+    }
+    return escapeCharacter;
+  }
+
 
   public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier)
       throws IOException {
