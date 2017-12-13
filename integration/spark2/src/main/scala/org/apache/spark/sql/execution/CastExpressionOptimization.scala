@@ -26,7 +26,7 @@ import scala.collection.JavaConverters._
 import org.apache.spark.sql.catalyst.expressions.{Attribute, EmptyRow, EqualTo, Expression, GreaterThan, GreaterThanOrEqual, In, LessThan, LessThanOrEqual, Literal, Not}
 import org.apache.spark.sql.CastExpr
 import org.apache.spark.sql.sources
-import org.apache.spark.sql.types.{DoubleType, IntegerType, ShortType, StringType, TimestampType}
+import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 import org.apache.spark.sql.sources.Filter
 
@@ -36,10 +36,20 @@ import org.apache.carbondata.core.util.CarbonProperties
 object CastExpressionOptimization {
 
 
-  def typeCastStringToLong(v: Any): Any = {
-    val parser: SimpleDateFormat = new SimpleDateFormat(CarbonProperties.getInstance
-      .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-        CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+  def typeCastStringToLong(v: Any, dataType: DataType): Any = {
+    var parser: SimpleDateFormat = null
+    if (dataType == TimestampType) {
+      parser = new SimpleDateFormat(CarbonProperties.getInstance
+        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT))
+    } else if (dataType == DateType) {
+      parser = new SimpleDateFormat(CarbonProperties.getInstance
+        .getProperty(CarbonCommonConstants.CARBON_DATE_FORMAT,
+          CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT))
+      parser.setTimeZone(TimeZone.getTimeZone("GMT"))
+    } else {
+      throw new UnsupportedOperationException ("Unsupported DataType being evaluated.")
+    }
     try {
       val value = parser.parse(v.toString).getTime() * 1000L
       value
@@ -53,7 +63,7 @@ object CastExpressionOptimization {
             val gmtDay = new SimpleDateFormat("yyyy-MM-dd", Locale.US)
             gmtDay.setTimeZone(TimeZone.getTimeZone("GMT"))
             try {
-              gmtDay.parse(v.toString).getTime()
+              gmtDay.parse(v.toString).getTime() * 1000L
             } catch {
               case e: ParseException =>
                 v
@@ -68,10 +78,11 @@ object CastExpressionOptimization {
     }
   }
 
-  def typeCastStringToLongList(list: Seq[Expression]): Seq[Expression] = {
+
+  def typeCastStringToLongList(list: Seq[Expression], dataType: DataType): Seq[Expression] = {
     val tempList = new util.ArrayList[Expression]()
     list.foreach { value =>
-      val output = typeCastStringToLong(value)
+      val output = typeCastStringToLong(value, dataType)
       if (!output.equals(value)) {
         tempList.add(output.asInstanceOf[Expression])
       }
@@ -130,8 +141,8 @@ object CastExpressionOptimization {
     expr match {
       case c@EqualTo(Cast(a: Attribute, _), Literal(v, t)) =>
         a.dataType match {
-          case ts: TimestampType if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c)
+          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+            updateFilterForTimeStamp(v, c, ts)
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -140,8 +151,8 @@ object CastExpressionOptimization {
         }
       case c@EqualTo(Literal(v, t), Cast(a: Attribute, _)) =>
         a.dataType match {
-          case ts: TimestampType if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c)
+          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+            updateFilterForTimeStamp(v, c, ts)
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -150,8 +161,8 @@ object CastExpressionOptimization {
         }
       case c@Not(EqualTo(Cast(a: Attribute, _), Literal(v, t))) =>
         a.dataType match {
-          case ts: TimestampType if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c)
+          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+            updateFilterForTimeStamp(v, c, ts)
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -160,8 +171,8 @@ object CastExpressionOptimization {
         }
       case c@Not(EqualTo(Literal(v, t), Cast(a: Attribute, _))) =>
         a.dataType match {
-          case ts: TimestampType if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c)
+          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+            updateFilterForTimeStamp(v, c, ts)
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -170,8 +181,8 @@ object CastExpressionOptimization {
         }
       case c@Not(In(Cast(a: Attribute, _), list)) =>
         a.dataType match {
-          case ts: TimestampType if list.head.dataType.sameType(StringType) =>
-            val value = typeCastStringToLongList(list)
+          case ts@(_: DateType | _: TimestampType) if list.head.dataType.sameType(StringType) =>
+            val value = typeCastStringToLongList(list, ts)
             if (!value.equals(list)) {
               val hSet = value.map(e => e.eval(EmptyRow))
               Some(sources.Not(sources.In(a.name, hSet.toArray)))
@@ -198,8 +209,8 @@ object CastExpressionOptimization {
         }
       case c@In(Cast(a: Attribute, _), list) =>
         a.dataType match {
-          case ts: TimestampType if list.head.dataType.sameType(StringType) =>
-            val value = typeCastStringToLongList(list)
+          case ts@(_: DateType | _: TimestampType) if list.head.dataType.sameType(StringType) =>
+            val value = typeCastStringToLongList(list, ts)
             if (!value.equals(list)) {
               val hSet = value.map(e => e.eval(EmptyRow))
               Some(sources.In(a.name, hSet.toArray))
@@ -226,8 +237,8 @@ object CastExpressionOptimization {
         }
       case c@GreaterThan(Cast(a: Attribute, _), Literal(v, t)) =>
         a.dataType match {
-          case ts: TimestampType if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c)
+          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+            updateFilterForTimeStamp(v, c, ts)
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -236,8 +247,8 @@ object CastExpressionOptimization {
         }
       case c@GreaterThan(Literal(v, t), Cast(a: Attribute, _)) =>
         a.dataType match {
-          case ts: TimestampType if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c)
+          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+            updateFilterForTimeStamp(v, c, ts)
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -246,8 +257,8 @@ object CastExpressionOptimization {
         }
       case c@LessThan(Cast(a: Attribute, _), Literal(v, t)) =>
         a.dataType match {
-          case ts: TimestampType if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c)
+          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+            updateFilterForTimeStamp(v, c, ts)
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -256,8 +267,8 @@ object CastExpressionOptimization {
         }
       case c@LessThan(Literal(v, t), Cast(a: Attribute, _)) =>
         a.dataType match {
-          case ts: TimestampType if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c)
+          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+            updateFilterForTimeStamp(v, c, ts)
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -266,8 +277,8 @@ object CastExpressionOptimization {
         }
       case c@GreaterThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
         a.dataType match {
-          case ts: TimestampType if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c)
+          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+            updateFilterForTimeStamp(v, c, ts)
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -276,8 +287,8 @@ object CastExpressionOptimization {
         }
       case c@GreaterThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
         a.dataType match {
-          case ts: TimestampType if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c)
+          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+            updateFilterForTimeStamp(v, c, ts)
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -286,13 +297,8 @@ object CastExpressionOptimization {
         }
       case c@LessThanOrEqual(Cast(a: Attribute, _), Literal(v, t)) =>
         a.dataType match {
-          case ts: TimestampType if t.sameType(StringType) =>
-            val value = typeCastStringToLong(v)
-            if (!value.equals(v)) {
-              Some(sources.LessThanOrEqual(a.name, value))
-            } else {
-              Some(CastExpr(c))
-            }
+          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+            updateFilterForTimeStamp(v, c, ts)
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -301,8 +307,8 @@ object CastExpressionOptimization {
         }
       case c@LessThanOrEqual(Literal(v, t), Cast(a: Attribute, _)) =>
         a.dataType match {
-          case ts: TimestampType if t.sameType(StringType) =>
-            updateFilterForTimeStamp(v, c)
+          case ts@(_: DateType | _: TimestampType) if t.sameType(StringType) =>
+            updateFilterForTimeStamp(v, c, ts)
           case i: IntegerType if t.sameType(DoubleType) =>
             updateFilterForInt(v, c)
           case s: ShortType if t.sameType(IntegerType) =>
@@ -350,8 +356,9 @@ object CastExpressionOptimization {
    * @param exp
    * @return
    */
-  def updateFilterForTimeStamp(actualValue: Any, exp: Expression): Option[sources.Filter] = {
-    val newValue = typeCastStringToLong(actualValue)
+  def updateFilterForTimeStamp(actualValue: Any, exp: Expression, dt: DataType):
+  Option[sources.Filter] = {
+    val newValue = typeCastStringToLong(actualValue, dt)
     if (!newValue.equals(actualValue)) {
       updateFilterBasedOnFilterType(exp, newValue)
     } else {
