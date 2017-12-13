@@ -73,6 +73,20 @@ class TestTimeseriesDataLoad extends QueryTest with BeforeAndAfterAll {
         Row(Timestamp.valueOf("2016-02-23 01:02:50.0"),50)))
   }
 
+  test("test if timeseries load is successful on table creation") {
+    sql("drop table if exists mainTable")
+    sql("CREATE TABLE mainTable(mytime timestamp, name string, age int) STORED BY 'org.apache.carbondata.format'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
+    sql("create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='mytime', 'timeseries.hierarchy'='second=1,minute=1,hour=1,day=1,month=1,year=1') as select mytime, sum(age) from mainTable group by mytime")
+    checkAnswer( sql("select * from maintable_agg0_second"),
+      Seq(Row(Timestamp.valueOf("2016-02-23 01:01:30.0"),10),
+        Row(Timestamp.valueOf("2016-02-23 01:01:40.0"),20),
+        Row(Timestamp.valueOf("2016-02-23 01:01:50.0"),30),
+        Row(Timestamp.valueOf("2016-02-23 01:02:30.0"),40),
+        Row(Timestamp.valueOf("2016-02-23 01:02:40.0"),50),
+        Row(Timestamp.valueOf("2016-02-23 01:02:50.0"),50)))
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
   }
