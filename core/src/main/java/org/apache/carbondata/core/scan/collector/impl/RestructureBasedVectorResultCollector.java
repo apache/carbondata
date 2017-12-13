@@ -238,7 +238,7 @@ public class RestructureBasedVectorResultCollector extends DictionaryBasedVector
                 (long) defaultValue);
           } else if (DataTypes.isDecimal(dataType)) {
             vector.putDecimals(columnVectorInfo.vectorOffset, columnVectorInfo.size,
-                (Decimal) defaultValue, measure.getPrecision());
+                ((Decimal) defaultValue).toJavaBigDecimal(), measure.getPrecision());
           } else {
             vector.putDoubles(columnVectorInfo.vectorOffset, columnVectorInfo.size,
                 (double) defaultValue);

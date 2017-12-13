@@ -53,7 +53,7 @@ public class ShortStreamReader extends AbstractStreamReader {
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (streamData != null) {
         for(int i = 0; i < numberOfRows ; i++ ){
-          type.writeLong(builder,(Short)streamData[i]);
+          type.writeLong(builder, (short) streamData[i]);
         }
       }
     }
@@ -66,14 +66,14 @@ public class ShortStreamReader extends AbstractStreamReader {
       if (columnVector.isNullAt(i)) {
         builder.appendNull();
       } else {
-        type.writeLong(builder, (columnVector.getShort(i)));
+        type.writeLong(builder, ((short) columnVector.getData(i)));
       }
     }
   }
 
   private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
     for (int i = 0; i < numberOfRows; i++) {
-       type.writeLong(builder, (columnVector.getShort(i)));
+       type.writeLong(builder, ((short) columnVector.getData(i)));
       }
   }
 
