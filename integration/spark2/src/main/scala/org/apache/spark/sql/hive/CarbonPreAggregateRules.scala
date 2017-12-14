@@ -148,7 +148,9 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             carbonTable,
             tableName,
             list)
-          isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(filterExp)
+          if(isValidPlan) {
+            isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(filterExp)
+          }
           // getting the columns from filter expression
           if(isValidPlan) {
             isValidPlan = extractQueryColumnFromFilterExp(filterExp, list, carbonTable, tableName)
@@ -208,7 +210,9 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             carbonTable,
             tableName,
             list)
-          isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(filterExp)
+          if(isValidPlan) {
+            isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(filterExp)
+          }
           if (isValidPlan) {
             list ++
             extractQueryColumnForOrderBy(Some(projectList), sortOrders, carbonTable, tableName)
@@ -251,7 +255,9 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             carbonTable,
             tableName,
             list)
-          isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(filterExp)
+          if(isValidPlan) {
+            isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(filterExp)
+          }
           if(isValidPlan) {
             list ++ extractQueryColumnForOrderBy(sortOrders = sortOrders,
               carbonTable = carbonTable,
