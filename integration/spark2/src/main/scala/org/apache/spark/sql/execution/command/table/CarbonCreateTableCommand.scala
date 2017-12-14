@@ -73,8 +73,8 @@ case class CarbonCreateTableCommand(
         .getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
       if (!CarbonUtil.isValidSortOption(sortScope)) {
         throw new InvalidConfigurationException(
-          s"Passing invalid SORT_SCOPE '$sortScope', valid SORT_SCOPE are 'NO_SORT', 'BATCH_SORT'," +
-          s" 'LOCAL_SORT' and 'GLOBAL_SORT' ")
+          s"Passing invalid SORT_SCOPE '$sortScope', valid SORT_SCOPE are 'NO_SORT'," +
+          s" 'BATCH_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT' ")
       }
 
       if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
@@ -103,7 +103,7 @@ case class CarbonCreateTableCommand(
                |  tablePath "$tablePath",
                |  path "$tablePath"
                |  $carbonSchemaString)
-             """.stripMargin)
+             """.stripMargin).collect()
         } catch {
           case e: AnalysisException => throw e
           case e: Exception =>
