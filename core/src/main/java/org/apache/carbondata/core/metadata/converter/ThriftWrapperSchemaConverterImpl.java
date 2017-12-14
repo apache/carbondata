@@ -635,13 +635,13 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         schemaEvolutionList.get(schemaEvolutionList.size() - 1).getTime_stamp());
     wrapperTableInfo.setDatabaseName(dbName);
     wrapperTableInfo.setTableUniqueName(CarbonTable.buildUniqueName(dbName, tableName));
-    wrapperTableInfo.setTablePath(tablePath);
     wrapperTableInfo.setFactTable(
         fromExternalToWrapperTableSchema(externalTableInfo.getFact_table(), tableName));
     if (null != externalTableInfo.getDataMapSchemas()) {
       wrapperTableInfo.setDataMapSchemaList(
           fromExternalToWrapperChildSchemaList(externalTableInfo.getDataMapSchemas()));
     }
+    wrapperTableInfo.setTablePath(tablePath);
     return wrapperTableInfo;
   }
 
