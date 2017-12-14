@@ -734,6 +734,7 @@ object CommonUtil {
       case PartitionType.HASH =>
         val hashNumber = partitionInfo.getNumPartitions
         result.+=(RowFactory.create(columnName + " = HASH_NUMBER(" + hashNumber.toString() + ")"))
+        result.+=(RowFactory.create(s"partitionIds = ${partitionInfo.getPartitionIds}"))
       case others =>
         result.+=(RowFactory.create(columnName + " = "))
     }
