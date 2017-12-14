@@ -111,7 +111,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
 
   def needToConvertToLowerCase(key: String): Boolean = {
     val noConvertList = Array("LIST_INFO", "RANGE_INFO")
-    !noConvertList.exists(x => x.equalsIgnoreCase(key));
+    !noConvertList.exists(x => x.equalsIgnoreCase(key))
   }
 
   /**
@@ -173,6 +173,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     val cols = Option(columns).toSeq.flatMap(visitColTypeList)
     val properties = getPropertyKeyValues(tablePropertyList)
 
+    validateTableProperties(properties)
     // Ensuring whether no duplicate name is used in table definition
     val colNames = cols.map(_.name)
     if (colNames.length != colNames.distinct.length) {
@@ -190,8 +191,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     }
 
     val tableProperties = mutable.Map[String, String]()
-    properties.foreach{property => tableProperties.put(property._1, property._2)}
-
+    properties.foreach { property => tableProperties.put(property._1, property._2) }
     // validate partition clause
     val (partitionByStructFields, partitionFields) =
       validateParitionFields(partitionColumns, colNames, tableProperties)
@@ -229,6 +229,25 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
       isAlterFlow = false,
       tableComment)
     CarbonCreateTableCommand(TableNewProcessor(tableModel), tableModel.ifNotExistsSet, tablePath)
+  }
+
+  private def validateTableProperties(properties: Map[String, String]): Unit = {
+    val tableProperties = Seq("DICTIONARY_INCLUDE", "DICTIONARY_EXCLUDE", "NO_INVERTED_INDEX",
+      "SORT_COLUMNS", "TABLE_BLOCKSIZE", "STREAMING", "SORT_SCOPE", "COMMENT", "PARTITION_TYPE",
+      "NUM_PARTITIONS", "RANGE_INFO", "LIST_INFO", "BUCKETNUMBER", "BUCKETCOLUMNS", "TABLENAME")
+    val invalidTblProperties: Map[String, String] = properties.filter { property =>
+      if (!(tableProperties.exists(prop => prop.equalsIgnoreCase(property._1))
+            || property._1.toUpperCase.startsWith("DEFAULT.VALUE")
+            || property._1.toUpperCase.startsWith("COLUMNPROPERTIES"))) {
+        true
+      } else {
+        false
+      }
+    }
+    if (invalidTblProperties.nonEmpty) {
+      val errorMessage = "Error: Invalid option(s): " + invalidTblProperties.keySet.mkString(",")
+      throw new MalformedCarbonCommandException(errorMessage)
+    }
   }
 
   private def validateStreamingProperty(carbonOption: CarbonOption): Unit = {

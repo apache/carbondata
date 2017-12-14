@@ -178,7 +178,7 @@ class SortColumnTestCase extends QueryTest with BeforeAndAfterAll {
 
   //unsorted table creation, query data loading with heap and safe sort config
   test("Sortcolumn-001_TC014", Include) {
-     sql(s"""CREATE TABLE unsortedtable_heap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_c+C17olumns'='')""").collect
+     sql(s"""CREATE TABLE unsortedtable_heap_safe (empno int, empname String, designation String, doj Timestamp, workgroupcategory int, workgroupcategoryname String, deptno int, deptname String, projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,utilization int,salary int) STORED BY 'org.apache.carbondata.format' tblproperties('sort_columns'='')""").collect
    sql(s"""LOAD DATA local inpath '$resourcesPath/Data/sortcolumns/data.csv' INTO TABLE unsortedtable_heap_safe OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '\"')""").collect
     sql(s"""select * from unsortedtable_heap_safe where empno = 11""").collect
 
