@@ -146,7 +146,7 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
 
   test("show partition table: hash table") {
     // EqualTo
-    checkAnswer(sql("show partitions hashTable"), Seq(Row("empno = HASH_NUMBER(3)")))
+    checkAnswer(sql("show partitions hashTable"), Seq(Row("empno = HASH_NUMBER(3)"), Row("partitionIds = [0, 1, 2]")))
 
   }
 
@@ -164,7 +164,8 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
   }
   test("show partition table: not default db") {
     // EqualTo
-    checkAnswer(sql("show partitions partitionDB.hashTable"), Seq(Row("empno = HASH_NUMBER(3)")))
+    checkAnswer(sql("show partitions partitionDB.hashTable"), Seq(Row("empno = HASH_NUMBER(3)"),
+      Row("partitionIds = [0, 1, 2]")))
     // EqualTo
     checkAnswer(sql("show partitions partitionDB.rangeTable"), Seq(Row("0, doj = DEFAULT"),
       Row("1, doj < 01-01-2010"), Row("2, 01-01-2010 <= doj < 01-01-2015")))
