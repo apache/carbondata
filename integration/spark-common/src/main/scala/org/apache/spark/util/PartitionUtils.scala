@@ -113,7 +113,8 @@ object PartitionUtils {
     }
 
     if (partitionId == 0) {
-      partitionInfo.addPartition(splitInfo.size)
+      val addedPartitionList = PartitionUtils.getListInfo(splitInfo.mkString(","))
+      partitionInfo.addPartition(addedPartitionList.size)
     } else {
       partitionInfo.splitPartition(index, splitInfo.size)
     }
