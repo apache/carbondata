@@ -38,7 +38,7 @@ public class DeleteDeltaBlockDetails implements Serializable {
    * LOGGER
    */
   private static final LogService LOGGER =
-      LogServiceFactory.getLogService(DeleteDeltaBlockDetails.class.getName());
+          LogServiceFactory.getLogService(DeleteDeltaBlockDetails.class.getName());
 
   public DeleteDeltaBlockDetails(String blockName) {
     this.blockName = blockName;
@@ -83,8 +83,14 @@ public class DeleteDeltaBlockDetails implements Serializable {
   public boolean addBlocklet(String blockletId, String offset, Integer pageId) throws Exception {
     DeleteDeltaBlockletDetails blocklet = new DeleteDeltaBlockletDetails(blockletId, pageId);
     try {
-      blocklet.addDeletedRow(CarbonUpdateUtil.getIntegerValue(offset));
-      return addBlockletDetails(blocklet);
+      boolean isDeleteSuccessFull = blocklet.addDeletedRow(CarbonUpdateUtil.getIntegerValue(offset));
+      if(isDeleteSuccessFull){
+        blockletDetails.add(blocklet);
+        return true;
+      }
+      else{
+        return false;
+      }
     } catch (Exception e) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(e.getMessage());
