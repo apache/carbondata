@@ -514,17 +514,40 @@ class TableNewProcessor(cm: TableModel) {
     }
 
     cm.msrCols.foreach { field =>
-      val encoders = new java.util.ArrayList[Encoding]()
+      // if aggregate function is defined in case of preaggregate and agg function is sum or avg
+      // then it can be stored as measure
+      var isAggFunPresent = false
+      // getting the encoder from maintable so whatever encoding is applied in maintable
+      // same encoder can be applied on aggregate table
+      val encoders = if (cm.parentTable.isDefined && cm.dataMapRelation.get.get(field).isDefined) {
+        isAggFunPresent =
+          cm.dataMapRelation.get.get(field).get.aggregateFunction.equalsIgnoreCase("sum") ||
+          cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("avg")
+        if(!isAggFunPresent) {
+          cm.parentTable.get.getColumnByName(
+            cm.parentTable.get.getTableName,
+            cm.dataMapRelation.get.get(field).get.columnTableRelation.get.parentColumnName)
+            .getEncoder
+        } else {
+          new java.util.ArrayList[Encoding]()
+        }
+      } else {
+        new java.util.ArrayList[Encoding]()
+      }
+      // check if it can be dimension column
+      val isDimColumn = !encoders.isEmpty && !isAggFunPresent
       val columnSchema = getColumnSchema(
         DataTypeConverterUtil.convertToCarbonType(field.dataType.getOrElse("")),
         field.name.getOrElse(field.column),
         encoders,
-        false,
+        isDimColumn,
         field,
         cm.dataMapRelation)
       allColumns :+= columnSchema
       index = index + 1
-      measureCount += 1
+      if (!isDimColumn) {
+        measureCount += 1
+      }
     }
 
     // Check if there is any duplicate measures or dimensions.

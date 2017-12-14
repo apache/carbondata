@@ -116,17 +116,6 @@ object PreAggregateUtil {
       throw new MalformedCarbonCommandException(
         "Pre Aggregation is not supported on Pre-Aggregated Table")
     }
-    groupByExp.map {
-      case attr: AttributeReference =>
-        fieldToDataMapFieldMap += getField(attr.name,
-          attr.dataType,
-          parentColumnId = carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName = parentTableName,
-          parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
-      case _ =>
-        throw new MalformedCarbonCommandException(s"Unsupported Function in select Statement:${
-          selectStmt } ")
-    }
     aggExp.map {
       case Alias(attr: AggregateExpression, _) =>
         if (attr.isDistinct) {
