@@ -21,7 +21,7 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
-import org.apache.spark.sql.execution.command.{AlterTableModel, CompactionModel, DataCommand}
+import org.apache.spark.sql.execution.command.{AlterTableModel, CarbonMergerMapping, CompactionModel, DataCommand}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.util.CarbonException
 
@@ -31,7 +31,7 @@ import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.CarbonProperties
-import org.apache.carbondata.events.{AlterTableCompactionPostEvent, AlterTableCompactionPreEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{AlterTableCompactionPostEvent, AlterTableCompactionPreEvent, AlterTableCompactionPreStatusUpdateEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
@@ -200,15 +200,29 @@ case class CarbonAlterTableCompactionCommand(
               carbonLoadModel.getTablePath,
               carbonTable, true)
 
+            val carbonMergerMapping = CarbonMergerMapping(carbonTable.getTablePath,
+              carbonTable.getMetaDataFilepath,
+              "",
+              carbonTable.getDatabaseName,
+              carbonTable.getTableName,
+              Array(),
+              carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
+              compactionType,
+              maxSegmentColCardinality = null,
+              maxSegmentColumnSchemaList = null
+            )
+
             // trigger event for merge index
             val operationContext = new OperationContext
-            val alterTableCompactionPreEvent: AlterTableCompactionPreEvent =
-              AlterTableCompactionPreEvent(sqlContext.sparkSession,
+            // trigger event for compaction
+            val alterTableCompactionPreStatusUpdateEvent: AlterTableCompactionPreStatusUpdateEvent =
+              AlterTableCompactionPreStatusUpdateEvent(sqlContext.sparkSession,
                 carbonTable,
-                null,
+                carbonMergerMapping,
+                carbonLoadModel,
                 "")
             OperationListenerBus.getInstance
-              .fireEvent(alterTableCompactionPreEvent, operationContext)
+              .fireEvent(alterTableCompactionPreStatusUpdateEvent, operationContext)
 
           } else {
             CarbonDataRDDFactory.startCompactionThreads(
