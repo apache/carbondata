@@ -409,7 +409,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       if (segmentId.equals(CarbonCommonConstants.INVALID_SEGMENT_ID)) {
         continue;
       }
-      carbonSplits.add(CarbonInputSplit.from(segmentId, fileSplit,
+      carbonSplits.add(CarbonInputSplit.from(segmentId, "0", fileSplit,
           ColumnarFormatVersion.valueOf(
               CarbonCommonConstants.CARBON_DATA_FILE_DEFAULT_VERSION)));
     }
@@ -452,9 +452,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     Boolean  isIUDTable = false;
 
     AbsoluteTableIdentifier absoluteTableIdentifier =
-            getOrCreateCarbonTable(job.getConfiguration()).getAbsoluteTableIdentifier();
+        getOrCreateCarbonTable(job.getConfiguration()).getAbsoluteTableIdentifier();
     SegmentUpdateStatusManager updateStatusManager =
-            new SegmentUpdateStatusManager(absoluteTableIdentifier);
+        new SegmentUpdateStatusManager(absoluteTableIdentifier);
 
     isIUDTable = (updateStatusManager.getUpdateStatusDetails().length != 0);
 
@@ -476,22 +476,23 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
           // In case IUD is not performed in this table avoid searching for
           // invalidated blocks.
           if (CarbonUtil
-                  .isInvalidTableBlock(tableBlockInfo.getSegmentId(), tableBlockInfo.getFilePath(),
-                          invalidBlockVOForSegmentId, updateStatusManager)) {
+              .isInvalidTableBlock(tableBlockInfo.getSegmentId(), tableBlockInfo.getFilePath(),
+                  invalidBlockVOForSegmentId, updateStatusManager)) {
             continue;
           }
           // When iud is done then only get delete delta files for a block
           try {
             deleteDeltaFilePath =
-                    updateStatusManager.getDeleteDeltaFilePath(tableBlockInfo.getFilePath());
+                updateStatusManager.getDeleteDeltaFilePath(tableBlockInfo.getFilePath());
           } catch (Exception e) {
             throw new IOException(e);
           }
         }
-        result.add(new CarbonInputSplit(segmentNo, new Path(tableBlockInfo.getFilePath()),
-            tableBlockInfo.getBlockOffset(), tableBlockInfo.getBlockLength(),
-            tableBlockInfo.getLocations(), tableBlockInfo.getBlockletInfos().getNoOfBlockLets(),
-            tableBlockInfo.getVersion(), deleteDeltaFilePath));
+        result.add(new CarbonInputSplit(segmentNo, tableBlockInfo.getBlockletId(),
+            new Path(tableBlockInfo.getFilePath()), tableBlockInfo.getBlockOffset(),
+            tableBlockInfo.getBlockLength(), tableBlockInfo.getLocations(),
+            tableBlockInfo.getBlockletInfos().getNoOfBlockLets(), tableBlockInfo.getVersion(),
+            deleteDeltaFilePath));
       }
     }
     return result;
@@ -583,7 +584,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys, UpdateVO updateDetails,
       SegmentUpdateStatusManager updateStatusManager,
       String segmentId, Set<SegmentTaskIndexStore.TaskBucketHolder> validTaskKeys)
-    throws IOException {
+      throws IOException {
     List<TableBlockInfo> tableBlockInfoList = new ArrayList<TableBlockInfo>();
 
     // get file location of all files of given segment
@@ -603,7 +604,8 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         BlockletInfos blockletInfos = new BlockletInfos(carbonInputSplit.getNumberOfBlocklets(), 0,
             carbonInputSplit.getNumberOfBlocklets());
         tableBlockInfoList.add(
-            new TableBlockInfo(carbonInputSplit.getPath().toString(), carbonInputSplit.getStart(),
+            new TableBlockInfo(carbonInputSplit.getPath().toString(),
+                carbonInputSplit.getBlockletId(), carbonInputSplit.getStart(),
                 tableSegmentUniqueIdentifier.getSegmentId(), carbonInputSplit.getLocations(),
                 carbonInputSplit.getLength(), blockletInfos, carbonInputSplit.getVersion(),
                 carbonInputSplit.getBlockStorageIdMap(), carbonInputSplit.getDeleteDeltaFiles()));
@@ -613,9 +615,9 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   private boolean isValidBlockBasedOnUpdateDetails(
-          Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys, CarbonInputSplit carbonInputSplit,
-          UpdateVO updateDetails, SegmentUpdateStatusManager updateStatusManager, String segmentId,
-          Set<SegmentTaskIndexStore.TaskBucketHolder> validTaskKeys) {
+      Set<SegmentTaskIndexStore.TaskBucketHolder> taskKeys, CarbonInputSplit carbonInputSplit,
+      UpdateVO updateDetails, SegmentUpdateStatusManager updateStatusManager, String segmentId,
+      Set<SegmentTaskIndexStore.TaskBucketHolder> validTaskKeys) {
     String taskID = null;
     if (null != carbonInputSplit) {
       if (!updateStatusManager.isBlockValid(segmentId, carbonInputSplit.getPath().getName())) {
@@ -741,7 +743,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
                 updateStatusManager);
         for (Map.Entry<SegmentTaskIndexStore.TaskBucketHolder, AbstractIndex> taskMap :
             taskAbstractIndexMap
-            .entrySet()) {
+                .entrySet()) {
           AbstractIndex taskAbstractIndex = taskMap.getValue();
           countOfBlocksInSeg += new BlockLevelTraverser()
               .getBlockRowMapping(taskAbstractIndex, blockRowCountMapping, eachValidSeg,

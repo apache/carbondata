@@ -82,6 +82,11 @@ private[sql] case class CarbonProjectForDeleteCommand(
         HorizontalCompaction.tryHorizontalCompaction(sparkSession, carbonTable,
           isUpdateOperation = false)
 
+
+        if (executorErrors.failureCauses != FailureCauses.NONE) {
+          throw new Exception(executorErrors.errorMsg)
+        }
+
         // trigger post event for Delete from table
         val deleteFromTablePostEvent: DeleteFromTablePostEvent =
           DeleteFromTablePostEvent(sparkSession, carbonTable)

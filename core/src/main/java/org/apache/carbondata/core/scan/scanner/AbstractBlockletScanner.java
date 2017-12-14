@@ -76,7 +76,7 @@ public abstract class AbstractBlockletScanner implements BlockletScanner {
         totalPagesScanned.getCount() + blocksChunkHolder.getDataBlock().numberOfPages());
     scannedResult.setBlockletId(
         blockExecutionInfo.getBlockId() + CarbonCommonConstants.FILE_SEPARATOR + blocksChunkHolder
-            .getDataBlock().nodeNumber());
+            .getDataBlock().blockletId());
     DimensionRawColumnChunk[] dimensionRawColumnChunks =
         blocksChunkHolder.getDimensionRawDataChunk();
     DimensionColumnDataChunk[][] dimensionColumnDataChunks =

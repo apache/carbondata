@@ -60,6 +60,14 @@ public class BlockBTreeLeafNode extends AbstractBTreeLeafNode {
   }
 
   /**
+   * Below method is suppose to return the Blocklet ID.
+   * @return
+   */
+  @Override public String blockletId() {
+    return blockInfo.getTableBlockInfo().getDetailInfo().getBlockletId().toString();
+  }
+
+  /**
    * number of pages in blocklet
    * @return
    */

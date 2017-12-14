@@ -135,6 +135,10 @@ public class BTreeNonLeafNode implements BTreeNode {
     throw new UnsupportedOperationException("Unsupported operation");
   }
 
+  @Override public String blockletId() {
+    throw new UnsupportedOperationException("Unsupported operation");
+  }
+
   /**
    * This method will be used to get the max value of all the columns this can
    * be used in case of filter query
