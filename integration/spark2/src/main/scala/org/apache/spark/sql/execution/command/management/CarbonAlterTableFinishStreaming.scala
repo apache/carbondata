@@ -18,7 +18,7 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
-import org.apache.spark.sql.execution.command.DataCommand
+import org.apache.spark.sql.execution.command.MetadataCommand
 
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -28,8 +28,8 @@ import org.apache.carbondata.streaming.segment.StreamSegment
 case class CarbonAlterTableFinishStreaming(
     dbName: Option[String],
     tableName: String)
-  extends DataCommand {
-  override def processData(sparkSession: SparkSession): Seq[Row] = {
+  extends MetadataCommand {
+  override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val carbonTable = CarbonEnv.getCarbonTable(dbName, tableName)(sparkSession)
     StreamSegment.finishStreaming(carbonTable)
     Seq.empty

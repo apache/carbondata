@@ -129,6 +129,11 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
         CarbonAlterTableCompactionCommand(altertablemodel)
     }
 
+  /**
+   * The below syntax is used to change the status of the segment
+   * from "streaming" to "streaming finish".
+   * ALTER TABLE tableName FINISH STREAMING
+   */
   protected lazy val alterTableFinishStreaming: Parser[LogicalPlan] =
     ALTER ~> TABLE ~> (ident <~ ".").? ~ ident <~ FINISH <~ STREAMING <~ opt(";") ^^ {
       case dbName ~ table =>
