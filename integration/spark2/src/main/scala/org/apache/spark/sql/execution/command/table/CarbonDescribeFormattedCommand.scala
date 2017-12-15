@@ -122,6 +122,9 @@ private[sql] case class CarbonDescribeFormattedCommand(
       results ++=
       Seq(("Partition Columns", carbonTable.getPartitionInfo(carbonTable.getTableName)
         .getColumnSchemaList.asScala.map(_.getColumnName).mkString(","), ""))
+      results ++=
+      Seq(("Partition Type", carbonTable.getPartitionInfo(carbonTable.getTableName)
+        .getPartitionType.toString, ""))
     }
     results.map {
       case (name, dataType, null) =>
