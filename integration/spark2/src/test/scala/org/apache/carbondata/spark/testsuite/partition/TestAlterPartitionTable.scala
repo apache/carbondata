@@ -45,6 +45,21 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
      * list_table_area
      */
     sql("""
+          | CREATE TABLE IF NOT EXISTS list_table_group
+          | (
+          | id Int,
+          | vin string,
+          | logdate Timestamp,
+          | phonenumber Long,
+          | country string,
+          | salary Int
+          | )
+          | PARTITIONED BY (area string)
+          | STORED BY 'carbondata'
+          | TBLPROPERTIES('PARTITION_TYPE'='LIST',
+          | 'LIST_INFO'='Asia, America, Europe')
+        """.stripMargin)
+    sql("""
           | CREATE TABLE IF NOT EXISTS list_table_area_origin
           | (
           | id Int,
@@ -360,6 +375,38 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     val result_after6 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate""")
     val result_origin6 = sql("""select id, vin, logdate, phonenumber, country, area, salary from range_table_logdate_origin where logdate < '2015/01/01 00:00:00' or logdate >= '2016/01/01 00:00:00' """)
     checkAnswer(result_after6, result_origin6)
+  }
+
+  test("Alter table add partition with string group with show partition : List Partition") {
+
+    sql("""show partitions list_table_group""").show()
+
+    sql(
+      """ALTER TABLE list_table_group ADD PARTITION
+        |('SAUDI ARABIA','(VIETNAM,RUSSIA,UNITED KINGDOM,UNITED STATES)' )""".stripMargin)
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "list_table_group")
+    val partitionInfo = carbonTable.getPartitionInfo(carbonTable.getTableName)
+    val partitionIds = partitionInfo.getPartitionIds
+    val list_info = partitionInfo.getListInfo
+    assert(partitionIds == List(0, 1, 2, 3, 4, 5).map(Integer.valueOf(_)).asJava)
+    assert(partitionInfo.getMaxPartitionId == 5)
+    assert(partitionInfo.getNumPartitions == 6)
+    assert(list_info.get(0).get(0) == "Asia")
+    assert(list_info.get(1).get(0) == "America")
+    assert(list_info.get(2).get(0) == "Europe")
+    assert(list_info.get(3).get(0) == "SAUDI ARABIA")
+    assert(list_info.get(4).toString == "[VIETNAM, RUSSIA, UNITED KINGDOM, UNITED STATES]")
+
+    sql("""SHOW PARTITIONS list_table_group""")
+    val updated_list_info = partitionInfo.getListInfo
+    assert(partitionIds == List(0, 1, 2, 3, 4, 5).map(Integer.valueOf(_)).asJava)
+    assert(partitionInfo.getMaxPartitionId == 5)
+    assert(partitionInfo.getNumPartitions == 6)
+    assert(updated_list_info.get(0).get(0) == "Asia")
+    assert(updated_list_info.get(1).get(0) == "America")
+    assert(updated_list_info.get(2).get(0) == "Europe")
+    assert(updated_list_info.get(3).get(0) == "SAUDI ARABIA")
+    assert(updated_list_info.get(4).toString == "[VIETNAM, RUSSIA, UNITED KINGDOM, UNITED STATES]")
   }
 
   test("test exception if invalid partition id is provided in alter command") {
@@ -898,6 +945,7 @@ class TestAlterPartitionTable extends QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS range_table_logdate_split_origin")
     sql("DROP TABLE IF EXISTS range_table_bucket_origin")
     sql("DROP TABLE IF EXISTS list_table_area")
+    sql("DROP TABLE IF EXISTS list_table_group")
     sql("DROP TABLE IF EXISTS range_table_logdate")
     sql("DROP TABLE IF EXISTS list_table_country")
     sql("DROP TABLE IF EXISTS range_table_logdate_split")
