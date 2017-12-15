@@ -38,23 +38,6 @@ private[sql] case class CarbonDescribeFormattedCommand(
     tblIdentifier: TableIdentifier)
   extends MetadataCommand {
 
-  private def getColumnGroups(dimensions: List[CarbonDimension]): Seq[(String, String, String)] = {
-    var results: Seq[(String, String, String)] =
-      Seq(("", "", ""), ("##Column Group Information", "", ""))
-    val groupedDimensions = dimensions.groupBy(x => x.columnGroupId()).filter {
-      case (groupId, _) => groupId != -1
-    }.toSeq.sortBy(_._1)
-    val groups = groupedDimensions.map(colGroups => {
-      colGroups._2.map(dim => dim.getColName).mkString(", ")
-    })
-    var index = 1
-    groups.foreach { x =>
-      results = results :+ (s"Column Group $index", x, "")
-      index = index + 1
-    }
-    results
-  }
-
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val relation = CarbonEnv.getInstance(sparkSession).carbonMetastore
       .lookupRelation(tblIdentifier)(sparkSession).asInstanceOf[CarbonRelation]
@@ -135,7 +118,6 @@ private[sql] case class CarbonDescribeFormattedCommand(
       .map(column => column).mkString(","), ""))
     val dimension = carbonTable
       .getDimensionByTableName(relation.carbonTable.getTableName)
-    results ++= getColumnGroups(dimension.asScala.toList)
     if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
       results ++=
       Seq(("Partition Columns", carbonTable.getPartitionInfo(carbonTable.getTableName)
