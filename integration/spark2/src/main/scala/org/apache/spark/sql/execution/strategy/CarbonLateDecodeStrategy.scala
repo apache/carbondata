@@ -471,7 +471,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     (unrecognizedPredicates ++ unhandledPredicates, translatedFilters)
   }
 
-
   /**
    * Tries to translate a Catalyst [[Expression]] into data source [[Filter]].
    *
@@ -568,10 +567,6 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
         CastExpressionOptimization.checkIfCastCanBeRemove(c)
       case StartsWith(a: Attribute, Literal(v, t)) =>
         Some(sources.StringStartsWith(a.name, v.toString))
-      case c@EndsWith(a: Attribute, Literal(v, t)) =>
-        Some(CarbonEndsWith(c))
-      case c@Contains(a: Attribute, Literal(v, t)) =>
-        Some(CarbonContainsWith(c))
       case others => None
     }
   }
