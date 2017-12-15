@@ -356,8 +356,10 @@ object GlobalDictionaryUtil {
    * @param hadoopConf hadoop configuration
    * @return rdd that contains only dictionary columns
    */
-  private def loadInputDataAsDictRdd(sqlContext: SQLContext, carbonLoadModel: CarbonLoadModel,
-      inputDF: Option[DataFrame], requiredCols: Array[String],
+  private def loadInputDataAsDictRdd(sqlContext: SQLContext,
+      carbonLoadModel: CarbonLoadModel,
+      inputDF: Option[DataFrame],
+      requiredCols: Array[String],
       hadoopConf: Configuration): RDD[Row] = {
     if (inputDF.isDefined) {
       inputDF.get.select(requiredCols.head, requiredCols.tail : _*).rdd
@@ -379,7 +381,9 @@ object GlobalDictionaryUtil {
         classOf[CSVInputFormat],
         classOf[NullWritable],
         classOf[StringArrayWritable],
-        jobConf).setName("global dictionary").map[Row] { currentRow =>
+        jobConf)
+        .setName("global dictionary")
+        .map[Row] { currentRow =>
         val rawRow = currentRow._2.get()
         val destRow = new Array[String](dictColIdx.length)
         for (i <- dictColIdx.indices) {
