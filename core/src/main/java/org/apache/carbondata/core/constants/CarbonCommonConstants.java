@@ -789,12 +789,12 @@ public final class CarbonCommonConstants {
    * Size of Major Compaction in MBs
    */
   @CarbonProperty
-  public static final String MAJOR_COMPACTION_SIZE = "carbon.major.compaction.size";
+  public static final String CARBON_MAJOR_COMPACTION_SIZE = "carbon.major.compaction.size";
 
   /**
    * By default size of major compaction in MBs.
    */
-  public static final String DEFAULT_MAJOR_COMPACTION_SIZE = "1024";
+  public static final String DEFAULT_CARBON_MAJOR_COMPACTION_SIZE = "1024";
 
   /**
    * This property is used to tell how many segments to be preserved from merging.
@@ -873,6 +873,16 @@ public final class CarbonCommonConstants {
   public static final String TABLE_BLOCKSIZE = "table_blocksize";
   // set in column level to disable inverted index
   public static final String NO_INVERTED_INDEX = "no_inverted_index";
+  // table property name of major compaction size
+  public static final String TABLE_MAJOR_COMPACTION_SIZE = "major_compaction_size";
+  // table property name of auto load merge
+  public static final String TABLE_AUTO_LOAD_MERGE = "auto_load_merge";
+  // table property name of compaction level threshold
+  public static final String TABLE_COMPACTION_LEVEL_THRESHOLD = "compaction_level_threshold";
+  // table property name of preserve segments numbers while compaction
+  public static final String TABLE_COMPACTION_PRESERVE_SEGMENTS = "compaction_preserve_segments";
+  // table property name of allowed compaction days while compaction
+  public static final String TABLE_ALLOWED_COMPACTION_DAYS = "allowed_compaction_days";
 
   /**
    * 16 mb size

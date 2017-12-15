@@ -21,15 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -78,7 +70,8 @@ public final class CarbonDataMergerUtil {
     // carbon data file case.
     CarbonFile[] factFile = carbonFile.listFiles(new CarbonFileFilter() {
 
-      @Override public boolean accept(CarbonFile file) {
+      @Override
+      public boolean accept(CarbonFile file) {
         return CarbonTablePath.isCarbonDataFile(file.getName());
       }
     });
@@ -93,17 +86,22 @@ public final class CarbonDataMergerUtil {
   /**
    * To check whether the merge property is enabled or not.
    *
+   * @Params carbonTable
    * @return
    */
-
-  public static boolean checkIfAutoLoadMergingRequired() {
+  public static boolean checkIfAutoLoadMergingRequired(CarbonTable carbonTable) {
     // load merge is not supported as per new store format
     // moving the load merge check in early to avoid unnecessary load listing causing IOException
     // check whether carbons segment merging operation is enabled or not.
     // default will be false.
+    Map<String, String> tblProps = carbonTable.getTableInfo().getFactTable().getTableProperties();
+
     String isLoadMergeEnabled = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
-            CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE);
+            .getProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE,
+                    CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE);
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE)) {
+      isLoadMergeEnabled = tblProps.get(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE);
+    }
     if (isLoadMergeEnabled.equalsIgnoreCase("false")) {
       return false;
     }
@@ -386,9 +384,11 @@ public final class CarbonDataMergerUtil {
    * @return
    */
   public static List<LoadMetadataDetails> identifySegmentsToBeMerged(
-      CarbonLoadModel carbonLoadModel, long compactionSize,
-      List<LoadMetadataDetails> segments, CompactionType compactionType) {
+          CarbonLoadModel carbonLoadModel, long compactionSize,
+          List<LoadMetadataDetails> segments, CompactionType compactionType) {
     String tablePath = carbonLoadModel.getTablePath();
+    Map<String, String> tableLevelProperties = carbonLoadModel.getCarbonDataLoadSchema()
+            .getCarbonTable().getTableInfo().getFactTable().getTableProperties();
     List<LoadMetadataDetails> sortedSegments = new ArrayList<LoadMetadataDetails>(segments);
 
     sortSegments(sortedSegments);
@@ -402,22 +402,24 @@ public final class CarbonDataMergerUtil {
     // check preserve property and preserve the configured number of latest loads.
 
     List<LoadMetadataDetails> listOfSegmentsAfterPreserve =
-        checkPreserveSegmentsPropertyReturnRemaining(sortedSegments);
+            checkPreserveSegmentsPropertyReturnRemaining(sortedSegments, tableLevelProperties);
 
     // filter the segments if the compaction based on days is configured.
 
     List<LoadMetadataDetails> listOfSegmentsLoadedInSameDateInterval =
-        identifySegmentsToBeMergedBasedOnLoadedDate(listOfSegmentsAfterPreserve);
+            identifySegmentsToBeMergedBasedOnLoadedDate(listOfSegmentsAfterPreserve,
+                    tableLevelProperties);
     List<LoadMetadataDetails> listOfSegmentsToBeMerged;
     // identify the segments to merge based on the Size of the segments across partition.
     if (CompactionType.MAJOR == compactionType) {
 
       listOfSegmentsToBeMerged = identifySegmentsToBeMergedBasedOnSize(compactionSize,
-          listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, tablePath);
+              listOfSegmentsLoadedInSameDateInterval, carbonLoadModel, tablePath);
     } else {
 
       listOfSegmentsToBeMerged =
-          identifySegmentsToBeMergedBasedOnSegCount(listOfSegmentsLoadedInSameDateInterval);
+              identifySegmentsToBeMergedBasedOnSegCount(listOfSegmentsLoadedInSameDateInterval,
+                      tableLevelProperties);
     }
 
     return listOfSegmentsToBeMerged;
@@ -430,7 +432,8 @@ public final class CarbonDataMergerUtil {
   public static void sortSegments(List segments) {
     // sort the segment details.
     Collections.sort(segments, new Comparator<LoadMetadataDetails>() {
-      @Override public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
+      @Override
+      public int compare(LoadMetadataDetails seg1, LoadMetadataDetails seg2) {
         double seg1Id = Double.parseDouble(seg1.getLoadName());
         double seg2Id = Double.parseDouble(seg2.getLoadName());
         return Double.compare(seg1Id, seg2Id);
@@ -443,19 +446,26 @@ public final class CarbonDataMergerUtil {
    * This property is configurable.
    *
    * @param listOfSegmentsBelowThresholdSize
+   * @param tblProps
    * @return
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnLoadedDate(
-      List<LoadMetadataDetails> listOfSegmentsBelowThresholdSize) {
+      List<LoadMetadataDetails> listOfSegmentsBelowThresholdSize, Map<String, String> tblProps) {
 
     List<LoadMetadataDetails> loadsOfSameDate =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
     long numberOfDaysAllowedToMerge = 0;
     try {
+      // overwrite system level option by table level option if exists
       numberOfDaysAllowedToMerge = Long.parseLong(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
-              CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT));
+              .getProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT,
+                      CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT));
+      if (tblProps.containsKey(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS)) {
+        numberOfDaysAllowedToMerge = Long.parseLong(
+                tblProps.get(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS));
+      }
+
       if (numberOfDaysAllowedToMerge < 0 || numberOfDaysAllowedToMerge > 100) {
         LOGGER.error(
             "The specified value for property " + CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT
@@ -675,18 +685,27 @@ public final class CarbonDataMergerUtil {
    *
    * @param listOfSegmentsAfterPreserve the list of segments after
    *        preserve and before filtering by minor compaction level
+   * @param tblProps
    * @return the list of segments to be merged after filtering by minor compaction level
    */
   private static List<LoadMetadataDetails> identifySegmentsToBeMergedBasedOnSegCount(
-      List<LoadMetadataDetails> listOfSegmentsAfterPreserve) {
+          List<LoadMetadataDetails> listOfSegmentsAfterPreserve, Map<String, String> tblProps) {
 
     List<LoadMetadataDetails> mergedSegments =
-        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     List<LoadMetadataDetails> unMergedSegments =
-        new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+            new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
-    int[] noOfSegmentLevelsCount =
-        CarbonProperties.getInstance().getCompactionSegmentLevelCount();
+    int[] noOfSegmentLevelsCount = CarbonProperties.getInstance()
+            .getCompactionSegmentLevelCount();
+    // overwrite system level option by table level option if exists
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD)) {
+      noOfSegmentLevelsCount = CarbonProperties.getInstance()
+              .getIntArray(tblProps.get(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD));
+      if (0 == noOfSegmentLevelsCount.length) {
+        noOfSegmentLevelsCount = CarbonProperties.getInstance().getCompactionSegmentLevelCount();
+      }
+    }
 
     int level1Size = 0;
     int level2Size = 0;
@@ -756,14 +775,21 @@ public final class CarbonDataMergerUtil {
    * checks number of loads to be preserved and returns remaining valid segments
    *
    * @param segments
+   * @param tblProps
    * @return
    */
   private static List<LoadMetadataDetails> checkPreserveSegmentsPropertyReturnRemaining(
-      List<LoadMetadataDetails> segments) {
+      List<LoadMetadataDetails> segments, Map<String, String> tblProps) {
     // check whether the preserving of the segments from merging is enabled or not.
-    // get the number of loads to be preserved.
-    int numberOfSegmentsToBePreserved =
-        CarbonProperties.getInstance().getNumberOfSegmentsToBePreserved();
+    // get the number of loads to be preserved. default value is system level option
+    // overwrite system level option by table level option if exists
+    int numberOfSegmentsToBePreserved = CarbonProperties.getInstance()
+            .getNumberOfSegmentsToBePreserved();
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS)) {
+      numberOfSegmentsToBePreserved = Integer.parseInt(
+              tblProps.get(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS));
+    }
+
     // get the number of valid segments and retain the latest loads from merging.
     return CarbonDataMergerUtil
         .getValidLoadDetailsWithRetaining(segments, numberOfSegmentsToBePreserved);
@@ -808,14 +834,23 @@ public final class CarbonDataMergerUtil {
    * This will give the compaction sizes configured based on compaction type.
    *
    * @param compactionType
+   * @param carbonLoadModel
    * @return
    */
-  public static long getCompactionSize(CompactionType compactionType) {
-
+  public static long getCompactionSize(CompactionType compactionType,
+                                       CarbonLoadModel carbonLoadModel) {
     long compactionSize = 0;
     switch (compactionType) {
       case MAJOR:
+        // default value is system level option
         compactionSize = CarbonProperties.getInstance().getMajorCompactionSize();
+        // if table level option is identified, use it to overwrite system level option
+        Map<String, String> tblProps = carbonLoadModel.getCarbonDataLoadSchema()
+                .getCarbonTable().getTableInfo().getFactTable().getTableProperties();
+        if (tblProps.containsKey(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE)) {
+          compactionSize = Long.parseLong(
+                  tblProps.get(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE));
+        }
         break;
       default: // this case can not come.
     }

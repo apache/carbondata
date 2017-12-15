@@ -620,10 +620,12 @@ public final class CarbonProperties {
   public long getMajorCompactionSize() {
     long compactionSize;
     try {
-      compactionSize = Long.parseLong(getProperty(CarbonCommonConstants.MAJOR_COMPACTION_SIZE,
-          CarbonCommonConstants.DEFAULT_MAJOR_COMPACTION_SIZE));
+      compactionSize = Long.parseLong(getProperty(
+              CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE,
+              CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE));
     } catch (NumberFormatException e) {
-      compactionSize = Long.parseLong(CarbonCommonConstants.DEFAULT_MAJOR_COMPACTION_SIZE);
+      compactionSize = Long.parseLong(
+              CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE);
     }
     return compactionSize;
   }
@@ -684,7 +686,7 @@ public final class CarbonProperties {
    * @param commaSeparatedLevels the string format value before separating
    * @return the int array format value after separating by comma
    */
-  private int[] getIntArray(String commaSeparatedLevels) {
+  public int[] getIntArray(String commaSeparatedLevels) {
     String[] levels = commaSeparatedLevels.split(",");
     int[] compactionSize = new int[levels.length];
     int i = 0;

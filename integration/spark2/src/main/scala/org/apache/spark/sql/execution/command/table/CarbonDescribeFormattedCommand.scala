@@ -107,6 +107,38 @@ private[sql] case class CarbonDescribeFormattedCommand(
     val isStreaming = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
       .getOrElse("streaming", "false")
     results ++= Seq(("Streaming", isStreaming, ""))
+
+    val tblProps = carbonTable.getTableInfo.getFactTable.getTableProperties
+    results ++= Seq(("SORT_SCOPE", tblProps.getOrDefault("sort_scope", CarbonCommonConstants
+      .LOAD_SORT_SCOPE_DEFAULT), CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
+
+    // show table level compaction options
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE)) {
+      results ++= Seq((CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE.toUpperCase
+        , tblProps.get(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE),
+        CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE))
+    }
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE)) {
+      results ++= Seq((CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE.toUpperCase,
+        tblProps.get(CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE),
+        CarbonCommonConstants.DEFAULT_ENABLE_AUTO_LOAD_MERGE))
+    }
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD)) {
+      results ++= Seq((CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD.toUpperCase,
+        tblProps.get(CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD),
+        CarbonCommonConstants.DEFAULT_SEGMENT_LEVEL_THRESHOLD))
+    }
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS)) {
+      results ++= Seq((CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS.toUpperCase,
+        tblProps.get(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS),
+        CarbonCommonConstants.DEFAULT_PRESERVE_LATEST_SEGMENTS_NUMBER))
+    }
+    if (tblProps.containsKey(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS)) {
+      results ++= Seq((CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS.toUpperCase,
+        tblProps.get(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS),
+        CarbonCommonConstants.DEFAULT_DAYS_ALLOWED_TO_COMPACT))
+    }
+
     results ++= Seq(("", "", ""), ("##Detailed Column property", "", ""))
     if (colPropStr.length() > 0) {
       results ++= Seq((colPropStr, "", ""))

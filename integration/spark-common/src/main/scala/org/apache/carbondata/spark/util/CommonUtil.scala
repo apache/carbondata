@@ -471,6 +471,125 @@ object CommonUtil {
   }
 
   /**
+   * validate table level properties for compaction
+   *
+   * @param tableProperties
+   */
+  def validateTableLevelCompactionProperties(tableProperties: Map[String, String]): Unit = {
+    validateMajorCompactionSize(tableProperties)
+    validateAutoLoadMerge(tableProperties)
+    validateCompactionLevelThreshold(tableProperties)
+    validateCompactionPreserveSegmentsOrAllowedDays(tableProperties,
+      CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS)
+    validateCompactionPreserveSegmentsOrAllowedDays(tableProperties,
+      CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS)
+  }
+
+  /**
+   * This method will validate the major compaction size specified by the user
+   * the property is used while doing major compaction
+   *
+   * @param tableProperties
+   */
+  def validateMajorCompactionSize(tableProperties: Map[String, String]): Unit = {
+    var majorCompactionSize: Integer = 0
+    val tblPropName = CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE
+    if (tableProperties.get(tblPropName).isDefined) {
+      val majorCompactionSizeStr: String =
+        parsePropertyValueStringInMB(tableProperties(tblPropName))
+      try {
+        majorCompactionSize = Integer.parseInt(majorCompactionSizeStr)
+      } catch {
+        case e: NumberFormatException =>
+          throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+            s"$majorCompactionSizeStr, only int value greater than 0 is supported.")
+      }
+      if (majorCompactionSize < 0) {
+        throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+          s"$majorCompactionSizeStr, only int value greater than 0 is supported.")
+      }
+      tableProperties.put(tblPropName, majorCompactionSizeStr)
+    }
+  }
+
+  /**
+   * This method will validate the auto merge load property specified by the user
+   * the property is used while doing minor compaction
+   *
+   * @param tableProperties
+   */
+  def validateAutoLoadMerge(tableProperties: Map[String, String]): Unit = {
+    val tblPropName = CarbonCommonConstants.TABLE_AUTO_LOAD_MERGE
+    if (tableProperties.get(tblPropName).isDefined) {
+      val trimStr = tableProperties(tblPropName).trim
+      if (!trimStr.equalsIgnoreCase("true") && !trimStr.equalsIgnoreCase("false")) {
+        throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+          s"$trimStr, only true|false is supported.")
+      }
+      tableProperties.put(tblPropName, trimStr)
+    }
+  }
+
+  /**
+   * This method will validate the compaction level threshold property specified by the user
+   * the property is used while doing minor compaction
+   *
+   * @param tableProperties
+   */
+  def validateCompactionLevelThreshold(tableProperties: Map[String, String]): Unit = {
+    val tblPropName = CarbonCommonConstants.TABLE_COMPACTION_LEVEL_THRESHOLD
+    if (tableProperties.get(tblPropName).isDefined) {
+      val regularedStr = tableProperties(tblPropName).replace(" ", "")
+      try {
+        val levels: Array[String] = regularedStr.split(",")
+        val thresholds = regularedStr.split(",").map(levelThresholdStr => levelThresholdStr.toInt)
+        if (!thresholds.forall(t => t < 100 && t > 0)) {
+          throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+            s"$regularedStr, only int values separated by comma and between 0 " +
+            s"and 100 are supported.")
+        }
+      }
+      catch {
+        case e: NumberFormatException =>
+          throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+            s"$regularedStr, only int values separated by comma and between 0 " +
+            s"and 100 are supported.")
+      }
+      tableProperties.put(tblPropName, regularedStr)
+    }
+  }
+
+  /**
+   * This method will validate the compaction preserve segments property
+   * or compaction allowed days property
+   *
+   * @param tableProperties
+   * @param tblPropName
+   */
+  def validateCompactionPreserveSegmentsOrAllowedDays(tableProperties: Map[String, String],
+                                                      tblPropName: String): Unit = {
+    if (tblPropName.equals(CarbonCommonConstants.TABLE_COMPACTION_PRESERVE_SEGMENTS) ||
+      tblPropName.equals(CarbonCommonConstants.TABLE_ALLOWED_COMPACTION_DAYS)) {
+      var propValue: Integer = 0
+      if (tableProperties.get(tblPropName).isDefined) {
+        val propValueStr = tableProperties(tblPropName).trim
+        try {
+          propValue = Integer.parseInt(propValueStr)
+        } catch {
+          case e: NumberFormatException =>
+            throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+              s"$propValueStr, only int value between 0 and 100 is supported.")
+        }
+        if (propValue < 0 || propValue > 100) {
+          throw new MalformedCarbonCommandException(s"Invalid $tblPropName value found: " +
+            s"$propValueStr, only int value between 0 and 100 is supported.")
+        }
+        tableProperties.put(tblPropName, propValueStr)
+      }
+    }
+  }
+
+  /**
    * This method will validate the table block size specified by the user
    *
    * @param tableProperties

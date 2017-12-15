@@ -208,7 +208,8 @@ object CarbonDataRDDFactory {
 
               val newCarbonLoadModel = prepareCarbonLoadModel(table)
 
-              val compactionSize = CarbonDataMergerUtil.getCompactionSize(CompactionType.MAJOR)
+              val compactionSize = CarbonDataMergerUtil
+                .getCompactionSize(CompactionType.MAJOR, carbonLoadModel)
 
               val newcompactionModel = CompactionModel(
                 compactionSize,
@@ -720,8 +721,8 @@ object CarbonDataRDDFactory {
       operationContext: OperationContext
   ): Unit = {
     LOGGER.info(s"compaction need status is" +
-                s" ${ CarbonDataMergerUtil.checkIfAutoLoadMergingRequired() }")
-    if (CarbonDataMergerUtil.checkIfAutoLoadMergingRequired()) {
+                s" ${ CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable) }")
+    if (CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable)) {
       LOGGER.audit(s"Compaction request received for table " +
                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       val compactionSize = 0

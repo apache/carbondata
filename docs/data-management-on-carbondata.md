@@ -92,6 +92,26 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
      ```
      NOTE: 512 or 512M both are accepted.
 
+   - **Table Compaction Configuration**
+   
+     These properties are table level compaction configurations, if not specified, system level configurations in carbon.properties will be used.
+     Following are 5 configurations:
+     
+     * MAJOR_COMPACTION_SIZE: same meaning with carbon.major.compaction.size, size in MB.
+     * AUTO_LOAD_MERGE: same meaning with carbon.enable.auto.load.merge.
+     * COMPACTION_LEVEL_THRESHOLD: same meaning with carbon.compaction.level.threshold.
+     * COMPACTION_PRESERVE_SEGMENTS: same meaning with carbon.numberof.preserve.segments.
+     * ALLOWED_COMPACTION_DAYS: same meaning with carbon.allowed.compaction.days.     
+
+     ```
+     TBLPROPERTIES ('MAJOR_COMPACTION_SIZE'='2048',
+                    'AUTO_LOAD_MERGE'='true',
+                    'COMPACTION_LEVEL_THRESHOLD'='5,6',
+                    'COMPACTION_PRESERVE_SEGMENTS'='10',
+                    'ALLOWED_COMPACTION_DAYS'='5')
+     ```
+
+
 ### Example:
 
    ```
@@ -109,7 +129,12 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
                    'NO_INVERTED_INDEX'='productBatch',
                    'SORT_COLUMNS'='productName,storeCity',
                    'SORT_SCOPE'='NO_SORT',
-                   'TABLE_BLOCKSIZE'='512')
+                   'TABLE_BLOCKSIZE'='512',
+                   'MAJOR_COMPACTION_SIZE'='2048',
+                   'AUTO_LOAD_MERGE'='true',
+                   'COMPACTION_LEVEL_THRESHOLD'='5,6',
+                   'COMPACTION_PRESERVE_SEGMENTS'='10',
+                   'ALLOWED_COMPACTION_DAYS'='5')
    ```
         
 ## TABLE MANAGEMENT  
