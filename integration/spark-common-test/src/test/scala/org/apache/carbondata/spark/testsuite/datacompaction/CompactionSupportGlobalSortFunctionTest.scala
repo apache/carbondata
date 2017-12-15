@@ -439,7 +439,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
     }
     sql("ALTER TABLE compaction_globalsort COMPACT 'MAJOR'")
 
-    assert(getIndexFileCount("compaction_globalsort", "0.1") === 3)
+    assert(getIndexFileCount("compaction_globalsort", "0.1") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(72)))
     checkAnswer(sql("SELECT * FROM compaction_globalsort order by name, id"),
       sql("SELECT * FROM carbon_localsort order by name, id"))
@@ -454,7 +454,7 @@ class CompactionSupportGlobalSortFunctionTest extends QueryTest with BeforeAndAf
     }
     sql("ALTER TABLE compaction_globalsort COMPACT 'MINOR'")
 
-    assert(getIndexFileCount("compaction_globalsort", "0.1") === 3)
+    assert(getIndexFileCount("compaction_globalsort", "0.1") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM compaction_globalsort"), Seq(Row(72)))
     checkAnswer(sql("SELECT * FROM compaction_globalsort order by name, id"),
       sql("SELECT * FROM carbon_localsort order by name, id"))
