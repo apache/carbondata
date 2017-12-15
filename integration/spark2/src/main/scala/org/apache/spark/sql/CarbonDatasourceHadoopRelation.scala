@@ -65,13 +65,45 @@ case class CarbonDatasourceHadoopRelation(
 
   override def schema: StructType = tableSchema.getOrElse(carbonRelation.schema)
 
-  def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[InternalRow] = {
+  def appendRequiredChildColumnNames(colName : String,
+                                     projectedFields :
+                                     java.util.List[java.util.Map[String, String]] )
+  : String = {
+    var colNamewithChildFields : String = colName
+    var childFieldsSet : java.util.HashSet[String] = new java.util.HashSet[String]();
+
+    val itr = projectedFields.iterator()
+    while (itr.hasNext) {
+      val m = itr.next()
+      if (m.get(CarbonCommonConstants.ATTRIBUTE_REFRENCE).equals(colName)) {
+        childFieldsSet.add(m.get(CarbonCommonConstants.FIELD_NAME));
+        colNamewithChildFields = colNamewithChildFields + "#" +
+          m.get(CarbonCommonConstants.FIELD_NAME)
+      }
+    }
+    if(childFieldsSet.contains(CarbonCommonConstants.NEED_ALL_FIELDS)) {
+      colNamewithChildFields = colName;
+    }
+    return colNamewithChildFields;
+  }
+
+  def buildScan(requiredColumns: Array[String],
+                projectedFields : java.util.List[java.util.Map[String, String]],
+                filters: Array[Filter]): RDD[InternalRow] = {
     val filterExpression: Option[Expression] = filters.flatMap { filter =>
       CarbonFilters.createCarbonFilter(schema, filter)
     }.reduceOption(new AndExpression(_, _))
 
     val projection = new CarbonProjection
-    requiredColumns.foreach(projection.addColumn)
+    var requiredColumnsUpdated = new java.util.ArrayList[String]()
+    requiredColumns.foreach((s : String ) => requiredColumnsUpdated.add(
+      appendRequiredChildColumnNames(s, projectedFields)))
+
+    var itr : java.util.Iterator[String] = requiredColumnsUpdated.iterator();
+    while (itr.hasNext) {
+      var colName = itr.next()
+      projection.addColumn(colName)
+    }
     val inputMetricsStats: CarbonInputMetrics = new CarbonInputMetrics
     new CarbonScanRDD(
       sparkSession.sparkContext,

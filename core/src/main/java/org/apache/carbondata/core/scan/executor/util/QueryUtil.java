@@ -224,19 +224,35 @@ public class QueryUtil {
       if (queryDimensions.get(i).getDimension().hasEncoding(Encoding.IMPLICIT)) {
         continue;
       }
-
+      List<String> allReqchildDimensions = new ArrayList<String>();
       Integer dimensionOrdinal = queryDimensions.get(i).getDimension().getOrdinal();
-      allProjectionListDimensionIndexes.add(dimensionOrdinalToBlockMapping.get(dimensionOrdinal));
       if (queryDimensions.get(i).getDimension().getNumberOfChild() > 0) {
+        //if the projected child dimension is also complex then include its childern
+        if (queryDimensions.get(i).getProjectionChildColumnNames() != null &&
+                queryDimensions.get(i).getProjectionChildColumnNames().size() > 0) {
+          for (String projCol :queryDimensions.get(i).getProjectionChildColumnNames()) {
+            addChildDimensionsForComplexProjDimensions(
+                    queryDimensions.get(i).getDimension(), projCol,allReqchildDimensions);
+          }
+        } else {
+          allProjectionListDimensionIndexes.add(
+                  dimensionOrdinalToBlockMapping.get(dimensionOrdinal));
+        }
+
+
         addChildrenBlockIndex(allProjectionListDimensionIndexes,
-            queryDimensions.get(i).getDimension());
+            queryDimensions.get(i).getDimension() , allReqchildDimensions);
       }
 
       if (!filterDimensionOrdinal.contains(dimensionOrdinal)) {
         blockIndex = dimensionOrdinalToBlockMapping.get(dimensionOrdinal);
-        dimensionBlockIndex.add(blockIndex);
+        if (queryDimensions.get(i).getProjectionChildColumnNames() == null ||
+                queryDimensions.get(i).getProjectionChildColumnNames().size() == 0) {
+          dimensionBlockIndex.add(blockIndex);
+        }
         if (queryDimensions.get(i).getDimension().getNumberOfChild() > 0) {
-          addChildrenBlockIndex(dimensionBlockIndex, queryDimensions.get(i).getDimension());
+          addChildrenBlockIndex(dimensionBlockIndex, queryDimensions.get(i).getDimension(),
+                  allReqchildDimensions);
         }
       }
     }
@@ -255,16 +271,31 @@ public class QueryUtil {
 
   /**
    * Below method will be used to add the children block index
-   * this will be basically for complex dimension which will have children
+   * this will be basically for complex dimension which will have children.
+   * adds block indesxes for only projected child dimensions
    *
    * @param blockIndexes block indexes
    * @param dimension    parent dimension
    */
-  private static void addChildrenBlockIndex(Set<Integer> blockIndexes, CarbonDimension dimension) {
-    for (int i = 0; i < dimension.getNumberOfChild(); i++) {
-      addChildrenBlockIndex(blockIndexes, dimension.getListOfChildDimensions().get(i));
-      blockIndexes.add(dimension.getListOfChildDimensions().get(i).getOrdinal());
+  private static void addChildrenBlockIndex(Set<Integer> blockIndexes, CarbonDimension dimension ,
+                                            List<String> projectionChildColumnNames) {
+    if (projectionChildColumnNames != null && projectionChildColumnNames.size() > 0) {
+      for (int i = 0; i < dimension.getNumberOfChild(); i++) {
+        addChildrenBlockIndex(blockIndexes, dimension.getListOfChildDimensions().get(i) ,
+                projectionChildColumnNames);
+        if (projectionChildColumnNames.contains(
+                dimension.getListOfChildDimensions().get(i).getColName())) {
+          blockIndexes.add(dimension.getListOfChildDimensions().get(i).getOrdinal());
+        }
+      }
+    } else {
+      for (int i = 0; i < dimension.getNumberOfChild(); i++) {
+        addChildrenBlockIndex(blockIndexes, dimension.getListOfChildDimensions().get(i),
+                projectionChildColumnNames);
+        blockIndexes.add(dimension.getListOfChildDimensions().get(i).getOrdinal());
+      }
     }
+
   }
 
   /**
@@ -906,5 +937,33 @@ public class QueryUtil {
         filterDimensionsOrdinal.add(queryDimensions.getListOfChildDimensions().get(j).getOrdinal());
       }
     }
+  }
+
+  private static List<String> addChildDimensionsForComplexProjDimensions(
+                                  CarbonDimension dimension ,
+                                  String projDimension ,
+                                  List<String> projDimensionsWithChildern) {
+    if (dimension.getListOfChildDimensions() != null &&
+            dimension.getListOfChildDimensions().size() > 0) {
+      for (CarbonDimension child : dimension.getListOfChildDimensions()) {
+        if (projDimension.equalsIgnoreCase(child.getColName())) {
+          addAllChildDimensions(child, projDimensionsWithChildern);
+        } else {
+          addChildDimensionsForComplexProjDimensions(child, projDimension,
+                  projDimensionsWithChildern);
+        }
+      }
+    }
+
+    return projDimensionsWithChildern;
+  }
+
+  private static void addAllChildDimensions(CarbonDimension child, List<String> projDimensions) {
+    if (child.getListOfChildDimensions() != null && child.getListOfChildDimensions().size() > 0) {
+      for (CarbonDimension ch : child.getListOfChildDimensions()) {
+        addAllChildDimensions(ch , projDimensions);
+      }
+    }
+    projDimensions.add(child.getColName());
   }
 }

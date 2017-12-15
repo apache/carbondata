@@ -20,6 +20,7 @@ package org.apache.carbondata.core.scan.filter;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.List;
 
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -48,4 +49,6 @@ public interface GenericQueryType {
   void fillRequiredBlockData(BlocksChunkHolder blockChunkHolder) throws IOException;
 
   Object getDataBasedOnDataTypeFromSurrogates(ByteBuffer surrogateData);
+
+  public List<GenericQueryType> getChildern();
 }

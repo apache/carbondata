@@ -1453,6 +1453,12 @@ public final class CarbonCommonConstants {
 
   public static final String TIMESERIES_HIERARCHY = "timeseries.hierarchy";
 
+  public static final String ATTRIBUTE_REFRENCE = "AttributeReference";
+
+  public static final String FIELD_NAME = "FieldName";
+
+  public static final String NEED_ALL_FIELDS = "ALL_FIELDS";
+
   private CarbonCommonConstants() {
   }
 }

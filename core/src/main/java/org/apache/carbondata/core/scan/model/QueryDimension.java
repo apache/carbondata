@@ -17,7 +17,10 @@
 
 package org.apache.carbondata.core.scan.model;
 
+
 import java.io.Serializable;
+
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 
@@ -36,6 +39,8 @@ public class QueryDimension extends QueryColumn implements Serializable {
    */
   private transient CarbonDimension dimension;
 
+  private List<String> projectionChildColumnNames ;
+
   public QueryDimension(String columnName) {
     super(columnName);
   }
@@ -52,5 +57,14 @@ public class QueryDimension extends QueryColumn implements Serializable {
    */
   public void setDimension(CarbonDimension dimension) {
     this.dimension = dimension;
+  }
+
+  public void setProjectionChildColumnNames(List<String> childDimensionNames) {
+    this.projectionChildColumnNames = childDimensionNames;
+  }
+
+  public List<String> getProjectionChildColumnNames() {
+    return projectionChildColumnNames;
+
   }
 }

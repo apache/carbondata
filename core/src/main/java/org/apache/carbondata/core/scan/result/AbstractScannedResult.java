@@ -463,6 +463,57 @@ public abstract class AbstractScannedResult {
     }
     return complexTypeData;
   }
+  public GenericQueryType getChildProjectionQueryType(GenericQueryType parentQueryType ,
+                                                        String childProjection) {
+    int childLength = parentQueryType.getChildern().size();
+    for (int i = 0; i < childLength; i++) {
+      GenericQueryType childQueryType = parentQueryType.getChildern().get(i);
+      if (childProjection.equalsIgnoreCase(childQueryType.getName())) {
+        return childQueryType;
+      } else if (childQueryType.getChildern() != null &&
+              childQueryType.getChildern().size() > 0) {
+        GenericQueryType found = getChildProjectionQueryType(childQueryType ,
+                  childProjection);
+        if (found != null) {
+          return found;
+        }
+
+      }
+    }
+
+    return null;
+  }
+
+  /**
+   * Get byte array for projected dimensions
+   * @param rowId
+   * @param childProjection
+   * @param parentblockIndex
+   * @return byte[]
+   */
+  protected byte[] getComplexTypeKeyArrayForDimension(int rowId , String childProjection ,
+                                                        int parentblockIndex) {
+    GenericQueryType genericQueryType =
+            complexParentIndexToQueryMap.get(parentblockIndex) ;
+
+    GenericQueryType projectedQueryType = getChildProjectionQueryType(genericQueryType ,
+            childProjection);
+    ByteArrayOutputStream byteStream = new ByteArrayOutputStream();
+    DataOutputStream dataOutput = new DataOutputStream(byteStream);
+    try {
+      projectedQueryType
+                .parseBlocksAndReturnComplexColumnByteArray(rawColumnChunks, rowId, pageCounter,
+                        dataOutput);
+    } catch (IOException e) {
+      LOGGER.error(e);
+    } finally {
+      CarbonUtil.closeStreams(dataOutput);
+      CarbonUtil.closeStreams(byteStream);
+    }
+
+    return byteStream.toByteArray();
+
+  }
 
   /**
    * @return return the total number of row after scanning
@@ -591,6 +642,9 @@ public abstract class AbstractScannedResult {
    * @return complex type key array
    */
   public abstract byte[][] getComplexTypeKeyArray();
+
+  public abstract byte[] getComplexTypeKeyArrayForDimension(String projectedDimension ,
+                                                            int parentblockIndex);
 
   /**
    * Below method will be used to get the no dictionary key

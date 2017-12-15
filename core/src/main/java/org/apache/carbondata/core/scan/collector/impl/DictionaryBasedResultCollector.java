@@ -17,10 +17,7 @@
 package org.apache.carbondata.core.scan.collector.impl;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
@@ -36,6 +33,7 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
 import org.apache.commons.lang3.ArrayUtils;
+import org.apache.spark.sql.catalyst.expressions.GenericInternalRow;
 
 /**
  * It is not a collector it is just a scanned result holder.
@@ -91,17 +89,20 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
     int rowCounter = 0;
     int[] surrogateResult;
     byte[][] noDictionaryKeys;
-    byte[][] complexTypeKeyArray;
+    byte[][] complexTypeKeyArray = null;
     while (scannedResult.hasNext() && rowCounter < batchSize) {
       Object[] row = new Object[queryDimensions.length + queryMeasures.length];
       if (isDimensionExists) {
         surrogateResult = scannedResult.getDictionaryKeyIntegerArray();
         noDictionaryKeys = scannedResult.getNoDictionaryKeyArray();
-        complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
         dictionaryColumnIndex = 0;
         noDictionaryColumnIndex = 0;
         complexTypeColumnIndex = 0;
         for (int i = 0; i < queryDimensions.length; i++) {
+          if (queryDimensions[i].getProjectionChildColumnNames() == null ||
+                  queryDimensions[i].getProjectionChildColumnNames().size() == 0) {
+            complexTypeKeyArray = scannedResult.getComplexTypeKeyArray();
+          }
           fillDimensionData(scannedResult, surrogateResult, noDictionaryKeys, complexTypeKeyArray,
               comlexDimensionInfoMap, row, i);
         }
@@ -144,13 +145,57 @@ public class DictionaryBasedResultCollector extends AbstractScannedResultCollect
             surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]]);
       }
     } else if (complexDataTypeArray[i]) {
-      row[order[i]] = comlexDimensionInfoMap.get(queryDimensions[i].getDimension().getOrdinal())
+      Map<String, byte[]> dataBasedonProjectedChildelements =  new HashMap<>();
+      if (queryDimensions[i].getProjectionChildColumnNames() != null &&
+              queryDimensions[i].getProjectionChildColumnNames().size() > 0 &&
+              (DataTypes.isStructType(queryDimensions[i].getDimension().getDataType()))) {
+        for (String projectedChileDimension : queryDimensions[i].getProjectionChildColumnNames()) {
+          dataBasedonProjectedChildelements.put(projectedChileDimension ,
+                  scannedResult.getComplexTypeKeyArrayForDimension(projectedChileDimension ,
+                          queryDimensions[i].getDimension().getOrdinal()));
+        }
+        row[order[i]] = fillDimensionDataForProjectedDimensions(dataBasedonProjectedChildelements,
+                comlexDimensionInfoMap.get(queryDimensions[i].getDimension().getOrdinal()));
+      } else {
+        row[order[i]] = comlexDimensionInfoMap.get(queryDimensions[i].getDimension().getOrdinal())
           .getDataBasedOnDataTypeFromSurrogates(
               ByteBuffer.wrap(complexTypeKeyArray[complexTypeColumnIndex++]));
+      }
+
       dictionaryColumnIndex++;
     } else {
       row[order[i]] = surrogateResult[actualIndexInSurrogateKey[dictionaryColumnIndex++]];
     }
+  }
+
+  /**
+   * Fills in the Dimension Data only for the required projected dimensions /child dimension
+   * @param dataBasedonProjectedChilelements
+   * @param genericQueryType
+   * @return
+   */
+
+  private Object fillDimensionDataForProjectedDimensions(Map<String,
+                                                    byte[]> dataBasedonProjectedChilelements,
+                                                         GenericQueryType genericQueryType) {
+    Object[] fields = null;
+    if (dataBasedonProjectedChilelements.containsKey(genericQueryType.getName())) {
+      return genericQueryType.getDataBasedOnDataTypeFromSurrogates(
+              ByteBuffer.wrap(dataBasedonProjectedChilelements.get(genericQueryType.getName())));
+    } else if (genericQueryType.getChildern() != null &&
+            genericQueryType.getChildern().size() > 0) {
+      fields = new Object[genericQueryType.getChildern().size()];
+
+      int i = 0;
+      for (GenericQueryType childQueryType : genericQueryType.getChildern()) {
+        fields[i] = fillDimensionDataForProjectedDimensions(dataBasedonProjectedChilelements,
+                childQueryType);
+        i++;
+      }
+    } else {
+      return null;
+    }
+    return new GenericInternalRow(fields);
   }
 
   protected void fillMeasureData(AbstractScannedResult scannedResult, Object[] row) {
