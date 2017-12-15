@@ -19,10 +19,10 @@ package org.apache.carbondata.spark.testsuite.partition
 
 import java.sql.Timestamp
 
-import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.{AnalysisException, DataFrame, Row}
 import org.apache.spark.sql.catalyst.analysis.NoSuchDatabaseException
-import org.apache.spark.sql.Row
 import org.scalatest.BeforeAndAfterAll
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
@@ -148,6 +148,14 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
     // EqualTo
     checkAnswer(sql("show partitions hashTable"), Seq(Row("empno = HASH_NUMBER(3)"), Row("partitionIds = [0, 1, 2]")))
 
+  }
+
+  test("show partition table: desc formatted should show partition type"){
+    //check for partition type exist in desc formatted
+    val result:DataFrame = sql("describe formatted hashTable")
+    checkExistence(result,true,"Partition Type")
+    val row: Array[Row] = result.collect().filter{row: Row => row.getString(0).contains("Partition Type")}
+    assert(row(0).getString(1).contains("HASH"))
   }
 
   test("show partition table: range partition") {
