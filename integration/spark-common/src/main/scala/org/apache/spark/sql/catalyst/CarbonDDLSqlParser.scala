@@ -28,7 +28,6 @@ import scala.util.matching.Regex
 
 import org.apache.hadoop.hive.ql.lib.Node
 import org.apache.hadoop.hive.ql.parse._
-import org.apache.spark.sql.AnalysisException
 import org.apache.spark.sql.catalyst.trees.CurrentOrigin
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.util.CarbonException
@@ -42,6 +41,7 @@ import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
+import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.{CommonUtil, DataTypeConverterUtil}
 
@@ -871,6 +871,30 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
     if (!isSupported) {
       val errorMessage = "Error: Invalid option(s): " + invalidOptions.toString()
       throw new MalformedCarbonCommandException(errorMessage)
+    }
+
+    // Validate QUOTECHAR length
+    if (options.exists(_._1.equalsIgnoreCase("QUOTECHAR"))) {
+      val quoteChar: String = options.get("quotechar").get.head._2
+      if (quoteChar.length > 1 ) {
+        throw new MalformedCarbonCommandException("QUOTECHAR cannot be more than one character.")
+      }
+    }
+
+    // Validate COMMENTCHAR length
+    if (options.exists(_._1.equalsIgnoreCase("COMMENTCHAR"))) {
+      val commentChar: String = options.get("commentchar").get.head._2
+      if (commentChar.length > 1) {
+        throw new MalformedCarbonCommandException("COMMENTCHAR cannot be more than one character.")
+      }
+    }
+
+    // Validate ESCAPECHAR length
+    if (options.exists(_._1.equalsIgnoreCase("ESCAPECHAR"))) {
+      val escapechar: String = options.get("escapechar").get.head._2
+      if (escapechar.length > 1 && !CarbonLoaderUtil.isValidEscapeSequence(escapechar)) {
+        throw new MalformedCarbonCommandException("ESCAPECHAR cannot be more than one character.")
+      }
     }
 
     //  COLUMNDICT and ALL_DICTIONARY_PATH can not be used together.

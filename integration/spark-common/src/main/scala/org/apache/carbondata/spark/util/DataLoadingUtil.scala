@@ -55,9 +55,12 @@ object DataLoadingUtil {
     optionsFinal.put("delimiter", options.getOrElse("delimiter", ","))
     optionsFinal.put("quotechar", options.getOrElse("quotechar", "\""))
     optionsFinal.put("fileheader", options.getOrElse("fileheader", ""))
-    optionsFinal.put("escapechar", options.getOrElse("escapechar", "\\"))
     optionsFinal.put("commentchar", options.getOrElse("commentchar", "#"))
     optionsFinal.put("columndict", options.getOrElse("columndict", null))
+
+    optionsFinal.put("escapechar",
+      CarbonLoaderUtil.getEscapeChar(options.getOrElse("escapechar", "\\")))
+
     optionsFinal.put(
       "serialization_null_format",
       options.getOrElse("serialization_null_format", "\\N"))
