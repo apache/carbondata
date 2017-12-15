@@ -17,6 +17,10 @@
 
 package org.apache.carbondata.spark.testsuite.dataload
 
+import java.io.{File, FileWriter}
+
+import org.apache.commons.io.FileUtils
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -105,7 +109,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
       "OPTIONS('BAD_RECORDS_ACTION'='REDIRECT')")
 
-    assert(getIndexFileCount("carbon_globalsort") === 3)
+    assert(getIndexFileCount("carbon_globalsort") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
   }
 
@@ -115,7 +119,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort " +
       "OPTIONS('SINGLE_PASS'='TRUE')")
 
-    assert(getIndexFileCount("carbon_globalsort") === 3)
+    assert(getIndexFileCount("carbon_globalsort") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(12)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name"),
       sql("SELECT * FROM carbon_localsort_once ORDER BY name"))
@@ -164,7 +168,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
     sql("ALTER TABLE carbon_globalsort COMPACT 'MAJOR'")
 
-    assert(getIndexFileCount("carbon_globalsort") === 3)
+    assert(getIndexFileCount("carbon_globalsort") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(24)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
       sql("SELECT * FROM carbon_localsort_twice ORDER BY name, id"))
@@ -223,7 +227,7 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     sql(s"LOAD DATA LOCAL INPATH '$filePath' INTO TABLE carbon_globalsort")
     sql("DELETE FROM carbon_globalsort WHERE id = 1").show
 
-    assert(getIndexFileCount("carbon_globalsort") === 3)
+    assert(getIndexFileCount("carbon_globalsort") === 2)
     checkAnswer(sql("SELECT COUNT(*) FROM carbon_globalsort"), Seq(Row(11)))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
       sql("SELECT * FROM carbon_localsort_delete ORDER BY name, id"))
@@ -248,6 +252,27 @@ class TestGlobalSortDataLoad extends QueryTest with BeforeAndAfterEach with Befo
     checkAnswer(sql("SELECT name FROM carbon_globalsort WHERE id = 2"), Seq(Row("bb")))
     checkAnswer(sql("SELECT * FROM carbon_globalsort ORDER BY name, id"),
       sql("SELECT * FROM carbon_localsort_update ORDER BY name, id"))
+  }
+
+  test("LOAD with small files") {
+    val inputPath = new File("target/small_files").getCanonicalPath
+    val folder = new File(inputPath)
+    if (folder.exists()) {
+      FileUtils.deleteDirectory(folder)
+    }
+    folder.mkdir()
+    for (i <- 0 to 100) {
+      val file = s"$folder/file$i.csv"
+      val writer = new FileWriter(file)
+      writer.write("id,name,city,age\n")
+      writer.write(s"$i,name_$i,city_$i,${ i % 100 }")
+      writer.close()
+    }
+    sql(s"LOAD DATA LOCAL INPATH '$inputPath' INTO TABLE carbon_globalsort")
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default", "carbon_globalsort")
+    val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
+    val segmentDir = carbonTablePath.getSegmentDir("0", "0")
+    assertResult(5)(new File(segmentDir).listFiles().length)
   }
 
   // ----------------------------------- INSERT INTO -----------------------------------

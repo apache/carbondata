@@ -1277,6 +1277,10 @@ public final class CarbonCommonConstants {
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION = "carbon.custom.block.distribution";
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT = "false";
 
+  @CarbonProperty
+  public static final String CARBON_COMBINE_SMALL_INPUT_FILES = "carbon.combine.small.input.files";
+  public static final String CARBON_COMBINE_SMALL_INPUT_FILES_DEFAULT = "false";
+
   public static final int DICTIONARY_DEFAULT_CARDINALITY = 1;
   @CarbonProperty
   public static final String SPARK_SCHEMA_STRING_LENGTH_THRESHOLD =

@@ -18,7 +18,8 @@
 package org.apache.carbondata.spark.rdd
 
 import java.text.SimpleDateFormat
-import java.util.{ArrayList, Date, List}
+import java.util
+import java.util.{ArrayList, Collections, Date, List}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -29,7 +30,9 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark._
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.execution.command.sessionState
 import org.apache.spark.sql.hive.DistributionUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -55,7 +58,7 @@ import org.apache.carbondata.spark.util.SparkDataTypeConverterImpl
  * level filtering in driver side.
  */
 class CarbonScanRDD(
-    @transient sc: SparkContext,
+    @transient spark: SparkSession,
     val columnProjection: CarbonProjection,
     var filterExpression: Expression,
     identifier: AbsoluteTableIdentifier,
@@ -63,7 +66,7 @@ class CarbonScanRDD(
     @transient tableInfo: TableInfo,
     inputMetricsStats: InitInputMetrics,
     @transient val partitionNames: Seq[String])
-  extends CarbonRDDWithTableInfo[InternalRow](sc, Nil, serializedTableInfo) {
+  extends CarbonRDDWithTableInfo[InternalRow](spark.sparkContext, Nil, serializedTableInfo) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
   private val jobTrackerId: String = {
@@ -186,31 +189,74 @@ class CarbonScanRDD(
           }
         }
         noOfNodes = nodeBlockMapping.size
+      } else if (CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.CARBON_USE_BLOCKLET_DISTRIBUTION,
+        CarbonCommonConstants.CARBON_USE_BLOCKLET_DISTRIBUTION_DEFAULT).toBoolean) {
+        // Use blocklet distribution
+        // Randomize the blocklets for better shuffling
+        Random.shuffle(splits.asScala).zipWithIndex.foreach { splitWithIndex =>
+          val multiBlockSplit =
+            new CarbonMultiBlockSplit(identifier,
+              Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
+              splitWithIndex._1.getLocations)
+          val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
+          result.add(partition)
+        }
+      } else if (CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.CARBON_COMBINE_SMALL_INPUT_FILES,
+        CarbonCommonConstants.CARBON_COMBINE_SMALL_INPUT_FILES_DEFAULT).toBoolean) {
+
+        // sort blocks in reverse order of length
+        val blockSplits = splits
+          .asScala
+          .map(_.asInstanceOf[CarbonInputSplit])
+          .groupBy(f => f.getBlockPath)
+          .map { blockSplitEntry =>
+            new CarbonMultiBlockSplit(identifier,
+              blockSplitEntry._2.asJava,
+              blockSplitEntry._2.flatMap(f => f.getLocations).distinct.toArray)
+          }.toArray.sortBy(_.getLength)(implicitly[Ordering[Long]].reverse)
+
+        val defaultMaxSplitBytes = sessionState(spark).conf.filesMaxPartitionBytes
+        val openCostInBytes = sessionState(spark).conf.filesOpenCostInBytes
+        val defaultParallelism = spark.sparkContext.defaultParallelism
+        val totalBytes = blockSplits.map(_.getLength + openCostInBytes).sum
+        val bytesPerCore = totalBytes / defaultParallelism
+
+        val maxSplitBytes = Math.min(defaultMaxSplitBytes, Math.max(openCostInBytes, bytesPerCore))
+        LOGGER.info(s"Planning scan with bin packing, max size: $maxSplitBytes bytes, " +
+                    s"open cost is considered as scanning $openCostInBytes bytes.")
+
+        val currentFiles = new ArrayBuffer[CarbonMultiBlockSplit]
+        var currentSize = 0L
+
+        def closePartition(): Unit = {
+          if (currentFiles.nonEmpty) {
+            result.add(combineSplits(currentFiles, currentSize, result.size()))
+          }
+          currentFiles.clear()
+          currentSize = 0
+        }
+
+        blockSplits.foreach { file =>
+          if (currentSize + file.getLength > maxSplitBytes) {
+            closePartition()
+          }
+          // Add the given file to the current partition.
+          currentSize += file.getLength + openCostInBytes
+          currentFiles += file
+        }
+        closePartition()
       } else {
-        if (CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.CARBON_USE_BLOCKLET_DISTRIBUTION,
-            CarbonCommonConstants.CARBON_USE_BLOCKLET_DISTRIBUTION_DEFAULT).toBoolean) {
-          // Use blocklet distribution
-          // Randomize the blocklets for better shuffling
-          Random.shuffle(splits.asScala).zipWithIndex.foreach { splitWithIndex =>
-            val multiBlockSplit =
-              new CarbonMultiBlockSplit(identifier,
-                Seq(splitWithIndex._1.asInstanceOf[CarbonInputSplit]).asJava,
-                splitWithIndex._1.getLocations)
-            val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
-            result.add(partition)
-          }
-        } else {
-          // Use block distribution
-          splits.asScala.map(_.asInstanceOf[CarbonInputSplit]).
-            groupBy(f => f.getBlockPath).values.zipWithIndex.foreach { splitWithIndex =>
-            val multiBlockSplit =
-              new CarbonMultiBlockSplit(identifier,
-                splitWithIndex._1.asJava,
-                splitWithIndex._1.flatMap(f => f.getLocations).distinct.toArray)
-            val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
-            result.add(partition)
-          }
+        // Use block distribution
+        splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
+          .groupBy(f => f.getBlockPath).values.zipWithIndex.foreach { splitWithIndex =>
+          val multiBlockSplit =
+            new CarbonMultiBlockSplit(identifier,
+              splitWithIndex._1.asJava,
+              splitWithIndex._1.flatMap(f => f.getLocations).distinct.toArray)
+          val partition = new CarbonSparkPartition(id, splitWithIndex._2, multiBlockSplit)
+          result.add(partition)
         }
       }
 
@@ -230,6 +276,32 @@ class CarbonScanRDD(
          | parallelism: $parallelism
        """.stripMargin)
     result.asScala
+  }
+
+  def combineSplits(
+      splits: ArrayBuffer[CarbonMultiBlockSplit],
+      size: Long,
+      partitionId: Int
+  ): CarbonSparkPartition = {
+    val carbonInputSplits = splits.flatMap(_.getAllSplits.asScala)
+
+    // Computes total number of bytes can be retrieved from each host.
+    val hostToNumBytes = mutable.HashMap.empty[String, Long]
+    splits.foreach { split =>
+      split.getLocations.filter(_ != "localhost").foreach { host =>
+        hostToNumBytes(host) = hostToNumBytes.getOrElse(host, 0L) + split.getLength
+      }
+    }
+    // Takes the first 3 hosts with the most data to be retrieved
+    val locations = hostToNumBytes
+      .toSeq
+      .sortBy(_._2)(implicitly[Ordering[Long]].reverse)
+      .take(3)
+      .map(_._1)
+      .toArray
+
+    val multiBlockSplit = new CarbonMultiBlockSplit(null, carbonInputSplits.asJava, locations)
+    new CarbonSparkPartition(id, partitionId, multiBlockSplit)
   }
 
   override def internalCompute(split: Partition, context: TaskContext): Iterator[InternalRow] = {
