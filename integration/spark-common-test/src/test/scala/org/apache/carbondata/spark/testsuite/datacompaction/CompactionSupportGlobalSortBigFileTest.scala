@@ -51,7 +51,7 @@ class CompactionSupportGlobalSortBigFileTest extends QueryTest with BeforeAndAft
     CompactionSupportGlobalSortBigFileTest.deleteFile(file3)
     CompactionSupportGlobalSortBigFileTest.deleteFile(file4)
     CompactionSupportGlobalSortBigFileTest.deleteFile(file5)
-    resetConf(CarbonCommonConstants.DEFAULT_MAJOR_COMPACTION_SIZE)
+    resetConf(CarbonCommonConstants.DEFAULT_CARBON_MAJOR_COMPACTION_SIZE)
   }
 
   override def beforeEach {
@@ -104,7 +104,7 @@ class CompactionSupportGlobalSortBigFileTest extends QueryTest with BeforeAndAft
 
   private def resetConf(size:String) {
     CarbonProperties.getInstance()
-      .addProperty(CarbonCommonConstants.MAJOR_COMPACTION_SIZE, size)
+      .addProperty(CarbonCommonConstants.CARBON_MAJOR_COMPACTION_SIZE, size)
   }
 }
 
