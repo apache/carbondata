@@ -48,12 +48,3 @@ case class CarbonBoundReference(colExp: ColumnExpression, dataType: DataType, nu
 
   override def newInstance(): NamedExpression = throw new UnsupportedOperationException
 }
-
-case class CarbonEndsWith(expr: Expression) extends Filter {
-  override def references: Array[String] = null
-}
-
-case class CarbonContainsWith(expr: Expression) extends Filter {
-  override def references: Array[String] = null
-}
-
