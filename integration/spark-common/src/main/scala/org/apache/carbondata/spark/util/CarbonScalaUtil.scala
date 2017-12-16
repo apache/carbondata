@@ -222,4 +222,21 @@ object CarbonScalaUtil {
           } cannot be modified. Only Int and Decimal data types are allowed for modification")
     }
   }
+
+  /**
+   * returns  all fields except tupleId field as it is not required in the value
+   *
+   * @param fields
+   * @return
+   */
+  def getAllFieldsWithoutTupleIdField(fields: Array[StructField]): Seq[Column] = {
+    // getting all fields except tupleId field as it is not required in the value
+    val otherFields = fields.toSeq
+      .filter(field => !field.name
+        .equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))
+      .map(field => {
+        new Column(field.name)
+      })
+    otherFields
+  }
 }

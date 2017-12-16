@@ -26,6 +26,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
 import org.apache.spark.sql.execution.command.{DataCommand, DataLoadTableFileMapping, UpdateTableModel}
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.types.StructField
 import org.apache.spark.util.{CausedBy, FileUtils}
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -47,7 +48,7 @@ import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
-import org.apache.carbondata.spark.util.{CommonUtil, DataLoadingUtil, GlobalDictionaryUtil}
+import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, DataLoadingUtil, GlobalDictionaryUtil}
 
 case class CarbonLoadDataCommand(
     databaseNameOp: Option[String],
@@ -310,6 +311,11 @@ case class CarbonLoadDataCommand(
     } else {
       None
     }
+    val loadDataFrame = if (updateModel.isDefined) {
+       Some(getDataFrameWithTupleID())
+    } else {
+      dataFrame
+    }
     CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
       carbonLoadModel,
       columnar,
@@ -317,7 +323,7 @@ case class CarbonLoadDataCommand(
       server,
       isOverwriteTable,
       hadoopConf,
-      dataFrame,
+      loadDataFrame,
       updateModel,
       operationContext)
   }
@@ -330,27 +336,11 @@ case class CarbonLoadDataCommand(
       hadoopConf: Configuration,
       operationContext: OperationContext): Unit = {
     val (dictionaryDataFrame, loadDataFrame) = if (updateModel.isDefined) {
-      val fields = dataFrame.get.schema.fields
-      import org.apache.spark.sql.functions.udf
-      // extracting only segment from tupleId
-      val getSegIdUDF = udf((tupleId: String) =>
-        CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID))
+      val dataFrameWithTupleId: DataFrame = getDataFrameWithTupleID()
       // getting all fields except tupleId field as it is not required in the value
-      var otherFields = fields.toSeq.filter { field =>
-        !field.name.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID)
-      }.map { field =>
-        new Column(field.name)
-      }
-
-      // extract tupleId field which will be used as a key
-      val segIdColumn = getSegIdUDF(new Column(UnresolvedAttribute
-        .quotedString(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))).
-        as(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_SEGMENTID)
+      val otherFields = CarbonScalaUtil.getAllFieldsWithoutTupleIdField(dataFrame.get.schema.fields)
       // use dataFrameWithoutTupleId as dictionaryDataFrame
       val dataFrameWithoutTupleId = dataFrame.get.select(otherFields: _*)
-      otherFields = otherFields :+ segIdColumn
-      // use dataFrameWithTupleId as loadDataFrame
-      val dataFrameWithTupleId = dataFrame.get.select(otherFields: _*)
       (Some(dataFrameWithoutTupleId), Some(dataFrameWithTupleId))
     } else {
       (dataFrame, dataFrame)
@@ -372,6 +362,24 @@ case class CarbonLoadDataCommand(
       loadDataFrame,
       updateModel,
       operationContext)
+  }
+
+  def getDataFrameWithTupleID(): DataFrame = {
+    val fields = dataFrame.get.schema.fields
+    import org.apache.spark.sql.functions.udf
+    // extracting only segment from tupleId
+    val getSegIdUDF = udf((tupleId: String) =>
+      CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.SEGMENT_ID))
+    // getting all fields except tupleId field as it is not required in the value
+    val otherFields = CarbonScalaUtil.getAllFieldsWithoutTupleIdField(fields)
+    // extract tupleId field which will be used as a key
+    val segIdColumn = getSegIdUDF(new Column(UnresolvedAttribute
+      .quotedString(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))).
+      as(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_SEGMENTID)
+    val fieldWithTupleId = otherFields :+ segIdColumn
+    // use dataFrameWithTupleId as loadDataFrame
+    val dataFrameWithTupleId = dataFrame.get.select(fieldWithTupleId: _*)
+    (dataFrameWithTupleId)
   }
 
   private def updateTableMetadata(
