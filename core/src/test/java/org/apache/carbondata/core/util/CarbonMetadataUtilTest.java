@@ -209,7 +209,7 @@ public class CarbonMetadataUtilTest {
       }
     };
 
-    TablePageKey key = new TablePageKey(3, null, segmentProperties, false);
+    TablePageKey key = new TablePageKey(3, segmentProperties, false);
     EncodedTablePage encodedTablePage = EncodedTablePage.newInstance(3, new EncodedColumnPage[0], new EncodedColumnPage[0],
         key);
 
