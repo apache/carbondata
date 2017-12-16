@@ -62,66 +62,66 @@ case class CarbonCreateTableCommand(
           s"Table [$tableName] already exists under database [$dbName]")
         throw new TableAlreadyExistsException(dbName, tableName)
       }
-    }
+    } else {
+      val tablePath = tableLocation.getOrElse(
+        CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession))
+      tableInfo.setTablePath(tablePath)
+      val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
 
-    val tablePath = tableLocation.getOrElse(
-      CarbonEnv.getTablePath(Some(dbName), tableName)(sparkSession))
-    tableInfo.setTablePath(tablePath)
-    val tableIdentifier = AbsoluteTableIdentifier.from(tablePath, dbName, tableName)
-
-    // Add validation for sort scope when create table
-    val sortScope = tableInfo.getFactTable.getTableProperties.asScala
-      .getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
-    if (!CarbonUtil.isValidSortOption(sortScope)) {
-      throw new InvalidConfigurationException(
-        s"Passing invalid SORT_SCOPE '$sortScope', valid SORT_SCOPE are 'NO_SORT', 'BATCH_SORT'," +
-        s" 'LOCAL_SORT' and 'GLOBAL_SORT' ")
-    }
-
-    if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
-      CarbonException.analysisException("Table should have at least one column.")
-    }
-
-    val operationContext = new OperationContext
-    val createTablePreExecutionEvent: CreateTablePreExecutionEvent =
-      CreateTablePreExecutionEvent(sparkSession, tableIdentifier, Some(tableInfo))
-    OperationListenerBus.getInstance.fireEvent(createTablePreExecutionEvent, operationContext)
-    val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
-    val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tableIdentifier)
-    if (createDSTable) {
-      try {
-        val tablePath = tableIdentifier.getTablePath
-        val carbonRelation = CarbonSparkUtil.createCarbonRelation(tableInfo, tablePath)
-        val rawSchema = CarbonSparkUtil.getRawSchema(carbonRelation)
-        sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
-        sparkSession.sql(
-          s"""CREATE TABLE $dbName.$tableName
-             |(${ rawSchema })
-             |USING org.apache.spark.sql.CarbonSource
-             |OPTIONS (
-             |  tableName "$tableName",
-             |  dbName "$dbName",
-             |  tablePath "$tablePath",
-             |  path "$tablePath"
-             |  $carbonSchemaString)
-             """.stripMargin)
-      } catch {
-        case e: AnalysisException => throw e
-        case e: Exception =>
-          // call the drop table to delete the created table.
-          CarbonEnv.getInstance(sparkSession).carbonMetastore
-            .dropTable(tableIdentifier)(sparkSession)
-
-          val msg = s"Create table'$tableName' in database '$dbName' failed."
-          LOGGER.audit(msg)
-          LOGGER.error(e, msg)
-          CarbonException.analysisException(msg)
+      // Add validation for sort scope when create table
+      val sortScope = tableInfo.getFactTable.getTableProperties.asScala
+        .getOrElse("sort_scope", CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT)
+      if (!CarbonUtil.isValidSortOption(sortScope)) {
+        throw new InvalidConfigurationException(
+          s"Passing invalid SORT_SCOPE '$sortScope', valid SORT_SCOPE are 'NO_SORT'," +
+          s" 'BATCH_SORT', 'LOCAL_SORT' and 'GLOBAL_SORT' ")
       }
+
+      if (tableInfo.getFactTable.getListOfColumns.size <= 0) {
+        CarbonException.analysisException("Table should have at least one column.")
+      }
+
+      val operationContext = new OperationContext
+      val createTablePreExecutionEvent: CreateTablePreExecutionEvent =
+        CreateTablePreExecutionEvent(sparkSession, tableIdentifier, Some(tableInfo))
+      OperationListenerBus.getInstance.fireEvent(createTablePreExecutionEvent, operationContext)
+      val catalog = CarbonEnv.getInstance(sparkSession).carbonMetastore
+      val carbonSchemaString = catalog.generateTableSchemaString(tableInfo, tableIdentifier)
+      if (createDSTable) {
+        try {
+          val tablePath = tableIdentifier.getTablePath
+          val carbonRelation = CarbonSparkUtil.createCarbonRelation(tableInfo, tablePath)
+          val rawSchema = CarbonSparkUtil.getRawSchema(carbonRelation)
+          sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
+          sparkSession.sql(
+            s"""CREATE TABLE $dbName.$tableName
+               |(${ rawSchema })
+               |USING org.apache.spark.sql.CarbonSource
+               |OPTIONS (
+               |  tableName "$tableName",
+               |  dbName "$dbName",
+               |  tablePath "$tablePath",
+               |  path "$tablePath"
+               |  $carbonSchemaString)
+             """.stripMargin)
+        } catch {
+          case e: AnalysisException => throw e
+          case e: Exception =>
+            // call the drop table to delete the created table.
+            CarbonEnv.getInstance(sparkSession).carbonMetastore
+              .dropTable(tableIdentifier)(sparkSession)
+
+            val msg = s"Create table'$tableName' in database '$dbName' failed."
+            LOGGER.audit(msg)
+            LOGGER.error(e, msg)
+            CarbonException.analysisException(msg)
+        }
+      }
+      val createTablePostExecutionEvent: CreateTablePostExecutionEvent =
+        CreateTablePostExecutionEvent(sparkSession, tableIdentifier)
+      OperationListenerBus.getInstance.fireEvent(createTablePostExecutionEvent, operationContext)
+      LOGGER.audit(s"Table created with Database name [$dbName] and Table name [$tableName]")
     }
-    val createTablePostExecutionEvent: CreateTablePostExecutionEvent =
-      CreateTablePostExecutionEvent(sparkSession, tableIdentifier)
-    OperationListenerBus.getInstance.fireEvent(createTablePostExecutionEvent, operationContext)
-    LOGGER.audit(s"Table created with Database name [$dbName] and Table name [$tableName]")
     Seq.empty
   }
 }
