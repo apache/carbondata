@@ -98,11 +98,11 @@ case class CarbonCreateTableCommand(
           val partitionString =
             if (partitionInfo != null &&
                 partitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
-            s" PARTITIONED BY (${partitionInfo.getColumnSchemaList.asScala.map(
-              _.getColumnName).mkString(",")})"
-          } else {
-            ""
-          }
+              s" PARTITIONED BY (${partitionInfo.getColumnSchemaList.asScala.map(
+                _.getColumnName).mkString(",")})"
+            } else {
+              ""
+            }
           sparkSession.sql(
             s"""CREATE TABLE $dbName.$tableName
                |(${ rawSchema })

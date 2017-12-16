@@ -70,7 +70,9 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<String[]> {
     if (loadBatch.isLoading()) {
       try {
         loadBatch.readyRead();
-        queue.put(loadBatch);
+        if (loadBatch.size > 0) {
+          queue.put(loadBatch);
+        }
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
       }
