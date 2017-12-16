@@ -88,9 +88,7 @@ public class CarbonOutputMapperTest extends TestCase {
    }
  }
 
-  private void runJob(String outPath)
-      throws Exception {
-
+  private void runJob(String outPath) throws Exception {
     Configuration configuration = new Configuration();
     configuration.set("mapreduce.cluster.local.dir", new File(outPath + "1").getCanonicalPath());
     Job job = Job.getInstance(configuration);
@@ -113,10 +111,4 @@ public class CarbonOutputMapperTest extends TestCase {
     job.waitForCompletion(true);
   }
 
-  public static void main(String[] args) throws Exception {
-
-    CarbonOutputMapperTest carbonOutputMapperTest = new CarbonOutputMapperTest();
-    carbonOutputMapperTest.setUp();
-    carbonOutputMapperTest.runJob("");
-  }
 }

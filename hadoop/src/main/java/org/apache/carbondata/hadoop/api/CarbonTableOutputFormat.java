@@ -19,7 +19,6 @@ package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Random;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -45,41 +44,44 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 
 /**
- * Base class for all output format for CarbonData file.
+ * This is table level output format which writes the data to store in new segment. Each load
+ * creates new segment folder and manages the folder through tablestatus file.
+ * It also generate and writes dictionary data during load only if dictionary server is configured.
  */
+// TODO Move dictionary generater which is coded in spark to MR framework.
 public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, StringArrayWritable> {
 
-  private static final String LOAD_MODEL = "mapreduce.carbonoutputformat.load.mmodel";
-  private static final String DATABASE_NAME = "mapreduce.carbonoutputformat.databaseName";
-  private static final String TABLE_NAME = "mapreduce.carbonoutputformat.tableName";
-  private static final String TABLE = "mapreduce.carbonoutputformat.table";
-  private static final String TABLE_PATH = "mapreduce.carbonoutputformat.tablepath";
-  private static final String INPUT_SCHEMA = "mapreduce.carbonoutputformat.inputschema";
-  private static final String TEMP_STORE_LOCATIONS = "carbon.load.tempstore.locations";
-  private static final String OVERWRITE_SET = "carbon.load.set.overwrite";
-  public static final String COMPLEX_DELIMITERS = "mapreduce.carbonoutputformat.complex_delimiters";
+  private static final String LOAD_MODEL = "mapreduce.carbontable.load.model";
+  private static final String DATABASE_NAME = "mapreduce.carbontable.databaseName";
+  private static final String TABLE_NAME = "mapreduce.carbontable.tableName";
+  private static final String TABLE = "mapreduce.carbontable.table";
+  private static final String TABLE_PATH = "mapreduce.carbontable.tablepath";
+  private static final String INPUT_SCHEMA = "mapreduce.carbontable.inputschema";
+  private static final String TEMP_STORE_LOCATIONS = "mapreduce.carbontable.tempstore.locations";
+  private static final String OVERWRITE_SET = "mapreduce.carbontable.set.overwrite";
+  public static final String COMPLEX_DELIMITERS = "mapreduce.carbontable.complex_delimiters";
   public static final String SERIALIZATION_NULL_FORMAT =
-      "mapreduce.carbonoutputformat.serialization.null.format";
+      "mapreduce.carbontable.serialization.null.format";
   public static final String BAD_RECORDS_LOGGER_ENABLE =
-      "mapreduce.carbonoutputformat.bad.records.logger.enable";
+      "mapreduce.carbontable.bad.records.logger.enable";
   public static final String BAD_RECORDS_LOGGER_ACTION =
-      "mapreduce.carbonoutputformat.bad.records.logger.action";
+      "mapreduce.carbontable.bad.records.logger.action";
   public static final String IS_EMPTY_DATA_BAD_RECORD =
-      "mapreduce.carbonoutputformat.empty.data.bad.record";
-  public static final String SKIP_EMPTY_LINE = "mapreduce.carbonoutputformat.skip.empty.line";
-  public static final String SORT_SCOPE = "mapreduce.carbonoutputformat.load.sort.scope";
+      "mapreduce.carbontable.empty.data.bad.record";
+  public static final String SKIP_EMPTY_LINE = "mapreduce.carbontable.skip.empty.line";
+  public static final String SORT_SCOPE = "mapreduce.carbontable.load.sort.scope";
   public static final String BATCH_SORT_SIZE_INMB =
-      "mapreduce.carbonoutputformat.batch.sort.size.inmb";
+      "mapreduce.carbontable.batch.sort.size.inmb";
   public static final String GLOBAL_SORT_PARTITIONS =
-      "mapreduce.carbonoutputformat.global.sort.partitions";
-  public static final String BAD_RECORD_PATH = "mapreduce.carbonoutputformat.bad.record.path";
-  public static final String DATE_FORMAT = "mapreduce.carbonoutputformat.date.format";
-  public static final String TIMESTAMP_FORMAT = "mapreduce.carbonoutputformat.timestamp.format";
-  public static final String IS_ONE_PASS_LOAD = "mapreduce.carbonoutputformat.one.pass.load";
+      "mapreduce.carbontable.global.sort.partitions";
+  public static final String BAD_RECORD_PATH = "mapreduce.carbontable.bad.record.path";
+  public static final String DATE_FORMAT = "mapreduce.carbontable.date.format";
+  public static final String TIMESTAMP_FORMAT = "mapreduce.carbontable.timestamp.format";
+  public static final String IS_ONE_PASS_LOAD = "mapreduce.carbontable.one.pass.load";
   public static final String DICTIONARY_SERVER_HOST =
-      "mapreduce.carbonoutputformat.dict.server.host";
+      "mapreduce.carbontable.dict.server.host";
   public static final String DICTIONARY_SERVER_PORT =
-      "mapreduce.carbonoutputformat.dict.server.port";
+      "mapreduce.carbontable.dict.server.port";
 
   private CarbonOutputCommitter committer;
 
@@ -121,7 +123,7 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
     }
   }
 
-  public static CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
+  public static CarbonTable getCarbonTable(Configuration configuration) throws IOException {
     CarbonTable carbonTable = null;
     String encodedString = configuration.get(TABLE);
     if (encodedString != null) {
@@ -187,20 +189,21 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
             .getTaskAttemptID().toString() };
   }
 
-  @Override public synchronized OutputCommitter getOutputCommitter(TaskAttemptContext context)
+  @Override
+  public synchronized OutputCommitter getOutputCommitter(TaskAttemptContext context)
       throws IOException {
     if (this.committer == null) {
       Path output = getOutputPath(context);
       this.committer = new CarbonOutputCommitter(output, context);
     }
-
     return this.committer;
   }
 
-  @Override public RecordWriter<NullWritable, StringArrayWritable> getRecordWriter(
+  @Override
+  public RecordWriter<NullWritable, StringArrayWritable> getRecordWriter(
       TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
-    loadModel.setTaskNo(new Random().nextInt(Integer.MAX_VALUE) + "");
+    loadModel.setTaskNo(taskAttemptContext.getTaskAttemptID().getTaskID().getId() + "");
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
     final CarbonOutputIteratorWrapper iteratorWrapper = new CarbonOutputIteratorWrapper();
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
@@ -208,8 +211,10 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
     new Thread() {
       @Override public void run() {
         try {
-          dataLoadExecutor
-              .execute(loadModel, tempStoreLocations, new CarbonIterator[] { iteratorWrapper });
+          dataLoadExecutor.execute(
+              loadModel,
+              tempStoreLocations,
+              new CarbonIterator[] { iteratorWrapper });
         } catch (Exception e) {
           dataLoadExecutor.close();
           throw new RuntimeException(e);
@@ -231,24 +236,35 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
     CarbonProperties carbonProperty = CarbonProperties.getInstance();
     model.setDatabaseName(CarbonTableOutputFormat.getDatabaseName(conf));
     model.setTableName(CarbonTableOutputFormat.getTableName(conf));
-    model.setCarbonDataLoadSchema(new CarbonDataLoadSchema(getOrCreateCarbonTable(conf)));
+    model.setCarbonDataLoadSchema(new CarbonDataLoadSchema(getCarbonTable(conf)));
     model.setTablePath(getTablePath(conf));
 
     setFileHeader(conf, model);
     model.setSerializationNullFormat(conf.get(SERIALIZATION_NULL_FORMAT, "\\N"));
-    model.setBadRecordsLoggerEnable(conf.get(BAD_RECORDS_LOGGER_ENABLE, carbonProperty
-        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE,
-            CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT)));
-    model.setBadRecordsAction(conf.get(BAD_RECORDS_LOGGER_ACTION, carbonProperty
-        .getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
-            CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)));
+    model.setBadRecordsLoggerEnable(
+        conf.get(
+            BAD_RECORDS_LOGGER_ENABLE,
+            carbonProperty.getProperty(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE,
+                CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_LOGGER_ENABLE_DEFAULT)));
+    model.setBadRecordsAction(
+        conf.get(
+            BAD_RECORDS_LOGGER_ACTION,
+            carbonProperty.getProperty(
+                CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION,
+                CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)));
 
-    model.setIsEmptyDataBadRecord(conf.get(IS_EMPTY_DATA_BAD_RECORD, carbonProperty
-        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
-            CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT)));
+    model.setIsEmptyDataBadRecord(
+        conf.get(
+            IS_EMPTY_DATA_BAD_RECORD,
+            carbonProperty.getProperty(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
+                CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT)));
 
-    model.setSkipEmptyLine(conf.get(SKIP_EMPTY_LINE,
-        carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SKIP_EMPTY_LINE)));
+    model.setSkipEmptyLine(
+        conf.get(
+            SKIP_EMPTY_LINE,
+            carbonProperty.getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SKIP_EMPTY_LINE)));
 
     String complexDelim = conf.get(COMPLEX_DELIMITERS, "\\$" + "," + "\\:");
     String[] split = complexDelim.split(",");
@@ -256,30 +272,50 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
     if (split.length > 1) {
       model.setComplexDelimiterLevel1(split[1]);
     }
-    model.setDateFormat(conf.get(DATE_FORMAT, carbonProperty
-        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
-            CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)));
+    model.setDateFormat(
+        conf.get(
+            DATE_FORMAT,
+            carbonProperty.getProperty(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
+                CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)));
 
-    model.setTimestampformat(conf.get(TIMESTAMP_FORMAT, carbonProperty
-        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
-            CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT)));
+    model.setTimestampformat(
+        conf.get(
+            TIMESTAMP_FORMAT,
+            carbonProperty.getProperty(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
+                CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT)));
 
-    model.setGlobalSortPartitions(conf.get(GLOBAL_SORT_PARTITIONS, carbonProperty
-        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS, null)));
+    model.setGlobalSortPartitions(
+        conf.get(
+            GLOBAL_SORT_PARTITIONS,
+            carbonProperty.getProperty(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS,
+                null)));
 
-    model.setBatchSortSizeInMb(conf.get(BATCH_SORT_SIZE_INMB, carbonProperty
-        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB, carbonProperty
-            .getProperty(CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
-                CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))));
+    model.setBatchSortSizeInMb(
+        conf.get(
+            BATCH_SORT_SIZE_INMB,
+            carbonProperty.getProperty(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_BATCH_SORT_SIZE_INMB,
+                carbonProperty.getProperty(
+                    CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB,
+                    CarbonCommonConstants.LOAD_BATCH_SORT_SIZE_INMB_DEFAULT))));
 
-    model.setBadRecordsLocation(conf.get(BAD_RECORD_PATH, carbonProperty
-        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH, carbonProperty
-            .getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC,
-                CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))));
+    model.setBadRecordsLocation(
+        conf.get(BAD_RECORD_PATH,
+            carbonProperty.getProperty(
+                CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH,
+                carbonProperty.getProperty(
+                    CarbonCommonConstants.CARBON_BADRECORDS_LOC,
+                    CarbonCommonConstants.CARBON_BADRECORDS_LOC_DEFAULT_VAL))));
 
-    model.setUseOnePass(conf.getBoolean(IS_ONE_PASS_LOAD, Boolean.parseBoolean(carbonProperty
-        .getProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
-            CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT))));
+    model.setUseOnePass(
+        conf.getBoolean(IS_ONE_PASS_LOAD,
+            Boolean.parseBoolean(
+                carbonProperty.getProperty(
+                    CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS,
+                    CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS_DEFAULT))));
     return model;
   }
 
@@ -315,12 +351,14 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
       this.dataLoadExecutor = dataLoadExecutor;
     }
 
-    @Override public void write(NullWritable aVoid, StringArrayWritable strings)
+    @Override
+    public void write(NullWritable aVoid, StringArrayWritable strings)
         throws InterruptedException {
       iteratorWrapper.write(strings.get());
     }
 
-    @Override public void close(TaskAttemptContext taskAttemptContext) {
+    @Override
+    public void close(TaskAttemptContext taskAttemptContext) {
       iteratorWrapper.close();
       dataLoadExecutor.close();
     }

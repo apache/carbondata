@@ -800,7 +800,7 @@ object CarbonDataRDDFactory {
       newEntryLoadStatus,
       carbonLoadModel.getFactTimeStamp,
       true)
-    CarbonUtil
+    CarbonLoaderUtil
       .addDataIndexSizeIntoMetaEntry(metadataDetails, carbonLoadModel.getSegmentId, carbonTable)
     val done = CarbonLoaderUtil.recordNewLoadMetadata(metadataDetails, carbonLoadModel, false,
       overwriteTable)

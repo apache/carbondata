@@ -19,9 +19,10 @@ package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
@@ -32,9 +33,13 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputCommitter;
 
 /**
- * Outputcommitter which manages the segments during loading.
+ * Outputcommitter which manages the segments during loading.It commits segment information to the
+ * tablestatus file upon success or fail.
  */
 public class CarbonOutputCommitter extends FileOutputCommitter {
+
+  private static final LogService LOGGER =
+      LogServiceFactory.getLogService(CarbonOutputCommitter.class.getName());
 
   public CarbonOutputCommitter(Path outputPath, TaskAttemptContext context) throws IOException {
     super(outputPath, context);
@@ -50,11 +55,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     super.setupJob(context);
     boolean overwriteSet = CarbonTableOutputFormat.isOverwriteSet(context.getConfiguration());
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
-    try {
-      CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, overwriteSet);
-    } catch (InterruptedException e) {
-      throw new IOException(e);
-    }
+    CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, overwriteSet);
     CarbonTableOutputFormat.setLoadModel(context.getConfiguration(), loadModel);
   }
 
@@ -68,17 +69,12 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     super.commitJob(context);
     boolean overwriteSet = CarbonTableOutputFormat.isOverwriteSet(context.getConfiguration());
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
-    try {
-      LoadMetadataDetails newMetaEntry =
-          loadModel.getLoadMetadataDetails().get(loadModel.getLoadMetadataDetails().size() - 1);
-      CarbonLoaderUtil.populateNewLoadMetaEntry(newMetaEntry, SegmentStatus.SUCCESS,
-          loadModel.getFactTimeStamp(), true);
-      CarbonUtil.addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(),
-          loadModel.getCarbonDataLoadSchema().getCarbonTable());
-      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, overwriteSet);
-    } catch (InterruptedException e) {
-      throw new IOException(e);
-    }
+    LoadMetadataDetails newMetaEntry = loadModel.getCurrentLoadMetadataDetail();
+    CarbonLoaderUtil.populateNewLoadMetaEntry(newMetaEntry, SegmentStatus.SUCCESS,
+        loadModel.getFactTimeStamp(), true);
+    CarbonLoaderUtil.addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(),
+        loadModel.getCarbonDataLoadSchema().getCarbonTable());
+    CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, overwriteSet);
   }
 
   /**
@@ -91,11 +87,8 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
   @Override public void abortJob(JobContext context, JobStatus.State state) throws IOException {
     super.abortJob(context, state);
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
-    try {
-      CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
-    } catch (InterruptedException e) {
-      throw new IOException(e);
-    }
+    CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
+    LOGGER.error("Loading failed with job status : " + state);
   }
 
 }

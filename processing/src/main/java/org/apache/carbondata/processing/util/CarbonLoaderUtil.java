@@ -148,7 +148,7 @@ public final class CarbonLoaderUtil {
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
       CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
-      throws IOException, InterruptedException {
+      throws IOException {
     boolean status = false;
     AbsoluteTableIdentifier absoluteTableIdentifier =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
@@ -364,7 +364,7 @@ public final class CarbonLoaderUtil {
 
 
   public static void readAndUpdateLoadProgressInTableMeta(CarbonLoadModel model,
-      boolean insertOverwrite) throws IOException, InterruptedException {
+      boolean insertOverwrite) throws IOException {
     LoadMetadataDetails newLoadMetaEntry = new LoadMetadataDetails();
     SegmentStatus status = SegmentStatus.INSERT_IN_PROGRESS;
     if (insertOverwrite) {
@@ -387,18 +387,17 @@ public final class CarbonLoaderUtil {
    * This method will update the load failure entry in the table status file
    */
   public static void updateTableStatusForFailure(CarbonLoadModel model)
-      throws IOException, InterruptedException {
+      throws IOException {
     // in case if failure the load status should be "Marked for delete" so that it will be taken
     // care during clean up
     SegmentStatus loadStatus = SegmentStatus.MARKED_FOR_DELETE;
     // always the last entry in the load metadata details will be the current load entry
-    LoadMetadataDetails loadMetaEntry =
-        model.getLoadMetadataDetails().get(model.getLoadMetadataDetails().size() - 1);
+    LoadMetadataDetails loadMetaEntry = model.getCurrentLoadMetadataDetail();
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp(), true);
-    boolean updationStatus =
+    boolean entryAdded =
         CarbonLoaderUtil.recordNewLoadMetadata(loadMetaEntry, model, false, false);
-    if (!updationStatus) {
+    if (!entryAdded) {
       throw new IOException(
           "Failed to update failure entry in table status for " + model.getTableName());
     }
@@ -858,4 +857,18 @@ public final class CarbonLoaderUtil {
     return newListMetadata;
   }
 
+  /*
+   * This method will add data size and index size into tablestatus for each segment
+   */
+  public static void addDataIndexSizeIntoMetaEntry(LoadMetadataDetails loadMetadataDetails,
+      String segmentId, CarbonTable carbonTable) throws IOException {
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath((carbonTable.getAbsoluteTableIdentifier()));
+    Map<String, Long> dataIndexSize =
+        CarbonUtil.getDataSizeAndIndexSize(carbonTablePath, segmentId);
+    loadMetadataDetails
+        .setDataSize(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE).toString());
+    loadMetadataDetails
+        .setIndexSize(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE).toString());
+  }
 }

@@ -21,6 +21,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 
 import org.apache.carbondata.common.CarbonIterator;
 
+/**
+ * It is wrapper class to hold the rows in batches when record writer writes the data and allows
+ * to iterate on it during data load. It uses blocking queue to coordinate between read and write.
+ */
 public class CarbonOutputIteratorWrapper extends CarbonIterator<String[]> {
 
   private boolean close = false;
@@ -37,7 +41,6 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<String[]> {
   private ArrayBlockingQueue<RowBatch> queue = new ArrayBlockingQueue<>(10);
 
   public void write(String[] row) throws InterruptedException {
-
     if (!loadBatch.addRow(row)) {
       loadBatch.readyRead();
       queue.put(loadBatch);
@@ -45,11 +48,13 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<String[]> {
     }
   }
 
-  @Override public boolean hasNext() {
+  @Override
+  public boolean hasNext() {
     return !queue.isEmpty() || !close || readBatch != null && readBatch.hasNext();
   }
 
-  @Override public String[] next() {
+  @Override
+  public String[] next() {
     if (readBatch == null || !readBatch.hasNext()) {
       try {
         readBatch = queue.take();
@@ -60,7 +65,8 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<String[]> {
     return readBatch.next();
   }
 
-  @Override public void close() {
+  @Override
+  public void close() {
     if (loadBatch.isLoading()) {
       try {
         loadBatch.readyRead();
@@ -82,17 +88,19 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<String[]> {
 
     private boolean isLoading = true;
 
-    public RowBatch(int size) {
+    private RowBatch(int size) {
       batch = new String[size][];
       this.size = size;
     }
 
+    /**
+     * Add row to the batch, it can hold rows till the batch size.
+     * @param row
+     * @return false if the row cannot be added as batch is full.
+     */
     public boolean addRow(String[] row) {
       batch[counter++] = row;
-      if (counter > size) {
-        return false;
-      }
-      return true;
+      return counter < size;
     }
 
     public void readyRead() {
@@ -105,11 +113,13 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<String[]> {
       return isLoading;
     }
 
-    @Override public boolean hasNext() {
+    @Override
+    public boolean hasNext() {
       return counter < size;
     }
 
-    @Override public String[] next() {
+    @Override
+    public String[] next() {
       assert (counter < size);
       return batch[counter++];
     }
