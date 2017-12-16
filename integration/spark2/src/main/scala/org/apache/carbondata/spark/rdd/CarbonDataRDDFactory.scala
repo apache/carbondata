@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.rdd
 
 import java.text.SimpleDateFormat
 import java.util
+import java.util.TimeZone
 import java.util.concurrent._
 
 import scala.collection.JavaConverters._
@@ -844,6 +845,7 @@ object CarbonDataRDDFactory {
         .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
       new SimpleDateFormat(dateFormatString)
     }
+    dateFormat.setTimeZone(TimeZone.getTimeZone("GMT"))
 
     // generate RDD[(K, V)] to use the partitionBy method of PairRDDFunctions
     val inputRDD: RDD[(String, Row)] = if (dataFrame.isDefined) {
