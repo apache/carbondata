@@ -20,6 +20,7 @@ import org.apache.spark.sql.test.TestQueryExecutor
 import org.scalatest.{BeforeAndAfterAll, Suites}
 
 import org.apache.carbondata.cluster.sdv.generated._
+import org.apache.carbondata.cluster.sdv.register.TestRegisterCarbonTable
 
 /**
  * Suite class for all tests.
@@ -133,7 +134,8 @@ class SDVSuites3 extends Suites with BeforeAndAfterAll {
                     new QueriesRangeFilterTestCase ::
                     new QueriesSparkBlockDistTestCase ::
                     new DataLoadingV3TestCase ::
-                    new QueriesIncludeDictionaryTestCase :: Nil
+                    new QueriesIncludeDictionaryTestCase ::
+                    new TestRegisterCarbonTable :: Nil
 
   override val nestedSuites = suites.toIndexedSeq
 
