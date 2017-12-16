@@ -27,14 +27,6 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
     sql("drop table if exists mainTable")
-    sql("drop table if exists agg0")
-    sql("drop table if exists agg1")
-    sql("drop table if exists agg2")
-    sql("drop table if exists agg3")
-    sql("drop table if exists agg4")
-    sql("drop table if exists agg5")
-    sql("drop table if exists agg6")
-    sql("drop table if exists agg7")
     sql("drop table if exists lineitem")
     sql("CREATE TABLE mainTable(id int, name string, city string, age string) STORED BY 'org.apache.carbondata.format'")
     sql("create datamap agg0 on table mainTable using 'preaggregate' as select name from mainTable group by name")
@@ -191,6 +183,11 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
   }
 
+  test("test PreAggregate table selection 28") {
+    val df = sql("select name as NewName, sum(case when age=2016 then 1 else 0 end) as sum from mainTable group by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable")
+  }
+
 
   def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit ={
     var isValidPlan = false
@@ -223,14 +220,7 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
-    sql("drop table if exists agg0")
-    sql("drop table if exists agg1")
-    sql("drop table if exists agg2")
-    sql("drop table if exists agg3")
-    sql("drop table if exists agg4")
-    sql("drop table if exists agg5")
-    sql("drop table if exists agg6")
-    sql("drop table if exists agg7")
+    sql("drop table if exists lineitem")
   }
 
 }
