@@ -103,7 +103,7 @@ case class CarbonCreateTableCommand(
                |  tablePath "$tablePath",
                |  path "$tablePath"
                |  $carbonSchemaString)
-             """.stripMargin).collect()
+             """.stripMargin)
         } catch {
           case e: AnalysisException => throw e
           case e: Exception =>
