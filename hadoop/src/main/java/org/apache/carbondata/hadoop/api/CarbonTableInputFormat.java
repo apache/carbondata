@@ -42,7 +42,6 @@ import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.indexstore.ExtendedBlocklet;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapFactory;
-import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
@@ -917,8 +916,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    * @throws IOException
    * @throws KeyGenException
    */
-  public BlockMappingVO getBlockRowCount(Job job, AbsoluteTableIdentifier identifier)
-      throws IOException, KeyGenException {
+  public BlockMappingVO getBlockRowCount(Job job, AbsoluteTableIdentifier identifier,
+      List<String> partitions) throws IOException {
     TableDataMap blockletMap = DataMapStoreManager.getInstance()
         .getDataMap(identifier, BlockletDataMap.NAME, BlockletDataMapFactory.class.getName());
     SegmentUpdateStatusManager updateStatusManager = new SegmentUpdateStatusManager(identifier);
@@ -930,7 +929,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     // TODO: currently only batch segment is supported, add support for streaming table
     List<String> filteredSegment = getFilteredSegment(job, allSegments.getValidSegments());
 
-    List<ExtendedBlocklet> blocklets = blockletMap.prune(filteredSegment, null, null);
+    List<ExtendedBlocklet> blocklets = blockletMap.prune(filteredSegment, null, partitions);
     for (ExtendedBlocklet blocklet : blocklets) {
       String blockName = blocklet.getPath();
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);

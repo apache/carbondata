@@ -72,9 +72,9 @@ public class BlockletDataMapIndexStore
     BlockletDataMap dataMap = (BlockletDataMap) lruCache.get(lruCacheKey);
     if (dataMap == null) {
       try {
-        String segmentPath = CarbonTablePath
-            .getSegmentPath(identifier.getAbsoluteTableIdentifier().getTablePath(),
-                identifier.getSegmentId());
+        String segmentPath = CarbonTablePath.getSegmentPath(
+            identifier.getAbsoluteTableIdentifier().getTablePath(),
+            identifier.getSegmentId());
         SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
         indexFileStore.readAllIIndexOfSegment(segmentPath);
         PartitionMapFileStore partitionFileStore = new PartitionMapFileStore();
@@ -111,9 +111,9 @@ public class BlockletDataMapIndexStore
               segmentIndexFileStoreMap.get(identifier.getSegmentId());
           PartitionMapFileStore partitionFileStore =
               partitionFileStoreMap.get(identifier.getSegmentId());
-          String segmentPath = CarbonTablePath
-              .getSegmentPath(identifier.getAbsoluteTableIdentifier().getTablePath(),
-                  identifier.getSegmentId());
+          String segmentPath = CarbonTablePath.getSegmentPath(
+              identifier.getAbsoluteTableIdentifier().getTablePath(),
+              identifier.getSegmentId());
           if (indexFileStore == null) {
             indexFileStore = new SegmentIndexFileStore();
             indexFileStore.readAllIIndexOfSegment(segmentPath);
@@ -185,7 +185,8 @@ public class BlockletDataMapIndexStore
       dataMap = new BlockletDataMap();
       dataMap.init(new BlockletDataMapModel(identifier.getFilePath(),
           indexFileStore.getFileData(identifier.getCarbonIndexFileName()),
-          partitionFileStore.getPartitions(identifier.getCarbonIndexFileName())));
+          partitionFileStore.getPartitions(identifier.getCarbonIndexFileName()),
+          partitionFileStore.isPartionedSegment()));
       lruCache.put(identifier.getUniqueTableSegmentIdentifier(), dataMap,
           dataMap.getMemorySize());
     }

@@ -105,6 +105,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private int[] columnCardinality;
 
+  private boolean isPartitionedSegment;
+
   @Override
   public void init(DataMapModel dataMapModel) throws IOException, MemoryException {
     long startTime = System.currentTimeMillis();
@@ -113,6 +115,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
     DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
     List<DataFileFooter> indexInfo = fileFooterConverter
         .getIndexInfo(blockletDataMapInfo.getFilePath(), blockletDataMapInfo.getFileData());
+    isPartitionedSegment = blockletDataMapInfo.isPartitionedSegment();
     DataMapRowImpl summaryRow = null;
     for (DataFileFooter fileFooter : indexInfo) {
       List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
@@ -394,6 +397,14 @@ public class BlockletDataMap implements DataMap, Cacheable {
         new UnsafeMemoryDMStore(indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]));
   }
 
+  /**
+   * Creates the schema to store summary information or the information which can be stored only
+   * once per datamap. It stores datamap level max/min of each column and partition information of
+   * datamap
+   * @param segmentProperties
+   * @param partitions
+   * @throws MemoryException
+   */
   private void createSummarySchema(SegmentProperties segmentProperties, List<String> partitions)
       throws MemoryException {
     List<CarbonRowSchema> taskMinMaxSchemas = new ArrayList<>(2);
@@ -518,8 +529,15 @@ public class BlockletDataMap implements DataMap, Cacheable {
   }
 
   @Override public List<Blocklet> prune(FilterResolverIntf filterExp, List<String> partitions) {
+    // First get the partitions which are stored inside datamap.
     List<String> storedPartitions = getPartitions();
-    if (storedPartitions != null && storedPartitions.size() > 0 && filterExp != null) {
+    // if it has partitioned datamap but there is no partitioned information stored, it means
+    // partitions are dropped so return empty list.
+    if (isPartitionedSegment && (storedPartitions == null || storedPartitions.size() == 0)) {
+      return new ArrayList<>();
+    }
+    if (storedPartitions != null && storedPartitions.size() > 0) {
+      // Check the exact match of partition information inside the stored partitions.
       boolean found = false;
       if (partitions != null && partitions.size() > 0) {
         found = partitions.containsAll(storedPartitions);
@@ -528,6 +546,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
         return new ArrayList<>();
       }
     }
+    // Prune with filters if the partitions are existed in this datamap
     return prune(filterExp);
   }
 
@@ -705,16 +724,17 @@ public class BlockletDataMap implements DataMap, Cacheable {
   }
 
   private List<String> getPartitions() {
-    List<String> partitions = new ArrayList<>();
     DataMapRow unsafeRow = unsafeMemorySummaryDMStore.getUnsafeRow(0);
     if (unsafeRow.getColumnCount() > 2) {
+      List<String> partitions = new ArrayList<>();
       DataMapRow row = unsafeRow.getRow(2);
       for (int i = 0; i < row.getColumnCount(); i++) {
         partitions.add(
             new String(row.getByteArray(i), CarbonCommonConstants.DEFAULT_CHARSET_CLASS));
       }
+      return partitions;
     }
-    return partitions;
+    return null;
   }
 
   @Override
