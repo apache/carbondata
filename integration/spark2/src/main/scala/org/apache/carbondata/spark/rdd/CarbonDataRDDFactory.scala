@@ -623,7 +623,7 @@ object CarbonDataRDDFactory {
       carbonLoadModel: CarbonLoadModel,
       updateModel: Option[UpdateTableModel],
       key: String,
-      taskNo: Int,
+      taskNo: Long,
       iter: Iterator[Row]
   ): Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     val rddResult = new updateResultImpl()

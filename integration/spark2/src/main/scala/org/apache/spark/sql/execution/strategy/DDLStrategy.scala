@@ -74,8 +74,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           CarbonDropTableCommand(ifNotExists, identifier.database,
             identifier.table.toLowerCase)) :: Nil
       case InsertIntoCarbonTable(relation: CarbonDatasourceHadoopRelation,
-      _, child: LogicalPlan, overwrite, _) =>
-        ExecutedCommandExec(CarbonInsertIntoCommand(relation, child, overwrite)) :: Nil
+      partition, child: LogicalPlan, overwrite, _) =>
+        ExecutedCommandExec(CarbonInsertIntoCommand(relation, child, overwrite, partition)) :: Nil
       case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
         FileUtils.createDatabaseDirectory(dbName, CarbonProperties.getStorePath)
         ExecutedCommandExec(createDb) :: Nil

@@ -642,11 +642,14 @@ class TableNewProcessor(cm: TableModel) {
     }
     if (cm.partitionInfo.isDefined) {
       val partitionInfo = cm.partitionInfo.get
-      val PartitionColumnSchema = partitionInfo.getColumnSchemaList.asScala
+      val partitionColumnSchema = partitionInfo.getColumnSchemaList.asScala
       val partitionCols = allColumns.filter { column =>
-        PartitionColumnSchema.exists(_.getColumnName.equalsIgnoreCase(column.getColumnName))
-      }.asJava
-      partitionInfo.setColumnSchemaList(partitionCols)
+        partitionColumnSchema.exists(_.getColumnName.equalsIgnoreCase(column.getColumnName))
+      }
+      val orderCols =
+        partitionColumnSchema.map(
+          f => partitionCols.find(_.getColumnName.equalsIgnoreCase(f.getColumnName)).get).asJava
+      partitionInfo.setColumnSchemaList(orderCols)
       tableSchema.setPartitionInfo(partitionInfo)
     }
     tableSchema.setTableName(cm.tableName)

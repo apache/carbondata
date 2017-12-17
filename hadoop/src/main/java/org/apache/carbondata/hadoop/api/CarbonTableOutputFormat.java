@@ -19,6 +19,10 @@ package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -28,6 +32,7 @@ import org.apache.carbondata.core.metadata.datatype.StructType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
 import org.apache.carbondata.core.util.CarbonProperties;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.apache.carbondata.processing.loading.DataLoadExecutor;
 import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable;
@@ -203,26 +208,27 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
   public RecordWriter<NullWritable, StringArrayWritable> getRecordWriter(
       TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
-    loadModel.setTaskNo(taskAttemptContext.getTaskAttemptID().getTaskID().getId() + "");
+    loadModel.setTaskNo(System.nanoTime() + "");
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
     final CarbonOutputIteratorWrapper iteratorWrapper = new CarbonOutputIteratorWrapper();
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
-    CarbonRecordWriter recordWriter = new CarbonRecordWriter(iteratorWrapper, dataLoadExecutor);
-    new Thread() {
+    ExecutorService executorService = Executors.newFixedThreadPool(1,
+        new CarbonThreadFactory("CarbonRecordWriter:" + loadModel.getTableName()));;
+    // It should be started in new thread as the underlying iterator uses blocking queue.
+    Future future = executorService.submit(new Thread() {
       @Override public void run() {
         try {
-          dataLoadExecutor.execute(
-              loadModel,
-              tempStoreLocations,
-              new CarbonIterator[] { iteratorWrapper });
+          dataLoadExecutor
+              .execute(loadModel, tempStoreLocations, new CarbonIterator[] { iteratorWrapper });
         } catch (Exception e) {
           dataLoadExecutor.close();
           throw new RuntimeException(e);
         }
       }
-    }.start();
+    });
 
-    return recordWriter;
+    return new CarbonRecordWriter(iteratorWrapper, dataLoadExecutor, loadModel, future,
+        executorService);
   }
 
   public static CarbonLoadModel getLoadModel(Configuration conf) throws IOException {
@@ -339,28 +345,47 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
     model.setCsvHeaderColumns(columns);
   }
 
-  private static class CarbonRecordWriter extends RecordWriter<NullWritable, StringArrayWritable> {
+  public static class CarbonRecordWriter extends RecordWriter<NullWritable, StringArrayWritable> {
 
     private CarbonOutputIteratorWrapper iteratorWrapper;
 
     private DataLoadExecutor dataLoadExecutor;
 
+    private CarbonLoadModel loadModel;
+
+    private ExecutorService executorService;
+
+    private Future future;
+
     public CarbonRecordWriter(CarbonOutputIteratorWrapper iteratorWrapper,
-        DataLoadExecutor dataLoadExecutor) {
+        DataLoadExecutor dataLoadExecutor, CarbonLoadModel loadModel, Future future,
+        ExecutorService executorService) {
       this.iteratorWrapper = iteratorWrapper;
       this.dataLoadExecutor = dataLoadExecutor;
+      this.loadModel = loadModel;
+      this.executorService = executorService;
+      this.future = future;
     }
 
-    @Override
-    public void write(NullWritable aVoid, StringArrayWritable strings)
+    @Override public void write(NullWritable aVoid, StringArrayWritable strings)
         throws InterruptedException {
       iteratorWrapper.write(strings.get());
     }
 
-    @Override
-    public void close(TaskAttemptContext taskAttemptContext) {
+    @Override public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
       iteratorWrapper.close();
-      dataLoadExecutor.close();
+      try {
+        future.get();
+      } catch (ExecutionException e) {
+        throw new InterruptedException(e.getMessage());
+      } finally {
+        executorService.shutdownNow();
+        dataLoadExecutor.close();
+      }
+    }
+
+    public CarbonLoadModel getLoadModel() {
+      return loadModel;
     }
   }
 }

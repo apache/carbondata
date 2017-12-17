@@ -118,7 +118,7 @@ class CarbonTableSplitPartition(rddId: Int, val idx: Int, @transient val tableSp
 }
 
 class SparkPartitionLoader(model: CarbonLoadModel,
-    splitIndex: Int,
+    splitIndex: Long,
     storePath: String,
     loadMetadataDetails: LoadMetadataDetails) {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)

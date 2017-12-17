@@ -63,6 +63,7 @@ enum PartitionType{
   RANGE_INTERVAL = 1;
   LIST = 2;
   HASH = 3;
+  NATIVE_HIVE = 4; // Uses the standard partition features of spark/hive
 }
 
 /**

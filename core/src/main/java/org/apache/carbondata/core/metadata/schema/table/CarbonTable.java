@@ -27,6 +27,7 @@ import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.BucketingInfo;
 import org.apache.carbondata.core.metadata.schema.PartitionInfo;
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDimension;
@@ -571,6 +572,11 @@ public class CarbonTable implements Serializable {
 
   public boolean isPartitionTable() {
     return null != tablePartitionMap.get(getTableName());
+  }
+
+  public boolean isHivePartitionTable() {
+    PartitionInfo partitionInfo = tablePartitionMap.get(getTableName());
+    return null != partitionInfo && partitionInfo.getPartitionType() == PartitionType.NATIVE_HIVE;
   }
 
   /**

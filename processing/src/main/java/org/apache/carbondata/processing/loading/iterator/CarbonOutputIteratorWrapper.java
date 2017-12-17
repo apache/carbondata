@@ -55,7 +55,7 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<String[]> {
 
   @Override
   public String[] next() {
-    if (readBatch == null || !readBatch.hasNext()) {
+    if (readBatch == null || !readBatch.hasNext()  && !close) {
       try {
         readBatch = queue.take();
       } catch (InterruptedException e) {

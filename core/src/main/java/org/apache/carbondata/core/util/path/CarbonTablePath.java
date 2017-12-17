@@ -48,6 +48,7 @@ public class CarbonTablePath extends Path {
 
   public static final String INDEX_FILE_EXT = ".carbonindex";
   public static final String MERGE_INDEX_FILE_EXT = ".carbonindexmerge";
+  public static final String PARTITION_MAP_EXT = ".partitionmap";
 
   private static final String STREAMING_DIR = ".streaming";
   private static final String STREAMING_LOG_DIR = "log";
@@ -250,7 +251,7 @@ public class CarbonTablePath extends Path {
    * @return absolute path of data file stored in carbon data format
    */
   public String getCarbonDataFilePath(String partitionId, String segmentId, Integer filePartNo,
-      Integer taskNo, int batchNo, int bucketNumber, String factUpdateTimeStamp) {
+      Long taskNo, int batchNo, int bucketNumber, String factUpdateTimeStamp) {
     return getSegmentDir(partitionId, segmentId) + File.separator + getCarbonDataFileName(
         filePartNo, taskNo, bucketNumber, batchNo, factUpdateTimeStamp);
   }
@@ -324,7 +325,7 @@ public class CarbonTablePath extends Path {
         return getCarbonIndexFilePath(taskId, partitionId, segmentId, bucketNumber);
       default:
         String segmentDir = getSegmentDir(partitionId, segmentId);
-        return segmentDir + File.separator + getCarbonIndexFileName(Integer.parseInt(taskId),
+        return segmentDir + File.separator + getCarbonIndexFileName(Long.parseLong(taskId),
             Integer.parseInt(bucketNumber), batchNo, timeStamp);
     }
   }
@@ -353,7 +354,7 @@ public class CarbonTablePath extends Path {
    * @param factUpdateTimeStamp unique identifier to identify an update
    * @return gets data file name only with out path
    */
-  public static String getCarbonDataFileName(Integer filePartNo, Integer taskNo, int bucketNumber,
+  public static String getCarbonDataFileName(Integer filePartNo, Long taskNo, int bucketNumber,
       int batchNo, String factUpdateTimeStamp) {
     return DATA_PART_PREFIX + filePartNo + "-" + taskNo + BATCH_PREFIX + batchNo + "-"
         + bucketNumber + "-" + factUpdateTimeStamp + CARBON_DATA_EXT;
@@ -366,7 +367,7 @@ public class CarbonTablePath extends Path {
    * @param factUpdatedTimeStamp time stamp
    * @return filename
    */
-  public static String getCarbonIndexFileName(int taskNo, int bucketNumber, int batchNo,
+  public static String getCarbonIndexFileName(long taskNo, int bucketNumber, int batchNo,
       String factUpdatedTimeStamp) {
     return taskNo + BATCH_PREFIX + batchNo + "-" + bucketNumber + "-" + factUpdatedTimeStamp
         + INDEX_FILE_EXT;
@@ -505,8 +506,8 @@ public class CarbonTablePath extends Path {
      * @param taskNo
      * @return
      */
-    public static int getTaskIdFromTaskNo(String taskNo) {
-      return Integer.parseInt(taskNo.split(BATCH_PREFIX)[0]);
+    public static long getTaskIdFromTaskNo(String taskNo) {
+      return Long.parseLong(taskNo.split(BATCH_PREFIX)[0]);
     }
 
     public static int getBatchNoFromTaskNo(String taskNo) {

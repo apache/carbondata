@@ -119,7 +119,7 @@ public class CarbonStreamRecordWriter extends RecordWriter<Void, Object> {
     String segmentId = CarbonStreamOutputFormat.getSegmentId(hadoopConf);
     carbonLoadModel.setSegmentId(segmentId);
     carbonTable = carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable();
-    int taskNo = TaskID.forName(hadoopConf.get("mapred.tip.id")).getId();
+    long taskNo = TaskID.forName(hadoopConf.get("mapred.tip.id")).getId();
     carbonLoadModel.setTaskNo("" + taskNo);
     configuration = DataLoadProcessBuilder.createConfiguration(carbonLoadModel);
     maxRowNums = hadoopConf.getInt(CarbonStreamOutputFormat.CARBON_STREAM_BLOCKLET_ROW_NUMS,

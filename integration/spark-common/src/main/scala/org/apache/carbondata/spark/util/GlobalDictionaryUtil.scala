@@ -732,7 +732,7 @@ object GlobalDictionaryUtil {
           headers
         }
 
-        if (headers.length > headerOfInputData.length) {
+        if (headers.length > headerOfInputData.length && !carbonTable.isHivePartitionTable) {
           val msg = "The number of columns in the file header do not match the " +
                     "number of columns in the data file; Either delimiter " +
                     "or fileheader provided is not correct"

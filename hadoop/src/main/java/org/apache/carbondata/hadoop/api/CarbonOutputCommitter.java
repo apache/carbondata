@@ -21,8 +21,10 @@ import java.io.IOException;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.metadata.PartitionMapFileStore;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
@@ -59,6 +61,10 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     CarbonTableOutputFormat.setLoadModel(context.getConfiguration(), loadModel);
   }
 
+  @Override public void setupTask(TaskAttemptContext context) throws IOException {
+    super.setupTask(context);
+  }
+
   /**
    * Update the tablestatus as success after job is success
    *
@@ -75,6 +81,10 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     CarbonLoaderUtil.addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(),
         loadModel.getCarbonDataLoadSchema().getCarbonTable());
     CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, overwriteSet);
+    String segmentPath =
+        CarbonTablePath.getSegmentPath(loadModel.getTablePath(), loadModel.getSegmentId());
+    // Merge all partition files into a single file.
+    new PartitionMapFileStore().mergePartitionMapFiles(segmentPath);
   }
 
   /**
