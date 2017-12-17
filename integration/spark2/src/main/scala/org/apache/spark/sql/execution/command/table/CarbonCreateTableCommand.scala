@@ -93,6 +93,13 @@ case class CarbonCreateTableCommand(
           val carbonRelation = CarbonSparkUtil.createCarbonRelation(tableInfo, tablePath)
           val rawSchema = CarbonSparkUtil.getRawSchema(carbonRelation)
           sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
+          val partitionInfo = tableInfo.getFactTable.getPartitionInfo
+          val partitionString = if (partitionInfo != null) {
+            s" PARTITIONED BY (${partitionInfo.getColumnSchemaList.asScala.map(
+              _.getColumnName).mkString(",")})"
+          } else {
+            ""
+          }
           sparkSession.sql(
             s"""CREATE TABLE $dbName.$tableName
                |(${ rawSchema })
@@ -103,6 +110,7 @@ case class CarbonCreateTableCommand(
                |  tablePath "$tablePath",
                |  path "$tablePath"
                |  $carbonSchemaString)
+               |  $partitionString
              """.stripMargin)
         } catch {
           case e: AnalysisException => throw e

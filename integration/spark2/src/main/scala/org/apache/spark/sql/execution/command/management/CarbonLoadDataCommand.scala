@@ -17,17 +17,31 @@
 
 package org.apache.spark.sql.execution.command.management
 
+import java.text.SimpleDateFormat
+
 import scala.collection.JavaConverters._
+import scala.collection.mutable
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
+import org.apache.hadoop.io.NullWritable
+import org.apache.hadoop.mapred.JobConf
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
+import org.apache.spark.deploy.SparkHadoopUtil
+import org.apache.spark.rdd.NewHadoopRDD
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
+import org.apache.spark.sql.catalyst.catalog.{CatalogRelation, CatalogTable}
+import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, Project}
+import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.command.{DataCommand, DataLoadTableFileMapping, UpdateTableModel}
+import org.apache.spark.sql.execution.datasources.{CarbonFileFormat, CatalogFileIndex, HadoopFsRelation, LogicalRelation}
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.types.StructField
-import org.apache.spark.util.{CausedBy, FileUtils}
+import org.apache.spark.sql.types.{StringType, StructField, StructType}
+import org.apache.spark.unsafe.types.UTF8String
+import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils}
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
@@ -45,6 +59,7 @@ import org.apache.carbondata.events.{LoadTablePostExecutionEvent, LoadTablePreEx
 import org.apache.carbondata.format
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.TableProcessingOperations
+import org.apache.carbondata.processing.loading.csvinput.{CSVInputFormat, StringArrayWritable}
 import org.apache.carbondata.processing.loading.exception.NoRetryException
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -65,7 +80,8 @@ case class CarbonLoadDataCommand(
     dataFrame: Option[DataFrame] = None,
     updateModel: Option[UpdateTableModel] = None,
     var tableInfoOp: Option[TableInfo] = None,
-    internalOptions: Map[String, String] = Map.empty) extends DataCommand {
+    internalOptions: Map[String, String] = Map.empty,
+    partition: Map[String, Option[String]] = Map.empty) extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -156,7 +172,7 @@ case class CarbonLoadDataCommand(
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
         GlobalDictionaryUtil.updateTableMetadataFunc = updateTableMetadata
         // add the start entry for the new load in the table status file
-        if (updateModel.isEmpty) {
+        if (updateModel.isEmpty && !table.isHivePartitionTable) {
           CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, isOverwriteTable)
         }
         if (isOverwriteTable) {
@@ -217,9 +233,9 @@ case class CarbonLoadDataCommand(
           LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")
           throw new RuntimeException(s"Dataload failure for $dbName.$tableName, ${ex.getMessage}")
         case ex: Exception =>
+          LOGGER.error(ex)
           // update the load entry in table status file for changing the status to marked for delete
           CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
-          LOGGER.error(ex)
           LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
           throw ex
       } finally {
@@ -344,16 +360,35 @@ case class CarbonLoadDataCommand(
     } else {
       dataFrame
     }
-    CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
-      carbonLoadModel,
-      columnar,
-      partitionStatus,
-      server,
-      isOverwriteTable,
-      hadoopConf,
-      loadDataFrame,
-      updateModel,
-      operationContext)
+
+    if (carbonTable.isHivePartitionTable) {
+      try {
+        loadStandardPartition(sparkSession, carbonLoadModel, hadoopConf, loadDataFrame)
+      } finally {
+        server match {
+          case Some(dictServer) =>
+            try {
+              dictServer.writeTableDictionary(carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+                .getCarbonTableIdentifier.getTableId)
+            } catch {
+              case _: Exception =>
+                throw new Exception("Dataload failed due to error while writing dictionary file!")
+            }
+          case _ =>
+        }
+      }
+    } else {
+      CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
+        carbonLoadModel,
+        columnar,
+        partitionStatus,
+        server,
+        isOverwriteTable,
+        hadoopConf,
+        loadDataFrame,
+        updateModel,
+        operationContext)
+    }
   }
 
   private def loadData(
@@ -373,23 +408,203 @@ case class CarbonLoadDataCommand(
     } else {
       (dataFrame, dataFrame)
     }
-    if (!carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isChildDataMap) {
+    val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    if (!table.isChildDataMap) {
       GlobalDictionaryUtil.generateGlobalDictionary(
         sparkSession.sqlContext,
         carbonLoadModel,
         hadoopConf,
         dictionaryDataFrame)
     }
-    CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
-      carbonLoadModel,
-      columnar,
-      partitionStatus,
-      None,
-      isOverwriteTable,
-      hadoopConf,
-      loadDataFrame,
-      updateModel,
-      operationContext)
+    if (table.isHivePartitionTable) {
+      loadStandardPartition(sparkSession, carbonLoadModel, hadoopConf, loadDataFrame)
+    } else {
+      CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
+        carbonLoadModel,
+        columnar,
+        partitionStatus,
+        None,
+        isOverwriteTable,
+        hadoopConf,
+        loadDataFrame,
+        updateModel,
+        operationContext)
+    }
+  }
+
+  private def loadStandardPartition(sparkSession: SparkSession,
+      carbonLoadModel: CarbonLoadModel,
+      hadoopConf: Configuration,
+      dataFrame: Option[DataFrame]) = {
+    val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    val logicalPlan =
+      sparkSession.sessionState.catalog.lookupRelation(
+        TableIdentifier(table.getTableName, Some(table.getDatabaseName)))
+    val relation = logicalPlan.collect {
+      case l: LogicalRelation => l
+      case c: CatalogRelation => c
+    }.head.asInstanceOf[LogicalPlan]
+
+    val query: LogicalPlan = if (dataFrame.isDefined) {
+      val timeStampformatString = CarbonProperties.getInstance()
+        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
+          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      val timeStampFormat = new SimpleDateFormat(timeStampformatString)
+      val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
+        .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      val dateFormat = new SimpleDateFormat(dateFormatString)
+      val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
+      val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
+      val serializationNullFormat =
+      carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+      val attributes =
+        StructType(dataFrame.get.schema.fields.map(_.copy(dataType = StringType))).toAttributes
+      val len = attributes.length
+      val rdd = dataFrame.get.rdd.map { f =>
+        val data = new Array[Any](len)
+        var i = 0
+        while (i < len) {
+          data(i) =
+            UTF8String.fromString(
+              CarbonScalaUtil.getString(f.get(i),
+                serializationNullFormat,
+                delimiterLevel1,
+                delimiterLevel2,
+                timeStampFormat,
+                dateFormat))
+          i = i + 1
+        }
+        InternalRow.fromSeq(data)
+      }
+      LogicalRDD(attributes, rdd)(sparkSession)
+
+    } else {
+      // input data from csv files. Convert to logical plan
+      CommonUtil.configureCSVInputFormat(hadoopConf, carbonLoadModel)
+      hadoopConf.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
+      val jobConf = new JobConf(hadoopConf)
+      SparkHadoopUtil.get.addCredentials(jobConf)
+      val rdd = new NewHadoopRDD[NullWritable, StringArrayWritable](
+        sparkSession.sparkContext,
+        classOf[CSVInputFormat],
+        classOf[NullWritable],
+        classOf[StringArrayWritable],
+        jobConf
+      ).map(f => InternalRow.fromSeq(f._2.get().map(UTF8String.fromString)))
+
+      val attributes =
+        StructType(carbonLoadModel.getCsvHeaderColumns.map(
+          StructField(_, StringType))).toAttributes
+      // Only select the required columns
+      Project(relation.output.map(f => attributes.find(_.name.equalsIgnoreCase(f.name)).get),
+        LogicalRDD(attributes, rdd)(sparkSession))
+    }
+    val convertRelation = relation match {
+      case l: LogicalRelation =>
+        convertToLogicalRelation(l, isOverwriteTable, carbonLoadModel, sparkSession)
+      case c: CatalogRelation =>
+        convertToLogicalRelation(c, isOverwriteTable, carbonLoadModel, sparkSession)
+    }
+    Dataset.ofRows(
+      sparkSession,
+      CarbonReflectionUtils.getInsertIntoCommand(
+        convertRelation,
+        partition,
+        query,
+        isOverwriteTable,
+        false))
+  }
+
+  private def convertToLogicalRelation(
+      relation: LogicalRelation,
+      overWrite: Boolean,
+      loadModel: CarbonLoadModel,
+      sparkSession: SparkSession): LogicalRelation = {
+    val catalogTable = relation.catalogTable.get
+    val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
+    val metastoreSchema = StructType(StructType.fromAttributes(
+      relation.output).fields.map(_.copy(dataType = StringType)))
+    val lazyPruningEnabled = sparkSession.sqlContext.conf.manageFilesourcePartitions
+    val catalog = new CatalogFileIndex(
+      sparkSession, catalogTable, relation.relation.sizeInBytes)
+    if (lazyPruningEnabled) {
+      catalog
+    } else {
+      catalog.filterPartitions(Nil) // materialize all the partitions in memory
+    }
+    val partitionSchema =
+      StructType(table.getPartitionInfo(table.getTableName).getColumnSchemaList.asScala.map(f =>
+      metastoreSchema.fields.find(_.name.equalsIgnoreCase(f.getColumnName))).map(_.get))
+
+
+    val dataSchema =
+      StructType(metastoreSchema
+        .filterNot(field => partitionSchema.contains(field.name)))
+    val options = new mutable.HashMap[String, String]()
+    options ++= catalogTable.storage.properties
+    options += (("overwrite", overWrite.toString))
+    options += (("onepass", loadModel.getUseOnePass.toString))
+    options += (("dicthost", loadModel.getDictionaryServerHost))
+    options += (("dictport", loadModel.getDictionaryServerPort.toString))
+    val hdfsRelation = HadoopFsRelation(
+      location = catalog,
+      partitionSchema = partitionSchema,
+      dataSchema = dataSchema,
+      bucketSpec = catalogTable.bucketSpec,
+      fileFormat = new CarbonFileFormat,
+      options = options.toMap)(sparkSession = sparkSession)
+
+    CarbonReflectionUtils.getLogicalRelation(hdfsRelation,
+      hdfsRelation.schema.toAttributes,
+      Some(catalogTable))
+  }
+
+  private def convertToLogicalRelation(
+      relation: CatalogRelation,
+      overWrite: Boolean,
+      loadModel: CarbonLoadModel,
+      sparkSession: SparkSession): LogicalRelation = {
+    val catalogTable =
+      CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta", relation).asInstanceOf[CatalogTable]
+    val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
+    val metastoreSchema = StructType(StructType.fromAttributes(
+      relation.output).fields.map(_.copy(dataType = StringType)))
+    val lazyPruningEnabled = sparkSession.sqlContext.conf.manageFilesourcePartitions
+    // TODO nedd to find a way to avoid double lookup
+    val sizeInBytes =
+      CarbonEnv.getInstance(sparkSession).carbonMetastore.lookupRelation(
+        catalogTable.identifier)(sparkSession).asInstanceOf[CarbonRelation].sizeInBytes
+    val catalog = new CatalogFileIndex(sparkSession, catalogTable, sizeInBytes)
+    if (lazyPruningEnabled) {
+      catalog
+    } else {
+      catalog.filterPartitions(Nil) // materialize all the partitions in memory
+    }
+    val partitionSchema =
+      StructType(table.getPartitionInfo(table.getTableName).getColumnSchemaList.asScala.map(f =>
+        metastoreSchema.fields.find(_.name.equalsIgnoreCase(f.getColumnName))).map(_.get))
+
+
+    val dataSchema =
+      StructType(metastoreSchema
+        .filterNot(field => partitionSchema.contains(field.name)))
+    val options = new mutable.HashMap[String, String]()
+    options ++= catalogTable.storage.properties
+    options += (("overwrite", overWrite.toString))
+    options += (("onepass", loadModel.getUseOnePass.toString))
+    options += (("dicthost", loadModel.getDictionaryServerHost))
+    options += (("dictport", loadModel.getDictionaryServerPort.toString))
+    val hdfsRelation = HadoopFsRelation(
+      location = catalog,
+      partitionSchema = partitionSchema,
+      dataSchema = dataSchema,
+      bucketSpec = catalogTable.bucketSpec,
+      fileFormat = new CarbonFileFormat,
+      options = options.toMap)(sparkSession = sparkSession)
+
+    CarbonReflectionUtils.getLogicalRelation(hdfsRelation,
+      hdfsRelation.schema.toAttributes,
+      Some(catalogTable))
   }
 
   def getDataFrameWithTupleID(): DataFrame = {

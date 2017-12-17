@@ -26,7 +26,8 @@ import org.apache.carbondata.spark.util.CarbonSparkUtil
 case class CarbonInsertIntoCommand(
     relation: CarbonDatasourceHadoopRelation,
     child: LogicalPlan,
-    overwrite: Boolean)
+    overwrite: Boolean,
+    partition: Map[String, Option[String]])
   extends DataCommand {
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
@@ -40,7 +41,11 @@ case class CarbonInsertIntoCommand(
       scala.collection.immutable.Map("fileheader" -> header),
       overwrite,
       null,
-      Some(df)).run(sparkSession)
+      Some(df),
+      None,
+      None,
+      Map.empty,
+      partition).run(sparkSession)
     // updating relation metadata. This is in case of auto detect high cardinality
     relation.carbonRelation.metaData =
       CarbonSparkUtil.createSparkMeta(relation.carbonRelation.carbonTable)

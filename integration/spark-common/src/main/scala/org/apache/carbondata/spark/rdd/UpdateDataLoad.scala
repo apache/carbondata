@@ -35,7 +35,7 @@ object UpdateDataLoad {
 
   def DataLoadForUpdate(
       segId: String,
-      index: Int,
+      index: Long,
       iter: Iterator[Row],
       carbonLoadModel: CarbonLoadModel,
       loadMetadataDetails: LoadMetadataDetails): Unit = {

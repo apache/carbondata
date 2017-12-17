@@ -199,7 +199,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     // validate partition clause
     if (partitionFields.nonEmpty) {
       if (!CommonUtil.validatePartitionColumns(tableProperties, partitionFields)) {
-        throw new MalformedCarbonCommandException("Error: Invalid partition definition")
+         throw new MalformedCarbonCommandException("Error: Invalid partition definition")
       }
       // partition columns should not be part of the schema
       val badPartCols = partitionFields.map(_.partitionColumn).toSet.intersect(colNames.toSet)
@@ -251,7 +251,7 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser)
     }
     if (partitionerFields.nonEmpty) {
       if (!CommonUtil.validatePartitionColumns(tableProperties, partitionerFields)) {
-        throw new MalformedCarbonCommandException("Error: Invalid partition definition")
+         throw new MalformedCarbonCommandException("Error: Invalid partition definition")
       }
       // partition columns should not be part of the schema
       val badPartCols = partitionerFields.map(_.partitionColumn).toSet.intersect(colNames.toSet)
