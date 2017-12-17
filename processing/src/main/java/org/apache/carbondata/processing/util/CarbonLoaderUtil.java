@@ -24,17 +24,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -158,7 +148,7 @@ public final class CarbonLoaderUtil {
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
       CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
-      throws IOException, InterruptedException {
+      throws IOException {
     boolean status = false;
     AbsoluteTableIdentifier absoluteTableIdentifier =
         loadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
@@ -372,6 +362,46 @@ public final class CarbonLoaderUtil {
     return escapeCharacter;
   }
 
+
+  public static void readAndUpdateLoadProgressInTableMeta(CarbonLoadModel model,
+      boolean insertOverwrite) throws IOException {
+    LoadMetadataDetails newLoadMetaEntry = new LoadMetadataDetails();
+    SegmentStatus status = SegmentStatus.INSERT_IN_PROGRESS;
+    if (insertOverwrite) {
+      status = SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS;
+    }
+
+    // reading the start time of data load.
+    long loadStartTime = CarbonUpdateUtil.readCurrentTime();
+    model.setFactTimeStamp(loadStartTime);
+    CarbonLoaderUtil
+        .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp(), false);
+    boolean entryAdded =
+        CarbonLoaderUtil.recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite);
+    if (!entryAdded) {
+      throw new IOException("Failed to add entry in table status for " + model.getTableName());
+    }
+  }
+
+  /**
+   * This method will update the load failure entry in the table status file
+   */
+  public static void updateTableStatusForFailure(CarbonLoadModel model)
+      throws IOException {
+    // in case if failure the load status should be "Marked for delete" so that it will be taken
+    // care during clean up
+    SegmentStatus loadStatus = SegmentStatus.MARKED_FOR_DELETE;
+    // always the last entry in the load metadata details will be the current load entry
+    LoadMetadataDetails loadMetaEntry = model.getCurrentLoadMetadataDetail();
+    CarbonLoaderUtil
+        .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp(), true);
+    boolean entryAdded =
+        CarbonLoaderUtil.recordNewLoadMetadata(loadMetaEntry, model, false, false);
+    if (!entryAdded) {
+      throw new IOException(
+          "Failed to update failure entry in table status for " + model.getTableName());
+    }
+  }
 
   public static Dictionary getDictionary(DictionaryColumnUniqueIdentifier columnIdentifier)
       throws IOException {
@@ -827,4 +857,18 @@ public final class CarbonLoaderUtil {
     return newListMetadata;
   }
 
+  /*
+   * This method will add data size and index size into tablestatus for each segment
+   */
+  public static void addDataIndexSizeIntoMetaEntry(LoadMetadataDetails loadMetadataDetails,
+      String segmentId, CarbonTable carbonTable) throws IOException {
+    CarbonTablePath carbonTablePath =
+        CarbonStorePath.getCarbonTablePath((carbonTable.getAbsoluteTableIdentifier()));
+    Map<String, Long> dataIndexSize =
+        CarbonUtil.getDataSizeAndIndexSize(carbonTablePath, segmentId);
+    loadMetadataDetails
+        .setDataSize(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE).toString());
+    loadMetadataDetails
+        .setIndexSize(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE).toString());
+  }
 }

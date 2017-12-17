@@ -50,11 +50,11 @@ import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.statusmanager.SegmentUpdateStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
+import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
 /**
  * utility class for load merging.
@@ -327,7 +327,7 @@ public final class CarbonDataMergerUtil {
         loadMetadataDetails.setLoadEndTime(loadEnddate);
         CarbonTable carbonTable = carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable();
         loadMetadataDetails.setLoadName(mergedLoadNumber);
-        CarbonUtil
+        CarbonLoaderUtil
             .addDataIndexSizeIntoMetaEntry(loadMetadataDetails, mergedLoadNumber, carbonTable);
         loadMetadataDetails.setLoadStartTime(mergeLoadStartTime);
         loadMetadataDetails.setPartitionCount("0");
