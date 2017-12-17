@@ -26,6 +26,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
+import org.apache.carbondata.core.metadata.PartitionMapFileStore;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -34,6 +35,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SingleThreadFinalSortFilesMerger;
@@ -127,21 +129,19 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private SortIntermediateFileMerger intermediateFileMerger;
 
-  /**
-   * @param carbonLoadModel
-   * @param carbonTable
-   * @param segmentProperties
-   * @param compactionType
-   * @param tableName
-   */
+  private List<String> partitionNames;
+
+
   public CompactionResultSortProcessor(CarbonLoadModel carbonLoadModel, CarbonTable carbonTable,
-      SegmentProperties segmentProperties, CompactionType compactionType, String tableName) {
+      SegmentProperties segmentProperties, CompactionType compactionType, String tableName,
+      List<String> partitionNames) {
     this.carbonLoadModel = carbonLoadModel;
     this.carbonTable = carbonTable;
     this.segmentProperties = segmentProperties;
     this.segmentId = carbonLoadModel.getSegmentId();
     this.compactionType = compactionType;
     this.tableName = tableName;
+    this.partitionNames = partitionNames;
   }
 
   /**
@@ -168,6 +168,19 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     } catch (Exception e) {
       LOGGER.error(e, "Compaction failed: " + e.getMessage());
     } finally {
+      if (partitionNames != null) {
+        try {
+          new PartitionMapFileStore().writePartitionMapFile(
+              CarbonTablePath.getSegmentPath(
+                  carbonLoadModel.getTablePath(),
+                  carbonLoadModel.getSegmentId()),
+              carbonLoadModel.getTaskNo(),
+              partitionNames);
+        } catch (IOException e) {
+          LOGGER.error(e, "Compaction failed: " + e.getMessage());
+          isCompactionSuccess = false;
+        }
+      }
       // clear temp files and folders created during compaction
       deleteTempStoreLocation();
     }
