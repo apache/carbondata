@@ -29,7 +29,8 @@ import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier
+import org.apache.carbondata.core.metadata.PartitionFileStore.PartitionMapper
 import org.apache.carbondata.core.metadata.datatype.{DataType, DataTypes, DecimalType}
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema._
@@ -114,7 +115,9 @@ case class CarbonMergerMapping(
     // maxSegmentColCardinality is Cardinality of last segment of compaction
     var maxSegmentColCardinality: Array[Int],
     // maxSegmentColumnSchemaList is list of column schema of last segment of compaction
-    var maxSegmentColumnSchemaList: List[ColumnSchema])
+    var maxSegmentColumnSchemaList: List[ColumnSchema],
+    currentPartitions: Seq[String],
+    @transient partitionMapper: PartitionMapper)
 
 case class NodeInfo(TaskId: String, noOfBlocks: Int)
 
@@ -134,13 +137,15 @@ case class UpdateTableModel(
 case class CompactionModel(compactionSize: Long,
     compactionType: CompactionType,
     carbonTable: CarbonTable,
-    isDDLTrigger: Boolean)
+    isDDLTrigger: Boolean,
+    currentPartitions: Seq[String])
 
 case class CompactionCallableModel(carbonLoadModel: CarbonLoadModel,
     carbonTable: CarbonTable,
     loadsToMerge: util.List[LoadMetadataDetails],
     sqlContext: SQLContext,
-    compactionType: CompactionType)
+    compactionType: CompactionType,
+    currentPartitions: Seq[String])
 
 case class AlterPartitionModel(carbonLoadModel: CarbonLoadModel,
     segmentId: String,

@@ -177,7 +177,8 @@ class StreamHandoffRDD[K, V](
       carbonTable,
       segmentProperties,
       CompactionType.STREAMING,
-      carbonTable.getTableName
+      carbonTable.getTableName,
+      null
     )
   }
 

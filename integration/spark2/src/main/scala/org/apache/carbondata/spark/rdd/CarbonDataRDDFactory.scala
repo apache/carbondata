@@ -40,6 +40,7 @@ import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, N
 import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.execution.command.{CompactionModel, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.constants.LoggerAction
@@ -212,8 +213,8 @@ object CarbonDataRDDFactory {
               val newcompactionModel = CompactionModel(compactionSize,
                 compactionType,
                 table,
-                compactionModel.isDDLTrigger
-              )
+                compactionModel.isDDLTrigger,
+                CarbonFilters.getCurrentPartitions(sqlContext.sparkSession, table))
               // proceed for compaction
               try {
                 CompactionFactory.getCompactor(
@@ -727,8 +728,8 @@ object CarbonDataRDDFactory {
       val compactionModel = CompactionModel(compactionSize,
         CompactionType.MINOR,
         carbonTable,
-        isCompactionTriggerByDDl
-      )
+        isCompactionTriggerByDDl,
+        CarbonFilters.getCurrentPartitions(sqlContext.sparkSession, carbonTable))
       var storeLocation = ""
       val configuredStore = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
       if (null != configuredStore && configuredStore.nonEmpty) {
