@@ -716,13 +716,13 @@ public class CarbonUtilTest {
     List<String> list = new ArrayList<>();
     list.add("1");
     list.add("2");
-    String segments = CarbonUtil.getSegmentString(list);
+    String segments = CarbonUtil.convertToString(list);
     assertEquals(segments, "1,2");
   }
 
   @Test public void testToGetSegmentStringWithEmptySegmentList() {
     List<String> list = new ArrayList<>();
-    String segments = CarbonUtil.getSegmentString(list);
+    String segments = CarbonUtil.convertToString(list);
     assertEquals(segments, "");
   }
 

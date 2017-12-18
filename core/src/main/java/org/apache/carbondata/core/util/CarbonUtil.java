@@ -1391,23 +1391,23 @@ public final class CarbonUtil {
   }
 
   /**
-   * Below method will be used to get the list of segment in
+   * Below method will be used to get the list of values in
    * comma separated string format
    *
-   * @param segmentList
+   * @param values
    * @return comma separated segment string
    */
-  public static String getSegmentString(List<String> segmentList) {
-    if (segmentList.isEmpty()) {
+  public static String convertToString(List<String> values) {
+    if (values == null || values.isEmpty()) {
       return "";
     }
     StringBuilder segmentStringbuilder = new StringBuilder();
-    for (int i = 0; i < segmentList.size() - 1; i++) {
-      String segmentNo = segmentList.get(i);
+    for (int i = 0; i < values.size() - 1; i++) {
+      String segmentNo = values.get(i);
       segmentStringbuilder.append(segmentNo);
       segmentStringbuilder.append(",");
     }
-    segmentStringbuilder.append(segmentList.get(segmentList.size() - 1));
+    segmentStringbuilder.append(values.get(values.size() - 1));
     return segmentStringbuilder.toString();
   }
 

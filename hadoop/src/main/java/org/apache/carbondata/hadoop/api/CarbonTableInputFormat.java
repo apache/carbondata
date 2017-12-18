@@ -127,6 +127,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   private static final String DATA_MAP_DSTR = "mapreduce.input.carboninputformat.datamapdstr";
   public static final String DATABASE_NAME = "mapreduce.input.carboninputformat.databaseName";
   public static final String TABLE_NAME = "mapreduce.input.carboninputformat.tableName";
+  public static final String PARTITIONS_TO_PRUNE =
+      "mapreduce.input.carboninputformat.partitions.to.prune";
 
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
@@ -257,7 +259,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    * Set list of segments to access
    */
   public static void setSegmentsToAccess(Configuration configuration, List<String> validSegments) {
-    configuration.set(INPUT_SEGMENT_NUMBERS, CarbonUtil.getSegmentString(validSegments));
+    configuration.set(INPUT_SEGMENT_NUMBERS, CarbonUtil.convertToString(validSegments));
   }
 
   /**
@@ -290,10 +292,28 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   }
 
   /**
+   * set list of partitions to prune
+   */
+  public static void setPartitionsToPrune(Configuration configuration, List<String> partitions) {
+    configuration.set(
+        CarbonTableInputFormat.PARTITIONS_TO_PRUNE, CarbonUtil.convertToString(partitions));
+  }
+
+  /**
+   * get list of partitions to prune
+   */
+  public static List<String> getPartitionsToPrune(Configuration configuration) {
+    String partitionString = configuration.get(PARTITIONS_TO_PRUNE, "");
+    if (partitionString.trim().isEmpty()) {
+      return null;
+    }
+    return Arrays.asList(partitionString.split(","));
+  }
+  /**
    * Set list of files to access
    */
   public static void setFilesToAccess(Configuration configuration, List<String> validFiles) {
-    configuration.set(INPUT_FILES, CarbonUtil.getSegmentString(validFiles));
+    configuration.set(INPUT_FILES, CarbonUtil.convertToString(validFiles));
   }
 
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
@@ -710,14 +730,16 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         .getDataMap(absoluteTableIdentifier, BlockletDataMap.NAME,
             BlockletDataMapFactory.class.getName());
     DataMapJob dataMapJob = getDataMapJob(job.getConfiguration());
+    List<String> partitionsToPrune = getPartitionsToPrune(job.getConfiguration());
     List<ExtendedBlocklet> prunedBlocklets;
     if (dataMapJob != null) {
       DistributableDataMapFormat datamapDstr =
           new DistributableDataMapFormat(absoluteTableIdentifier, BlockletDataMap.NAME,
-              segmentIds, BlockletDataMapFactory.class.getName());
+              segmentIds, partitionsToPrune,
+              BlockletDataMapFactory.class.getName());
       prunedBlocklets = dataMapJob.execute(datamapDstr, resolver);
     } else {
-      prunedBlocklets = blockletMap.prune(segmentIds, resolver);
+      prunedBlocklets = blockletMap.prune(segmentIds, resolver, partitionsToPrune);
     }
 
     List<org.apache.carbondata.hadoop.CarbonInputSplit> resultFilterredBlocks = new ArrayList<>();
@@ -908,7 +930,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     // TODO: currently only batch segment is supported, add support for streaming table
     List<String> filteredSegment = getFilteredSegment(job, allSegments.getValidSegments());
 
-    List<ExtendedBlocklet> blocklets = blockletMap.prune(filteredSegment, null);
+    List<ExtendedBlocklet> blocklets = blockletMap.prune(filteredSegment, null, null);
     for (ExtendedBlocklet blocklet : blocklets) {
       String blockName = blocklet.getPath();
       blockName = CarbonTablePath.getCarbonDataFileName(blockName);

@@ -299,14 +299,14 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
    */
   public static void setSegmentsToAccess(Configuration configuration, List<String> validSegments) {
     configuration
-        .set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, CarbonUtil.getSegmentString(validSegments));
+        .set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS, CarbonUtil.convertToString(validSegments));
   }
 
   /**
    * Set list of files to access
    */
   public static void setFilesToAccess(Configuration configuration, List<String> validFiles) {
-    configuration.set(CarbonInputFormat.INPUT_FILES, CarbonUtil.getSegmentString(validFiles));
+    configuration.set(CarbonInputFormat.INPUT_FILES, CarbonUtil.convertToString(validFiles));
   }
 
   private static AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)

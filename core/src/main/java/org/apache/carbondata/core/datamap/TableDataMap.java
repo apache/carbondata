@@ -64,14 +64,14 @@ public final class TableDataMap implements OperationEventListener {
    * @param filterExp
    * @return
    */
-  public List<ExtendedBlocklet> prune(List<String> segmentIds, FilterResolverIntf filterExp)
-      throws IOException {
+  public List<ExtendedBlocklet> prune(List<String> segmentIds, FilterResolverIntf filterExp,
+      List<String> partitions) throws IOException {
     List<ExtendedBlocklet> blocklets = new ArrayList<>();
     for (String segmentId : segmentIds) {
       List<Blocklet> pruneBlocklets = new ArrayList<>();
       List<DataMap> dataMaps = dataMapFactory.getDataMaps(segmentId);
       for (DataMap dataMap : dataMaps) {
-        pruneBlocklets.addAll(dataMap.prune(filterExp));
+        pruneBlocklets.addAll(dataMap.prune(filterExp, partitions));
       }
       blocklets.addAll(addSegmentId(blockletDetailsFetcher
           .getExtendedBlocklets(pruneBlocklets, segmentId), segmentId));
@@ -118,12 +118,12 @@ public final class TableDataMap implements OperationEventListener {
    * @return
    */
   public List<ExtendedBlocklet> prune(DataMapDistributable distributable,
-      FilterResolverIntf filterExp) throws IOException {
+      FilterResolverIntf filterExp, List<String> partitions) throws IOException {
     List<ExtendedBlocklet> detailedBlocklets = new ArrayList<>();
     List<Blocklet> blocklets = new ArrayList<>();
     List<DataMap> dataMaps = dataMapFactory.getDataMaps(distributable);
     for (DataMap dataMap : dataMaps) {
-      blocklets.addAll(dataMap.prune(filterExp));
+      blocklets.addAll(dataMap.prune(filterExp, partitions));
     }
     for (Blocklet blocklet: blocklets) {
       ExtendedBlocklet detailedBlocklet =
