@@ -186,7 +186,7 @@ object CommonUtil {
     val listInfo = tableProperties.get(CarbonCommonConstants.LIST_INFO)
 
     if (partitionType.isEmpty) {
-      isValid = false
+      isValid = true
     } else {
       partitionType.get.toUpperCase() match {
         case "HASH" => if (!numPartitions.isDefined
@@ -207,10 +207,12 @@ object CommonUtil {
             isValid &= validateTypeConvert(partitionerFields(0), _))
         }
         case "RANGE_INTERVAL" => isValid = false
-        case _ => isValid = false
+        case _ => isValid = true
       }
       // only support one partition column for now
-      if (partitionerFields.length > 1) isValid = false
+      if (partitionerFields.length > 1 && !partitionType.get.toUpperCase.equals("NATIVE_HIVE")) {
+        isValid = false
+      }
     }
     isValid
   }

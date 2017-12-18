@@ -98,7 +98,7 @@ case class CarbonDatasourceHadoopRelation(
         CarbonCommonConstants.DEFAULT_MAX_NUMBER_OF_COLUMNS)
     }
     if (data.logicalPlan.output.size >= carbonRelation.output.size) {
-      CarbonInsertIntoCommand(this, data.logicalPlan, overwrite).run(sparkSession)
+      CarbonInsertIntoCommand(this, data.logicalPlan, overwrite, Map.empty).run(sparkSession)
     } else {
       CarbonException.analysisException(
         "Cannot insert into target table because number of columns mismatch")

@@ -419,6 +419,8 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
         case "LIST" => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.LIST)
           partitionInfo.setListInfo(listInfo.map(_.asJava).asJava)
           partitionInfo.initialize(listInfo.size + 1)
+        case _ => partitionInfo = new PartitionInfo(cols.asJava, PartitionType.NATIVE_HIVE)
+          partitionInfo.setListInfo(listInfo.map(_.asJava).asJava)
       }
       Some(partitionInfo)
     }

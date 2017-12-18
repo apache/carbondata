@@ -229,8 +229,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return org.apache.carbondata.format.PartitionType.RANGE;
       case RANGE_INTERVAL:
         return org.apache.carbondata.format.PartitionType.RANGE_INTERVAL;
+      case NATIVE_HIVE:
+        return org.apache.carbondata.format.PartitionType.NATIVE_HIVE;
       default:
-        return org.apache.carbondata.format.PartitionType.HASH;
+        return org.apache.carbondata.format.PartitionType.NATIVE_HIVE;
     }
   }
 
@@ -559,8 +561,10 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
         return PartitionType.RANGE;
       case RANGE_INTERVAL:
         return PartitionType.RANGE_INTERVAL;
+      case NATIVE_HIVE:
+        return PartitionType.NATIVE_HIVE;
       default:
-        return PartitionType.HASH;
+        return PartitionType.NATIVE_HIVE;
     }
   }
 

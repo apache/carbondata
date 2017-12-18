@@ -46,16 +46,16 @@ public abstract class AbstractResultProcessor {
       CarbonFactDataHandlerModel carbonFactDataHandlerModel) {
     CarbonDataFileAttributes carbonDataFileAttributes;
     if (compactionType == CompactionType.IUD_UPDDEL_DELTA) {
-      int taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegmentId(),
+      long taskNo = CarbonUpdateUtil.getLatestTaskIdForSegment(loadModel.getSegmentId(),
           CarbonStorePath.getCarbonTablePath(loadModel.getTablePath(),
               carbonTable.getCarbonTableIdentifier()));
       // Increase the Task Index as in IUD_UPDDEL_DELTA_COMPACTION the new file will
       // be written in same segment. So the TaskNo should be incremented by 1 from max val.
-      int index = taskNo + 1;
+      long index = taskNo + 1;
       carbonDataFileAttributes = new CarbonDataFileAttributes(index, loadModel.getFactTimeStamp());
     } else {
       carbonDataFileAttributes =
-          new CarbonDataFileAttributes(Integer.parseInt(loadModel.getTaskNo()),
+          new CarbonDataFileAttributes(Long.parseLong(loadModel.getTaskNo()),
               loadModel.getFactTimeStamp());
     }
     carbonFactDataHandlerModel.setCarbonDataFileAttributes(carbonDataFileAttributes);
