@@ -20,7 +20,8 @@ package org.apache.carbondata.spark.testsuite.dataretention
 import java.util
 import java.util.concurrent.{Callable, Executors}
 
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, Ignore}
+
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
@@ -51,7 +52,7 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
     sql("drop table if exists concurrent")
   }
 
-  test("DataRetention_Concurrency_load_id") {
+  ignore("DataRetention_Concurrency_load_id") {
 
     val tasks = new util.ArrayList[Callable[String]]()
     tasks

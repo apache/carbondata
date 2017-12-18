@@ -429,7 +429,7 @@ class TableNewProcessor(cm: TableModel) {
     columnSchema.setSortColumn(false)
     if(isParentColumnRelation) {
       val dataMapField = map.get.get(field).get
-      columnSchema.setAggFunction(dataMapField.aggregateFunction)
+      columnSchema.setFunction(dataMapField.aggregateFunction)
         val relation = dataMapField.columnTableRelation.get
         val parentColumnTableRelationList = new util.ArrayList[ParentColumnTableRelation]
         val relationIdentifier = new RelationIdentifier(
