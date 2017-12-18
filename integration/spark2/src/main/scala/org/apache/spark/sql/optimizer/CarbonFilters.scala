@@ -90,15 +90,12 @@ object CarbonFilters {
                   .map(filterValues => getCarbonLiteralExpression(name, filterValues)).toList))))
           }
         case sources.Not(sources.In(name, values)) =>
-          if (values.length == 1 && values(0) == null) {
-            Some(new NotInExpression(getCarbonExpression(name),
-              new ListExpression(
-                convertToJavaList(values.map(f => getCarbonLiteralExpression(name, f)).toList))))
+          if (values.contains(null)) {
+            Some(new FalseExpression(getCarbonExpression(name)))
           } else {
             Some(new NotInExpression(getCarbonExpression(name),
               new ListExpression(
-                convertToJavaList(values.filterNot(_ == null)
-                  .map(f => getCarbonLiteralExpression(name, f)).toList))))
+                convertToJavaList(values.map(f => getCarbonLiteralExpression(name, f)).toList))))
           }
         case sources.IsNull(name) =>
           Some(new EqualToExpression(getCarbonExpression(name),

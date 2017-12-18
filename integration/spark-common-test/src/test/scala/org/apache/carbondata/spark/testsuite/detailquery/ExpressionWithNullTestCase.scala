@@ -59,6 +59,9 @@ class ExpressionWithNullTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from expression_test where id in ('2')"), sql("select * from expression_test_hive where id in ('2')"))
     checkAnswer(sql("select * from expression_test where id in (cast('2' as int))"), sql("select * from expression_test_hive where id in (cast('2' as int))"))
     checkAnswer(sql("select * from expression_test where id in (cast('null' as int))"), sql("select * from expression_test_hive where id in (cast('null' as int))"))
+    checkAnswer(sql("select * from expression_test where id in (1,2,NULL)"), sql("select * from expression_test_hive where id in (1,2,NULL)"))
+    checkAnswer(sql("select * from expression_test where id in (NULL)"), sql("select * from expression_test_hive where id in (NULL)"))
+
   }
 
   test("test to check not in expression with null values") {
@@ -75,6 +78,9 @@ class ExpressionWithNullTestCase extends QueryTest with BeforeAndAfterAll {
     checkAnswer(sql("select * from expression_test where id not in ('2')"), sql("select * from expression_test_hive where id not in ('2')"))
     checkAnswer(sql("select * from expression_test where id not in (cast('2' as int))"), sql("select * from expression_test_hive where id not in (cast('2' as int))"))
 //    checkAnswer(sql("select * from expression_test where id not in (cast('null' as int))"), sql("select * from expression_test_hive where id not in (cast('null' as int))"))
+    checkAnswer(sql("select * from expression_test where id not in (1,2,NULL)"), sql("select * from expression_test_hive where id not in (1,2,NULL)"))
+    checkAnswer(sql("select * from expression_test where id not in (NULL)"), sql("select * from expression_test_hive where id not in (NULL)"))
+
   }
 
   test("test to check equals expression with null values") {
