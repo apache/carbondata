@@ -61,7 +61,8 @@ class CarbonScanRDD(
     identifier: AbsoluteTableIdentifier,
     @transient serializedTableInfo: Array[Byte],
     @transient tableInfo: TableInfo,
-    inputMetricsStats: InitInputMetrics)
+    inputMetricsStats: InitInputMetrics,
+    @transient val partitionNames: Seq[String])
   extends CarbonRDDWithTableInfo[InternalRow](sc, Nil, serializedTableInfo) {
 
   private val queryId = sparkContext.getConf.get("queryId", System.nanoTime() + "")
@@ -332,6 +333,9 @@ class CarbonScanRDD(
     CarbonTableInputFormat.setTableInfo(conf, tableInfo)
     CarbonTableInputFormat.setDatabaseName(conf, tableInfo.getDatabaseName)
     CarbonTableInputFormat.setTableName(conf, tableInfo.getFactTable.getTableName)
+    if (partitionNames != null) {
+      CarbonTableInputFormat.setPartitionsToPrune(conf, partitionNames.asJava)
+    }
     createInputFormat(conf)
   }
 

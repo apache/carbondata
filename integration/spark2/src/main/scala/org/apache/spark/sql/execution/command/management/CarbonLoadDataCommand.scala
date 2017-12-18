@@ -39,7 +39,7 @@ import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.command.{DataCommand, DataLoadTableFileMapping, UpdateTableModel}
 import org.apache.spark.sql.execution.datasources.{CarbonFileFormat, CatalogFileIndex, HadoopFsRelation, LogicalRelation}
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.types.{StringType, StructField, StructType}
+import org.apache.spark.sql.types.{StringType, StructField, StructType, TimestampType}
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils}
 
@@ -378,7 +378,8 @@ case class CarbonLoadDataCommand(
         }
       }
     } else {
-      CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
+      CarbonDataRDDFactory.loadCarbonData(
+        sparkSession.sqlContext,
         carbonLoadModel,
         columnar,
         partitionStatus,
@@ -419,7 +420,8 @@ case class CarbonLoadDataCommand(
     if (table.isHivePartitionTable) {
       loadStandardPartition(sparkSession, carbonLoadModel, hadoopConf, loadDataFrame)
     } else {
-      CarbonDataRDDFactory.loadCarbonData(sparkSession.sqlContext,
+      CarbonDataRDDFactory.loadCarbonData(
+        sparkSession.sqlContext,
         carbonLoadModel,
         columnar,
         partitionStatus,
@@ -445,13 +447,11 @@ case class CarbonLoadDataCommand(
       case c: CatalogRelation => c
     }.head.asInstanceOf[LogicalPlan]
 
+
     val query: LogicalPlan = if (dataFrame.isDefined) {
-      val timeStampformatString = CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
-          CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+      var timeStampformatString = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
       val timeStampFormat = new SimpleDateFormat(timeStampformatString)
-      val dateFormatString = CarbonProperties.getInstance().getProperty(CarbonCommonConstants
-        .CARBON_DATE_FORMAT, CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
+      var dateFormatString = CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
       val dateFormat = new SimpleDateFormat(dateFormatString)
       val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
       val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
@@ -479,22 +479,52 @@ case class CarbonLoadDataCommand(
       LogicalRDD(attributes, rdd)(sparkSession)
 
     } else {
+      var timeStampformatString = carbonLoadModel.getTimestampformat
+      if (timeStampformatString.isEmpty) {
+        timeStampformatString = carbonLoadModel.getDefaultTimestampFormat
+      }
+      val timeStampFormat = new SimpleDateFormat(timeStampformatString)
+      var dateFormatString = carbonLoadModel.getDateFormat
+      if (dateFormatString.isEmpty) {
+        dateFormatString = carbonLoadModel.getDefaultDateFormat
+      }
+      val dateFormat = new SimpleDateFormat(dateFormatString)
       // input data from csv files. Convert to logical plan
       CommonUtil.configureCSVInputFormat(hadoopConf, carbonLoadModel)
       hadoopConf.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
       val jobConf = new JobConf(hadoopConf)
       SparkHadoopUtil.get.addCredentials(jobConf)
-      val rdd = new NewHadoopRDD[NullWritable, StringArrayWritable](
-        sparkSession.sparkContext,
-        classOf[CSVInputFormat],
-        classOf[NullWritable],
-        classOf[StringArrayWritable],
-        jobConf
-      ).map(f => InternalRow.fromSeq(f._2.get().map(UTF8String.fromString)))
-
       val attributes =
         StructType(carbonLoadModel.getCsvHeaderColumns.map(
           StructField(_, StringType))).toAttributes
+      val rowDataTypes = attributes.map{f =>
+        relation.output.find(_.name.equalsIgnoreCase(f.name)) match {
+          case Some(attr) => attr.dataType
+          case _ => StringType
+        }
+      }
+      val len = rowDataTypes.length
+      val rdd =
+        new NewHadoopRDD[NullWritable, StringArrayWritable](
+          sparkSession.sparkContext,
+          classOf[CSVInputFormat],
+          classOf[NullWritable],
+          classOf[StringArrayWritable],
+          jobConf).map{f =>
+            val data = new Array[Any](len)
+            var i = 0
+            while (i < len) {
+              // TODO find a way to avoid double conversion of date and time.
+              data(i) = CarbonScalaUtil.getString(
+                f._2.get()(i),
+                rowDataTypes(i),
+                timeStampFormat,
+                dateFormat)
+              i = i + 1
+            }
+            InternalRow.fromSeq(data)
+        }
+
       // Only select the required columns
       Project(relation.output.map(f => attributes.find(_.name.equalsIgnoreCase(f.name)).get),
         LogicalRDD(attributes, rdd)(sparkSession))
@@ -533,9 +563,8 @@ case class CarbonLoadDataCommand(
       catalog.filterPartitions(Nil) // materialize all the partitions in memory
     }
     val partitionSchema =
-      StructType(table.getPartitionInfo(table.getTableName).getColumnSchemaList.asScala.map(f =>
-      metastoreSchema.fields.find(_.name.equalsIgnoreCase(f.getColumnName))).map(_.get))
-
+      StructType(table.getPartitionInfo(table.getTableName).getColumnSchemaList.asScala.map(field =>
+      metastoreSchema.fields.find(_.name.equalsIgnoreCase(field.getColumnName))).map(_.get))
 
     val dataSchema =
       StructType(metastoreSchema

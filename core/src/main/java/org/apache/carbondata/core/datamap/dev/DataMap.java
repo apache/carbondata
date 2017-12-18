@@ -42,6 +42,17 @@ public interface DataMap {
    */
   List<Blocklet> prune(FilterResolverIntf filterExp);
 
+  // TODO Move this method to Abstract class
+  /**
+   * Prune the datamap with filter expression and partition information. It returns the list of
+   * blocklets where these filters can exist.
+   *
+   * @param filterExp
+   * @return
+   */
+  List<Blocklet> prune(FilterResolverIntf filterExp, List<String> partitions);
+
+  // TODO Move this method to Abstract class
   /**
    * Validate whether the current segment needs to be fetching the required data
    *

@@ -72,7 +72,6 @@ with Serializable {
     sparkSession.sessionState.conf.setConfString(
       "spark.sql.sources.commitProtocolClass",
       "org.apache.spark.sql.execution.datasources.CarbonSQLHadoopMapReduceCommitProtocol")
-
     job.setOutputFormatClass(classOf[CarbonTableOutputFormat])
     var table = CarbonEnv.getCarbonTable(
       TableIdentifier(options("tableName"), options.get("dbName")))(sparkSession)
@@ -98,6 +97,8 @@ with Serializable {
       model,
       conf
     )
+    model.setTimestampformat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
+    model.setDateFormat(CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
     model.setPartitionId("0")
     model.setUseOnePass(options.getOrElse("onepass", "false").toBoolean)
     model.setDictionaryServerHost(options.getOrElse("dicthost", null))
@@ -139,7 +140,7 @@ with Serializable {
       }
 
       override def getFileExtension(context: TaskAttemptContext): String = {
-        ".carbondata"
+        CarbonTablePath.CARBON_DATA_EXT
       }
 
     }

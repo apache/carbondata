@@ -34,18 +34,18 @@ case class CarbonInsertIntoCommand(
     val df = Dataset.ofRows(sparkSession, child)
     val header = relation.tableSchema.get.fields.map(_.name).mkString(",")
     val load = CarbonLoadDataCommand(
-      Some(relation.carbonRelation.databaseName),
-      relation.carbonRelation.tableName,
-      null,
-      Seq(),
-      scala.collection.immutable.Map("fileheader" -> header),
-      overwrite,
-      null,
-      Some(df),
-      None,
-      None,
-      Map.empty,
-      partition).run(sparkSession)
+      databaseNameOp = Some(relation.carbonRelation.databaseName),
+      tableName = relation.carbonRelation.tableName,
+      factPathFromUser = null,
+      dimFilesPath = Seq(),
+      options = scala.collection.immutable.Map("fileheader" -> header),
+      isOverwriteTable = overwrite,
+      inputSqlString = null,
+      dataFrame = Some(df),
+      updateModel = None,
+      tableInfoOp = None,
+      internalOptions = Map.empty,
+      partition = partition).run(sparkSession)
     // updating relation metadata. This is in case of auto detect high cardinality
     relation.carbonRelation.metaData =
       CarbonSparkUtil.createSparkMeta(relation.carbonRelation.carbonTable)

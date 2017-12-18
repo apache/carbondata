@@ -17,18 +17,14 @@
 
 package org.apache.spark.sql.optimizer
 
+import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.CastExpressionOptimization
-import org.apache.spark.sql.CarbonBoundReference
-import org.apache.spark.sql.CastExpr
-import org.apache.spark.sql.SparkUnknownExpression
-import org.apache.spark.sql.sources
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
+import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
-import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
@@ -394,5 +390,15 @@ object CarbonFilters {
 
       case _ => expressions
     }
+  }
+
+  def getPartitions(partitionFilters: Seq[Expression],
+      sparkSession: SparkSession,
+      identifier: TableIdentifier): Seq[String] = {
+    val partitions =
+      sparkSession.sessionState.catalog.listPartitionsByFilter(identifier, partitionFilters)
+    partitions.toList.flatMap { f =>
+      f.spec.seq.map(f => f._1 + "=" + f._2)
+    }.toSet.toSeq
   }
 }

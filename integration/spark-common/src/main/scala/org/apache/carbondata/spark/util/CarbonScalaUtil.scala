@@ -22,8 +22,10 @@ import java.text.SimpleDateFormat
 import java.util
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.execution.command.DataTypeInfo
 import org.apache.spark.sql.types._
+import org.apache.spark.unsafe.types.UTF8String
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, StructField => CarbonStructField}
@@ -149,6 +151,22 @@ object CarbonScalaUtil {
           builder.substring(0, builder.length - 1)
         case other => other.toString
       }
+    }
+  }
+
+  def getString(value: String,
+      dataType: DataType,
+      timeStampFormat: SimpleDateFormat,
+      dateFormat: SimpleDateFormat): UTF8String = {
+    dataType match {
+      case TimestampType =>
+        UTF8String.fromString(
+          DateTimeUtils.timestampToString(timeStampFormat.parse(value).getTime * 1000))
+      case DateType =>
+        UTF8String.fromString(
+          DateTimeUtils.dateToString(
+            (dateFormat.parse(value).getTime / DateTimeUtils.MILLIS_PER_DAY).toInt))
+      case _ => UTF8String.fromString(value)
     }
   }
 
