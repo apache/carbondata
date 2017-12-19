@@ -131,7 +131,7 @@ object CarbonDataStoreCreator {
         "true")
       loadModel.setMaxColumns("15")
       loadModel.setCsvHeader(
-        "ID,date,country,name,phonetype,serialname,salary,bonus,monthlyBonus,dob,shortField")
+        "ID,date,country,name,phonetype,serialname,salary,bonus,monthlyBonus,dob,shortField,isCurrentEmployee")
       loadModel.setCsvHeaderColumns(loadModel.getCsvHeader.split(","))
       loadModel.setTaskNo("0")
       loadModel.setSegmentId("0")
@@ -301,6 +301,17 @@ object CarbonDataStoreCreator {
     shortField.setSchemaOrdinal(10)
     shortField.setColumnReferenceId(shortField.getColumnUniqueId)
     columnSchemas.add(shortField)
+
+    val isCurrentEmployee: ColumnSchema = new ColumnSchema()
+    isCurrentEmployee.setColumnName("isCurrentEmployee")
+    isCurrentEmployee.setColumnar(true)
+    isCurrentEmployee.setDataType(DataTypes.BOOLEAN)
+    isCurrentEmployee.setEncodingList(invertedIndexEncoding)
+    isCurrentEmployee.setColumnUniqueId(UUID.randomUUID().toString)
+    isCurrentEmployee.setDimensionColumn(false)
+    isCurrentEmployee.setColumnGroup(11)
+    isCurrentEmployee.setColumnReferenceId(isCurrentEmployee.getColumnUniqueId)
+    columnSchemas.add(isCurrentEmployee)
 
     tableSchema.setListOfColumns(columnSchemas)
     val schemaEvol: SchemaEvolution = new SchemaEvolution()
