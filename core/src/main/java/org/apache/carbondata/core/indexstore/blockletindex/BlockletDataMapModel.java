@@ -16,18 +16,27 @@
  */
 package org.apache.carbondata.core.indexstore.blockletindex;
 
+import java.util.List;
+
 import org.apache.carbondata.core.datamap.dev.DataMapModel;
 
 public class BlockletDataMapModel extends DataMapModel {
 
   private byte[] fileData;
 
-  public BlockletDataMapModel(String filePath, byte[] fileData) {
+  private List<String> partitions;
+
+  public BlockletDataMapModel(String filePath, byte[] fileData, List<String> partitions) {
     super(filePath);
     this.fileData = fileData;
+    this.partitions = partitions;
   }
 
   public byte[] getFileData() {
     return fileData;
+  }
+
+  public List<String> getPartitions() {
+    return partitions;
   }
 }

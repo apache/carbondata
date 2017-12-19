@@ -31,6 +31,7 @@ import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMap;
 import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapModel;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.memory.MemoryException;
+import org.apache.carbondata.core.metadata.PartitionMapFileStore;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
@@ -71,12 +72,14 @@ public class BlockletDataMapIndexStore
     BlockletDataMap dataMap = (BlockletDataMap) lruCache.get(lruCacheKey);
     if (dataMap == null) {
       try {
+        String segmentPath = CarbonTablePath
+            .getSegmentPath(identifier.getAbsoluteTableIdentifier().getTablePath(),
+                identifier.getSegmentId());
         SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
-        indexFileStore.readAllIIndexOfSegment(
-            CarbonTablePath.getSegmentPath(
-                identifier.getAbsoluteTableIdentifier().getTablePath(),
-                identifier.getSegmentId()));
-        dataMap = loadAndGetDataMap(identifier, indexFileStore);
+        indexFileStore.readAllIIndexOfSegment(segmentPath);
+        PartitionMapFileStore partitionFileStore = new PartitionMapFileStore();
+        partitionFileStore.readAllPartitionsOfSegment(segmentPath);
+        dataMap = loadAndGetDataMap(identifier, indexFileStore, partitionFileStore);
       } catch (MemoryException e) {
         LOGGER.error("memory exception when loading datamap: " + e.getMessage());
         throw new RuntimeException(e.getMessage(), e);
@@ -102,18 +105,26 @@ public class BlockletDataMapIndexStore
       }
       if (missedIdentifiers.size() > 0) {
         Map<String, SegmentIndexFileStore> segmentIndexFileStoreMap = new HashMap<>();
+        Map<String, PartitionMapFileStore> partitionFileStoreMap = new HashMap<>();
         for (TableBlockIndexUniqueIdentifier identifier: missedIdentifiers) {
           SegmentIndexFileStore indexFileStore =
               segmentIndexFileStoreMap.get(identifier.getSegmentId());
+          PartitionMapFileStore partitionFileStore =
+              partitionFileStoreMap.get(identifier.getSegmentId());
+          String segmentPath = CarbonTablePath
+              .getSegmentPath(identifier.getAbsoluteTableIdentifier().getTablePath(),
+                  identifier.getSegmentId());
           if (indexFileStore == null) {
-            String segmentPath = CarbonTablePath
-                .getSegmentPath(identifier.getAbsoluteTableIdentifier().getTablePath(),
-                    identifier.getSegmentId());
             indexFileStore = new SegmentIndexFileStore();
             indexFileStore.readAllIIndexOfSegment(segmentPath);
             segmentIndexFileStoreMap.put(identifier.getSegmentId(), indexFileStore);
           }
-          blockletDataMaps.add(loadAndGetDataMap(identifier, indexFileStore));
+          if (partitionFileStore == null) {
+            partitionFileStore = new PartitionMapFileStore();
+            partitionFileStore.readAllPartitionsOfSegment(segmentPath);
+            partitionFileStoreMap.put(identifier.getSegmentId(), partitionFileStore);
+          }
+          blockletDataMaps.add(loadAndGetDataMap(identifier, indexFileStore, partitionFileStore));
         }
       }
     } catch (Throwable e) {
@@ -160,7 +171,8 @@ public class BlockletDataMapIndexStore
    */
   private BlockletDataMap loadAndGetDataMap(
       TableBlockIndexUniqueIdentifier identifier,
-      SegmentIndexFileStore indexFileStore)
+      SegmentIndexFileStore indexFileStore,
+      PartitionMapFileStore partitionFileStore)
       throws IOException, MemoryException {
     String uniqueTableSegmentIdentifier =
         identifier.getUniqueTableSegmentIdentifier();
@@ -168,11 +180,12 @@ public class BlockletDataMapIndexStore
     if (lock == null) {
       lock = addAndGetSegmentLock(uniqueTableSegmentIdentifier);
     }
-    BlockletDataMap dataMap = null;
+    BlockletDataMap dataMap;
     synchronized (lock) {
       dataMap = new BlockletDataMap();
       dataMap.init(new BlockletDataMapModel(identifier.getFilePath(),
-          indexFileStore.getFileData(identifier.getCarbonIndexFileName())));
+          indexFileStore.getFileData(identifier.getCarbonIndexFileName()),
+          partitionFileStore.getPartitions(identifier.getCarbonIndexFileName())));
       lruCache.put(identifier.getUniqueTableSegmentIdentifier(), dataMap,
           dataMap.getMemorySize());
     }

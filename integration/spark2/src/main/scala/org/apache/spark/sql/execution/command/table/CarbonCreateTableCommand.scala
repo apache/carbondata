@@ -29,6 +29,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.exception.InvalidConfigurationException
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events.{CreateTablePostExecutionEvent, CreateTablePreExecutionEvent, OperationContext, OperationListenerBus}
@@ -94,7 +95,9 @@ case class CarbonCreateTableCommand(
           val rawSchema = CarbonSparkUtil.getRawSchema(carbonRelation)
           sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
           val partitionInfo = tableInfo.getFactTable.getPartitionInfo
-          val partitionString = if (partitionInfo != null) {
+          val partitionString =
+            if (partitionInfo != null &&
+                partitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
             s" PARTITIONED BY (${partitionInfo.getColumnSchemaList.asScala.map(
               _.getColumnName).mkString(",")})"
           } else {

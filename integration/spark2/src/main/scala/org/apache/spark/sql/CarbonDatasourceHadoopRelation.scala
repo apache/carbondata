@@ -65,7 +65,9 @@ case class CarbonDatasourceHadoopRelation(
 
   override def schema: StructType = tableSchema.getOrElse(carbonRelation.schema)
 
-  def buildScan(requiredColumns: Array[String], filters: Array[Filter]): RDD[InternalRow] = {
+  def buildScan(requiredColumns: Array[String],
+      filters: Array[Filter],
+      partitions: Seq[String]): RDD[InternalRow] = {
     val filterExpression: Option[Expression] = filters.flatMap { filter =>
       CarbonFilters.createCarbonFilter(schema, filter)
     }.reduceOption(new AndExpression(_, _))
@@ -80,7 +82,8 @@ case class CarbonDatasourceHadoopRelation(
       identifier,
       carbonTable.getTableInfo.serialize(),
       carbonTable.getTableInfo,
-      inputMetricsStats)
+      inputMetricsStats,
+      partitions)
   }
 
   override def unhandledFilters(filters: Array[Filter]): Array[Filter] = new Array[Filter](0)

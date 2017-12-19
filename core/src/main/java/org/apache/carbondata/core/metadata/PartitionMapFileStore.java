@@ -46,6 +46,7 @@ import com.google.gson.Gson;
  */
 public class PartitionMapFileStore {
 
+  private Map<String, List<String>> partitionMap = new HashMap<>();
   /**
    * Write partitionmapp file to the segment folder with indexfilename and corresponding partitions.
    *
@@ -105,33 +106,38 @@ public class PartitionMapFileStore {
    * @throws IOException
    */
   public void mergePartitionMapFiles(String segmentPath) throws IOException {
+    CarbonFile[] partitionFiles = getPartitionFiles(segmentPath);
+    if (partitionFiles != null && partitionFiles.length > 1) {
+      PartitionMapper partitionMapper = null;
+      for (CarbonFile file : partitionFiles) {
+        PartitionMapper localMapper = readPartitionMap(file.getAbsolutePath());
+        if (partitionMapper == null && localMapper != null) {
+          partitionMapper = localMapper;
+        }
+        if (localMapper != null) {
+          partitionMapper = partitionMapper.merge(localMapper);
+        }
+      }
+      if (partitionMapper != null) {
+        String path = segmentPath + "/" + "mergedpartitions" + CarbonTablePath.PARTITION_MAP_EXT;
+        writePartitionFile(partitionMapper, path);
+        for (CarbonFile file : partitionFiles) {
+          FileFactory.deleteAllCarbonFilesOfDir(file);
+        }
+      }
+    }
+  }
+
+  private CarbonFile[] getPartitionFiles(String segmentPath) {
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
     if (carbonFile.exists()) {
-      CarbonFile[] carbonFiles = carbonFile.listFiles(new CarbonFileFilter() {
+      return carbonFile.listFiles(new CarbonFileFilter() {
         @Override public boolean accept(CarbonFile file) {
           return file.getName().endsWith(CarbonTablePath.PARTITION_MAP_EXT);
         }
       });
-      if (carbonFiles != null && carbonFiles.length > 1) {
-        PartitionMapper partitionMapper = null;
-        for (CarbonFile file : carbonFiles) {
-          PartitionMapper localMapper = readPartitionMap(file.getAbsolutePath());
-          if (partitionMapper == null && localMapper != null) {
-            partitionMapper = localMapper;
-          }
-          if (localMapper != null) {
-            partitionMapper = partitionMapper.merge(localMapper);
-          }
-        }
-        if (partitionMapper != null) {
-          String path = segmentPath + "/" + "mergedpartitions" + CarbonTablePath.PARTITION_MAP_EXT;
-          writePartitionFile(partitionMapper, path);
-          for (CarbonFile file : carbonFiles) {
-            FileFactory.deleteAllCarbonFilesOfDir(file);
-          }
-        }
-      }
     }
+    return null;
   }
 
   /**
@@ -165,6 +171,20 @@ public class PartitionMapFileStore {
     }
 
     return partitionMapper;
+  }
+
+  public void readAllPartitionsOfSegment(String segmentPath) {
+    CarbonFile[] partitionFiles = getPartitionFiles(segmentPath);
+    if (partitionFiles != null && partitionFiles.length > 0) {
+      for (CarbonFile file : partitionFiles) {
+        PartitionMapper partitionMapper = readPartitionMap(file.getAbsolutePath());
+        partitionMap.putAll(partitionMapper.getPartitionMap());
+      }
+    }
+  }
+
+  public List<String> getPartitions(String indexFileName) {
+    return partitionMap.get(indexFileName);
   }
 
   public static class PartitionMapper implements Serializable {
