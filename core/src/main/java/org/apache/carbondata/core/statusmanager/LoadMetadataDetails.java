@@ -63,7 +63,6 @@ public class LoadMetadataDetails implements Serializable {
   // partition count of this segment
   private String partitionCount;
 
-  private String isDeleted = CarbonCommonConstants.KEYWORD_FALSE;
   private String dataSize;
   private String indexSize;
 
@@ -336,24 +335,6 @@ public class LoadMetadataDetails implements Serializable {
    */
   public void setMajorCompacted(String majorCompacted) {
     this.majorCompacted = majorCompacted;
-  }
-
-  /**
-   * To get isDeleted property.
-   *
-   * @return isDeleted
-   */
-  public String getIsDeleted() {
-    return isDeleted;
-  }
-
-  /**
-   * To set isDeleted property.
-   *
-   * @param isDeleted
-   */
-  public void setIsDeleted(String isDeleted) {
-    this.isDeleted = isDeleted;
   }
 
   /**

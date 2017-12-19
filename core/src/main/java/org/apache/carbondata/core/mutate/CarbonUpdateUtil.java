@@ -231,7 +231,6 @@ public class CarbonUpdateUtil {
               // if this call is coming from the delete delta flow then the time stamp
               // String will come empty then no need to write into table status file.
               if (isTimestampUpdationRequired) {
-                loadMetadata.setIsDeleted(CarbonCommonConstants.KEYWORD_TRUE);
                 // if in case of update flow.
                 if (loadMetadata.getUpdateDeltaStartTimestamp().isEmpty()) {
                   // this means for first time it is getting updated .
