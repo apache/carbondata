@@ -34,7 +34,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.catalog.{CatalogRelation, CatalogTable}
-import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
+import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, Project}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.command.{DataCommand, DataLoadTableFileMapping, UpdateTableModel}
@@ -46,6 +46,7 @@ import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils}
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
+import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
 import org.apache.carbondata.core.dictionary.service.NonSecureDictionaryServiceProvider
@@ -53,7 +54,7 @@ import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
-import org.apache.carbondata.core.statusmanager.SegmentStatus
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, OperationContext, OperationListenerBus}
@@ -67,7 +68,7 @@ import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
 import org.apache.carbondata.spark.dictionary.server.SecureDictionaryServer
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
-import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, DictionaryLoadModel}
+import org.apache.carbondata.spark.rdd.{CarbonDataRDDFactory, CarbonDropPartitionCommitRDD, CarbonDropPartitionRDD, DictionaryLoadModel}
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, CommonUtil, DataLoadingUtil, GlobalDictionaryUtil}
 
 case class CarbonLoadDataCommand(
@@ -567,14 +568,18 @@ case class CarbonLoadDataCommand(
           carbonLoadModel,
           sparkSession)
     }
-    Dataset.ofRows(
-      sparkSession,
+    val convertedPlan =
       CarbonReflectionUtils.getInsertIntoCommand(
         convertRelation,
         partition,
         query,
-        isOverwriteTable,
-        false))
+        false,
+        false)
+    if (isOverwriteTable && partition.nonEmpty && table.isHivePartitionTable) {
+      overwritePartition(sparkSession, table, convertedPlan)
+    } else {
+      Dataset.ofRows(sparkSession, convertedPlan)
+    }
   }
 
   private def convertToLogicalRelation(
@@ -597,14 +602,18 @@ case class CarbonLoadDataCommand(
     }
     val partitionSchema =
       StructType(table.getPartitionInfo(table.getTableName).getColumnSchemaList.asScala.map(field =>
-      metastoreSchema.fields.find(_.name.equalsIgnoreCase(field.getColumnName))).map(_.get))
-
+        metastoreSchema.fields.find(_.name.equalsIgnoreCase(field.getColumnName))).map(_.get))
+    val overWriteLocal = if (overWrite && partition.nonEmpty) {
+      false
+    } else {
+      overWrite
+    }
     val dataSchema =
       StructType(metastoreSchema
         .filterNot(field => partitionSchema.contains(field.name)))
     val options = new mutable.HashMap[String, String]()
     options ++= catalogTable.storage.properties
-    options += (("overwrite", overWrite.toString))
+    options += (("overwrite", overWriteLocal.toString))
     options += (("onepass", loadModel.getUseOnePass.toString))
     options += (("dicthost", loadModel.getDictionaryServerHost))
     options += (("dictport", loadModel.getDictionaryServerPort.toString))
@@ -619,6 +628,66 @@ case class CarbonLoadDataCommand(
     CarbonReflectionUtils.getLogicalRelation(hdfsRelation,
       hdfsRelation.schema.toAttributes,
       Some(catalogTable))
+  }
+
+  /**
+   * Overwrite the partition data if static partitions are specified.
+   * @param sparkSession
+   * @param table
+   * @param logicalPlan
+   */
+  private def overwritePartition(
+      sparkSession: SparkSession,
+      table: CarbonTable,
+      logicalPlan: LogicalPlan): Unit = {
+    sparkSession.sessionState.catalog.listPartitions(
+      TableIdentifier(table.getTableName, Some(table.getDatabaseName)),
+      Some(partition.map(f => (f._1, f._2.get))))
+    val partitionNames = partition.map(k => k._1 + "=" + k._2.get).toSet
+    val uniqueId = System.nanoTime().toString
+    val segments = new SegmentStatusManager(
+      table.getAbsoluteTableIdentifier).getValidAndInvalidSegments.getValidSegments
+    try {
+      // First drop the partitions from partition mapper files of each segment
+      new CarbonDropPartitionRDD(
+        sparkSession.sparkContext,
+        table.getTablePath,
+        segments.asScala,
+        partitionNames.toSeq,
+        uniqueId).collect()
+    } catch {
+      case e: Exception =>
+        // roll back the drop partitions from carbon store
+        new CarbonDropPartitionCommitRDD(
+          sparkSession.sparkContext,
+          table.getTablePath,
+          segments.asScala,
+          false,
+          uniqueId).collect()
+        throw e
+    }
+
+    try {
+      Dataset.ofRows(sparkSession, logicalPlan)
+    } catch {
+      case e: Exception =>
+        // roll back the drop partitions from carbon store
+        new CarbonDropPartitionCommitRDD(
+          sparkSession.sparkContext,
+          table.getTablePath,
+          segments.asScala,
+          false,
+          uniqueId).collect()
+        throw e
+    }
+    // Commit the removed partitions in carbon store.
+    new CarbonDropPartitionCommitRDD(
+      sparkSession.sparkContext,
+      table.getTablePath,
+      segments.asScala,
+      true,
+      uniqueId).collect()
+    DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
   }
 
   def getDataFrameWithTupleID(): DataFrame = {
