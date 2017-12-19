@@ -17,6 +17,7 @@
 package org.apache.carbondata.spark.testsuite.standardpartition
 
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.{AnalysisException, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -200,6 +201,59 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     validateDataFiles("default_singlepasspartitionone", "0", 1)
   }
 
+  test("data loading for partition table for one static partition column with load syntax") {
+    sql(
+      """
+        | CREATE TABLE loadstaticpartitionone (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (empno int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitionone PARTITION(empno='1') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    checkAnswer(sql("select distinct empno from loadstaticpartitionone"), Seq(Row(1)))
+  }
+
+  test("overwrite partition table for one static partition column with load syntax") {
+    sql(
+      """
+        | CREATE TABLE loadstaticpartitiononeoverwrite (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (empno int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitiononeoverwrite PARTITION(empno='1') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    val rows = sql("select count(*) from loadstaticpartitiononeoverwrite").collect()
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitiononeoverwrite PARTITION(empno='1') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitiononeoverwrite PARTITION(empno='1') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE loadstaticpartitiononeoverwrite PARTITION(empno='1') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    checkAnswer(sql("select count(*) from loadstaticpartitiononeoverwrite"), rows)
+  }
+
+  test("Restrict streaming on partitioned table") {
+    intercept[AnalysisException] {
+      sql(
+        """
+          | CREATE TABLE streamingpartitionedtable (empname String, designation String, doj
+          | Timestamp,
+          |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+          |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+          |  utilization int,salary int)
+          | PARTITIONED BY (empno int)
+          | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('streaming'='true')
+        """.stripMargin)
+    }
+  }
+
 
   override def afterAll = {
     dropTable
@@ -215,6 +269,9 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table if exists insertpartitionthree")
     sql("drop table if exists staticpartitionone")
     sql("drop table if exists singlepasspartitionone")
+    sql("drop table if exists loadstaticpartitionone")
+    sql("drop table if exists loadstaticpartitiononeoverwrite")
+    sql("drop table if exists streamingpartitionedtable")
   }
 
 }

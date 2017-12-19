@@ -233,6 +233,9 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
       case _ =>
         // ignore this case
     }
+    if (partitionFields.nonEmpty && options.isStreaming) {
+      operationNotAllowed("Streaming is not allowed on partitioned table", partitionColumns)
+    }
     // validate tblProperties
     val bucketFields = parser.getBucketFields(tableProperties, fields, options)
     // prepare table model of the collected tokens

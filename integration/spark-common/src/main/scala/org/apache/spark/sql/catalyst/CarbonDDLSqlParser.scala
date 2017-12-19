@@ -976,6 +976,12 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       case _ => ("", "")
     }
 
+  protected lazy val partitions: Parser[(String, String)] =
+    (ident <~ "=") ~ stringLit ^^ {
+      case opt ~ optvalue => (opt.trim, optvalue)
+      case _ => ("", "")
+    }
+
   protected lazy val valueOptions: Parser[(Int, Int)] =
     (numericLit <~ ",") ~ numericLit ^^ {
       case opt ~ optvalue => (opt.toInt, optvalue.toInt)

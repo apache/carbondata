@@ -538,8 +538,14 @@ case class CarbonLoadDataCommand(
         }
 
       // Only select the required columns
-      Project(relation.output.map(f => attributes.find(_.name.equalsIgnoreCase(f.name)).get),
-        LogicalRDD(attributes, rdd)(sparkSession))
+      val output = if (partition.nonEmpty) {
+        relation.output.map{ attr =>
+          attributes.find(_.name.equalsIgnoreCase(attr.name)).get
+        }.filter(attr => partition.get(attr.name).isEmpty)
+      } else {
+        relation.output.map(f => attributes.find(_.name.equalsIgnoreCase(f.name)).get)
+      }
+      Project(output, LogicalRDD(attributes, rdd)(sparkSession))
     }
     val convertRelation = relation match {
       case l: LogicalRelation =>
