@@ -435,4 +435,19 @@ class PrestoAllDataTypeTest extends FunSuiteLike with BeforeAndAfterAll {
     val expectedResult: List[Map[String, Any]] = List(Map("RESULT" -> "2"))
     assert(actualResult.toString() equals expectedResult.toString())
   }
+  test("test the boolean data type") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT isCurrentEmployee AS RESULT FROM TESTDB.TESTTABLE WHERE ID=1")
+    assert(actualResult.head("RESULT").toString.toBoolean)
+  }
+  test("test the boolean data type for null value") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT id AS RESULT FROM TESTDB.TESTTABLE WHERE isCurrentEmployee is null")
+    assert(actualResult.head("RESULT").toString.toInt==2)
+  }
+  test("test the boolean data type for not null value with filter ") {
+    val actualResult: List[Map[String, Any]] = PrestoServer
+      .executeQuery("SELECT id AS RESULT FROM TESTDB.TESTTABLE WHERE isCurrentEmployee is NOT null AND ID>8")
+    assert(actualResult.head("RESULT").toString.toInt==9)
+  }
 }

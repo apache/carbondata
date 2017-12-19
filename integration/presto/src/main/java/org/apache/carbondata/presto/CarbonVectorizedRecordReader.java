@@ -186,18 +186,17 @@ class CarbonVectorizedRecordReader extends AbstractRecordReader<Object> {
       }
     }
 
-    for (int i = 0; i < queryMeasures.size(); i++) {
-      QueryMeasure msr = queryMeasures.get(i);
+    for (QueryMeasure msr : queryMeasures) {
       DataType dataType = msr.getMeasure().getDataType();
-      if (dataType == DataTypes.SHORT || dataType == DataTypes.INT || dataType == DataTypes.LONG) {
-        fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-            msr.getMeasure().getDataType());
+      if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.SHORT || dataType == DataTypes.INT
+          || dataType == DataTypes.LONG) {
+        fields[msr.getQueryOrder()] =
+            new StructField(msr.getColumnName(), msr.getMeasure().getDataType());
       } else if (DataTypes.isDecimal(dataType)) {
-        fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-           msr.getMeasure().getDataType());
+        fields[msr.getQueryOrder()] =
+            new StructField(msr.getColumnName(), msr.getMeasure().getDataType());
       } else {
-        fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(),
-            DataTypes.DOUBLE);
+        fields[msr.getQueryOrder()] = new StructField(msr.getColumnName(), DataTypes.DOUBLE);
       }
     }
 
