@@ -280,25 +280,27 @@ class CarbonOptimizer(
   }
 }
 
-class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser) extends
-  SparkSqlAstBuilder(conf) {
+class CarbonSqlAstBuilder(conf: SQLConf, parser: CarbonSpark2SqlParser, sparkSession: SparkSession)
+  extends SparkSqlAstBuilder(conf) {
 
-  val helper = new CarbonHelperSqlAstBuilder(conf, parser)
+  val helper = new CarbonHelperSqlAstBuilder(conf, parser, sparkSession)
 
   override def visitCreateHiveTable(ctx: CreateHiveTableContext): LogicalPlan = {
     val fileStorage = helper.getFileStorage(ctx.createFileFormat)
 
     if (fileStorage.equalsIgnoreCase("'carbondata'") ||
         fileStorage.equalsIgnoreCase("'org.apache.carbondata.format'")) {
-      helper.createCarbonTable(ctx.createTableHeader,
-          ctx.skewSpec,
-          ctx.bucketSpec,
-          ctx.partitionColumns,
-          ctx.columns,
-          ctx.tablePropertyList,
-          ctx.locationSpec(),
-          Option(ctx.STRING()).map(string),
-          ctx.AS)
+      helper.createCarbonTable(
+        tableHeader = ctx.createTableHeader,
+        skewSpecContext = ctx.skewSpec,
+        bucketSpecContext = ctx.bucketSpec,
+        partitionColumns = ctx.partitionColumns,
+        columns = ctx.columns,
+        tablePropertyList = ctx.tablePropertyList,
+        locationSpecContext = ctx.locationSpec(),
+        tableComment = Option(ctx.STRING()).map(string),
+        ctas = ctx.AS,
+        query = ctx.query)
     } else {
       super.visitCreateHiveTable(ctx)
     }

@@ -16,9 +16,10 @@
  */
 package org.apache.spark.sql.hive
 
-import org.apache.spark.sql.{RuntimeConfig, SparkSession}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, DataFrame, Dataset, RuntimeConfig, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.types.StructType
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
@@ -144,6 +145,31 @@ trait CarbonMetaStore {
   def getThriftTableInfo(tablePath: CarbonTablePath)(sparkSession: SparkSession): TableInfo
 
   def getTableFromMetadataCache(database: String, tableName: String): Option[CarbonTable]
+
+  /**
+   * Method will be used to retrieve or create carbon data source relation
+   *
+   * @param sparkSession
+   * @param tableIdentifier
+   * @return
+   */
+  def createCarbonDataSourceHadoopRelation(
+      sparkSession: SparkSession,
+      tableIdentifier: TableIdentifier): CarbonDatasourceHadoopRelation
+
+  /**
+   * Method will be used retrieve the schema from unresolved relation
+   *
+   * @param sparkSession
+   * @param query
+   * @return
+   */
+  def getSchemaFromUnresolvedRelation(
+      sparkSession: SparkSession,
+      query: LogicalPlan): StructType = {
+    val df: DataFrame = Dataset.ofRows(sparkSession, query)
+    df.schema
+  }
 }
 /**
  * Factory for Carbon metastore
