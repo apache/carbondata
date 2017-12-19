@@ -19,6 +19,7 @@ package org.apache.carbondata.spark.load
 
 import scala.util.Random
 
+import com.univocity.parsers.common.TextParsingException
 import org.apache.spark.{Accumulator, SparkEnv, TaskContext}
 import org.apache.spark.broadcast.Broadcast
 import org.apache.spark.sql.Row
@@ -234,6 +235,10 @@ object DataLoadProcessorStepOnSpark {
   private def wrapException(e: Throwable, model: CarbonLoadModel): Unit = {
     e match {
       case e: CarbonDataLoadingException => throw e
+      case e: TextParsingException =>
+        LOGGER.error(e, "Data Loading failed for table " + model.getTableName)
+        throw new CarbonDataLoadingException("Data Loading failed for table " + model.getTableName,
+          e)
       case e: Exception =>
         LOGGER.error(e, "Data Loading failed for table " + model.getTableName)
         throw new CarbonDataLoadingException("Data Loading failed for table " + model.getTableName,

@@ -27,6 +27,7 @@ import scala.collection.mutable.ListBuffer
 import scala.util.Random
 import scala.util.control.Breaks._
 
+import com.univocity.parsers.common.TextParsingException
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.io.NullWritable
@@ -403,6 +404,10 @@ object CarbonDataRDDFactory {
                 sparkException.getCause.isInstanceOf[CarbonDataLoadingException]) {
               executorMessage = sparkException.getCause.getMessage
               errorMessage = errorMessage + ": " + executorMessage
+            } else if (sparkException.getCause.isInstanceOf[TextParsingException]) {
+              executorMessage = CarbonDataProcessorUtil
+                .trimErrorMessage(sparkException.getCause.getMessage)
+              errorMessage = errorMessage + " : " + executorMessage
             }
           case _ =>
             if (ex.getCause != null) {
