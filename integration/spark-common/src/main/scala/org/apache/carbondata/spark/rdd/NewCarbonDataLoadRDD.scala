@@ -514,6 +514,9 @@ class LazyRddIterator(serializer: SerializerInstance,
     val row = rddIter.next()
     val columns = new Array[AnyRef](row.length)
     for (i <- 0 until columns.length) {
+      // scalastyle:off println
+      println(row.get(i) + "=====================+++++")
+      // scalastyle:on println
       columns(i) = CarbonScalaUtil.getString(row.get(i), serializationNullFormat,
         delimiterLevel1, delimiterLevel2, timeStampFormat, dateFormat)
     }

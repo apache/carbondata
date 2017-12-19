@@ -107,7 +107,7 @@ object CarbonScalaUtil {
       value match {
         case s: String => if (s.length > CSVInputFormat.MAX_CHARS_PER_COLUMN_DEFAULT) {
           throw new Exception("Dataload failed, String length cannot exceed " +
-                              CSVInputFormat.MAX_CHARS_PER_COLUMN_DEFAULT + " characters")
+                              CSVInputFormat.MAX_CHARS_PER_COLUMN_DEFAULT + " characters" + s)
         } else {
           s
         }
