@@ -134,8 +134,12 @@ object DataLoadProcessBuilderOnSpark {
       DataLoadProcessorStepOnSpark.writeFunc(rows, context.partitionId, modelBroadcast,
         writeStepRowCounter))
 
-    // clean cache
-    convertRDD.unpersist()
+    // clean cache only if persisted and keeping unpersist non-blocking as non-blocking call will
+    // not have any functional impact as spark automatically monitors the cache usage on each node
+    // and drops out old data partiotions in a least-recently used (LRU) fashion.
+    if (numPartitions > 1) {
+      convertRDD.unpersist(false)
+    }
 
     // Log the number of rows in each step
     LOGGER.info("Total rows processed in step Input Processor: " + inputStepRowCounter.value)
