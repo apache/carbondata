@@ -104,8 +104,15 @@ with Serializable {
     model.setUseOnePass(options.getOrElse("onepass", "false").toBoolean)
     model.setDictionaryServerHost(options.getOrElse("dicthost", null))
     model.setDictionaryServerPort(options.getOrElse("dictport", "-1").toInt)
-    CarbonTableOutputFormat.setLoadModel(conf, model)
     CarbonTableOutputFormat.setOverwrite(conf, options("overwrite").toBoolean)
+    // Set the update timestamp if user sets in case of update query. It needs to be updated
+    // in load status update time
+    val updateTimeStamp = options.getOrElse("updatetimestamp", null)
+    if (updateTimeStamp != null) {
+      conf.set(CarbonTableOutputFormat.UPADTE_TIMESTAMP, updateTimeStamp)
+      model.setFactTimeStamp(updateTimeStamp.toLong)
+    }
+    CarbonTableOutputFormat.setLoadModel(conf, model)
 
     new OutputWriterFactory {
 

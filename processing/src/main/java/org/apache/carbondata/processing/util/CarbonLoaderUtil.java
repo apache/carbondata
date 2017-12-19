@@ -858,17 +858,19 @@ public final class CarbonLoaderUtil {
   }
 
   /*
-   * This method will add data size and index size into tablestatus for each segment
+   * This method will add data size and index size into tablestatus for each segment. And also
+   * returns the size of the segment.
    */
-  public static void addDataIndexSizeIntoMetaEntry(LoadMetadataDetails loadMetadataDetails,
+  public static Long addDataIndexSizeIntoMetaEntry(LoadMetadataDetails loadMetadataDetails,
       String segmentId, CarbonTable carbonTable) throws IOException {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath((carbonTable.getAbsoluteTableIdentifier()));
     Map<String, Long> dataIndexSize =
         CarbonUtil.getDataSizeAndIndexSize(carbonTablePath, segmentId);
-    loadMetadataDetails
-        .setDataSize(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE).toString());
-    loadMetadataDetails
-        .setIndexSize(dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE).toString());
+    Long dataSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
+    loadMetadataDetails.setDataSize(String.valueOf(dataSize));
+    Long indexSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_INDEX_SIZE);
+    loadMetadataDetails.setIndexSize(String.valueOf(indexSize));
+    return dataSize + indexSize;
   }
 }

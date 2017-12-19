@@ -161,6 +161,10 @@ public class CarbonFactDataHandlerColumnar implements CarbonFactHandler {
     if (sortScope != null && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
       numberOfCores = 1;
     }
+    // Overriding it to the task specified cores.
+    if (model.getWritingCoresCount() > 0) {
+      numberOfCores = model.getWritingCoresCount();
+    }
 
     blockletProcessingCount = new AtomicInteger(0);
     producerExecutorService = Executors.newFixedThreadPool(numberOfCores,

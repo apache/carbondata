@@ -40,6 +40,8 @@ import org.apache.carbondata.processing.loading.iterator.CarbonOutputIteratorWra
 import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
@@ -87,6 +89,13 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
       "mapreduce.carbontable.dict.server.host";
   public static final String DICTIONARY_SERVER_PORT =
       "mapreduce.carbontable.dict.server.port";
+  /**
+   * Set the update timestamp if user sets in case of update query. It needs to be updated
+   * in load status update time
+   */
+  public static final String UPADTE_TIMESTAMP = "mapreduce.carbontable.update.timestamp";
+
+  private static final Log LOG = LogFactory.getLog(CarbonTableOutputFormat.class);
 
   private CarbonOutputCommitter committer;
 
@@ -373,15 +382,17 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
     }
 
     @Override public void close(TaskAttemptContext taskAttemptContext) throws InterruptedException {
-      iteratorWrapper.close();
+      iteratorWrapper.closeWriter();
       try {
         future.get();
       } catch (ExecutionException e) {
+        LOG.error("Error while loading data", e);
         throw new InterruptedException(e.getMessage());
       } finally {
         executorService.shutdownNow();
         dataLoadExecutor.close();
       }
+      LOG.info("Closed partition writer task " + taskAttemptContext.getTaskAttemptID());
     }
 
     public CarbonLoadModel getLoadModel() {

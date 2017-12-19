@@ -224,7 +224,11 @@ public final class DataLoadProcessBuilder {
     configuration.setPreFetch(loadModel.isPreFetch());
     configuration.setNumberOfSortColumns(carbonTable.getNumberOfSortColumns());
     configuration.setNumberOfNoDictSortColumns(carbonTable.getNumberOfNoDictSortColumns());
-
+    // For partition loading always use single core as it already runs in multiple
+    // threads per partition
+    if (carbonTable.isHivePartitionTable()) {
+      configuration.setWritingCoresCount((short) 1);
+    }
     TableSpec tableSpec = new TableSpec(dimensions, measures);
     configuration.setTableSpec(tableSpec);
     return configuration;

@@ -104,6 +104,11 @@ public class CarbonDataLoadConfiguration {
   // contains metadata used in write step of loading process
   private TableSpec tableSpec;
 
+  /**
+   * Number of thread cores to use while writing data files
+   */
+  private short writingCoresCount;
+
   public CarbonDataLoadConfiguration() {
   }
 
@@ -351,5 +356,11 @@ public class CarbonDataLoadConfiguration {
     this.tableSpec = tableSpec;
   }
 
+  public short getWritingCoresCount() {
+    return writingCoresCount;
+  }
 
+  public void setWritingCoresCount(short writingCoresCount) {
+    this.writingCoresCount = writingCoresCount;
+  }
 }

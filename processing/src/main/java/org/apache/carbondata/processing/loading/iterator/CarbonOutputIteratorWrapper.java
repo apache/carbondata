@@ -18,14 +18,20 @@
 package org.apache.carbondata.processing.loading.iterator;
 
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.CarbonIterator;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * It is wrapper class to hold the rows in batches when record writer writes the data and allows
  * to iterate on it during data load. It uses blocking queue to coordinate between read and write.
  */
 public class CarbonOutputIteratorWrapper extends CarbonIterator<String[]> {
+
+  private static final Log LOG = LogFactory.getLog(CarbonOutputIteratorWrapper.class);
 
   private boolean close = false;
 
@@ -50,34 +56,48 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<String[]> {
 
   @Override
   public boolean hasNext() {
-    return !queue.isEmpty() || !close || readBatch != null && readBatch.hasNext();
-  }
-
-  @Override
-  public String[] next() {
-    if (readBatch == null || !readBatch.hasNext()  && !close) {
+    if (readBatch == null || !readBatch.hasNext()) {
       try {
-        readBatch = queue.take();
-      } catch (InterruptedException e) {
-        throw new RuntimeException(e);
-      }
-    }
-    return readBatch.next();
-  }
-
-  @Override
-  public void close() {
-    if (loadBatch.isLoading()) {
-      try {
-        loadBatch.readyRead();
-        if (loadBatch.size > 0) {
-          queue.put(loadBatch);
+        if (!close) {
+          readBatch = queue.poll(5, TimeUnit.MINUTES);
+          if (readBatch == null) {
+            LOG.warn("This scenario should not happen");
+            return false;
+          }
+        } else {
+          readBatch = queue.poll();
+          if (readBatch == null) {
+            return false;
+          }
         }
       } catch (InterruptedException e) {
         throw new RuntimeException(e);
       }
     }
+    return readBatch.hasNext();
+  }
+
+  @Override
+  public String[] next() {
+    return readBatch.next();
+  }
+
+  public void closeWriter() {
+    try {
+      loadBatch.readyRead();
+      if (loadBatch.size > 0) {
+        queue.put(loadBatch);
+      }
+    } catch (InterruptedException e) {
+      throw new RuntimeException(e);
+    }
     close = true;
+    // It is required if the thread waits for take.
+    if (queue.isEmpty()) {
+      if (!queue.offer(new RowBatch(0))) {
+        LOG.warn("The default last element is not added to queue");
+      }
+    }
   }
 
   private static class RowBatch extends CarbonIterator<String[]> {
@@ -87,8 +107,6 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<String[]> {
     private String[][] batch;
 
     private int size;
-
-    private boolean isLoading = true;
 
     private RowBatch(int size) {
       batch = new String[size][];
@@ -108,11 +126,6 @@ public class CarbonOutputIteratorWrapper extends CarbonIterator<String[]> {
     public void readyRead() {
       size = counter;
       counter = 0;
-      isLoading = false;
-    }
-
-    public boolean isLoading() {
-      return isLoading;
     }
 
     @Override
