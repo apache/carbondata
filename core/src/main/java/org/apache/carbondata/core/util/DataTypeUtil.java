@@ -353,12 +353,26 @@ public final class DataTypeUtil {
       } else if (actualDataType == DataTypes.STRING) {
         return getDataTypeConverter().convertFromByteToUTF8String(dataInBytes);
       } else if (actualDataType == DataTypes.SHORT) {
+        // for non string type no dictionary column empty byte array is empty value
+        // so no need to parse
+        if (isEmptyByteArray(dataInBytes)) {
+          return null;
+        }
         return ByteUtil.toShort(dataInBytes, 0, dataInBytes.length);
       } else if (actualDataType == DataTypes.INT) {
+        if (isEmptyByteArray(dataInBytes)) {
+          return null;
+        }
         return ByteUtil.toInt(dataInBytes, 0, dataInBytes.length);
       } else if (actualDataType == DataTypes.LONG) {
+        if (isEmptyByteArray(dataInBytes)) {
+          return null;
+        }
         return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length);
       } else if (actualDataType == DataTypes.TIMESTAMP) {
+        if (isEmptyByteArray(dataInBytes)) {
+          return null;
+        }
         return ByteUtil.toLong(dataInBytes, 0, dataInBytes.length) * 1000L;
       } else {
         return ByteUtil.toString(dataInBytes, 0, dataInBytes.length);
@@ -370,6 +384,16 @@ public final class DataTypeUtil {
       LOGGER.error("Problem while converting data type" + data);
       return null;
     }
+  }
+
+  /**
+   * Method to check if byte array is empty
+   *
+   * @param dataInBytes
+   * @return
+   */
+  private static boolean isEmptyByteArray(byte[] dataInBytes) {
+    return dataInBytes.length == 0;
   }
 
 
