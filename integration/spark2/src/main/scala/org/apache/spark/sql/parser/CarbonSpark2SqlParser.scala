@@ -351,8 +351,9 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
   protected lazy val loadDataNew: Parser[LogicalPlan] =
     LOAD ~> DATA ~> opt(LOCAL) ~> INPATH ~> stringLit ~ opt(OVERWRITE) ~
     (INTO ~> TABLE ~> (ident <~ ".").? ~ ident) ~
+    (PARTITION ~>"("~> repsep(partitions, ",") <~ ")").? ~
     (OPTIONS ~> "(" ~> repsep(loadOptions, ",") <~ ")").? <~ opt(";") ^^ {
-      case filePath ~ isOverwrite ~ table ~ optionsList =>
+      case filePath ~ isOverwrite ~ table ~ partitions ~ optionsList =>
         val (databaseNameOp, tableName) = table match {
           case databaseName ~ tableName => (databaseName, tableName.toLowerCase())
         }
@@ -360,13 +361,20 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           validateOptions(optionsList)
         }
         val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
+        val partitionSpec = partitions.getOrElse(List.empty[(String, String)]).toMap
         CarbonLoadDataCommand(
-          convertDbNameToLowerCase(databaseNameOp),
-          tableName,
-          filePath,
-          Seq(),
-          optionsMap,
-          isOverwrite.isDefined)
+          databaseNameOp = convertDbNameToLowerCase(databaseNameOp),
+          tableName = tableName,
+          factPathFromUser = filePath,
+          dimFilesPath = Seq(),
+          options = optionsMap,
+          isOverwriteTable = isOverwrite.isDefined,
+          inputSqlString = null,
+          dataFrame = None,
+          updateModel = None,
+          tableInfoOp = None,
+          internalOptions = Map.empty,
+          partition = partitionSpec.map { case (key, value) => (key, Some(value))})
     }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
