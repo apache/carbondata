@@ -34,6 +34,7 @@ import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.catalog.{CatalogRelation, CatalogTable}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, Project}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.command.{DataCommand, DataLoadTableFileMapping, UpdateTableModel}
@@ -363,7 +364,7 @@ case class CarbonLoadDataCommand(
 
     if (carbonTable.isHivePartitionTable) {
       try {
-        loadStandardPartition(sparkSession, carbonLoadModel, hadoopConf, loadDataFrame)
+        loadDataWithPartition(sparkSession, carbonLoadModel, hadoopConf, loadDataFrame)
       } finally {
         server match {
           case Some(dictServer) =>
@@ -418,7 +419,7 @@ case class CarbonLoadDataCommand(
         dictionaryDataFrame)
     }
     if (table.isHivePartitionTable) {
-      loadStandardPartition(sparkSession, carbonLoadModel, hadoopConf, loadDataFrame)
+      loadDataWithPartition(sparkSession, carbonLoadModel, hadoopConf, loadDataFrame)
     } else {
       CarbonDataRDDFactory.loadCarbonData(
         sparkSession.sqlContext,
@@ -434,7 +435,17 @@ case class CarbonLoadDataCommand(
     }
   }
 
-  private def loadStandardPartition(sparkSession: SparkSession,
+  /**
+   * Loads the data in a hive partition way. This method uses InsertIntoTable command to load data
+   * into partitoned data. The table relation would be converted to HadoopFSRelation to let spark
+   * handling the partitioning.
+   * @param sparkSession
+   * @param carbonLoadModel
+   * @param hadoopConf
+   * @param dataFrame
+   * @return
+   */
+  private def loadDataWithPartition(sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
       hadoopConf: Configuration,
       dataFrame: Option[DataFrame]) = {
@@ -445,9 +456,10 @@ case class CarbonLoadDataCommand(
     val relation = logicalPlan.collect {
       case l: LogicalRelation => l
       case c: CatalogRelation => c
-    }.head.asInstanceOf[LogicalPlan]
+    }.head
 
-
+    // Converts the data to carbon understandable format. The timestamp/date format data needs to
+    // converted to hive standard fomat to let spark understand the data to partition.
     val query: LogicalPlan = if (dataFrame.isDefined) {
       var timeStampformatString = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
       val timeStampFormat = new SimpleDateFormat(timeStampformatString)
@@ -497,8 +509,8 @@ case class CarbonLoadDataCommand(
       val attributes =
         StructType(carbonLoadModel.getCsvHeaderColumns.map(
           StructField(_, StringType))).toAttributes
-      val rowDataTypes = attributes.map{f =>
-        relation.output.find(_.name.equalsIgnoreCase(f.name)) match {
+      val rowDataTypes = attributes.map { attribute =>
+        relation.output.find(_.name.equalsIgnoreCase(attribute.name)) match {
           case Some(attr) => attr.dataType
           case _ => StringType
         }
@@ -510,13 +522,13 @@ case class CarbonLoadDataCommand(
           classOf[CSVInputFormat],
           classOf[NullWritable],
           classOf[StringArrayWritable],
-          jobConf).map{f =>
+          jobConf).map{ case (key, value) =>
             val data = new Array[Any](len)
             var i = 0
             while (i < len) {
               // TODO find a way to avoid double conversion of date and time.
-              data(i) = CarbonScalaUtil.getString(
-                f._2.get()(i),
+              data(i) = CarbonScalaUtil.convertToUTF8String(
+                value.get()(i),
                 rowDataTypes(i),
                 timeStampFormat,
                 dateFormat)
@@ -531,9 +543,29 @@ case class CarbonLoadDataCommand(
     }
     val convertRelation = relation match {
       case l: LogicalRelation =>
-        convertToLogicalRelation(l, isOverwriteTable, carbonLoadModel, sparkSession)
+        convertToLogicalRelation(
+          l.catalogTable.get,
+          l.output,
+          l.relation.sizeInBytes,
+          isOverwriteTable,
+          carbonLoadModel,
+          sparkSession)
       case c: CatalogRelation =>
-        convertToLogicalRelation(c, isOverwriteTable, carbonLoadModel, sparkSession)
+        val catalogTable = CarbonReflectionUtils.getFieldOfCatalogTable(
+          "tableMeta",
+          relation).asInstanceOf[CatalogTable]
+        // TODO need to find a way to avoid double lookup
+        val sizeInBytes =
+          CarbonEnv.getInstance(sparkSession).carbonMetastore.lookupRelation(
+            catalogTable.identifier)(sparkSession).asInstanceOf[CarbonRelation].sizeInBytes
+        val catalog = new CatalogFileIndex(sparkSession, catalogTable, sizeInBytes)
+        convertToLogicalRelation(
+          catalogTable,
+          c.output,
+          sizeInBytes,
+          isOverwriteTable,
+          carbonLoadModel,
+          sparkSession)
     }
     Dataset.ofRows(
       sparkSession,
@@ -546,17 +578,18 @@ case class CarbonLoadDataCommand(
   }
 
   private def convertToLogicalRelation(
-      relation: LogicalRelation,
+      catalogTable: CatalogTable,
+      output: Seq[Attribute],
+      sizeInBytes: Long,
       overWrite: Boolean,
       loadModel: CarbonLoadModel,
       sparkSession: SparkSession): LogicalRelation = {
-    val catalogTable = relation.catalogTable.get
     val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
     val metastoreSchema = StructType(StructType.fromAttributes(
-      relation.output).fields.map(_.copy(dataType = StringType)))
+      output).fields.map(_.copy(dataType = StringType)))
     val lazyPruningEnabled = sparkSession.sqlContext.conf.manageFilesourcePartitions
     val catalog = new CatalogFileIndex(
-      sparkSession, catalogTable, relation.relation.sizeInBytes)
+      sparkSession, catalogTable, sizeInBytes)
     if (lazyPruningEnabled) {
       catalog
     } else {
@@ -565,54 +598,6 @@ case class CarbonLoadDataCommand(
     val partitionSchema =
       StructType(table.getPartitionInfo(table.getTableName).getColumnSchemaList.asScala.map(field =>
       metastoreSchema.fields.find(_.name.equalsIgnoreCase(field.getColumnName))).map(_.get))
-
-    val dataSchema =
-      StructType(metastoreSchema
-        .filterNot(field => partitionSchema.contains(field.name)))
-    val options = new mutable.HashMap[String, String]()
-    options ++= catalogTable.storage.properties
-    options += (("overwrite", overWrite.toString))
-    options += (("onepass", loadModel.getUseOnePass.toString))
-    options += (("dicthost", loadModel.getDictionaryServerHost))
-    options += (("dictport", loadModel.getDictionaryServerPort.toString))
-    val hdfsRelation = HadoopFsRelation(
-      location = catalog,
-      partitionSchema = partitionSchema,
-      dataSchema = dataSchema,
-      bucketSpec = catalogTable.bucketSpec,
-      fileFormat = new CarbonFileFormat,
-      options = options.toMap)(sparkSession = sparkSession)
-
-    CarbonReflectionUtils.getLogicalRelation(hdfsRelation,
-      hdfsRelation.schema.toAttributes,
-      Some(catalogTable))
-  }
-
-  private def convertToLogicalRelation(
-      relation: CatalogRelation,
-      overWrite: Boolean,
-      loadModel: CarbonLoadModel,
-      sparkSession: SparkSession): LogicalRelation = {
-    val catalogTable =
-      CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta", relation).asInstanceOf[CatalogTable]
-    val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
-    val metastoreSchema = StructType(StructType.fromAttributes(
-      relation.output).fields.map(_.copy(dataType = StringType)))
-    val lazyPruningEnabled = sparkSession.sqlContext.conf.manageFilesourcePartitions
-    // TODO nedd to find a way to avoid double lookup
-    val sizeInBytes =
-      CarbonEnv.getInstance(sparkSession).carbonMetastore.lookupRelation(
-        catalogTable.identifier)(sparkSession).asInstanceOf[CarbonRelation].sizeInBytes
-    val catalog = new CatalogFileIndex(sparkSession, catalogTable, sizeInBytes)
-    if (lazyPruningEnabled) {
-      catalog
-    } else {
-      catalog.filterPartitions(Nil) // materialize all the partitions in memory
-    }
-    val partitionSchema =
-      StructType(table.getPartitionInfo(table.getTableName).getColumnSchemaList.asScala.map(f =>
-        metastoreSchema.fields.find(_.name.equalsIgnoreCase(f.getColumnName))).map(_.get))
-
 
     val dataSchema =
       StructType(metastoreSchema

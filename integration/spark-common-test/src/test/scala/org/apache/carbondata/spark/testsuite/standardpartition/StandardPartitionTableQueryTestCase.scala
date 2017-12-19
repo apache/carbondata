@@ -64,7 +64,7 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
       " deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary " +
       "from partitionone where empno=11 order by empno")
 
-    verifyPartitionInfo(frame, Seq("empno=11"), 1)
+    verifyPartitionInfo(frame, Seq("empno=11"))
 
     checkAnswer(frame,
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where empno=11 order by empno"))
@@ -87,17 +87,21 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
       "select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno," +
       " deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary " +
       "from partitiontwo where deptname='network' and projectcode=928478")
-    verifyPartitionInfo(frame, Seq("deptname=network"), 1)
+    verifyPartitionInfo(frame, Seq("deptname=network"))
 
     val frame1 = sql(
       "select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno," +
       " deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary " +
       "from partitiontwo where projectcode=928478")
-    verifyPartitionInfo(frame1, Seq("deptname=network","deptname=security","deptname=protocol","deptname=Learning","deptname=configManagement"), 4)
+    checkAnswer(frame1,
+      sql( "select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno," +
+           " deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary " +
+           "from originTable where projectcode=928478"))
+    verifyPartitionInfo(frame1, Seq("deptname=network","deptname=security","deptname=protocol","deptname=Learning","deptname=configManagement"))
 
     val frame2 = sql("select distinct deptname from partitiontwo")
 
-    verifyPartitionInfo(frame2, Seq("deptname=network","deptname=security","deptname=protocol","deptname=Learning","deptname=configManagement"), 5)
+    verifyPartitionInfo(frame2, Seq("deptname=network","deptname=security","deptname=protocol","deptname=Learning","deptname=configManagement"))
 
     checkAnswer(frame,
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where where deptname='network' and projectcode=928478 order by empno"))
@@ -117,7 +121,7 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmany OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
 
     val frame = sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionmany where doj='2007-01-17 00:00:00'")
-    verifyPartitionInfo(frame, Seq("deptname=network","doj=2007-01-17 00:00:00","projectcode=928478"), 1)
+    verifyPartitionInfo(frame, Seq("deptname=network","doj=2007-01-17 00:00:00","projectcode=928478"))
     checkAnswer(frame,
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj='2007-01-17 00:00:00'"))
 
@@ -136,7 +140,7 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitiondate OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
     val frame = sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitiondate where projectenddate = cast('2016-11-30' as date)")
-    verifyPartitionInfo(frame, Seq("projectenddate=2016-11-30"), 1)
+    verifyPartitionInfo(frame, Seq("projectenddate=2016-11-30"))
     checkAnswer(frame,
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where projectenddate = cast('2016-11-30' as date)"))
 
@@ -155,7 +159,7 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
       """.stripMargin)
     sql(s"""insert into partitiondateinsert select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable""")
     val frame = sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitiondateinsert where projectenddate = cast('2016-11-30' as date)")
-    verifyPartitionInfo(frame, Seq("projectenddate=2016-11-30","doj=2015-12-01 00:00:00"), 1)
+    verifyPartitionInfo(frame, Seq("projectenddate=2016-11-30","doj=2015-12-01 00:00:00"))
     checkAnswer(frame,
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where projectenddate = cast('2016-11-30' as date)"))
 
@@ -176,14 +180,14 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
            "doj=2013-09-22 00:00:00"  ,
            "doj=2008-05-29 00:00:00"  ,
            "doj=2014-08-15 00:00:00",
-           "projectenddate=2016-12-30"), 10)
+           "projectenddate=2016-12-30"))
     checkAnswer(frame1,
       sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj>'2006-01-17 00:00:00'"))
 
   }
 
 
-  private def verifyPartitionInfo(frame: DataFrame, partitionNames: Seq[String], patitionCount: Int) = {
+  private def verifyPartitionInfo(frame: DataFrame, partitionNames: Seq[String]) = {
     val plan = frame.queryExecution.sparkPlan
     val scanRDD = plan collect {
       case b: BatchedDataSourceScanExec if b.rdd.isInstanceOf[CarbonScanRDD] => b.rdd
@@ -191,7 +195,6 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
     }
     assert(scanRDD.nonEmpty)
     assert(!partitionNames.map(f => scanRDD.head.partitionNames.exists(_.equals(f))).exists(!_))
-    assert(scanRDD.head.getPartitions.length == patitionCount)
   }
 
   override def afterAll = {

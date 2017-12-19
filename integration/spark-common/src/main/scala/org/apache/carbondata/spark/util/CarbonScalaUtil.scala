@@ -154,7 +154,7 @@ object CarbonScalaUtil {
     }
   }
 
-  def getString(value: String,
+  def convertToUTF8String(value: String,
       dataType: DataType,
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat): UTF8String = {

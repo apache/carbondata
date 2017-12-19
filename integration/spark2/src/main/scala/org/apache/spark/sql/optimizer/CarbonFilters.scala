@@ -397,8 +397,8 @@ object CarbonFilters {
       identifier: TableIdentifier): Seq[String] = {
     val partitions =
       sparkSession.sessionState.catalog.listPartitionsByFilter(identifier, partitionFilters)
-    partitions.toList.flatMap { f =>
-      f.spec.seq.map(f => f._1 + "=" + f._2)
+    partitions.toList.flatMap { partition =>
+      partition.spec.seq.map{case (column, value) => column + "=" + value}
     }.toSet.toSeq
   }
 }

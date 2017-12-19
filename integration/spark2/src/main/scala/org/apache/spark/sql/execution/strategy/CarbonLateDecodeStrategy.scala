@@ -130,17 +130,28 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
       table.carbonTable.getTableInfo.serialize())
   }
 
-  protected def pruneFilterProject(
+  /**
+   * Converts to physical RDD of carbon after pushing down applicable filters.
+   * @param relation Carbon relation
+   * @param projects Projections of query
+   * @param filterPredicates Query filters
+   * @param scanBuilder function which can build the CarbonScanRDD
+   * @return physical RDD
+   */
+  private def pruneFilterProject(
       relation: LogicalRelation,
       projects: Seq[NamedExpression],
       filterPredicates: Seq[Expression],
       scanBuilder: (Seq[Attribute], Array[Filter],
         ArrayBuffer[AttributeReference], Seq[String]) => RDD[InternalRow]) = {
     val names = relation.catalogTable.get.partitionColumnNames
+    // Get the current partitions from table.
     var partitions: Seq[String] = null
     if (names.nonEmpty) {
-      val partitionSet = AttributeSet(names
-        .map(p => relation.output.find(_.name.equalsIgnoreCase(p)).get))
+      // Extract the partition filters from the query filters and pass only partition filters
+      // to get the partition list
+      val partitionSet =
+        AttributeSet(names.map(p => relation.output.find(_.name.equalsIgnoreCase(p)).get))
       val partitionKeyFilters =
         ExpressionSet(ExpressionSet(filterPredicates).filter(_.references.subsetOf(partitionSet)))
       partitions =
@@ -175,7 +186,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     }
   }
 
-  protected def pruneFilterProjectRaw(
+  private def pruneFilterProjectRaw(
       relation: LogicalRelation,
       rawProjects: Seq[NamedExpression],
       filterPredicates: Seq[Expression],
@@ -328,7 +339,7 @@ private[sql] class CarbonLateDecodeStrategy extends SparkStrategy {
     }
   }
 
-  def getDataSourceScan(relation: LogicalRelation,
+  private def getDataSourceScan(relation: LogicalRelation,
       output: Seq[Attribute],
       partitions: Seq[String],
       scanBuilder: (Seq[Attribute], Seq[Expression], Seq[Filter],

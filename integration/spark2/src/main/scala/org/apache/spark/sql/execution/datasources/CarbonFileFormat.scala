@@ -97,6 +97,7 @@ with Serializable {
       model,
       conf
     )
+    // Set the standard date/time format which supported by spark/hive.
     model.setTimestampformat(CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     model.setDateFormat(CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT)
     model.setPartitionId("0")
