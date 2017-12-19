@@ -223,7 +223,7 @@ case class CarbonAlterTableCompactionCommand(
                 "")
             OperationListenerBus.getInstance
               .fireEvent(alterTableCompactionPreStatusUpdateEvent, operationContext)
-
+          lock.unlock()
           } else {
             CarbonDataRDDFactory.startCompactionThreads(
               sqlContext,
@@ -237,9 +237,8 @@ case class CarbonAlterTableCompactionCommand(
         } catch {
           case e: Exception =>
             LOGGER.error(s"Exception in start compaction thread. ${ e.getMessage }")
+            lock.unlock()
             throw e
-        } finally {
-          lock.unlock()
         }
       } else {
         LOGGER.audit("Not able to acquire the compaction lock for table " +
