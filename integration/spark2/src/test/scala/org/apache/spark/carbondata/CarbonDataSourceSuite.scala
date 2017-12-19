@@ -147,7 +147,7 @@ class CarbonDataSourceSuite extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists sparkunion")
     import sqlContext.implicits._
     val df = sqlContext.sparkContext.parallelize(1 to 1000).map(x => (x+"", (x+100)+"")).toDF("c1", "c2")
-    df.registerTempTable("sparkunion")
+    df.createOrReplaceTempView("sparkunion")
     df.write
       .format("carbondata")
       .mode(SaveMode.Overwrite)
