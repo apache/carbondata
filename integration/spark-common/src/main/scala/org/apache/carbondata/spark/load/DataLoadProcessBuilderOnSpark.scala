@@ -31,12 +31,12 @@ import org.apache.hadoop.mapreduce.task.{JobContextImpl, TaskAttemptContextImpl}
 import org.apache.spark.TaskContext
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SparkSession, SQLContext}
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.{DataFrame, SparkSession}
 import org.apache.spark.sql.catalyst.expressions.GenericInternalRow
+import org.apache.spark.sql.catalyst.InternalRow
 import org.apache.spark.sql.execution.command.ExecutionErrors
-import org.apache.spark.sql.execution.command.sessionState
 import org.apache.spark.sql.execution.datasources.{FilePartition, FileScanRDD, PartitionedFile}
+import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
@@ -59,7 +59,7 @@ object DataLoadProcessBuilderOnSpark {
   private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
 
   def loadDataUsingGlobalSort(
-      sqlContext: SQLContext,
+      sparkSession: SparkSession,
       dataFrame: Option[DataFrame],
       model: CarbonLoadModel,
       hadoopConf: Configuration): Array[(String, (LoadMetadataDetails, ExecutionErrors))] = {
@@ -68,12 +68,12 @@ object DataLoadProcessBuilderOnSpark {
     } else {
       // input data from files
       val columnCount = model.getCsvHeaderColumns.length
-      csvFileScanRDD(sqlContext.sparkSession, model, hadoopConf)
+      csvFileScanRDD(sparkSession, model, hadoopConf)
         .map(DataLoadProcessorStepOnSpark.toStringArrayRow(_, columnCount))
     }
 
     model.setPartitionId("0")
-    val sc = sqlContext.sparkContext
+    val sc = sparkSession.sparkContext
     val modelBroadcast = sc.broadcast(model)
     val partialSuccessAccum = sc.accumulator(0, "Partial Success Accumulator")
 
@@ -164,7 +164,7 @@ object DataLoadProcessBuilderOnSpark {
   }
 
   /**
-   * use FileScanRDD to read input csv files
+   * creates a RDD that does reading of multiple CSV files
    */
   def csvFileScanRDD(
       spark: SparkSession,

@@ -18,8 +18,7 @@
 package org.apache.carbondata.spark.rdd
 
 import java.text.SimpleDateFormat
-import java.util
-import java.util.{ArrayList, Collections, Date, List}
+import java.util.{ArrayList, Date, List}
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -30,10 +29,10 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.mapreduce._
 import org.apache.hadoop.mapreduce.task.TaskAttemptContextImpl
 import org.apache.spark._
-import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.InternalRow
-import org.apache.spark.sql.execution.command.sessionState
 import org.apache.spark.sql.hive.DistributionUtil
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.util.SparkSQLUtil.sessionState
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants

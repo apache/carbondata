@@ -15,11 +15,11 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution
+package org.apache.spark.sql.util
 
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.internal.SessionState
 
-package object command {
+object SparkSQLUtil {
   def sessionState(sparkSession: SparkSession): SessionState = sparkSession.sessionState
 }

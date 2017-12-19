@@ -342,7 +342,7 @@ object CarbonDataRDDFactory {
         status = if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
           loadDataForPartitionTable(sqlContext, dataFrame, carbonLoadModel, hadoopConf)
         } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
-          DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext,
+          DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkSession,
             dataFrame, carbonLoadModel, hadoopConf)
         } else if (dataFrame.isDefined) {
           loadDataFrame(sqlContext, dataFrame, carbonLoadModel)
