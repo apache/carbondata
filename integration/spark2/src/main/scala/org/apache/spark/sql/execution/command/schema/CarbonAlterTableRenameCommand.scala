@@ -166,10 +166,10 @@ private[sql] case class CarbonAlterTableRenameCommand(
               sparkSession)
           renameBadRecords(newTableName, oldTableName, oldDatabaseName)
         }
+        // release lock from old location in case of any rename failure
+        AlterTableUtil.releaseLocks(locks)
         sys.error(s"Alter table rename table operation failed: ${e.getMessage}")
     } finally {
-      // release lock after command execution completion
-      AlterTableUtil.releaseLocks(locks)
       // case specific to rename table as after table rename old table path will not be found
       if (carbonTable != null) {
         val newTablePath = CarbonUtil
