@@ -104,6 +104,27 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("partition delete data from carbon table with alias [where clause ]") {
+    sql("drop table if exists iud_db.dest")
+    sql("""create table iud_db.dest (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
+    sql("""delete from iud_db.dest d where d.c1 = 'a'""").show
+    checkAnswer(
+      sql("""select c2 from iud_db.dest"""),
+      Seq(Row(2), Row(3),Row(4), Row(5))
+    )
+  }
+  test("partition delete data from  carbon table[where clause ]") {
+    sql("""drop table if exists iud_db.dest""")
+    sql("""create table iud_db.dest (c1 string,c2 int,c5 string) PARTITIONED BY(c3 string) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""LOAD DATA LOCAL INPATH '$resourcesPath/IUD/dest.csv' INTO table iud_db.dest""")
+    sql("""delete from iud_db.dest where c2 = 2""").show
+    checkAnswer(
+      sql("""select c1 from iud_db.dest"""),
+      Seq(Row("a"), Row("c"), Row("d"), Row("e"))
+    )
+  }
+
   test("Records more than one pagesize after delete operation ") {
     sql("DROP TABLE IF EXISTS carbon2")
     import sqlContext.implicits._

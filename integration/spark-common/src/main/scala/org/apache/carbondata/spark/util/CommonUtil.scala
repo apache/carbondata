@@ -520,7 +520,7 @@ object CommonUtil {
   def readLoadMetadataDetails(model: CarbonLoadModel): Unit = {
     val metadataPath = model.getCarbonDataLoadSchema.getCarbonTable.getMetaDataFilepath
     val details = SegmentStatusManager.readLoadMetadata(metadataPath)
-    model.setLoadMetadataDetails(details.toList.asJava)
+    model.setLoadMetadataDetails(new util.ArrayList[LoadMetadataDetails](details.toList.asJava))
   }
 
   def configureCSVInputFormat(configuration: Configuration,

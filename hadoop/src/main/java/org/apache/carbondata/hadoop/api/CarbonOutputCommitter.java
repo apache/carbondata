@@ -18,12 +18,18 @@
 package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.metadata.PartitionMapFileStore;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
@@ -76,18 +82,32 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     super.commitJob(context);
     boolean overwriteSet = CarbonTableOutputFormat.isOverwriteSet(context.getConfiguration());
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
+    LoadMetadataDetails newMetaEntry = loadModel.getCurrentLoadMetadataDetail();
     String segmentPath =
         CarbonTablePath.getSegmentPath(loadModel.getTablePath(), loadModel.getSegmentId());
     // Merge all partition files into a single file.
     new PartitionMapFileStore().mergePartitionMapFiles(segmentPath,
         loadModel.getFactTimeStamp() + "");
-    LoadMetadataDetails newMetaEntry = loadModel.getCurrentLoadMetadataDetail();
     CarbonLoaderUtil.populateNewLoadMetaEntry(newMetaEntry, SegmentStatus.SUCCESS,
         loadModel.getFactTimeStamp(), true);
-    CarbonLoaderUtil.addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(),
-        loadModel.getCarbonDataLoadSchema().getCarbonTable());
-    CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, overwriteSet);
-    new CarbonIndexFileMergeWriter().mergeCarbonIndexFilesOfSegment(segmentPath);
+    CarbonTable carbonTable = loadModel.getCarbonDataLoadSchema().getCarbonTable();
+    long segmentSize = CarbonLoaderUtil
+        .addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(), carbonTable);
+    if (segmentSize > 0) {
+      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, overwriteSet);
+      new CarbonIndexFileMergeWriter().mergeCarbonIndexFilesOfSegment(segmentPath);
+      String updateTime =
+          context.getConfiguration().get(CarbonTableOutputFormat.UPADTE_TIMESTAMP, null);
+      if (updateTime != null) {
+        Set<String> segmentSet = new HashSet<>(
+            new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
+                .getValidAndInvalidSegments().getValidSegments());
+        CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, updateTime, true,
+            new ArrayList<String>());
+      }
+    } else {
+      CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
+    }
   }
 
   /**

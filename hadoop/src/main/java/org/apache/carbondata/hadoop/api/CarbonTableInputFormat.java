@@ -128,6 +128,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   public static final String TABLE_NAME = "mapreduce.input.carboninputformat.tableName";
   public static final String PARTITIONS_TO_PRUNE =
       "mapreduce.input.carboninputformat.partitions.to.prune";
+  public static final String UPADTE_T =
+      "mapreduce.input.carboninputformat.partitions.to.prune";
 
   // a cache for carbon table, it will be used in task side
   private CarbonTable carbonTable;
@@ -915,7 +917,6 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    * @param identifier
    * @return
    * @throws IOException
-   * @throws KeyGenException
    */
   public BlockMappingVO getBlockRowCount(Job job, AbsoluteTableIdentifier identifier,
       List<String> partitions) throws IOException {

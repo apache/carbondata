@@ -90,10 +90,16 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
     this.threadStatusObserver = new ThreadStatusObserver(executorService);
 
     try {
-      for (int i = 0; i < iterators.length; i++) {
-        executorService.execute(
-            new SortIteratorThread(iterators[i], sortDataRow, batchSize, rowCounter,
-                this.threadStatusObserver));
+      // If it is a single iterator better run in main thread
+      if (iterators.length == 1) {
+        new SortIteratorThread(iterators[0], sortDataRow, batchSize, rowCounter,
+            this.threadStatusObserver).run();
+      } else {
+        for (int i = 0; i < iterators.length; i++) {
+          executorService.execute(
+              new SortIteratorThread(iterators[i], sortDataRow, batchSize, rowCounter,
+                  this.threadStatusObserver));
+        }
       }
       executorService.shutdown();
       executorService.awaitTermination(2, TimeUnit.DAYS);
@@ -186,9 +192,8 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
 
     private ThreadStatusObserver threadStatusObserver;
 
-    public SortIteratorThread(Iterator<CarbonRowBatch> iterator,
-        UnsafeSortDataRows sortDataRows, int batchSize, AtomicLong rowCounter,
-        ThreadStatusObserver threadStatusObserver) {
+    public SortIteratorThread(Iterator<CarbonRowBatch> iterator, UnsafeSortDataRows sortDataRows,
+        int batchSize, AtomicLong rowCounter, ThreadStatusObserver threadStatusObserver) {
       this.iterator = iterator;
       this.sortDataRows = sortDataRows;
       this.buffer = new Object[batchSize][];
@@ -196,8 +201,7 @@ public class UnsafeParallelReadMergeSorterImpl extends AbstractMergeSorter {
       this.threadStatusObserver = threadStatusObserver;
     }
 
-    @Override
-    public void run() {
+    @Override public void run() {
       try {
         while (iterator.hasNext()) {
           CarbonRowBatch batch = iterator.next();
