@@ -98,6 +98,24 @@ public class DataTypeUtilTest {
 
   }
 
+  @Test public void testGetDataBasedOnDataTypeForNoDictionaryColumn() {
+    Object result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
+        DataTypes.INT);
+    assert (result == null);
+    result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
+        DataTypes.SHORT);
+    assert (result == null);
+    result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
+        DataTypes.LONG);
+    assert (result == null);
+    result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
+        DataTypes.TIMESTAMP);
+    assert (result == null);
+    result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
+        DataTypes.STRING);
+    assert (result != null);
+  }
+
 }
 
 
