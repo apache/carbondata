@@ -86,7 +86,7 @@ class CarbonMergerRDD[K, V](
       } else {
         carbonLoadModel.setTaskNo(String.valueOf(theSplit.index))
       }
-      val partitionNames = if (carbonTable.isStandardPartitionTable) {
+      val partitionNames = if (carbonTable.isHivePartitionTable) {
         carbonSparkPartition.partitionNames.get.asJava
       } else {
         null
@@ -438,7 +438,8 @@ class CarbonMergerRDD[K, V](
             carbonPartitionId = Integer.parseInt(taskInfo.getTaskId)
           }
           result.add(
-            new CarbonSparkPartition(id,
+            new CarbonSparkPartition(
+              id,
               taskPartitionNo,
               multiBlockSplit,
               carbonPartitionId,
@@ -473,7 +474,7 @@ class CarbonMergerRDD[K, V](
   private def getTaskNo(
       split: CarbonInputSplit,
       partitionTaskMap: util.Map[List[String], String]): String = {
-    if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isStandardPartitionTable) {
+    if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
       val partitions =
         carbonMergerMapping.partitionMapper.getPartitionMap.get(
           CarbonTablePath.getCarbonIndexFileName(split.getBlockPath))
@@ -490,7 +491,7 @@ class CarbonMergerRDD[K, V](
 
   private def getPartitionNamesFromTask(taskId: String,
       partitionTaskMap: util.Map[List[String], String]): Option[Seq[String]] = {
-    if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isStandardPartitionTable) {
+    if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
       Some(partitionTaskMap.asScala.find(f => f._2.equals(taskId)).get._1.asScala)
     } else {
       None

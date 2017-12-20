@@ -106,8 +106,6 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
 
     validateDataFiles("default_partitionthree", "0.1", 1)
 
-    checkExistence(sql("show partitions partitionthree"), true, "workgroupcategory=1")
-
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionthree where workgroupcategory=1 and empname='arvind' and designation='SE' order by empno"),
       sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where workgroupcategory=1 and empname='arvind' and designation='SE' order by empno"))
   }
@@ -135,7 +133,6 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     val rows = sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionmajor where workgroupcategory=1 and empname='arvind' and designation='SE' order by empno").collect()
     sql("ALTER TABLE partitionmajor COMPACT 'MAJOR'").collect()
     validateDataFiles("default_partitionmajor", "0.2", 1)
-    checkExistence(sql("show partitions partitionmajor"), true, "workgroupcategory=1")
     checkAnswer(sql("select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from partitionmajor where workgroupcategory=1 and empname='arvind' and designation='SE' order by empno"),
       rows)
   }
@@ -159,8 +156,6 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     sql("ALTER TABLE staticpartition COMPACT 'MINOR'").collect()
 
     validateDataFiles("default_staticpartition", "0.1", 1)
-
-    checkExistence(sql("show partitions staticpartition"), true, "deptname=software","deptname=finance")
 
     checkAnswer(sql(s"""select count(*) from staticpartition where deptname='software'"""), p1)
     checkAnswer(sql(s"""select count(*) from staticpartition where deptname='finance'"""), p2)

@@ -210,7 +210,8 @@ object CarbonDataRDDFactory {
 
               val compactionSize = CarbonDataMergerUtil.getCompactionSize(CompactionType.MAJOR)
 
-              val newcompactionModel = CompactionModel(compactionSize,
+              val newcompactionModel = CompactionModel(
+                compactionSize,
                 compactionType,
                 table,
                 compactionModel.isDDLTrigger,
@@ -725,7 +726,8 @@ object CarbonDataRDDFactory {
                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       val compactionSize = 0
       val isCompactionTriggerByDDl = false
-      val compactionModel = CompactionModel(compactionSize,
+      val compactionModel = CompactionModel(
+        compactionSize,
         CompactionType.MINOR,
         carbonTable,
         isCompactionTriggerByDDl,

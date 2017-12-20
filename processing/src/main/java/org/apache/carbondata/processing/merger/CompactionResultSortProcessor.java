@@ -26,7 +26,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.PartitionFileStore;
+import org.apache.carbondata.core.metadata.PartitionMapFileStore;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -131,13 +131,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
 
   private List<String> partitionNames;
 
-  /**
-   * @param carbonLoadModel
-   * @param carbonTable
-   * @param segmentProperties
-   * @param compactionType
-   * @param tableName
-   */
+
   public CompactionResultSortProcessor(CarbonLoadModel carbonLoadModel, CarbonTable carbonTable,
       SegmentProperties segmentProperties, CompactionType compactionType, String tableName,
       List<String> partitionNames) {
@@ -176,11 +170,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     } finally {
       if (partitionNames != null) {
         try {
-          new PartitionFileStore().writePartitionMapFile(
+          new PartitionMapFileStore().writePartitionMapFile(
               CarbonTablePath.getSegmentPath(
                   carbonLoadModel.getTablePath(),
                   carbonLoadModel.getSegmentId()),
-              carbonLoadModel.getTaskNo(), partitionNames);
+              carbonLoadModel.getTaskNo(),
+              partitionNames);
         } catch (IOException e) {
           LOGGER.error(e, "Compaction failed: " + e.getMessage());
           isCompactionSuccess = false;

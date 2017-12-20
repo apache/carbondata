@@ -30,7 +30,7 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.datastore.row.WriteStepRowUtil;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
-import org.apache.carbondata.core.metadata.PartitionFileStore;
+import org.apache.carbondata.core.metadata.PartitionMapFileStore;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.scan.result.iterator.RawResultIterator;
 import org.apache.carbondata.core.scan.wrappers.ByteArrayWrapper;
@@ -158,12 +158,13 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
           this.dataHandler.closeHandler();
         }
         if (partitionNames != null) {
-          new PartitionFileStore().writePartitionMapFile(
+          new PartitionMapFileStore().writePartitionMapFile(
               CarbonTablePath.getSegmentPath(loadModel.getTablePath(), loadModel.getSegmentId()),
-              loadModel.getTaskNo(), partitionNames);
+              loadModel.getTaskNo(),
+              partitionNames);
         }
       } catch (CarbonDataWriterException | IOException e) {
-        LOGGER.error("Exception while closing the handler in compaction merger " + e.getMessage());
+        LOGGER.error(e,"Exception in compaction merger");
         mergeStatus = false;
       }
     }

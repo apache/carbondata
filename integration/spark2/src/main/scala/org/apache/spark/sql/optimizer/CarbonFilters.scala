@@ -395,7 +395,7 @@ object CarbonFilters {
 
   def getCurrentPartitions(sparkSession: SparkSession,
       carbonTable: CarbonTable): Seq[String] = {
-    if (carbonTable.isStandardPartitionTable) {
+    if (carbonTable.isHivePartitionTable) {
       CarbonFilters.getPartitions(
         Seq.empty,
         sparkSession,

@@ -27,8 +27,8 @@ import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Futu
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.{CarbonMergerMapping, CompactionCallableModel, CompactionModel}
 
-import org.apache.carbondata.core.metadata.PartitionFileStore
-import org.apache.carbondata.core.metadata.PartitionFileStore.PartitionMapper
+import org.apache.carbondata.core.metadata.PartitionMapFileStore
+import org.apache.carbondata.core.metadata.PartitionMapFileStore.PartitionMapper
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -136,10 +136,10 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     val validSegments: Array[String] = CarbonDataMergerUtil
       .getValidSegments(loadsToMerge).split(',')
     val mergeLoadStartTime = CarbonUpdateUtil.readCurrentTime()
-    val partitionMapper = if (carbonTable.isStandardPartitionTable) {
+    val partitionMapper = if (carbonTable.isHivePartitionTable) {
       var partitionMap: util.Map[String, util.List[String]] = null
       validSegments.foreach { segmentId =>
-        val localMapper = new PartitionFileStore()
+        val localMapper = new PartitionMapFileStore()
         localMapper.readAllPartitionsOfSegment(
           CarbonTablePath.getSegmentPath(carbonLoadModel.getTablePath, segmentId))
         if (partitionMap == null) {
@@ -154,7 +154,8 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     } else {
       null
     }
-    val carbonMergerMapping = CarbonMergerMapping(tablePath,
+    val carbonMergerMapping = CarbonMergerMapping(
+      tablePath,
       carbonTable.getMetaDataFilepath,
       mergedLoadName,
       databaseName,
@@ -221,8 +222,9 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
       val mergedLoadNumber = CarbonDataMergerUtil.getLoadNumberFromLoadName(mergedLoadName)
       CommonUtil.mergeIndexFiles(
         sc.sparkContext, Seq(mergedLoadNumber), tablePath, carbonTable, false)
-      new PartitionFileStore().mergePartitionMapFiles(
-        CarbonTablePath.getSegmentPath(tablePath, mergedLoadNumber))
+      new PartitionMapFileStore().mergePartitionMapFiles(
+        CarbonTablePath.getSegmentPath(tablePath, mergedLoadNumber),
+        carbonLoadModel.getFactTimeStamp + "")
       // trigger event for compaction
       val alterTableCompactionPreStatusUpdateEvent: AlterTableCompactionPreStatusUpdateEvent =
       AlterTableCompactionPreStatusUpdateEvent(sc.sparkSession,
