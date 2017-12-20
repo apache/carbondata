@@ -23,7 +23,6 @@ import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
 import com.facebook.presto.spi.block.BlockBuilderStatus;
 import com.facebook.presto.spi.type.Type;
-import io.airlift.slice.Slice;
 
 /**
  * Class to read the Object Stream

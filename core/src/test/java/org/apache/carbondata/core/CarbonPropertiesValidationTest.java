@@ -22,7 +22,6 @@ import java.lang.reflect.Method;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.util.CarbonProperties;
-import org.apache.carbondata.core.util.CarbonProperty;
 
 import junit.framework.TestCase;
 import org.junit.Test;
