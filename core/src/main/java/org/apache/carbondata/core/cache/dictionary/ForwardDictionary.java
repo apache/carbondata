@@ -161,4 +161,15 @@ public class ForwardDictionary implements Dictionary {
     columnDictionaryInfo
         .getIncrementalSurrogateKeyFromDictionary(byteValuesOfFilterMembers, surrogates);
   }
+
+  /**
+   * This method return the access count associated with the dictionary.
+   * @return
+   */
+  @Override public int getAccessCount() {
+    if (null != columnDictionaryInfo) {
+      return columnDictionaryInfo.getAccessCount();
+    }
+    return 0;
+  }
 }

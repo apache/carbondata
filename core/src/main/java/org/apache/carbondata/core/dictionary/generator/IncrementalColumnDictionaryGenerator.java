@@ -151,6 +151,10 @@ public class IncrementalColumnDictionaryGenerator implements BiDictionary<Intege
             "\n create dictionary cache: " + dictCacheTime +
             "\n sort list, distinct and write: " + dictWriteTime +
             "\n write sort info: " + sortIndexWriteTime);
+
+    if (isDictExists) {
+      CarbonUtil.clearDictionaryCache(dictionary);
+    }
   }
 
   /**
