@@ -29,6 +29,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.BlockletInfos;
 import org.apache.carbondata.core.datastore.block.Distributable;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
+import org.apache.carbondata.core.indexstore.BlockletDetailInfo;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
 import org.apache.carbondata.core.mutate.UpdateVO;
 import org.apache.carbondata.core.util.CarbonProperties;
@@ -66,7 +67,16 @@ public class CarbonHiveInputSplit extends FileSplit
   private Map<String, String> blockStorageIdMap =
       new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
+  private String tableInfo;
+
   private List<UpdateVO> invalidTimestampsList;
+
+  /**
+   * list of delete delta files for split
+   */
+  private String[] deleteDeltaFiles;
+
+  private BlockletDetailInfo detailInfo;
 
   public CarbonHiveInputSplit() {
     segmentId = null;
@@ -77,25 +87,30 @@ public class CarbonHiveInputSplit extends FileSplit
     version = CarbonProperties.getInstance().getFormatVersion();
   }
 
-  public CarbonHiveInputSplit(String segmentId, Path path, long start, long length,
-      String[] locations, ColumnarFormatVersion version) {
+  private CarbonHiveInputSplit(String segmentId, Path path, long start, long length,
+      String[] locations, ColumnarFormatVersion version, String[] deleteDeltaFiles) {
     super(path, start, length, locations);
     this.segmentId = segmentId;
-    this.taskId = CarbonTablePath.DataFileUtil.getTaskNo(path.getName());
+    String taskNo = CarbonTablePath.DataFileUtil.getTaskNo(path.getName());
+    if (taskNo.contains("_")) {
+      taskNo = taskNo.split("_")[0];
+    }
+    this.taskId = taskNo;
     this.bucketId = CarbonTablePath.DataFileUtil.getBucketNo(path.getName());
     this.invalidSegments = new ArrayList<>();
     this.version = version;
+    this.deleteDeltaFiles = deleteDeltaFiles;
   }
 
-  public CarbonHiveInputSplit(String segmentId, Path path, long start, long length,
-      String[] locations, int numberOfBlocklets, ColumnarFormatVersion version) {
-    this(segmentId, path, start, length, locations, version);
+  public CarbonHiveInputSplit(String segmentId, Path path, long start,
+      long length, String[] locations, int numberOfBlocklets,
+      ColumnarFormatVersion version, String[] deleteDeltaFiles) {
+    this(segmentId, path, start, length, locations, version, deleteDeltaFiles);
     this.numberOfBlocklets = numberOfBlocklets;
   }
 
   /**
    * Constructor to initialize the CarbonInputSplit with blockStorageIdMap
-   *
    * @param segmentId
    * @param path
    * @param start
@@ -104,18 +119,24 @@ public class CarbonHiveInputSplit extends FileSplit
    * @param numberOfBlocklets
    * @param version
    * @param blockStorageIdMap
+   * @param deleteDeltaFiles
+   * @param detailInfo
+   * @param tableInfo
    */
   public CarbonHiveInputSplit(String segmentId, Path path, long start, long length,
       String[] locations, int numberOfBlocklets, ColumnarFormatVersion version,
-      Map<String, String> blockStorageIdMap) {
-    this(segmentId, path, start, length, locations, numberOfBlocklets, version);
+       Map<String, String> blockStorageIdMap, String[] deleteDeltaFiles,
+       BlockletDetailInfo detailInfo, String tableInfo) {
+    this(segmentId, path, start, length, locations, numberOfBlocklets, version, deleteDeltaFiles);
     this.blockStorageIdMap = blockStorageIdMap;
+    this.detailInfo = detailInfo;
+    this.tableInfo = tableInfo;
   }
 
   public static CarbonHiveInputSplit from(String segmentId, FileSplit split,
       ColumnarFormatVersion version) throws IOException {
-    return new CarbonHiveInputSplit(segmentId, split.getPath(), split.getStart(), split.getLength(),
-        split.getLocations(), version);
+    return new CarbonHiveInputSplit(segmentId, split.getPath(), split.getStart(),
+      split.getLength(), split.getLocations(), version, null);
   }
 
   public static List<TableBlockInfo> createBlocks(List<CarbonHiveInputSplit> splitList) {
@@ -124,9 +145,12 @@ public class CarbonHiveInputSplit extends FileSplit
       BlockletInfos blockletInfos =
           new BlockletInfos(split.getNumberOfBlocklets(), 0, split.getNumberOfBlocklets());
       try {
-        tableBlockInfoList.add(
+        TableBlockInfo blockInfo =
             new TableBlockInfo(split.getPath().toString(), split.getStart(), split.getSegmentId(),
-                split.getLocations(), split.getLength(), blockletInfos, split.getVersion(), null));
+              split.getLocations(), split.getLength(), blockletInfos, split.getVersion(),
+              split.getDeleteDeltaFiles());
+        blockInfo.setDetailInfo(split.getDetailInfo());
+        tableBlockInfoList.add(blockInfo);
       } catch (IOException e) {
         throw new RuntimeException("fail to get location of split: " + split, e);
       }
@@ -160,7 +184,17 @@ public class CarbonHiveInputSplit extends FileSplit
     for (int i = 0; i < numInvalidSegment; i++) {
       invalidSegments.add(in.readUTF());
     }
-    this.numberOfBlocklets = in.readInt();
+    int numberOfDeleteDeltaFiles = in.readInt();
+    deleteDeltaFiles = new String[numberOfDeleteDeltaFiles];
+    for (int i = 0; i < numberOfDeleteDeltaFiles; i++) {
+      deleteDeltaFiles[i] = in.readUTF();
+    }
+    boolean detailInfoExists = in.readBoolean();
+    if (detailInfoExists) {
+      detailInfo = new BlockletDetailInfo();
+      detailInfo.readFields(in);
+    }
+    this.tableInfo = in.readUTF();
   }
 
   @Override public void write(DataOutput out) throws IOException {
@@ -172,7 +206,17 @@ public class CarbonHiveInputSplit extends FileSplit
     for (String invalidSegment : invalidSegments) {
       out.writeUTF(invalidSegment);
     }
-    out.writeInt(numberOfBlocklets);
+    out.writeInt(null != deleteDeltaFiles ? deleteDeltaFiles.length : 0);
+    if (null != deleteDeltaFiles) {
+      for (int i = 0; i < deleteDeltaFiles.length; i++) {
+        out.writeUTF(deleteDeltaFiles[i]);
+      }
+    }
+    out.writeBoolean(detailInfo != null);
+    if (detailInfo != null) {
+      detailInfo.write(out);
+    }
+    out.writeUTF(tableInfo);
   }
 
   public List<String> getInvalidSegments() {
@@ -303,5 +347,25 @@ public class CarbonHiveInputSplit extends FileSplit
    */
   public Map<String, String> getBlockStorageIdMap() {
     return blockStorageIdMap;
+  }
+
+  public String[] getDeleteDeltaFiles() {
+    return deleteDeltaFiles;
+  }
+
+  public void setDeleteDeltaFiles(String[] deleteDeltaFiles) {
+    this.deleteDeltaFiles = deleteDeltaFiles;
+  }
+
+  public BlockletDetailInfo getDetailInfo() {
+    return detailInfo;
+  }
+
+  public void setDetailInfo(BlockletDetailInfo detailInfo) {
+    this.detailInfo = detailInfo;
+  }
+
+  public String getTableInfo() {
+    return this.tableInfo;
   }
 }
