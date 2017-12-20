@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import org.apache.carbondata.common.CarbonIterator;
 import org.apache.carbondata.common.logging.LogService;
@@ -544,12 +543,10 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     }
     UnsafeMemoryManager.INSTANCE.freeMemoryAll(ThreadLocalTaskInfo.getCarbonTaskInfo().getTaskId());
     if (null != queryProperties.executorService) {
-      queryProperties.executorService.shutdown();
-      try {
-        queryProperties.executorService.awaitTermination(1, TimeUnit.HOURS);
-      } catch (InterruptedException e) {
-        throw new QueryExecutionException(e);
-      }
+      // In case of limit query when number of limit records is already found so executors
+      // must stop all the running execution otherwise it will keep running and will hit
+      // the query performance.
+      queryProperties.executorService.shutdownNow();
     }
   }
 
