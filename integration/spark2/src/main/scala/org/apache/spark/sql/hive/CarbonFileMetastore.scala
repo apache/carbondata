@@ -440,7 +440,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     if (FileFactory.isFileExist(metadataFilePath, fileType)) {
       // while drop we should refresh the schema modified time so that if any thing has changed
       // in the other beeline need to update.
-      checkSchemasModifiedTimeAndReloadTables()
+      checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
 
       removeTableFromMetadata(dbName, tableName)
       updateSchemasUpdatedTime(touchSchemaFileSystemTime())
@@ -504,19 +504,20 @@ class CarbonFileMetastore extends CarbonMetaStore {
       .getLastModifiedTime
   }
 
-  def checkSchemasModifiedTimeAndReloadTables() {
+  def checkSchemasModifiedTimeAndReloadTable(tableIdentifier: TableIdentifier): Boolean = {
     val (timestampFile, timestampFileType) = getTimestampFileAndType()
+    var isRefreshed = false
     if (FileFactory.isFileExist(timestampFile, timestampFileType)) {
       if (!(FileFactory.getCarbonFile(timestampFile, timestampFileType).
         getLastModifiedTime ==
             tableModifiedTimeStore.get(CarbonCommonConstants.DATABASE_DEFAULT_NAME))) {
-        refreshCache()
+        metadata.carbonTables = metadata.carbonTables.filterNot(
+          table => table.getTableName.equalsIgnoreCase(tableIdentifier.table) &&
+        table.getDatabaseName.equalsIgnoreCase(tableIdentifier.database.getOrElse("default")))
+        isRefreshed = true
       }
     }
-  }
-
-  private def refreshCache() {
-    metadata.carbonTables.clear()
+    isRefreshed
   }
 
   override def isReadFromHiveMetaStore: Boolean = false

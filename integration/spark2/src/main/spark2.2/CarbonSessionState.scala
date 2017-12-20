@@ -41,6 +41,7 @@ import org.apache.spark.sql.internal.{SQLConf, SessionState}
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.parser.{CarbonHelperSqlAstBuilder, CarbonSpark2SqlParser, CarbonSparkSqlParser}
 import org.apache.spark.sql.types.DecimalType
+import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -90,23 +91,15 @@ class CarbonSessionCatalog(
   }
 
 
-  private def refreshRelationFromCache(identifier: TableIdentifier,
-      carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation): Boolean = {
+  private def refreshRelationFromCache(identifier: TableIdentifier): Boolean = {
     var isRefreshed = false
-    val storePath = CarbonProperties.getStorePath
-    carbonEnv.carbonMetastore.checkSchemasModifiedTimeAndReloadTables()
-
-    val table = carbonEnv.carbonMetastore.getTableFromMetadataCache(
-      carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
-      carbonDatasourceHadoopRelation.carbonTable.getTableName)
-    if (table.isEmpty || (table.isDefined && table.get.getTableLastUpdatedTime !=
-       carbonDatasourceHadoopRelation.carbonTable.getTableLastUpdatedTime)) {
+    if (carbonEnv.carbonMetastore.checkSchemasModifiedTimeAndReloadTable(identifier)) {
       refreshTable(identifier)
       DataMapStoreManager.getInstance().
-        clearDataMaps(AbsoluteTableIdentifier.from(storePath,
+        clearDataMaps(AbsoluteTableIdentifier.from(CarbonProperties.getStorePath,
           identifier.database.getOrElse("default"), identifier.table))
-      isRefreshed = true
       logInfo(s"Schema changes have been detected for table: $identifier")
+      isRefreshed = true
     }
     isRefreshed
   }
@@ -117,10 +110,18 @@ class CarbonSessionCatalog(
     var toRefreshRelation = false
     rtnRelation match {
       case SubqueryAlias(_,
-      LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _)) =>
-        toRefreshRelation = refreshRelationFromCache(name, carbonDatasourceHadoopRelation)
-      case LogicalRelation(carbonDatasourceHadoopRelation: CarbonDatasourceHadoopRelation, _, _) =>
-        toRefreshRelation = refreshRelationFromCache(name, carbonDatasourceHadoopRelation)
+      LogicalRelation(_: CarbonDatasourceHadoopRelation, _, _)) =>
+        toRefreshRelation = refreshRelationFromCache(name)
+      case LogicalRelation(_: CarbonDatasourceHadoopRelation, _, _) =>
+        toRefreshRelation = refreshRelationFromCache(name)
+      case SubqueryAlias(_, relation) if
+      relation.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
+      relation.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
+      relation.getClass.getName.equals(
+        "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation") =>
+        val catalogTable = CarbonReflectionUtils.getFieldOfCatalogTable("tableMeta",
+          relation).asInstanceOf[CatalogTable]
+        toRefreshRelation = refreshRelationFromCache(catalogTable.identifier)
       case _ =>
     }
 
