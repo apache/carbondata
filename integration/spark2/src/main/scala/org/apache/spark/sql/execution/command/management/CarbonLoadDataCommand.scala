@@ -18,6 +18,7 @@
 package org.apache.spark.sql.execution.command.management
 
 import java.text.SimpleDateFormat
+import java.util
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -575,7 +576,7 @@ case class CarbonLoadDataCommand(
         query,
         false,
         false)
-    if (isOverwriteTable && partition.nonEmpty && table.isHivePartitionTable) {
+    if (isOverwriteTable && partition.nonEmpty) {
       overwritePartition(sparkSession, table, convertedPlan)
     } else {
       Dataset.ofRows(sparkSession, convertedPlan)
@@ -644,7 +645,7 @@ case class CarbonLoadDataCommand(
       TableIdentifier(table.getTableName, Some(table.getDatabaseName)),
       Some(partition.map(f => (f._1, f._2.get))))
     val partitionNames = partition.map(k => k._1 + "=" + k._2.get).toSet
-    val uniqueId = System.nanoTime().toString
+    val uniqueId = System.currentTimeMillis().toString
     val segments = new SegmentStatusManager(
       table.getAbsoluteTableIdentifier).getValidAndInvalidSegments.getValidSegments
     try {
@@ -687,6 +688,15 @@ case class CarbonLoadDataCommand(
       segments.asScala,
       true,
       uniqueId).collect()
+    // Update the loadstatus with update time to clear cache from driver.
+    val segmentSet = new util.HashSet[String](new SegmentStatusManager(table
+      .getAbsoluteTableIdentifier).getValidAndInvalidSegments.getValidSegments)
+    CarbonUpdateUtil.updateTableMetadataStatus(
+      segmentSet,
+      table,
+      uniqueId,
+      true,
+      new util.ArrayList[String])
     DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
   }
 

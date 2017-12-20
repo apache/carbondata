@@ -156,7 +156,7 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
   }
 
   override def afterAll = {
-    dropTable
+//    dropTable
   }
 
   def dropTable = {

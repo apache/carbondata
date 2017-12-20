@@ -228,7 +228,7 @@ public class PartitionMapFileStore {
       }
       PartitionMapper mapper = new PartitionMapper();
       mapper.setPartitionMap(partitionMap);
-      String path = segmentPath + "/" + uniqueId + CarbonTablePath.PARTITION_MAP_EXT;
+      String path = segmentPath + "/" + uniqueId + CarbonTablePath.PARTITION_MAP_EXT + ".tmp";
       writePartitionFile(mapper, path);
     }
   }
@@ -241,33 +241,14 @@ public class PartitionMapFileStore {
    * @param success
    */
   public void commitPartitions(String segmentPath, final String uniqueId, boolean success) {
-    CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
+    CarbonFile carbonFile = FileFactory
+        .getCarbonFile(segmentPath + "/" + uniqueId + CarbonTablePath.PARTITION_MAP_EXT + ".tmp");
     // write partition info to new file.
     if (carbonFile.exists()) {
-      CarbonFile[] carbonFiles = carbonFile.listFiles(new CarbonFileFilter() {
-        @Override public boolean accept(CarbonFile file) {
-          return file.getName().endsWith(CarbonTablePath.PARTITION_MAP_EXT);
-        }
-      });
-      CarbonFile latestFile = null;
-      for (CarbonFile mapFile: carbonFiles) {
-        if (mapFile.getName().startsWith(uniqueId)) {
-          latestFile = mapFile;
-        }
-      }
-      if (latestFile != null) {
-        for (CarbonFile mapFile : carbonFiles) {
-          if (latestFile != mapFile) {
-            // Remove old files in case of success scenario
-            if (success) {
-              mapFile.delete();
-            }
-          }
-        }
-      }
-      // If it is failure scenario then remove the new file.
-      if (!success && latestFile != null) {
-        latestFile.delete();
+      if (success) {
+        carbonFile.renameForce(segmentPath + "/" + uniqueId + CarbonTablePath.PARTITION_MAP_EXT);
+      } else {
+        carbonFile.delete();
       }
     }
   }
