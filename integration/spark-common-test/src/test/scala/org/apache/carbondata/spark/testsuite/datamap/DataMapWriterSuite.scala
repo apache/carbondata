@@ -70,6 +70,7 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
     sqlContext.sparkContext.parallelize(1 to numRows)
       .map(x => ("a", "b", x))
       .toDF("c1", "c2", "c3")
+      .sort("c3")
   }
 
   def dropTable(): Unit = {
