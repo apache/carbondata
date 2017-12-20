@@ -571,25 +571,53 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_TIMESTAMP_MILLIS = "dd-MM-yyyy HH:mm:ss:SSS";
   /**
-   * NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK
+   * NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK.
+   *
+   * Because we want concurrent loads to be completed even if they have to wait for the lock
+   * therefore taking the default as 100.
+   *
+   * Example: Concurrent loads will use this to wait to acquire the table status lock.
    */
-  public static final int NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK_DEFAULT = 3;
+  public static final int NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK_DEFAULT = 100;
   /**
    * MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK
+   *
+   * * Example: Concurrent loads will use this to wait to acquire the table status lock.
    */
-  public static final int MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK_DEFAULT = 5;
+  public static final int MAX_TIMEOUT_FOR_CONCURRENT_LOCK_DEFAULT = 1;
   /**
    * NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK
    */
   @CarbonProperty
-  public static final String NUMBER_OF_TRIES_FOR_LOAD_METADATA_LOCK =
-      "carbon.load.metadata.lock.retries";
+  public static final String NUMBER_OF_TRIES_FOR_CONCURRENT_LOCK =
+      "carbon.concurrent.lock.retries";
   /**
    * MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK
    */
   @CarbonProperty
-  public static final String MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK =
-      "carbon.load.metadata.lock.retry.timeout.sec";
+  public static final String MAX_TIMEOUT_FOR_CONCURRENT_LOCK =
+      "carbon.concurrent.lock.retry.timeout.sec";
+
+  /**
+   * NUMBER_OF_TRIES_FOR_CARBON_LOCK
+   */
+  public static final int NUMBER_OF_TRIES_FOR_CARBON_LOCK_DEFAULT = 3;
+  /**
+   * MAX_TIMEOUT_FOR_CARBON_LOCK
+   */
+  public static final int MAX_TIMEOUT_FOR_CARBON_LOCK_DEFAULT = 5;
+  /**
+   * NUMBER_OF_TRIES_FOR_CARBON_LOCK
+   */
+  @CarbonProperty
+  public static final String NUMBER_OF_TRIES_FOR_CARBON_LOCK =
+      "carbon.lock.retries";
+  /**
+   * MAX_TIMEOUT_FOR_CARBON_LOCK
+   */
+  @CarbonProperty
+  public static final String MAX_TIMEOUT_FOR_CARBON_LOCK =
+      "carbon.lock.retry.timeout.sec";
 
   /**
    * compressor for writing/reading carbondata file

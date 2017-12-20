@@ -571,8 +571,7 @@ object CarbonDataRDDFactory {
       dataFrame: Option[DataFrame],
       carbonLoadModel: CarbonLoadModel,
       updateModel: Option[UpdateTableModel],
-      carbonTable: CarbonTable
-  ): Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = {
+      carbonTable: CarbonTable): Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = {
     val segmentUpdateParallelism = CarbonProperties.getInstance().getParallelismForSegmentUpdate
 
     val updateRdd = dataFrame.get.rdd
@@ -632,8 +631,7 @@ object CarbonDataRDDFactory {
       updateModel: Option[UpdateTableModel],
       key: String,
       taskNo: Long,
-      iter: Iterator[Row]
-  ): Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] = {
+      iter: Iterator[Row]): Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] = {
     val rddResult = new updateResultImpl()
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val resultIter = new Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] {
@@ -718,8 +716,7 @@ object CarbonDataRDDFactory {
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       carbonTable: CarbonTable,
-      operationContext: OperationContext
-  ): Unit = {
+      operationContext: OperationContext): Unit = {
     LOGGER.info(s"compaction need status is" +
                 s" ${ CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable) }")
     if (CarbonDataMergerUtil.checkIfAutoLoadMergingRequired(carbonTable)) {
@@ -796,8 +793,7 @@ object CarbonDataRDDFactory {
       carbonLoadModel: CarbonLoadModel,
       loadStatus: SegmentStatus,
       newEntryLoadStatus: SegmentStatus,
-      overwriteTable: Boolean
-  ): Boolean = {
+      overwriteTable: Boolean): Boolean = {
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val metadataDetails = if (status != null && status.size > 0 && status(0) != null) {
       status(0)._2._1
@@ -814,7 +810,8 @@ object CarbonDataRDDFactory {
     val done = CarbonLoaderUtil.recordNewLoadMetadata(metadataDetails, carbonLoadModel, false,
       overwriteTable)
     if (!done) {
-      val errorMessage = "Dataload failed due to failure in table status updation."
+      val errorMessage = s"Dataload failed due to failure in table status updation for" +
+                         s" ${carbonLoadModel.getTableName}"
       LOGGER.audit("Data load is failed for " +
                    s"${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
       LOGGER.error("Dataload failed due to failure in table status updation.")
