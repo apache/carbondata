@@ -30,7 +30,6 @@ import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.reader.CarbonDictionaryReaderImpl;
 import org.apache.carbondata.core.reader.sortindex.CarbonDictionarySortIndexReaderImpl;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.format.ColumnDictionaryChunk;
 
 import mockit.Mock;

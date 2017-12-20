@@ -30,7 +30,6 @@ import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.service.CarbonCommonFactory;
 import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.service.impl.PathFactory;
-import org.apache.carbondata.core.util.path.CarbonStorePath;
 
 import mockit.Mock;
 import mockit.MockUp;
