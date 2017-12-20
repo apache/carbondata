@@ -24,10 +24,14 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFileFilter;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
+import org.apache.carbondata.core.locks.CarbonLockFactory;
+import org.apache.carbondata.core.locks.ICarbonLock;
+import org.apache.carbondata.core.locks.LockUsage;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
@@ -55,63 +59,66 @@ public final class DeleteLoadFolders {
     return carbon.getCarbonDataDirectoryPath("" + partitionId, segmentId);
   }
 
-  private static boolean physicalFactAndMeasureMetadataDeletion(String path) {
+  public static void physicalFactAndMeasureMetadataDeletion(
+      AbsoluteTableIdentifier absoluteTableIdentifier, String metadataPath, boolean isForceDelete) {
+    LoadMetadataDetails[] currentDetails = SegmentStatusManager.readLoadMetadata(metadataPath);
+    for (LoadMetadataDetails oneLoad : currentDetails) {
+      if (checkIfLoadCanBeDeletedPhysically(oneLoad, isForceDelete)) {
+        String path = getSegmentPath(absoluteTableIdentifier, 0, oneLoad);
+        boolean status = false;
+        try {
+          if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
+            CarbonFile file = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
+            CarbonFile[] filesToBeDeleted = file.listFiles(new CarbonFileFilter() {
 
-    boolean status = false;
-    try {
-      if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
-        CarbonFile file = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));
-        CarbonFile[] filesToBeDeleted = file.listFiles(new CarbonFileFilter() {
+              @Override public boolean accept(CarbonFile file) {
+                return (CarbonTablePath.isCarbonDataFile(file.getName())
+                    || CarbonTablePath.isCarbonIndexFile(file.getName())
+                    || CarbonTablePath.isPartitionMapFile(file.getName()));
+              }
+            });
 
-          @Override public boolean accept(CarbonFile file) {
-            return (CarbonTablePath.isCarbonDataFile(file.getName())
-                || CarbonTablePath.isCarbonIndexFile(file.getName())
-                || CarbonTablePath.isPartitionMapFile(file.getName()));
-          }
-        });
-
-        //if there are no fact and msr metadata files present then no need to keep
-        //entry in metadata.
-        if (filesToBeDeleted.length == 0) {
-          status = true;
-        } else {
-
-          for (CarbonFile eachFile : filesToBeDeleted) {
-            if (!eachFile.delete()) {
-              LOGGER.warn("Unable to delete the file as per delete command "
-                  + eachFile.getAbsolutePath());
-              status = false;
-            } else {
+            //if there are no fact and msr metadata files present then no need to keep
+            //entry in metadata.
+            if (filesToBeDeleted.length == 0) {
               status = true;
+            } else {
+
+              for (CarbonFile eachFile : filesToBeDeleted) {
+                if (!eachFile.delete()) {
+                  LOGGER.warn("Unable to delete the file as per delete command " + eachFile
+                      .getAbsolutePath());
+                  status = false;
+                } else {
+                  status = true;
+                }
+              }
             }
-          }
-        }
-        // need to delete the complete folder.
-        if (status) {
-          if (!file.delete()) {
-            LOGGER.warn("Unable to delete the folder as per delete command "
-                + file.getAbsolutePath());
-            status = false;
-          }
-        }
+            // need to delete the complete folder.
+            if (status) {
+              if (!file.delete()) {
+                LOGGER.warn(
+                    "Unable to delete the folder as per delete command " + file.getAbsolutePath());
+              }
+            }
 
-      } else {
-        LOGGER.warn("Files are not found in segment " + path
-            + " it seems, files are already being deleted");
-        status = true;
+          } else {
+            LOGGER.warn("Files are not found in segment " + path
+                + " it seems, files are already being deleted");
+          }
+        } catch (IOException e) {
+          LOGGER.warn("Unable to delete the file as per delete command " + path);
+        }
       }
-    } catch (IOException e) {
-      LOGGER.warn("Unable to delete the file as per delete command " + path);
     }
-
-    return status;
-
   }
 
   private static boolean checkIfLoadCanBeDeleted(LoadMetadataDetails oneLoad,
       boolean isForceDelete) {
     if ((SegmentStatus.MARKED_FOR_DELETE == oneLoad.getSegmentStatus() ||
-        SegmentStatus.COMPACTED == oneLoad.getSegmentStatus())
+        SegmentStatus.COMPACTED == oneLoad.getSegmentStatus() ||
+        SegmentStatus.INSERT_IN_PROGRESS == oneLoad.getSegmentStatus() ||
+        SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == oneLoad.getSegmentStatus())
         && oneLoad.getVisibility().equalsIgnoreCase("true")) {
       if (isForceDelete) {
         return true;
@@ -125,27 +132,72 @@ public final class DeleteLoadFolders {
     return false;
   }
 
+  private static boolean checkIfLoadCanBeDeletedPhysically(LoadMetadataDetails oneLoad,
+      boolean isForceDelete) {
+    if ((SegmentStatus.MARKED_FOR_DELETE == oneLoad.getSegmentStatus() ||
+        SegmentStatus.COMPACTED == oneLoad.getSegmentStatus())) {
+      if (isForceDelete) {
+        return true;
+      }
+      long deletionTime = oneLoad.getModificationOrdeletionTimesStamp();
+
+      return CarbonUpdateUtil.isMaxQueryTimeoutExceeded(deletionTime);
+
+    }
+
+    return false;
+  }
+
+  private static LoadMetadataDetails getCurrentLoadStatusOfSegment(String segmentId,
+      String metadataPath) {
+    LoadMetadataDetails[] currentDetails = SegmentStatusManager.readLoadMetadata(metadataPath);
+    for (LoadMetadataDetails oneLoad : currentDetails) {
+      if (oneLoad.getLoadName().equalsIgnoreCase(segmentId)) {
+        return oneLoad;
+      }
+    }
+    return null;
+  }
+
   public static boolean deleteLoadFoldersFromFileSystem(
       AbsoluteTableIdentifier absoluteTableIdentifier, boolean isForceDelete,
-      LoadMetadataDetails[] details) {
+      LoadMetadataDetails[] details, String metadataPath) {
     boolean isDeleted = false;
-
     if (details != null && details.length != 0) {
       for (LoadMetadataDetails oneLoad : details) {
         if (checkIfLoadCanBeDeleted(oneLoad, isForceDelete)) {
-          String path = getSegmentPath(absoluteTableIdentifier, 0, oneLoad);
-          boolean deletionStatus = physicalFactAndMeasureMetadataDeletion(path);
-          if (deletionStatus) {
-            isDeleted = true;
-            oneLoad.setVisibility("false");
-            LOGGER.info("Info: Deleted the load " + oneLoad.getLoadName());
+          ICarbonLock segmentLock = CarbonLockFactory.getCarbonLockObj(absoluteTableIdentifier,
+              CarbonTablePath.addSegmentPrefix(oneLoad.getLoadName()) + LockUsage.LOCK);
+          try {
+            if (oneLoad.getSegmentStatus() == SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS
+                || oneLoad.getSegmentStatus() == SegmentStatus.INSERT_IN_PROGRESS) {
+              if (segmentLock.lockWithRetries(1, 5)) {
+                LOGGER.info("Info: Acquired segment lock on segment:" + oneLoad.getLoadName());
+                LoadMetadataDetails currentDetails =
+                    getCurrentLoadStatusOfSegment(oneLoad.getLoadName(), metadataPath);
+                if (currentDetails != null && checkIfLoadCanBeDeleted(currentDetails,
+                    isForceDelete)) {
+                  oneLoad.setVisibility("false");
+                  isDeleted = true;
+                  LOGGER.info("Info: Deleted the load " + oneLoad.getLoadName());
+                }
+              } else {
+                LOGGER.info("Info: Load in progress for segment" + oneLoad.getLoadName());
+                return isDeleted;
+              }
+            } else {
+              oneLoad.setVisibility("false");
+              isDeleted = true;
+              LOGGER.info("Info: Deleted the load " + oneLoad.getLoadName());
+            }
+          } finally {
+            segmentLock.unlock();
+            LOGGER.info("Info: Segment lock on segment:" + oneLoad.getLoadName() + " is released");
           }
         }
       }
     }
-
     return isDeleted;
   }
-
 
 }
