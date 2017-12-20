@@ -60,7 +60,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
 import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.events.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.events.exception.PreEventException
 import org.apache.carbondata.format
@@ -178,6 +178,8 @@ case class CarbonLoadDataCommand(
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
         GlobalDictionaryUtil.updateTableMetadataFunc = updateTableMetadata
+        // Clean up the old invalid segment data before creating a new entry for new load.
+        DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false, table)
         // add the start entry for the new load in the table status file
         if (updateModel.isEmpty && !table.isHivePartitionTable) {
           CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, isOverwriteTable)
@@ -480,8 +482,6 @@ case class CarbonLoadDataCommand(
           "tableMeta",
           c).asInstanceOf[CatalogTable]
     }.head
-    // Clean up the old invalid segment data.
-    DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false, table)
     val currentPartitions =
       CarbonFilters.getPartitions(Seq.empty[Expression], sparkSession, identifier)
     // Clean up the alreday dropped partitioned data

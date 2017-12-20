@@ -17,9 +17,8 @@
 
 package org.apache.carbondata.spark.util
 
-import scala.collection.immutable
+import scala.collection.{immutable, mutable}
 import scala.collection.JavaConverters._
-import scala.collection.mutable
 
 import org.apache.commons.lang3.StringUtils
 import org.apache.hadoop.conf.Configuration
@@ -332,7 +331,9 @@ object DataLoadingUtil {
     val details = SegmentStatusManager.readLoadMetadata(metaDataLocation)
     if (details != null && details.nonEmpty) for (oneRow <- details) {
       if ((SegmentStatus.MARKED_FOR_DELETE == oneRow.getSegmentStatus ||
-           SegmentStatus.COMPACTED == oneRow.getSegmentStatus) &&
+           SegmentStatus.COMPACTED == oneRow.getSegmentStatus ||
+           SegmentStatus.INSERT_IN_PROGRESS == oneRow.getSegmentStatus ||
+           SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == oneRow.getSegmentStatus) &&
           oneRow.getVisibility.equalsIgnoreCase("true")) {
         return true
       }
@@ -357,8 +358,11 @@ object DataLoadingUtil {
         DeleteLoadFolders.deleteLoadFoldersFromFileSystem(
           absoluteTableIdentifier,
           isForceDeletion,
-          details
+          details,
+          carbonTable.getMetaDataFilepath
         )
+
+      var updationCompletionStaus = false
 
       if (isUpdationRequired) {
         try {
@@ -386,8 +390,14 @@ object DataLoadingUtil {
             LOGGER.error(errorMsg)
             throw new Exception(errorMsg + " Please try after some time.")
           }
+          updationCompletionStaus = true
         } finally {
           CarbonLockUtil.fileUnlock(carbonTableStatusLock, LockUsage.TABLE_STATUS_LOCK)
+        }
+        if (updationCompletionStaus) {
+          DeleteLoadFolders
+            .physicalFactAndMeasureMetadataDeletion(absoluteTableIdentifier,
+              carbonTable.getMetaDataFilepath, isForceDeletion)
         }
       }
     }

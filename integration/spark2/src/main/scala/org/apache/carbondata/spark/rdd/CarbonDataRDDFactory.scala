@@ -57,7 +57,7 @@ import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.events.{LoadTablePostExecutionEvent, LoadTablePreStatusUpdateEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -301,7 +301,6 @@ object CarbonDataRDDFactory {
                  s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
     // Check if any load need to be deleted before loading new data
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
-    DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false, carbonTable)
     var status: Array[(String, (LoadMetadataDetails, ExecutionErrors))] = null
     var res: Array[List[(String, (LoadMetadataDetails, ExecutionErrors))]] = null
 
@@ -315,87 +314,92 @@ object CarbonDataRDDFactory {
     val isSortTable = carbonTable.getNumberOfSortColumns > 0
     val sortScope = CarbonDataProcessorUtil.getSortScope(carbonLoadModel.getSortScope)
 
-    try {
-      if (updateModel.isDefined) {
-        res = loadDataFrameForUpdate(
-          sqlContext,
-          dataFrame,
-          carbonLoadModel,
-          updateModel,
-          carbonTable)
-        res.foreach { resultOfSeg =>
-          resultOfSeg.foreach { resultOfBlock =>
-            if (resultOfBlock._2._1.getSegmentStatus == SegmentStatus.LOAD_FAILURE) {
-              loadStatus = SegmentStatus.LOAD_FAILURE
-              if (resultOfBlock._2._2.failureCauses == FailureCauses.NONE) {
-                updateModel.get.executorErrors.failureCauses = FailureCauses.EXECUTOR_FAILURE
-                updateModel.get.executorErrors.errorMsg = "Failure in the Executor."
-              } else {
-                updateModel.get.executorErrors = resultOfBlock._2._2
-              }
-            } else if (resultOfBlock._2._1.getSegmentStatus ==
-                       SegmentStatus.LOAD_PARTIAL_SUCCESS) {
-              loadStatus = SegmentStatus.LOAD_PARTIAL_SUCCESS
-              updateModel.get.executorErrors.failureCauses = resultOfBlock._2._2.failureCauses
-              updateModel.get.executorErrors.errorMsg = resultOfBlock._2._2.errorMsg
-            }
-          }
-        }
-      } else {
-        status = if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
-          loadDataForPartitionTable(sqlContext, dataFrame, carbonLoadModel, hadoopConf)
-        } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
-          DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkSession,
-            dataFrame, carbonLoadModel, hadoopConf)
-        } else if (dataFrame.isDefined) {
-          loadDataFrame(sqlContext, dataFrame, carbonLoadModel)
-        } else {
-          loadDataFile(sqlContext, carbonLoadModel, hadoopConf)
-        }
-        CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
-          Seq(carbonLoadModel.getSegmentId), storePath, carbonTable, false)
-        val newStatusMap = scala.collection.mutable.Map.empty[String, SegmentStatus]
-        if (status.nonEmpty) {
-          status.foreach { eachLoadStatus =>
-            val state = newStatusMap.get(eachLoadStatus._1)
-            state match {
-              case Some(SegmentStatus.LOAD_FAILURE) =>
-                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
-              case Some(SegmentStatus.LOAD_PARTIAL_SUCCESS)
-                if eachLoadStatus._2._1.getSegmentStatus ==
-                   SegmentStatus.SUCCESS =>
-                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
-              case _ =>
-                newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
-            }
-          }
+    val segmentLock = CarbonLockFactory.getCarbonLockObj(carbonTable.getAbsoluteTableIdentifier,
+      CarbonTablePath.addSegmentPrefix(carbonLoadModel.getSegmentId) + LockUsage.LOCK)
 
-          newStatusMap.foreach {
-            case (key, value) =>
-              if (value == SegmentStatus.LOAD_FAILURE) {
+    try {
+      if (segmentLock.lockWithRetries()) {
+        if (updateModel.isDefined) {
+          res = loadDataFrameForUpdate(
+            sqlContext,
+            dataFrame,
+            carbonLoadModel,
+            updateModel,
+            carbonTable)
+          res.foreach { resultOfSeg =>
+            resultOfSeg.foreach { resultOfBlock =>
+              if (resultOfBlock._2._1.getSegmentStatus == SegmentStatus.LOAD_FAILURE) {
                 loadStatus = SegmentStatus.LOAD_FAILURE
-              } else if (value == SegmentStatus.LOAD_PARTIAL_SUCCESS &&
-                         loadStatus!= SegmentStatus.LOAD_FAILURE) {
+                if (resultOfBlock._2._2.failureCauses == FailureCauses.NONE) {
+                  updateModel.get.executorErrors.failureCauses = FailureCauses.EXECUTOR_FAILURE
+                  updateModel.get.executorErrors.errorMsg = "Failure in the Executor."
+                } else {
+                  updateModel.get.executorErrors = resultOfBlock._2._2
+                }
+              } else if (resultOfBlock._2._1.getSegmentStatus ==
+                         SegmentStatus.LOAD_PARTIAL_SUCCESS) {
                 loadStatus = SegmentStatus.LOAD_PARTIAL_SUCCESS
+                updateModel.get.executorErrors.failureCauses = resultOfBlock._2._2.failureCauses
+                updateModel.get.executorErrors.errorMsg = resultOfBlock._2._2.errorMsg
               }
+            }
           }
         } else {
-          // if no value is there in data load, make load status Success
-          // and data load flow executes
-          if (dataFrame.isDefined && updateModel.isEmpty) {
-            val rdd = dataFrame.get.rdd
-            if (rdd.partitions == null || rdd.partitions.length == 0) {
-              LOGGER.warn("DataLoading finished. No data was loaded.")
-              loadStatus = SegmentStatus.SUCCESS
+          status = if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
+            loadDataForPartitionTable(sqlContext, dataFrame, carbonLoadModel, hadoopConf)
+          } else if (isSortTable && sortScope.equals(SortScopeOptions.SortScope.GLOBAL_SORT)) {
+            DataLoadProcessBuilderOnSpark.loadDataUsingGlobalSort(sqlContext.sparkSession,
+              dataFrame, carbonLoadModel, hadoopConf)
+          } else if (dataFrame.isDefined) {
+            loadDataFrame(sqlContext, dataFrame, carbonLoadModel)
+          } else {
+            loadDataFile(sqlContext, carbonLoadModel, hadoopConf)
+          }
+          CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
+            Seq(carbonLoadModel.getSegmentId), storePath, carbonTable, false)
+          val newStatusMap = scala.collection.mutable.Map.empty[String, SegmentStatus]
+          if (status.nonEmpty) {
+            status.foreach { eachLoadStatus =>
+              val state = newStatusMap.get(eachLoadStatus._1)
+              state match {
+                case Some(SegmentStatus.LOAD_FAILURE) =>
+                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
+                case Some(SegmentStatus.LOAD_PARTIAL_SUCCESS)
+                  if eachLoadStatus._2._1.getSegmentStatus ==
+                     SegmentStatus.SUCCESS =>
+                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
+                case _ =>
+                  newStatusMap.put(eachLoadStatus._1, eachLoadStatus._2._1.getSegmentStatus)
+              }
+            }
+
+            newStatusMap.foreach {
+              case (key, value) =>
+                if (value == SegmentStatus.LOAD_FAILURE) {
+                  loadStatus = SegmentStatus.LOAD_FAILURE
+                } else if (value == SegmentStatus.LOAD_PARTIAL_SUCCESS &&
+                           loadStatus != SegmentStatus.LOAD_FAILURE) {
+                  loadStatus = SegmentStatus.LOAD_PARTIAL_SUCCESS
+                }
             }
           } else {
-            loadStatus = SegmentStatus.LOAD_FAILURE
+            // if no value is there in data load, make load status Success
+            // and data load flow executes
+            if (dataFrame.isDefined && updateModel.isEmpty) {
+              val rdd = dataFrame.get.rdd
+              if (rdd.partitions == null || rdd.partitions.length == 0) {
+                LOGGER.warn("DataLoading finished. No data was loaded.")
+                loadStatus = SegmentStatus.SUCCESS
+              }
+            } else {
+              loadStatus = SegmentStatus.LOAD_FAILURE
+            }
           }
-        }
 
-        if (loadStatus != SegmentStatus.LOAD_FAILURE &&
-            partitionStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
-          loadStatus = partitionStatus
+          if (loadStatus != SegmentStatus.LOAD_FAILURE &&
+              partitionStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
+            loadStatus = partitionStatus
+          }
         }
       }
     } catch {
@@ -420,6 +424,8 @@ object CarbonDataRDDFactory {
         }
         LOGGER.info(errorMessage)
         LOGGER.error(ex)
+    } finally {
+      segmentLock.unlock()
     }
     // handle the status file updation for the update cmd.
     if (updateModel.isDefined) {
