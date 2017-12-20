@@ -691,6 +691,19 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
                      CarbonCommonConstants.FILE_SEPARATOR + "Part0")
     assert(f.list().length == 2)
   }
+  test("test sentences func in update statement") {
+    sql("drop table if exists senten")
+    sql("create table senten(name string, comment string) stored by 'carbondata'")
+    sql("insert into senten select 'aaa','comment for aaa'")
+    sql("insert into senten select 'bbb','comment for bbb'")
+    sql("select * from senten").show()
+    val errorMessage = intercept[Exception] {
+      sql("update senten set(comment)=(sentences('Hello there! How are you?'))").show()
+    }.getMessage
+    errorMessage
+      .contains("Unsupported data type: Array")
+    sql("drop table if exists senten")
+  }
 
   override def afterAll {
     sql("use default")
