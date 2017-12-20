@@ -25,7 +25,8 @@ class CarbonSparkPartition(
     val rddId: Int,
     val idx: Int,
     @transient val multiBlockSplit: CarbonMultiBlockSplit,
-    val partitionId: Int = 0)
+    val partitionId: Int = 0,
+    val partitionNames: Option[Seq[String]] = None)
     extends Partition {
 
   val split = new SerializableWritable[CarbonMultiBlockSplit](multiBlockSplit)

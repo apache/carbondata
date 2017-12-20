@@ -25,6 +25,7 @@ import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
@@ -389,6 +390,18 @@ object CarbonFilters {
       case List(left, right) => List(And(left, right))
 
       case _ => expressions
+    }
+  }
+
+  def getCurrentPartitions(sparkSession: SparkSession,
+      carbonTable: CarbonTable): Seq[String] = {
+    if (carbonTable.isHivePartitionTable) {
+      CarbonFilters.getPartitions(
+        Seq.empty,
+        sparkSession,
+        TableIdentifier(carbonTable.getTableName, Some(carbonTable.getDatabaseName)))
+    } else {
+      Seq.empty
     }
   }
 

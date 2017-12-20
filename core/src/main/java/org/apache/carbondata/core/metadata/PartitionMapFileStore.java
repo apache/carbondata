@@ -276,6 +276,10 @@ public class PartitionMapFileStore {
     return partitionMap.get(indexFileName);
   }
 
+  public Map<String, List<String>> getPartitionMap() {
+    return partitionMap;
+  }
+
   public static class PartitionMapper implements Serializable {
 
     private static final long serialVersionUID = 3582245668420401089L;

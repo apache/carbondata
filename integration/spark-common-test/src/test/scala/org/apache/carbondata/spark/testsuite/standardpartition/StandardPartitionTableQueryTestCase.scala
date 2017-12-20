@@ -182,7 +182,7 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
            "doj=2014-08-15 00:00:00",
            "projectenddate=2016-12-30"))
     checkAnswer(frame1,
-      sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj>'2006-01-17 00:00:00'"))
+      sql("select  empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno, deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary from originTable where doj>cast('2006-01-17 00:00:00' as Timestamp)"))
 
   }
 
@@ -209,8 +209,6 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists partitionmany")
     sql("drop table if exists partitiondate")
     sql("drop table if exists partitiondateinsert")
-    sql("drop table if exists staticpartitionone")
-    sql("drop table if exists singlepasspartitionone")
   }
 
 }

@@ -23,6 +23,7 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.{AlterTableModel, CarbonMergerMapping, CompactionModel, DataCommand}
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -159,7 +160,8 @@ case class CarbonAlterTableCompactionCommand(
     val compactionModel = CompactionModel(compactionSize,
       compactionType,
       carbonTable,
-      isCompactionTriggerByDDl
+      isCompactionTriggerByDDl,
+      CarbonFilters.getCurrentPartitions(sqlContext.sparkSession, carbonTable)
     )
 
     val isConcurrentCompactionAllowed = CarbonProperties.getInstance()
@@ -209,8 +211,9 @@ case class CarbonAlterTableCompactionCommand(
               carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
               compactionType,
               maxSegmentColCardinality = null,
-              maxSegmentColumnSchemaList = null
-            )
+              maxSegmentColumnSchemaList = null,
+              compactionModel.currentPartitions,
+              null)
 
             // trigger event for merge index
             val operationContext = new OperationContext

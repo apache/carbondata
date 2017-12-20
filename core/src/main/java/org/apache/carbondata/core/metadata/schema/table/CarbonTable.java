@@ -571,7 +571,8 @@ public class CarbonTable implements Serializable {
   }
 
   public boolean isPartitionTable() {
-    return null != tablePartitionMap.get(getTableName());
+    return null != tablePartitionMap.get(getTableName())
+        && tablePartitionMap.get(getTableName()).getPartitionType() != PartitionType.NATIVE_HIVE;
   }
 
   public boolean isHivePartitionTable() {
