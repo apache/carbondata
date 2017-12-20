@@ -87,6 +87,9 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
     }
   }
 
+  @Override public void clear() {
+  }
+
   private void updateWithNullValue(CarbonRow row) {
     if (dataType == DataTypes.STRING) {
       row.update(CarbonCommonConstants.MEMBER_DEFAULT_VAL_ARRAY, index);

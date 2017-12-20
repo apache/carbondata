@@ -52,6 +52,12 @@ public class ComplexFieldConverterImpl extends AbstractDictionaryFieldConverterI
     }
   }
 
+  /**
+   * Method to clear out the dictionary caches. In this instance nothing to clear.
+   */
+  @Override public void clear() {
+  }
+
   @Override public void fillColumnCardinality(List<Integer> cardinality) {
     genericDataType.fillCardinality(cardinality);
   }

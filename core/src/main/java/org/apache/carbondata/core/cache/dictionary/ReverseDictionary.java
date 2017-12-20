@@ -137,4 +137,14 @@ public class ReverseDictionary implements Dictionary {
     }
   }
 
+  /**
+   * This method return the access count associated with the dictionary.
+   * @return
+   */
+  @Override public int getAccessCount() {
+    if (null != columnReverseDictionaryInfo) {
+      return columnReverseDictionaryInfo.getAccessCount();
+    }
+    return 0;
+  }
 }
