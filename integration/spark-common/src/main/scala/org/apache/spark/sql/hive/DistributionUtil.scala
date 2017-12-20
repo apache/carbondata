@@ -115,7 +115,9 @@ object DistributionUtil {
       sparkContext: SparkContext): Seq[String] = {
     val confExecutors: Int = getConfiguredExecutors(sparkContext)
     LOGGER.info(s"Executors configured : $confExecutors")
-    val requiredExecutors = if (nodesOfData < 1 || nodesOfData > confExecutors) {
+    val requiredExecutors = if (nodesOfData < 1) {
+      1
+    } else if (nodesOfData > confExecutors) {
       confExecutors
     } else {
       nodesOfData
