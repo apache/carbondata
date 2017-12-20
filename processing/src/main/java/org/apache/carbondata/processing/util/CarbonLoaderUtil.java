@@ -50,6 +50,8 @@ import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
+import org.apache.carbondata.core.service.CarbonCommonFactory;
+import org.apache.carbondata.core.service.PathService;
 import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
 import org.apache.carbondata.core.statusmanager.SegmentStatus;
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
@@ -884,4 +886,56 @@ public final class CarbonLoaderUtil {
     loadMetadataDetails.setIndexSize(String.valueOf(indexSize));
     return dataSize + indexSize;
   }
+
+  /**
+   * check if any stale .dictmeta or .sortindex file is available, if available then throw error
+   *
+   * @param absoluteTableIdentifier
+   * @param columnIdentifier
+   * @param dataType
+   * @throws IOException
+   */
+  public static void validateForStaleDictionaryData(AbsoluteTableIdentifier absoluteTableIdentifier,
+      ColumnIdentifier columnIdentifier, DataType dataType) throws IOException {
+    DictionaryColumnUniqueIdentifier dictColumnIdentifier =
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier, dataType);
+    PathService pathService = CarbonCommonFactory.getPathService();
+    CarbonTablePath carbonTablePath =
+        pathService.getCarbonTablePath(absoluteTableIdentifier, dictColumnIdentifier);
+    String dictionaryMetadataFilePath = carbonTablePath
+        .getDictionaryMetaFilePath(dictColumnIdentifier.getColumnIdentifier().getColumnId());
+    if (CarbonUtil.isFileExists(dictionaryMetadataFilePath)) {
+      LOGGER.error("stale dictionary meta file is available." + dictionaryMetadataFilePath);
+      throw new IOException("Stale dictionary meta file is available.");
+    }
+    String metaDataDirPath = carbonTablePath.getMetadataDirectoryPath();
+    CarbonFile metaDataDir =
+        FileFactory.getCarbonFile(metaDataDirPath, FileFactory.getFileType(metaDataDirPath));
+
+    CarbonFile[] sortIndexFiles =
+        carbonTablePath.getSortIndexFiles(metaDataDir, columnIdentifier.getColumnId());
+    if (null == sortIndexFiles) {
+      return;
+    }
+    if (sortIndexFiles.length > 0) {
+      LOGGER.error("stale sort index file is available." + dictionaryMetadataFilePath);
+      throw new IOException("Stale sort index file is available.");
+    }
+  }
+
+  /**
+   * clear dictionary cache
+   *
+   * @param absoluteTableIdentifier
+   * @param columnIdentifier
+   * @param dataType
+   */
+  public static void clearDictionaryCache(AbsoluteTableIdentifier absoluteTableIdentifier,
+      ColumnIdentifier columnIdentifier, DataType dataType) {
+    DictionaryColumnUniqueIdentifier dictColumnIdentifier =
+        new DictionaryColumnUniqueIdentifier(absoluteTableIdentifier, columnIdentifier, dataType);
+    Cache dictCache = CacheProvider.getInstance().createCache(CacheType.REVERSE_DICTIONARY);
+    dictCache.invalidate(dictColumnIdentifier);
+  }
+
 }
