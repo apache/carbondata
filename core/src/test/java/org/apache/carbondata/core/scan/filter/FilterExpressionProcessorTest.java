@@ -16,10 +16,8 @@ import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
-import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
 import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
-import org.apache.carbondata.core.scan.filter.resolver.RowLevelFilterResolverImpl;
 
 import org.junit.Before;
 import org.junit.Test;
