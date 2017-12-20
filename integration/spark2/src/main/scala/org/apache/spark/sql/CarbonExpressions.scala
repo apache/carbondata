@@ -47,6 +47,19 @@ object CarbonExpressions {
   }
 
   /**
+   * unapply method of Cast class with expression.
+   */
+  object MatchCastExpression {
+    def unapply(expr: Expression): Option[(Expression, DataType)] = {
+      expr match {
+        case a: Cast if a.child.isInstanceOf[Expression] =>
+          Some((a.child.asInstanceOf[Expression], a.dataType))
+        case _ => None
+      }
+    }
+  }
+
+  /**
    * unapply method of Describe Table format.
    */
   object CarbonDescribeTable {
