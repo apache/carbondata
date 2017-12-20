@@ -1008,12 +1008,18 @@ public final class CarbonUtil {
   public static long calculateMetaSize(TableBlockInfo tableBlockInfo) throws IOException {
     FileHolder fileReader = null;
     try {
-      long completeBlockLength = tableBlockInfo.getBlockLength();
-      long footerPointer = completeBlockLength - 8;
-      String filePath = tableBlockInfo.getFilePath();
-      fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath));
-      long actualFooterOffset = fileReader.readLong(filePath, footerPointer);
-      return footerPointer - actualFooterOffset;
+      // V1 doesnt support offset reading from driver.Need to read
+      // from the carbondata file
+      if (ColumnarFormatVersion.V1 == tableBlockInfo.getVersion()) {
+        long completeBlockLength = tableBlockInfo.getBlockLength();
+        long footerPointer = completeBlockLength - 8;
+        String filePath = tableBlockInfo.getFilePath();
+        fileReader = FileFactory.getFileHolder(FileFactory.getFileType(filePath));
+        long actualFooterOffset = fileReader.readLong(filePath, footerPointer);
+        return footerPointer - actualFooterOffset;
+      }
+
+      return tableBlockInfo.getBlockLength() - tableBlockInfo.getBlockOffset();
     } finally {
       if (null != fileReader) {
         try {
@@ -1661,9 +1667,21 @@ public final class CarbonUtil {
       Long blockTimeStamp = Long.parseLong(filePath
           .substring(filePath.lastIndexOf('-') + 1,
               filePath.lastIndexOf('.')));
-      if ((blockTimeStamp > invalidBlockVOForSegmentId.getFactTimestamp() && (
-          invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp() != null
+      if (((null != invalidBlockVOForSegmentId.getFactTimestamp()
+          && blockTimeStamp > invalidBlockVOForSegmentId.getFactTimestamp()) && (
+          null != invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()
               && blockTimeStamp < invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()))) {
+        return true;
+      }
+      // aborted files case
+      if (null != invalidBlockVOForSegmentId.getLatestUpdateTimestamp()
+          && blockTimeStamp > invalidBlockVOForSegmentId.getLatestUpdateTimestamp()) {
+        return true;
+      }
+
+      //for 1st time starttimestamp will be empty so no need to consider facttimestamp
+      if (null == invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()
+          && blockTimeStamp > invalidBlockVOForSegmentId.getFactTimestamp()) {
         return true;
       }
     }
