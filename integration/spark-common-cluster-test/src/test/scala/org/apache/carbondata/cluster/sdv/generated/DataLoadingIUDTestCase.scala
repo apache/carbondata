@@ -1926,13 +1926,13 @@ ignore("IUD-01-01-01_040-23", Include) {
        
 
 //Check for updating carbon table set column value to a value returned by split function
+//Split will give us array value
 test("IUD-01-01-01_040-25", Include) {
    sql(s"""create table if not exists default.t_carbn01 (Active_status String,Item_type_cd INT,Qty_day_avg INT,Qty_total INT,Sell_price BIGINT,Sell_pricep DOUBLE,Discount_price DOUBLE,Profit DECIMAL(3,2),Item_code String,Item_name String,Outlet_name String,Update_time TIMESTAMP,Create_date String)STORED BY 'org.apache.carbondata.format'""").collect
  sql(s"""insert into default.t_carbn01  select * from default.t_carbn01b""").collect
- sql(s"""update default.t_carbn01  set (active_status)= (split('t','a')) """).collect
-  checkAnswer(s""" select active_status from default.t_carbn01  group by active_status """,
-    Seq(Row("t\\")), "DataLoadingIUDTestCase_IUD-01-01-01_040-25")
-   sql(s"""drop table default.t_carbn01  """).collect
+ intercept[Exception] {
+   sql(s"""update default.t_carbn01  set (active_status)= (split('t','a')) """).collect
+ }
 }
        
 
