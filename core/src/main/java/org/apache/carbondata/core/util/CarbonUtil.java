@@ -2020,9 +2020,8 @@ public final class CarbonUtil {
     }
   }
 
-  public static void dropDatabaseDirectory(String dbName, String storePath)
+  public static void dropDatabaseDirectory(String databasePath)
       throws IOException, InterruptedException {
-    String databasePath = storePath + File.separator + dbName;
     FileFactory.FileType fileType = FileFactory.getFileType(databasePath);
     if (FileFactory.isFileExist(databasePath, fileType)) {
       CarbonFile dbPath = FileFactory.getCarbonFile(databasePath, fileType);
