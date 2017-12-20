@@ -19,20 +19,19 @@ package org.apache.spark.sql.execution.command.preaaggregate
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.collection.JavaConverters._
 
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSession, DataFrame, SparkSession}
-import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias}
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSession, SparkSession}
+import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias, MatchCast => Cast, MatchCastExpression}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFunction, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, NamedExpression, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate._
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField, Field}
+import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
-import org.apache.spark.sql.types.DataType
-import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
-import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
+import org.apache.spark.sql.types.DataType
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -116,35 +115,79 @@ object PreAggregateUtil {
       throw new MalformedCarbonCommandException(
         "Pre Aggregation is not supported on Pre-Aggregated Table")
     }
+    var counter = 0
     aggExp.map {
-      case Alias(attr: AggregateExpression, _) =>
+      case Alias(attr: AggregateExpression, name) =>
         if (attr.isDistinct) {
           throw new MalformedCarbonCommandException(
             "Distinct is not supported On Pre Aggregation")
         }
-        fieldToDataMapFieldMap ++= validateAggregateFunctionAndGetFields(carbonTable,
+        fieldToDataMapFieldMap ++= validateAggregateFunctionAndGetFields(
+          carbonTable,
           attr.aggregateFunction,
           parentTableName,
           parentDatabaseName,
-          parentTableId)
+          parentTableId,
+          "column_" + counter)
+        counter = counter + 1
       case attr: AttributeReference =>
-        fieldToDataMapFieldMap += getField(attr.name,
+        val columnRelation = getColumnRelation(
+          attr.name,
+          parentTableId,
+          parentTableName,
+          parentDatabaseName,
+          carbonTable)
+        fieldToDataMapFieldMap += createField(
+          attr.name,
           attr.dataType,
-          parentColumnId = carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
           parentTableName = parentTableName,
-          parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
+          columnTableRelationList = Seq(columnRelation))
       case Alias(attr: AttributeReference, _) =>
-        fieldToDataMapFieldMap += getField(attr.name,
+        val columnRelation = getColumnRelation(
+          attr.name,
+          parentTableId,
+          parentTableName,
+          parentDatabaseName,
+          carbonTable)
+        fieldToDataMapFieldMap += createField(
+          attr.name,
           attr.dataType,
-          parentColumnId = carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
           parentTableName = parentTableName,
-          parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
+          columnTableRelationList = Seq(columnRelation))
       case _@Alias(s: ScalaUDF, name) if name.equals("preAgg") =>
       case _ =>
         throw new MalformedCarbonCommandException(s"Unsupported Select Statement:${
           selectStmt } ")
     }
     fieldToDataMapFieldMap
+  }
+
+  /**
+   * Below method will be used to get the column relation
+   * with the parent column which will be used during query and data loading
+   * @param parentColumnName
+   * parent column name
+   * @param parentTableId
+   * parent column id
+   * @param parentTableName
+   * parent table name
+   * @param parentDatabaseName
+   * parent database name
+   * @param carbonTable
+   * carbon table
+   * @return column relation object
+   */
+  def getColumnRelation(parentColumnName: String,
+      parentTableId: String,
+      parentTableName: String,
+      parentDatabaseName: String,
+      carbonTable: CarbonTable) : ColumnTableRelation = {
+    val parentColumnId = carbonTable.getColumnByName(parentTableName, parentColumnName).getColumnId
+    val columnTableRelation = ColumnTableRelation(parentColumnName = parentColumnName,
+      parentColumnId = parentColumnId,
+      parentTableName = parentTableName,
+      parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
+    columnTableRelation
   }
 
   /**
@@ -155,106 +198,160 @@ object PreAggregateUtil {
    * In case of avg it will return two fields one for count
    * and other of sum of that column to support rollup
    *
-   * @param carbonTable
-   * @param aggFunctions
-   * @param parentTableName
-   * @param parentDatabaseName
-   * @param parentTableId
+   * @param carbonTable parent carbon table
+   * @param aggFunctions aggregation function
+   * @param parentTableName parent table name
+   * @param parentDatabaseName parent database name
+   * @param parentTableId parent column id
+   * @param newColumnName
+   * In case of any expression this will be used as a column name for pre aggregate
    * @return list of fields
    */
   def validateAggregateFunctionAndGetFields(carbonTable: CarbonTable,
       aggFunctions: AggregateFunction,
       parentTableName: String,
       parentDatabaseName: String,
-      parentTableId: String) : scala.collection.mutable.ListBuffer[(Field, DataMapField)] = {
+      parentTableId: String,
+      newColumnName: String) : scala.collection.mutable.ListBuffer[(Field, DataMapField)] = {
     val list = scala.collection.mutable.ListBuffer.empty[(Field, DataMapField)]
     aggFunctions match {
-      case sum@Sum(attr: AttributeReference) =>
-        list += getField(attr.name,
-          attr.dataType,
-          sum.prettyName,
-          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName,
-          parentDatabaseName, parentTableId = parentTableId)
-      case sum@Sum(Cast(attr: AttributeReference, changeDataType: DataType)) =>
-        list += getField(attr.name,
+      case sum@Sum(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
+        list += createFieldForAggregateExpression(
+          exp,
           changeDataType,
-          sum.prettyName,
-          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName,
-          parentDatabaseName, parentTableId = parentTableId)
-      case count@Count(Seq(attr: AttributeReference)) =>
-        list += getField(attr.name,
-          attr.dataType,
-          count.prettyName,
-          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName,
-          parentDatabaseName, parentTableId = parentTableId)
-      case count@Count(Seq(Cast(attr: AttributeReference, _))) =>
-        list += getField(attr.name,
-          attr.dataType,
-          count.prettyName,
-          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName,
-          parentDatabaseName, parentTableId = parentTableId)
-      case min@Min(attr: AttributeReference) =>
-        list += getField(attr.name,
-          attr.dataType,
-          min.prettyName,
-          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName,
-          parentDatabaseName, parentTableId = parentTableId)
-      case min@Min(Cast(attr: AttributeReference, changeDataType: DataType)) =>
-        list += getField(attr.name,
+          carbonTable,
+          newColumnName,
+          sum.prettyName)
+      case sum@Sum(exp: Expression) =>
+        list += createFieldForAggregateExpression(
+          exp,
+          sum.dataType,
+          carbonTable,
+          newColumnName,
+          sum.prettyName)
+      case count@Count(Seq(MatchCastExpression(exp: Expression, changeDataType: DataType))) =>
+        list += createFieldForAggregateExpression(
+          exp,
           changeDataType,
-          min.prettyName,
-          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName,
-          parentDatabaseName, parentTableId = parentTableId)
-      case max@Max(attr: AttributeReference) =>
-        list += getField(attr.name,
-          attr.dataType,
-          max.prettyName,
-          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName,
-          parentDatabaseName, parentTableId = parentTableId)
-      case max@Max(Cast(attr: AttributeReference, changeDataType: DataType)) =>
-        list += getField(attr.name,
+          carbonTable,
+          newColumnName,
+          count.prettyName)
+      case count@Count(Seq(exp: Expression)) =>
+        list += createFieldForAggregateExpression(
+          exp,
+          count.dataType,
+          carbonTable,
+          newColumnName,
+          count.prettyName)
+      case min@Min(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
+        list += createFieldForAggregateExpression(
+          exp,
           changeDataType,
-          max.prettyName,
-          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName,
-          parentDatabaseName, parentTableId = parentTableId)
-      case Average(attr: AttributeReference) =>
-        list += getField(attr.name,
-          attr.dataType,
-          "sum",
-          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName,
-          parentDatabaseName, parentTableId = parentTableId)
-        list += getField(attr.name,
-          attr.dataType,
-          "count",
-          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName,
-          parentDatabaseName, parentTableId = parentTableId)
-      case Average(Cast(attr: AttributeReference, changeDataType: DataType)) =>
-        list += getField(attr.name,
+          carbonTable,
+          newColumnName,
+          min.prettyName)
+      case min@Min(exp: Expression) =>
+        list += createFieldForAggregateExpression(
+          exp,
+          min.dataType,
+          carbonTable,
+          newColumnName,
+          min.prettyName)
+      case max@Max(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
+        list += createFieldForAggregateExpression(
+          exp,
           changeDataType,
-          "sum",
-          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName,
-          parentDatabaseName, parentTableId = parentTableId)
-        list += getField(attr.name,
+          carbonTable,
+          newColumnName,
+          max.prettyName)
+      case max@Max(exp: Expression) =>
+        list += createFieldForAggregateExpression(
+          exp,
+          max.dataType,
+          carbonTable,
+          newColumnName,
+          max.prettyName)
+      case Average(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
+        list += createFieldForAggregateExpression(
+          exp,
           changeDataType,
-          "count",
-          carbonTable.getColumnByName(parentTableName, attr.name).getColumnId,
-          parentTableName,
-          parentDatabaseName, parentTableId = parentTableId)
+          carbonTable,
+          newColumnName,
+          "sum")
+        list += createFieldForAggregateExpression(
+          exp,
+          changeDataType,
+          carbonTable,
+          newColumnName,
+          "count")
+      case avg@Average(exp: Expression) =>
+        list += createFieldForAggregateExpression(
+          exp,
+          avg.dataType,
+          carbonTable,
+          newColumnName,
+          "sum")
+        list += createFieldForAggregateExpression(
+          exp,
+          avg.dataType,
+          carbonTable,
+          newColumnName,
+          "count")
       case others@_ =>
         throw new MalformedCarbonCommandException(s"Un-Supported Aggregation Type: ${
           others.prettyName}")
     }
+  }
+
+  /**
+   * Below method will be used to get the field and its data map field object
+   * for aggregate expression
+   * @param expression
+   *                   expression in aggregate function
+   * @param dataType
+   *                 data type
+   * @param carbonTable
+   *                    parent carbon table
+   * @param newColumnName
+   *                      column name of aggregate table
+   * @param aggregationName
+   *                        aggregate function name
+   * @return field and its metadata tuple
+   */
+  def createFieldForAggregateExpression(
+      expression: Expression,
+      dataType: DataType,
+      carbonTable: CarbonTable,
+      newColumnName: String,
+      aggregationName: String): (Field, DataMapField) = {
+    val parentColumnsName = new ArrayBuffer[String]()
+    expression.transform {
+      case attr: AttributeReference =>
+        parentColumnsName += attr.name
+        attr
+    }
+    val arrayBuffer = parentColumnsName.map { name =>
+       getColumnRelation(name,
+        carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableId,
+        carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
+        carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getDatabaseName,
+        carbonTable)
+    }
+    // if parent column relation is of size more than one that means aggregate table
+    // column is derived from multiple column of main table
+    // or if expression is not a instance of attribute reference
+    // then use column name which is passed
+    val columnName =
+    if (parentColumnsName.size > 1 && !expression.isInstanceOf[AttributeReference]) {
+      newColumnName
+    } else {
+      expression.asInstanceOf[AttributeReference].name
+    }
+    createField(columnName,
+      dataType,
+      aggregationName,
+      carbonTable.getAbsoluteTableIdentifier.getCarbonTableIdentifier.getTableName,
+      arrayBuffer)
   }
 
   /**
@@ -263,30 +360,23 @@ object PreAggregateUtil {
    * @param columnName
    * @param dataType
    * @param aggregateType
-   * @param parentColumnId
    * @param parentTableName
-   * @param parentDatabaseName
-   * @param parentTableId
+   * @param columnTableRelationList
+   *                                List of column relation with parent
    * @return fields object
    */
-  def getField(columnName: String,
+  def createField(columnName: String,
       dataType: DataType,
       aggregateType: String = "",
-      parentColumnId: String,
       parentTableName: String,
-      parentDatabaseName: String,
-      parentTableId: String): (Field, DataMapField) = {
+      columnTableRelationList: Seq[ColumnTableRelation]): (Field, DataMapField) = {
     val actualColumnName = if (aggregateType.equals("")) {
       parentTableName + '_' + columnName
     } else {
       parentTableName + '_' + columnName + '_' + aggregateType
     }
     val rawSchema = '`' + actualColumnName + '`' + ' ' + dataType.typeName
-    val columnTableRelation = ColumnTableRelation(parentColumnName = columnName,
-      parentColumnId = parentColumnId,
-      parentTableName = parentTableName,
-      parentDatabaseName = parentDatabaseName, parentTableId = parentTableId)
-    val dataMapField = DataMapField(aggregateType, Some(columnTableRelation))
+    val dataMapField = DataMapField(aggregateType, Some(columnTableRelationList))
     if (dataType.typeName.startsWith("decimal")) {
       val (precision, scale) = CommonUtil.getScaleAndPrecision(dataType.catalogString)
       (Field(column = actualColumnName,
@@ -508,7 +598,10 @@ object PreAggregateUtil {
     val headers = dataMapSchemas.find(_.getChildSchema.getTableName.equalsIgnoreCase(
       dataMapIdentifier.table)) match {
       case Some(dataMapSchema) =>
-        dataMapSchema.getChildSchema.getListOfColumns.asScala.sortBy(_.getSchemaOrdinal).map(
+        val columns = dataMapSchema.getChildSchema.getListOfColumns.asScala
+          .filter{column =>
+            !column.getColumnName.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE)}
+        columns.sortBy(_.getSchemaOrdinal).map(
           _.getColumnName).mkString(",")
       case None =>
         throw new RuntimeException(

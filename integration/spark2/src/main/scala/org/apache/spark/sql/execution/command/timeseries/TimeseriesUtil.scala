@@ -111,8 +111,8 @@ object TimeSeriesUtil {
   .LinkedHashMap[Field, DataMapField],
       timeSeriesColumn: String) : Any = {
     val isTimeSeriesColumnExits = fieldMapping
-      .exists(obj => obj._2.columnTableRelation.isDefined &&
-                     obj._2.columnTableRelation.get.parentColumnName
+      .exists(obj => obj._2.columnTableRelationList.isDefined &&
+                     obj._2.columnTableRelationList.get(0).parentColumnName
                        .equalsIgnoreCase(timeSeriesColumn) &&
                      obj._2.aggregateFunction.isEmpty)
     if(!isTimeSeriesColumnExits) {
@@ -134,8 +134,8 @@ object TimeSeriesUtil {
       timeSeriesColumn: String,
       timeSeriesFunction: String) : Any = {
     val isTimeSeriesColumnExits = fieldMapping
-      .find(obj => obj._2.columnTableRelation.isDefined &&
-                     obj._2.columnTableRelation.get.parentColumnName
+      .find(obj => obj._2.columnTableRelationList.isDefined &&
+                     obj._2.columnTableRelationList.get(0).parentColumnName
                        .equalsIgnoreCase(timeSeriesColumn) &&
                      obj._2.aggregateFunction.isEmpty)
     isTimeSeriesColumnExits.get._2.aggregateFunction = timeSeriesFunction
