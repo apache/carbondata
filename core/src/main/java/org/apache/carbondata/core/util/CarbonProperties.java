@@ -106,6 +106,7 @@ public final class CarbonProperties {
     validateLockType();
     validateCarbonCSVReadBufferSizeByte();
     validateHandoffSize();
+    validateCombineSmallInputFiles();
   }
 
   private void validateCarbonCSVReadBufferSizeByte() {
@@ -202,6 +203,19 @@ public final class CarbonProperties {
           + CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT);
       carbonProperties.setProperty(CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION,
           CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT);
+    }
+  }
+
+  private void validateCombineSmallInputFiles() {
+    String combineSmallInputFilesStr =
+        carbonProperties.getProperty(CarbonCommonConstants.CARBON_COMBINE_SMALL_INPUT_FILES);
+    boolean isValidBooleanValue = CarbonUtil.validateBoolean(combineSmallInputFilesStr);
+    if (!isValidBooleanValue) {
+      LOGGER.warn("The combine small files value \"" + combineSmallInputFilesStr
+          + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.CARBON_COMBINE_SMALL_INPUT_FILES_DEFAULT);
+      carbonProperties.setProperty(CarbonCommonConstants.CARBON_COMBINE_SMALL_INPUT_FILES,
+          CarbonCommonConstants.CARBON_COMBINE_SMALL_INPUT_FILES_DEFAULT);
     }
   }
 

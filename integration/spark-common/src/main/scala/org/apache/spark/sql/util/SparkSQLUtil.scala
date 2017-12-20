@@ -17,8 +17,9 @@
 
 package org.apache.spark.sql.util
 
-import org.apache.spark.sql.AnalysisException
+import org.apache.spark.sql.SparkSession
+import org.apache.spark.sql.internal.SessionState
 
-object CarbonException {
-  def analysisException(message: String): Nothing = throw new AnalysisException(message)
+object SparkSQLUtil {
+  def sessionState(sparkSession: SparkSession): SessionState = sparkSession.sessionState
 }

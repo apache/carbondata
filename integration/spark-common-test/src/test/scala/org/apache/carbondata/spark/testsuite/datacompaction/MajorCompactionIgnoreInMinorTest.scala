@@ -59,16 +59,16 @@ class MajorCompactionIgnoreInMinorTest extends QueryTest with BeforeAndAfterAll 
       "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
     // compaction will happen here.
-    sql("alter table ignoremajor compact 'major'"
+    sql("alter table ignoremajor compact 'major'")
+
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE ignoremajor OPTIONS" +
+        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
     )
-      sql("LOAD DATA LOCAL INPATH '" + csvFilePath1 + "' INTO TABLE ignoremajor OPTIONS" +
+    sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE ignoremajor  OPTIONS" +
         "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
-      )
-      sql("LOAD DATA LOCAL INPATH '" + csvFilePath2 + "' INTO TABLE ignoremajor  OPTIONS" +
-        "('DELIMITER'= ',', 'QUOTECHAR'= '\"')"
-      )
-      sql("alter table ignoremajor compact 'minor'"
-      )
+    )
+    sql("alter table ignoremajor compact 'minor'"
+    )
 
   }
 

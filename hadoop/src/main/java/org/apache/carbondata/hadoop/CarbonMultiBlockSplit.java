@@ -47,15 +47,19 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
 
   private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
 
+  private long length;
+
   public CarbonMultiBlockSplit() {
     splitList = null;
     locations = null;
+    length = 0;
   }
 
   public CarbonMultiBlockSplit(AbsoluteTableIdentifier identifier, List<CarbonInputSplit> splitList,
       String[] locations) throws IOException {
     this.splitList = splitList;
     this.locations = locations;
+    calculateLength();
   }
 
   public CarbonMultiBlockSplit(AbsoluteTableIdentifier identifier, List<CarbonInputSplit> splitList,
@@ -63,6 +67,7 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
     this.splitList = splitList;
     this.locations = locations;
     this.fileFormat = fileFormat;
+    calculateLength();
   }
 
   /**
@@ -75,11 +80,19 @@ public class CarbonMultiBlockSplit extends InputSplit implements Writable {
 
   @Override
   public long getLength() throws IOException, InterruptedException {
+    return length;
+  }
+
+  public void setLength(long length) {
+    this.length = length;
+  }
+
+  private void calculateLength() {
     long total = 0;
-    for (InputSplit split: splitList) {
+    for (CarbonInputSplit split : splitList) {
       total += split.getLength();
     }
-    return total;
+    length = total;
   }
 
   @Override
