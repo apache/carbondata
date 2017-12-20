@@ -58,12 +58,13 @@ public class CarbonOutputMapperTest extends TestCase {
     assert (file.exists());
     File[] listFiles = file.listFiles(new FilenameFilter() {
       @Override public boolean accept(File dir, String name) {
-        return name.endsWith(".carbondata") || name.endsWith(".carbonindex");
+        return name.endsWith(".carbondata") ||
+            name.endsWith(".carbonindex") ||
+            name.endsWith(".carbonindexmerge");
       }
     });
 
     assert (listFiles.length == 2);
-
   }
 
 

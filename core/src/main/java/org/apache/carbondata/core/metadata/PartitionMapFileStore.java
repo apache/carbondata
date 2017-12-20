@@ -25,6 +25,8 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +49,8 @@ import com.google.gson.Gson;
 public class PartitionMapFileStore {
 
   private Map<String, List<String>> partitionMap = new HashMap<>();
+
+  private boolean partionedSegment = false;
   /**
    * Write partitionmapp file to the segment folder with indexfilename and corresponding partitions.
    *
@@ -105,9 +109,9 @@ public class PartitionMapFileStore {
    * @param segmentPath
    * @throws IOException
    */
-  public void mergePartitionMapFiles(String segmentPath) throws IOException {
+  public void mergePartitionMapFiles(String segmentPath, String mergeFileName) throws IOException {
     CarbonFile[] partitionFiles = getPartitionFiles(segmentPath);
-    if (partitionFiles != null && partitionFiles.length > 1) {
+    if (partitionFiles != null && partitionFiles.length > 0) {
       PartitionMapper partitionMapper = null;
       for (CarbonFile file : partitionFiles) {
         PartitionMapper localMapper = readPartitionMap(file.getAbsolutePath());
@@ -119,10 +123,12 @@ public class PartitionMapFileStore {
         }
       }
       if (partitionMapper != null) {
-        String path = segmentPath + "/" + "mergedpartitions" + CarbonTablePath.PARTITION_MAP_EXT;
+        String path = segmentPath + "/" + mergeFileName + CarbonTablePath.PARTITION_MAP_EXT;
         writePartitionFile(partitionMapper, path);
         for (CarbonFile file : partitionFiles) {
-          FileFactory.deleteAllCarbonFilesOfDir(file);
+          if (!FileFactory.deleteAllCarbonFilesOfDir(file)) {
+            throw new IOException("Old partition map files cannot be deleted");
+          }
         }
       }
     }
@@ -146,7 +152,7 @@ public class PartitionMapFileStore {
    * @param partitionMapPath
    * @return
    */
-  public PartitionMapper readPartitionMap(String partitionMapPath) {
+  private PartitionMapper readPartitionMap(String partitionMapPath) {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
@@ -176,9 +182,92 @@ public class PartitionMapFileStore {
   public void readAllPartitionsOfSegment(String segmentPath) {
     CarbonFile[] partitionFiles = getPartitionFiles(segmentPath);
     if (partitionFiles != null && partitionFiles.length > 0) {
+      partionedSegment = true;
+      int i = 0;
+      // Get the latest partition map file based on the timestamp of that file.
+      long [] partitionTimestamps = new long[partitionFiles.length];
       for (CarbonFile file : partitionFiles) {
-        PartitionMapper partitionMapper = readPartitionMap(file.getAbsolutePath());
-        partitionMap.putAll(partitionMapper.getPartitionMap());
+        partitionTimestamps[i++] =
+            Long.parseLong(file.getName().substring(
+                0, file.getName().length() - CarbonTablePath.PARTITION_MAP_EXT.length()));
+      }
+      Arrays.sort(partitionTimestamps);
+      PartitionMapper partitionMapper = readPartitionMap(
+          segmentPath + "/" + partitionTimestamps[partitionTimestamps.length - 1]
+              + CarbonTablePath.PARTITION_MAP_EXT);
+      partitionMap.putAll(partitionMapper.getPartitionMap());
+    }
+  }
+
+  public boolean isPartionedSegment() {
+    return partionedSegment;
+  }
+
+  /**
+   * Drops the partitions from the partition mapper file of the segment and writes to a new file.
+   * @param segmentPath
+   * @param partitionsToDrop
+   * @param uniqueId
+   * @throws IOException
+   */
+  public void dropPartitions(String segmentPath, List<String> partitionsToDrop, String uniqueId)
+      throws IOException {
+    readAllPartitionsOfSegment(segmentPath);
+    List<String> indexesToDrop = new ArrayList<>();
+    for (Map.Entry<String, List<String>> entry: partitionMap.entrySet()) {
+      for (String partition: partitionsToDrop) {
+        if (entry.getValue().contains(partition)) {
+          indexesToDrop.add(entry.getKey());
+        }
+      }
+    }
+    if (indexesToDrop.size() > 0) {
+      // Remove the indexes from partition map
+      for (String indexToDrop : indexesToDrop) {
+        partitionMap.remove(indexToDrop);
+      }
+      PartitionMapper mapper = new PartitionMapper();
+      mapper.setPartitionMap(partitionMap);
+      String path = segmentPath + "/" + uniqueId + CarbonTablePath.PARTITION_MAP_EXT;
+      writePartitionFile(mapper, path);
+    }
+  }
+
+  /**
+   * It deletes the old partition mapper files in case of success. And in case of failure it removes
+   * the old new file.
+   * @param segmentPath
+   * @param uniqueId
+   * @param success
+   */
+  public void commitPartitions(String segmentPath, final String uniqueId, boolean success) {
+    CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
+    // write partition info to new file.
+    if (carbonFile.exists()) {
+      CarbonFile[] carbonFiles = carbonFile.listFiles(new CarbonFileFilter() {
+        @Override public boolean accept(CarbonFile file) {
+          return file.getName().endsWith(CarbonTablePath.PARTITION_MAP_EXT);
+        }
+      });
+      CarbonFile latestFile = null;
+      for (CarbonFile mapFile: carbonFiles) {
+        if (mapFile.getName().startsWith(uniqueId)) {
+          latestFile = mapFile;
+        }
+      }
+      if (latestFile != null) {
+        for (CarbonFile mapFile : carbonFiles) {
+          if (latestFile != mapFile) {
+            // Remove old files in case of success scenario
+            if (success) {
+              mapFile.delete();
+            }
+          }
+        }
+      }
+      // If it is failure scenario then remove the new file.
+      if (!success && latestFile != null) {
+        latestFile.delete();
       }
     }
   }

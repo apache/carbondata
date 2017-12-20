@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql
 
+import scala.collection.JavaConverters._
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.fs.Path
 import org.apache.hadoop.mapred.JobConf
@@ -24,9 +26,10 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.catalyst.InternalRow
+import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.LeafExecNode
+import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
@@ -36,6 +39,7 @@ import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 case class CarbonCountStar(
     attributesRaw: Seq[Attribute],
     carbonTable: CarbonTable,
+    sparkSession: SparkSession,
     outUnsafeRows: Boolean = true) extends LeafExecNode {
 
   override def doExecute(): RDD[InternalRow] = {
@@ -45,7 +49,13 @@ case class CarbonCountStar(
 
     // get row count
     val rowCount = CarbonUpdateUtil.getRowCount(
-      tableInputFormat.getBlockRowCount(job, absoluteTableIdentifier),
+      tableInputFormat.getBlockRowCount(
+        job,
+        absoluteTableIdentifier,
+        CarbonFilters.getPartitions(
+          Seq.empty,
+          sparkSession,
+          TableIdentifier(carbonTable.getTableName, Some(carbonTable.getDatabaseName))).asJava),
       absoluteTableIdentifier)
     val value = new GenericInternalRow(Seq(Long.box(rowCount)).toArray.asInstanceOf[Array[Any]])
     val unsafeProjection = UnsafeProjection.create(output.map(_.dataType).toArray)

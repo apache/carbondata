@@ -29,7 +29,9 @@ import org.apache.hadoop.mapreduce.Job
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.rdd.RDD
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.ExecutionErrors
+import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -92,8 +94,14 @@ object DeleteExecution {
     if (keyRdd.partitions.length == 0) {
       return true
     }
-
-    val blockMappingVO = carbonInputFormat.getBlockRowCount(job, absoluteTableIdentifier)
+    val blockMappingVO =
+      carbonInputFormat.getBlockRowCount(
+        job,
+        absoluteTableIdentifier,
+        CarbonFilters.getPartitions(
+          Seq.empty,
+          sparkSession,
+          TableIdentifier(tableName, databaseNameOp)).asJava)
     val segmentUpdateStatusMngr = new SegmentUpdateStatusManager(absoluteTableIdentifier)
     CarbonUpdateUtil
       .createBlockDetailsMap(blockMappingVO, segmentUpdateStatusMngr)

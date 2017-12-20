@@ -23,12 +23,13 @@ import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.execution.command.management.{CarbonAlterTableCompactionCommand, CarbonInsertIntoCommand, CarbonLoadDataCommand, RefreshCarbonTableCommand}
-import org.apache.spark.sql.execution.command.partition.CarbonShowCarbonPartitionsCommand
+import org.apache.spark.sql.execution.command.partition.{CarbonShowCarbonPartitionsCommand, CarbonStandardAlterTableDropPartition}
 import org.apache.spark.sql.execution.command.schema._
 import org.apache.spark.sql.execution.command.table.{CarbonDescribeFormattedCommand, CarbonDropTableCommand}
 import org.apache.spark.sql.hive.execution.command.{CarbonDropDatabaseCommand, CarbonResetCommand, CarbonSetCommand}
 import org.apache.spark.sql.CarbonExpressions.{CarbonDescribeTable => DescribeTableCommand}
 import org.apache.spark.sql.execution.datasources.RefreshTable
+import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.{CarbonReflectionUtils, FileUtils}
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
@@ -158,9 +159,29 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(t)(sparkSession)
         if (isCarbonTable) {
-          ExecutedCommandExec(CarbonShowCarbonPartitionsCommand(t)) :: Nil
+          val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+            .lookupRelation(t)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
+          if (!carbonTable.isHivePartitionTable) {
+            ExecutedCommandExec(CarbonShowCarbonPartitionsCommand(t)) :: Nil
+          } else {
+            ExecutedCommandExec(ShowPartitionsCommand(t, cols)) :: Nil
+          }
         } else {
           ExecutedCommandExec(ShowPartitionsCommand(t, cols)) :: Nil
+        }
+      case adp@AlterTableDropPartitionCommand(tableName, specs, ifExists, purge, retainData) =>
+        val isCarbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .tableExists(tableName)(sparkSession)
+        if (isCarbonTable) {
+          ExecutedCommandExec(
+            CarbonStandardAlterTableDropPartition(
+              tableName,
+              specs,
+              ifExists,
+              purge,
+              retainData)) :: Nil
+        } else {
+          ExecutedCommandExec(adp) :: Nil
         }
       case set@SetCommand(kv) =>
         ExecutedCommandExec(CarbonSetCommand(set)) :: Nil
