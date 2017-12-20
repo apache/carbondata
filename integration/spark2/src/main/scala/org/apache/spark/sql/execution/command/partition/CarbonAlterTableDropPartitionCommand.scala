@@ -23,6 +23,7 @@ import java.util.concurrent.{Executors, ExecutorService, Future}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command._
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.util.AlterTableUtil
@@ -60,7 +61,7 @@ case class CarbonAlterTableDropPartitionCommand(
     val relation = carbonMetaStore.lookupRelation(Option(dbName), tableName)(sparkSession)
       .asInstanceOf[CarbonRelation]
     val tablePath = relation.carbonTable.getTablePath
-    carbonMetaStore.checkSchemasModifiedTimeAndReloadTables()
+    carbonMetaStore.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
     if (relation == null) {
       sys.error(s"Table $dbName.$tableName does not exist")
     }

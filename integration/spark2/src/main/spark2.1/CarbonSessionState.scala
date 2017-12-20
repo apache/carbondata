@@ -108,7 +108,7 @@ class CarbonSessionCatalog(
     var isRefreshed = false
     val storePath = CarbonProperties.getStorePath
     carbonEnv.carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables()
+      checkSchemasModifiedTimeAndReloadTable(identifier)
 
     val table = carbonEnv.carbonMetastore.getTableFromMetadataCache(
       carbonDatasourceHadoopRelation.carbonTable.getDatabaseName,
