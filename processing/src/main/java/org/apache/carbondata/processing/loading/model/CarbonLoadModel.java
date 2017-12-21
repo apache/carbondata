@@ -564,7 +564,11 @@ public class CarbonLoadModel implements Serializable {
    * @return
    */
   public LoadMetadataDetails getCurrentLoadMetadataDetail() {
-    return loadMetadataDetails.get(loadMetadataDetails.size() - 1);
+    if (loadMetadataDetails != null && loadMetadataDetails.size() > 0) {
+      return loadMetadataDetails.get(loadMetadataDetails.size() - 1);
+    } else {
+      return null;
+    }
   }
 
   /**

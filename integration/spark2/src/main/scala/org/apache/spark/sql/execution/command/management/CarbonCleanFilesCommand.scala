@@ -18,7 +18,10 @@
 package org.apache.spark.sql.execution.command.management
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.expressions.Expression
 import org.apache.spark.sql.execution.command.{Checker, DataCommand}
+import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.api.CarbonStore
 import org.apache.carbondata.core.util.CarbonProperties
@@ -76,13 +79,21 @@ case class CarbonCleanFilesCommand(
   private def cleanGarbageData(sparkSession: SparkSession,
       databaseNameOp: Option[String], tableName: String): Unit = {
     val carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
-
+    val partitions: Option[Seq[String]] = if (carbonTable.isHivePartitionTable) {
+      Some(CarbonFilters.getPartitions(
+        Seq.empty[Expression],
+        sparkSession,
+        TableIdentifier(tableName, databaseNameOp)))
+    } else {
+      None
+    }
     CarbonStore.cleanFiles(
       CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession),
       tableName,
       CarbonProperties.getStorePath,
       carbonTable,
-      forceTableClean)
+      forceTableClean,
+      partitions)
   }
 
   private def cleanGarbageDataInAllTables(sparkSession: SparkSession): Unit = {

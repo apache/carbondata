@@ -39,34 +39,51 @@ public class CarbonIndexFileMergeWriter {
   /**
    * Merge all the carbonindex files of segment to a  merged file
    * @param segmentPath
+   * @param indexFileNamesTobeAdded while merging it comsiders only these files.
+   *                                If null then consider all
    * @throws IOException
    */
-  public void mergeCarbonIndexFilesOfSegment(String segmentPath) throws IOException {
+  public void mergeCarbonIndexFilesOfSegment(
+      String segmentPath,
+      List<String> indexFileNamesTobeAdded) throws IOException {
     CarbonFile[] indexFiles = SegmentIndexFileStore.getCarbonIndexFiles(segmentPath);
-    if (isCarbonIndexFilePresent(indexFiles)) {
+    if (isCarbonIndexFilePresent(indexFiles) || indexFileNamesTobeAdded != null) {
       SegmentIndexFileStore fileStore = new SegmentIndexFileStore();
       fileStore.readAllIIndexOfSegment(segmentPath);
-      openThriftWriter(
-          segmentPath + "/" +
-              System.currentTimeMillis() + CarbonTablePath.MERGE_INDEX_FILE_EXT);
       Map<String, byte[]> indexMap = fileStore.getCarbonIndexMap();
       MergedBlockIndexHeader indexHeader = new MergedBlockIndexHeader();
       MergedBlockIndex mergedBlockIndex = new MergedBlockIndex();
       List<String> fileNames = new ArrayList<>(indexMap.size());
       List<ByteBuffer> data = new ArrayList<>(indexMap.size());
       for (Map.Entry<String, byte[]> entry : indexMap.entrySet()) {
-        fileNames.add(entry.getKey());
-        data.add(ByteBuffer.wrap(entry.getValue()));
+        if (indexFileNamesTobeAdded == null ||
+            indexFileNamesTobeAdded.contains(entry.getKey())) {
+          fileNames.add(entry.getKey());
+          data.add(ByteBuffer.wrap(entry.getValue()));
+        }
       }
-      indexHeader.setFile_names(fileNames);
-      mergedBlockIndex.setFileData(data);
-      writeMergedBlockIndexHeader(indexHeader);
-      writeMergedBlockIndex(mergedBlockIndex);
-      close();
+      if (fileNames.size() > 0) {
+        openThriftWriter(
+            segmentPath + "/" + System.currentTimeMillis() + CarbonTablePath.MERGE_INDEX_FILE_EXT);
+        indexHeader.setFile_names(fileNames);
+        mergedBlockIndex.setFileData(data);
+        writeMergedBlockIndexHeader(indexHeader);
+        writeMergedBlockIndex(mergedBlockIndex);
+        close();
+      }
       for (CarbonFile indexFile : indexFiles) {
         indexFile.delete();
       }
     }
+  }
+
+  /**
+   * Merge all the carbonindex files of segment to a  merged file
+   * @param segmentPath
+   * @throws IOException
+   */
+  public void mergeCarbonIndexFilesOfSegment(String segmentPath) throws IOException {
+    mergeCarbonIndexFilesOfSegment(segmentPath, null);
   }
 
   private boolean isCarbonIndexFilePresent(CarbonFile[] indexFiles) {

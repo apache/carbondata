@@ -393,6 +393,9 @@ public final class CarbonLoaderUtil {
     SegmentStatus loadStatus = SegmentStatus.MARKED_FOR_DELETE;
     // always the last entry in the load metadata details will be the current load entry
     LoadMetadataDetails loadMetaEntry = model.getCurrentLoadMetadataDetail();
+    if (loadMetaEntry == null) {
+      return;
+    }
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp(), true);
     boolean entryAdded =

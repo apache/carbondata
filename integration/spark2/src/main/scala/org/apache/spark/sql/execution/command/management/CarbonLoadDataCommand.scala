@@ -34,14 +34,15 @@ import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
-import org.apache.spark.sql.catalyst.catalog.{CatalogRelation, CatalogTable}
-import org.apache.spark.sql.catalyst.expressions.Attribute
+import org.apache.spark.sql.catalyst.catalog.CatalogTable
+import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, Project}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 import org.apache.spark.sql.execution.command.{DataCommand, DataLoadTableFileMapping, UpdateTableModel}
 import org.apache.spark.sql.execution.datasources.{CarbonFileFormat, CatalogFileIndex, HadoopFsRelation, LogicalRelation}
 import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.types.{StringType, StructField, StructType, TimestampType}
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils}
@@ -52,6 +53,7 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.dictionary.server.{DictionaryServer, NonSecureDictionaryServer}
 import org.apache.carbondata.core.dictionary.service.NonSecureDictionaryServiceProvider
+import org.apache.carbondata.core.metadata.PartitionMapFileStore
 import org.apache.carbondata.core.metadata.encoder.Encoding
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension
@@ -453,16 +455,28 @@ case class CarbonLoadDataCommand(
       hadoopConf: Configuration,
       dataFrame: Option[DataFrame]) = {
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    val identifier = TableIdentifier(table.getTableName, Some(table.getDatabaseName))
     val logicalPlan =
       sparkSession.sessionState.catalog.lookupRelation(
-        TableIdentifier(table.getTableName, Some(table.getDatabaseName)))
+        identifier)
     val relation = logicalPlan.collect {
       case l: LogicalRelation => l
-      case c: CatalogRelation => c
+      case c // To make compatabile with spark 2.1 and 2.2 we need to compare classes
+        if (c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
+            c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
+            c.getClass.getName.equals(
+              "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) => c
     }.head
-
+    // Clean up the old invalid segment data.
+    DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false, table)
+    val currentPartitions =
+      CarbonFilters.getPartitions(Seq.empty[Expression], sparkSession, identifier)
+    // Clean up the alreday dropped partitioned data
+    new PartitionMapFileStore().cleanSegments(table, currentPartitions.asJava, false)
     // Converts the data to carbon understandable format. The timestamp/date format data needs to
     // converted to hive standard fomat to let spark understand the data to partition.
+    val serializationNullFormat =
+      carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
     val query: LogicalPlan = if (dataFrame.isDefined) {
       var timeStampformatString = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
       val timeStampFormat = new SimpleDateFormat(timeStampformatString)
@@ -545,13 +559,15 @@ case class CarbonLoadDataCommand(
           jobConf).map{ case (key, value) =>
             val data = new Array[Any](len)
             var i = 0
-            while (i < len) {
+            val input = value.get()
+            while (i < input.length) {
               // TODO find a way to avoid double conversion of date and time.
               data(i) = CarbonScalaUtil.convertToUTF8String(
-                value.get()(i),
+                input(i),
                 rowDataTypes(i),
                 timeStampFormat,
-                dateFormat)
+                dateFormat,
+                serializationNullFormat)
               i = i + 1
             }
             InternalRow.fromSeq(data)
@@ -576,7 +592,7 @@ case class CarbonLoadDataCommand(
           isOverwriteTable,
           carbonLoadModel,
           sparkSession)
-      case c: CatalogRelation =>
+      case others =>
         val catalogTable = CarbonReflectionUtils.getFieldOfCatalogTable(
           "tableMeta",
           relation).asInstanceOf[CatalogTable]
@@ -587,7 +603,7 @@ case class CarbonLoadDataCommand(
         val catalog = new CatalogFileIndex(sparkSession, catalogTable, sizeInBytes)
         convertToLogicalRelation(
           catalogTable,
-          c.output,
+          others.output,
           sizeInBytes,
           isOverwriteTable,
           carbonLoadModel,
@@ -642,6 +658,7 @@ case class CarbonLoadDataCommand(
     options += (("onepass", loadModel.getUseOnePass.toString))
     options += (("dicthost", loadModel.getDictionaryServerHost))
     options += (("dictport", loadModel.getDictionaryServerPort.toString))
+    options ++= this.options
     if (updateModel.isDefined) {
       options += (("updatetimestamp", updateModel.get.updatedTimeStamp.toString))
     }
