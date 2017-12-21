@@ -62,6 +62,7 @@ import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusMan
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.exception.PreEventException
 import org.apache.carbondata.format
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.TableProcessingOperations
@@ -238,6 +239,9 @@ case class CarbonLoadDataCommand(
           CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
           LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")
           throw new RuntimeException(s"Dataload failure for $dbName.$tableName, ${ex.getMessage}")
+        // In case of event related exception
+        case preEventEx: PreEventException =>
+          throw new AnalysisException(preEventEx.getMessage)
         case ex: Exception =>
           LOGGER.error(ex)
           // update the load entry in table status file for changing the status to marked for delete
