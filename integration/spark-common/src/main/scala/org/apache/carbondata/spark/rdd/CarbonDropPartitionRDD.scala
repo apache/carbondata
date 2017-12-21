@@ -94,10 +94,11 @@ class CarbonDropPartitionRDD(
  * @param tablePath
  * @param segments segments to be merged
  */
-class CarbonDropPartitionRollbackRDD(
+class CarbonDropPartitionCommitRDD(
     sc: SparkContext,
     tablePath: String,
     segments: Seq[String],
+    success: Boolean,
     uniqueId: String)
   extends CarbonRDD[String](sc, Nil) {
 
@@ -112,7 +113,7 @@ class CarbonDropPartitionRollbackRDD(
       val split = theSplit.asInstanceOf[CarbonDropPartition]
       logInfo("Commit partition information from : " + split.segmentPath)
 
-      new PartitionMapFileStore().commitPartitions(split.segmentPath, uniqueId, false)
+      new PartitionMapFileStore().commitPartitions(split.segmentPath, uniqueId, success)
 
       var havePair = false
       var finished = false

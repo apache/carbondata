@@ -32,7 +32,7 @@ import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
-import org.apache.carbondata.spark.rdd.{CarbonDropPartitionRDD, CarbonDropPartitionRollbackRDD}
+import org.apache.carbondata.spark.rdd.{CarbonDropPartitionCommitRDD, CarbonDropPartitionRDD}
 
 /**
  * Drop the partitions from hive and carbon store. It drops the partitions in following steps
@@ -118,20 +118,28 @@ case class CarbonStandardAlterTableDropPartition(
       } catch {
         case e: Exception =>
           // roll back the drop partitions from carbon store
-          new CarbonDropPartitionRollbackRDD(sparkSession.sparkContext,
+          new CarbonDropPartitionCommitRDD(sparkSession.sparkContext,
             table.getTablePath,
             segments.asScala,
+            false,
             uniqueId).collect()
           throw e
       }
+      // commit the drop partitions from carbon store
+      new CarbonDropPartitionCommitRDD(sparkSession.sparkContext,
+        table.getTablePath,
+        segments.asScala,
+        true,
+        uniqueId).collect()
+      // Update the loadstatus with update time to clear cache from driver.
       val segmentSet = new util.HashSet[String](new SegmentStatusManager(table
         .getAbsoluteTableIdentifier).getValidAndInvalidSegments.getValidSegments)
-      CarbonUpdateUtil
-        .updateTableMetadataStatus(segmentSet,
-          table,
-          uniqueId,
-          true,
-          new util.ArrayList[String])
+      CarbonUpdateUtil.updateTableMetadataStatus(
+        segmentSet,
+        table,
+        uniqueId,
+        true,
+        new util.ArrayList[String])
       DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
     } finally {
       AlterTableUtil.releaseLocks(locks)
