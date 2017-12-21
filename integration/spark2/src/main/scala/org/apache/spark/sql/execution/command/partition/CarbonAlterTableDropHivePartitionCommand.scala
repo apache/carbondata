@@ -48,7 +48,7 @@ import org.apache.carbondata.spark.rdd.{CarbonDropPartitionCommitRDD, CarbonDrop
  * @param purge
  * @param retainData
  */
-case class CarbonStandardAlterTableDropPartition(
+case class CarbonAlterTableDropHivePartitionCommand(
     tableName: TableIdentifier,
     specs: Seq[TablePartitionSpec],
     ifExists: Boolean,
