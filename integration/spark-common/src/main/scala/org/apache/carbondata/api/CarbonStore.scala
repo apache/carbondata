@@ -30,7 +30,7 @@ import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
-import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, PartitionMapFileStore}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
@@ -103,7 +103,8 @@ object CarbonStore {
       tableName: String,
       storePath: String,
       carbonTable: CarbonTable,
-      forceTableClean: Boolean): Unit = {
+      forceTableClean: Boolean,
+      currentTablePartitions: Option[Seq[String]] = None): Unit = {
     LOGGER.audit(s"The clean files request has been received for $dbName.$tableName")
     var carbonCleanFilesLock: ICarbonLock = null
     var absoluteTableIdentifier: AbsoluteTableIdentifier = null
@@ -128,6 +129,11 @@ object CarbonStore {
         DataLoadingUtil.deleteLoadsAndUpdateMetadata(
           isForceDeletion = true, carbonTable)
         CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, true)
+        currentTablePartitions match {
+          case Some(partitions) =>
+            new PartitionMapFileStore().cleanSegments(carbonTable, partitions.asJava, true)
+          case _ =>
+        }
       }
     } finally {
       if (carbonCleanFilesLock != null) {

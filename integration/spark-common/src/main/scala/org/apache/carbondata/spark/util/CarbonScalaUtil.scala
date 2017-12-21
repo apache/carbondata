@@ -157,16 +157,25 @@ object CarbonScalaUtil {
   def convertToUTF8String(value: String,
       dataType: DataType,
       timeStampFormat: SimpleDateFormat,
-      dateFormat: SimpleDateFormat): UTF8String = {
-    dataType match {
-      case TimestampType =>
-        UTF8String.fromString(
-          DateTimeUtils.timestampToString(timeStampFormat.parse(value).getTime * 1000))
-      case DateType =>
-        UTF8String.fromString(
-          DateTimeUtils.dateToString(
-            (dateFormat.parse(value).getTime / DateTimeUtils.MILLIS_PER_DAY).toInt))
-      case _ => UTF8String.fromString(value)
+      dateFormat: SimpleDateFormat,
+      serializationNullFormat: String): UTF8String = {
+    if (value == null || serializationNullFormat.equals(value)) {
+      return UTF8String.fromString(value)
+    }
+    try {
+      dataType match {
+        case TimestampType =>
+          UTF8String.fromString(
+            DateTimeUtils.timestampToString(timeStampFormat.parse(value).getTime * 1000))
+        case DateType =>
+          UTF8String.fromString(
+            DateTimeUtils.dateToString(
+              (dateFormat.parse(value).getTime / DateTimeUtils.MILLIS_PER_DAY).toInt))
+        case _ => UTF8String.fromString(value)
+      }
+    } catch {
+      case e: Exception =>
+        UTF8String.fromString(value)
     }
   }
 

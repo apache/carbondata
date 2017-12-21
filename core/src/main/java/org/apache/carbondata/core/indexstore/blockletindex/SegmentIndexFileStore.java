@@ -42,7 +42,7 @@ public class SegmentIndexFileStore {
    */
   private Map<String, byte[]> carbonIndexMap;
 
-  public SegmentIndexFileStore() throws IOException {
+  public SegmentIndexFileStore() {
     carbonIndexMap = new HashMap<>();
   }
 

@@ -189,7 +189,14 @@ private class CarbonOutputWriter(path: String,
   extends OutputWriter with AbstractCarbonOutputWriter {
   val partitions = getPartitionsFromPath(path, context).map(ExternalCatalogUtils.unescapePathName)
   val partitionData = if (partitions.nonEmpty) {
-    partitions.map(_.split("=")(1))
+    partitions.map{ p =>
+      val splitData = p.split("=")
+      if (splitData.length > 1) {
+        splitData(1)
+      } else {
+        ""
+      }
+    }
   } else {
     Array.empty
   }

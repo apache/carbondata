@@ -21,9 +21,13 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.impl.FileFactory
+import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonTablePath
 
-class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAll {
+class StandardPartitionTableCleanTestCase extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll {
     dropTable
@@ -45,21 +49,27 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
 
   }
 
-  test("show partitions on partition table") {
-    sql(
-      """
-        | CREATE TABLE partitionshow (designation String, doj Timestamp,
-        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Date,attendance int,
-        |  utilization int,salary int)
-        | PARTITIONED BY (empno int, empname String)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionshow OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
-    checkExistence(sql(s"""SHOW PARTITIONS partitionshow"""), true, "empno=11", "empno=12")
+  def validateDataFiles(tableUniqueName: String, segmentId: String, partitions: Int, partitionMapFiles: Int): Unit = {
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable(tableUniqueName)
+    val tablePath = new CarbonTablePath(carbonTable.getCarbonTableIdentifier,
+      carbonTable.getTablePath)
+    val segmentDir = tablePath.getCarbonDataDirectoryPath("0", segmentId)
+    val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
+    val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
+      override def accept(file: CarbonFile): Boolean = {
+        return file.getName.endsWith(".carbondata")
+      }
+    })
+    assert(dataFiles.length == partitions)
+    val partitionFile = carbonFile.listFiles(new CarbonFileFilter() {
+      override def accept(file: CarbonFile): Boolean = {
+        return file.getName.endsWith(".partitionmap")
+      }
+    })
+    assert(partitionFile.length == partitionMapFiles)
   }
 
-  test("droping on partition table for int partition column") {
+  test("clean up partition table for int partition column") {
     sql(
       """
         | CREATE TABLE partitionone (empname String, designation String, doj Timestamp,
@@ -79,15 +89,18 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
       sql(s"""select count (*) from originTable where empno=11"""))
 
     sql(s"""ALTER TABLE partitionone DROP PARTITION(empno='11')""")
+    validateDataFiles("default_partitionone", "0", 10, 2)
+    sql(s"CLEAN FILES FOR TABLE partitionone").show()
 
     checkExistence(sql(s"""SHOW PARTITIONS partitionone"""), false, "empno=11")
-
+    validateDataFiles("default_partitionone", "0", 9, 1)
     checkAnswer(
       sql(s"""select count (*) from partitionone where empno=11"""),
       Seq(Row(0)))
+
   }
 
-    test("dropping partition on table for more partition columns") {
+    test("clean up partition on table for more partition columns") {
       sql(
         """
           | CREATE TABLE partitionmany (empno int, empname String, designation String,
@@ -100,13 +113,18 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmany OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
       sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmany OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
       sql(s"""ALTER TABLE partitionmany DROP PARTITION(deptname='Learning')""")
+      validateDataFiles("default_partitionmany", "0", 10, 2)
+      validateDataFiles("default_partitionmany", "1", 10, 2)
+      sql(s"CLEAN FILES FOR TABLE partitionmany").show()
+      validateDataFiles("default_partitionmany", "0", 8, 1)
+      validateDataFiles("default_partitionmany", "1", 8, 1)
       checkExistence(sql(s"""SHOW PARTITIONS partitionmany"""), false, "deptname=Learning", "projectcode=928479")
       checkAnswer(
         sql(s"""select count (*) from partitionmany where deptname='Learning'"""),
         Seq(Row(0)))
     }
 
-  test("dropping all partition on table") {
+  test("clean up after dropping all partition on table") {
     sql(
       """
         | CREATE TABLE partitionall (empno int, empname String, designation String,
@@ -124,35 +142,12 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
     sql(s"""ALTER TABLE partitionall DROP PARTITION(deptname='protocol')""")
     sql(s"""ALTER TABLE partitionall DROP PARTITION(deptname='security')""")
     assert(sql(s"""SHOW PARTITIONS partitionall""").collect().length == 0)
+    validateDataFiles("default_partitionall", "0", 10, 6)
+    sql(s"CLEAN FILES FOR TABLE partitionall").show()
+    validateDataFiles("default_partitionall", "0", 0, 0)
     checkAnswer(
       sql(s"""select count (*) from partitionall"""),
       Seq(Row(0)))
-  }
-
-  test("dropping static partition on table") {
-    sql(
-      """
-        | CREATE TABLE staticpartition (empno int, doj Timestamp,
-        |  workgroupcategoryname String, deptno int,
-        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
-        |  utilization int,salary int,workgroupcategory int, empname String, designation String)
-        | PARTITIONED BY (deptname String)
-        | STORED BY 'org.apache.carbondata.format'
-      """.stripMargin)
-    sql(s"""insert into staticpartition PARTITION(deptname='software') select empno,doj,workgroupcategoryname,deptno,projectcode,projectjoindate,projectenddate,attendance,utilization,salary,workgroupcategory,empname,designation from originTable""")
-
-    checkExistence(sql(s"""SHOW PARTITIONS staticpartition"""), true, "deptname=software")
-    assert(sql(s"""SHOW PARTITIONS staticpartition""").collect().length == 1)
-    sql(s"""ALTER TABLE staticpartition DROP PARTITION(deptname='software')""")
-    checkAnswer(
-      sql(s"""select count (*) from staticpartition"""),
-      Seq(Row(0)))
-    sql(s"""insert into staticpartition select empno,doj,workgroupcategoryname,deptno,projectcode,projectjoindate,projectenddate,attendance,utilization,salary,workgroupcategory,empname,designation,deptname from originTable""")
-    checkExistence(sql(s"""SHOW PARTITIONS staticpartition"""), true, "deptname=protocol")
-    checkAnswer(
-      sql(s"""select count (*) from staticpartition"""),
-      sql(s"""select count (*) from originTable"""))
-
   }
 
   override def afterAll = {

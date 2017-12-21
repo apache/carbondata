@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.filesystem.CarbonFile;
@@ -38,8 +39,18 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
 import org.apache.carbondata.core.fileoperations.FileWriteOperation;
+import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
+import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
+import org.apache.carbondata.core.mutate.CarbonUpdateUtil;
+import org.apache.carbondata.core.statusmanager.LoadMetadataDetails;
+import org.apache.carbondata.core.statusmanager.SegmentStatus;
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataFileFooterConverter;
+import org.apache.carbondata.core.util.path.CarbonStorePath;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
+import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
 
 import com.google.gson.Gson;
 
@@ -134,6 +145,31 @@ public class PartitionMapFileStore {
     }
   }
 
+  private String getPartitionFilePath(String segmentPath) {
+    CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
+    if (carbonFile.exists()) {
+      CarbonFile[] partitionFiles = carbonFile.listFiles(new CarbonFileFilter() {
+        @Override public boolean accept(CarbonFile file) {
+          return file.getName().endsWith(CarbonTablePath.PARTITION_MAP_EXT);
+        }
+      });
+      if (partitionFiles != null && partitionFiles.length > 0) {
+        partionedSegment = true;
+        int i = 0;
+        // Get the latest partition map file based on the timestamp of that file.
+        long[] partitionTimestamps = new long[partitionFiles.length];
+        for (CarbonFile file : partitionFiles) {
+          partitionTimestamps[i++] = Long.parseLong(file.getName()
+              .substring(0, file.getName().length() - CarbonTablePath.PARTITION_MAP_EXT.length()));
+        }
+        Arrays.sort(partitionTimestamps);
+        return segmentPath + "/" + partitionTimestamps[partitionTimestamps.length - 1]
+            + CarbonTablePath.PARTITION_MAP_EXT;
+      }
+    }
+    return null;
+  }
+
   private CarbonFile[] getPartitionFiles(String segmentPath) {
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
     if (carbonFile.exists()) {
@@ -179,22 +215,15 @@ public class PartitionMapFileStore {
     return partitionMapper;
   }
 
+  /**
+   * Reads all partitions which existed inside the passed segment path
+   * @param segmentPath
+   */
   public void readAllPartitionsOfSegment(String segmentPath) {
-    CarbonFile[] partitionFiles = getPartitionFiles(segmentPath);
-    if (partitionFiles != null && partitionFiles.length > 0) {
+    String partitionFilePath = getPartitionFilePath(segmentPath);
+    if (partitionFilePath != null) {
       partionedSegment = true;
-      int i = 0;
-      // Get the latest partition map file based on the timestamp of that file.
-      long [] partitionTimestamps = new long[partitionFiles.length];
-      for (CarbonFile file : partitionFiles) {
-        partitionTimestamps[i++] =
-            Long.parseLong(file.getName().substring(
-                0, file.getName().length() - CarbonTablePath.PARTITION_MAP_EXT.length()));
-      }
-      Arrays.sort(partitionTimestamps);
-      PartitionMapper partitionMapper = readPartitionMap(
-          segmentPath + "/" + partitionTimestamps[partitionTimestamps.length - 1]
-              + CarbonTablePath.PARTITION_MAP_EXT);
+      PartitionMapper partitionMapper = readPartitionMap(partitionFilePath);
       partitionMap.putAll(partitionMapper.getPartitionMap());
     }
   }
@@ -249,6 +278,96 @@ public class PartitionMapFileStore {
         carbonFile.renameForce(segmentPath + "/" + uniqueId + CarbonTablePath.PARTITION_MAP_EXT);
       } else {
         carbonFile.delete();
+      }
+    }
+  }
+
+  /**
+   * Clean up invalid data after drop partition in all segments of table
+   * @param table
+   * @param currentPartitions Current partitions of table
+   * @param forceDelete Whether it should be deleted force or check the time for an hour creation
+   *                    to delete data.
+   * @throws IOException
+   */
+  public void cleanSegments(
+      CarbonTable table,
+      List<String> currentPartitions,
+      boolean forceDelete) throws IOException {
+    SegmentStatusManager ssm = new SegmentStatusManager(table.getAbsoluteTableIdentifier());
+
+    CarbonTablePath carbonTablePath = CarbonStorePath
+        .getCarbonTablePath(table.getAbsoluteTableIdentifier().getTablePath(),
+            table.getAbsoluteTableIdentifier().getCarbonTableIdentifier());
+
+    LoadMetadataDetails[] details = ssm.readLoadMetadata(table.getMetaDataFilepath());
+    // scan through each segment.
+
+    for (LoadMetadataDetails segment : details) {
+
+      // if this segment is valid then only we will go for deletion of related
+      // dropped partition files. if the segment is mark for delete or compacted then any way
+      // it will get deleted.
+
+      if (segment.getSegmentStatus() == SegmentStatus.SUCCESS
+          || segment.getSegmentStatus() == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
+        List<String> toBeDeletedIndexFiles = new ArrayList<>();
+        List<String> toBeDeletedDataFiles = new ArrayList<>();
+        // take the list of files from this segment.
+        String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", segment.getLoadName());
+        String partitionFilePath = getPartitionFilePath(segmentPath);
+        if (partitionFilePath != null) {
+          PartitionMapper partitionMapper = readPartitionMap(partitionFilePath);
+          DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
+          SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
+          indexFileStore.readAllIIndexOfSegment(segmentPath);
+          Set<String> indexFilesFromSegment = indexFileStore.getCarbonIndexMap().keySet();
+          for (String indexFile : indexFilesFromSegment) {
+            // Check the partition information in the partiton mapper
+            List<String> indexPartitions = partitionMapper.partitionMap.get(indexFile);
+            if (indexPartitions == null || !currentPartitions.containsAll(indexPartitions)) {
+              Long fileTimestamp = CarbonUpdateUtil.getTimeStampAsLong(indexFile
+                  .substring(indexFile.lastIndexOf(CarbonCommonConstants.HYPHEN) + 1,
+                      indexFile.length() - CarbonTablePath.INDEX_FILE_EXT.length()));
+              if (CarbonUpdateUtil.isMaxQueryTimeoutExceeded(fileTimestamp) || forceDelete) {
+                toBeDeletedIndexFiles.add(indexFile);
+                // Add the corresponding carbondata files to the delete list.
+                byte[] fileData = indexFileStore.getFileData(indexFile);
+                List<DataFileFooter> indexInfo =
+                    fileFooterConverter.getIndexInfo(segmentPath + "/" + indexFile, fileData);
+                for (DataFileFooter footer : indexInfo) {
+                  toBeDeletedDataFiles.add(footer.getBlockInfo().getTableBlockInfo().getFilePath());
+                }
+              }
+            }
+          }
+
+          if (toBeDeletedIndexFiles.size() > 0) {
+            indexFilesFromSegment.removeAll(toBeDeletedIndexFiles);
+            new CarbonIndexFileMergeWriter().mergeCarbonIndexFilesOfSegment(segmentPath,
+                new ArrayList<String>(indexFilesFromSegment));
+            for (String dataFile : toBeDeletedDataFiles) {
+              FileFactory.deleteFile(dataFile, FileFactory.getFileType(dataFile));
+            }
+          }
+          CarbonFile[] partitionFiles = getPartitionFiles(segmentPath);
+          CarbonFile currentPartitionFile = FileFactory.getCarbonFile(partitionFilePath);
+          if (partitionFiles != null) {
+            // Delete all old partition files
+            for (CarbonFile partitionFile : partitionFiles) {
+              if (!currentPartitionFile.getName().equalsIgnoreCase(partitionFile.getName())) {
+                partitionFile.delete();
+              }
+            }
+          }
+          partitionMapper = readPartitionMap(partitionFilePath);
+          if (partitionMapper != null) {
+            // delete partition map if there is no partition files exist
+            if (partitionMapper.partitionMap.size() == 0) {
+              currentPartitionFile.delete();
+            }
+          }
+        }
       }
     }
   }
