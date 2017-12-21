@@ -67,7 +67,7 @@ class C2DataMapFactory() extends DataMapFactory {
 class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
   def buildTestData(numRows: Int): DataFrame = {
     import sqlContext.implicits._
-    sqlContext.sparkContext.parallelize(1 to numRows)
+    sqlContext.sparkContext.parallelize(1 to numRows, 1)
       .map(x => ("a" + x, "b", x))
       .toDF("c1", "c2", "c3")
   }

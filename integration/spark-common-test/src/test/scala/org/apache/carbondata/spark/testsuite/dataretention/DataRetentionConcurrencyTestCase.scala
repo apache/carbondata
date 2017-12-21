@@ -93,7 +93,8 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
         LOGGER.info("Executing :" + Thread.currentThread().getName)
         sql(query)
       } catch {
-        case _: Exception =>
+        case ex: Exception =>
+          ex.printStackTrace()
           result = "FAIL"
       }
       result

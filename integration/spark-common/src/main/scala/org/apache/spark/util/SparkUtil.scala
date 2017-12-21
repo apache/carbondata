@@ -17,10 +17,12 @@
 
 package org.apache.spark.util
 
+import scala.collection.mutable.ArrayBuffer
+
 import org.apache.hadoop.conf.Configuration
 import org.apache.hadoop.io.{LongWritable, Text}
 import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
-import org.apache.spark.{SparkContext, TaskContext}
+import org.apache.spark.{SparkContext, TaskContext, TaskContextImpl}
 import org.apache.spark.rdd.{NewHadoopPartition, NewHadoopRDD}
 
 import org.apache.carbondata.processing.loading.csvinput.BlockDetails
@@ -29,6 +31,21 @@ import org.apache.carbondata.processing.loading.csvinput.BlockDetails
  * this object use to handle file splits
  */
 object SparkUtil {
+
+  def removeInvalidListener(context: TaskContext) : Unit = {
+    val field = classOf[TaskContextImpl].getDeclaredField("onCompleteCallbacks")
+    field.setAccessible(true)
+    val listeners = field.get(context).asInstanceOf[ArrayBuffer[TaskCompletionListener]]
+    if (null != listeners) {
+      if (listeners.length > 0) {
+        (listeners.length - 1 to 0).foreach { index =>
+          if (null == listeners(index)) {
+            listeners.remove(index)
+          }
+        }
+      }
+    }
+  }
 
   def setTaskContext(context: TaskContext): Unit = {
     val localThreadContext = TaskContext.get()
