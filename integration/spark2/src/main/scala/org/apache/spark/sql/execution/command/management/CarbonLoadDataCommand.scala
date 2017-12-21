@@ -38,6 +38,7 @@ import org.apache.spark.sql.catalyst.catalog.{CatalogRelation, CatalogTable}
 import org.apache.spark.sql.catalyst.expressions.Attribute
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, Project}
 import org.apache.spark.sql.execution.LogicalRDD
+import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 import org.apache.spark.sql.execution.command.{DataCommand, DataLoadTableFileMapping, UpdateTableModel}
 import org.apache.spark.sql.execution.datasources.{CarbonFileFormat, CatalogFileIndex, HadoopFsRelation, LogicalRelation}
 import org.apache.spark.sql.hive.CarbonRelation
@@ -490,7 +491,24 @@ case class CarbonLoadDataCommand(
         }
         InternalRow.fromSeq(data)
       }
-      LogicalRDD(attributes, rdd)(sparkSession)
+      if (updateModel.isDefined) {
+        sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
+        // In case of update, we don't need the segmrntid column in case of partitioning
+        val dropAttributes = attributes.dropRight(1)
+        val finalOutput = relation.output.map { attr =>
+          dropAttributes.find { d =>
+            val index = d.name.lastIndexOf("-updatedColumn")
+            if (index > 0) {
+              d.name.substring(0, index).equalsIgnoreCase(attr.name)
+            } else {
+              d.name.equalsIgnoreCase(attr.name)
+            }
+          }.get
+        }
+        Project(finalOutput, LogicalRDD(attributes, rdd)(sparkSession))
+      } else {
+        LogicalRDD(attributes, rdd)(sparkSession)
+      }
 
     } else {
       var timeStampformatString = carbonLoadModel.getTimestampformat
@@ -618,6 +636,9 @@ case class CarbonLoadDataCommand(
     options += (("onepass", loadModel.getUseOnePass.toString))
     options += (("dicthost", loadModel.getDictionaryServerHost))
     options += (("dictport", loadModel.getDictionaryServerPort.toString))
+    if (updateModel.isDefined) {
+      options += (("updatetimestamp", updateModel.get.updatedTimeStamp.toString))
+    }
     val hdfsRelation = HadoopFsRelation(
       location = catalog,
       partitionSchema = partitionSchema,
