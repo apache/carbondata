@@ -701,10 +701,11 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       handoffSize = 1024L * 200
     )
     val segments = sql("show segments for table streaming.stream_table_handoff").collect()
-    assertResult(3)(segments.length)
+    assert(segments.length == 3 || segments.length == 4)
     assertResult("Streaming")(segments(0).getString(1))
-    assertResult("Streaming Finish")(segments(1).getString(1))
-    assertResult("Streaming Finish")(segments(2).getString(1))
+    (1 to segments.length - 1).foreach { index =>
+      assertResult("Streaming Finish")(segments(index).getString(1))
+    }
     checkAnswer(
       sql("select count(*) from streaming.stream_table_handoff"),
       Seq(Row(6 * 10000))
@@ -741,11 +742,11 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("show segments for table streaming.stream_table_finish").show(100, false)
 
     val segments = sql("show segments for table streaming.stream_table_finish").collect()
-    assertResult(4)(segments.length)
-    assertResult("Streaming Finish")(segments(0).getString(1))
-    assertResult("Streaming Finish")(segments(1).getString(1))
-    assertResult("Streaming Finish")(segments(2).getString(1))
-    assertResult("Success")(segments(3).getString(1))
+    assert(segments.length == 4 || segments.length == 5)
+    (0 to segments.length -2).foreach { index =>
+      assertResult("Streaming Finish")(segments(index).getString(1))
+    }
+    assertResult("Success")(segments(segments.length - 1).getString(1))
     checkAnswer(
       sql("select count(*) from streaming.stream_table_finish"),
       Seq(Row(5 + 6 * 10000))
