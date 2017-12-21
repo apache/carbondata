@@ -89,6 +89,12 @@ public class DirectDictionaryFieldConverterImpl extends AbstractDictionaryFieldC
     }
   }
 
+  /**
+   * Method to clean the dictionary cache. In this instance nothing to clear.
+   */
+  @Override public void clear() {
+  }
+
   @Override
   public void fillColumnCardinality(List<Integer> cardinality) {
     cardinality.add(Integer.MAX_VALUE);
