@@ -36,9 +36,11 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
+import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonStorePath
-import org.apache.carbondata.events.{AlterTableCompactionPostEvent, AlterTableCompactionPreEvent, AlterTableCompactionPreStatusUpdateEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{AlterTableCompactionPostEvent, AlterTableCompactionPreEvent,
+AlterTableCompactionPreStatusUpdateEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
@@ -56,7 +58,7 @@ case class CarbonAlterTableCompactionCommand(
 
   override def processData(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService =
-    LogServiceFactory.getLogService(this.getClass.getName)
+      LogServiceFactory.getLogService(this.getClass.getName)
     val tableName = alterTableModel.tableName.toLowerCase
     val databaseName = alterTableModel.dbName.getOrElse(sparkSession.catalog.currentDatabase)
 
@@ -77,6 +79,14 @@ case class CarbonAlterTableCompactionCommand(
         throw new NoSuchTableException(databaseName, tableName)
       }
       relation.carbonTable
+    }
+
+    val isLoadInProgress = SegmentStatusManager.checkIfAnyLoadInProgressForTable(table)
+    if (isLoadInProgress) {
+      val message = "Cannot run data loading and compaction on same table concurrently. " +
+                    "Please wait for load to finish"
+      LOGGER.error(message)
+      throw new Exception(message)
     }
 
     val carbonLoadModel = new CarbonLoadModel()
@@ -162,7 +172,7 @@ case class CarbonAlterTableCompactionCommand(
     }
 
     // reading the start time of data load.
-    val loadStartTime : Long =
+    val loadStartTime: Long =
       if (alterTableModel.factTimeStamp.isEmpty) {
         CarbonUpdateUtil.readCurrentTime
       } else {
