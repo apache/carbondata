@@ -18,11 +18,13 @@
 package org.apache.carbondata.processing.sort.sortdata;
 
 import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,14 +33,11 @@ import java.util.concurrent.Future;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
-import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
+import org.apache.carbondata.core.datastore.compression.CompressorFactory;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
-import org.apache.carbondata.core.util.NonDictionaryUtil;
+import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 
 public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHolder> {
@@ -73,21 +72,6 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    * return row
    */
   private Object[] returnRow;
-
-  /**
-   * number of measures
-   */
-  private int measureCount;
-
-  /**
-   * number of dimensionCount
-   */
-  private int dimensionCount;
-
-  /**
-   * number of complexDimensionCount
-   */
-  private int complexDimensionCount;
 
   /**
    * fileBufferSize for file reader stream size
@@ -127,53 +111,30 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    */
   private int totalRecordFetch;
 
-  private int noDictionaryCount;
-
-  private DataType[] measureDataTypes;
-
-  /**
-   * to store whether dimension is of dictionary type or not
-   */
-  private boolean[] isNoDictionaryDimensionColumn;
-
-  /**
-   * to store whether sort column is of dictionary type or not
-   */
-  private boolean[] isNoDictionarySortColumn;
-
+  private TableFieldStat tableFieldStat;
+  private SortStepRowHandler sortStepRowHandler;
+  private Comparator<Object[]> comparator;
   /**
    * Constructor to initialize
    *
    * @param tempFile
-   * @param dimensionCount
-   * @param complexDimensionCount
-   * @param measureCount
    * @param fileBufferSize
-   * @param noDictionaryCount
-   * @param measureDataTypes
-   * @param isNoDictionaryDimensionColumn
+   * @param tableFieldStat
+   * @param tableName
    */
-  public SortTempFileChunkHolder(File tempFile, int dimensionCount, int complexDimensionCount,
-      int measureCount, int fileBufferSize, int noDictionaryCount, DataType[] measureDataTypes,
-      boolean[] isNoDictionaryDimensionColumn, boolean[] isNoDictionarySortColumn,
+  public SortTempFileChunkHolder(File tempFile, int fileBufferSize, TableFieldStat tableFieldStat,
       String tableName) {
     // set temp file
     this.tempFile = tempFile;
 
-    // set measure and dimension count
-    this.measureCount = measureCount;
-    this.dimensionCount = dimensionCount;
-    this.complexDimensionCount = complexDimensionCount;
-
-    this.noDictionaryCount = noDictionaryCount;
     // set mdkey length
     this.fileBufferSize = fileBufferSize;
     this.executorService = Executors
         .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool:" + tableName));
-    this.measureDataTypes = measureDataTypes;
 
-    this.isNoDictionaryDimensionColumn = isNoDictionaryDimensionColumn;
-    this.isNoDictionarySortColumn = isNoDictionarySortColumn;
+    this.tableFieldStat = tableFieldStat;
+    this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
+    this.comparator = new NewRowComparator(tableFieldStat.getIsSortColNoDictFlags());
   }
 
   /**
@@ -273,7 +234,8 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
       prefetchRecordsProceesed++;
       returnRow = currentBuffer[bufferRowCounter++];
     } else {
-      this.returnRow = getRowFromStream();
+      this.numberOfObjectRead++;
+      this.returnRow = sortStepRowHandler.readPartedRowFromInputStream(stream);
     }
   }
 
@@ -307,78 +269,57 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   }
 
   /**
-   * Reads row from file
-   * @return Object[]
-   * @throws CarbonSortKeyAndGroupByException
+   * read a batch of row from stream
+   * @param expected expected entry number of this batch
+   * @return a batch of row
+   * @throws CarbonSortKeyAndGroupByException if `expected` number is incorrect
+   * or other error occurs
    */
-  private Object[] getRowFromStream() throws CarbonSortKeyAndGroupByException {
-    // create new row of size 3 (1 for dims , 1 for high card , 1 for measures)
+  private Object[][] getBatchedRowFromStream(int expected) throws CarbonSortKeyAndGroupByException {
+    Object[][] holders;
 
-    Object[] holder = new Object[3];
-    int index = 0;
-    int nonDicIndex = 0;
-    int[] dim = new int[this.dimensionCount - this.noDictionaryCount];
-    byte[][] nonDicArray = new byte[this.noDictionaryCount + this.complexDimensionCount][];
-    Object[] measures = new Object[this.measureCount];
-    try {
-      // read dimension values
-      for (int i = 0; i < isNoDictionaryDimensionColumn.length; i++) {
-        if (isNoDictionaryDimensionColumn[i]) {
-          short len = stream.readShort();
-          byte[] array = new byte[len];
-          stream.readFully(array);
-          nonDicArray[nonDicIndex++] = array;
-        } else {
-          dim[index++] = stream.readInt();
-        }
+    if (!isSortTempFileCompressionEnabled) {
+      holders = new Object[expected][3];
+      for (int i = 0; i < expected; i++) {
+        Object[] holder = sortStepRowHandler.readPartedRowFromInputStream(stream);
+        holders[i] = holder;
       }
-
-      for (int i = 0; i < complexDimensionCount; i++) {
-        short len = stream.readShort();
-        byte[] array = new byte[len];
-        stream.readFully(array);
-        nonDicArray[nonDicIndex++] = array;
-      }
-
-      index = 0;
-      // read measure values
-      for (int i = 0; i < this.measureCount; i++) {
-        if (stream.readByte() == 1) {
-          DataType dataType = measureDataTypes[i];
-          if (dataType == DataTypes.BOOLEAN) {
-            measures[index++] = stream.readBoolean();
-          } else if (dataType == DataTypes.SHORT) {
-            measures[index++] = stream.readShort();
-          } else if (dataType == DataTypes.INT) {
-            measures[index++] = stream.readInt();
-          } else if (dataType == DataTypes.LONG) {
-            measures[index++] = stream.readLong();
-          } else if (dataType == DataTypes.DOUBLE) {
-            measures[index++] = stream.readDouble();
-          } else if (DataTypes.isDecimal(dataType)) {
-            int len = stream.readInt();
-            byte[] buff = new byte[len];
-            stream.readFully(buff);
-            measures[index++] = DataTypeUtil.byteToBigDecimal(buff);
-          } else {
-            throw new IllegalArgumentException("unsupported data type:" + measureDataTypes[i]);
-          }
-        } else {
-          measures[index++] = null;
-        }
-      }
-
-      NonDictionaryUtil.prepareOutObj(holder, dim, nonDicArray, measures);
-
-      // increment number if record read
-      this.numberOfObjectRead++;
-    } catch (IOException e) {
-      LOGGER.error("Problme while reading the madkey fom sort temp file");
-      throw new CarbonSortKeyAndGroupByException("Problem while reading the sort temp file ", e);
+      this.numberOfObjectRead += expected;
+      return holders;
     }
 
-    //return out row
-    return holder;
+    ByteArrayInputStream blockDataArray = null;
+    DataInputStream dataInputStream = null;
+    try {
+      int actual = stream.readInt();
+      if (expected != actual) {
+        throw new CarbonSortKeyAndGroupByException(String.format(
+            "Expected %d rows, but found %d rows while reading sort temp file", expected, actual));
+      }
+
+      holders = new Object[expected][3];
+
+      int compressedContentLength = stream.readInt();
+      byte[] compressedContent = new byte[compressedContentLength];
+      stream.readFully(compressedContent);
+      byte[] decompressedContent = CompressorFactory.getInstance().getCompressor()
+          .unCompressByte(compressedContent);
+
+      blockDataArray = new ByteArrayInputStream(decompressedContent);
+      dataInputStream = new DataInputStream(blockDataArray);
+      for (int i = 0; i < expected; i++) {
+        holders[i] = sortStepRowHandler.readPartedRowFromInputStream(dataInputStream);
+      }
+      this.numberOfObjectRead += expected;
+    } catch (IOException e) {
+      LOGGER.error(e, "IOException occrus while batch reading sort temp file");
+      throw new CarbonSortKeyAndGroupByException(
+          "IOException occrus while batch reading sort temp file");
+    } finally {
+      CarbonUtil.closeStreams(dataInputStream);
+      CarbonUtil.closeStreams(blockDataArray);
+    }
+    return holders;
   }
 
   /**
@@ -425,31 +366,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   }
 
   @Override public int compareTo(SortTempFileChunkHolder other) {
-    int diff = 0;
-    int index = 0;
-    int noDictionaryIndex = 0;
-    int[] leftMdkArray = (int[]) returnRow[0];
-    int[] rightMdkArray = (int[]) other.returnRow[0];
-    byte[][] leftNonDictArray = (byte[][]) returnRow[1];
-    byte[][] rightNonDictArray = (byte[][]) other.returnRow[1];
-    for (boolean isNoDictionary : isNoDictionarySortColumn) {
-      if (isNoDictionary) {
-        diff = UnsafeComparer.INSTANCE
-            .compareTo(leftNonDictArray[noDictionaryIndex], rightNonDictArray[noDictionaryIndex]);
-        if (diff != 0) {
-          return diff;
-        }
-        noDictionaryIndex++;
-      } else {
-        diff = leftMdkArray[index] - rightMdkArray[index];
-        if (diff != 0) {
-          return diff;
-        }
-        index++;
-      }
-
-    }
-    return diff;
+    return comparator.compare(returnRow, other.getRow());
   }
 
   @Override public boolean equals(Object obj) {
@@ -467,10 +384,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
 
   @Override public int hashCode() {
     int hash = 0;
-    hash += 31 * measureCount;
-    hash += 31 * dimensionCount;
-    hash += 31 * complexDimensionCount;
-    hash += 31 * noDictionaryCount;
+    hash += tableFieldStat.hashCode();
     hash += tempFile.hashCode();
     return hash;
   }
@@ -516,10 +430,6 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    */
   private Object[][] prefetchRecordsFromFile(int numberOfRecords)
       throws CarbonSortKeyAndGroupByException {
-    Object[][] records = new Object[numberOfRecords][];
-    for (int i = 0; i < numberOfRecords; i++) {
-      records[i] = getRowFromStream();
-    }
-    return records;
+    return getBatchedRowFromStream(numberOfRecords);
   }
 }

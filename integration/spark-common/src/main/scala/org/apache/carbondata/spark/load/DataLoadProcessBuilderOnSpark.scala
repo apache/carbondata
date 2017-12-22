@@ -41,12 +41,12 @@ import org.apache.spark.storage.StorageLevel
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.row.CarbonRow
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.processing.loading.{DataLoadProcessBuilder, FailureCauses}
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
+import org.apache.carbondata.processing.loading.sort.SortStepRowHandler
 import org.apache.carbondata.processing.sort.sortdata.{NewRowComparator, NewRowComparatorForNormalDims, SortParameters}
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil
 import org.apache.carbondata.spark.rdd.SerializableConfiguration
@@ -123,17 +123,18 @@ object DataLoadProcessBuilderOnSpark {
         CarbonProperties.getInstance().getGlobalSortRddStorageLevel()))
     }
 
+    val sortStepRowConverter: SortStepRowHandler = new SortStepRowHandler(sortParameters)
     import scala.reflect.classTag
-    val sortRDD = convertRDD
-      .sortBy(_.getData, numPartitions = numPartitions)(RowOrdering, classTag[Array[AnyRef]])
-      .mapPartitionsWithIndex { case (index, rows) =>
-        DataLoadProcessorStepOnSpark.convertTo3Parts(rows, index, modelBroadcast,
-          sortStepRowCounter)
-      }
 
-    // 4. Write
-    sc.runJob(sortRDD, (context: TaskContext, rows: Iterator[CarbonRow]) =>
-      DataLoadProcessorStepOnSpark.writeFunc(rows, context.partitionId, modelBroadcast,
+    // 3. sort
+    val sortRDD = convertRDD
+      .map(r => DataLoadProcessorStepOnSpark.convertTo3Parts(r, TaskContext.getPartitionId(),
+        modelBroadcast, sortStepRowConverter, sortStepRowCounter))
+      .sortBy(r => r.getData, numPartitions = numPartitions)(RowOrdering, classTag[Array[AnyRef]])
+
+    // 4. write
+    sortRDD.foreachPartition(rows =>
+      DataLoadProcessorStepOnSpark.writeFunc(rows, TaskContext.getPartitionId(), modelBroadcast,
         writeStepRowCounter))
 
     // clean cache only if persisted and keeping unpersist non-blocking as non-blocking call will

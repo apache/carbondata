@@ -23,18 +23,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.util.AbstractQueue;
 import java.util.PriorityQueue;
 import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.metadata.datatype.DataType;
-import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.core.util.DataTypeUtil;
-import org.apache.carbondata.core.util.NonDictionaryUtil;
+import org.apache.carbondata.processing.loading.sort.SortStepRowHandler;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 
 public class IntermediateFileMerger implements Callable<Void> {
@@ -90,8 +86,8 @@ public class IntermediateFileMerger implements Callable<Void> {
 
   private File outPutFile;
 
-  private boolean[] noDictionarycolumnMapping;
-
+  private TableFieldStat tableFieldStat;
+  private SortStepRowHandler sortStepRowHandler;
   private Throwable throwable;
 
   /**
@@ -103,7 +99,8 @@ public class IntermediateFileMerger implements Callable<Void> {
     this.fileCounter = intermediateFiles.length;
     this.intermediateFiles = intermediateFiles;
     this.outPutFile = outPutFile;
-    noDictionarycolumnMapping = mergerParameters.getNoDictionaryDimnesionColumn();
+    this.tableFieldStat = new TableFieldStat(mergerParameters);
+    this.sortStepRowHandler = new SortStepRowHandler(tableFieldStat);
   }
 
   @Override public Void call() throws Exception {
@@ -180,9 +177,7 @@ public class IntermediateFileMerger implements Callable<Void> {
     } else {
       writer = TempSortFileWriterFactory.getInstance()
           .getTempSortFileWriter(mergerParameters.isSortFileCompressionEnabled(),
-              mergerParameters.getDimColCount(), mergerParameters.getComplexDimColCount(),
-              mergerParameters.getMeasureColCount(), mergerParameters.getNoDictionaryCount(),
-              mergerParameters.getFileWriteBufferSize());
+              tableFieldStat, mergerParameters.getFileWriteBufferSize());
       writer.initiaize(outPutFile, totalNumberOfRecords);
 
       if (mergerParameters.isPrefetch()) {
@@ -256,12 +251,8 @@ public class IntermediateFileMerger implements Callable<Void> {
     for (File tempFile : intermediateFiles) {
       // create chunk holder
       sortTempFileChunkHolder =
-          new SortTempFileChunkHolder(tempFile, mergerParameters.getDimColCount(),
-              mergerParameters.getComplexDimColCount(), mergerParameters.getMeasureColCount(),
-              mergerParameters.getFileBufferSize(), mergerParameters.getNoDictionaryCount(),
-              mergerParameters.getMeasureDataType(),
-              mergerParameters.getNoDictionaryDimnesionColumn(),
-              mergerParameters.getNoDictionarySortColumn(), mergerParameters.getTableName());
+          new SortTempFileChunkHolder(tempFile, mergerParameters.getFileBufferSize(),
+              tableFieldStat, mergerParameters.getTableName());
 
       // initialize
       sortTempFileChunkHolder.initialize();
@@ -327,54 +318,8 @@ public class IntermediateFileMerger implements Callable<Void> {
       }
       return;
     }
-    try {
-      DataType[] measureDataType = mergerParameters.getMeasureDataType();
-      int[] mdkArray = (int[]) row[0];
-      byte[][] nonDictArray = (byte[][]) row[1];
-      int mdkIndex = 0;
-      int nonDictKeyIndex = 0;
-      // write dictionary and non dictionary dimensions here.
-      for (boolean nodictinary : noDictionarycolumnMapping) {
-        if (nodictinary) {
-          byte[] col = nonDictArray[nonDictKeyIndex++];
-          stream.writeShort(col.length);
-          stream.write(col);
-        } else {
-          stream.writeInt(mdkArray[mdkIndex++]);
-        }
-      }
 
-      int fieldIndex = 0;
-      for (int counter = 0; counter < mergerParameters.getMeasureColCount(); counter++) {
-        if (null != NonDictionaryUtil.getMeasure(fieldIndex, row)) {
-          stream.write((byte) 1);
-          DataType dataType = measureDataType[counter];
-          if (dataType == DataTypes.BOOLEAN) {
-            stream.writeBoolean((boolean)NonDictionaryUtil.getMeasure(fieldIndex, row));
-          } else if (dataType == DataTypes.SHORT) {
-            stream.writeShort((short) NonDictionaryUtil.getMeasure(fieldIndex, row));
-          } else if (dataType == DataTypes.INT) {
-            stream.writeInt((int) NonDictionaryUtil.getMeasure(fieldIndex, row));
-          } else if (dataType == DataTypes.LONG) {
-            stream.writeLong((long) NonDictionaryUtil.getMeasure(fieldIndex, row));
-          } else if (dataType == DataTypes.DOUBLE) {
-            stream.writeDouble((Double) NonDictionaryUtil.getMeasure(fieldIndex, row));
-          } else if (DataTypes.isDecimal(dataType)) {
-            byte[] bigDecimalInBytes = DataTypeUtil
-                .bigDecimalToByte((BigDecimal) NonDictionaryUtil.getMeasure(fieldIndex, row));
-            stream.writeInt(bigDecimalInBytes.length);
-            stream.write(bigDecimalInBytes);
-          } else {
-            throw new IllegalArgumentException("unsupported data type:" + measureDataType[counter]);
-          }
-        } else {
-          stream.write((byte) 0);
-        }
-        fieldIndex++;
-      }
-    } catch (IOException e) {
-      throw new CarbonSortKeyAndGroupByException("Problem while writing the file", e);
-    }
+    sortStepRowHandler.writePartedRowToOutputStream(row, stream);
   }
 
   private void finish() throws CarbonSortKeyAndGroupByException {
