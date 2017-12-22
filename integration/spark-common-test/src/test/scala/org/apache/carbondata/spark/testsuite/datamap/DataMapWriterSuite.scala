@@ -138,6 +138,8 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
 
     assert(DataMapWriterSuite.callbackSeq.head.contains("block start"))
     assert(DataMapWriterSuite.callbackSeq.last.contains("block end"))
+    // corrected test case the min "carbon.blockletgroup.size.in.mb" size could not be less than
+    // 64 MB
     assert(
       DataMapWriterSuite.callbackSeq.slice(1, DataMapWriterSuite.callbackSeq.length - 1) == Seq(
         "blocklet start 0",
@@ -145,17 +147,13 @@ class DataMapWriterSuite extends QueryTest with BeforeAndAfterAll {
         "add page data: blocklet 0, page 1",
         "add page data: blocklet 0, page 2",
         "add page data: blocklet 0, page 3",
-        "blocklet end: 0",
-        "blocklet start 1",
-        "add page data: blocklet 1, page 0",
-        "add page data: blocklet 1, page 1",
-        "add page data: blocklet 1, page 2",
-        "add page data: blocklet 1, page 3",
-        "blocklet end: 1",
-        "blocklet start 2",
-        "add page data: blocklet 2, page 0",
-        "add page data: blocklet 2, page 1",
-        "blocklet end: 2"
+        "add page data: blocklet 0, page 4",
+        "add page data: blocklet 0, page 5",
+        "add page data: blocklet 0, page 6",
+        "add page data: blocklet 0, page 7",
+        "add page data: blocklet 0, page 8",
+        "add page data: blocklet 0, page 9",
+        "blocklet end: 0"
       ))
     DataMapWriterSuite.callbackSeq = Seq()
   }
