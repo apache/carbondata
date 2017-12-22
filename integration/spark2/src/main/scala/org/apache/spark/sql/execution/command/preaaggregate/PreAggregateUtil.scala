@@ -508,7 +508,8 @@ object PreAggregateUtil {
     val headers = dataMapSchemas.find(_.getChildSchema.getTableName.equalsIgnoreCase(
       dataMapIdentifier.table)) match {
       case Some(dataMapSchema) =>
-        dataMapSchema.getChildSchema.getListOfColumns.asScala.map(_.getColumnName).mkString(",")
+        dataMapSchema.getChildSchema.getListOfColumns.asScala.sortBy(_.getSchemaOrdinal).map(
+          _.getColumnName).mkString(",")
       case None =>
         throw new RuntimeException(
           s"${ dataMapIdentifier.table} datamap not found in DataMapSchema list: ${
