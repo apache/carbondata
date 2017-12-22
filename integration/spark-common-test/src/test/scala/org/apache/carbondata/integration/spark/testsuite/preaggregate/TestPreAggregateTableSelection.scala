@@ -219,6 +219,17 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+  test("test if pre-agg table is hit with filter condition") {
+    sql("drop table if exists filtertable")
+    sql("CREATE TABLE filtertable(id int, name string, city string, age string) STORED BY" +
+        " 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='name,age')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table filtertable")
+    sql("create datamap agg9 on table filtertable using 'preaggregate' as select name, age, sum(age) from filtertable group by name, age")
+    val df = sql("select name, sum(age) from filtertable where age = '29' group by name, age")
+    preAggTableValidator(df.queryExecution.analyzed, "filtertable_agg9")
+    checkAnswer(df, Row("vishal", 29))
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
     sql("drop table if exists lineitem")
