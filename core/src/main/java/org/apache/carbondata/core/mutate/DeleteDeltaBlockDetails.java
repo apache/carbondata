@@ -30,15 +30,13 @@ import org.apache.carbondata.common.logging.LogServiceFactory;
 public class DeleteDeltaBlockDetails implements Serializable {
 
   private static final long serialVersionUID = 1206104914918495724L;
-
-  private List<DeleteDeltaBlockletDetails> blockletDetails;
-  private String blockName;
-
   /**
    * LOGGER
    */
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(DeleteDeltaBlockDetails.class.getName());
+  private List<DeleteDeltaBlockletDetails> blockletDetails;
+  private String blockName;
 
   public DeleteDeltaBlockDetails(String blockName) {
     this.blockName = blockName;
@@ -82,9 +80,21 @@ public class DeleteDeltaBlockDetails implements Serializable {
 
   public boolean addBlocklet(String blockletId, String offset, Integer pageId) throws Exception {
     DeleteDeltaBlockletDetails blocklet = new DeleteDeltaBlockletDetails(blockletId, pageId);
+    int index = blockletDetails.indexOf(blocklet);
+
     try {
-      blocklet.addDeletedRow(CarbonUpdateUtil.getIntegerValue(offset));
-      return addBlockletDetails(blocklet);
+      boolean isRowAddedForDeletion =
+          blocklet.addDeletedRow(CarbonUpdateUtil.getIntegerValue(offset));
+      if (isRowAddedForDeletion) {
+        if (blockletDetails.isEmpty() || index == -1) {
+          return blockletDetails.add(blocklet);
+        } else {
+          blockletDetails.get(index).addDeletedRows(blocklet.getDeletedRows());
+          return true;
+        }
+      } else {
+        return false;
+      }
     } catch (Exception e) {
       if (LOGGER.isDebugEnabled()) {
         LOGGER.debug(e.getMessage());
