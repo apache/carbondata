@@ -205,4 +205,46 @@ public class CarbonPropertiesValidationTest extends TestCase {
     assertTrue(CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE
         .equalsIgnoreCase(valueAfterValidation));
   }
+
+  @Test public void testValidateDynamicSchedulerTimeOut() {
+    carbonProperties
+        .addProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT, "2");
+    String valueAfterValidation = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT);
+    assertTrue(valueAfterValidation
+        .equals(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_DEFAULT));
+    carbonProperties
+        .addProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT, "16");
+    valueAfterValidation = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT);
+    assertTrue(valueAfterValidation
+        .equals(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_DEFAULT));
+    carbonProperties
+        .addProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT, "15");
+    valueAfterValidation = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT);
+    assertTrue(valueAfterValidation
+        .equals("15"));
+
+  }
+  @Test public void testValidateSchedulerMinRegisteredRatio() {
+    carbonProperties
+        .addProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO, "0.0");
+    String valueAfterValidation = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO);
+    assertTrue(valueAfterValidation
+        .equals(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT));
+    carbonProperties
+        .addProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO, "-0.1");
+    valueAfterValidation = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO);
+    assertTrue(valueAfterValidation
+        .equals(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT));
+    carbonProperties
+        .addProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO, "0.1");
+    valueAfterValidation = carbonProperties
+        .getProperty(CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO);
+    assertTrue(valueAfterValidation.equals("0.1"));
+  }
+
 }
