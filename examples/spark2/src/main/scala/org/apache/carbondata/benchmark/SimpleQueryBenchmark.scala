@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.examples
+package org.apache.carbondata.benchmark
 
 import java.io.File
 import java.text.SimpleDateFormat
@@ -27,70 +27,14 @@ import org.apache.spark.sql.types._
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 
-/**
- * A query test case
- * @param sqlText SQL statement
- * @param queryType type of query: scan, filter, aggregate, topN
- * @param desc description of the goal of this test case
- */
-case class Query(sqlText: String, queryType: String, desc: String)
+
 
 // scalastyle:off println
-object CompareTest {
+object SimpleQueryBenchmark {
 
   def parquetTableName: String = "comparetest_parquet"
   def orcTableName: String = "comparetest_orc"
   def carbonTableName(version: String): String = s"comparetest_carbonV$version"
-
-  // Table schema:
-  // +-------------+-----------+-------------+-------------+------------+
-  // | Column name | Data type | Cardinality | Column type | Dictionary |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | city        | string    | 8           | dimension   | yes        |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | country     | string    | 1103        | dimension   | yes        |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | planet      | string    | 10,007      | dimension   | yes        |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | id          | string    | 10,000,000  | dimension   | no         |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | m1          | short     | NA          | measure     | no         |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | m2          | int       | NA          | measure     | no         |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | m3          | big int   | NA          | measure     | no         |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | m4          | double    | NA          | measure     | no         |
-  // +-------------+-----------+-------------+-------------+------------+
-  // | m5          | decimal   | NA          | measure     | no         |
-  // +-------------+-----------+-------------+-------------+------------+
-  private def generateDataFrame(spark: SparkSession): DataFrame = {
-    val rdd = spark.sparkContext
-        .parallelize(1 to 10 * 1000 * 1000, 4)
-        .map { x =>
-          ("city" + x % 8, "country" + x % 1103, "planet" + x % 10007, "IDENTIFIER" + x.toString,
-              (x % 16).toShort, x / 2, (x << 1).toLong, x.toDouble / 13,
-              BigDecimal.valueOf(x.toDouble / 11))
-        }.map { x =>
-      Row(x._1, x._2, x._3, x._4, x._5, x._6, x._7, x._8, x._9)
-    }
-
-    val schema = StructType(
-      Seq(
-        StructField("city", StringType, nullable = false),
-        StructField("country", StringType, nullable = false),
-        StructField("planet", StringType, nullable = false),
-        StructField("id", StringType, nullable = false),
-        StructField("m1", ShortType, nullable = false),
-        StructField("m2", IntegerType, nullable = false),
-        StructField("m3", LongType, nullable = false),
-        StructField("m4", DoubleType, nullable = false),
-        StructField("m5", DecimalType(30, 10), nullable = false)
-      )
-    )
-
-    spark.createDataFrame(rdd, schema)
-  }
 
   // performance test queries, they are designed to test various data access type
   val queries: Array[Query] = Array(
@@ -284,7 +228,7 @@ object CompareTest {
 
   // load data into parquet, carbonV2, carbonV3
   private def prepareTable(spark: SparkSession, table1: String, table2: String): Unit = {
-    val df = generateDataFrame(spark).cache
+    val df = DataGenerator.generateDataFrame(spark, totalNum = 10 * 10 * 1000).cache
     println(s"loading ${df.count} records, schema: ${df.schema}")
     val table1Time = if (table1.endsWith("parquet")) {
       loadParquetTable(spark, df, table1)
