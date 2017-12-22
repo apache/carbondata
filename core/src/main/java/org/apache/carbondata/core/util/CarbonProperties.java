@@ -35,7 +35,33 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.constants.CarbonV3DataFormatConstants;
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
-import static org.apache.carbondata.core.constants.CarbonCommonConstants.*;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.BLOCKLET_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_DATA_FILE_VERSION;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_DATE_FORMAT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MAX;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MIN;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_BLOCK;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_BLOCKLET;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_CUSTOM;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TASK_DISTRIBUTION_MERGE_FILES;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.CSV_READ_BUFFER_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_AUTO_HANDOFF;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_UNSAFE_SORT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.ENABLE_VECTOR_READER;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.HANDOFF_SIZE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.LOCK_TYPE;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_CORES;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.NUM_CORES_BLOCK_SORT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.SORT_INTERMEDIATE_FILES_LIMIT;
+import static org.apache.carbondata.core.constants.CarbonCommonConstants.SORT_SIZE;
 import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB;
 import static org.apache.carbondata.core.constants.CarbonV3DataFormatConstants.NUMBER_OF_COLUMN_TO_READ_IN_IO;
 
@@ -106,8 +132,8 @@ public final class CarbonProperties {
       case CARBON_DATA_FILE_VERSION:
         validateCarbonDataFileVersion();
         break;
-      case CARBON_EXECUTOR_STARTUP_TIMEOUT:
-        validateExecutorStartUpTime();
+      case CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT:
+        validateDynamicSchedulerTimeOut();
         break;
       case CARBON_PREFETCH_BUFFERSIZE:
         validatePrefetchBufferSize();
@@ -156,6 +182,9 @@ public final class CarbonProperties {
       case ENABLE_AUTO_HANDOFF:
         validateHandoffSize();
         break;
+      case CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO:
+        validateSchedulerMinRegisteredRatio();
+        break;
       // TODO : Validation for carbon.lock.type should be handled for addProperty flow
       default:
         // none
@@ -171,7 +200,7 @@ public final class CarbonProperties {
     validateNumCoresBlockSort();
     validateSortSize();
     validateCarbonDataFileVersion();
-    validateExecutorStartUpTime();
+    validateDynamicSchedulerTimeOut();
     validatePrefetchBufferSize();
     validateBlockletGroupSizeInMB();
     validateNumberOfColumnPerIORead();
@@ -193,6 +222,7 @@ public final class CarbonProperties {
     validateSortFileWriteBufferSize();
     validateSortIntermediateFilesLimit();
     validateEnableAutoHandoff();
+    validateSchedulerMinRegisteredRatio();
   }
 
   /**
@@ -250,6 +280,36 @@ public final class CarbonProperties {
         CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE,
         CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_MIN,
         CarbonCommonConstants.CARBON_SORT_FILE_WRITE_BUFFER_SIZE_MAX);
+  }
+
+  /**
+   * minimum required registered resource for starting block distribution
+   */
+  private void validateSchedulerMinRegisteredRatio() {
+    String value = carbonProperties
+        .getProperty(CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO,
+            CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT);
+    try {
+      double minRegisteredResourceRatio = java.lang.Double.parseDouble(value);
+      if (minRegisteredResourceRatio < CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MIN
+          || minRegisteredResourceRatio > CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MAX) {
+        LOGGER.warn("The value \"" + value
+            + "\" configured for key " + CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO
+            + "\" is not in range. Valid range is (byte) \""
+            + CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MIN + " to \""
+            + CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MAX + ". Using the default value \""
+            + CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT);
+        carbonProperties.setProperty(CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO,
+            CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT);
+      }
+    } catch (NumberFormatException e) {
+      LOGGER.warn("The value \"" + value
+          + "\" configured for key " + CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO
+          + "\" is invalid. Using the default value \""
+          + CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT);
+      carbonProperties.setProperty(CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO,
+          CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT);
+    }
   }
 
   /**
@@ -984,23 +1044,11 @@ public final class CarbonProperties {
   /**
    * This method will validate and set the value for executor start up waiting time out
    */
-  private void validateExecutorStartUpTime() {
-    int executorStartUpTimeOut = 0;
-    try {
-      executorStartUpTimeOut = Integer.parseInt(carbonProperties
-          .getProperty(CARBON_EXECUTOR_STARTUP_TIMEOUT,
-              CarbonCommonConstants.CARBON_EXECUTOR_WAITING_TIMEOUT_DEFAULT));
-      // If value configured by user is more than max value of time out then consider the max value
-      if (executorStartUpTimeOut > CarbonCommonConstants.CARBON_EXECUTOR_WAITING_TIMEOUT_MAX) {
-        executorStartUpTimeOut = CarbonCommonConstants.CARBON_EXECUTOR_WAITING_TIMEOUT_MAX;
-      }
-    } catch (NumberFormatException ne) {
-      executorStartUpTimeOut =
-          Integer.parseInt(CarbonCommonConstants.CARBON_EXECUTOR_WAITING_TIMEOUT_DEFAULT);
-    }
-    carbonProperties.setProperty(CARBON_EXECUTOR_STARTUP_TIMEOUT,
-        String.valueOf(executorStartUpTimeOut));
-    LOGGER.info("Executor start up wait time: " + executorStartUpTimeOut);
+  private void validateDynamicSchedulerTimeOut() {
+    validateRange(CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT,
+        CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_DEFAULT,
+        CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_MIN,
+        CarbonCommonConstants.CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_MAX);
   }
 
   /**

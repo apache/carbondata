@@ -1149,29 +1149,6 @@ public final class CarbonCommonConstants {
    */
   public static final int DEFAULT_MAX_NUMBER_OF_COLUMNS = 20000;
 
-  /**
-   * Maximum waiting time (in seconds) for a query for requested executors to be started
-   */
-  @CarbonProperty
-  public static final String CARBON_EXECUTOR_STARTUP_TIMEOUT =
-      "carbon.max.executor.startup.timeout";
-
-  /**
-   * default value for executor start up waiting time out
-   */
-  public static final String CARBON_EXECUTOR_WAITING_TIMEOUT_DEFAULT = "5";
-
-  /**
-   * Max value. If value configured by user is more than this than this value will value will be
-   * considered
-   */
-  public static final int CARBON_EXECUTOR_WAITING_TIMEOUT_MAX = 60;
-
-  /**
-   * time for which thread will sleep and check again if the requested number of executors
-   * have been started
-   */
-  public static final int CARBON_EXECUTOR_STARTUP_THREAD_SLEEP_TIME = 250;
 
   /**
    * to enable unsafe column page in write step
@@ -1542,6 +1519,54 @@ public final class CarbonCommonConstants {
    * the default handoff size of streaming segment, the unit is byte
    */
   public static final long HANDOFF_SIZE_DEFAULT = 1024L * 1024 * 1024;
+
+  /**
+   * minimum required registered resource for starting block distribution
+   */
+  @CarbonProperty
+  public static final String CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO =
+      "carbon.scheduler.minregisteredresourcesratio";
+  /**
+   * default minimum required registered resource for starting block distribution
+   */
+  public static final String CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_DEFAULT = "0.8d";
+  /**
+   * minimum required registered resource for starting block distribution
+   */
+  public static final double CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MIN = 0.1d;
+  /**
+   * max minimum required registered resource for starting block distribution
+   */
+  public static final double CARBON_SCHEDULER_MIN_REGISTERED_RESOURCES_RATIO_MAX = 1.0d;
+
+  /**
+   * To define how much time scheduler should wait for the
+   * resource in dynamic allocation.
+   */
+  public static final String CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT =
+      "carbon.dynamicallocation.schedulertimeout";
+
+  /**
+   * default scheduler wait time
+   */
+  public static final String CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_DEFAULT = "5";
+
+  /**
+   * default value for executor start up waiting time out
+   */
+  public static final int CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_MIN = 5;
+
+  /**
+   * Max value. If value configured by user is more than this than this value will value will be
+   * considered
+   */
+  public static final int CARBON_DYNAMIC_ALLOCATION_SCHEDULER_TIMEOUT_MAX = 15;
+
+  /**
+   * time for which thread will sleep and check again if the requested number of executors
+   * have been started
+   */
+  public static final int CARBON_DYNAMIC_ALLOCATION_SCHEDULER_THREAD_SLEEP_TIME = 250;
 
   /**
    * It allows queries on hive metastore directly along with filter information, otherwise first
