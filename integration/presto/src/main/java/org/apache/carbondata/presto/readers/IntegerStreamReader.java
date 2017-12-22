@@ -19,6 +19,10 @@ package org.apache.carbondata.presto.readers;
 
 import java.io.IOException;
 
+import org.apache.carbondata.core.cache.dictionary.Dictionary;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
+import org.apache.carbondata.core.util.DataTypeUtil;
+
 import com.facebook.presto.spi.block.Block;
 import com.facebook.presto.spi.block.BlockBuilder;
 import com.facebook.presto.spi.block.BlockBuilderStatus;
@@ -26,38 +30,40 @@ import com.facebook.presto.spi.type.Type;
 
 public class IntegerStreamReader extends AbstractStreamReader {
 
+  private Dictionary dictionaryValues;
+  private boolean isDictionary;
 
-  public IntegerStreamReader( ) {
+  public IntegerStreamReader() {
 
   }
 
-  public Block readBlock(Type type)
-      throws IOException
-  {
-    int numberOfRows = 0;
-    BlockBuilder builder = null;
-    if(isVectorReader) {
+  public IntegerStreamReader(boolean isDictionary, Dictionary dictionary) {
+    this.dictionaryValues = dictionary;
+    this.isDictionary = isDictionary;
+  }
+
+  public Block readBlock(Type type) throws IOException {
+    int numberOfRows;
+    BlockBuilder builder;
+    if (isVectorReader) {
       numberOfRows = batchSize;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (columnVector != null) {
-        if(columnVector.anyNullsSet()) {
+        if (columnVector.anyNullsSet()) {
           handleNullInVector(type, numberOfRows, builder);
-        }
-        else {
+        } else {
           populateVector(type, numberOfRows, builder);
         }
       }
-
     } else {
       numberOfRows = streamData.length;
       builder = type.createBlockBuilder(new BlockBuilderStatus(), numberOfRows);
       if (streamData != null) {
-        for(int i = 0; i < numberOfRows ; i++ ){
-          type.writeLong(builder, ((Integer)streamData[i]).longValue());
+        for (int i = 0; i < numberOfRows; i++) {
+          type.writeLong(builder, ((Integer) streamData[i]).longValue());
         }
       }
     }
-
     return builder.build();
   }
 
@@ -72,9 +78,23 @@ public class IntegerStreamReader extends AbstractStreamReader {
   }
 
   private void populateVector(Type type, int numberOfRows, BlockBuilder builder) {
-    for (int i = 0; i < numberOfRows; i++) {
-        type.writeLong(builder,  (Integer) columnVector.getData(i));
+    if (isDictionary) {
+      for (int i = 0; i < numberOfRows; i++) {
+        int value = (int) columnVector.getData(i);
+        Object data = DataTypeUtil
+            .getDataBasedOnDataType(dictionaryValues.getDictionaryValueForKey(value),
+                DataTypes.INT);
+        if (data != null) {
+          type.writeLong(builder, ((Integer) data).longValue());
+        } else {
+          builder.appendNull();
+        }
       }
+    } else {
+      for (int i = 0; i < numberOfRows; i++) {
+        Integer value = (Integer) columnVector.getData(i);
+        type.writeLong(builder, value.longValue());
+      }
+    }
   }
-
 }
