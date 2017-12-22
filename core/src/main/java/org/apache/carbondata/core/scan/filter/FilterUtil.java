@@ -53,6 +53,7 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
+import org.apache.carbondata.core.metadata.ColumnIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -61,6 +62,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonDimension;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.scan.executor.exception.QueryExecutionException;
+import org.apache.carbondata.core.scan.executor.util.QueryUtil;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.ExpressionResult;
@@ -1241,15 +1243,27 @@ public final class FilterUtil {
       AbsoluteTableIdentifier dictionarySourceAbsoluteTableIdentifier,
       CarbonDimension carbonDimension, TableProvider tableProvider) throws IOException {
     String dictionaryPath = null;
+    ColumnIdentifier columnIdentifier = carbonDimension.getColumnIdentifier();
     if (null != tableProvider) {
       CarbonTable carbonTable = tableProvider
           .getCarbonTable(dictionarySourceAbsoluteTableIdentifier.getCarbonTableIdentifier());
       dictionaryPath = carbonTable.getTableInfo().getFactTable().getTableProperties()
           .get(CarbonCommonConstants.DICTIONARY_PATH);
+      if (null != carbonDimension.getColumnSchema().getParentColumnTableRelations() &&
+          carbonDimension.getColumnSchema().getParentColumnTableRelations().size() == 1) {
+        dictionarySourceAbsoluteTableIdentifier =
+            QueryUtil.getTableIdentifierForColumn(carbonDimension,
+                carbonTable.getAbsoluteTableIdentifier());
+        columnIdentifier = new ColumnIdentifier(
+            carbonDimension.getColumnSchema().getParentColumnTableRelations().get(0).getColumnId(),
+            carbonDimension.getColumnProperties(), carbonDimension.getDataType());
+      } else {
+        dictionarySourceAbsoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier();
+      }
     }
     DictionaryColumnUniqueIdentifier dictionaryColumnUniqueIdentifier =
         new DictionaryColumnUniqueIdentifier(dictionarySourceAbsoluteTableIdentifier,
-            carbonDimension.getColumnIdentifier(), carbonDimension.getDataType(), dictionaryPath);
+            columnIdentifier, carbonDimension.getDataType(), dictionaryPath);
     CacheProvider cacheProvider = CacheProvider.getInstance();
     Cache<DictionaryColumnUniqueIdentifier, Dictionary> forwardDictionaryCache =
         cacheProvider.createCache(CacheType.FORWARD_DICTIONARY);
