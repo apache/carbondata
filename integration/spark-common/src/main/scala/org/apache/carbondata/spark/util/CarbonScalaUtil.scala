@@ -31,6 +31,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, StructField => CarbonStructField}
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
+import org.apache.carbondata.processing.loading.exception.BadRecordFoundException
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
@@ -158,7 +159,9 @@ object CarbonScalaUtil {
       dataType: DataType,
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat,
-      serializationNullFormat: String): UTF8String = {
+      serializationNullFormat: String,
+      failAction: Boolean,
+      ignoreAction: Boolean): UTF8String = {
     if (value == null || serializationNullFormat.equals(value)) {
       return UTF8String.fromString(value)
     }
@@ -171,11 +174,26 @@ object CarbonScalaUtil {
           UTF8String.fromString(
             DateTimeUtils.dateToString(
               (dateFormat.parse(value).getTime / DateTimeUtils.MILLIS_PER_DAY).toInt))
+        case ShortType => UTF8String.fromString(value.toShort.toString)
+        case IntegerType => UTF8String.fromString(value.toInt.toString)
+        case LongType => UTF8String.fromString(value.toLong.toString)
+        case DoubleType => UTF8String.fromString(value.toDouble.toString)
+        case FloatType => UTF8String.fromString(value.toFloat.toString)
+        case d: DecimalType => UTF8String
+          .fromString(new java.math.BigDecimal(value).toPlainString)
+        case BooleanType => UTF8String.fromString(value.toBoolean.toString)
         case _ => UTF8String.fromString(value)
       }
     } catch {
       case e: Exception =>
-        UTF8String.fromString(value)
+        if (failAction) {
+          throw new BadRecordFoundException(
+            s"Data load failed due to bad record: $value with datatype $dataType")
+        }
+        if (ignoreAction) {
+          throw e
+        }
+        UTF8String.fromString(null)
     }
   }
 
