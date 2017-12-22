@@ -126,7 +126,7 @@ public class TableBlockInfo implements Distributable, Serializable {
   }
 
   /**
-   * constructor to initialize the TbaleBlockInfo with blockletIds
+   * constructor to initialize the TableBlockInfo with blockletIds
    *
    * @param filePath
    * @param blockOffset
@@ -135,12 +135,12 @@ public class TableBlockInfo implements Distributable, Serializable {
    * @param blockLength
    * @param blockletInfos
    */
-  public TableBlockInfo(String filePath, String blockletIds, long blockOffset, String segmentId,
+  public TableBlockInfo(String filePath, String blockletId, long blockOffset, String segmentId,
       String[] locations, long blockLength, BlockletInfos blockletInfos,
       ColumnarFormatVersion version, String[] deletedDeltaFilePath) {
     this(filePath, blockOffset, segmentId, locations, blockLength, blockletInfos, version,
         deletedDeltaFilePath);
-    this.blockletId = blockletIds;
+    this.blockletId = blockletId;
   }
 
   /**
