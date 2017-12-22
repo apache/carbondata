@@ -53,6 +53,7 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
       BlockletDetailInfo detailInfo = blockInfo.getDetailInfo();
       detailInfo.getBlockletInfo().setNumberOfRows(detailInfo.getRowCount());
       detailInfo.getBlockletInfo().setNumberOfPages(detailInfo.getPagesCount());
+      detailInfo.setBlockletId(blockInfo.getDetailInfo().getBlockletId());
       int[] pageRowCount = new int[detailInfo.getPagesCount()];
       int numberOfPagesCompletelyFilled = detailInfo.getRowCount()
           / CarbonV3DataFormatConstants.NUMBER_OF_ROWS_PER_BLOCKLET_COLUMN_PAGE_DEFAULT;
@@ -84,6 +85,10 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
 
   @Override public long nodeNumber() {
     return index;
+  }
+
+  @Override public String blockletId() {
+    return blockInfos.get(index).getDetailInfo().getBlockletId().toString();
   }
 
   @Override public byte[][] getColumnsMaxValue() {
