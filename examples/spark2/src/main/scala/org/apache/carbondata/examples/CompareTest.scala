@@ -25,7 +25,7 @@ import org.apache.spark.sql.{DataFrame, Row, SaveMode, SparkSession}
 import org.apache.spark.sql.types._
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 
 /**
  * A query test case
@@ -384,6 +384,8 @@ object CompareTest {
     prepareTable(spark, table1, table2)
     runTest(spark, table1, table2)
 
+    CarbonUtil.deleteFoldersAndFiles(new File(table1))
+    spark.sql(s"drop table if exists $table2")
     spark.close()
   }
 
