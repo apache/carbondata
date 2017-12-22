@@ -42,6 +42,7 @@ import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.block.TableBlockInfo;
 import org.apache.carbondata.core.datastore.block.TableBlockUniqueIdentifier;
+import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataRefNodeWrapper;
 import org.apache.carbondata.core.indexstore.blockletindex.IndexWrapper;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.keygenerator.KeyGenerator;
@@ -217,12 +218,13 @@ public abstract class AbstractQueryExecutor<E> implements QueryExecutor<E> {
     // query
     // and query will be executed based on that infos
     for (int i = 0; i < queryProperties.dataBlocks.size(); i++) {
-      blockExecutionInfoList.add(
-          getBlockExecutionInfoForBlock(queryModel, queryProperties.dataBlocks.get(i),
-              queryModel.getTableBlockInfos().get(i).getBlockletInfos().getStartBlockletNumber(),
-              queryModel.getTableBlockInfos().get(i).getBlockletInfos().getNumberOfBlockletToScan(),
-              queryModel.getTableBlockInfos().get(i).getFilePath(),
-              queryModel.getTableBlockInfos().get(i).getDeletedDeltaFilePath()));
+      AbstractIndex abstractIndex = queryProperties.dataBlocks.get(i);
+      BlockletDataRefNodeWrapper dataRefNode =
+          (BlockletDataRefNodeWrapper) abstractIndex.getDataRefNode();
+      blockExecutionInfoList.add(getBlockExecutionInfoForBlock(queryModel, abstractIndex,
+          dataRefNode.getBlockInfos().get(0).getBlockletInfos().getStartBlockletNumber(),
+          dataRefNode.numberOfNodes(), dataRefNode.getBlockInfos().get(0).getFilePath(),
+          dataRefNode.getBlockInfos().get(0).getDeletedDeltaFilePath()));
     }
     if (null != queryModel.getStatisticsRecorder()) {
       QueryStatistic queryStatistic = new QueryStatistic();
