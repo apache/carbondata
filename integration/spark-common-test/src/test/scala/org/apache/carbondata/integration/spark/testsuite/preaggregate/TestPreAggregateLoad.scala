@@ -21,6 +21,9 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, Ignore}
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.util.CarbonProperties
+
 @Ignore
 class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
 
@@ -201,6 +204,16 @@ class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
     sql(s"insert into maintable values(1, 'xyz', 'bengaluru', 26)")
     sql(s"insert overwrite table maintable values(1, 'xyz', 'delhi', 29)")
     checkAnswer(sql("select * from maintable_preagg_sum"), Row(1, 29))
+  }
+
+  test("test load in aggregate table with Measure col") {
+    val originalBadRecordsAction = CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION)
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, "FAIL")
+    sql("drop table if exists y ")
+    sql("create table y(year int,month int,name string,salary int) stored by 'carbondata'")
+    sql("insert into y select 10,11,'babu',12")
+    sql("create datamap y1_sum1 on table y using 'preaggregate' as select year,name,sum(salary) from y group by year,name")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION, originalBadRecordsAction)
   }
 
 }
