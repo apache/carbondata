@@ -254,7 +254,25 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ```
   DROP TABLE IF EXISTS productSchema.productSalesTable
   ```
+ 
+### REFRESH TABLE
+ 
+  This command is used to register Carbon table to HIVE meta store catalogue from existing Carbon table data.
+  ```
+  REFRESH TABLE $db_NAME.$table_NAME
+  ```
   
+  Example:
+  ```
+  REFRESH TABLE dbcarbon.productSalesTable
+  ```
+  NOTE: 
+  * The new database name and the old database name should be same.
+  * Before executing this command the old table schema and data should be copied into the new database location.
+  * If the table is aggregate table, then all the aggregate tables should be copied to the new database location.
+  * For old store, the time zone of the source and destination cluster should be same.
+  
+
 ## LOAD DATA
 
 ### LOAD FILES TO CARBONDATA TABLE
