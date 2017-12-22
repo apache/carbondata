@@ -45,6 +45,13 @@ import org.apache.carbondata.spark.util.CommonUtil
 class CarbonSession(@transient val sc: SparkContext,
     @transient private val existingSharedState: Option[SharedState]) extends SparkSession(sc) {
 
+  /**
+   * The version of carbondata on which this application is running.
+   *
+   * @since 1.3.0
+   */
+  val carbonVersion = CarbonCommonConstants.CARBONDATA_DEFAULT_VERSION
+
   def this(sc: SparkContext) {
     this(sc, None)
   }

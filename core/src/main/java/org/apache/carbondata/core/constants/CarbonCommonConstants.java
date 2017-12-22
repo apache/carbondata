@@ -1032,6 +1032,12 @@ public final class CarbonCommonConstants {
   public static final String CARBON_DATA_FILE_VERSION = "carbon.data.file.version";
 
   /**
+   * carbondata version property
+   */
+  @CarbonProperty
+  public static final String CARBONDATA_VERSION = "carbon.version";
+
+  /**
    * Index file name will end with this extension when update.
    */
   public static final String UPDATE_INDEX_FILE_EXT = ".carbonindex";
@@ -1107,6 +1113,11 @@ public final class CarbonCommonConstants {
    * current data file version
    */
   public static final String CARBON_DATA_FILE_DEFAULT_VERSION = "V3";
+
+  /**
+   * current CarbonData version
+   */
+  public static final String CARBONDATA_DEFAULT_VERSION = "1.3.0-SNAPSHOT";
 
   /**
    * data file version header
