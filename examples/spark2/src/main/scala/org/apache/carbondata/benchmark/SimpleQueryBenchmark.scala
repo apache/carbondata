@@ -15,7 +15,7 @@
  * limitations under the License.
  */
 
-package org.apache.carbondata.examples
+package org.apache.carbondata.benchmark
 
 import java.io.File
 import java.text.SimpleDateFormat
@@ -27,16 +27,10 @@ import org.apache.spark.sql.types._
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 
-/**
- * A query test case
- * @param sqlText SQL statement
- * @param queryType type of query: scan, filter, aggregate, topN
- * @param desc description of the goal of this test case
- */
-case class Query(sqlText: String, queryType: String, desc: String)
+
 
 // scalastyle:off println
-object CompareTest {
+object SimpleQueryBenchmark {
 
   def parquetTableName: String = "comparetest_parquet"
   def orcTableName: String = "comparetest_orc"
