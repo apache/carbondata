@@ -17,7 +17,7 @@
 package org.apache.spark.util
 
 import org.apache.spark.sql.{CarbonEnv, SparkSession}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.catalyst.TableIdentifier
 
 import org.apache.carbondata.api.CarbonStore
 
@@ -51,7 +51,7 @@ object DeleteSegmentById {
     val segmentIds = extractSegmentIds(TableAPIUtil.escape(args(2)))
     val spark = TableAPIUtil.spark(storePath, s"DeleteSegmentById: $dbName.$tableName")
     CarbonEnv.getInstance(spark).carbonMetastore.
-      checkSchemasModifiedTimeAndReloadTables()
+      checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
     deleteSegmentById(spark, dbName, tableName, segmentIds)
   }
 }

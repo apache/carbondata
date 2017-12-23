@@ -133,7 +133,7 @@ object CarbonEnv {
     val databaseName = getDatabaseName(databaseNameOp)(sparkSession)
     val catalog = getInstance(sparkSession).carbonMetastore
     // refresh cache
-    catalog.checkSchemasModifiedTimeAndReloadTables()
+    catalog.checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, databaseNameOp))
 
     // try to get it from catch, otherwise lookup in catalog
     catalog.getTableFromMetadataCache(databaseName, tableName)

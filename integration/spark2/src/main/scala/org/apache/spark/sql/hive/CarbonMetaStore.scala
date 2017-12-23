@@ -136,7 +136,7 @@ trait CarbonMetaStore {
 
   def updateAndTouchSchemasUpdatedTime()
 
-  def checkSchemasModifiedTimeAndReloadTables()
+  def checkSchemasModifiedTimeAndReloadTable(tableIdentifier: TableIdentifier): Boolean
 
   def isReadFromHiveMetaStore: Boolean
 

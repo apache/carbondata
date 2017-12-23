@@ -75,7 +75,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       // clear driver B-tree and dictionary cache
       ManageDictionaryAndBTree.clearBTreeAndDictionaryLRUCache(carbonTable)
     }
-    checkSchemasModifiedTimeAndReloadTables()
+    checkSchemasModifiedTimeAndReloadTable(TableIdentifier(tableName, Some(dbName)))
     removeTableFromMetadata(dbName, tableName)
     CarbonHiveMetadataUtil.invalidateAndDropTable(dbName, tableName, sparkSession)
     // discard cached table info in cachedDataSourceTables
@@ -84,8 +84,9 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier)
   }
 
-  override def checkSchemasModifiedTimeAndReloadTables() {
-    // do nothing now
+  override def checkSchemasModifiedTimeAndReloadTable(tableIdentifier: TableIdentifier): Boolean = {
+    // do nothing
+    false
   }
 
   override def listAllTables(sparkSession: SparkSession): Seq[CarbonTable] = {
