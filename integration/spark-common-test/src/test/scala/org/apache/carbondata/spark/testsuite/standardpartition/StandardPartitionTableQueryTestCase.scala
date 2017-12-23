@@ -16,9 +16,9 @@
  */
 package org.apache.carbondata.spark.testsuite.standardpartition
 
-import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.execution.BatchedDataSourceScanExec
 import org.apache.spark.sql.test.util.QueryTest
+import org.apache.spark.sql.{DataFrame, Row}
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -63,7 +63,6 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
       "select empno, empname, designation, doj, workgroupcategory, workgroupcategoryname, deptno," +
       " deptname, projectcode, projectjoindate, projectenddate, attendance, utilization, salary " +
       "from partitionone where empno=11 order by empno")
-
     verifyPartitionInfo(frame, Seq("empno=11"))
 
     checkAnswer(frame,
@@ -186,6 +185,43 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
 
   }
 
+  test("badrecords on partition column") {
+    sql("create table badrecordsPartition(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata'")
+    sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartition options('bad_records_action'='force')")
+    sql("select count(*) from badrecordsPartition").show()
+    checkAnswer(sql("select count(*) cnt from badrecordsPartition where intfield2 is null"), Seq(Row(9)))
+    checkAnswer(sql("select count(*) cnt from badrecordsPartition where intfield2 is not null"), Seq(Row(2)))
+  }
+
+  test("badrecords fail on partition column") {
+    sql("create table badrecordsPartitionfail(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata'")
+    intercept[Exception] {
+      sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionfail options('bad_records_action'='fail')")
+
+    }
+  }
+
+  test("badrecords ignore on partition column") {
+    sql("create table badrecordsPartitionignore(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata'")
+    sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionignore options('bad_records_action'='ignore')")
+    checkAnswer(sql("select count(*) cnt from badrecordsPartitionignore where intfield2 is null"), Seq(Row(3)))
+    checkAnswer(sql("select count(*) cnt from badrecordsPartitionignore where intfield2 is not null"), Seq(Row(2)))
+  }
+
+  test("static column partition with load command") {
+    sql(
+      """
+        | CREATE TABLE staticpartitionload (empno int, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int,
+        |  projectjoindate Timestamp,attendance int,
+        |  deptname String,projectcode int,
+        |  utilization int,salary int,projectenddate Date,doj Timestamp)
+        | PARTITIONED BY (empname String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionload partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+  }
+
 
   private def verifyPartitionInfo(frame: DataFrame, partitionNames: Seq[String]) = {
     val plan = frame.queryExecution.sparkPlan
@@ -209,6 +245,10 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists partitionmany")
     sql("drop table if exists partitiondate")
     sql("drop table if exists partitiondateinsert")
+    sql("drop table if exists badrecordsPartition")
+    sql("drop table if exists staticpartitionload")
+    sql("drop table if exists badrecordsPartitionignore")
+    sql("drop table if exists badrecordsPartitionfail")
   }
 
 }

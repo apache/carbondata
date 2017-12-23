@@ -192,7 +192,12 @@ private class CarbonOutputWriter(path: String,
     partitions.map{ p =>
       val splitData = p.split("=")
       if (splitData.length > 1) {
-        splitData(1)
+        // NUll handling case. For null hive creates with this special name
+        if (splitData(1).equals("__HIVE_DEFAULT_PARTITION__")) {
+          null
+        } else {
+          splitData(1)
+        }
       } else {
         ""
       }

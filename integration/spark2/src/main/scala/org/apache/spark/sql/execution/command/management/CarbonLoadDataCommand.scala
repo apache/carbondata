@@ -67,7 +67,7 @@ import org.apache.carbondata.format
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.csvinput.{CSVInputFormat, StringArrayWritable}
-import org.apache.carbondata.processing.loading.exception.NoRetryException
+import org.apache.carbondata.processing.loading.exception.{BadRecordFoundException, NoRetryException}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
 import org.apache.carbondata.spark.dictionary.provider.SecureDictionaryServiceProvider
@@ -463,13 +463,16 @@ case class CarbonLoadDataCommand(
     val logicalPlan =
       sparkSession.sessionState.catalog.lookupRelation(
         identifier)
-    val relation = logicalPlan.collect {
-      case l: LogicalRelation => l
+    val catalogTable: CatalogTable = logicalPlan.collect {
+      case l: LogicalRelation => l.catalogTable.get
       case c // To make compatabile with spark 2.1 and 2.2 we need to compare classes
         if (c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
             c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
             c.getClass.getName.equals(
-              "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) => c
+              "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
+        CarbonReflectionUtils.getFieldOfCatalogTable(
+          "tableMeta",
+          c).asInstanceOf[CatalogTable]
     }.head
     // Clean up the old invalid segment data.
     DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false, table)
@@ -481,6 +484,11 @@ case class CarbonLoadDataCommand(
     // converted to hive standard fomat to let spark understand the data to partition.
     val serializationNullFormat =
       carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
+    val failAction =
+      carbonLoadModel.getBadRecordsAction.split(",")(1).equalsIgnoreCase(
+        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
+    val ignoreAction =
+      carbonLoadModel.getBadRecordsAction.split(",")(1).equalsIgnoreCase("ignore")
     val query: LogicalPlan = if (dataFrame.isDefined) {
       var timeStampformatString = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
       val timeStampFormat = new SimpleDateFormat(timeStampformatString)
@@ -513,7 +521,7 @@ case class CarbonLoadDataCommand(
         sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
         // In case of update, we don't need the segmrntid column in case of partitioning
         val dropAttributes = attributes.dropRight(1)
-        val finalOutput = relation.output.map { attr =>
+        val finalOutput = catalogTable.schema.map { attr =>
           dropAttributes.find { d =>
             val index = d.name.lastIndexOf("-updatedColumn")
             if (index > 0) {
@@ -548,13 +556,15 @@ case class CarbonLoadDataCommand(
         StructType(carbonLoadModel.getCsvHeaderColumns.map(
           StructField(_, StringType))).toAttributes
       val rowDataTypes = attributes.map { attribute =>
-        relation.output.find(_.name.equalsIgnoreCase(attribute.name)) match {
+        catalogTable.schema.find(_.name.equalsIgnoreCase(attribute.name)) match {
           case Some(attr) => attr.dataType
           case _ => StringType
         }
       }
       val len = rowDataTypes.length
-      val rdd =
+      // Fail row conversion if fail/ignore badrecord action is enabled
+      val fail = failAction || ignoreAction
+      var rdd =
         new NewHadoopRDD[NullWritable, StringArrayWritable](
           sparkSession.sparkContext,
           classOf[CSVInputFormat],
@@ -564,55 +574,60 @@ case class CarbonLoadDataCommand(
             val data = new Array[Any](len)
             var i = 0
             val input = value.get()
-            while (i < input.length) {
-              // TODO find a way to avoid double conversion of date and time.
-              data(i) = CarbonScalaUtil.convertToUTF8String(
-                input(i),
-                rowDataTypes(i),
-                timeStampFormat,
-                dateFormat,
-                serializationNullFormat)
-              i = i + 1
+            val inputLen = Math.min(input.length, len)
+            try {
+              while (i < inputLen) {
+                // TODO find a way to avoid double conversion of date and time.
+                data(i) = CarbonScalaUtil.convertToUTF8String(
+                  input(i),
+                  rowDataTypes(i),
+                  timeStampFormat,
+                  dateFormat,
+                  serializationNullFormat,
+                  fail)
+                i = i + 1
+              }
+              InternalRow.fromSeq(data)
+            } catch {
+              case e: Exception =>
+                if (failAction) {
+                  // It is badrecord fail case.
+                  throw new BadRecordFoundException(
+                    s"Data load failed due to bad record: " +
+                    s"${input(i)} with datatype ${rowDataTypes(i)}")
+                } else {
+                  // It is bad record ignore case
+                  InternalRow.empty
+                }
             }
-            InternalRow.fromSeq(data)
+
         }
+      // In bad record ignore case filter the empty values
+      if (ignoreAction) {
+        rdd = rdd.filter(f => f.numFields != 0)
+      }
 
       // Only select the required columns
       val output = if (partition.nonEmpty) {
-        relation.output.map{ attr =>
+        catalogTable.schema.map{ attr =>
           attributes.find(_.name.equalsIgnoreCase(attr.name)).get
         }.filter(attr => partition.get(attr.name).isEmpty)
       } else {
-        relation.output.map(f => attributes.find(_.name.equalsIgnoreCase(f.name)).get)
+        catalogTable.schema.map(f => attributes.find(_.name.equalsIgnoreCase(f.name)).get)
       }
       Project(output, LogicalRDD(attributes, rdd)(sparkSession))
     }
-    val convertRelation = relation match {
-      case l: LogicalRelation =>
-        convertToLogicalRelation(
-          l.catalogTable.get,
-          l.output,
-          l.relation.sizeInBytes,
-          isOverwriteTable,
-          carbonLoadModel,
-          sparkSession)
-      case others =>
-        val catalogTable = CarbonReflectionUtils.getFieldOfCatalogTable(
-          "tableMeta",
-          relation).asInstanceOf[CatalogTable]
-        // TODO need to find a way to avoid double lookup
-        val sizeInBytes =
-          CarbonEnv.getInstance(sparkSession).carbonMetastore.lookupRelation(
-            catalogTable.identifier)(sparkSession).asInstanceOf[CarbonRelation].sizeInBytes
-        val catalog = new CatalogFileIndex(sparkSession, catalogTable, sizeInBytes)
-        convertToLogicalRelation(
-          catalogTable,
-          others.output,
-          sizeInBytes,
-          isOverwriteTable,
-          carbonLoadModel,
-          sparkSession)
-    }
+    // TODO need to find a way to avoid double lookup
+    val sizeInBytes =
+      CarbonEnv.getInstance(sparkSession).carbonMetastore.lookupRelation(
+        catalogTable.identifier)(sparkSession).asInstanceOf[CarbonRelation].sizeInBytes
+    val catalog = new CatalogFileIndex(sparkSession, catalogTable, sizeInBytes)
+    val convertRelation = convertToLogicalRelation(
+      catalogTable,
+      sizeInBytes,
+      isOverwriteTable,
+      carbonLoadModel,
+      sparkSession)
     val convertedPlan =
       CarbonReflectionUtils.getInsertIntoCommand(
         convertRelation,
@@ -629,14 +644,12 @@ case class CarbonLoadDataCommand(
 
   private def convertToLogicalRelation(
       catalogTable: CatalogTable,
-      output: Seq[Attribute],
       sizeInBytes: Long,
       overWrite: Boolean,
       loadModel: CarbonLoadModel,
       sparkSession: SparkSession): LogicalRelation = {
     val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
-    val metastoreSchema = StructType(StructType.fromAttributes(
-      output).fields.map(_.copy(dataType = StringType)))
+    val metastoreSchema = StructType(catalogTable.schema.fields.map(_.copy(dataType = StringType)))
     val lazyPruningEnabled = sparkSession.sqlContext.conf.manageFilesourcePartitions
     val catalog = new CatalogFileIndex(
       sparkSession, catalogTable, sizeInBytes)
