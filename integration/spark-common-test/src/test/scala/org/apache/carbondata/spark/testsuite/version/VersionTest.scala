@@ -24,7 +24,7 @@ import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
 /**
- * Created by root on 12/22/17.
+ * Test CarbonData version
  */
 class VersionTest extends QueryTest with BeforeAndAfterAll {
   test("CarbonData version test: null") {
@@ -45,17 +45,9 @@ class VersionTest extends QueryTest with BeforeAndAfterAll {
   test("data file version test") {
     val version = CarbonProperties.getInstance
       .getProperty(CarbonCommonConstants.CARBON_DATA_FILE_VERSION)
-    assert("V3".equals(version))
+    assert(version.contains("V"))
   }
 
-  test("new carbonsession test") {
-    try {
-      VersionTest.main(null)
-      assert(true)
-    } catch {
-      case _: Exception => assert(false)
-    }
-  }
 }
 
 object VersionTest {
