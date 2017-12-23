@@ -158,6 +158,14 @@ class TestShowPartition  extends QueryTest with BeforeAndAfterAll {
     assert(row(0).getString(1).contains("HASH"))
   }
 
+  test("show partition table: desc formatted should show partition type"){
+    //check for partition type exist in desc formatted
+    val result:DataFrame = sql("describe formatted hashTable")
+    checkExistence(result,true,"Partition Type")
+    val row: Array[Row] = result.collect().filter{row: Row => row.getString(0).contains("Partition Type")}
+    assert(row(0).getString(1).contains("HASH"))
+  }
+
   test("show partition table: range partition") {
     // EqualTo
     checkAnswer(sql("show partitions rangeTable"), Seq(Row("0, doj = DEFAULT"),
