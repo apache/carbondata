@@ -155,13 +155,24 @@ object CarbonScalaUtil {
     }
   }
 
+  /**
+   * Converts incoming value to UTF8String after converting data as per the data type.
+   * @param value Input value to convert
+   * @param dataType Datatype to convert and then convert to UTF8String
+   * @param timeStampFormat Timestamp format to convert in case of timestamp datatypes
+   * @param dateFormat DataFormat to convert incase of DateType datatype
+   * @param serializationNullFormat if this encounters in input data then data will
+   *                                be treated as null
+   * @param fail If it is true then any conversion error will trhow error otherwise it will be
+   *                   filled with ull value
+   * @return converted UTF8String
+   */
   def convertToUTF8String(value: String,
       dataType: DataType,
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat,
       serializationNullFormat: String,
-      failAction: Boolean,
-      ignoreAction: Boolean): UTF8String = {
+      fail: Boolean): UTF8String = {
     if (value == null || serializationNullFormat.equals(value)) {
       return UTF8String.fromString(value)
     }
@@ -186,11 +197,7 @@ object CarbonScalaUtil {
       }
     } catch {
       case e: Exception =>
-        if (failAction) {
-          throw new BadRecordFoundException(
-            s"Data load failed due to bad record: $value with datatype $dataType")
-        }
-        if (ignoreAction) {
+        if (fail) {
           throw e
         }
         UTF8String.fromString(null)

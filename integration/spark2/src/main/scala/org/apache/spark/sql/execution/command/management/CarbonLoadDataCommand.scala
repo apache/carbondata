@@ -562,7 +562,9 @@ case class CarbonLoadDataCommand(
         }
       }
       val len = rowDataTypes.length
-      val rdd =
+      // Fail row conversion if fail/ignore badrecord action is enabled
+      val fail = failAction || ignoreAction
+      var rdd =
         new NewHadoopRDD[NullWritable, StringArrayWritable](
           sparkSession.sparkContext,
           classOf[CSVInputFormat],
@@ -582,17 +584,28 @@ case class CarbonLoadDataCommand(
                   timeStampFormat,
                   dateFormat,
                   serializationNullFormat,
-                  failAction,
-                  ignoreAction)
+                  fail)
                 i = i + 1
               }
               InternalRow.fromSeq(data)
             } catch {
-              case e: BadRecordFoundException => throw e
-              case e: Exception => InternalRow.empty // It is bad record ignore case
+              case e: Exception =>
+                if (failAction) {
+                  // It is badrecord fail case.
+                  throw new BadRecordFoundException(
+                    s"Data load failed due to bad record: " +
+                    s"${input(i)} with datatype ${rowDataTypes(i)}")
+                } else {
+                  // It is bad record ignore case
+                  InternalRow.empty
+                }
             }
 
-        }.filter(f => f.numFields != 0) // In bad record ignore case filter the empty values
+        }
+      // In bad record ignore case filter the empty values
+      if (ignoreAction) {
+        rdd = rdd.filter(f => f.numFields != 0)
+      }
 
       // Only select the required columns
       val output = if (partition.nonEmpty) {
