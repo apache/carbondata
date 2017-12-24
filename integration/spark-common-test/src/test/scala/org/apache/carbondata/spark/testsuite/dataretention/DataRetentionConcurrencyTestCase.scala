@@ -34,7 +34,7 @@ class DataRetentionConcurrencyTestCase extends QueryTest with BeforeAndAfterAll 
   private val executorService = Executors.newFixedThreadPool(10)
 
   override def beforeAll {
-    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_LOAD_METADATA_LOCK, "1")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.MAX_TIMEOUT_FOR_CONCURRENT_LOCK, "1")
     sql("drop table if exists concurrent")
     sql(
       "create table concurrent (ID int, date String, country String, name " +
