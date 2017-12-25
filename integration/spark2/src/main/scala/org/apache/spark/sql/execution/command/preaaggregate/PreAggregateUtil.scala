@@ -20,18 +20,18 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSession, SparkSession}
-import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias, MatchCast => Cast, MatchCastExpression}
+import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias, MatchCastExpression}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFunction, UnresolvedRelation}
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, NamedExpression, ScalaUDF}
-import org.apache.spark.sql.catalyst.expressions.aggregate._
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Cast, Expression, NamedExpression, ScalaUDF}
+import org.apache.spark.sql.catalyst.expressions.aggregate.{Count, _}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField, Field}
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
-import org.apache.spark.sql.types.DataType
+import org.apache.spark.sql.types.{DataType, LongType}
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -166,15 +166,15 @@ object PreAggregateUtil {
    * Below method will be used to get the column relation
    * with the parent column which will be used during query and data loading
    * @param parentColumnName
-   * parent column name
+   *                         parent column name
    * @param parentTableId
-   * parent column id
+   *                      parent column id
    * @param parentTableName
-   * parent table name
+   *                        parent table name
    * @param parentDatabaseName
-   * parent database name
+   *                           parent database name
    * @param carbonTable
-   * carbon table
+   *                    carbon table
    * @return column relation object
    */
   def getColumnRelation(parentColumnName: String,
@@ -280,7 +280,7 @@ object PreAggregateUtil {
           "sum")
         list += createFieldForAggregateExpression(
           exp,
-          changeDataType,
+          LongType,
           carbonTable,
           newColumnName,
           "count")
@@ -293,7 +293,7 @@ object PreAggregateUtil {
           "sum")
         list += createFieldForAggregateExpression(
           exp,
-          avg.dataType,
+          LongType,
           carbonTable,
           newColumnName,
           "count")
@@ -746,6 +746,80 @@ object PreAggregateUtil {
           rollupDataMapSchema += f
         } }
       rollupDataMapSchema.lastOption
+    }
+  }
+
+  /**
+   * Below method will be used to update aggregate expression
+   * in case of average it will return two columns so avreage value can be calculated correctly
+   * @param aggregateExpression
+   * query aggregate expression
+   * @return updated aggregate expression
+   */
+  def getUpdateAggregateExpressions(
+      aggregateExpression: AggregateExpression) : Seq[AggregateExpression] = {
+    val aggExpBuffer = new ArrayBuffer[AggregateExpression]()
+    aggregateExpression.aggregateFunction match {
+      case Average(exp: Expression) =>
+        aggExpBuffer += AggregateExpression(
+          Sum(exp),
+          aggregateExpression.mode,
+          aggregateExpression.isDistinct)
+        aggExpBuffer += AggregateExpression(
+          Count(exp),
+          aggregateExpression.mode,
+          aggregateExpression.isDistinct)
+      case Average(MatchCastExpression(exp: Expression, dataType)) =>
+        aggExpBuffer += AggregateExpression(
+          Sum(Cast(exp, dataType)),
+          aggregateExpression.mode,
+          aggregateExpression.isDistinct)
+        aggExpBuffer += AggregateExpression(Count(Cast(exp, dataType)),
+          aggregateExpression.mode,
+          aggregateExpression.isDistinct)
+      case _ =>
+        aggExpBuffer += aggregateExpression
+    }
+  }
+
+  /**
+   * Below method will be used to get the logical plan from aggregate expression
+   * @param aggExp
+   *               aggregate expression
+   * @param tableName
+   *                  parent table name
+   * @param databaseName
+   *                     database name
+   * @param logicalRelation
+   *                        logical relation
+   * @return logical plan
+   */
+  def getLogicalPlanFromAggExp(aggExp: AggregateExpression,
+      tableName: String,
+      databaseName: String,
+      logicalRelation: LogicalRelation,
+      sparkSession: SparkSession,
+      parser: CarbonSpark2SqlParser): LogicalPlan = {
+    // adding the preAGG UDF, so pre aggregate data loading rule and query rule will not
+    // be applied
+    val query = parser.addPreAggFunction(s"Select ${ aggExp.sql } from $databaseName.$tableName")
+    // updating the logical relation of logical plan to so when two logical plan
+    // will be compared it will not consider relation
+    updateLogicalRelation(sparkSession.sql(query).logicalPlan, logicalRelation)
+  }
+
+  /**
+   * Below method will be used to update the logical plan of expression
+   * with parent table logical relation
+   * @param logicalPlan
+   * @param logicalRelation
+   * @return
+   */
+  def updateLogicalRelation(logicalPlan: LogicalPlan,
+      logicalRelation: LogicalRelation): LogicalPlan = {
+    logicalPlan transform {
+      case l: LogicalRelation =>
+        l.copy(relation = logicalRelation.relation)
     }
   }
 }

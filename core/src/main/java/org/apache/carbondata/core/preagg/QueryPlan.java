@@ -29,28 +29,17 @@ public class QueryPlan {
   private List<QueryColumn> projectionColumn;
 
   /**
-   * list of aggregation columns
-   */
-  private List<QueryColumn> aggregationColumns;
-
-  /**
    * list of filter columns
    */
   private List<QueryColumn> filterColumns;
 
-  public QueryPlan(List<QueryColumn> projectionColumn, List<QueryColumn> aggregationColumns,
-      List<QueryColumn> filterColumns) {
+  public QueryPlan(List<QueryColumn> projectionColumn, List<QueryColumn> filterColumns) {
     this.projectionColumn = projectionColumn;
-    this.aggregationColumns = aggregationColumns;
     this.filterColumns = filterColumns;
   }
 
   public List<QueryColumn> getProjectionColumn() {
     return projectionColumn;
-  }
-
-  public List<QueryColumn> getAggregationColumns() {
-    return aggregationColumns;
   }
 
   public List<QueryColumn> getFilterColumns() {

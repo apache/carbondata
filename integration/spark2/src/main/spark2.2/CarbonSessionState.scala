@@ -169,7 +169,7 @@ class CarbonAnalyzer(catalog: SessionCatalog,
     analyzer: Analyzer) extends Analyzer(catalog, conf) {
   override def execute(plan: LogicalPlan): LogicalPlan = {
     var logicalPlan = analyzer.execute(plan)
-    logicalPlan = CarbonPreAggregateDataLoadingRules(logicalPlan)
+    logicalPlan = CarbonPreAggregateDataLoadingRules(sparkSession).apply(logicalPlan)
     CarbonPreAggregateQueryRules(sparkSession).apply(logicalPlan)
   }
 }
