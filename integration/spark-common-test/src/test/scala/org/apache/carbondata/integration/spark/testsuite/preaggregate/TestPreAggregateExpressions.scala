@@ -17,6 +17,10 @@
 
 package org.apache.carbondata.integration.spark.testsuite.preaggregate
 
+import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, Row}
+import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
+import org.apache.spark.sql.execution.datasources.LogicalRelation
+import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -25,6 +29,7 @@ class TestPreAggregateExpressions extends QueryTest with BeforeAndAfterAll {
   override def beforeAll: Unit = {
     sql("DROP TABLE IF EXISTS mainTable")
     sql("CREATE TABLE mainTable(id int, name string, city string, age string) STORED BY 'org.apache.carbondata.format'")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table mainTable")
   }
   test("test pre agg create table with expression 1") {
     sql(
@@ -93,6 +98,69 @@ class TestPreAggregateExpressions extends QueryTest with BeforeAndAfterAll {
          | FROM mainTable GROUP BY name
          | """.stripMargin)
     checkExistence(sql("DESCRIBE FORMATTED mainTable_agg5"), true, "maintable_column_0_count")
+  }
+  test("test pre agg table selection with expression 1") {
+    val df = sql("select name as NewName, count(age) as sum from mainTable group by name order by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
+  }
+
+
+  test("test pre agg table selection with expression 2") {
+    val df = sql("select name as NewName, sum(case when age=35 then id else 0 end) as sum from mainTable group by name order by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg1")
+  }
+
+  test("test pre agg table selection with expression 3") {
+    val df = sql("select sum(case when age=35 then id else 0 end) from maintable")
+    checkAnswer(df, Seq(Row(6.0)))
+  }
+
+  test("test pre agg table selection with expression 4") {
+    val df = sql("select sum(case when age=27 then id else 0 end) from maintable")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg3")
+    checkAnswer(df, Seq(Row(2.0)))
+  }
+
+  test("test pre agg table selection with expression 5") {
+    val df = sql("select sum(case when age=27 then id else 0 end), sum(case when age=35 then id else 0 end) from maintable")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg4")
+    checkAnswer(df, Seq(Row(2.0,6.0)))
+  }
+
+  /**
+   * Below method will be used to validate the table name is present in the plan or not
+   * @param plan
+   * query plan
+   * @param actualTableName
+   * table name to be validated
+   */
+  def preAggTableValidator(plan: LogicalPlan, actualTableName: String) : Unit ={
+    var isValidPlan = false
+    plan.transform {
+      // first check if any preaTable1 scala function is applied it is present is in plan
+      // then call is from create preaTable1regate table class so no need to transform the query plan
+      case ca:CarbonRelation =>
+        if (ca.isInstanceOf[CarbonDatasourceHadoopRelation]) {
+          val relation = ca.asInstanceOf[CarbonDatasourceHadoopRelation]
+          if(relation.carbonTable.getTableName.equalsIgnoreCase(actualTableName)) {
+            isValidPlan = true
+          }
+        }
+        ca
+      case logicalRelation:LogicalRelation =>
+        if(logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation]) {
+          val relation = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
+          if(relation.carbonTable.getTableName.equalsIgnoreCase(actualTableName)) {
+            isValidPlan = true
+          }
+        }
+        logicalRelation
+    }
+    if(!isValidPlan) {
+      assert(false)
+    } else {
+      assert(true)
+    }
   }
 
   override def afterAll: Unit = {
