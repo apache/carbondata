@@ -155,6 +155,23 @@ object PreAggregateUtil {
         throw new MalformedCarbonCommandException(s"Unsupported Select Statement:${
           selectStmt } ")
     }
+    groupByExp map {
+      case attr: AttributeReference =>
+        val columnRelation = getColumnRelation(
+          attr.name,
+          parentTableId,
+          parentTableName,
+          parentDatabaseName,
+          carbonTable)
+        fieldToDataMapFieldMap += createField(
+          attr.name,
+          attr.dataType,
+          parentTableName = parentTableName,
+          columnTableRelationList = Seq(columnRelation))
+      case _ =>
+        throw new MalformedCarbonCommandException(s"Unsupported Function in select Statement:${
+          selectStmt }")
+    }
     fieldToDataMapFieldMap
   }
 
