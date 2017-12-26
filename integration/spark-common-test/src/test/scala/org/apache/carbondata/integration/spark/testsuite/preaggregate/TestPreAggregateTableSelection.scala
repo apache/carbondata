@@ -235,6 +235,17 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg2")
   }
 
+  test("test pre-agg table with group by condition") {
+    sql("drop table if exists grouptable")
+    sql("CREATE TABLE grouptable(id int, name string, city string, age string) STORED BY" +
+        " 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='name,age')")
+    sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table grouptable")
+    sql("create datamap agg9 on table grouptable using 'preaggregate' as select sum(id) from grouptable group by city")
+    val df = sql("select sum(id) from grouptable group by city")
+    preAggTableValidator(df.queryExecution.analyzed, "grouptable_agg9")
+    checkAnswer(df, Seq(Row(3), Row(3), Row(4), Row(7)))
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
     sql("drop table if exists lineitem")
