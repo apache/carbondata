@@ -38,6 +38,8 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   private DataType dataType;
 
+  private DataType blockDataType;
+
   public ColumnarVectorWrapper(ColumnVector columnVector, boolean[] filteredRows) {
     this.columnVector = columnVector;
     this.filteredRows = filteredRows;
@@ -209,6 +211,16 @@ class ColumnarVectorWrapper implements CarbonColumnVector {
 
   @Override public DataType getType() {
     return dataType;
+  }
+
+  @Override
+  public DataType getBlockDataType() {
+    return blockDataType;
+  }
+
+  @Override
+  public void setBlockDataType(DataType blockDataType) {
+    this.blockDataType = blockDataType;
   }
 
   @Override public void setFilteredRowsExist(boolean filteredRowsExist) {

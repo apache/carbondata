@@ -51,6 +51,8 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   private DataType dataType;
 
+  private DataType blockDataType;
+
   /**
    * True if there is at least one NULL byte set. This is an optimization for the writer, to skip
    * having to clear NULL bits.
@@ -233,6 +235,16 @@ public class CarbonColumnVectorImpl implements CarbonColumnVector {
 
   @Override public DataType getType() {
     return dataType;
+  }
+
+  @Override
+  public DataType getBlockDataType() {
+    return blockDataType;
+  }
+
+  @Override
+  public void setBlockDataType(DataType blockDataType) {
+    this.blockDataType = blockDataType;
   }
 
   @Override public void setFilteredRowsExist(boolean filteredRowsExist) {

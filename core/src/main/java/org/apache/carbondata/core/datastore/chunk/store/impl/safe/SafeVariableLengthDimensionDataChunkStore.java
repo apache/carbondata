@@ -24,7 +24,7 @@ import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.result.vector.CarbonColumnVector;
 import org.apache.carbondata.core.util.ByteUtil;
-
+import org.apache.carbondata.core.util.DataTypeUtil;
 
 /**
  * Below class is responsible to store variable length dimension data chunk in
@@ -153,7 +153,9 @@ public class SafeVariableLengthDimensionDataChunkStore extends SafeAbsractDimens
       } else if (dt == DataTypes.INT) {
         vector.putInt(vectorRow, ByteUtil.toInt(data, currentDataOffset, length));
       } else if (dt == DataTypes.LONG) {
-        vector.putLong(vectorRow, ByteUtil.toLong(data, currentDataOffset, length));
+        vector.putLong(vectorRow, DataTypeUtil
+            .getDataBasedOnRestructuredDataType(data, vector.getBlockDataType(),
+                currentDataOffset, length));
       } else if (dt  == DataTypes.TIMESTAMP) {
         vector.putLong(vectorRow, ByteUtil.toLong(data, currentDataOffset, length) * 1000L);
       }
