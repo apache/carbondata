@@ -17,10 +17,8 @@
 
 package org.apache.carbondata.processing.loading.sort.unsafe;
 
-import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -31,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.memory.CarbonUnsafe;
 import org.apache.carbondata.core.memory.IntPointerBuffer;
 import org.apache.carbondata.core.memory.MemoryBlock;
@@ -279,13 +278,19 @@ public class UnsafeSortDataRows {
     startFileBasedMerge();
   }
 
-  private void writeData(UnsafeCarbonRowPage rowPage, File file)
+  /**
+   * write a page to sort temp file
+   * @param rowPage page
+   * @param file file
+   * @throws CarbonSortKeyAndGroupByException
+   */
+  private void writeDataToFile(UnsafeCarbonRowPage rowPage, File file)
       throws CarbonSortKeyAndGroupByException {
     DataOutputStream stream = null;
     try {
       // open stream
-      stream = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file),
-          parameters.getFileWriteBufferSize()));
+      stream = FileFactory.getDataOutputStream(file.getPath(), FileFactory.FileType.LOCAL,
+          parameters.getFileWriteBufferSize(), parameters.getSortTempCompressorName());
       int actualSize = rowPage.getBuffer().getActualSize();
       // write number of entries to the file
       stream.writeInt(actualSize);
@@ -372,7 +377,7 @@ public class UnsafeSortDataRows {
           File sortTempFile = new File(
               tmpDir + File.separator + parameters.getTableName()
                   + System.nanoTime() + CarbonCommonConstants.SORT_TEMP_FILE_EXT);
-          writeData(page, sortTempFile);
+          writeDataToFile(page, sortTempFile);
           LOGGER.info("Time taken to sort row page with size" + page.getBuffer().getActualSize()
               + " and write is: " + (System.currentTimeMillis() - startTime) + ": location:"
               + sortTempFile);

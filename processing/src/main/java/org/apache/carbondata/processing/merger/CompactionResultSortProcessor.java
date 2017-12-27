@@ -130,7 +130,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
   private SortIntermediateFileMerger intermediateFileMerger;
 
   private List<String> partitionNames;
-
+  private SortParameters sortParameters;
 
   public CompactionResultSortProcessor(CarbonLoadModel carbonLoadModel, CarbonTable carbonTable,
       SegmentProperties segmentProperties, CompactionType compactionType, String tableName,
@@ -349,11 +349,11 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       noDictionaryCount++;
     }
     dimensionColumnCount = dimensions.size();
-    SortParameters parameters = createSortParameters();
-    intermediateFileMerger = new SortIntermediateFileMerger(parameters);
+    sortParameters = createSortParameters();
+    intermediateFileMerger = new SortIntermediateFileMerger(sortParameters);
     // TODO: Now it is only supported onheap merge, but we can have unsafe merge
     // as well by using UnsafeSortDataRows.
-    this.sortDataRows = new SortDataRows(parameters, intermediateFileMerger);
+    this.sortDataRows = new SortDataRows(sortParameters, intermediateFileMerger);
     try {
       this.sortDataRows.initialize();
     } catch (CarbonSortKeyAndGroupByException e) {
@@ -389,13 +389,12 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
       System.arraycopy(noDictionaryColMapping, 0,
           noDictionarySortColumnMapping, 0, noDictionarySortColumnMapping.length);
     }
+    sortParameters.setNoDictionarySortColumn(noDictionarySortColumnMapping);
 
     String[] sortTempFileLocation = CarbonDataProcessorUtil.arrayAppend(tempStoreLocation,
         CarbonCommonConstants.FILE_SEPARATOR, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     finalMerger =
-        new SingleThreadFinalSortFilesMerger(sortTempFileLocation, tableName, dimensionColumnCount,
-            segmentProperties.getComplexDimensions().size(), measureCount, noDictionaryCount,
-            dataTypes, noDictionaryColMapping, noDictionarySortColumnMapping);
+        new SingleThreadFinalSortFilesMerger(sortTempFileLocation, tableName, sortParameters);
   }
 
   /**
