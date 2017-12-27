@@ -37,8 +37,10 @@ import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CAR
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_GLOBAL_SORT_PARTITIONS;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_SINGLE_PASS;
 import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_SORT_SCOPE;
+import static org.apache.carbondata.core.constants.CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT;
 
 /**
  * This class maintains carbon session params
@@ -166,6 +168,14 @@ public class SessionParams implements Serializable {
         break;
       // no validation needed while set for CARBON_OPTIONS_DATEFORMAT
       case CARBON_OPTIONS_DATEFORMAT:
+        isValid = true;
+        break;
+      // no validation needed while set for CARBON_OPTIONS_TIMESTAMPFORMAT
+      case CARBON_OPTIONS_TIMESTAMPFORMAT:
+        isValid = true;
+        break;
+      // no validation needed while set for CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT
+      case CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT:
         isValid = true;
         break;
       default:

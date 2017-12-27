@@ -100,6 +100,16 @@ public final class CarbonLoadOptionConstants {
       "carbon.options.global.sort.partitions";
 
   /**
+   * specify serialization null format, it is used describe which character in side the csv file
+   * is treated as null.
+   */
+  @CarbonProperty
+  public static final String CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT =
+      "carbon.options.serialization.null.format";
+
+  public static final String CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT_DEFAULT = "\\N";
+
+  /**
    *  Max number of dictionary values that can be given with external dictionary
    */
   public static final int MAX_EXTERNAL_DICTIONARY_SIZE = 10000000;

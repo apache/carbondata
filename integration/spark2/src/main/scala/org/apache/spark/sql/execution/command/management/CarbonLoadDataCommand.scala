@@ -29,13 +29,13 @@ import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.rdd.NewHadoopRDD
+import org.apache.spark.rdd.{NewHadoopRDD, RDD}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Expression}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, Project}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
@@ -47,6 +47,7 @@ import org.apache.spark.sql.types.{StringType, StructField, StructType, Timestam
 import org.apache.spark.unsafe.types.UTF8String
 import org.apache.spark.util.{CarbonReflectionUtils, CausedBy, FileUtils}
 
+import org.apache.carbondata.common.constants.LoggerAction
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.datamap.DataMapStoreManager
@@ -472,10 +473,10 @@ case class CarbonLoadDataCommand(
     val catalogTable: CatalogTable = logicalPlan.collect {
       case l: LogicalRelation => l.catalogTable.get
       case c // To make compatabile with spark 2.1 and 2.2 we need to compare classes
-        if (c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
+        if c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.CatalogRelation") ||
             c.getClass.getName.equals("org.apache.spark.sql.catalyst.catalog.HiveTableRelation") ||
             c.getClass.getName.equals(
-              "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation")) =>
+              "org.apache.spark.sql.catalyst.catalog.UnresolvedCatalogRelation") =>
         CarbonReflectionUtils.getFieldOfCatalogTable(
           "tableMeta",
           c).asInstanceOf[CatalogTable]
@@ -490,161 +491,148 @@ case class CarbonLoadDataCommand(
     // converted to hive standard fomat to let spark understand the data to partition.
     val serializationNullFormat =
       carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
-    val failAction =
-      carbonLoadModel.getBadRecordsAction.split(",")(1).equalsIgnoreCase(
-        CarbonCommonConstants.CARBON_BAD_RECORDS_ACTION_DEFAULT)
-    val ignoreAction =
-      carbonLoadModel.getBadRecordsAction.split(",")(1).equalsIgnoreCase("ignore")
-    val query: LogicalPlan = if (dataFrame.isDefined) {
-      var timeStampformatString = CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT
-      val timeStampFormat = new SimpleDateFormat(timeStampformatString)
-      var dateFormatString = CarbonCommonConstants.CARBON_DATE_DEFAULT_FORMAT
-      val dateFormat = new SimpleDateFormat(dateFormatString)
-      val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
-      val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
-      val serializationNullFormat =
-      carbonLoadModel.getSerializationNullFormat.split(CarbonCommonConstants.COMMA, 2)(1)
-      val attributes =
-        StructType(dataFrame.get.schema.fields.map(_.copy(dataType = StringType))).toAttributes
-      val len = attributes.length
-      val rdd = dataFrame.get.rdd.map { f =>
-        val data = new Array[Any](len)
-        var i = 0
-        while (i < len) {
-          data(i) =
-            UTF8String.fromString(
-              CarbonScalaUtil.getString(f.get(i),
-                serializationNullFormat,
-                delimiterLevel1,
-                delimiterLevel2,
-                timeStampFormat,
-                dateFormat))
-          i = i + 1
+    val badRecordAction =
+      carbonLoadModel.getBadRecordsAction.split(",")(1)
+    var timeStampformatString = carbonLoadModel.getTimestampformat
+    if (timeStampformatString.isEmpty) {
+      timeStampformatString = carbonLoadModel.getDefaultTimestampFormat
+    }
+    val timeStampFormat = new SimpleDateFormat(timeStampformatString)
+    var dateFormatString = carbonLoadModel.getDateFormat
+    if (dateFormatString.isEmpty) {
+      dateFormatString = carbonLoadModel.getDefaultDateFormat
+    }
+    val dateFormat = new SimpleDateFormat(dateFormatString)
+    CarbonSession.threadSet(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT, dateFormatString)
+    CarbonSession.threadSet(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
+      timeStampformatString)
+    CarbonSession.threadSet(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT,
+      serializationNullFormat)
+    CarbonSession.threadSet(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION,
+      badRecordAction)
+    CarbonSession.threadSet(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
+      carbonLoadModel.getIsEmptyDataBadRecord.split(",")(1))
+    try {
+      val query: LogicalPlan = if (dataFrame.isDefined) {
+        val delimiterLevel1 = carbonLoadModel.getComplexDelimiterLevel1
+        val delimiterLevel2 = carbonLoadModel.getComplexDelimiterLevel2
+        val attributes =
+          StructType(dataFrame.get.schema.fields.map(_.copy(dataType = StringType))).toAttributes
+        val len = attributes.length
+        val rdd = dataFrame.get.rdd.map { f =>
+          val data = new Array[Any](len)
+          var i = 0
+          while (i < len) {
+            data(i) =
+              UTF8String.fromString(
+                CarbonScalaUtil.getString(f.get(i),
+                  serializationNullFormat,
+                  delimiterLevel1,
+                  delimiterLevel2,
+                  timeStampFormat,
+                  dateFormat))
+            i = i + 1
+          }
+          InternalRow.fromSeq(data)
         }
-        InternalRow.fromSeq(data)
-      }
-      if (updateModel.isDefined) {
-        sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
-        // In case of update, we don't need the segmrntid column in case of partitioning
-        val dropAttributes = attributes.dropRight(1)
-        val finalOutput = catalogTable.schema.map { attr =>
-          dropAttributes.find { d =>
-            val index = d.name.lastIndexOf("-updatedColumn")
-            if (index > 0) {
-              d.name.substring(0, index).equalsIgnoreCase(attr.name)
-            } else {
-              d.name.equalsIgnoreCase(attr.name)
-            }
-          }.get
+        if (updateModel.isDefined) {
+          // Get the updated query plan in case of update scenario
+          getLogicalQueryForUpdate(sparkSession, catalogTable, attributes, rdd)
+        } else {
+          LogicalRDD(attributes, rdd)(sparkSession)
         }
-        Project(finalOutput, LogicalRDD(attributes, rdd)(sparkSession))
-      } else {
-        LogicalRDD(attributes, rdd)(sparkSession)
-      }
 
-    } else {
-      var timeStampformatString = carbonLoadModel.getTimestampformat
-      if (timeStampformatString.isEmpty) {
-        timeStampformatString = carbonLoadModel.getDefaultTimestampFormat
-      }
-      val timeStampFormat = new SimpleDateFormat(timeStampformatString)
-      var dateFormatString = carbonLoadModel.getDateFormat
-      if (dateFormatString.isEmpty) {
-        dateFormatString = carbonLoadModel.getDefaultDateFormat
-      }
-      val dateFormat = new SimpleDateFormat(dateFormatString)
-      // input data from csv files. Convert to logical plan
-      CommonUtil.configureCSVInputFormat(hadoopConf, carbonLoadModel)
-      hadoopConf.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
-      val jobConf = new JobConf(hadoopConf)
-      SparkHadoopUtil.get.addCredentials(jobConf)
-      val attributes =
-        StructType(carbonLoadModel.getCsvHeaderColumns.map(
-          StructField(_, StringType))).toAttributes
-      val rowDataTypes = attributes.map { attribute =>
-        catalogTable.schema.find(_.name.equalsIgnoreCase(attribute.name)) match {
-          case Some(attr) => attr.dataType
-          case _ => StringType
+      } else {
+        // input data from csv files. Convert to logical plan
+        CommonUtil.configureCSVInputFormat(hadoopConf, carbonLoadModel)
+        hadoopConf.set(FileInputFormat.INPUT_DIR, carbonLoadModel.getFactFilePath)
+        val jobConf = new JobConf(hadoopConf)
+        SparkHadoopUtil.get.addCredentials(jobConf)
+        val attributes =
+          StructType(carbonLoadModel.getCsvHeaderColumns.map(
+            StructField(_, StringType))).toAttributes
+        val rowDataTypes = attributes.map { attribute =>
+          catalogTable.schema.find(_.name.equalsIgnoreCase(attribute.name)) match {
+            case Some(attr) => attr.dataType
+            case _ => StringType
+          }
         }
-      }
-      val len = rowDataTypes.length
-      // Fail row conversion if fail/ignore badrecord action is enabled
-      val fail = failAction || ignoreAction
-      var rdd =
-        new NewHadoopRDD[NullWritable, StringArrayWritable](
-          sparkSession.sparkContext,
-          classOf[CSVInputFormat],
-          classOf[NullWritable],
-          classOf[StringArrayWritable],
-          jobConf).map{ case (key, value) =>
+        // Find the partition columns from the csv header attributes
+        val partitionColumns = attributes.map { attribute =>
+          catalogTable.partitionSchema.find(_.name.equalsIgnoreCase(attribute.name)) match {
+            case Some(attr) => true
+            case _ => false
+          }
+        }
+        val len = rowDataTypes.length
+        var rdd =
+          new NewHadoopRDD[NullWritable, StringArrayWritable](
+            sparkSession.sparkContext,
+            classOf[CSVInputFormat],
+            classOf[NullWritable],
+            classOf[StringArrayWritable],
+            jobConf).map { case (key, value) =>
             val data = new Array[Any](len)
             var i = 0
             val input = value.get()
             val inputLen = Math.min(input.length, len)
-            try {
-              while (i < inputLen) {
-                // TODO find a way to avoid double conversion of date and time.
-                data(i) = CarbonScalaUtil.convertToUTF8String(
-                  input(i),
-                  rowDataTypes(i),
-                  timeStampFormat,
-                  dateFormat,
-                  serializationNullFormat,
-                  fail)
-                i = i + 1
-              }
-              InternalRow.fromSeq(data)
-            } catch {
-              case e: Exception =>
-                if (failAction) {
-                  // It is badrecord fail case.
-                  throw new BadRecordFoundException(
-                    s"Data load failed due to bad record: " +
-                    s"${input(i)} with datatype ${rowDataTypes(i)}")
-                } else {
-                  // It is bad record ignore case
-                  InternalRow.empty
+            while (i < inputLen) {
+              data(i) = UTF8String.fromString(input(i))
+              // If partition column then update empty value with special string otherwise spark
+              // makes it as null so we cannot internally handle badrecords.
+              if (partitionColumns(i)) {
+                if (input(i) != null && input(i).isEmpty) {
+                  data(i) = UTF8String.fromString(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
                 }
+              }
+              i = i + 1
             }
+            InternalRow.fromSeq(data)
 
+          }
+        // Only select the required columns
+        val output = if (partition.nonEmpty) {
+          val lowerCasePartition = partition.map{case(key, value) => (key.toLowerCase, value)}
+          catalogTable.schema.map { attr =>
+            attributes.find(_.name.equalsIgnoreCase(attr.name)).get
+          }.filter(attr => lowerCasePartition.get(attr.name.toLowerCase).isEmpty)
+        } else {
+          catalogTable.schema.map(f => attributes.find(_.name.equalsIgnoreCase(f.name)).get)
         }
-      // In bad record ignore case filter the empty values
-      if (ignoreAction) {
-        rdd = rdd.filter(f => f.numFields != 0)
+        Project(output, LogicalRDD(attributes, rdd)(sparkSession))
       }
-
-      // Only select the required columns
-      val output = if (partition.nonEmpty) {
-        catalogTable.schema.map{ attr =>
-          attributes.find(_.name.equalsIgnoreCase(attr.name)).get
-        }.filter(attr => partition.get(attr.name).isEmpty)
+      // TODO need to find a way to avoid double lookup
+      val sizeInBytes =
+        CarbonEnv.getInstance(sparkSession).carbonMetastore.lookupRelation(
+          catalogTable.identifier)(sparkSession).asInstanceOf[CarbonRelation].sizeInBytes
+      val convertRelation = convertToLogicalRelation(
+        catalogTable,
+        sizeInBytes,
+        isOverwriteTable,
+        carbonLoadModel,
+        sparkSession)
+      val convertedPlan =
+        CarbonReflectionUtils.getInsertIntoCommand(
+          table = convertRelation,
+          partition = partition,
+          query = query,
+          overwrite = false,
+          ifPartitionNotExists = false)
+      if (isOverwriteTable && partition.nonEmpty) {
+        overwritePartition(sparkSession, table, convertedPlan)
       } else {
-        catalogTable.schema.map(f => attributes.find(_.name.equalsIgnoreCase(f.name)).get)
+        Dataset.ofRows(sparkSession, convertedPlan)
       }
-      Project(output, LogicalRDD(attributes, rdd)(sparkSession))
-    }
-    // TODO need to find a way to avoid double lookup
-    val sizeInBytes =
-      CarbonEnv.getInstance(sparkSession).carbonMetastore.lookupRelation(
-        catalogTable.identifier)(sparkSession).asInstanceOf[CarbonRelation].sizeInBytes
-    val catalog = new CatalogFileIndex(sparkSession, catalogTable, sizeInBytes)
-    val convertRelation = convertToLogicalRelation(
-      catalogTable,
-      sizeInBytes,
-      isOverwriteTable,
-      carbonLoadModel,
-      sparkSession)
-    val convertedPlan =
-      CarbonReflectionUtils.getInsertIntoCommand(
-        convertRelation,
-        partition,
-        query,
-        false,
-        false)
-    if (isOverwriteTable && partition.nonEmpty) {
-      overwritePartition(sparkSession, table, convertedPlan)
-    } else {
-      Dataset.ofRows(sparkSession, convertedPlan)
+    } finally {
+      CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT)
+      CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT)
+      CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT)
+      CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION)
+      CarbonSession.threadUnset(CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD)
     }
     try {
       // Trigger auto compaction
@@ -659,6 +647,31 @@ case class CarbonLoadDataCommand(
           "Dataload is success. Auto-Compaction has failed. Please check logs.",
           e)
     }
+  }
+
+  /**
+   * Create the logical plan for update scenario. Here we should drop the segmentid column from the
+   * input rdd.
+   */
+  private def getLogicalQueryForUpdate(
+      sparkSession: SparkSession,
+      catalogTable: CatalogTable,
+      attributes: Seq[AttributeReference],
+      rdd: RDD[InternalRow]): LogicalPlan = {
+    sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
+    // In case of update, we don't need the segmrntid column in case of partitioning
+    val dropAttributes = attributes.dropRight(1)
+    val finalOutput = catalogTable.schema.map { attr =>
+      dropAttributes.find { d =>
+        val index = d.name.lastIndexOf("-updatedColumn")
+        if (index > 0) {
+          d.name.substring(0, index).equalsIgnoreCase(attr.name)
+        } else {
+          d.name.equalsIgnoreCase(attr.name)
+        }
+      }.get
+    }
+    Project(finalOutput, LogicalRDD(attributes, rdd)(sparkSession))
   }
 
   private def convertToLogicalRelation(
@@ -694,6 +707,7 @@ case class CarbonLoadDataCommand(
     options += (("onepass", loadModel.getUseOnePass.toString))
     options += (("dicthost", loadModel.getDictionaryServerHost))
     options += (("dictport", loadModel.getDictionaryServerPort.toString))
+    options += (("staticpartition", partition.nonEmpty.toString))
     options ++= this.options
     if (updateModel.isDefined) {
       options += (("updatetimestamp", updateModel.get.updatedTimeStamp.toString))
