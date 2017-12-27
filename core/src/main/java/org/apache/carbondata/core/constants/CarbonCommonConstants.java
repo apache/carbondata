@@ -1501,6 +1501,15 @@ public final class CarbonCommonConstants {
 
   public static final String TIMESERIES_HIERARCHY = "timeseries.hierarchy";
 
+  /**
+   * It allows queries on hive metastore directly along with filter information, otherwise first
+   * fetches all partitions from hive and apply filters on it.
+   */
+  @CarbonProperty
+  public static final String CARBON_READ_PARTITION_HIVE_DIRECT =
+      "carbon.read.partition.hive.direct";
+  public static final String CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT = "true";
+
   private CarbonCommonConstants() {
   }
 }

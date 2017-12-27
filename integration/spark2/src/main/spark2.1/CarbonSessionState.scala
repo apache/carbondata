@@ -18,8 +18,8 @@ package org.apache.spark.sql.hive
 
 import org.apache.hadoop.conf.Configuration
 import org.apache.spark.sql.catalyst.analysis.{Analyzer, FunctionRegistry}
-import org.apache.spark.sql.catalyst.catalog.{FunctionResourceLoader, GlobalTempViewManager, SessionCatalog}
-import org.apache.spark.sql.catalyst.expressions.{PredicateSubquery, ScalarSubquery}
+import org.apache.spark.sql.catalyst.catalog.{ExternalCatalogUtils, FunctionResourceLoader, GlobalTempViewManager, SessionCatalog}
+import org.apache.spark.sql.catalyst.expressions.{And, AttributeReference, BoundReference, Expression, InterpretedPredicate, PredicateSubquery, ScalarSubquery}
 import org.apache.spark.sql.catalyst.optimizer.Optimizer
 import org.apache.spark.sql.catalyst.parser.ParserInterface
 import org.apache.spark.sql.catalyst.parser.ParserUtils._
@@ -133,6 +133,33 @@ class CarbonSessionCatalog(
    */
   def getClient(): org.apache.spark.sql.hive.client.HiveClient = {
     sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
+  }
+
+  /**
+   * This is alternate way of getting partition information. It first fetches all partitions from
+   * hive and then apply filter instead of querying hive along with filters.
+   * @param partitionFilters
+   * @param sparkSession
+   * @param identifier
+   * @return
+   */
+  def getPartitionsAlternate(partitionFilters: Seq[Expression],
+      sparkSession: SparkSession,
+      identifier: TableIdentifier) = {
+    val allPartitions = sparkSession.sessionState.catalog.listPartitions(identifier)
+    val catalogTable = sparkSession.sessionState.catalog.getTableMetadata(identifier)
+    val partitionSchema = catalogTable.partitionSchema
+    if (partitionFilters.nonEmpty) {
+      val boundPredicate =
+        InterpretedPredicate.create(partitionFilters.reduce(And).transform {
+          case att: AttributeReference =>
+            val index = partitionSchema.indexWhere(_.name == att.name)
+            BoundReference(index, partitionSchema(index).dataType, nullable = true)
+        })
+      allPartitions.filter { p => boundPredicate(p.toRow(partitionSchema)) }
+    } else {
+      allPartitions
+    }
   }
 }
 
