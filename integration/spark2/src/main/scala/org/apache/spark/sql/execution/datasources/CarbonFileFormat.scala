@@ -190,16 +190,12 @@ private class CarbonOutputWriter(path: String,
   val partitions = getPartitionsFromPath(path, context).map(ExternalCatalogUtils.unescapePathName)
   val partitionData = if (partitions.nonEmpty) {
     partitions.map{ p =>
-      val splitData = p.split("=")
-      if (splitData.length > 1) {
-        // NUll handling case. For null hive creates with this special name
-        if (splitData(1).equals("__HIVE_DEFAULT_PARTITION__")) {
-          null
-        } else {
-          splitData(1)
-        }
+      val value = p.substring(p.indexOf("=") + 1, p.length)
+      // NUll handling case. For null hive creates with this special name
+      if (value.equals("__HIVE_DEFAULT_PARTITION__")) {
+        null
       } else {
-        ""
+        value
       }
     }
   } else {
