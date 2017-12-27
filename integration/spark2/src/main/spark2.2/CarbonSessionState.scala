@@ -45,8 +45,9 @@ import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
+import org.apache.carbondata.spark.util.CarbonScalaUtil
 
 /**
  * This class will have carbon catalog and refresh the relation from cache if the carbontable in
@@ -140,6 +141,25 @@ class CarbonSessionCatalog(
   def getClient(): org.apache.spark.sql.hive.client.HiveClient = {
     sparkSession.asInstanceOf[CarbonSession].sharedState.externalCatalog
       .asInstanceOf[HiveExternalCatalog].client
+  }
+
+  override def createPartitions(tableName: TableIdentifier,
+      parts: Seq[CatalogTablePartition],
+      ignoreIfExists: Boolean): Unit = {
+    try {
+      val table = CarbonEnv.getCarbonTable(tableName)(sparkSession)
+      // Get the properties from thread local
+      val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+      if (carbonSessionInfo != null) {
+        val updatedParts = CarbonScalaUtil.updatePartitions(carbonSessionInfo, parts, table)
+        super.createPartitions(tableName, updatedParts, ignoreIfExists)
+      } else {
+        super.createPartitions(tableName, parts, ignoreIfExists)
+      }
+    } catch {
+      case e: Exception =>
+        super.createPartitions(tableName, parts, ignoreIfExists)
+    }
   }
 
   /**

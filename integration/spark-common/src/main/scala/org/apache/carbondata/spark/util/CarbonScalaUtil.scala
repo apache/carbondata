@@ -22,16 +22,18 @@ import java.text.SimpleDateFormat
 import java.util
 
 import org.apache.spark.sql._
+import org.apache.spark.sql.catalyst.catalog.CatalogTablePartition
 import org.apache.spark.sql.catalyst.util.DateTimeUtils
 import org.apache.spark.sql.execution.command.DataTypeInfo
 import org.apache.spark.sql.types._
-import org.apache.spark.unsafe.types.UTF8String
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.common.constants.LoggerAction
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, StructField => CarbonStructField}
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
+import org.apache.carbondata.core.util.CarbonSessionInfo
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
-import org.apache.carbondata.processing.loading.exception.BadRecordFoundException
 
 object CarbonScalaUtil {
   def convertSparkToCarbonDataType(dataType: DataType): CarbonDataType = {
@@ -156,52 +158,154 @@ object CarbonScalaUtil {
   }
 
   /**
-   * Converts incoming value to UTF8String after converting data as per the data type.
+   * Converts incoming value to String after converting data as per the data type.
    * @param value Input value to convert
-   * @param dataType Datatype to convert and then convert to UTF8String
+   * @param dataType Datatype to convert and then convert to String
    * @param timeStampFormat Timestamp format to convert in case of timestamp datatypes
-   * @param dateFormat DataFormat to convert incase of DateType datatype
+   * @param dateFormat DataFormat to convert in case of DateType datatype
    * @param serializationNullFormat if this encounters in input data then data will
    *                                be treated as null
-   * @param fail If it is true then any conversion error will trhow error otherwise it will be
-   *                   filled with ull value
-   * @return converted UTF8String
+   * @return converted String
    */
-  def convertToUTF8String(value: String,
+  def convertToString(value: String,
       dataType: DataType,
       timeStampFormat: SimpleDateFormat,
       dateFormat: SimpleDateFormat,
-      serializationNullFormat: String,
-      fail: Boolean): UTF8String = {
+      serializationNullFormat: String): String = {
     if (value == null || serializationNullFormat.equals(value)) {
-      return UTF8String.fromString(value)
+      return null
     }
+    dataType match {
+      case TimestampType =>
+        DateTimeUtils.timestampToString(timeStampFormat.parse(value).getTime * 1000)
+      case DateType =>
+        DateTimeUtils.dateToString(
+          (dateFormat.parse(value).getTime / DateTimeUtils.MILLIS_PER_DAY).toInt)
+      case ShortType => value.toShort.toString
+      case IntegerType => value.toInt.toString
+      case LongType => value.toLong.toString
+      case DoubleType => value.toDouble.toString
+      case FloatType => value.toFloat.toString
+      case d: DecimalType => new java.math.BigDecimal(value).toPlainString
+      case BooleanType => value.toBoolean.toString
+      case _ => value
+    }
+  }
+
+  /**
+   * Converts incoming value to String after converting data as per the data type.
+   * @param value Input value to convert
+   * @param dataType Datatype to convert and then convert to String
+   * @param timeStampFormat Timestamp format to convert in case of timestamp datatypes
+   * @param dateFormat DataFormat to convert in case of DateType datatype
+   * @return converted String
+   */
+  def convertToCarbonFormat(value: String,
+      dataType: DataType,
+      timeStampFormat: SimpleDateFormat,
+      dateFormat: SimpleDateFormat): String = {
     try {
       dataType match {
         case TimestampType =>
-          UTF8String.fromString(
-            DateTimeUtils.timestampToString(timeStampFormat.parse(value).getTime * 1000))
+          timeStampFormat.format(DateTimeUtils.stringToTime(value))
         case DateType =>
-          UTF8String.fromString(
-            DateTimeUtils.dateToString(
-              (dateFormat.parse(value).getTime / DateTimeUtils.MILLIS_PER_DAY).toInt))
-        case ShortType => UTF8String.fromString(value.toShort.toString)
-        case IntegerType => UTF8String.fromString(value.toInt.toString)
-        case LongType => UTF8String.fromString(value.toLong.toString)
-        case DoubleType => UTF8String.fromString(value.toDouble.toString)
-        case FloatType => UTF8String.fromString(value.toFloat.toString)
-        case d: DecimalType => UTF8String
-          .fromString(new java.math.BigDecimal(value).toPlainString)
-        case BooleanType => UTF8String.fromString(value.toBoolean.toString)
-        case _ => UTF8String.fromString(value)
+          dateFormat.format(DateTimeUtils.stringToTime(value))
+        case _ => value
       }
     } catch {
       case e: Exception =>
-        if (fail) {
-          throw e
-        }
-        UTF8String.fromString(null)
+        value
     }
+  }
+
+  private val hiveignorepartition = "__HIVE_IGNORE_PARTITION__"
+
+  /**
+   * Update partition values as per the right date and time format
+   * @return updated partition spec
+   */
+  def updatePartitions(
+      partitionSpec: Map[String, String],
+      table: CarbonTable,
+      timeFormat: SimpleDateFormat,
+      dateFormat: SimpleDateFormat,
+      serializationNullFormat: String,
+      badRecordAction: String,
+      isEmptyBadRecord: Boolean): Map[String, String] = {
+    partitionSpec.map{ case (col, value) =>
+      val carbonColumn = table.getColumnByName(table.getTableName, col.toLowerCase)
+      val dataType = CarbonScalaUtil.convertCarbonToSparkDataType(carbonColumn.getDataType)
+      val hivedefaultpartition = "__HIVE_DEFAULT_PARTITION__"
+      try {
+        if (isEmptyBadRecord && value.length == 0 &&
+            badRecordAction.equalsIgnoreCase(LoggerAction.IGNORE.toString) &&
+            dataType != StringType) {
+          (col, hiveignorepartition)
+        } else if (!isEmptyBadRecord && value.length == 0 && dataType != StringType) {
+          (col, hivedefaultpartition)
+        } else if (value.equals(hivedefaultpartition)) {
+          (col, value)
+        } else {
+          val convertedString = CarbonScalaUtil.convertToString(
+            value, dataType, timeFormat, dateFormat, serializationNullFormat)
+          if (convertedString == null) {
+            (col, hivedefaultpartition)
+          } else {
+            (col, convertedString)
+          }
+        }
+      } catch {
+        case e: Exception =>
+          // If it is bad record ignore case then add with special string so that it will be
+          // filtered after this.
+          if (badRecordAction.equalsIgnoreCase(LoggerAction.IGNORE.toString)) {
+            (col, hiveignorepartition)
+          } else {
+            (col, hivedefaultpartition)
+          }
+      }
+    }
+  }
+
+  /**
+   * Update partition values as per the right date and time format
+   */
+  def updatePartitions(
+      carbonSessionInfo: CarbonSessionInfo,
+      parts: Seq[CatalogTablePartition],
+      table: CarbonTable): Seq[CatalogTablePartition] = {
+    val dateFormatStr = carbonSessionInfo.getThreadParams.getProperty(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT,
+      CarbonLoadOptionConstants.CARBON_OPTIONS_DATEFORMAT_DEFAULT)
+    val dateFormat = new SimpleDateFormat(dateFormatStr)
+    val timeFormatStr = carbonSessionInfo.getThreadParams.getProperty(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT,
+      CarbonLoadOptionConstants.CARBON_OPTIONS_TIMESTAMPFORMAT_DEFAULT)
+    val timeFormat = new SimpleDateFormat(timeFormatStr)
+    val serializeFormat = carbonSessionInfo.getThreadParams.getProperty(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT,
+      CarbonLoadOptionConstants.CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT_DEFAULT)
+    val isEmptyBadRecord = carbonSessionInfo.getThreadParams.getProperty(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD,
+      CarbonLoadOptionConstants.CARBON_OPTIONS_IS_EMPTY_DATA_BAD_RECORD_DEFAULT).toBoolean
+    val badRecordAction = carbonSessionInfo.getThreadParams.getProperty(
+      CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION,
+      LoggerAction.FAIL.toString)
+    parts.map{ f =>
+      val changedSpec =
+        updatePartitions(
+          f.spec,
+          table,
+          timeFormat,
+          dateFormat,
+          serializeFormat,
+          badRecordAction,
+          isEmptyBadRecord)
+      f.copy(spec = changedSpec)
+    }.filterNot{ p =>
+      // Filter the special bad record ignore case string
+      p.spec.exists(_._2.equals(hiveignorepartition))
+    }.groupBy(p => p.spec).map(f => f._2.head).toSeq // Avoid duplicates by do groupby
   }
 
   /**

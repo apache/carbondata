@@ -203,10 +203,13 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
 
   test("badrecords ignore on partition column") {
     sql("create table badrecordsPartitionignore(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata'")
+    sql("create table badrecordsignore(intField1 int,intField2 int, stringField1 string) stored by 'carbondata'")
     sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionignore options('bad_records_action'='ignore')")
-    checkAnswer(sql("select count(*) cnt from badrecordsPartitionignore where intfield2 is null"), Seq(Row(3)))
-    checkAnswer(sql("select count(*) cnt from badrecordsPartitionignore where intfield2 is not null"), Seq(Row(2)))
+    sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsignore options('bad_records_action'='ignore')")
+    checkAnswer(sql("select count(*) cnt from badrecordsPartitionignore where intfield2 is null"), sql("select count(*) cnt from badrecordsignore where intfield2 is null"))
+    checkAnswer(sql("select count(*) cnt from badrecordsPartitionignore where intfield2 is not null"), sql("select count(*) cnt from badrecordsignore where intfield2 is not null"))
   }
+
 
   test("test partition fails on int null partition") {
     sql("create table badrecordsPartitionintnull(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata'")
@@ -263,6 +266,7 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists staticpartitionload")
     sql("drop table if exists badrecordsPartitionignore")
     sql("drop table if exists badrecordsPartitionfail")
+    sql("drop table if exists badrecordsignore")
     sql("drop table if exists badrecordsPartitionintnull")
     sql("drop table if exists badrecordsPartitionintnullalt")
   }
