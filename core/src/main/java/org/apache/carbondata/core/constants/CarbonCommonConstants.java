@@ -430,26 +430,6 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_MERGE_SORT_READER_THREAD_DEFAULTVALUE = "3";
   /**
-   * IS_SORT_TEMP_FILE_COMPRESSION_ENABLED
-   */
-  @CarbonProperty
-  public static final String IS_SORT_TEMP_FILE_COMPRESSION_ENABLED =
-      "carbon.is.sort.temp.file.compression.enabled";
-  /**
-   * IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE
-   */
-  public static final String IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE = "false";
-  /**
-   * SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-   */
-  @CarbonProperty
-  public static final String SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION =
-      "carbon.sort.temp.file.no.of.records.for.compression";
-  /**
-   * SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE
-   */
-  public static final String SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE = "50";
-  /**
    * DEFAULT_COLLECTION_SIZE
    */
   public static final int DEFAULT_COLLECTION_SIZE = 16;
@@ -1373,6 +1353,17 @@ public final class CarbonCommonConstants {
    */
   public static final String CARBON_USE_MULTI_TEMP_DIR_DEFAULT = "false";
 
+  /**
+   * name of compressor to compress sort temp files
+   */
+  @CarbonProperty
+  public static final String CARBON_SORT_TEMP_COMPRESSOR = "carbon.sort.temp.compressor";
+
+  /**
+   * The optional values are 'SNAPPY','GZIP','BZIP2','LZ4'.
+   * By default, empty means that Carbondata will not compress the sort temp files.
+   */
+  public static final String CARBON_SORT_TEMP_COMPRESSOR_DEFAULT = "";
   /**
    * Which storage level to persist rdd when sort_scope=global_sort
    */

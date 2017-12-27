@@ -18,10 +18,12 @@
 package org.apache.carbondata.core.datastore.filesystem;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -40,6 +42,8 @@ import org.apache.hadoop.io.compress.BZip2Codec;
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.hadoop.io.compress.GzipCodec;
+import org.apache.hadoop.io.compress.Lz4Codec;
+import org.apache.hadoop.io.compress.SnappyCodec;
 
 public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   /**
@@ -315,6 +319,49 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
     return new DataInputStream(new BufferedInputStream(stream));
   }
 
+  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, String compressor) throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    InputStream inputStream;
+    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    if (bufferSize <= 0) {
+      inputStream = fs.open(pt);
+    } else {
+      inputStream = fs.open(pt, bufferSize);
+    }
+
+    String codecName = getCodecNameFromCompressor(compressor);
+    if (!codecName.isEmpty()) {
+      CompressionCodec codec = new CompressionCodecFactory(hadoopConf).getCodecByName(codecName);
+      inputStream = codec.createInputStream(inputStream);
+    }
+
+    return new DataInputStream(new BufferedInputStream(inputStream));
+  }
+
+  /**
+   * get codec name from user specified compressor name
+   * @param compressorName user specified compressor name
+   * @return name of codec
+   * @throws IOException
+   */
+  private String getCodecNameFromCompressor(String compressorName) throws IOException {
+    if (compressorName.isEmpty()) {
+      return "";
+    } else if ("GZIP".equalsIgnoreCase(compressorName)) {
+      return GzipCodec.class.getName();
+    } else if ("BZIP2".equalsIgnoreCase(compressorName)) {
+      return BZip2Codec.class.getName();
+    } else if ("SNAPPY".equalsIgnoreCase(compressorName)) {
+      return SnappyCodec.class.getName();
+    } else if ("LZ4".equalsIgnoreCase(compressorName)) {
+      return Lz4Codec.class.getName();
+    } else {
+      throw new IOException("Unsuppotted compressor: " + compressorName);
+    }
+  }
+
   @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
       throws IOException {
     path = path.replace("\\", "/");
@@ -329,6 +376,26 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
     Path pt = new Path(path);
     FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
     return fs.create(pt, true, bufferSize, fs.getDefaultReplication(pt), blockSize);
+  }
+
+  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, String compressor) throws IOException {
+    path = path.replace("\\", "/");
+    Path pt = new Path(path);
+    OutputStream outputStream;
+    if (bufferSize <= 0) {
+      outputStream = fs.create(pt);
+    } else {
+      outputStream = fs.create(pt, true, bufferSize);
+    }
+
+    String codecName = getCodecNameFromCompressor(compressor);
+    if (!codecName.isEmpty()) {
+      CompressionCodec codec = new CompressionCodecFactory(hadoopConf).getCodecByName(codecName);
+      outputStream = codec.createOutputStream(outputStream);
+    }
+
+    return new DataOutputStream(new BufferedOutputStream(outputStream));
   }
 
   @Override public boolean isFileExist(String filePath, FileFactory.FileType fileType,

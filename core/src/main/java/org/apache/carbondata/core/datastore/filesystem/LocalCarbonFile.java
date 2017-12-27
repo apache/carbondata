@@ -28,8 +28,10 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.nio.channels.FileChannel;
 import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -37,10 +39,15 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
+import net.jpountz.lz4.LZ4BlockInputStream;
+import net.jpountz.lz4.LZ4BlockOutputStream;
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorInputStream;
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.xerial.snappy.SnappyInputStream;
+import org.xerial.snappy.SnappyOutputStream;
 
 public class LocalCarbonFile implements CarbonFile {
   private static final LogService LOGGER =
@@ -287,6 +294,32 @@ public class LocalCarbonFile implements CarbonFile {
     return new DataInputStream(new BufferedInputStream(stream));
   }
 
+  @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, String compressor) throws IOException {
+    path = path.replace("\\", "/");
+    path = FileFactory.getUpdatedFilePath(path, fileType);
+    InputStream inputStream;
+    if (compressor.isEmpty()) {
+      inputStream = new FileInputStream(path);
+    } else if ("GZIP".equalsIgnoreCase(compressor)) {
+      inputStream = new GZIPInputStream(new FileInputStream(path));
+    } else if ("BZIP2".equalsIgnoreCase(compressor)) {
+      inputStream = new BZip2CompressorInputStream(new FileInputStream(path));
+    } else if ("SNAPPY".equalsIgnoreCase(compressor)) {
+      inputStream = new SnappyInputStream(new FileInputStream(path));
+    } else if ("LZ4".equalsIgnoreCase(compressor)) {
+      inputStream = new LZ4BlockInputStream(new FileInputStream(path));
+    } else {
+      throw new IOException("Unsupported compressor: " + compressor);
+    }
+
+    if (bufferSize <= 0) {
+      return new DataInputStream(new BufferedInputStream(inputStream));
+    } else {
+      return new DataInputStream(new BufferedInputStream(inputStream, bufferSize));
+    }
+  }
+
   /**
    * return the datainputStream which is seek to the offset of file
    *
@@ -328,6 +361,32 @@ public class LocalCarbonFile implements CarbonFile {
     path = path.replace("\\", "/");
     path = FileFactory.getUpdatedFilePath(path, fileType);
     return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path), bufferSize));
+  }
+
+  @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
+      int bufferSize, String compressor) throws IOException {
+    path = path.replace("\\", "/");
+    path = FileFactory.getUpdatedFilePath(path, fileType);
+    OutputStream outputStream;
+    if (compressor.isEmpty()) {
+      outputStream = new FileOutputStream(path);
+    } else if ("GZIP".equalsIgnoreCase(compressor)) {
+      outputStream = new GZIPOutputStream(new FileOutputStream(path));
+    } else if ("BZIP2".equalsIgnoreCase(compressor)) {
+      outputStream = new BZip2CompressorOutputStream(new FileOutputStream(path));
+    } else if ("SNAPPY".equalsIgnoreCase(compressor)) {
+      outputStream = new SnappyOutputStream(new FileOutputStream(path));
+    } else if ("LZ4".equalsIgnoreCase(compressor)) {
+      outputStream = new LZ4BlockOutputStream(new FileOutputStream(path));
+    } else {
+      throw new IOException("Unsupported compressor: " + compressor);
+    }
+
+    if (bufferSize <= 0) {
+      return new DataOutputStream(new BufferedOutputStream(outputStream));
+    } else {
+      return new DataOutputStream(new BufferedOutputStream(outputStream, bufferSize));
+    }
   }
 
   @Override public boolean isFileExist(String filePath, FileFactory.FileType fileType,
