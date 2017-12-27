@@ -254,6 +254,23 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     }
   }
 
+  test("load static partition table for one static partition column with load syntax issue") {
+    sql(
+      """
+        | CREATE TABLE loadstaticpartitiononeissue (empname String, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (empno int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitiononeissue PARTITION(empno='1')""")
+    val df = sql("show partitions loadstaticpartitiononeissue")
+    assert(df.collect().length == 1)
+    checkExistence(df, true,  "empno=1")
+  }
+
 
   override def afterAll = {
     dropTable
@@ -272,6 +289,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table if exists loadstaticpartitionone")
     sql("drop table if exists loadstaticpartitiononeoverwrite")
     sql("drop table if exists streamingpartitionedtable")
+    sql("drop table if exists loadstaticpartitiononeissue")
   }
 
 }
