@@ -36,6 +36,8 @@ public class BlockletDetailInfo implements Serializable, Writable {
 
   private short versionNumber;
 
+  private short blockletId;
+
   private int[] dimLens;
 
   private long schemaUpdatedTimeStamp;
@@ -94,6 +96,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
     out.writeInt(rowCount);
     out.writeShort(pagesCount);
     out.writeShort(versionNumber);
+    out.writeShort(blockletId);
     out.writeShort(dimLens.length);
     for (int i = 0; i < dimLens.length; i++) {
       out.writeInt(dimLens[i]);
@@ -106,6 +109,7 @@ public class BlockletDetailInfo implements Serializable, Writable {
     rowCount = in.readInt();
     pagesCount = in.readShort();
     versionNumber = in.readShort();
+    blockletId = in.readShort();
     dimLens = new int[in.readShort()];
     for (int i = 0; i < dimLens.length; i++) {
       dimLens[i] = in.readInt();
@@ -113,5 +117,13 @@ public class BlockletDetailInfo implements Serializable, Writable {
     schemaUpdatedTimeStamp = in.readLong();
     blockletInfo = new BlockletInfo();
     blockletInfo.readFields(in);
+  }
+
+  public Short getBlockletId() {
+    return blockletId;
+  }
+
+  public void setBlockletId(Short blockletId) {
+    this.blockletId = blockletId;
   }
 }

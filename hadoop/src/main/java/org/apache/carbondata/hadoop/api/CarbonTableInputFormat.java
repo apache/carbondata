@@ -112,7 +112,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   public static final String INPUT_SEGMENT_NUMBERS =
       "mapreduce.input.carboninputformat.segmentnumbers";
   public static final String VALIDATE_INPUT_SEGMENT_IDs =
-            "mapreduce.input.carboninputformat.validsegments";
+      "mapreduce.input.carboninputformat.validsegments";
   // comma separated list of input files
   public static final String INPUT_FILES = "mapreduce.input.carboninputformat.files";
   public static final String ALTER_PARTITION_ID = "mapreduce.input.carboninputformat.partitionid";
@@ -155,7 +155,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       TableInfo output = new TableInfo();
       output.readFields(
           new DataInputStream(
-            new ByteArrayInputStream(ObjectSerializationUtil.decodeStringToBytes(tableInfoStr))));
+              new ByteArrayInputStream(ObjectSerializationUtil.decodeStringToBytes(tableInfoStr))));
       return output;
     }
   }
@@ -681,14 +681,14 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         // In case IUD is not performed in this table avoid searching for
         // invalidated blocks.
         if (CarbonUtil
-                .isInvalidTableBlock(inputSplit.getSegmentId(), inputSplit.getPath().toString(),
-                        invalidBlockVOForSegmentId, updateStatusManager)) {
+            .isInvalidTableBlock(inputSplit.getSegmentId(), inputSplit.getPath().toString(),
+                invalidBlockVOForSegmentId, updateStatusManager)) {
           continue;
         }
         // When iud is done then only get delete delta files for a block
         try {
           deleteDeltaFilePath =
-                  updateStatusManager.getDeleteDeltaFilePath(inputSplit.getPath().toString());
+              updateStatusManager.getDeleteDeltaFilePath(inputSplit.getPath().toString());
         } catch (Exception e) {
           throw new IOException(e);
         }
@@ -794,8 +794,8 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     }
     org.apache.carbondata.hadoop.CarbonInputSplit split =
         org.apache.carbondata.hadoop.CarbonInputSplit.from(blocklet.getSegmentId(),
-            new FileSplit(new Path(blocklet.getPath()), 0, blocklet.getLength(),
-                blocklet.getLocations()),
+            blocklet.getBlockletId(), new FileSplit(new Path(blocklet.getPath()), 0,
+                blocklet.getLength(), blocklet.getLocations()),
             ColumnarFormatVersion.valueOf((short) blocklet.getDetailInfo().getVersionNumber()));
     split.setDetailInfo(blocklet.getDetailInfo());
     return split;

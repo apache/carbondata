@@ -599,6 +599,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
     detailInfo.setRowCount(row.getInt(ROW_COUNT_INDEX));
     detailInfo.setPagesCount(row.getShort(PAGE_COUNT_INDEX));
     detailInfo.setVersionNumber(row.getShort(VERSION_INDEX));
+    detailInfo.setBlockletId((short) blockletId);
     detailInfo.setDimLens(columnCardinality);
     detailInfo.setSchemaUpdatedTimeStamp(row.getLong(SCHEMA_UPADATED_TIME_INDEX));
     BlockletInfo blockletInfo = new BlockletInfo();

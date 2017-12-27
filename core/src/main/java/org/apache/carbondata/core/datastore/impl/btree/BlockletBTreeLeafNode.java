@@ -98,6 +98,10 @@ public class BlockletBTreeLeafNode extends AbstractBTreeLeafNode {
     }
   }
 
+  @Override public String blockletId() {
+    return "0";
+  }
+
   /**
    * Below method will be used to get the dimension chunks
    *
