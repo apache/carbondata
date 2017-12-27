@@ -39,6 +39,7 @@ import org.apache.carbondata.core.cache.CacheType;
 import org.apache.carbondata.core.cache.dictionary.Dictionary;
 import org.apache.carbondata.core.cache.dictionary.DictionaryColumnUniqueIdentifier;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datamap.DataMapStoreManager;
 import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperations;
 import org.apache.carbondata.core.fileoperations.AtomicFileOperationsImpl;
@@ -171,6 +172,13 @@ public class StoreCreator {
     } catch (Exception e) {
       e.printStackTrace();
     }
+  }
+
+  /**
+   * Method to clear the data maps
+   */
+  public static void clearDataMaps() {
+    DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier);
   }
 
   public static CarbonLoadModel getCarbonLoadModel() throws Exception {

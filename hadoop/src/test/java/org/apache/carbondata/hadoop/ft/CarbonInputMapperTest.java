@@ -28,12 +28,12 @@ import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonUtil;
-import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.hadoop.CarbonProjection;
 import org.apache.carbondata.core.scan.expression.ColumnExpression;
 import org.apache.carbondata.core.scan.expression.Expression;
 import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.EqualToExpression;
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.test.util.StoreCreator;
 
 import junit.framework.TestCase;
@@ -56,7 +56,6 @@ public class CarbonInputMapperTest extends TestCase {
     CarbonProperties.getInstance().
         addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
     StoreCreator.createCarbonStore();
-
   }
 
   @Test public void testInputFormatMapperReadAllRowsAndColumns() throws Exception {
@@ -77,6 +76,8 @@ public class CarbonInputMapperTest extends TestCase {
       e.printStackTrace();
       Assert.assertTrue("failed", false);
       throw e;
+    } finally {
+      StoreCreator.clearDataMaps();
     }
   }
 
@@ -94,6 +95,8 @@ public class CarbonInputMapperTest extends TestCase {
     } catch (Exception e) {
       e.printStackTrace();
       Assert.assertTrue("failed", false);
+    } finally {
+      StoreCreator.clearDataMaps();
     }
   }
 
@@ -112,6 +115,8 @@ public class CarbonInputMapperTest extends TestCase {
       Assert.assertEquals("Column count are not matching", 3, countTheColumns(outPath));
     } catch (Exception e) {
       Assert.assertTrue("failed", false);
+    } finally {
+      StoreCreator.clearDataMaps();
     }
   }
 
@@ -194,18 +199,18 @@ public class CarbonInputMapperTest extends TestCase {
     job.setOutputValueClass(IntWritable.class);
     job.setMapperClass(Map.class);
     //    job.setReducerClass(WordCountReducer.class);
-    job.setInputFormatClass(CarbonInputFormat.class);
+    job.setInputFormatClass(CarbonTableInputFormat.class);
     job.setOutputFormatClass(TextOutputFormat.class);
     AbsoluteTableIdentifier abs = StoreCreator.getAbsoluteTableIdentifier();
     if (projection != null) {
-      CarbonInputFormat.setColumnProjection(job.getConfiguration(), projection);
+      CarbonTableInputFormat.setColumnProjection(job.getConfiguration(), projection);
     }
     if (filter != null) {
-      CarbonInputFormat.setFilterPredicates(job.getConfiguration(), filter);
+      CarbonTableInputFormat.setFilterPredicates(job.getConfiguration(), filter);
     }
-    CarbonInputFormat.setDatabaseName(job.getConfiguration(),
+    CarbonTableInputFormat.setDatabaseName(job.getConfiguration(),
         abs.getCarbonTableIdentifier().getDatabaseName());
-    CarbonInputFormat.setTableName(job.getConfiguration(),
+    CarbonTableInputFormat.setTableName(job.getConfiguration(),
         abs.getCarbonTableIdentifier().getTableName());
     FileInputFormat.addInputPath(job, new Path(abs.getTablePath()));
     CarbonUtil.deleteFoldersAndFiles(new File(outPath + "1"));

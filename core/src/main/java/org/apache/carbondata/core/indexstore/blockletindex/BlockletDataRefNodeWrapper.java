@@ -160,4 +160,8 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
   public int numberOfNodes() {
     return blockInfos.size();
   }
+
+  public List<TableBlockInfo> getBlockInfos() {
+    return blockInfos;
+  }
 }
