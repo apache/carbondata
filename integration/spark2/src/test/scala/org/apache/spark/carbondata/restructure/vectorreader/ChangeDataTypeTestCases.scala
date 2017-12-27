@@ -164,6 +164,21 @@ class ChangeDataTypeTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists PreAggMain_preagg1")
   }
 
+  test("test data type change for dictionary exclude INT type column") {
+    sql("drop table if exists table_sort")
+    sql("CREATE TABLE table_sort (imei int,age int,mac string) STORED BY 'carbondata' TBLPROPERTIES('DICTIONARY_EXCLUDE'='imei,age','SORT_COLUMNS'='imei,age')")
+    sql("insert into table_sort select 32674,32794,'MAC1'")
+    sql("alter table table_sort change age age bigint")
+    sql("insert into table_sort select 32675,9223372036854775807,'MAC2'")
+    try {
+      sqlContext.setConf("carbon.enable.vector.reader", "true")
+      checkAnswer(sql("select * from table_sort"),
+        Seq(Row(32674, 32794, "MAC1"), Row(32675, Long.MaxValue, "MAC2")))
+    } finally {
+      sqlContext.setConf("carbon.enable.vector.reader", "true")
+    }
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS changedatatypetest")
     sql("DROP TABLE IF EXISTS hivetable")

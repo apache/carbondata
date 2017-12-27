@@ -775,4 +775,25 @@ public final class DataTypeUtil {
     }
   }
 
+  /**
+   * Method to type case the data based on modified data type. This method will used for
+   * retrieving the data after change in data type restructure operation
+   *
+   * @param data
+   * @param restructuredDataType
+   * @param currentDataOffset
+   * @param length
+   * @return
+   */
+  public static long getDataBasedOnRestructuredDataType(byte[] data, DataType restructuredDataType,
+      int currentDataOffset, int length) {
+    long value = 0L;
+    if (restructuredDataType == DataTypes.INT) {
+      value = ByteUtil.toInt(data, currentDataOffset, length);
+    } else if (restructuredDataType == DataTypes.LONG) {
+      value = ByteUtil.toLong(data, currentDataOffset, length);
+    }
+    return value;
+  }
+
 }
