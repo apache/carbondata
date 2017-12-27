@@ -295,19 +295,26 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    * set list of partitions to prune
    */
   public static void setPartitionsToPrune(Configuration configuration, List<String> partitions) {
-    configuration.set(
-        CarbonTableInputFormat.PARTITIONS_TO_PRUNE, CarbonUtil.convertToString(partitions));
+    if (partitions == null) {
+      return;
+    }
+    try {
+      String partitionString = ObjectSerializationUtil.convertObjectToString(partitions);
+      configuration.set(PARTITIONS_TO_PRUNE, partitionString);
+    } catch (Exception e) {
+      throw new RuntimeException("Error while setting patition information to Job", e);
+    }
   }
 
   /**
    * get list of partitions to prune
    */
-  public static List<String> getPartitionsToPrune(Configuration configuration) {
-    String partitionString = configuration.get(PARTITIONS_TO_PRUNE, "");
-    if (partitionString.trim().isEmpty()) {
-      return null;
+  public static List<String> getPartitionsToPrune(Configuration configuration) throws IOException {
+    String partitionString = configuration.get(PARTITIONS_TO_PRUNE);
+    if (partitionString != null) {
+      return (List<String>) ObjectSerializationUtil.convertStringToObject(partitionString);
     }
-    return Arrays.asList(partitionString.split(","));
+    return null;
   }
   /**
    * Set list of files to access
