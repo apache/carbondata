@@ -208,6 +208,20 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
     checkAnswer(sql("select count(*) cnt from badrecordsPartitionignore where intfield2 is not null"), Seq(Row(2)))
   }
 
+  test("test partition fails on int null partition") {
+    sql("create table badrecordsPartitionintnull(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata'")
+    sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionintnull options('bad_records_action'='force')")
+    checkAnswer(sql("select count(*) cnt from badrecordsPartitionintnull where intfield2 = 13"), Seq(Row(1)))
+  }
+
+  test("test partition fails on int null partition read alternate") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT, "false")
+    sql("create table badrecordsPartitionintnullalt(intField1 int, stringField1 string) partitioned by (intField2 int) stored by 'carbondata'")
+    sql(s"load data local inpath '$resourcesPath/data_partition_badrecords.csv' into table badrecordsPartitionintnullalt options('bad_records_action'='force')")
+    checkAnswer(sql("select count(*) cnt from badrecordsPartitionintnullalt where intfield2 = 13"), Seq(Row(1)))
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT, CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT)
+  }
+
   test("static column partition with load command") {
     sql(
       """
@@ -249,6 +263,8 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
     sql("drop table if exists staticpartitionload")
     sql("drop table if exists badrecordsPartitionignore")
     sql("drop table if exists badrecordsPartitionfail")
+    sql("drop table if exists badrecordsPartitionintnull")
+    sql("drop table if exists badrecordsPartitionintnullalt")
   }
 
 }
