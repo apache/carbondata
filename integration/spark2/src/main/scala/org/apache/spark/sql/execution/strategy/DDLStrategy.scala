@@ -51,12 +51,19 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           .tableExists(identifier)(sparkSession) =>
         ExecutedCommandExec(
           CarbonLoadDataCommand(
-            identifier.database,
-            identifier.table.toLowerCase,
-            path,
-            Seq(),
-            Map(),
-            isOverwrite)) :: Nil
+            databaseNameOp = identifier.database,
+            tableName = identifier.table.toLowerCase,
+            factPathFromUser = path,
+            dimFilesPath = Seq(),
+            options = Map(),
+            isOverwriteTable = isOverwrite,
+            inputSqlString = null,
+            dataFrame = None,
+            updateModel = None,
+            tableInfoOp = None,
+            internalOptions = Map.empty,
+            partition = partition.getOrElse(Map.empty).map { case (col, value) =>
+              (col, Some(value))})) :: Nil
       case alter@AlterTableRenameCommand(oldTableIdentifier, newTableIdentifier, _) =>
         val dbOption = oldTableIdentifier.database.map(_.toLowerCase)
         val tableIdentifier = TableIdentifier(oldTableIdentifier.table.toLowerCase(), dbOption)
