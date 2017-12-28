@@ -17,9 +17,13 @@
 
 package org.apache.spark.sql.execution.command.management
 
+import java.io.IOException
+
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.execution.command.MetadataCommand
 
+import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
+import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.streaming.segment.StreamSegment
 
 /**
@@ -31,7 +35,29 @@ case class CarbonAlterTableFinishStreaming(
   extends MetadataCommand {
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val carbonTable = CarbonEnv.getCarbonTable(dbName, tableName)(sparkSession)
-    StreamSegment.finishStreaming(carbonTable)
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+    val streamingLock = CarbonLockFactory.getCarbonLockObj(
+      carbonTable.getTableInfo().getOrCreateAbsoluteTableIdentifier(),
+      LockUsage.STREAMING_LOCK)
+    try {
+      if (streamingLock.lockWithRetries()) {
+        StreamSegment.finishStreaming(carbonTable)
+      } else {
+        val msg = "Failed to finish streaming, because streaming is locked for table " +
+                  carbonTable.getDatabaseName() + "." + carbonTable.getTableName()
+        LOGGER.error(msg)
+        throw new IOException(msg)
+      }
+    } finally {
+      if (streamingLock.unlock()) {
+        LOGGER.info("Table unlocked successfully after streaming finished" +
+                    carbonTable.getDatabaseName() + "." + carbonTable.getTableName())
+      } else {
+        LOGGER.error("Unable to unlock Table lock for table " +
+                     carbonTable.getDatabaseName() + "." + carbonTable.getTableName() +
+                     " during streaming finished")
+      }
+    }
     Seq.empty
   }
 }

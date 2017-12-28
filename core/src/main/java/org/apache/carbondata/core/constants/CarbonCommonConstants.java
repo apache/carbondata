@@ -1460,6 +1460,13 @@ public final class CarbonCommonConstants {
   public static final String HANDOFF_SIZE = "carbon.streaming.segment.max.size";
 
   /**
+   * enable auto handoff streaming segment
+   */
+  public static final String ENABLE_AUTO_HANDOFF = "carbon.enable.auto.handoff";
+
+  public static final String ENABLE_AUTO_HANDOFF_DEFAULT = "true";
+
+  /**
    * the min handoff size of streaming segment, the unit is byte
    */
   public static final long HANDOFF_SIZE_MIN = 1024L * 1024 * 64;
