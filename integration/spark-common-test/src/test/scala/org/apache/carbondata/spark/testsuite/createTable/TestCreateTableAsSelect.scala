@@ -152,6 +152,24 @@ class TestCreateTableAsSelect extends QueryTest with BeforeAndAfterAll {
     assert(dictFiles.length == 3)
   }
 
+  test("test create table as select with column name as tupleid") {
+    intercept[Exception] {
+      sql("create table t2 stored by 'carbondata' as select count(value) AS tupleid from carbon_ctas_test")
+    }
+  }
+
+  test("test create table as select with column name as positionid") {
+    intercept[Exception] {
+      sql("create table t2 stored by 'carbondata' as select count(value) AS positionid from carbon_ctas_test")
+    }
+  }
+
+  test("test create table as select with column name as positionreference") {
+    intercept[Exception] {
+      sql("create table t2 stored by 'carbondata' as select count(value) AS positionreference from carbon_ctas_test")
+    }
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS carbon_ctas_test")
     sql("DROP TABLE IF EXISTS parquet_ctas_test")

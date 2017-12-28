@@ -637,6 +637,38 @@ class UpdateCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("""drop table if exists iud.dest33_part""")
   }
 
+  test("test create table with tupleid as column name") {
+    try {
+      sql("create table create_with_tupleid_column(item int, tupleId String) stored by " +
+          "'carbondata'")
+    } catch {
+      case ex: Exception =>
+        assert(ex.getMessage.contains("not allowed in column name while creating table"))
+    }
+  }
+
+  test("test create table with position reference as column name") {
+    try {
+      sql(
+        "create table create_with_positionReference_column(item int, positionReference String) " +
+        "stored by 'carbondata'")
+    } catch {
+      case ex: Exception =>
+        assert(ex.getMessage.contains("not allowed in column name while creating table"))
+    }
+  }
+
+  test("test create table with position id as column name") {
+    try {
+      sql(
+        "create table create_with_positionid_column(item int, positionId String) stored by " +
+        "'carbondata'")
+    } catch {
+      case ex: Exception =>
+        assert(ex.getMessage.contains("not allowed in column name while creating table"))
+    }
+  }
+
   override def afterAll {
     sql("use default")
     sql("drop database  if exists iud cascade")

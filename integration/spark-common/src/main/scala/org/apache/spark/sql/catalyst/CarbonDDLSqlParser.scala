@@ -231,6 +231,23 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
   }
 
   /**
+   * this function validates for the column names as tupleId, PositionReference and positionId
+   * @param fields
+   */
+  private def validateColumnNames(fields: Seq[Field]): Unit = {
+    fields.foreach { col =>
+      if (col.column.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID) ||
+          col.column.equalsIgnoreCase(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_POSITIONID) ||
+          col.column.equalsIgnoreCase(CarbonCommonConstants.POSITION_REFERENCE)) {
+        throw new MalformedCarbonCommandException(
+          s"Carbon Implicit column ${col.column} is not allowed in" +
+          s" column name while creating table")
+      }
+
+    }
+  }
+
+  /**
    * This will prepate the Model from the Tree details.
    *
    * @param ifNotExistPresent
@@ -251,6 +268,9 @@ abstract class CarbonDDLSqlParser extends AbstractCarbonSparkSQLParser {
       bucketFields: Option[BucketFields],
       isAlterFlow: Boolean = false,
       tableComment: Option[String] = None): TableModel = {
+
+    // do not allow below key words as column name
+    validateColumnNames(fields)
 
     fields.zipWithIndex.foreach { case (field, index) =>
       field.schemaOrdinal = index
