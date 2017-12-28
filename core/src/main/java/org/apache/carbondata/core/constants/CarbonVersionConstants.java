@@ -25,7 +25,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 
 public final class CarbonVersionConstants {
-  
+
   private static final LogService LOGGER =
       LogServiceFactory.getLogService(CarbonVersionConstants.class.getName());
   /**
@@ -45,10 +45,6 @@ public final class CarbonVersionConstants {
    * the latest commit revision which current branch point to
    */
   public final static String CARBONDATA_REVISION;
-  /**
-   * the user who build this version
-   */
-  public final static String CARBONDATA_BUILD_USER;
   /**
    * the date of building current version
    */
@@ -83,7 +79,6 @@ public final class CarbonVersionConstants {
     CARBONDATA_VERSION = props.getProperty("version");
     CARBONDATA_BRANCH = props.getProperty("branch");
     CARBONDATA_REVISION = props.getProperty("revision");
-    CARBONDATA_BUILD_USER = props.getProperty("user");
     CARBONDATA_BUILD_DATE = props.getProperty("date");
   }
 }

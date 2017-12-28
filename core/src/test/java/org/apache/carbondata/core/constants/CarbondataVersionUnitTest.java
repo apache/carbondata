@@ -29,7 +29,6 @@ public class CarbondataVersionUnitTest {
     assertTrue(StringUtils.isNoneEmpty(CarbonVersionConstants.CARBONDATA_VERSION));
     assertTrue(StringUtils.isNoneEmpty(CarbonVersionConstants.CARBONDATA_BRANCH));
     assertTrue(StringUtils.isNoneEmpty(CarbonVersionConstants.CARBONDATA_REVISION));
-    assertTrue(StringUtils.isNoneEmpty(CarbonVersionConstants.CARBONDATA_BUILD_USER));
     assertTrue(StringUtils.isNoneEmpty(CarbonVersionConstants.CARBONDATA_BUILD_DATE));
   }
 }

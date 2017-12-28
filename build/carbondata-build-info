@@ -24,14 +24,13 @@
 
 RESOURCE_DIR="$1"
 mkdir -p "$RESOURCE_DIR"
-SPARK_BUILD_INFO="${RESOURCE_DIR}"/carbondata-version-info.properties
+CARBONDATA_BUILD_INFO="${RESOURCE_DIR}"/carbondata-version-info.properties
 
 echo_build_properties() {
   echo version=$1
-  echo user=$USER
   echo revision=$(git rev-parse HEAD)
   echo branch=$(git rev-parse --abbrev-ref HEAD)
   echo date=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 }
 
-echo_build_properties $2 > "$SPARK_BUILD_INFO"
+echo_build_properties $2 > "$CARBONDATA_BUILD_INFO"
