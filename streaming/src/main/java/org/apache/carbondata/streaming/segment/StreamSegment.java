@@ -186,62 +186,41 @@ public class StreamSegment {
    * change the status of the segment from "streaming" to "streaming finish"
    */
   public static void finishStreaming(CarbonTable carbonTable) throws IOException {
-    ICarbonLock streamingLock = CarbonLockFactory.getCarbonLockObj(
+    ICarbonLock statusLock = CarbonLockFactory.getCarbonLockObj(
         carbonTable.getTableInfo().getOrCreateAbsoluteTableIdentifier(),
-        LockUsage.STREAMING_LOCK);
+        LockUsage.TABLE_STATUS_LOCK);
     try {
-      if (streamingLock.lockWithRetries()) {
-        ICarbonLock statusLock = CarbonLockFactory.getCarbonLockObj(
-            carbonTable.getTableInfo().getOrCreateAbsoluteTableIdentifier(),
-            LockUsage.TABLE_STATUS_LOCK);
-        try {
-          if (statusLock.lockWithRetries()) {
-            LoadMetadataDetails[] details =
-                SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath());
-            boolean updated = false;
-            for (LoadMetadataDetails detail : details) {
-              if (SegmentStatus.STREAMING == detail.getSegmentStatus()) {
-                detail.setLoadEndTime(System.currentTimeMillis());
-                detail.setSegmentStatus(SegmentStatus.STREAMING_FINISH);
-                updated = true;
-              }
-            }
-            if (updated) {
-              CarbonTablePath tablePath =
-                  CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
-              SegmentStatusManager.writeLoadDetailsIntoFile(
-                  tablePath.getTableStatusFilePath(), details);
-            }
-          } else {
-            String msg = "Failed to acquire table status lock of " +
-                carbonTable.getDatabaseName() + "." + carbonTable.getTableName();
-            LOGGER.error(msg);
-            throw new IOException(msg);
-          }
-        } finally {
-          if (statusLock.unlock()) {
-            LOGGER.info("Table unlocked successfully after table status updation" +
-                carbonTable.getDatabaseName() + "." + carbonTable.getTableName());
-          } else {
-            LOGGER.error("Unable to unlock Table lock for table " +
-                carbonTable.getDatabaseName() + "." + carbonTable.getTableName() +
-                " during table status updation");
+      if (statusLock.lockWithRetries()) {
+        LoadMetadataDetails[] details =
+            SegmentStatusManager.readLoadMetadata(carbonTable.getMetaDataFilepath());
+        boolean updated = false;
+        for (LoadMetadataDetails detail : details) {
+          if (SegmentStatus.STREAMING == detail.getSegmentStatus()) {
+            detail.setLoadEndTime(System.currentTimeMillis());
+            detail.setSegmentStatus(SegmentStatus.STREAMING_FINISH);
+            updated = true;
           }
         }
+        if (updated) {
+          CarbonTablePath tablePath =
+              CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier());
+          SegmentStatusManager.writeLoadDetailsIntoFile(
+              tablePath.getTableStatusFilePath(),
+              details);
+        }
       } else {
-        String msg = "Failed to finish streaming, because streaming is locked for table " +
-            carbonTable.getDatabaseName() + "." + carbonTable.getTableName();
+        String msg = "Failed to acquire table status lock of " + carbonTable.getDatabaseName()
+            + "." + carbonTable.getTableName();
         LOGGER.error(msg);
         throw new IOException(msg);
       }
     } finally {
-      if (streamingLock.unlock()) {
-        LOGGER.info("Table unlocked successfully after streaming finished" + carbonTable
-            .getDatabaseName() + "." + carbonTable.getTableName());
+      if (statusLock.unlock()) {
+        LOGGER.info("Table unlocked successfully after table status updation"
+            + carbonTable.getDatabaseName() + "." + carbonTable.getTableName());
       } else {
-        LOGGER.error("Unable to unlock Table lock for table " +
-            carbonTable.getDatabaseName() + "." + carbonTable.getTableName() +
-            " during streaming finished");
+        LOGGER.error("Unable to unlock Table lock for table " + carbonTable.getDatabaseName()
+            + "." + carbonTable.getTableName() + " during table status updation");
       }
     }
   }

@@ -45,7 +45,7 @@ import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.hadoop.streaming.CarbonStreamOutputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.streaming.CarbonStreamException
+import org.apache.carbondata.streaming.{CarbonStreamException, StreamHandoffRDD}
 import org.apache.carbondata.streaming.parser.CarbonStreamParser
 import org.apache.carbondata.streaming.segment.StreamSegment
 
@@ -78,6 +78,12 @@ class CarbonAppendableStreamSink(
   private val segmentMaxSize = hadoopConf.getLong(
     CarbonCommonConstants.HANDOFF_SIZE,
     CarbonProperties.getInstance().getHandoffSize
+  )
+
+  // auto handoff
+  private val enableAutoHandoff = hadoopConf.getBoolean(
+    CarbonCommonConstants.ENABLE_AUTO_HANDOFF,
+    CarbonProperties.getInstance().isEnableAutoHandoff
   )
 
   override def addBatch(batchId: Long, data: DataFrame): Unit = {
@@ -127,14 +133,18 @@ class CarbonAppendableStreamSink(
     val segmentDir = carbonTablePath.getSegmentDir("0", currentSegmentId)
     val fileType = FileFactory.getFileType(segmentDir)
     if (segmentMaxSize <= StreamSegment.size(segmentDir)) {
-      val newSegmentId =
-        StreamSegment.close(carbonTable, currentSegmentId)
+      val newSegmentId = StreamSegment.close(carbonTable, currentSegmentId)
       currentSegmentId = newSegmentId
       val newSegmentDir = carbonTablePath.getSegmentDir("0", currentSegmentId)
       FileFactory.mkdirs(newSegmentDir, fileType)
-    }
 
-    // TODO trigger hand off operation
+      // TODO trigger hand off operation
+      if (enableAutoHandoff) {
+        StreamHandoffRDD.startStreamingHandoffThread(
+          carbonLoadModel,
+          sparkSession)
+      }
+    }
   }
 }
 
