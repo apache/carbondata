@@ -280,7 +280,7 @@ public final class CarbonDataMergerUtil {
    */
   public static boolean updateLoadMetadataWithMergeStatus(List<LoadMetadataDetails> loadsToMerge,
       String metaDataFilepath, String mergedLoadNumber, CarbonLoadModel carbonLoadModel,
-      long mergeLoadStartTime, CompactionType compactionType) throws IOException {
+      CompactionType compactionType) throws IOException {
     boolean tableStatusUpdationStatus = false;
     AbsoluteTableIdentifier absoluteTableIdentifier =
         carbonLoadModel.getCarbonDataLoadSchema().getCarbonTable().getAbsoluteTableIdentifier();
@@ -327,7 +327,7 @@ public final class CarbonDataMergerUtil {
         loadMetadataDetails.setLoadName(mergedLoadNumber);
         CarbonLoaderUtil
             .addDataIndexSizeIntoMetaEntry(loadMetadataDetails, mergedLoadNumber, carbonTable);
-        loadMetadataDetails.setLoadStartTime(mergeLoadStartTime);
+        loadMetadataDetails.setLoadStartTime(carbonLoadModel.getFactTimeStamp());
         loadMetadataDetails.setPartitionCount("0");
         // if this is a major compaction then set the segment as major compaction.
         if (CompactionType.MAJOR == compactionType) {
