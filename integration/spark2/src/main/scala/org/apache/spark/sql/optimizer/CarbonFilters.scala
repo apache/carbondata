@@ -79,10 +79,7 @@ object CarbonFilters {
             getCarbonLiteralExpression(name, value)))
         case sources.In(name, values) =>
           if (values.length == 1 && values(0) == null) {
-            Some(new InExpression(getCarbonExpression(name),
-              new ListExpression(
-                convertToJavaList(values.map(filterValues =>
-                  getCarbonLiteralExpression(name, filterValues)).toList))))
+            Some(new FalseExpression(getCarbonExpression(name)))
           } else {
             Some(new InExpression(getCarbonExpression(name),
               new ListExpression(
