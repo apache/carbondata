@@ -135,7 +135,6 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
     val factTableName = carbonLoadModel.getTableName
     val validSegments: Array[String] = CarbonDataMergerUtil
       .getValidSegments(loadsToMerge).split(',')
-    val mergeLoadStartTime = CarbonUpdateUtil.readCurrentTime()
     val partitionMapper = if (carbonTable.isHivePartitionTable) {
       var partitionMap: util.Map[String, util.List[String]] = null
       validSegments.foreach { segmentId =>
@@ -245,7 +244,7 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
              carbonLoadModel)) ||
         CarbonDataMergerUtil
           .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath,
-            mergedLoadNumber, carbonLoadModel, mergeLoadStartTime, compactionType)
+            mergedLoadNumber, carbonLoadModel, compactionType)
 
       if (!statusFileUpdation) {
         LOGGER.audit(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +

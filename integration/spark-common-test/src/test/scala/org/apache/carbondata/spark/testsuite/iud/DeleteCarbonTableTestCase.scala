@@ -165,6 +165,21 @@ class DeleteCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists preaggmain_preagg1")
   }
 
+  test("test select query after compaction, delete and clean files") {
+    sql("drop table if exists select_after_clean")
+    sql("create table select_after_clean(id int, name string) stored by 'carbondata'")
+    sql("insert into select_after_clean select 1,'abc'")
+    sql("insert into select_after_clean select 2,'def'")
+    sql("insert into select_after_clean select 3,'uhj'")
+    sql("insert into select_after_clean select 4,'frg'")
+    sql("alter table select_after_clean compact 'minor'")
+    sql("clean files for table select_after_clean")
+    sql("delete from select_after_clean where name='def'")
+    sql("clean files for table select_after_clean")
+    checkAnswer(sql("""select * from select_after_clean"""),
+      Seq(Row(1, "abc"), Row(3, "uhj"), Row(4, "frg")))
+  }
+
 
   override def afterAll {
     sql("use default")
