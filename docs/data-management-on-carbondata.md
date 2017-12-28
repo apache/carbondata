@@ -323,6 +323,11 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
     ```
     OPTIONS('ESCAPECHAR'='\') 
     ```
+  - **SKIP_EMPTY_LINE:** This option will ignore the empty line in the CSV file during the data load.
+
+    ```
+    OPTIONS('SKIP_EMPTY_LINE'='TRUE/FALSE') 
+    ```
 
   - **COMPLEX_DELIMITER_LEVEL_1:** Split the complex type data column in a row (eg., a$b$c --> Array = {a,b,c}).
 

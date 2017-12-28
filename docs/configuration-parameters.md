@@ -106,7 +106,8 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.concurrent.lock.retries | 100 | Specifies the maximum number of retries to obtain the lock for concurrent operations. This is used for concurrent loading. |
 | carbon.concurrent.lock.retry.timeout.sec | 1 | Specifies the interval between the retries to obtain the lock for concurrent operations. |
 | carbon.tempstore.location | /opt/Carbon/TempStoreLoc | Temporary store location. By default it takes System.getProperty("java.io.tmpdir"). |
-| carbon.load.log.counter | 500000 | Data loading records count logger. |   
+| carbon.load.log.counter | 500000 | Data loading records count logger. |
+| carbon.skip.empty.line | false | Setting this property ignores the empty lines in the CSV file during the data load |
 
 
 * **Compaction Configuration**
