@@ -274,29 +274,8 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
 
   @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
       int bufferSize, Configuration hadoopConf) throws IOException {
-    path = path.replace("\\", "/");
-    boolean gzip = path.endsWith(".gz");
-    boolean bzip2 = path.endsWith(".bz2");
-    InputStream stream;
-    Path pt = new Path(path);
-    FileSystem fs = pt.getFileSystem(hadoopConf);
-    if (bufferSize == -1) {
-      stream = fs.open(pt);
-    } else {
-      stream = fs.open(pt, bufferSize);
-    }
-    String codecName = null;
-    if (gzip) {
-      codecName = GzipCodec.class.getName();
-    } else if (bzip2) {
-      codecName = BZip2Codec.class.getName();
-    }
-    if (null != codecName) {
-      CompressionCodecFactory ccf = new CompressionCodecFactory(hadoopConf);
-      CompressionCodec codec = ccf.getCodecByClassName(codecName);
-      stream = codec.createInputStream(stream);
-    }
-    return new DataInputStream(new BufferedInputStream(stream));
+    return getDataInputStream(path, fileType, bufferSize,
+        CarbonUtil.inferCompressorFromFileName(path));
   }
 
   /**

@@ -68,8 +68,14 @@ public class IntermediateFileMerger implements Callable<Void> {
   private File[] intermediateFiles;
 
   private File outPutFile;
-
-  private boolean[] noDictionarycolumnMapping;
+  private int dimCnt;
+  private int noDictDimCnt;
+  private int complexCnt;
+  private int measureCnt;
+  private boolean[] isNoDictionaryDimensionColumn;
+  private DataType[] measureDataTypes;
+  private int writeBufferSize;
+  private String compressorName;
 
   private Throwable throwable;
 
@@ -82,7 +88,14 @@ public class IntermediateFileMerger implements Callable<Void> {
     this.fileCounter = intermediateFiles.length;
     this.intermediateFiles = intermediateFiles;
     this.outPutFile = outPutFile;
-    noDictionarycolumnMapping = mergerParameters.getNoDictionaryDimnesionColumn();
+    this.dimCnt = mergerParameters.getDimColCount();
+    this.noDictDimCnt = mergerParameters.getNoDictionaryCount();
+    this.complexCnt = mergerParameters.getComplexDimColCount();
+    this.measureCnt = mergerParameters.getMeasureColCount();
+    this.isNoDictionaryDimensionColumn = mergerParameters.getNoDictionaryDimnesionColumn();
+    this.measureDataTypes = mergerParameters.getMeasureDataType();
+    this.writeBufferSize = mergerParameters.getBufferSize();
+    this.compressorName = mergerParameters.getSortTempCompressorName();
   }
 
   @Override public Void call() throws Exception {
@@ -131,8 +144,7 @@ public class IntermediateFileMerger implements Callable<Void> {
   private void initialize() throws CarbonSortKeyAndGroupByException {
     try {
       stream = FileFactory.getDataOutputStream(outPutFile.getPath(), FileFactory.FileType.LOCAL,
-          mergerParameters.getFileWriteBufferSize(),
-          mergerParameters.getSortTempCompressorName());
+          writeBufferSize, compressorName);
       this.stream.writeInt(this.totalNumberOfRecords);
     } catch (FileNotFoundException e) {
       throw new CarbonSortKeyAndGroupByException("Problem while getting the file", e);
@@ -256,13 +268,12 @@ public class IntermediateFileMerger implements Callable<Void> {
    */
   private void writeDataToFile(Object[] row) throws CarbonSortKeyAndGroupByException {
     try {
-      DataType[] measureDataType = mergerParameters.getMeasureDataType();
       int[] mdkArray = (int[]) row[0];
       byte[][] nonDictArray = (byte[][]) row[1];
       int mdkIndex = 0;
       int nonDictKeyIndex = 0;
       // write dictionary and non dictionary dimensions here.
-      for (boolean nodictinary : noDictionarycolumnMapping) {
+      for (boolean nodictinary : isNoDictionaryDimensionColumn) {
         if (nodictinary) {
           byte[] col = nonDictArray[nonDictKeyIndex++];
           stream.writeShort(col.length);
@@ -271,12 +282,18 @@ public class IntermediateFileMerger implements Callable<Void> {
           stream.writeInt(mdkArray[mdkIndex++]);
         }
       }
-
+      // write complex
+      for (; nonDictKeyIndex < noDictDimCnt + complexCnt; nonDictKeyIndex++) {
+        byte[] col = nonDictArray[nonDictKeyIndex++];
+        stream.writeShort(col.length);
+        stream.write(col);
+      }
+      // write measure
       int fieldIndex = 0;
-      for (int counter = 0; counter < mergerParameters.getMeasureColCount(); counter++) {
+      for (int counter = 0; counter < measureCnt; counter++) {
         if (null != NonDictionaryUtil.getMeasure(fieldIndex, row)) {
           stream.write((byte) 1);
-          DataType dataType = measureDataType[counter];
+          DataType dataType = measureDataTypes[counter];
           if (dataType == DataTypes.BOOLEAN) {
             stream.writeBoolean((boolean)NonDictionaryUtil.getMeasure(fieldIndex, row));
           } else if (dataType == DataTypes.SHORT) {
@@ -293,7 +310,7 @@ public class IntermediateFileMerger implements Callable<Void> {
             stream.writeInt(bigDecimalInBytes.length);
             stream.write(bigDecimalInBytes);
           } else {
-            throw new IllegalArgumentException("unsupported data type:" + measureDataType[counter]);
+            throw new IllegalArgumentException("unsupported data type:" + dataType);
           }
         } else {
           stream.write((byte) 0);

@@ -72,7 +72,15 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    * return row
    */
   private Object[] returnRow;
-
+  private int dimCnt;
+  private int noDictDimCnt;
+  private int complexCnt;
+  private int measureCnt;
+  private boolean[] isNoDictionaryDimensionColumn;
+  private boolean[] isNoDictionarySortColumn;
+  private DataType[] measureDataTypes;
+  private int readBufferSize;
+  private String compressorName;
 
   private Object[][] currentBuffer;
 
@@ -96,7 +104,6 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    * totalRecordFetch
    */
   private int totalRecordFetch;
-  private SortParameters sortParameters;
 
   /**
    * Constructor to initialize
@@ -108,7 +115,15 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   public SortTempFileChunkHolder(File tempFile, SortParameters sortParameters, String tableName) {
     // set temp file
     this.tempFile = tempFile;
-    this.sortParameters = sortParameters;
+    this.dimCnt = sortParameters.getDimColCount();
+    this.noDictDimCnt = sortParameters.getNoDictionaryCount();
+    this.complexCnt = sortParameters.getComplexDimColCount();
+    this.measureCnt = sortParameters.getMeasureColCount();
+    this.isNoDictionaryDimensionColumn = sortParameters.getNoDictionaryDimnesionColumn();
+    this.isNoDictionarySortColumn = sortParameters.getNoDictionarySortColumn();
+    this.measureDataTypes = sortParameters.getMeasureDataType();
+    this.readBufferSize = sortParameters.getBufferSize();
+    this.compressorName = sortParameters.getSortTempCompressorName();
 
     this.executorService = Executors
         .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool:" + tableName));
@@ -133,7 +148,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   private void initialise() throws CarbonSortKeyAndGroupByException {
     try {
       stream = FileFactory.getDataInputStream(tempFile.getPath(), FileFactory.FileType.LOCAL,
-          sortParameters.getBufferSize(), sortParameters.getSortTempCompressorName());
+          readBufferSize, compressorName);
       this.entryCount = stream.readInt();
       if (prefetch) {
         new DataFetcher(false).call();
@@ -207,14 +222,13 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     Object[] holder = new Object[3];
     int index = 0;
     int nonDicIndex = 0;
-    int[] dim = new int[sortParameters.getDimColCount() - sortParameters.getNoDictionaryCount()];
-    byte[][] nonDicArray = new byte[sortParameters.getNoDictionaryCount()
-        + sortParameters.getComplexDimColCount()][];
-    Object[] measures = new Object[sortParameters.getMeasureColCount()];
+    int[] dim = new int[dimCnt - noDictDimCnt];
+    byte[][] nonDicArray = new byte[noDictDimCnt + complexCnt][];
+    Object[] measures = new Object[measureCnt];
     try {
       // read dimension values
-      for (int i = 0; i < sortParameters.getNoDictionaryDimnesionColumn().length; i++) {
-        if (sortParameters.getNoDictionaryDimnesionColumn()[i]) {
+      for (int i = 0; i < isNoDictionaryDimensionColumn.length; i++) {
+        if (isNoDictionaryDimensionColumn[i]) {
           short len = stream.readShort();
           byte[] array = new byte[len];
           stream.readFully(array);
@@ -224,7 +238,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         }
       }
 
-      for (int i = 0; i < sortParameters.getComplexDimColCount(); i++) {
+      for (int i = 0; i < complexCnt; i++) {
         short len = stream.readShort();
         byte[] array = new byte[len];
         stream.readFully(array);
@@ -233,9 +247,9 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
 
       index = 0;
       // read measure values
-      for (int i = 0; i < sortParameters.getMeasureColCount(); i++) {
+      for (int i = 0; i < measureCnt; i++) {
         if (stream.readByte() == 1) {
-          DataType dataType = sortParameters.getMeasureDataType()[i];
+          DataType dataType = measureDataTypes[i];
           if (dataType == DataTypes.BOOLEAN) {
             measures[index++] = stream.readBoolean();
           } else if (dataType == DataTypes.SHORT) {
@@ -323,7 +337,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     int[] rightMdkArray = (int[]) other.returnRow[0];
     byte[][] leftNonDictArray = (byte[][]) returnRow[1];
     byte[][] rightNonDictArray = (byte[][]) other.returnRow[1];
-    for (boolean isNoDictionary : sortParameters.getNoDictionarySortColumn()) {
+    for (boolean isNoDictionary : isNoDictionarySortColumn) {
       if (isNoDictionary) {
         diff = UnsafeComparer.INSTANCE
             .compareTo(leftNonDictArray[noDictionaryIndex], rightNonDictArray[noDictionaryIndex]);
@@ -358,10 +372,9 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
 
   @Override public int hashCode() {
     int hash = 0;
-    hash += 31 * sortParameters.getMeasureColCount();
-    hash += 31 * sortParameters.getDimColCount();
-    hash += 31 * sortParameters.getComplexDimColCount();
-    hash += 31 * sortParameters.getNoDictionaryCount();
+    hash += 31 * measureCnt;
+    hash += 31 * dimCnt;
+    hash += 31 * complexCnt;
     hash += tempFile.hashCode();
     return hash;
   }

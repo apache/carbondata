@@ -130,7 +130,7 @@ public class LocalCarbonFile implements CarbonFile {
   }
 
   public boolean renameTo(String changetoName) {
-    changetoName = getUpdatedFilePath(changetoName);
+    changetoName = FileFactory.getUpdatedFilePath(changetoName, FileFactory.FileType.LOCAL);
     return file.renameTo(new File(changetoName));
   }
 
@@ -238,60 +238,20 @@ public class LocalCarbonFile implements CarbonFile {
         return file.renameTo(new File(changetoName));
       }
     }
-
     return file.renameTo(new File(changetoName));
-
-  }
-
-  /**
-   * below method will be used to update the file path
-   * for local type
-   * it removes the file:/ from the path
-   *
-   * @param filePath
-   * @return updated file path without url for local
-   */
-  private static String getUpdatedFilePath(String filePath) {
-    if (filePath != null && !filePath.isEmpty()) {
-      // If the store path is relative then convert to absolute path.
-      if (filePath.startsWith("./")) {
-        try {
-          return new File(filePath).getCanonicalPath();
-        } catch (IOException e) {
-          throw new RuntimeException(e);
-        }
-      } else {
-        Path pathWithoutSchemeAndAuthority =
-            Path.getPathWithoutSchemeAndAuthority(new Path(filePath));
-        return pathWithoutSchemeAndAuthority.toString();
-      }
-    } else {
-      return filePath;
-    }
   }
 
   @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType,
       int bufferSize, boolean append) throws FileNotFoundException {
-    path = getUpdatedFilePath(path);
+    path = FileFactory.getUpdatedFilePath(path, FileFactory.FileType.LOCAL);
     return new DataOutputStream(
         new BufferedOutputStream(new FileOutputStream(path, append), bufferSize));
   }
 
   @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
       int bufferSize, Configuration configuration) throws IOException {
-    path = path.replace("\\", "/");
-    boolean gzip = path.endsWith(".gz");
-    boolean bzip2 = path.endsWith(".bz2");
-    InputStream stream;
-    path = FileFactory.getUpdatedFilePath(path, fileType);
-    if (gzip) {
-      stream = new GZIPInputStream(new FileInputStream(path));
-    } else if (bzip2) {
-      stream = new BZip2CompressorInputStream(new FileInputStream(path));
-    } else {
-      stream = new FileInputStream(path);
-    }
-    return new DataInputStream(new BufferedInputStream(stream));
+    return getDataInputStream(path, fileType, bufferSize,
+        CarbonUtil.inferCompressorFromFileName(path));
   }
 
   @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
@@ -352,7 +312,7 @@ public class LocalCarbonFile implements CarbonFile {
   @Override public DataOutputStream getDataOutputStream(String path, FileFactory.FileType fileType)
       throws IOException {
     path = path.replace("\\", "/");
-    path = getUpdatedFilePath(path);
+    path = FileFactory.getUpdatedFilePath(path, FileFactory.FileType.LOCAL);
     return new DataOutputStream(new BufferedOutputStream(new FileOutputStream(path)));
   }
 

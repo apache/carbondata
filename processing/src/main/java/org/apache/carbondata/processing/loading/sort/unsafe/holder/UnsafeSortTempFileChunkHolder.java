@@ -68,8 +68,13 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
    * return row
    */
   private Object[] returnRow;
-  private SortParameters sortParameters;
-
+  private int dimCnt;
+  private int complexCnt;
+  private int measureCnt;
+  private boolean[] isNoDictionaryDimensionColumn;
+  private DataType[] measureDataTypes;
+  private int readBufferSize;
+  private String compressorName;
   private Object[][] currentBuffer;
 
   private Object[][] backupBuffer;
@@ -105,7 +110,13 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
   public UnsafeSortTempFileChunkHolder(File tempFile, SortParameters parameters) {
     // set temp file
     this.tempFile = tempFile;
-    this.sortParameters = parameters;
+    this.dimCnt = parameters.getDimColCount();
+    this.complexCnt = parameters.getComplexDimColCount();
+    this.measureCnt = parameters.getMeasureColCount();
+    this.isNoDictionaryDimensionColumn = parameters.getNoDictionaryDimnesionColumn();
+    this.measureDataTypes = parameters.getMeasureDataType();
+    this.readBufferSize = parameters.getBufferSize();
+    this.compressorName = parameters.getSortTempCompressorName();
 
     this.executorService = Executors.newFixedThreadPool(1);
     this.nullSetWordsLength = ((parameters.getMeasureColCount() - 1) >> 6) + 1;
@@ -131,7 +142,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
   private void initialise() {
     try {
       stream = FileFactory.getDataInputStream(tempFile.getPath(), FileFactory.FileType.LOCAL,
-          sortParameters.getBufferSize(), sortParameters.getSortTempCompressorName());
+          readBufferSize, compressorName);
       this.entryCount = stream.readInt();
       LOGGER.audit("Processing unsafe mode file rows with size : " + entryCount);
       if (prefetch) {
@@ -200,12 +211,11 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
    * @throws CarbonSortKeyAndGroupByException
    */
   private Object[] getRowFromStream() throws CarbonSortKeyAndGroupByException {
-    Object[] row = new Object[sortParameters.getDimColCount()
-        + sortParameters.getComplexDimColCount() + sortParameters.getMeasureColCount()];
+    Object[] row = new Object[dimCnt + measureCnt];
     try {
       int dimCount = 0;
-      for (; dimCount < sortParameters.getNoDictionaryDimnesionColumn().length; dimCount++) {
-        if (sortParameters.getNoDictionaryDimnesionColumn()[dimCount]) {
+      for (; dimCount < isNoDictionaryDimensionColumn.length; dimCount++) {
+        if (isNoDictionaryDimensionColumn[dimCount]) {
           short aShort = stream.readShort();
           byte[] col = new byte[aShort];
           stream.readFully(col);
@@ -217,7 +227,7 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
       }
 
       // write complex dimensions here.
-      for (; dimCount < sortParameters.getComplexDimColCount(); dimCount++) {
+      for (; dimCount < dimCnt; dimCount++) {
         short aShort = stream.readShort();
         byte[] col = new byte[aShort];
         stream.readFully(col);
@@ -229,9 +239,9 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
         words[i] = stream.readLong();
       }
 
-      for (int mesCount = 0; mesCount < sortParameters.getMeasureColCount(); mesCount++) {
+      for (int mesCount = 0; mesCount < measureCnt; mesCount++) {
         if (UnsafeCarbonRowPage.isSet(words, mesCount)) {
-          DataType dataType = sortParameters.getMeasureDataType()[mesCount];
+          DataType dataType = measureDataTypes[mesCount];
           if (dataType == DataTypes.SHORT) {
             row[dimCount + mesCount] = stream.readShort();
           } else if (dataType == DataTypes.INT) {
@@ -316,10 +326,9 @@ public class UnsafeSortTempFileChunkHolder implements SortTempChunkHolder {
 
   @Override public int hashCode() {
     int hash = 0;
-    hash += 31 * sortParameters.getMeasureColCount();
-    hash += 31 * sortParameters.getDimColCount();
-    hash += 31 * sortParameters.getComplexDimColCount();
-    hash += 31 * sortParameters.getNoDictionaryCount();
+    hash += 31 * measureCnt;
+    hash += 31 * dimCnt;
+    hash += 31 * complexCnt;
     hash += tempFile.hashCode();
     return hash;
   }

@@ -760,6 +760,21 @@ public final class CarbonUtil {
     return defaultFsUrl + currentPath;
   }
 
+  /**
+   * infer compress name from file name
+   * @param path file name
+   * @return compressor name
+   */
+  public static String inferCompressorFromFileName(String path) {
+    if (path.endsWith(".gz")) {
+      return "GZIP";
+    } else if (path.endsWith("bz2")) {
+      return "BZIP2";
+    } else {
+      return "";
+    }
+  }
+
   private static boolean checkIfPrefixExists(String path) {
     final String lowerPath = path.toLowerCase(Locale.getDefault());
     return lowerPath.startsWith(CarbonCommonConstants.HDFSURL_PREFIX) ||
