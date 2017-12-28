@@ -402,6 +402,16 @@ class CarbonGlobalDictionaryGenerateRDD(
             model.primDimensions(split.index).getDataType
           )
         } else {
+          // check if any stale dictionary data available for given column
+          CarbonLoaderUtil.validateForStaleDictionaryData(model.table,
+            model.columnIdentifier(split.index),
+            model.primDimensions(split.index).getDataType
+          )
+          // clearing stale dictionary cache
+          CarbonLoaderUtil.clearDictionaryCache(model.table,
+            model.columnIdentifier(split.index),
+            model.primDimensions(split.index).getDataType
+          )
           null
         }
         val dictCacheTime = System.currentTimeMillis - t2
