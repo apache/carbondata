@@ -18,6 +18,8 @@ package org.apache.carbondata.core.scan.filter.executer;
 
 import java.util.BitSet;
 
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
+
 /**
  * Implementation of this interface will involve block
  * and blocklet pruning based on block/blocklet id where
@@ -33,7 +35,7 @@ public interface ImplicitColumnFilterExecutor {
    * @param uniqueBlockPath
    * @return
    */
-  BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
+  BitSet isFilterValuesPresentInBlockOrBlocklet(BlockletStatistics blockletStatistics,
       String uniqueBlockPath);
 
   /**
@@ -43,5 +45,5 @@ public interface ImplicitColumnFilterExecutor {
    *
    * @return
    */
-  Boolean isFilterValuesPresentInAbstractIndex(byte[][] maxValue, byte[][] minValue);
+  Boolean isFilterValuesPresentInAbstractIndex(BlockletStatistics blockletStatistics);
 }

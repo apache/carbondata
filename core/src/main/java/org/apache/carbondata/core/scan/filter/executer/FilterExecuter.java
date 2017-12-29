@@ -19,6 +19,7 @@ package org.apache.carbondata.core.scan.filter.executer;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.processor.BlocksChunkHolder;
@@ -42,11 +43,10 @@ public interface FilterExecuter {
    * API will verify whether the block can be shortlisted based on block
    * max and min key.
    *
-   * @param blockMaxValue, maximum value of the
-   * @param blockMinValue
+   * @param blockletStatistics contains min max and null values of blocklet.
    * @return BitSet
    */
-  BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue);
+  BitSet isScanRequired(BlockletStatistics blockletStatistics);
 
   /**
    * It just reads necessary block for filter executor, it does not uncompress the data.

@@ -87,6 +87,11 @@ public abstract class ColumnPage {
       return new byte[0];
     }
 
+    @Override public byte getNull() {
+      byte nullVal = 0;
+      return nullVal;
+    }
+
     @Override public int getDecimalCount() {
       return 0;
     }

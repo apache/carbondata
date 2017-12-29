@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -110,17 +111,21 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
     }
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override public BitSet isScanRequired(BlockletStatistics blockletStatistics) {
     BitSet bitSet = new BitSet(1);
     boolean isScanRequired = false;
     byte[] maxValue = null;
+    boolean nullValue = false;
     if (isMeasurePresentInCurrentBlock[0] || isDimensionPresentInCurrentBlock[0]) {
       if (isMeasurePresentInCurrentBlock[0]) {
-        maxValue = blockMaxValue[measureBlocksIndex[0] + lastDimensionColOrdinal];
-        isScanRequired =
-            isScanRequired(maxValue, msrFilterRangeValues, msrColEvalutorInfoList.get(0).getType());
+        maxValue = blockletStatistics.getBlockletMaxVal()
+            [measureBlocksIndex[0] + lastDimensionColOrdinal];
+        nullValue = blockletStatistics.getBlockletNullVal()
+            .get(measureBlocksIndex[0] + lastDimensionColOrdinal);
+        isScanRequired = isScanRequired(maxValue, nullValue, msrFilterRangeValues,
+            msrColEvalutorInfoList.get(0).getType());
       } else {
-        maxValue = blockMaxValue[dimensionBlocksIndex[0]];
+        maxValue = blockletStatistics.getBlockletMaxVal()[dimensionBlocksIndex[0]];
         isScanRequired = isScanRequired(maxValue, filterRangeValues);
       }
     } else {
@@ -151,13 +156,17 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
     return isScanRequired;
   }
 
-  private boolean isScanRequired(byte[] maxValue, Object[] filterValue,
+  private boolean isScanRequired(byte[] maxValue, boolean nullValue, Object[] filterValue,
       DataType dataType) {
     Object value = DataTypeUtil.getMeasureObjectFromDataType(maxValue, dataType);
     for (int i = 0; i < filterValue.length; i++) {
       // TODO handle min and max for null values.
       if (filterValue[i] == null) {
-        return true;
+        if (nullValue == true) {
+          return true;
+        } else {
+          return false;
+        }
       }
       if (comparator.compare(filterValue[i], value) < 0) {
         return true;
@@ -219,7 +228,8 @@ public class RowLevelRangeGrtThanFiterExecuterImpl extends RowLevelFilterExecute
       BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMaxValues() != null) {
-          if (isScanRequired(rawColumnChunk.getMaxValues()[i], this.msrFilterRangeValues,
+          if (isScanRequired(rawColumnChunk.getMaxValues()[i],
+              rawColumnChunk.getNullValues().get(i), this.msrFilterRangeValues,
               msrColEvalutorInfoList.get(0).getType())) {
             int compare = comparator.compare(msrFilterRangeValues[0], DataTypeUtil
                 .getMeasureObjectFromDataType(rawColumnChunk.getMinValues()[i],

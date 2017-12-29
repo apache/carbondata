@@ -26,18 +26,19 @@ import org.apache.carbondata.core.util.ByteUtil;
 public class LVStringStatsCollector implements ColumnPageStatsCollector {
 
   private byte[] min, max;
+  private byte nullValue;
 
   public static LVStringStatsCollector newInstance() {
     return new LVStringStatsCollector();
   }
 
   private LVStringStatsCollector() {
-
+    nullValue = (byte) 0;
   }
 
   @Override
   public void updateNull(int rowId) {
-
+    nullValue = (byte) 1;
   }
 
   @Override
@@ -74,6 +75,7 @@ public class LVStringStatsCollector implements ColumnPageStatsCollector {
   public void update(byte[] value) {
     // input value is LV encoded
     assert (value.length >= 2);
+
     if (value.length == 2) {
       assert (value[0] == 0 && value[1] == 0);
       if (min == null && max == null) {
@@ -109,6 +111,10 @@ public class LVStringStatsCollector implements ColumnPageStatsCollector {
 
       @Override public Object getMax() {
         return max;
+      }
+
+      @Override public byte getNull() {
+        return nullValue;
       }
 
       @Override public int getDecimalCount() {

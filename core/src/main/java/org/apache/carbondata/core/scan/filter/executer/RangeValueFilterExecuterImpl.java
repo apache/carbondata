@@ -24,6 +24,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -207,7 +208,8 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
    * @param filterValues
    * @return
    */
-  public boolean isScanRequired(byte[] blockMinValue, byte[] blockMaxValue, byte[][] filterValues) {
+  public boolean isScanRequired(byte[] blockMinValue, byte[] blockMaxValue, boolean nullValue,
+      byte[][] filterValues) {
     boolean isScanRequired = true;
     isRangeFullyCoverBlock = false;
     startBlockMinIsDefaultStart = false;
@@ -284,12 +286,15 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
    * @param blockMinValue
    * @return
    */
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override public BitSet isScanRequired(BlockletStatistics blockletStatistics) {
     BitSet bitSet = new BitSet(1);
     byte[][] filterValues = this.filterRangesValues;
     int columnIndex = this.dimColEvaluatorInfo.getColumnIndex();
-    boolean isScanRequired = columnIndex >= blockMinValue.length ||
-        isScanRequired(blockMinValue[columnIndex], blockMaxValue[columnIndex], filterValues);
+    boolean isScanRequired =
+        columnIndex >= blockletStatistics.getBlockletMinVal().length || isScanRequired(
+            blockletStatistics.getBlockletMinVal()[columnIndex],
+            blockletStatistics.getBlockletMaxVal()[columnIndex],
+            blockletStatistics.getBlockletNullVal().get(columnIndex), filterValues);
     if (isScanRequired) {
       bitSet.set(0);
     }
@@ -330,7 +335,7 @@ public class RangeValueFilterExecuterImpl extends ValueBasedFilterExecuterImpl {
     for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
       if (rawColumnChunk.getMaxValues() != null) {
         if (isScanRequired(rawColumnChunk.getMinValues()[i], rawColumnChunk.getMaxValues()[i],
-            this.filterRangesValues)) {
+            rawColumnChunk.getNullValues().get(i), this.filterRangesValues)) {
           if (isRangeFullyCoverBlock == true) {
             // Set all the bits in this case as filter Min Max values cover the whole block.
             BitSet bitSet = new BitSet(rawColumnChunk.getRowCount()[i]);

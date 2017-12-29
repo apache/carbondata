@@ -100,6 +100,9 @@ public class DataFileFooterConverterTest {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
     blockletMinMaxIndex.setMax_values(Arrays.asList(ByteBuffer.allocate(1).put((byte) 2)));
     blockletMinMaxIndex.setMin_values(Arrays.asList(ByteBuffer.allocate(1).put((byte) 1)));
+    byte[] nullByte = new byte[1];
+    nullByte[0] = (byte)0;
+    blockletMinMaxIndex.setIsNull_value(nullByte);
     blockletIndex1.setMin_max_index(blockletMinMaxIndex);
     blockIndex.setBlock_index(blockletIndex1);
     List<Integer> column_cardinalities = new ArrayList<>();
@@ -222,6 +225,9 @@ public class DataFileFooterConverterTest {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
     blockletMinMaxIndex.setMax_values(Arrays.asList(ByteBuffer.allocate(1).put((byte) 2)));
     blockletMinMaxIndex.setMin_values(Arrays.asList(ByteBuffer.allocate(1).put((byte) 1)));
+    byte[] nullByte = new byte[1];
+    nullByte[0] = (byte)0;
+    blockletMinMaxIndex.setIsNull_value(nullByte);
     blockletIndex1.setMin_max_index(blockletMinMaxIndex);
     new MockUp<FileFactory>() {
       @SuppressWarnings("unused") @Mock public FileFactory.FileType getFileType(String path) {

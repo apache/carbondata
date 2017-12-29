@@ -19,6 +19,7 @@ package org.apache.carbondata.core.util;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.block.SegmentProperties;
@@ -222,6 +223,7 @@ public class CarbonMetadataUtilTest {
 
     byte[] byteMaxArr = "1".getBytes();
     byte[] byteMinArr = "2".getBytes();
+    BitSet nullBitSet = new BitSet(1);
 
     BlockletIndex index = getBlockletIndex(encodedTablePageList, segmentProperties.getMeasures());
     List<BlockletIndex> indexList = new ArrayList<>();
@@ -230,6 +232,8 @@ public class CarbonMetadataUtilTest {
     BlockletMinMaxIndex blockletMinMaxIndex = new BlockletMinMaxIndex();
     blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(byteMaxArr));
     blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(byteMinArr));
+    blockletMinMaxIndex.setIsNull_value(nullBitSet.toByteArray());
+
     FileFooter3 footer = convertFileFooterVersion3(blockletInfoColumnarList,
         indexList,
         cardinality, 2);
@@ -248,10 +252,13 @@ public class CarbonMetadataUtilTest {
     List<ByteBuffer> maxList = new ArrayList<>();
     maxList.add(ByteBuffer.wrap(byteArr1));
 
+    BitSet byteArr2 = new BitSet(5);
+    byteArr2.set(3);
+
     org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex
         blockletMinMaxIndex =
         new org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex(minList,
-            maxList);
+            maxList, byteArr2);
     org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex
         blockletBTreeIndex =
         new org.apache.carbondata.core.metadata.blocklet.index.BlockletBTreeIndex(startKey,

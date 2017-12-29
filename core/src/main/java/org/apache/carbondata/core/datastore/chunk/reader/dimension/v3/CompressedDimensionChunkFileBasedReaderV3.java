@@ -18,6 +18,7 @@ package org.apache.carbondata.core.datastore.chunk.reader.dimension.v3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.datastore.FileHolder;
@@ -109,12 +110,20 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     int numberOfPages = dataChunk.getPage_length().size();
     byte[][] maxValueOfEachPage = new byte[numberOfPages][];
     byte[][] minValueOfEachPage = new byte[numberOfPages][];
+    BitSet nullValueOfEachPage = new BitSet(numberOfPages);
+
     int[] eachPageLength = new int[numberOfPages];
     for (int i = 0; i < minValueOfEachPage.length; i++) {
       maxValueOfEachPage[i] =
           dataChunk.getData_chunk_list().get(i).getMin_max().getMax_values().get(0).array();
       minValueOfEachPage[i] =
           dataChunk.getData_chunk_list().get(i).getMin_max().getMin_values().get(0).array();
+      BitSet nullValueBitSet = BitSet.valueOf(
+          dataChunk.getData_chunk_list().get(i).getMin_max().getIsNull_value());
+      if (nullValueBitSet.get(0)) {
+        nullValueOfEachPage.set(i);
+      }
+
       eachPageLength[i] = dataChunk.getData_chunk_list().get(i).getNumberOfRowsInpage();
     }
     rawColumnChunk.setDataChunkV3(dataChunk);
@@ -122,6 +131,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
     rawColumnChunk.setPagesCount(dataChunk.getPage_length().size());
     rawColumnChunk.setMaxValues(maxValueOfEachPage);
     rawColumnChunk.setMinValues(minValueOfEachPage);
+    rawColumnChunk.setNullValues(nullValueOfEachPage);
     rawColumnChunk.setRowCount(eachPageLength);
     rawColumnChunk.setOffsets(ArrayUtils
         .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));
@@ -173,12 +183,18 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       int numberOfPages = dataChunk.getPage_length().size();
       byte[][] maxValueOfEachPage = new byte[numberOfPages][];
       byte[][] minValueOfEachPage = new byte[numberOfPages][];
+      BitSet nullValueOfEachPage = new BitSet(numberOfPages);
       int[] eachPageLength = new int[numberOfPages];
       for (int j = 0; j < minValueOfEachPage.length; j++) {
         maxValueOfEachPage[j] =
             dataChunk.getData_chunk_list().get(j).getMin_max().getMax_values().get(0).array();
         minValueOfEachPage[j] =
             dataChunk.getData_chunk_list().get(j).getMin_max().getMin_values().get(0).array();
+        BitSet nullValBitSet = BitSet.valueOf(
+            dataChunk.getData_chunk_list().get(j).getMin_max().getIsNull_value());
+        if (nullValBitSet.get(0)) {
+          nullValueOfEachPage.set(j);
+        }
         eachPageLength[j] = dataChunk.getData_chunk_list().get(j).getNumberOfRowsInpage();
       }
       dimensionDataChunks[index].setDataChunkV3(dataChunk);
@@ -186,6 +202,7 @@ public class CompressedDimensionChunkFileBasedReaderV3 extends AbstractChunkRead
       dimensionDataChunks[index].setPagesCount(dataChunk.getPage_length().size());
       dimensionDataChunks[index].setMaxValues(maxValueOfEachPage);
       dimensionDataChunks[index].setMinValues(minValueOfEachPage);
+      dimensionDataChunks[index].setNullValues(nullValueOfEachPage);
       dimensionDataChunks[index].setRowCount(eachPageLength);
       dimensionDataChunks[index].setOffsets(ArrayUtils
           .toPrimitive(dataChunk.page_offset.toArray(new Integer[dataChunk.page_offset.size()])));

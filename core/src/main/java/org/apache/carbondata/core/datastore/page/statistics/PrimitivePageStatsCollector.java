@@ -37,6 +37,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   private long minLong, maxLong;
   private double minDouble, maxDouble;
   private BigDecimal minDecimal, maxDecimal;
+  private byte nullByte;
 
   // scale of the double value, apply adaptive encoding if this is positive
   private int decimal;
@@ -55,6 +56,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         new PrimitivePageStatsCollector(meta.getSchemaDataType());
     // set min max from meta
     DataType dataType = meta.getSchemaDataType();
+    instance.nullByte = (byte) 0;
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       instance.minByte = (byte) meta.getMinValue();
       instance.maxByte = (byte) meta.getMaxValue();
@@ -87,6 +89,7 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
         new PrimitivePageStatsCollector(DataType.getDataType(meta.getType()));
     // set min max from meta
     DataType dataType = DataType.getDataType(meta.getType());
+    instance.nullByte = (byte) 0;
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       instance.minByte = (byte) meta.getMinValue();
       instance.maxByte = (byte) meta.getMaxValue();
@@ -147,6 +150,8 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
   @Override
   public void updateNull(int rowId) {
     long value = 0;
+    // Set the null Byte.
+    nullByte = (byte) 1;
     if (dataType == DataTypes.BOOLEAN || dataType == DataTypes.BYTE) {
       update((byte) value);
     } else if (dataType == DataTypes.SHORT) {
@@ -320,6 +325,10 @@ public class PrimitivePageStatsCollector implements ColumnPageStatsCollector, Si
       return maxDecimal;
     }
     return null;
+  }
+
+  @Override public byte getNull() {
+    return nullByte;
   }
 
   @Override

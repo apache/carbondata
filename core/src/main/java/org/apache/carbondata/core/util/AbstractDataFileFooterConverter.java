@@ -46,6 +46,7 @@ import org.apache.carbondata.core.reader.CarbonIndexFileReader;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.format.BlockIndex;
 
+
 /**
  * Footer reader class
  */
@@ -252,11 +253,14 @@ public abstract class AbstractDataFileFooterConverter {
     blockletIndex.setBtreeIndex(blockletBTreeIndex);
     byte[][] currentMinValue = blockletIndexList.get(0).getMinMaxIndex().getMinValues().clone();
     byte[][] currentMaxValue = blockletIndexList.get(0).getMinMaxIndex().getMaxValues().clone();
+    BitSet currentNullValue = blockletIndexList.get(0).getMinMaxIndex().getNullValues();
     byte[][] minValue = null;
     byte[][] maxValue = null;
+    BitSet nullValue = null;
     for (int i = 1; i < blockletIndexList.size(); i++) {
       minValue = blockletIndexList.get(i).getMinMaxIndex().getMinValues();
       maxValue = blockletIndexList.get(i).getMinMaxIndex().getMaxValues();
+      nullValue = blockletIndexList.get(i).getMinMaxIndex().getNullValues();
       for (int j = 0; j < maxValue.length; j++) {
         if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMinValue[j], minValue[j]) > 0) {
           currentMinValue[j] = minValue[j].clone();
@@ -264,12 +268,16 @@ public abstract class AbstractDataFileFooterConverter {
         if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(currentMaxValue[j], maxValue[j]) < 0) {
           currentMaxValue[j] = maxValue[j].clone();
         }
+        if (nullValue.get(j)) {
+          currentNullValue.set(j);
+        }
       }
     }
 
     BlockletMinMaxIndex minMax = new BlockletMinMaxIndex();
     minMax.setMaxValues(currentMaxValue);
     minMax.setMinValues(currentMinValue);
+    minMax.setNullValues(currentNullValue);
     blockletIndex.setMinMaxIndex(minMax);
     return blockletIndex;
   }
@@ -392,7 +400,8 @@ public abstract class AbstractDataFileFooterConverter {
         blockletIndexThrift.getMin_max_index();
     return new BlockletIndex(
         new BlockletBTreeIndex(btreeIndex.getStart_key(), btreeIndex.getEnd_key()),
-        new BlockletMinMaxIndex(minMaxIndex.getMin_values(), minMaxIndex.getMax_values()));
+        new BlockletMinMaxIndex(minMaxIndex.getMin_values(), minMaxIndex.getMax_values(),
+            BitSet.valueOf(minMaxIndex.getIsNull_value())));
   }
 
   /**

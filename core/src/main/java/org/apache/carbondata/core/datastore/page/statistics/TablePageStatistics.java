@@ -29,11 +29,17 @@ public class TablePageStatistics {
   // max of each dimension column
   private byte[][] dimensionMaxValue;
 
+  // Null values for dimension columns.
+  private byte[] dimensionNullValue;
+
   // min of each measure column
   private byte[][] measureMinValue;
 
   // max os each measure column
   private byte[][] measureMaxValue;
+
+  // Null Value in Column Page.
+  private byte[] measureNullValue;
 
   public TablePageStatistics(EncodedColumnPage[] dimensions,
       EncodedColumnPage[] measures) {
@@ -41,25 +47,30 @@ public class TablePageStatistics {
     int numMeasures = measures.length;
     this.dimensionMinValue = new byte[numDimensionsExpanded][];
     this.dimensionMaxValue = new byte[numDimensionsExpanded][];
+    this.dimensionNullValue = new byte[numDimensionsExpanded];
     this.measureMinValue = new byte[numMeasures][];
     this.measureMaxValue = new byte[numMeasures][];
-    updateDimensionMinMax(dimensions);
-    updateMeasureMinMax(measures);
+    this.measureNullValue = new byte[numMeasures];
+    updateDimensionMinMaxAndNull(dimensions);
+    updateMeasureMinMaxAndNull(measures);
+
   }
 
-  private void updateDimensionMinMax(EncodedColumnPage[] dimensions) {
+  private void updateDimensionMinMaxAndNull(EncodedColumnPage[] dimensions) {
     for (int i = 0; i < dimensions.length; i++) {
       SimpleStatsResult stats = dimensions[i].getStats();
       dimensionMaxValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMax());
       dimensionMinValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMin());
+      dimensionNullValue[i] = stats.getNull();
     }
   }
 
-  private void updateMeasureMinMax(EncodedColumnPage[] measures) {
+  private void updateMeasureMinMaxAndNull(EncodedColumnPage[] measures) {
     for (int i = 0; i < measures.length; i++) {
       SimpleStatsResult stats = measures[i].getStats();
       measureMaxValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMax());
       measureMinValue[i] = CarbonUtil.getValueAsBytes(stats.getDataType(), stats.getMin());
+      measureNullValue[i] = (byte) stats.getNull();
     }
   }
 
@@ -71,6 +82,10 @@ public class TablePageStatistics {
     return dimensionMaxValue;
   }
 
+  public byte[] getDimensionNullValue() {
+    return dimensionNullValue;
+  }
+
   public byte[][] getMeasureMinValue() {
     return measureMinValue;
   }
@@ -79,4 +94,7 @@ public class TablePageStatistics {
     return measureMaxValue;
   }
 
+  public byte[] getMeasureNullValue() {
+    return measureNullValue;
+  }
 }

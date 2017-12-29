@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
@@ -320,6 +321,11 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
       BlockletMinMaxIndex minMaxIndex = new BlockletMinMaxIndex();
       minMaxIndex.setMinValues(toByteArray(index.getMin_max_index().getMin_values()));
       minMaxIndex.setMaxValues(toByteArray(index.getMin_max_index().getMax_values()));
+      byte[] nullByteArray = index.getMin_max_index().getIsNull_value();
+      if (nullByteArray.length == 0) {
+        nullByteArray = new byte[1];
+      }
+      minMaxIndex.setNullValues(BitSet.valueOf(nullByteArray));
       org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex bIndex =
           new org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex(bTreeIndex,
               minMaxIndex);

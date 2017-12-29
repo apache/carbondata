@@ -24,6 +24,7 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.scan.filter.FilterUtil;
@@ -135,7 +136,7 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
 
   @Override public boolean applyFilter(RowIntf value, int dimOrdinalMax) {
     if (isDimensionPresentInCurrentBlock) {
-      byte[][] filterValues = dimColumnExecuterInfo.getFilterKeys();
+      byte[][] filterValues = dimColumnExecuterInfo.getExcludeFilterKeys();
       byte[] col = (byte[])value.getVal(dimColEvaluatorInfo.getDimension().getOrdinal());
       for (int i = 0; i < filterValues.length; i++) {
         if (0 == ByteUtil.UnsafeComparer.INSTANCE.compareTo(col, 0, col.length,
@@ -419,11 +420,74 @@ public class ExcludeFilterExecuterImpl implements FilterExecuter {
     return bitSet;
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  private boolean isScanRequired(byte[] blkMaxVal, byte[] blkMinVal, byte[][] filterValues) {
+    boolean isScanRequired = true;
+    for (int k = 0; k < filterValues.length; k++) {
+      int minmaxCompare = ByteUtil.UnsafeComparer.INSTANCE.compareTo(blkMinVal, blkMaxVal);
+
+      int maxCompare =
+          ByteUtil.UnsafeComparer.INSTANCE.compareTo(filterValues[k], blkMaxVal);
+
+      // if any filter value is in range than this block needs to be
+      // scanned. For exclude both Min and Max values should point to same
+      // the filter value should have the same value as Min Max.
+      // Min == Max == FilterValue => Exclude the block.
+      if (minmaxCompare == 0 && maxCompare == 0) {
+        isScanRequired = false;
+        break;
+      }
+    }
+    return isScanRequired;
+  }
+
+  private boolean isScanRequired(byte[] maxValue, byte[] minValue, boolean nullValue,
+      Object[] filterValue, DataType dataType) {
+    Object maxObject = DataTypeUtil.getMeasureObjectFromDataType(maxValue, dataType);
+    Object minObject = DataTypeUtil.getMeasureObjectFromDataType(minValue, dataType);
+    for (int i = 0; i < filterValue.length; i++) {
+      if (filterValue[i] == null) {
+        return true;
+      }
+      if (comparator.compare(filterValue[i], maxObject) == 0
+          && comparator.compare(filterValue[i], minObject) == 0) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  @Override public BitSet isScanRequired(BlockletStatistics blockletStatistics) {
+
     BitSet bitSet = new BitSet(1);
-    bitSet.flip(0, 1);
+    byte[][] filterValues = null;
+    int columnIndex = 0;
+    int blockIndex = 0;
+    boolean isScanRequired = false;
+
+    if (isDimensionPresentInCurrentBlock) {
+      filterValues = dimColumnExecuterInfo.getExcludeFilterKeys();
+      columnIndex = dimColEvaluatorInfo.getColumnIndex();
+      blockIndex = segmentProperties.getDimensionOrdinalToBlockMapping().get(columnIndex);
+      isScanRequired = isScanRequired(blockletStatistics.getBlockletMaxVal()[blockIndex],
+          blockletStatistics.getBlockletMinVal()[blockIndex], filterValues);
+
+    } else if (isMeasurePresentInCurrentBlock) {
+      columnIndex = msrColumnEvaluatorInfo.getColumnIndex();
+      blockIndex =
+          segmentProperties.getMeasuresOrdinalToBlockMapping().get(columnIndex) + segmentProperties
+              .getLastDimensionColOrdinal();
+      isScanRequired = isScanRequired(blockletStatistics.getBlockletMaxVal()[blockIndex],
+          blockletStatistics.getBlockletMinVal()[blockIndex],
+          blockletStatistics.getBlockletNullVal().get(blockIndex),
+          msrColumnExecutorInfo.getFilterKeys(), msrColumnEvaluatorInfo.getType());
+    }
+
+    if (isScanRequired) {
+      bitSet.set(0);
+    }
     return bitSet;
   }
+
 
   @Override public void readBlocks(BlocksChunkHolder blockChunkHolder) throws IOException {
     if (isDimensionPresentInCurrentBlock) {

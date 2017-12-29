@@ -17,6 +17,7 @@
 package org.apache.carbondata.core.indexstore.blockletindex;
 
 import java.io.IOException;
+import java.util.BitSet;
 import java.util.List;
 
 import org.apache.carbondata.core.cache.update.BlockletLevelDeleteDeltaDataCache;
@@ -111,6 +112,10 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
     if (null != blockletIndex) {
       return blockletIndex.getMinMaxIndex().getMinValues();
     }
+    return null;
+  }
+
+  @Override public BitSet getColumnsNullValue() {
     return null;
   }
 

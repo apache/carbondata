@@ -28,6 +28,7 @@ import org.apache.carbondata.core.datastore.DataRefNodeFinder;
 import org.apache.carbondata.core.datastore.IndexKey;
 import org.apache.carbondata.core.datastore.block.AbstractIndex;
 import org.apache.carbondata.core.datastore.impl.btree.BTreeDataRefNodeFinder;
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
@@ -290,8 +291,10 @@ public class FilterExpressionProcessor implements FilterProcessor {
   private void addBlockBasedOnMinMaxValue(FilterExecuter filterExecuter,
       List<DataRefNode> listOfDataBlocksToScan, DataRefNode dataRefNode) {
 
-    BitSet bitSet = filterExecuter
-        .isScanRequired(dataRefNode.getColumnsMaxValue(), dataRefNode.getColumnsMinValue());
+    BlockletStatistics blockletStatistics =
+        new BlockletStatistics(dataRefNode.getColumnsMaxValue(), dataRefNode.getColumnsMinValue(),
+            dataRefNode.getColumnsNullValue());
+    BitSet bitSet = filterExecuter.isScanRequired(blockletStatistics);
     if (!bitSet.isEmpty()) {
       listOfDataBlocksToScan.add(dataRefNode);
 
@@ -542,14 +545,14 @@ public class FilterExpressionProcessor implements FilterProcessor {
     return new RowLevelFilterResolverImpl(expression, false, false, tableIdentifier);
   }
 
-  public static boolean isScanRequired(FilterExecuter filterExecuter, byte[][] maxValue,
-      byte[][] minValue) {
+  public static boolean isScanRequired(FilterExecuter filterExecuter,
+      BlockletStatistics blockletStatistics) {
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
       return ((ImplicitColumnFilterExecutor) filterExecuter)
-          .isFilterValuesPresentInAbstractIndex(maxValue, minValue);
+          .isFilterValuesPresentInAbstractIndex(blockletStatistics);
     } else {
       // otherwise decide based on min/max value
-      BitSet bitSet = filterExecuter.isScanRequired(maxValue, minValue);
+      BitSet bitSet = filterExecuter.isScanRequired(blockletStatistics);
       return !bitSet.isEmpty();
     }
   }

@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.DimensionRawColumnChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.MeasureRawColumnChunk;
 import org.apache.carbondata.core.datastore.page.ColumnPage;
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryGenerator;
 import org.apache.carbondata.core.keygenerator.directdictionary.DirectDictionaryKeyGeneratorFactory;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
@@ -113,17 +114,21 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
     }
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override public BitSet isScanRequired(BlockletStatistics blockletStatisticss) {
     BitSet bitSet = new BitSet(1);
     byte[] minValue = null;
+    boolean nullValue = false;
     boolean isScanRequired = false;
     if (isMeasurePresentInCurrentBlock[0] || isDimensionPresentInCurrentBlock[0]) {
       if (isMeasurePresentInCurrentBlock[0]) {
-        minValue = blockMinValue[measureBlocksIndex[0] + lastDimensionColOrdinal];
-        isScanRequired =
-            isScanRequired(minValue, msrFilterRangeValues, msrColEvalutorInfoList.get(0).getType());
+        minValue = blockletStatisticss.getBlockletMinVal()
+            [measureBlocksIndex[0] + lastDimensionColOrdinal];
+        nullValue = blockletStatisticss.getBlockletNullVal()
+            .get(measureBlocksIndex[0] + lastDimensionColOrdinal);
+        isScanRequired = isScanRequired(minValue, nullValue, msrFilterRangeValues,
+            msrColEvalutorInfoList.get(0).getType());
       } else {
-        minValue = blockMinValue[dimensionBlocksIndex[0]];
+        minValue = blockletStatisticss.getBlockletMinVal()[dimensionBlocksIndex[0]];
         isScanRequired = isScanRequired(minValue, filterRangeValues);
       }
     } else {
@@ -153,13 +158,17 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
     return isScanRequired;
   }
 
-  private boolean isScanRequired(byte[] minValue, Object[] filterValue,
+  private boolean isScanRequired(byte[] minValue, boolean nullValue, Object[] filterValue,
       DataType dataType) {
     Object value = DataTypeUtil.getMeasureObjectFromDataType(minValue, dataType);
     for (int i = 0; i < filterValue.length; i++) {
       // TODO handle min and max for null values.
       if (filterValue[i] == null) {
-        return true;
+        if (nullValue == true) {
+          return true;
+        } else {
+          return false;
+        }
       }
       if (comparator.compare(filterValue[i], value) > 0) {
         return true;
@@ -213,7 +222,8 @@ public class RowLevelRangeLessThanFiterExecuterImpl extends RowLevelFilterExecut
       BitSetGroup bitSetGroup = new BitSetGroup(rawColumnChunk.getPagesCount());
       for (int i = 0; i < rawColumnChunk.getPagesCount(); i++) {
         if (rawColumnChunk.getMinValues() != null) {
-          if (isScanRequired(rawColumnChunk.getMinValues()[i], this.msrFilterRangeValues,
+          if (isScanRequired(rawColumnChunk.getMinValues()[i],
+              rawColumnChunk.getNullValues().get(i), this.msrFilterRangeValues,
               msrColEvalutorInfoList.get(0).getType())) {
             BitSet bitSet =
                 getFilteredIndexesForMeasures(rawColumnChunk.convertToColumnPage(i),

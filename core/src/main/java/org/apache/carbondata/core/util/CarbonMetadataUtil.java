@@ -19,6 +19,7 @@ package org.apache.carbondata.core.util;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.BitSet;
 import java.util.List;
 import java.util.Set;
 
@@ -101,6 +102,7 @@ public class CarbonMetadataUtil {
       blockletMinMaxIndex.addToMax_values(ByteBuffer.wrap(info.getMinMaxIndex().getMaxValues()[i]));
       blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(info.getMinMaxIndex().getMinValues()[i]));
     }
+    blockletMinMaxIndex.setIsNull_value(info.getMinMaxIndex().getNullValues().toByteArray());
     BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
     blockletBTreeIndex.setStart_key(info.getBtreeIndex().getStartKey());
     blockletBTreeIndex.setEnd_key(info.getBtreeIndex().getEndKey());
@@ -132,18 +134,25 @@ public class CarbonMetadataUtil {
         encodedTablePageList.get(0).getMeasures());
     byte[][] minCol = stats.getDimensionMinValue().clone();
     byte[][] maxCol = stats.getDimensionMaxValue().clone();
+    byte[] nullCol = stats.getDimensionNullValue().clone();
+    BitSet nullBitSet =
+        new BitSet(stats.getDimensionMaxValue().length + stats.getMeasureMaxValue().length);
 
     for (EncodedTablePage encodedTablePage : encodedTablePageList) {
       stats = new TablePageStatistics(encodedTablePage.getDimensions(),
           encodedTablePage.getMeasures());
       byte[][] columnMaxData = stats.getDimensionMaxValue();
       byte[][] columnMinData = stats.getDimensionMinValue();
+      byte[] columnNullData = stats.getDimensionNullValue();
       for (int i = 0; i < maxCol.length; i++) {
         if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(columnMaxData[i], maxCol[i]) > 0) {
           maxCol[i] = columnMaxData[i];
         }
         if (ByteUtil.UnsafeComparer.INSTANCE.compareTo(columnMinData[i], minCol[i]) < 0) {
           minCol[i] = columnMinData[i];
+        }
+        if (columnNullData[i] > nullCol[i]) {
+          nullCol[i] = columnNullData[i];
         }
       }
     }
@@ -154,14 +163,22 @@ public class CarbonMetadataUtil {
     for (byte[] min : minCol) {
       blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
     }
+    for (int i = 0; i < nullCol.length; i ++) {
+      if (nullCol[i] == (byte) 1) {
+        nullBitSet.set(i);
+      }
+    }
 
     stats = new TablePageStatistics(encodedTablePageList.get(0).getDimensions(),
         encodedTablePageList.get(0).getMeasures());
     byte[][] measureMaxValue = stats.getMeasureMaxValue().clone();
     byte[][] measureMinValue = stats.getMeasureMinValue().clone();
+    byte[] measureNullValue = stats.getMeasureNullValue().clone();
     byte[] minVal = null;
     byte[] maxVal = null;
+    byte[] nullValue = null;
     for (int i = 1; i < encodedTablePageList.size(); i++) {
+      nullValue = stats.getMeasureNullValue();
       for (int j = 0; j < measureMinValue.length; j++) {
         stats = new TablePageStatistics(
             encodedTablePageList.get(i).getDimensions(), encodedTablePageList.get(i).getMeasures());
@@ -175,6 +192,9 @@ public class CarbonMetadataUtil {
             > 0) {
           measureMinValue[j] = minVal.clone();
         }
+        if (measureNullValue[j] < nullValue[j]) {
+          measureNullValue[j] = nullValue[j];
+        }
       }
     }
 
@@ -184,6 +204,13 @@ public class CarbonMetadataUtil {
     for (byte[] min : measureMinValue) {
       blockletMinMaxIndex.addToMin_values(ByteBuffer.wrap(min));
     }
+    for (int i = 0; i < measureNullValue.length; i ++) {
+      if (measureNullValue[i] == (byte) 1) {
+        nullBitSet.set(i + nullCol.length);
+      }
+    }
+    blockletMinMaxIndex.setIsNull_value(nullBitSet.toByteArray());
+
     BlockletBTreeIndex blockletBTreeIndex = new BlockletBTreeIndex();
     byte[] startKey = encodedTablePageList.get(0).getPageKey().serializeStartKey();
     blockletBTreeIndex.setStart_key(startKey);

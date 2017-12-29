@@ -20,6 +20,7 @@ package org.apache.carbondata.core.scan.filter.executer;
 import java.io.IOException;
 import java.util.BitSet;
 
+import org.apache.carbondata.core.datastore.page.statistics.BlockletStatistics;
 import org.apache.carbondata.core.scan.expression.exception.FilterUnsupportedException;
 import org.apache.carbondata.core.scan.filter.intf.RowIntf;
 import org.apache.carbondata.core.scan.filter.resolver.resolverinfo.DimColumnResolvedFilterInfo;
@@ -56,7 +57,7 @@ public class ImplicitIncludeFilterExecutorImpl
     return false;
   }
 
-  @Override public BitSet isScanRequired(byte[][] blockMaxValue, byte[][] blockMinValue) {
+  @Override public BitSet isScanRequired(BlockletStatistics blockletStatistics) {
     return null;
   }
 
@@ -65,7 +66,7 @@ public class ImplicitIncludeFilterExecutorImpl
   }
 
   @Override
-  public BitSet isFilterValuesPresentInBlockOrBlocklet(byte[][] maxValue, byte[][] minValue,
+  public BitSet isFilterValuesPresentInBlockOrBlocklet(BlockletStatistics blockletStatistics,
       String uniqueBlockPath) {
     BitSet bitSet = new BitSet(1);
     boolean isScanRequired = false;
@@ -99,7 +100,7 @@ public class ImplicitIncludeFilterExecutorImpl
   }
 
   @Override
-  public Boolean isFilterValuesPresentInAbstractIndex(byte[][] maxValue, byte[][] minValue) {
+  public Boolean isFilterValuesPresentInAbstractIndex(BlockletStatistics blockletStatistics) {
     return true;
   }
 }
