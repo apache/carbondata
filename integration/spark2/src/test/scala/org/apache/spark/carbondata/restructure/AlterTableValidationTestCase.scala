@@ -21,11 +21,8 @@ import java.io.File
 import java.math.{BigDecimal, RoundingMode}
 import java.sql.Timestamp
 
-import org.apache.spark.sql.{CarbonEnv, Row}
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
-import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
-import org.apache.spark.sql.test.Spark2TestQueryExecutor
-import org.junit.Assert
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -305,6 +302,8 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   }
 
   test ("test drop & add same column multiple times as dict, nodict, timestamp and msr") {
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
     // drop and add dict column
     sql("alter table restructure drop columns(designation)")
     sql(

@@ -16,16 +16,11 @@
  */
 package org.apache.carbondata.events
 
-import java.util
-
 import org.apache.spark.sql.SparkSession
-import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.{AlterTableAddColumnsModel, AlterTableDataTypeChangeModel, AlterTableDropColumnModel, AlterTableRenameModel, CarbonMergerMapping}
 
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.statusmanager.LoadMetadataDetails
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
-import org.apache.carbondata.processing.merger.CompactionType
 
 /**
  *

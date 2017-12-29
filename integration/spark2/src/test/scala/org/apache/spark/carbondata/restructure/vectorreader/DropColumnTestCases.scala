@@ -17,13 +17,9 @@
 
 package org.apache.spark.carbondata.restructure.vectorreader
 
-import java.math.{BigDecimal, RoundingMode}
-
 import org.apache.spark.sql.Row
 import org.apache.spark.sql.common.util.Spark2QueryTest
 import org.scalatest.BeforeAndAfterAll
-
-import org.apache.carbondata.core.util.CarbonProperties
 
 class DropColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
 
