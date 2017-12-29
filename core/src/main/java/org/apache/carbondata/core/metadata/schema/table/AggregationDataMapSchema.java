@@ -329,6 +329,10 @@ public class AggregationDataMapSchema extends DataMapSchema {
             return false;
           }
         }
+      } else {
+        // in case of any expression one column can be derived from multiple column
+        // in that case we cannot do rollup so hit the maintable
+        return false;
       }
     }
     return true;

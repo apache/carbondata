@@ -22,7 +22,7 @@ import scala.collection.mutable.ArrayBuffer
 
 import org.apache.spark.SPARK_VERSION
 import org.apache.spark.sql._
-import org.apache.spark.sql.CarbonExpressions.{CarbonScalaUDF, CarbonSubqueryAlias, MatchCast}
+import org.apache.spark.sql.CarbonExpressions.{CarbonScalaUDF, CarbonSubqueryAlias, MatchCast, MatchCastExpression}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.expressions.{Alias, Attribute, AttributeReference, Cast, Divide, Expression, Literal, NamedExpression, ScalaUDF, SortOrder}
@@ -1290,11 +1290,11 @@ object CarbonPreAggregateDataLoadingRules extends Rule[LogicalPlan] {
           attrExpression.aggregateFunction match {
             case Sum(attr: AttributeReference) =>
               (attr.name + "_sum", alias) :: Nil
-            case Sum(MatchCast(attr: AttributeReference, _)) =>
+            case Sum(MatchCastExpression(attr: AttributeReference, _)) =>
               (attr.name + "_sum", alias) :: Nil
             case Count(Seq(attr: AttributeReference)) =>
               (attr.name + "_count", alias) :: Nil
-            case Count(Seq(MatchCast(attr: AttributeReference, _))) =>
+            case Count(Seq(MatchCastExpression(attr: AttributeReference, _))) =>
               (attr.name + "_count", alias) :: Nil
             case Average(attr: AttributeReference) =>
               Seq((attr.name + "_sum", Alias(attrExpression.
@@ -1303,7 +1303,7 @@ object CarbonPreAggregateDataLoadingRules extends Rule[LogicalPlan] {
                 (attr.name, Alias(attrExpression.
                   copy(aggregateFunction = Count(attr),
                     resultId = NamedExpression.newExprId), attr.name + "_count")()))
-            case Average(cast@MatchCast(attr: AttributeReference, _)) =>
+            case Average(cast@MatchCastExpression(attr: AttributeReference, _)) =>
               Seq((attr.name + "_sum", Alias(attrExpression.
                 copy(aggregateFunction = Sum(cast),
                   resultId = NamedExpression.newExprId),

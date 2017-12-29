@@ -79,7 +79,7 @@ case class Field(column: String, var dataType: Option[String], name: Option[Stri
 }
 
 case class DataMapField(var aggregateFunction: String = "",
-    columnTableRelation: Option[ColumnTableRelation] = None) {
+    columnTableRelationList: Option[Seq[ColumnTableRelation]] = None) {
 }
 
 case class ColumnTableRelation(parentColumnName: String, parentColumnId: String,
@@ -435,14 +435,21 @@ class TableNewProcessor(cm: TableModel) {
     if(isParentColumnRelation) {
       val dataMapField = map.get.get(field).get
       columnSchema.setFunction(dataMapField.aggregateFunction)
-        val relation = dataMapField.columnTableRelation.get
-        val parentColumnTableRelationList = new util.ArrayList[ParentColumnTableRelation]
-        val relationIdentifier = new RelationIdentifier(
-          relation.parentDatabaseName, relation.parentTableName, relation.parentTableId)
-        val parentColumnTableRelation = new ParentColumnTableRelation(
-          relationIdentifier, relation.parentColumnId, relation.parentColumnName)
-        parentColumnTableRelationList.add(parentColumnTableRelation)
-        columnSchema.setParentColumnTableRelations(parentColumnTableRelationList)
+      val columnRelationList = dataMapField.columnTableRelationList.get
+      val parentColumnTableRelationList = new util.ArrayList[ParentColumnTableRelation]
+      columnRelationList.foreach {
+        columnRelation =>
+          val relationIdentifier = new RelationIdentifier(
+            columnRelation.parentDatabaseName,
+            columnRelation.parentTableName,
+            columnRelation.parentTableId)
+          val parentColumnTableRelation = new ParentColumnTableRelation(
+            relationIdentifier,
+            columnRelation.parentColumnId,
+            columnRelation.parentColumnName)
+          parentColumnTableRelationList.add(parentColumnTableRelation)
+      }
+      columnSchema.setParentColumnTableRelations(parentColumnTableRelationList)
     }
     // TODO: Need to fill RowGroupID, converted type
     // & Number of Children after DDL finalization
@@ -467,10 +474,11 @@ class TableNewProcessor(cm: TableModel) {
     // Sort columns should be at the begin of all columns
     cm.sortKeyDims.get.foreach { keyDim =>
       val field = cm.dimCols.find(keyDim equals _.column).get
-      val encoders = if (cm.parentTable.isDefined && cm.dataMapRelation.get.get(field).isDefined) {
+      val encoders = if (getEncoderFromParent(field)) {
         cm.parentTable.get.getColumnByName(
           cm.parentTable.get.getTableName,
-          cm.dataMapRelation.get.get(field).get.columnTableRelation.get.parentColumnName).getEncoder
+          cm.dataMapRelation.get.get(field).get.columnTableRelationList.
+            get(0).parentColumnName).getEncoder
       } else {
         val encoders = new java.util.ArrayList[Encoding]()
         encoders.add(Encoding.DICTIONARY)
@@ -491,12 +499,11 @@ class TableNewProcessor(cm: TableModel) {
     cm.dimCols.foreach { field =>
       val sortField = cm.sortKeyDims.get.find(field.column equals _)
       if (sortField.isEmpty) {
-        val encoders = if (cm.parentTable.isDefined &&
-                           cm.dataMapRelation.get.get(field).isDefined) {
+        val encoders = if (getEncoderFromParent(field)) {
           cm.parentTable.get.getColumnByName(
             cm.parentTable.get.getTableName,
             cm.dataMapRelation.get.get(field).get.
-              columnTableRelation.get.parentColumnName).getEncoder
+              columnTableRelationList.get(0).parentColumnName).getEncoder
         } else {
           val encoders = new java.util.ArrayList[Encoding]()
           encoders.add(Encoding.DICTIONARY)
@@ -524,14 +531,14 @@ class TableNewProcessor(cm: TableModel) {
       var isAggFunPresent = false
       // getting the encoder from maintable so whatever encoding is applied in maintable
       // same encoder can be applied on aggregate table
-      val encoders = if (cm.parentTable.isDefined && cm.dataMapRelation.get.get(field).isDefined) {
+      val encoders = if (getEncoderFromParent(field)) {
         isAggFunPresent =
           cm.dataMapRelation.get.get(field).get.aggregateFunction.equalsIgnoreCase("sum") ||
           cm.dataMapRelation.get.get(field).get.aggregateFunction.equals("avg")
         if(!isAggFunPresent) {
           cm.parentTable.get.getColumnByName(
             cm.parentTable.get.getTableName,
-            cm.dataMapRelation.get.get(field).get.columnTableRelation.get.parentColumnName)
+            cm.dataMapRelation.get.get(field).get.columnTableRelationList.get(0).parentColumnName)
             .getEncoder
         } else {
           new java.util.ArrayList[Encoding]()
@@ -666,6 +673,17 @@ class TableNewProcessor(cm: TableModel) {
     tableInfo.setLastUpdatedTime(System.currentTimeMillis())
     tableInfo.setFactTable(tableSchema)
     tableInfo
+  }
+
+  /**
+   * Method to check to get the encoder from parent or not
+   * @param field column field
+   * @return get encoder from parent
+   */
+  private def getEncoderFromParent(field: Field) : Boolean = {
+     cm.parentTable.isDefined &&
+        cm.dataMapRelation.get.get(field).isDefined &&
+        cm.dataMapRelation.get.get(field).get.columnTableRelationList.size==1
   }
 
   //  For checking if the specified col group columns are specified in fields list.
