@@ -17,9 +17,11 @@
 
 package org.apache.spark.sql.execution.command.table
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable.ListBuffer
 
 import org.apache.spark.sql.{AnalysisException, CarbonEnv, Row, SparkSession}
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.util.CarbonException
@@ -32,7 +34,6 @@ import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
-import org.apache.carbondata.spark.util.CommonUtil
 
 case class CarbonDropTableCommand(
     ifExistsSet: Boolean,
@@ -42,6 +43,7 @@ case class CarbonDropTableCommand(
   extends AtomicRunnableCommand {
 
   var carbonTable: CarbonTable = _
+  var childTables : Seq[CarbonTable] = Seq.empty
 
   override def processMetadata(sparkSession: SparkSession): Seq[Row] = {
     val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
@@ -78,6 +80,27 @@ case class CarbonDropTableCommand(
                                     s"table operation is not allowed")
       }
       CarbonEnv.getInstance(sparkSession).carbonMetastore.dropTable(identifier)(sparkSession)
+
+      if (carbonTable.hasDataMapSchema) {
+        // drop all child tables
+       val childSchemas = carbonTable.getTableInfo.getDataMapSchemaList
+
+        childTables = childSchemas.asScala
+          .filter(_.getRelationIdentifier != null)
+          .map { childSchema =>
+            val childTable =
+              CarbonEnv.getCarbonTable(
+                TableIdentifier(childSchema.getRelationIdentifier.getTableName,
+                  Some(childSchema.getRelationIdentifier.getDatabaseName)))(sparkSession)
+            CarbonDropTableCommand(
+              ifExistsSet = true,
+              Some(childSchema.getRelationIdentifier.getDatabaseName),
+              childSchema.getRelationIdentifier.getTableName,
+              dropChildTable = true
+            ).processMetadata(sparkSession)
+            childTable
+          }
+      }
 
       // fires the event after dropping main table
       val dropTablePostEvent: DropTablePostEvent =
@@ -118,6 +141,19 @@ case class CarbonDropTableCommand(
       if (FileFactory.isFileExist(tablePath, fileType)) {
         val file = FileFactory.getCarbonFile(tablePath, fileType)
         CarbonUtil.deleteFoldersAndFilesSilent(file)
+      }
+      if (carbonTable.hasDataMapSchema && childTables.nonEmpty) {
+        // drop all child tables
+        childTables.foreach { childTable =>
+          val carbonDropCommand = CarbonDropTableCommand(
+            ifExistsSet = true,
+            Some(childTable.getDatabaseName),
+            childTable.getTableName,
+            dropChildTable = true
+          )
+          carbonDropCommand.carbonTable = childTable
+          carbonDropCommand.processData(sparkSession)
+        }
       }
     }
     Seq.empty

@@ -25,16 +25,15 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
 import org.apache.spark.sql.execution.command.AtomicRunnableCommand
 import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
+import org.apache.spark.sql.execution.command.table.CarbonDropTableCommand
 import org.apache.spark.sql.hive.CarbonRelation
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
-import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
-import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events._
 
 
@@ -103,6 +102,16 @@ case class CarbonDropDataMapCommand(
               carbonTable.get.getTableInfo,
               dbName,
               tableName))(sparkSession)
+          if (dataMapSchema.isDefined) {
+            if (dataMapSchema.get._1.getRelationIdentifier != null) {
+              CarbonDropTableCommand(
+                ifExistsSet = true,
+                Some(dataMapSchema.get._1.getRelationIdentifier.getDatabaseName),
+                dataMapSchema.get._1.getRelationIdentifier.getTableName,
+                dropChildTable = true
+              ).processMetadata(sparkSession)
+            }
+          }
           // fires the event after dropping datamap from main table schema
           val dropDataMapPostEvent =
             DropDataMapPostEvent(
@@ -136,6 +145,12 @@ case class CarbonDropDataMapCommand(
     // delete the table folder
     val tableIdentifier = CarbonEnv.getIdentifier(databaseNameOp, tableName)(sparkSession)
     DataMapStoreManager.getInstance().clearDataMap(tableIdentifier, dataMapName)
+    CarbonDropTableCommand(
+      ifExistsSet = true,
+      databaseNameOp,
+      dataMapName,
+      dropChildTable = true
+    ).processData(sparkSession)
     Seq.empty
   }
 
