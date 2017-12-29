@@ -146,7 +146,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       thriftTableInfo: org.apache.carbondata.format.TableInfo,
       carbonTablePath: String)(sparkSession: SparkSession): String = {
     val schemaConverter = new ThriftWrapperSchemaConverterImpl
-    updateHiveMetaStoreForDataMap(newTableIdentifier,
+    updateHiveMetaStoreForAlter(newTableIdentifier,
       oldTableIdentifier,
       thriftTableInfo,
       carbonTablePath,
@@ -178,27 +178,6 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     removeTableFromMetadata(dbName, tableName)
     CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
     CarbonStorePath.getCarbonTablePath(oldTablePath, newTableIdentifier).getPath
-  }
-
-  private def updateHiveMetaStoreForDataMap(newTableIdentifier: CarbonTableIdentifier,
-      oldTableIdentifier: CarbonTableIdentifier,
-      thriftTableInfo: format.TableInfo,
-      tablePath: String,
-      sparkSession: SparkSession,
-      schemaConverter: ThriftWrapperSchemaConverterImpl) = {
-    val newTablePath =
-      CarbonUtil.getNewTablePath(new Path(tablePath), newTableIdentifier.getTableName)
-    val wrapperTableInfo = schemaConverter.fromExternalToWrapperTableInfo(
-      thriftTableInfo,
-      newTableIdentifier.getDatabaseName,
-      newTableIdentifier.getTableName,
-      newTablePath)
-    val dbName = oldTableIdentifier.getDatabaseName
-    val tableName = oldTableIdentifier.getTableName
-    sparkSession.catalog.refreshTable(TableIdentifier(tableName, Some(dbName)).quotedString)
-    removeTableFromMetadata(dbName, tableName)
-    CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
-    newTablePath
   }
 
   /**

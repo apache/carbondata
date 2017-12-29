@@ -24,7 +24,6 @@ import org.apache.hadoop.conf.Configuration
 import org.apache.spark.{SparkConf, SparkContext}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql.SparkSession.Builder
-import org.apache.spark.sql.execution.command.datamap.{DataMapDropTablePostListener, DropDataMapPostListener}
 import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.streaming.CarbonStreamingQueryListener
 import org.apache.spark.sql.hive.execution.command.CarbonSetCommand
@@ -250,7 +249,6 @@ object CarbonSession {
 
   def initListeners(): Unit = {
     OperationListenerBus.getInstance()
-      .addListener(classOf[DropTablePostEvent], DataMapDropTablePostListener)
       .addListener(classOf[LoadTablePreStatusUpdateEvent], LoadPostAggregateListener)
       .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
       .addListener(classOf[DeleteSegmentByDatePreEvent], PreAggregateDeleteSegmentByDatePreListener)
@@ -261,7 +259,6 @@ object CarbonSession {
       .addListener(classOf[AlterTableRenamePreEvent], PreAggregateRenameTablePreListener)
       .addListener(classOf[AlterTableDataTypeChangePreEvent], PreAggregateDataTypeChangePreListener)
       .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
-      .addListener(classOf[DropDataMapPostEvent], DropDataMapPostListener)
       .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
       .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
         AlterPreAggregateTableCompactionPostListener)
