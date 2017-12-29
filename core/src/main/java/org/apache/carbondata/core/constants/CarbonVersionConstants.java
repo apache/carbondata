@@ -58,19 +58,13 @@ public final class CarbonVersionConstants {
     try {
       // read CARBONDATA_VERSION_INFO_FILE into props
       props.load(resourceStream);
-    }
-    catch (IOException ioe) {
-      LOGGER.error(ioe, "Error while reading file " + CARBONDATA_VERSION_INFO_FILE);
-    }
-    catch (Exception e) {
+    } catch (Exception e) {
       LOGGER.error(e, "Error loading properties from " + CARBONDATA_VERSION_INFO_FILE);
-    }
-    finally {
+    } finally {
       if (resourceStream != null) {
         try {
           resourceStream.close();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
           LOGGER.error(e, "Error closing CarbonData build info resource stream");
         }
       }
