@@ -17,6 +17,7 @@
 
 package org.apache.spark.sql.execution.command.preaaggregate
 
+import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.sql._
@@ -56,6 +57,26 @@ case class CreatePreAggregateTableCommand(
     val tableProperties = mutable.Map[String, String]()
     dmProperties.foreach(t => tableProperties.put(t._1, t._2))
 
+    val parentTable = PreAggregateUtil.getParentCarbonTable(df.logicalPlan)
+    assert(parentTable.getTableName.equalsIgnoreCase(parentTableIdentifier.table),
+      "Parent table name is different in select and create")
+
+
+    var neworder = Seq[String]()
+    val parentOrder = parentTable.getSortColumns(parentTable.getTableName).asScala
+    parentOrder.foreach(parentcol =>
+      fields.filter(col => (fieldRelationMap.get(col).get.aggregateFunction.isEmpty) &&
+                           (parentcol.equals(fieldRelationMap.get(col).get.
+                             columnTableRelationList.get(0).parentColumnName)))
+        .map(cols => neworder :+= cols.column)
+    )
+    tableProperties.put(CarbonCommonConstants.SORT_COLUMNS, neworder.mkString(","))
+    tableProperties.put("sort_scope", parentTable.getTableInfo.getFactTable.
+      getTableProperties.getOrDefault("sort_scope", CarbonCommonConstants
+      .LOAD_SORT_SCOPE_DEFAULT))
+    tableProperties
+      .put(CarbonCommonConstants.TABLE_BLOCKSIZE, parentTable.getBlockSizeInMB.toString)
+
     // prepare table model of the collected tokens
     val tableModel: TableModel = new CarbonSpark2SqlParser().prepareTableModel(
       ifNotExistPresent = false,
@@ -68,9 +89,7 @@ case class CreatePreAggregateTableCommand(
       isAlterFlow = false,
       None)
 
-    val parentTable = PreAggregateUtil.getParentCarbonTable(df.logicalPlan)
-    assert(parentTable.getTableName.equalsIgnoreCase(parentTableIdentifier.table),
-      "Parent table name is different in select and create")
+
     // updating the relation identifier, this will be stored in child table
     // which can be used during dropping of pre-aggreate table as parent table will
     // also get updated
