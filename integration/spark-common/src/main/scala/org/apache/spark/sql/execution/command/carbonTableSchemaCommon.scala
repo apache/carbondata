@@ -581,20 +581,22 @@ class TableNewProcessor(cm: TableModel) {
 
     updateColumnGroupsInFields(cm.columnGroups, allColumns)
 
-    // Setting the boolean value of useInvertedIndex in column schema
-    val noInvertedIndexCols = cm.noInvertedIdxCols.getOrElse(Seq())
-    LOGGER.info("NoINVERTEDINDEX columns are : " + noInvertedIndexCols.mkString(","))
-    for (column <- allColumns) {
-      // When the column is measure or the specified no inverted index column in DDL,
-      // set useInvertedIndex to false, otherwise true.
-      if (noInvertedIndexCols.contains(column.getColumnName) ||
-          cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
-        column.setUseInvertedIndex(false)
-      } else {
-        column.setUseInvertedIndex(true)
+    // Setting the boolean value of useInvertedIndex in column schema, if Paranet table is defined
+    // Encoding is already decided above
+    if (!cm.parentTable.isDefined) {
+      val noInvertedIndexCols = cm.noInvertedIdxCols.getOrElse(Seq())
+      LOGGER.info("NoINVERTEDINDEX columns are : " + noInvertedIndexCols.mkString(","))
+      for (column <- allColumns) {
+        // When the column is measure or the specified no inverted index column in DDL,
+        // set useInvertedIndex to false, otherwise true.
+        if (noInvertedIndexCols.contains(column.getColumnName) ||
+            cm.msrCols.exists(_.column.equalsIgnoreCase(column.getColumnName))) {
+          column.setUseInvertedIndex(false)
+        } else {
+          column.setUseInvertedIndex(true)
+        }
       }
     }
-
     // Adding dummy measure if no measure is provided
     if (measureCount == 0) {
       val encoders = new java.util.ArrayList[Encoding]()
