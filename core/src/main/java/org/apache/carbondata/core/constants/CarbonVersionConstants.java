@@ -31,24 +31,24 @@ public final class CarbonVersionConstants {
   /**
    * the file name of CarbonData version info
    */
-  private final static String CARBONDATA_VERSION_INFO_FILE =
+  private static final String CARBONDATA_VERSION_INFO_FILE =
       "carbondata-version-info.properties";
   /**
    * current CarbonData version
    */
-  public final static String CARBONDATA_VERSION;
+  public static final String CARBONDATA_VERSION;
   /**
    * which branch current version build from
    */
-  public final static String CARBONDATA_BRANCH;
+  public static final String CARBONDATA_BRANCH;
   /**
    * the latest commit revision which current branch point to
    */
-  public final static String CARBONDATA_REVISION;
+  public static final String CARBONDATA_REVISION;
   /**
    * the date of building current version
    */
-  public final static String CARBONDATA_BUILD_DATE;
+  public static final String CARBONDATA_BUILD_DATE;
 
   static {
     // create input stream for CARBONDATA_VERSION_INFO_FILE
