@@ -217,8 +217,14 @@ public class DefaultEncodingFactory extends EncodingFactory {
         value = (long)(int) max - (long)(int) min;
         break;
       case LONG:
-        // TODO: add overflow detection and return delta type
-        return DataType.LONG;
+        value = (long) max - (long) min;
+        // The subtraction overflowed iff the operands have opposing signs
+        // and the result's sign differs from the minuend.
+        boolean overflow = (((long) max ^ (long) min) & ((long) max ^ value)) < 0;
+        if (overflow) {
+          return DataType.LONG;
+        }
+        break;
       case DOUBLE:
         return DataType.LONG;
       default:
