@@ -335,7 +335,10 @@ class TestSortColumns extends QueryTest with BeforeAndAfterAll {
   }
 
   test("Test tableTwo data") {
+    sql("select * from tableOne").show(false)
     sql("insert into table tableTwo select id, count(age) from tableOne group by id")
+    sql("select * from tableTwo").show(false)
+
     checkAnswer(
       sql("select id,age from tableTwo order by id"),
       Seq(Row(1, 1), Row(2, 1), Row(3, 2), Row(4, 2)))
