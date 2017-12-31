@@ -109,9 +109,7 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("Streaming", isStreaming, ""))
 
     val tblProps = carbonTable.getTableInfo.getFactTable.getTableProperties
-    results ++= Seq(("SORT_SCOPE", tblProps.getOrDefault("sort_scope", CarbonCommonConstants
-      .LOAD_SORT_SCOPE_DEFAULT), CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
-
+    
     // show table level compaction options
     if (tblProps.containsKey(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE)) {
       results ++= Seq((CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE.toUpperCase
