@@ -735,4 +735,44 @@ public final class DataTypeUtil {
     return converter;
   }
 
+  /**
+   * @param name datatype string extracted from the json data
+   * @return returns the datatype based on the input string from json to deserialize the tableInfo
+   */
+  public static DataType valueOf(String name) {
+    if (DataTypes.STRING.getName().equalsIgnoreCase(name)) {
+      return DataTypes.STRING;
+    } else if (DataTypes.DATE.getName().equalsIgnoreCase(name)) {
+      return DataTypes.DATE;
+    } else if (DataTypes.TIMESTAMP.getName().equalsIgnoreCase(name)) {
+      return DataTypes.TIMESTAMP;
+    } else if (DataTypes.BOOLEAN.getName().equalsIgnoreCase(name)) {
+      return DataTypes.BOOLEAN;
+    } else if (DataTypes.BYTE.getName().equalsIgnoreCase(name)) {
+      return DataTypes.BYTE;
+    } else if (DataTypes.SHORT.getName().equalsIgnoreCase(name)) {
+      return DataTypes.SHORT;
+    } else if (DataTypes.SHORT_INT.getName().equalsIgnoreCase(name)) {
+      return DataTypes.SHORT_INT;
+    } else if (DataTypes.INT.getName().equalsIgnoreCase(name)) {
+      return DataTypes.INT;
+    } else if (DataTypes.LONG.getName().equalsIgnoreCase(name)) {
+      return DataTypes.LONG;
+    } else if (DataTypes.LEGACY_LONG.getName().equalsIgnoreCase(name)) {
+      return DataTypes.LEGACY_LONG;
+    } else if (DataTypes.FLOAT.getName().equalsIgnoreCase(name)) {
+      return DataTypes.FLOAT;
+    } else if (DataTypes.DOUBLE.getName().equalsIgnoreCase(name)) {
+      return DataTypes.DOUBLE;
+    } else if (DataTypes.NULL.getName().equalsIgnoreCase(name)) {
+      return DataTypes.NULL;
+    } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(name)) {
+      return DataTypes.BYTE_ARRAY;
+    } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(name)) {
+      return DataTypes.BYTE_ARRAY;
+    } else {
+      throw new RuntimeException("create DataType with invalid name: " + name);
+    }
+  }
+
 }

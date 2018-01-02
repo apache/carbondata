@@ -65,6 +65,7 @@ import org.apache.carbondata.core.metadata.ValueEncoderMeta;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
 import org.apache.carbondata.core.metadata.blocklet.SegmentInfo;
 import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypeAdapter;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.AggregationDataMapSchema;
@@ -90,6 +91,8 @@ import org.apache.carbondata.format.DataChunk2;
 import org.apache.carbondata.format.DataChunk3;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.hadoop.conf.Configuration;
@@ -1924,7 +1927,6 @@ public final class CarbonUtil {
 
   // TODO: move this to carbon store API as it is related to TableInfo creation
   public static TableInfo convertGsonToTableInfo(Map<String, String> properties) {
-    Gson gson = new Gson();
     String partsNo = properties.get("carbonSchemaPartsNo");
     if (partsNo == null) {
       return null;
@@ -1938,6 +1940,13 @@ public final class CarbonUtil {
       }
       builder.append(part);
     }
+
+    // Datatype GSON adapter is added to support backward compatibility for tableInfo
+    // deserialization
+    GsonBuilder gsonBuilder = new GsonBuilder();
+    gsonBuilder.registerTypeAdapter(DataType.class, new DataTypeAdapter());
+
+    Gson gson = gsonBuilder.create();
     TableInfo tableInfo = gson.fromJson(builder.toString(), TableInfo.class);
 
     // The tableInfo is deserialized from GSON string, need to update the scale and
