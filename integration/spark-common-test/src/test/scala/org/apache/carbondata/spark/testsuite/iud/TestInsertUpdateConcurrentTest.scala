@@ -21,6 +21,8 @@ import java.text.SimpleDateFormat
 import java.util
 import java.util.concurrent.{Callable, ExecutorService, Executors, Future}
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.BeforeAndAfterAll
@@ -80,8 +82,9 @@ class TestInsertUpdateConcurrentTest extends QueryTest with BeforeAndAfterAll {
     val tasks = new java.util.ArrayList[Callable[String]]()
     tasks.add(new QueryTask(s"insert overWrite table orders select * from orders_overwrite"))
     tasks.add(new QueryTask("update orders set (o_country)=('newCountry') where o_country='china'"))
-    val results: util.List[Future[String]] = executorService.invokeAll(tasks)
-    assert("PASS".equals(results.get(0).get) && "FAIL".equals(results.get(1).get))
+    val futures: util.List[Future[String]] = executorService.invokeAll(tasks)
+    val results = futures.asScala.map(_.get)
+    assert("PASS".equals(results.head) && "FAIL".equals(results(1)))
   }
 
   class QueryTask(query: String) extends Callable[String] {
