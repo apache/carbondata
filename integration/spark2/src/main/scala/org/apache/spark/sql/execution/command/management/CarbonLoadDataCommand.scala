@@ -29,13 +29,13 @@ import org.apache.hadoop.io.NullWritable
 import org.apache.hadoop.mapred.JobConf
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat
 import org.apache.spark.deploy.SparkHadoopUtil
-import org.apache.spark.rdd.NewHadoopRDD
+import org.apache.spark.rdd.{NewHadoopRDD, RDD}
 import org.apache.spark.scheduler.{SparkListener, SparkListenerApplicationEnd}
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.{InternalRow, TableIdentifier}
 import org.apache.spark.sql.catalyst.analysis.{NoSuchTableException, UnresolvedAttribute}
 import org.apache.spark.sql.catalyst.catalog.CatalogTable
-import org.apache.spark.sql.catalyst.expressions.{Attribute, Expression}
+import org.apache.spark.sql.catalyst.expressions.{Attribute, AttributeReference, Expression}
 import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan, Project}
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
@@ -540,20 +540,8 @@ case class CarbonLoadDataCommand(
           InternalRow.fromSeq(data)
         }
         if (updateModel.isDefined) {
-          sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
-          // In case of update, we don't need the segmrntid column in case of partitioning
-          val dropAttributes = attributes.dropRight(1)
-          val finalOutput = catalogTable.schema.map { attr =>
-            dropAttributes.find { d =>
-              val index = d.name.lastIndexOf("-updatedColumn")
-              if (index > 0) {
-                d.name.substring(0, index).equalsIgnoreCase(attr.name)
-              } else {
-                d.name.equalsIgnoreCase(attr.name)
-              }
-            }.get
-          }
-          Project(finalOutput, LogicalRDD(attributes, rdd)(sparkSession))
+          // Get the updated query plan in case of update scenario
+          getLogicalQueryForUpdate(sparkSession, catalogTable, attributes, rdd)
         } else {
           LogicalRDD(attributes, rdd)(sparkSession)
         }
@@ -586,7 +574,6 @@ case class CarbonLoadDataCommand(
             val input = value.get()
             val inputLen = Math.min(input.length, len)
             while (i < inputLen) {
-              // TODO find a way to avoid double conversion of date and time.
               data(i) = UTF8String.fromString(input(i))
               i = i + 1
             }
@@ -608,7 +595,6 @@ case class CarbonLoadDataCommand(
       val sizeInBytes =
         CarbonEnv.getInstance(sparkSession).carbonMetastore.lookupRelation(
           catalogTable.identifier)(sparkSession).asInstanceOf[CarbonRelation].sizeInBytes
-      val catalog = new CatalogFileIndex(sparkSession, catalogTable, sizeInBytes)
       val convertRelation = convertToLogicalRelation(
         catalogTable,
         sizeInBytes,
@@ -617,11 +603,11 @@ case class CarbonLoadDataCommand(
         sparkSession)
       val convertedPlan =
         CarbonReflectionUtils.getInsertIntoCommand(
-          convertRelation,
-          partition,
-          query,
-          false,
-          false)
+          table = convertRelation,
+          partition = partition,
+          query = query,
+          overwrite = false,
+          ifPartitionNotExists = false)
       if (isOverwriteTable && partition.nonEmpty) {
         overwritePartition(sparkSession, table, convertedPlan)
       } else {
@@ -647,6 +633,31 @@ case class CarbonLoadDataCommand(
           "Dataload is success. Auto-Compaction has failed. Please check logs.",
           e)
     }
+  }
+
+  /**
+   * Create the logical plan for update scenario. Here we should drop the segmentid column from the
+   * input rdd.
+   */
+  private def getLogicalQueryForUpdate(
+      sparkSession: SparkSession,
+      catalogTable: CatalogTable,
+      attributes: Seq[AttributeReference],
+      rdd: RDD[InternalRow]): LogicalPlan = {
+    sparkSession.sparkContext.setLocalProperty(EXECUTION_ID_KEY, null)
+    // In case of update, we don't need the segmrntid column in case of partitioning
+    val dropAttributes = attributes.dropRight(1)
+    val finalOutput = catalogTable.schema.map { attr =>
+      dropAttributes.find { d =>
+        val index = d.name.lastIndexOf("-updatedColumn")
+        if (index > 0) {
+          d.name.substring(0, index).equalsIgnoreCase(attr.name)
+        } else {
+          d.name.equalsIgnoreCase(attr.name)
+        }
+      }.get
+    }
+    Project(finalOutput, LogicalRDD(attributes, rdd)(sparkSession))
   }
 
   private def convertToLogicalRelation(
