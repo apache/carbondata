@@ -90,16 +90,6 @@ class TestLoadDataWithDictionaryExcludeAndInclude extends QueryTest with BeforeA
     )
   }
 
-  test("test create external table should fail") {
-    assert(intercept[AnalysisException](
-      sql(
-        """
-          | CREATE EXTERNAL TABLE t1 (id string, value int)
-          | STORED BY 'carbondata'
-        """.stripMargin)
-    ).message.contains("Operation not allowed: CREATE EXTERNAL TABLE"))
-  }
-
   override def afterAll {
     dropTable
     CarbonProperties.getInstance()

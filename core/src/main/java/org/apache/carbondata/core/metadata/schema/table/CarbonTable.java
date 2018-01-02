@@ -785,6 +785,15 @@ public class CarbonTable implements Serializable {
         && !tableInfo.getParentRelationIdentifiers().isEmpty();
   }
 
+  /**
+   * Return true if this is an external table (table with property "_external"="true", this is
+   * an internal table property set during table creation)
+   */
+  public boolean isExternalTable() {
+    String external = tableInfo.getFactTable().getTableProperties().get("_external");
+    return external != null && external.equalsIgnoreCase("true");
+  }
+
   public long size() throws IOException {
     Map<String, Long> dataIndexSize = CarbonUtil.calculateDataIndexSize(this);
     Long dataSize = dataIndexSize.get(CarbonCommonConstants.CARBON_TOTAL_DATA_SIZE);
