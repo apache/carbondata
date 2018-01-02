@@ -17,7 +17,7 @@
 
 package org.apache.spark.sql.execution.command.management
 
-import java.io.IOException
+import java.io.{File, IOException}
 
 import scala.collection.JavaConverters._
 
@@ -32,10 +32,12 @@ import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{AlterTableCompactionPostEvent, AlterTableCompactionPreEvent, AlterTableCompactionPreStatusUpdateEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
@@ -291,6 +293,10 @@ case class CarbonAlterTableCompactionCommand(
           Seq.empty,
           true)(sparkSession,
           sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog])
+        // 5. remove checkpoint
+        val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
+        FileFactory.deleteAllFilesOfDir(new File(tablePath.getStreamingCheckpointDir))
+        FileFactory.deleteAllFilesOfDir(new File(tablePath.getStreamingLogDir))
       } else {
         val msg = "Failed to close streaming table, because streaming is locked for table " +
                   carbonTable.getDatabaseName() + "." + carbonTable.getTableName()

@@ -32,6 +32,7 @@ import org.apache.spark.sql.types.StructType
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -122,6 +123,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     createTable(tableName = "stream_table_close", streaming = true, withBatchLoad = false)
     createTable(tableName = "stream_table_close_auto_handoff", streaming = true, withBatchLoad = false)
 
+    // 17. reopen streaming table after close
+    createTable(tableName = "stream_table_reopen", streaming = true, withBatchLoad = false)
+
   }
 
   test("validate streaming property") {
@@ -207,6 +211,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists streaming.stream_table_auto_handoff")
     sql("drop table if exists streaming.stream_table_close")
     sql("drop table if exists streaming.stream_table_close_auto_handoff")
+    sql("drop table if exists streaming.stream_table_reopen")
   }
 
   // normal table not support streaming ingest
@@ -870,6 +875,66 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     val table2 =
       CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_close_auto_handoff")(spark)
     assertResult(false)(table2.isStreamingTable)
+  }
+
+  test("reopen streaming table") {
+    executeStreamingIngest(
+      tableName = "stream_table_reopen",
+      batchNums = 6,
+      rowNumsEachBatch = 10000,
+      intervalOfSource = 5,
+      intervalOfIngest = 10,
+      continueSeconds = 40,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      handoffSize = 1024L * 200,
+      autoHandoff = true
+    )
+    Thread.sleep(10000)
+
+    val table1 =
+      CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_reopen")(spark)
+    assertResult(true)(table1.isStreamingTable)
+
+    sql("alter table streaming.stream_table_reopen compact 'close_streaming'")
+    val segments =
+      sql("show segments for table streaming.stream_table_reopen").collect()
+    assertResult(6)(segments.length)
+    assertResult(3)(segments.filter(_.getString(1).equals("Success")).length)
+    assertResult(3)(segments.filter(_.getString(1).equals("Compacted")).length)
+    checkAnswer(
+      sql("select count(*) from streaming.stream_table_reopen"),
+      Seq(Row(6 * 10000))
+    )
+
+    val table2 =
+      CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_reopen")(spark)
+    assertResult(false)(table2.isStreamingTable)
+
+    sql("ALTER TABLE streaming.stream_table_reopen SET TBLPROPERTIES('streaming'='true')")
+
+    val table3 =
+      CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_reopen")(spark)
+    assertResult(true)(table3.isStreamingTable)
+
+    executeStreamingIngest(
+      tableName = "stream_table_reopen",
+      batchNums = 6,
+      rowNumsEachBatch = 10000,
+      intervalOfSource = 5,
+      intervalOfIngest = 10,
+      continueSeconds = 40,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      handoffSize = 1024L * 200,
+      autoHandoff = true
+    )
+    Thread.sleep(10000)
+
+    checkAnswer(
+      sql("select count(*) from streaming.stream_table_reopen"),
+      Seq(Row(6 * 10000 * 2))
+    )
   }
 
   test("do not support creating datamap on streaming table") {

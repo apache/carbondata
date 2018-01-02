@@ -1462,7 +1462,7 @@ public final class CarbonCommonConstants {
   /**
    * enable auto handoff streaming segment
    */
-  public static final String ENABLE_AUTO_HANDOFF = "carbon.enable.auto.handoff";
+  public static final String ENABLE_AUTO_HANDOFF = "carbon.streaming.auto.handoff.enabled";
 
   public static final String ENABLE_AUTO_HANDOFF_DEFAULT = "true";
 
