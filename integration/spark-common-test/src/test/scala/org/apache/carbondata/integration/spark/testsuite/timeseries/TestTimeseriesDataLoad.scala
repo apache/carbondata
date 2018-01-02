@@ -25,7 +25,6 @@ import org.scalatest.{BeforeAndAfterAll, Ignore}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-@Ignore
 class TestTimeseriesDataLoad extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
