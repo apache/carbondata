@@ -373,7 +373,12 @@ case class CarbonLoadDataCommand(
 
     if (carbonTable.isHivePartitionTable) {
       try {
-        loadDataWithPartition(sparkSession, carbonLoadModel, hadoopConf, loadDataFrame)
+        loadDataWithPartition(
+          sparkSession,
+          carbonLoadModel,
+          hadoopConf,
+          loadDataFrame,
+          operationContext)
       } finally {
         server match {
           case Some(dictServer) =>
@@ -428,7 +433,12 @@ case class CarbonLoadDataCommand(
         dictionaryDataFrame)
     }
     if (table.isHivePartitionTable) {
-      loadDataWithPartition(sparkSession, carbonLoadModel, hadoopConf, loadDataFrame)
+      loadDataWithPartition(
+        sparkSession,
+        carbonLoadModel,
+        hadoopConf,
+        loadDataFrame,
+        operationContext)
     } else {
       CarbonDataRDDFactory.loadCarbonData(
         sparkSession.sqlContext,
@@ -448,16 +458,12 @@ case class CarbonLoadDataCommand(
    * Loads the data in a hive partition way. This method uses InsertIntoTable command to load data
    * into partitoned data. The table relation would be converted to HadoopFSRelation to let spark
    * handling the partitioning.
-   * @param sparkSession
-   * @param carbonLoadModel
-   * @param hadoopConf
-   * @param dataFrame
-   * @return
    */
   private def loadDataWithPartition(sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
       hadoopConf: Configuration,
-      dataFrame: Option[DataFrame]) = {
+      dataFrame: Option[DataFrame],
+      operationContext: OperationContext) = {
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val identifier = TableIdentifier(table.getTableName, Some(table.getDatabaseName))
     val logicalPlan =
@@ -639,6 +645,19 @@ case class CarbonLoadDataCommand(
       overwritePartition(sparkSession, table, convertedPlan)
     } else {
       Dataset.ofRows(sparkSession, convertedPlan)
+    }
+    try {
+      // Trigger auto compaction
+      CarbonDataRDDFactory.handleSegmentMerging(
+        sparkSession.sqlContext,
+        carbonLoadModel,
+        table,
+        operationContext)
+    } catch {
+      case e: Exception =>
+        throw new Exception(
+          "Dataload is success. Auto-Compaction has failed. Please check logs.",
+          e)
     }
   }
 
