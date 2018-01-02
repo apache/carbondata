@@ -32,6 +32,7 @@ import org.apache.spark.sql.types.StructField
 import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
@@ -164,9 +165,6 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     if (bucketSpecContext != null) {
       operationNotAllowed("CREATE TABLE ... CLUSTERED BY", bucketSpecContext)
     }
-    if (external) {
-      operationNotAllowed("CREATE EXTERNAL TABLE", tableHeader)
-    }
 
     val cols = Option(columns).toSeq.flatMap(visitColTypeList)
     val properties = getPropertyKeyValues(tablePropertyList)
@@ -238,29 +236,46 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
     }
     // validate tblProperties
     val bucketFields = parser.getBucketFields(tableProperties, fields, options)
-    // prepare table model of the collected tokens
-    val tableModel: TableModel = parser.prepareTableModel(
-      ifNotExists,
-      convertDbNameToLowerCase(tableIdentifier.database),
-      tableIdentifier.table.toLowerCase,
-      fields,
-      partitionFields,
-      tableProperties,
-      bucketFields,
-      isAlterFlow = false,
-      tableComment)
 
+    val tableInfo = if (external) {
+      // read table info from schema file in the provided table path
+      val identifier = AbsoluteTableIdentifier.from(
+        tablePath.get,
+        CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession),
+        tableIdentifier.table)
+      val table = CarbonEnv.getInstance(sparkSession).carbonMetastore
+        .getTableInfo(identifier)(sparkSession)
+      if (table.isEmpty) {
+        operationNotAllowed(s"Invalid table path provided: ${tablePath.get} ", tableHeader)
+      } else {
+        table.get
+      }
+    } else {
+      // prepare table model of the collected tokens
+      val tableModel: TableModel = parser.prepareTableModel(
+        ifNotExists,
+        convertDbNameToLowerCase(tableIdentifier.database),
+        tableIdentifier.table.toLowerCase,
+        fields,
+        partitionFields,
+        tableProperties,
+        bucketFields,
+        isAlterFlow = false,
+        tableComment)
+      TableNewProcessor(tableModel)
+    }
     selectQuery match {
       case query@Some(q) =>
         CarbonCreateTableAsSelectCommand(
-          TableNewProcessor(tableModel),
-          query.get,
-          tableModel.ifNotExistsSet,
-          tablePath)
+          tableInfo = tableInfo,
+          query = query.get,
+          ifNotExistsSet = ifNotExists,
+          tableLocation = tablePath)
       case _ =>
-        CarbonCreateTableCommand(TableNewProcessor(tableModel),
-          tableModel.ifNotExistsSet,
-          tablePath)
+        CarbonCreateTableCommand(
+          tableInfo = tableInfo,
+          ifNotExistsSet = ifNotExists,
+          tableLocation = tablePath)
     }
   }
 
