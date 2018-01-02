@@ -147,7 +147,10 @@ case class CarbonDropTableCommand(
       // delete the table folder
       val tablePath = carbonTable.getTablePath
       val fileType = FileFactory.getFileType(tablePath)
-      if (FileFactory.isFileExist(tablePath, fileType)) {
+
+      // delete table data only if it is not external table
+      if (FileFactory.isFileExist(tablePath, fileType) &&
+          !carbonTable.isExternalTable) {
         val file = FileFactory.getCarbonFile(tablePath, fileType)
         CarbonUtil.deleteFoldersAndFilesSilent(file)
       }
