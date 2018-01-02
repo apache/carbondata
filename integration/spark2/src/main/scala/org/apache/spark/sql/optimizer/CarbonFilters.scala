@@ -23,12 +23,15 @@ import org.apache.spark.sql.execution.CastExpressionOptimization
 import org.apache.spark.sql.types._
 import org.apache.spark.sql.CarbonExpressions.{MatchCast => Cast}
 import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.hive.CarbonSessionCatalog
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
+import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -405,13 +408,45 @@ object CarbonFilters {
     }
   }
 
+  /**
+   * Fetches partition information from hive
+   * @param partitionFilters
+   * @param sparkSession
+   * @param identifier
+   * @return
+   */
   def getPartitions(partitionFilters: Seq[Expression],
       sparkSession: SparkSession,
       identifier: TableIdentifier): Seq[String] = {
-    val partitions =
-      sparkSession.sessionState.catalog.listPartitionsByFilter(identifier, partitionFilters)
+    val partitions = {
+      try {
+        if (CarbonProperties.getInstance().
+          getProperty(CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT,
+          CarbonCommonConstants.CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT).toBoolean) {
+          // read partitions directly from hive metastore using filters
+          sparkSession.sessionState.catalog.listPartitionsByFilter(identifier, partitionFilters)
+        } else {
+          // Read partitions alternatively by firts get all partitions then filter them
+          sparkSession.sessionState.catalog.
+            asInstanceOf[CarbonSessionCatalog].getPartitionsAlternate(
+            partitionFilters,
+            sparkSession,
+            identifier)
+        }
+      } catch {
+        case e: Exception =>
+          // Get partition information alternatively.
+          sparkSession.sessionState.catalog.
+            asInstanceOf[CarbonSessionCatalog].getPartitionsAlternate(
+            partitionFilters,
+            sparkSession,
+            identifier)
+      }
+    }
     partitions.toList.flatMap { partition =>
       partition.spec.seq.map{case (column, value) => column + "=" + value}
     }.toSet.toSeq
   }
+
+
 }
