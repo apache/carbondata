@@ -225,6 +225,10 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
           operationNotAllowed(
             "Schema may not be specified in a Create Table As Select (CTAS) statement", columns)
         }
+        // external table is not allow
+        if (external) {
+          operationNotAllowed("Create external table as select", tableHeader)
+        }
         fields = parser
           .getFields(CarbonEnv.getInstance(sparkSession).carbonMetastore
             .getSchemaFromUnresolvedRelation(sparkSession, Some(q).get))
@@ -245,11 +249,8 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
         tableIdentifier.table)
       val table = CarbonEnv.getInstance(sparkSession).carbonMetastore
         .getTableInfo(identifier)(sparkSession)
-      if (table.isEmpty) {
-        operationNotAllowed(s"Invalid table path provided: ${tablePath.get} ", tableHeader)
-      } else {
-        table.get
-      }
+      table.getOrElse(
+        operationNotAllowed(s"Invalid table path provided: ${tablePath.get} ", tableHeader))
     } else {
       // prepare table model of the collected tokens
       val tableModel: TableModel = parser.prepareTableModel(

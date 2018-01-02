@@ -23,30 +23,56 @@ import org.scalatest.BeforeAndAfterAll
 
 class TestCreateExternalTable extends QueryTest with BeforeAndAfterAll {
 
-  test("create external table with existing files") {
-    sql("DROP TABLE IF EXISTS origin")
-    sql("DROP TABLE IF EXISTS source")
-
+  override def beforeAll(): Unit = {
     // create carbon table and insert data
     sql("CREATE TABLE origin(key INT, value STRING) STORED BY 'carbondata'")
     sql("INSERT INTO origin select 100,'spark'")
     sql("INSERT INTO origin select 200,'hive'")
+  }
+
+  override def afterAll(): Unit = {
+    sql("DROP TABLE IF EXISTS origin")
+  }
+
+  test("create external table with existing files") {
+    sql("DROP TABLE IF EXISTS source")
 
     // create external table with existing files
-    sql(s"CREATE EXTERNAL TABLE source STORED BY 'carbondata' LOCATION '$storeLocation/origin'")
+    sql(
+      s"""
+         |CREATE EXTERNAL TABLE source
+         |STORED BY 'carbondata'
+         |LOCATION '$storeLocation/origin'
+       """.stripMargin)
     checkAnswer(sql("SELECT count(*) from source"), sql("SELECT count(*) from origin"))
 
-    sql("DROP TABLE IF EXISTS origin")
     sql("DROP TABLE IF EXISTS source")
   }
 
   test("create external table with empty folder") {
-    sql("DROP TABLE IF EXISTS source")
     val exception = intercept[AnalysisException] {
-      sql(s"CREATE EXTERNAL TABLE source STORED BY 'carbondata' LOCATION './nothing'")
+      sql(
+        s"""
+           |CREATE EXTERNAL TABLE source
+           |STORED BY 'carbondata'
+           |LOCATION './nothing'
+         """.stripMargin)
     }
     assert(exception.getMessage().contains("Invalid table path provided"))
-    sql("DROP TABLE IF EXISTS source")
+  }
+
+  test("create external table with CTAS") {
+    val exception = intercept[AnalysisException] {
+      sql(
+        """
+          |CREATE EXTERNAL TABLE source
+          |STORED BY 'carbondata'
+          |LOCATION './nothing'
+          |AS
+          | SELECT * FROM origin
+        """.stripMargin)
+    }
+    assert(exception.getMessage().contains("Create external table as select"))
   }
 
 }
