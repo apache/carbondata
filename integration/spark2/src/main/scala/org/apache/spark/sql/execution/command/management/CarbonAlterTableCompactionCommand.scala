@@ -17,27 +17,34 @@
 
 package org.apache.spark.sql.execution.command.management
 
+import java.io.{File, IOException}
+
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonEnv, Row, SparkSession, SQLContext}
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.{AlterTableModel, CarbonMergerMapping, CompactionModel, DataCommand}
-import org.apache.spark.sql.hive.CarbonRelation
+import org.apache.spark.sql.hive.{CarbonRelation, CarbonSessionCatalog}
 import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.sql.util.CarbonException
+import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockFactory, LockUsage}
 import org.apache.carbondata.core.metadata.schema.table.{CarbonTable, TableInfo}
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.events.{AlterTableCompactionPostEvent, AlterTableCompactionPreEvent, AlterTableCompactionPreStatusUpdateEvent, OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory
 import org.apache.carbondata.spark.util.CommonUtil
 import org.apache.carbondata.streaming.StreamHandoffRDD
+import org.apache.carbondata.streaming.segment.StreamSegment
 
 /**
  * Command for the compaction in alter table command
@@ -143,8 +150,14 @@ case class CarbonAlterTableCompactionCommand(
     if (compactionType == CompactionType.STREAMING) {
       StreamHandoffRDD.startStreamingHandoffThread(
         carbonLoadModel,
-        sqlContext,
-        storeLocation)
+        sqlContext.sparkSession)
+      return
+    }
+
+    if (compactionType == CompactionType.CLOSE_STREAMING) {
+      closeStreamingTable(
+        carbonLoadModel,
+        sqlContext.sparkSession)
       return
     }
 
@@ -251,6 +264,53 @@ case class CarbonAlterTableCompactionCommand(
                      s" ${ carbonLoadModel.getDatabaseName }.${ carbonLoadModel.getTableName }")
         CarbonException.analysisException(
           "Table is already locked for compaction. Please try after some time.")
+      }
+    }
+  }
+
+  def closeStreamingTable(
+      carbonLoadModel: CarbonLoadModel,
+      sparkSession: SparkSession
+  ): Unit = {
+    val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
+    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
+    // 1. acquire lock of streaming.lock
+    val streamingLock = CarbonLockFactory.getCarbonLockObj(
+      carbonTable.getTableInfo.getOrCreateAbsoluteTableIdentifier,
+      LockUsage.STREAMING_LOCK)
+    try {
+      if (streamingLock.lockWithRetries()) {
+        // 2. convert segment status from "streaming" to "streaming finish"
+        StreamSegment.finishStreaming(carbonTable)
+        // 3. iterate to handoff all streaming segment to batch segment
+        StreamHandoffRDD.iterateStreamingHandoff(carbonLoadModel, sparkSession)
+        val tableIdentifier =
+          new TableIdentifier(carbonTable.getTableName, Option(carbonTable.getDatabaseName))
+        // 4. modify table to normal table
+        AlterTableUtil.modifyTableProperties(
+          tableIdentifier,
+          Map("streaming" -> "false"),
+          Seq.empty,
+          true)(sparkSession,
+          sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog])
+        // 5. remove checkpoint
+        val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
+        FileFactory.deleteAllFilesOfDir(new File(tablePath.getStreamingCheckpointDir))
+        FileFactory.deleteAllFilesOfDir(new File(tablePath.getStreamingLogDir))
+      } else {
+        val msg = "Failed to close streaming table, because streaming is locked for table " +
+                  carbonTable.getDatabaseName() + "." + carbonTable.getTableName()
+        LOGGER.error(msg)
+        throw new IOException(msg)
+      }
+    } finally {
+      if (streamingLock.unlock()) {
+        LOGGER.info("Table unlocked successfully after streaming finished" +
+                    carbonTable.getDatabaseName() + "." + carbonTable.getTableName())
+      } else {
+        LOGGER.error("Unable to unlock Table lock for table " +
+                     carbonTable.getDatabaseName() + "." + carbonTable.getTableName() +
+                     " during streaming finished")
       }
     }
   }

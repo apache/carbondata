@@ -107,6 +107,7 @@ public final class CarbonProperties {
     validateCarbonCSVReadBufferSizeByte();
     validateHandoffSize();
     validateCombineSmallInputFiles();
+    validateEnableAutoHandoff();
   }
 
   private void validateCarbonCSVReadBufferSizeByte() {
@@ -294,6 +295,19 @@ public final class CarbonProperties {
         carbonProperties.setProperty(CarbonCommonConstants.HANDOFF_SIZE,
             "" + CarbonCommonConstants.HANDOFF_SIZE_DEFAULT);
       }
+    }
+  }
+
+  private void validateEnableAutoHandoff() {
+    String enableAutoHandoffStr =
+        carbonProperties.getProperty(CarbonCommonConstants.ENABLE_AUTO_HANDOFF);
+    boolean isValid = CarbonUtil.validateBoolean(enableAutoHandoffStr);
+    if (!isValid) {
+      LOGGER.warn("The enable auto handoff value \"" + enableAutoHandoffStr
+          + "\" is invalid. Using the default value \""
+          + CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT);
+      carbonProperties.setProperty(CarbonCommonConstants.ENABLE_AUTO_HANDOFF,
+          CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT);
     }
   }
 
@@ -790,6 +804,13 @@ public final class CarbonProperties {
       handoffSize = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT;
     }
     return handoffSize;
+  }
+
+  public boolean isEnableAutoHandoff() {
+    String enableAutoHandoffStr = CarbonProperties.getInstance().getProperty(
+        CarbonCommonConstants.ENABLE_AUTO_HANDOFF,
+        CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT);
+    return enableAutoHandoffStr.equalsIgnoreCase("true");
   }
 
   /**

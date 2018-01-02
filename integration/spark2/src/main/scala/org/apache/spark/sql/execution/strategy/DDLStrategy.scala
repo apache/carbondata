@@ -98,7 +98,8 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           if (CompactionType.MINOR == compactionType ||
               CompactionType.MAJOR == compactionType ||
               CompactionType.SEGMENT_INDEX == compactionType ||
-              CompactionType.STREAMING == compactionType) {
+              CompactionType.STREAMING == compactionType ||
+              CompactionType.CLOSE_STREAMING == compactionType) {
             ExecutedCommandExec(alterTable) :: Nil
           } else {
             throw new MalformedCarbonCommandException(

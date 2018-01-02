@@ -32,6 +32,7 @@ import org.apache.spark.sql.types.StructType
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -114,6 +115,17 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     // 14. finish streaming
     createTable(tableName = "stream_table_finish", streaming = true, withBatchLoad = true)
+
+    // 15. auto handoff streaming segment
+    createTable(tableName = "stream_table_auto_handoff", streaming = true, withBatchLoad = false)
+
+    // 16. close streaming table
+    createTable(tableName = "stream_table_close", streaming = true, withBatchLoad = false)
+    createTable(tableName = "stream_table_close_auto_handoff", streaming = true, withBatchLoad = false)
+
+    // 17. reopen streaming table after close
+    createTable(tableName = "stream_table_reopen", streaming = true, withBatchLoad = false)
+
   }
 
   test("validate streaming property") {
@@ -196,6 +208,10 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists streaming.stream_table_alter")
     sql("drop table if exists streaming.stream_table_handoff")
     sql("drop table if exists streaming.stream_table_finish")
+    sql("drop table if exists streaming.stream_table_auto_handoff")
+    sql("drop table if exists streaming.stream_table_close")
+    sql("drop table if exists streaming.stream_table_close_auto_handoff")
+    sql("drop table if exists streaming.stream_table_reopen")
   }
 
   // normal table not support streaming ingest
@@ -239,7 +255,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 1,
       continueSeconds = 10,
       generateBadRecords = false,
-      badRecordAction = "force"
+      badRecordAction = "force",
+      autoHandoff = false
     )
 
     checkAnswer(
@@ -280,7 +297,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 1,
       continueSeconds = 10,
       generateBadRecords = true,
-      badRecordAction = "force"
+      badRecordAction = "force",
+      autoHandoff = false
     )
     checkAnswer(
       sql("select count(*) from streaming.stream_table_socket"),
@@ -298,7 +316,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 1,
       continueSeconds = 10,
       generateBadRecords = true,
-      badRecordAction = "fail"
+      badRecordAction = "fail",
+      autoHandoff = false
     )
     val result = sql("select count(*) from streaming.bad_record_fail").collect()
     assert(result(0).getLong(0) < 25)
@@ -314,7 +333,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 1,
       continueSeconds = 20,
       generateBadRecords = false,
-      badRecordAction = "force"
+      badRecordAction = "force",
+      autoHandoff = false
     )
     val result = sql("select count(*) from streaming.stream_table_1s").collect()
     // 20 seconds can't ingest all data, exists data delay
@@ -330,7 +350,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 10,
       continueSeconds = 50,
       generateBadRecords = false,
-      badRecordAction = "force"
+      badRecordAction = "force",
+      autoHandoff = false
     )
     checkAnswer(
       sql("select count(*) from streaming.stream_table_10s"),
@@ -347,7 +368,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 5,
       continueSeconds = 30,
       generateBadRecords = false,
-      badRecordAction = "force"
+      badRecordAction = "force",
+      autoHandoff = false
     )
     checkAnswer(
       sql("select count(*) from streaming.stream_table_batch"),
@@ -370,7 +392,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 4,
       continueSeconds = 20,
       generateBadRecords = false,
-      badRecordAction = "force"
+      badRecordAction = "force",
+      autoHandoff = false
     )
 
     val result = sql("select * from streaming.stream_table_scan order by id").collect()
@@ -393,7 +416,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 4,
       continueSeconds = 20,
       generateBadRecords = false,
-      badRecordAction = "force"
+      badRecordAction = "force",
+      autoHandoff = false
     )
 
     val result = sql("select * from streaming.stream_table_scan_complex order by id").collect()
@@ -418,7 +442,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 4,
       continueSeconds = 20,
       generateBadRecords = true,
-      badRecordAction = "force"
+      badRecordAction = "force",
+      autoHandoff = false
     )
 
     checkAnswer(
@@ -458,7 +483,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 4,
       continueSeconds = 20,
       generateBadRecords = true,
-      badRecordAction = "force"
+      badRecordAction = "force",
+      autoHandoff = false
     )
 
     checkAnswer(
@@ -503,7 +529,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 4,
       continueSeconds = 20,
       generateBadRecords = true,
-      badRecordAction = "force"
+      badRecordAction = "force",
+      autoHandoff = false
     )
 
     checkAnswer(
@@ -533,7 +560,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 4,
       continueSeconds = 20,
       generateBadRecords = true,
-      badRecordAction = "force"
+      badRecordAction = "force",
+      autoHandoff = false
     )
 
     checkAnswer(
@@ -564,7 +592,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       intervalOfIngest = 4,
       continueSeconds = 20,
       generateBadRecords = false,
-      badRecordAction = "force"
+      badRecordAction = "force",
+      autoHandoff = false
     )
     for (_ <- 0 to 3) {
       executeBatchLoad("stream_table_compact")
@@ -593,7 +622,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       continueSeconds = 40,
       generateBadRecords = false,
       badRecordAction = "force",
-      handoffSize = 1024L * 200
+      handoffSize = 1024L * 200,
+      autoHandoff = false
     )
     assert(sql("show segments for table streaming.stream_table_new").count() > 1)
 
@@ -613,7 +643,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       continueSeconds = 15,
       generateBadRecords = false,
       badRecordAction = "force",
-      handoffSize = 1024L * 200
+      handoffSize = 1024L * 200,
+      autoHandoff = false
     )
     val beforeDelete = sql("show segments for table streaming.stream_table_delete").collect()
     val segmentId = beforeDelete.map(_.getString(0)).mkString(",")
@@ -635,7 +666,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       continueSeconds = 15,
       generateBadRecords = false,
       badRecordAction = "force",
-      handoffSize = 1024L * 200
+      handoffSize = 1024L * 200,
+      autoHandoff = false
     )
     val beforeDelete = sql("show segments for table streaming.stream_table_delete").collect()
 
@@ -668,7 +700,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         continueSeconds = 40,
         generateBadRecords = false,
         badRecordAction = "force",
-        handoffSize = 1024L * 200
+        handoffSize = 1024L * 200,
+        autoHandoff = false
       )
       checkAnswer(
         sql("select count(*) from streaming.stream_table_alter"),
@@ -698,7 +731,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       continueSeconds = 40,
       generateBadRecords = false,
       badRecordAction = "force",
-      handoffSize = 1024L * 200
+      handoffSize = 1024L * 200,
+      autoHandoff = false
     )
     val segments = sql("show segments for table streaming.stream_table_handoff").collect()
     assert(segments.length == 3 || segments.length == 4)
@@ -726,6 +760,31 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     )
   }
 
+  test("auto handoff 'streaming finish' segment to columnar segment") {
+    executeStreamingIngest(
+      tableName = "stream_table_auto_handoff",
+      batchNums = 6,
+      rowNumsEachBatch = 10000,
+      intervalOfSource = 5,
+      intervalOfIngest = 10,
+      continueSeconds = 40,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      handoffSize = 1024L * 200,
+      autoHandoff = true
+    )
+    Thread.sleep(10000)
+    val segments = sql("show segments for table streaming.stream_table_auto_handoff").collect()
+    assertResult(5)(segments.length)
+    assertResult(2)(segments.filter(_.getString(1).equals("Success")).length)
+    assertResult(2)(segments.filter(_.getString(1).equals("Compacted")).length)
+    assertResult(1)(segments.filter(_.getString(1).equals("Streaming")).length)
+    checkAnswer(
+      sql("select count(*) from streaming.stream_table_auto_handoff"),
+      Seq(Row(6 * 10000))
+    )
+  }
+
   test("alter table finish streaming") {
     executeStreamingIngest(
       tableName = "stream_table_finish",
@@ -736,7 +795,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       continueSeconds = 40,
       generateBadRecords = false,
       badRecordAction = "force",
-      handoffSize = 1024L * 200
+      handoffSize = 1024L * 200,
+      autoHandoff = false
     )
     sql("alter table streaming.stream_table_finish finish streaming")
     sql("show segments for table streaming.stream_table_finish").show(100, false)
@@ -750,6 +810,131 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     checkAnswer(
       sql("select count(*) from streaming.stream_table_finish"),
       Seq(Row(5 + 6 * 10000))
+    )
+  }
+
+  test("alter table close streaming") {
+    executeStreamingIngest(
+      tableName = "stream_table_close",
+      batchNums = 6,
+      rowNumsEachBatch = 10000,
+      intervalOfSource = 5,
+      intervalOfIngest = 10,
+      continueSeconds = 40,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      handoffSize = 1024L * 200,
+      autoHandoff = false
+    )
+
+    val table1 = CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_close")(spark)
+    assertResult(true)(table1.isStreamingTable)
+    sql("alter table streaming.stream_table_close compact 'close_streaming'")
+
+    val segments = sql("show segments for table streaming.stream_table_close").collect()
+    assertResult(6)(segments.length)
+    assertResult(3)(segments.filter(_.getString(1).equals("Success")).length)
+    assertResult(3)(segments.filter(_.getString(1).equals("Compacted")).length)
+    checkAnswer(
+      sql("select count(*) from streaming.stream_table_close"),
+      Seq(Row(6 * 10000))
+    )
+    val table2 = CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_close")(spark)
+    assertResult(false)(table2.isStreamingTable)
+  }
+
+  test("alter table close streaming with auto handoff") {
+    executeStreamingIngest(
+      tableName = "stream_table_close_auto_handoff",
+      batchNums = 6,
+      rowNumsEachBatch = 10000,
+      intervalOfSource = 5,
+      intervalOfIngest = 10,
+      continueSeconds = 40,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      handoffSize = 1024L * 200,
+      autoHandoff = true
+    )
+    Thread.sleep(10000)
+
+    val table1 =
+      CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_close_auto_handoff")(spark)
+    assertResult(true)(table1.isStreamingTable)
+
+    sql("alter table streaming.stream_table_close_auto_handoff compact 'close_streaming'")
+    val segments =
+      sql("show segments for table streaming.stream_table_close_auto_handoff").collect()
+    assertResult(6)(segments.length)
+    assertResult(3)(segments.filter(_.getString(1).equals("Success")).length)
+    assertResult(3)(segments.filter(_.getString(1).equals("Compacted")).length)
+    checkAnswer(
+      sql("select count(*) from streaming.stream_table_close_auto_handoff"),
+      Seq(Row(6 * 10000))
+    )
+
+    val table2 =
+      CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_close_auto_handoff")(spark)
+    assertResult(false)(table2.isStreamingTable)
+  }
+
+  test("reopen streaming table") {
+    executeStreamingIngest(
+      tableName = "stream_table_reopen",
+      batchNums = 6,
+      rowNumsEachBatch = 10000,
+      intervalOfSource = 5,
+      intervalOfIngest = 10,
+      continueSeconds = 40,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      handoffSize = 1024L * 200,
+      autoHandoff = true
+    )
+    Thread.sleep(10000)
+
+    val table1 =
+      CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_reopen")(spark)
+    assertResult(true)(table1.isStreamingTable)
+
+    sql("alter table streaming.stream_table_reopen compact 'close_streaming'")
+    val segments =
+      sql("show segments for table streaming.stream_table_reopen").collect()
+    assertResult(6)(segments.length)
+    assertResult(3)(segments.filter(_.getString(1).equals("Success")).length)
+    assertResult(3)(segments.filter(_.getString(1).equals("Compacted")).length)
+    checkAnswer(
+      sql("select count(*) from streaming.stream_table_reopen"),
+      Seq(Row(6 * 10000))
+    )
+
+    val table2 =
+      CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_reopen")(spark)
+    assertResult(false)(table2.isStreamingTable)
+
+    sql("ALTER TABLE streaming.stream_table_reopen SET TBLPROPERTIES('streaming'='true')")
+
+    val table3 =
+      CarbonEnv.getCarbonTable(Option("streaming"), "stream_table_reopen")(spark)
+    assertResult(true)(table3.isStreamingTable)
+
+    executeStreamingIngest(
+      tableName = "stream_table_reopen",
+      batchNums = 6,
+      rowNumsEachBatch = 10000,
+      intervalOfSource = 5,
+      intervalOfIngest = 10,
+      continueSeconds = 40,
+      generateBadRecords = false,
+      badRecordAction = "force",
+      handoffSize = 1024L * 200,
+      autoHandoff = true
+    )
+    Thread.sleep(10000)
+
+    checkAnswer(
+      sql("select count(*) from streaming.stream_table_reopen"),
+      Seq(Row(6 * 10000 * 2))
     )
   }
 
@@ -828,7 +1013,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       tableIdentifier: TableIdentifier,
       badRecordAction: String = "force",
       intervalSecond: Int = 2,
-      handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT): Thread = {
+      handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT,
+      autoHandoff: Boolean = CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT.toBoolean
+  ): Thread = {
     new Thread() {
       override def run(): Unit = {
         var qry: StreamingQuery = null
@@ -848,6 +1035,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
             .option("dbName", tableIdentifier.database.get)
             .option("tableName", tableIdentifier.table)
             .option(CarbonCommonConstants.HANDOFF_SIZE, handoffSize)
+            .option(CarbonCommonConstants.ENABLE_AUTO_HANDOFF, autoHandoff)
             .start()
           qry.awaitTermination()
         } catch {
@@ -874,7 +1062,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       continueSeconds: Int,
       generateBadRecords: Boolean,
       badRecordAction: String,
-      handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT
+      handoffSize: Long = CarbonCommonConstants.HANDOFF_SIZE_DEFAULT,
+      autoHandoff: Boolean = CarbonCommonConstants.ENABLE_AUTO_HANDOFF_DEFAULT.toBoolean
   ): Unit = {
     val identifier = new TableIdentifier(tableName, Option("streaming"))
     val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.lookupRelation(identifier)(spark)
@@ -896,7 +1085,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
         tableIdentifier = identifier,
         badRecordAction = badRecordAction,
         intervalSecond = intervalOfIngest,
-        handoffSize = handoffSize)
+        handoffSize = handoffSize,
+        autoHandoff = autoHandoff)
       thread1.start()
       thread2.start()
       Thread.sleep(continueSeconds * 1000)
