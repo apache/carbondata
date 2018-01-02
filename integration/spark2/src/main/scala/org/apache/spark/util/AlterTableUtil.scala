@@ -199,10 +199,8 @@ object AlterTableUtil {
     if (FileFactory.isFileExist(tablePath, fileType)) {
       val tableInfo = if (metastore.isReadFromHiveMetaStore) {
         // In case of hive metastore we first update the carbonschema inside old table only.
-        metastore.getThriftTableInfo(
-          CarbonStorePath.getCarbonTablePath(
-            tablePath,
-            new CarbonTableIdentifier(database, oldTableIdentifier.table, tableId)))(sparkSession)
+        metastore.getThriftTableInfo(CarbonStorePath.getCarbonTablePath(tablePath,
+          new CarbonTableIdentifier(database, oldTableIdentifier.table, tableId)))(sparkSession)
       } else {
         metastore.getThriftTableInfo(carbonTablePath)(sparkSession)
       }
