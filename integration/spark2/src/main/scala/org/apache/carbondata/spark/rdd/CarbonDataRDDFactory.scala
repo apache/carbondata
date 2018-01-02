@@ -712,7 +712,7 @@ object CarbonDataRDDFactory {
   /**
    * Trigger compaction after data load
    */
-  private def handleSegmentMerging(
+  def handleSegmentMerging(
       sqlContext: SQLContext,
       carbonLoadModel: CarbonLoadModel,
       carbonTable: CarbonTable,

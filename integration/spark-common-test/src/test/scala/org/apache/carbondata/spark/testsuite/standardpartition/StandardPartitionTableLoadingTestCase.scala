@@ -254,6 +254,34 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     }
   }
 
+  test("merge carbon index disable data loading for partition table for three partition column") {
+    CarbonProperties.getInstance.addProperty(
+      CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
+    sql(
+      """
+        | CREATE TABLE mergeindexpartitionthree (empno int, doj Timestamp,
+        |  workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (workgroupcategory int, empname String, designation String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE mergeindexpartitionthree OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    val carbonTable = CarbonMetadata.getInstance().getCarbonTable("default_mergeindexpartitionthree")
+    val tablePath = new CarbonTablePath(carbonTable.getCarbonTableIdentifier,
+      carbonTable.getTablePath)
+    val segmentDir = tablePath.getCarbonDataDirectoryPath("0", "0")
+    val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
+    val files = carbonFile.listFiles(new CarbonFileFilter {
+      override def accept(file: CarbonFile): Boolean = CarbonTablePath.isCarbonIndexFile(file.getName)
+    })
+    CarbonProperties.getInstance.addProperty(
+      CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
+      CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT)
+    assert(files.length == 10)
+  }
+
   test("load static partition table for one static partition column with load syntax issue") {
     sql(
       """
@@ -289,6 +317,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table if exists loadstaticpartitionone")
     sql("drop table if exists loadstaticpartitiononeoverwrite")
     sql("drop table if exists streamingpartitionedtable")
+    sql("drop table if exists mergeindexpartitionthree")
     sql("drop table if exists loadstaticpartitiononeissue")
   }
 

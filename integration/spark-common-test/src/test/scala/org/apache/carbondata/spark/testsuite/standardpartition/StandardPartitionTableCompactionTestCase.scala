@@ -161,6 +161,38 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     checkAnswer(sql(s"""select count(*) from staticpartition where deptname='finance'"""), p2)
   }
 
+  test("enable auto compaction for partition table"){
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "true")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.COMPACTION_SEGMENT_LEVEL_THRESHOLD, "4,2")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.PRESERVE_LATEST_SEGMENTS_NUMBER, "0")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.DAYS_ALLOWED_TO_COMPACT, "0")
+
+    sql(
+      """
+        | CREATE TABLE staticpartitioncompaction (empno int, doj Timestamp,
+        |  workgroupcategoryname String, deptno int,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int,workgroupcategory int, empname String, designation String)
+        | PARTITIONED BY (deptname String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    for (i <- 0 until 4) {
+      sql(s"""insert into staticpartitioncompaction PARTITION(deptname='software') select empno,doj,workgroupcategoryname,deptno,projectcode,projectjoindate,projectenddate,attendance,utilization,salary,workgroupcategory,empname,designation from originTable""")
+    }
+    sql("CLEAN FILES FOR TABLE staticpartitioncompaction").show()
+    var segments = sql("SHOW SEGMENTS FOR TABLE staticpartitioncompaction")
+    var segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    assert(segmentSequenceIds.size==1)
+    assert(segmentSequenceIds.contains("0.1"))
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.ENABLE_AUTO_LOAD_MERGE, "false")
+  }
+
   override def afterAll = {
     dropTable
   }
@@ -173,6 +205,7 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     sql("drop table if exists partitionthree")
     sql("drop table if exists partitionmajor")
     sql("drop table if exists staticpartition")
+    sql("drop table if exists staticpartitioncompaction")
   }
 
 }
