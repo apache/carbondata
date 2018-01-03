@@ -72,7 +72,6 @@ object TimeSeriesUtil {
         // checking hierarchy name is valid or not
         if (!TimeSeriesUDF.INSTANCE.TIMESERIES_FUNCTION.contains(splits(0).toLowerCase)) {
           throw new MalformedCarbonCommandException(s"Not supported heirarchy type: ${ splits(0) }")
-
         }
         // validating hierarchy level is valid or not
         if (!splits(1).equals("1")) {

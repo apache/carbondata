@@ -148,8 +148,6 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("SORT_COLUMNS", relation.metaData.carbonTable.getSortColumns(
       relation.carbonTable.getTableName).asScala
       .map(column => column).mkString(","), ""))
-    val dimension = carbonTable
-      .getDimensionByTableName(relation.carbonTable.getTableName)
     if (carbonTable.getPartitionInfo(carbonTable.getTableName) != null) {
       results ++=
       Seq(("Partition Columns", carbonTable.getPartitionInfo(carbonTable.getTableName)

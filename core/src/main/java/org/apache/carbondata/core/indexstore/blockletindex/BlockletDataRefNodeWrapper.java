@@ -129,11 +129,11 @@ public class BlockletDataRefNodeWrapper implements DataRefNode {
   private DimensionColumnChunkReader getDimensionColumnChunkReader() throws IOException {
     ColumnarFormatVersion version =
         ColumnarFormatVersion.valueOf(blockInfos.get(index).getDetailInfo().getVersionNumber());
-    DimensionColumnChunkReader dimensionColumnChunkReader = CarbonDataReaderFactory.getInstance()
-        .getDimensionColumnChunkReader(version,
-            blockInfos.get(index).getDetailInfo().getBlockletInfo(), dimensionLens,
-            blockInfos.get(index).getFilePath());
-    return dimensionColumnChunkReader;
+    return CarbonDataReaderFactory.getInstance().getDimensionColumnChunkReader(
+        version,
+        blockInfos.get(index).getDetailInfo().getBlockletInfo(),
+        dimensionLens,
+        blockInfos.get(index).getFilePath());
   }
 
   private MeasureColumnChunkReader getMeasureColumnChunkReader() throws IOException {

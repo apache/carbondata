@@ -91,7 +91,7 @@ object StreamSinkFactory {
                                     CarbonCommonConstants.HANDOFF_SIZE_MIN)
         }
       } catch {
-        case ex: NumberFormatException =>
+        case _: NumberFormatException =>
           new CarbonStreamException(CarbonCommonConstants.HANDOFF_SIZE +
                                     s" $segmentSize is an illegal number")
       }

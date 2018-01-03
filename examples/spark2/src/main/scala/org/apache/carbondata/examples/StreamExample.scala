@@ -174,7 +174,7 @@ object StreamExample {
 
           qry.awaitTermination()
         } catch {
-          case ex =>
+          case ex: Exception =>
             ex.printStackTrace()
             println("Done reading and writing streaming data")
         } finally {

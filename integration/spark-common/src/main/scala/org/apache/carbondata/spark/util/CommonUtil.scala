@@ -155,7 +155,6 @@ object CommonUtil {
   }
 
   def validateTblProperties(tableProperties: Map[String, String], fields: Seq[Field]): Boolean = {
-    val itr = tableProperties.keys
     var isValid: Boolean = true
     tableProperties.foreach {
       case (key, value) =>

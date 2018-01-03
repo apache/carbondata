@@ -90,14 +90,12 @@ public class SegmentIndexFileStore {
    * @throws IOException
    */
   public List<String> getIndexFilesFromMergeFile(String mergeFile) throws IOException {
-    List<String> indexFiles = new ArrayList<>();
     ThriftReader thriftReader = new ThriftReader(mergeFile);
     thriftReader.open();
     MergedBlockIndexHeader indexHeader = readMergeBlockIndexHeader(thriftReader);
-    List<String> file_names = indexHeader.getFile_names();
-    indexFiles.addAll(file_names);
+    List<String> fileNames = indexHeader.getFile_names();
     thriftReader.close();
-    return indexFiles;
+    return fileNames;
   }
 
   /**

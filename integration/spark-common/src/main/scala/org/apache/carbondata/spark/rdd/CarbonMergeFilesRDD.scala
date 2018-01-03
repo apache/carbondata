@@ -22,7 +22,7 @@ import org.apache.spark.{Partition, SparkContext, TaskContext}
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter
 
-case class CarbonMergeFilePartition(rddId: Int, val idx: Int, segmentPath: String)
+case class CarbonMergeFilePartition(rddId: Int, idx: Int, segmentPath: String)
   extends Partition {
 
   override val index: Int = idx

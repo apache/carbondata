@@ -50,7 +50,7 @@ object AllDictionaryUtil {
           try {
             result += ((i, tokens(i)))
           } catch {
-            case ex: ArrayIndexOutOfBoundsException =>
+            case _: ArrayIndexOutOfBoundsException =>
               LOGGER.error("Read a bad record: " + x)
           }
         }
