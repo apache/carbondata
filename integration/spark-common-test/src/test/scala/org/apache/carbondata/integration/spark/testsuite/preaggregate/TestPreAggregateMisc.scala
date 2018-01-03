@@ -20,7 +20,6 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.{BeforeAndAfterAll, Ignore}
 
-@Ignore
 class TestPreAggregateMisc extends QueryTest with BeforeAndAfterAll {
   override def beforeAll: Unit = {
     sql("drop table if exists mainTable")

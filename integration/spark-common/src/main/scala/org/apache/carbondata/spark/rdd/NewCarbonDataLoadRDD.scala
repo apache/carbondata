@@ -389,6 +389,7 @@ class NewDataFrameLoaderRDD[K, V](
         // in case of success, failure or cancelation clear memory and stop execution
         context.addTaskCompletionListener { context => executor.close()
           CommonUtil.clearUnsafeMemory(ThreadLocalTaskInfo.getCarbonTaskInfo.getTaskId)}
+        SparkUtil.removeInvalidListener(context)
         executor.execute(model, loader.storeLocation, recordReaders.toArray)
       } catch {
         case e: NoRetryException =>
@@ -402,7 +403,6 @@ class NewDataFrameLoaderRDD[K, V](
           LOGGER.error(e)
           throw e
       } finally {
-        SparkUtil.removeInvalidListener(context)
         // clean up the folders and files created locally for data load operation
         TableProcessingOperations.deleteLocalDataLoadFolderLocation(model, false, false)
         // in case of failure the same operation will be re-tried several times.

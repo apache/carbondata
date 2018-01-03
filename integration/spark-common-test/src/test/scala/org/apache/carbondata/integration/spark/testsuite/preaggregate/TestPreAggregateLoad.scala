@@ -24,7 +24,6 @@ import org.scalatest.{BeforeAndAfterAll, Ignore}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-@Ignore
 class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
 
   val testData = s"$resourcesPath/sample.csv"
