@@ -78,10 +78,6 @@ class CarbonInputMetrics extends InitInputMetrics{
   }
 
   override def updateByValue(value: Object): Unit = {
-    value match {
-      case batch: ColumnarBatch =>
-        inputMetrics.incRecordsRead(batch.numRows())
-      case _ =>
-    }
+
   }
 }
