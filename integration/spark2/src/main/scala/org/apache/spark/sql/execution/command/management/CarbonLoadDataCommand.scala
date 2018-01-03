@@ -377,7 +377,8 @@ case class CarbonLoadDataCommand(
           sparkSession,
           carbonLoadModel,
           hadoopConf,
-          loadDataFrame, operationContext)
+          loadDataFrame,
+          operationContext)
       } finally {
         server match {
           case Some(dictServer) =>
@@ -457,11 +458,6 @@ case class CarbonLoadDataCommand(
    * Loads the data in a hive partition way. This method uses InsertIntoTable command to load data
    * into partitoned data. The table relation would be converted to HadoopFSRelation to let spark
    * handling the partitioning.
-   * @param sparkSession
-   * @param carbonLoadModel
-   * @param hadoopConf
-   * @param dataFrame
-   * @return
    */
   private def loadDataWithPartition(sparkSession: SparkSession,
       carbonLoadModel: CarbonLoadModel,
@@ -660,7 +656,8 @@ case class CarbonLoadDataCommand(
     } catch {
       case e: Exception =>
         throw new Exception(
-          "Dataload is success. Auto-Compaction has failed. Please check logs.")
+          "Dataload is success. Auto-Compaction has failed. Please check logs.",
+          e)
     }
   }
 
