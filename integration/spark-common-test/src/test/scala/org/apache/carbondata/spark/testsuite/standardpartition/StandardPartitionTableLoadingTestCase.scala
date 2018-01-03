@@ -17,6 +17,8 @@
 package org.apache.carbondata.spark.testsuite.standardpartition
 
 import java.io.{File, IOException}
+import java.util
+import java.util.concurrent.{Callable, ExecutorService, Executors}
 
 import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.test.util.QueryTest
@@ -31,7 +33,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
 class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfterAll {
-
+  var executorService: ExecutorService = _
   override def beforeAll {
     dropTable
 
@@ -275,6 +277,47 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     }
   }
 
+  test("concurrent partition table load test") {
+    executorService = Executors.newCachedThreadPool()
+    sql(
+      """
+        | CREATE TABLE partitionmultiplethreeconcurrent (empno int, doj Timestamp,
+        |  workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (workgroupcategory int, empname String, designation String)
+        | STORED BY 'org.apache.carbondata.format'
+        | TBLPROPERTIES('DICTIONARY_INCLUDE'='empname,designation,deptname')
+      """.stripMargin)
+
+    val tasks = new util.ArrayList[Callable[String]]()
+    tasks.add(new QueryTask(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmultiplethreeconcurrent OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')"""))
+    tasks.add(new QueryTask(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmultiplethreeconcurrent OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')"""))
+    tasks.add(new QueryTask(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionmultiplethreeconcurrent OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')"""))
+    val results = executorService.invokeAll(tasks)
+    for (i <- 0 until tasks.size()) {
+      val res = results.get(i).get
+      assert("PASS".equals(res))
+    }
+    executorService.shutdown()
+    checkAnswer(sql("select count(*) from partitionmultiplethreeconcurrent"), Seq(Row(30)))
+  }
+
+  class QueryTask(query: String) extends Callable[String] {
+    override def call(): String = {
+      var result = "PASS"
+      try {
+        LOGGER.info("Executing :" + Thread.currentThread().getName)
+        sql(query)
+      } catch {
+        case ex: Exception =>
+          ex.printStackTrace()
+          result = "FAIL"
+      }
+      result
+    }
+  }
+
   test("merge carbon index disable data loading for partition table for three partition column") {
     CarbonProperties.getInstance.addProperty(
       CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT, "false")
@@ -396,6 +439,9 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
 
   override def afterAll = {
     dropTable
+    if (executorService != null && !executorService.isShutdown) {
+      executorService.shutdownNow()
+    }
   }
 
   def dropTable = {
@@ -413,6 +459,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table if exists streamingpartitionedtable")
     sql("drop table if exists mergeindexpartitionthree")
     sql("drop table if exists loadstaticpartitiononeissue")
+    sql("drop table if exists partitionmultiplethreeconcurrent")
     sql("drop table if exists loadpartitionwithspecialchar")
     sql("drop table if exists emp1")
     sql("drop table if exists restorepartition")

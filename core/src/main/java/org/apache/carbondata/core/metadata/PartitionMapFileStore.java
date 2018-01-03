@@ -237,15 +237,21 @@ public class PartitionMapFileStore {
    * @param segmentPath
    * @param partitionsToDrop
    * @param uniqueId
+   * @param partialMatch  If it is true then even the partial partition spec matches also can be
+   *                      dropped
    * @throws IOException
    */
-  public void dropPartitions(String segmentPath, List<String> partitionsToDrop, String uniqueId)
-      throws IOException {
+  public void dropPartitions(String segmentPath, List<String> partitionsToDrop, String uniqueId,
+      boolean partialMatch) throws IOException {
     readAllPartitionsOfSegment(segmentPath);
     List<String> indexesToDrop = new ArrayList<>();
     for (Map.Entry<String, List<String>> entry: partitionMap.entrySet()) {
-      for (String partition: partitionsToDrop) {
-        if (entry.getValue().contains(partition)) {
+      if (partialMatch) {
+        if (entry.getValue().containsAll(partitionsToDrop)) {
+          indexesToDrop.add(entry.getKey());
+        }
+      } else {
+        if (partitionsToDrop.containsAll(entry.getValue())) {
           indexesToDrop.add(entry.getKey());
         }
       }
@@ -302,7 +308,7 @@ public class PartitionMapFileStore {
 
     LoadMetadataDetails[] details = ssm.readLoadMetadata(table.getMetaDataFilepath());
     // scan through each segment.
-
+    List<String> segmentsNeedToBeDeleted = new ArrayList<>();
     for (LoadMetadataDetails segment : details) {
 
       // if this segment is valid then only we will go for deletion of related
@@ -318,6 +324,12 @@ public class PartitionMapFileStore {
         String partitionFilePath = getPartitionFilePath(segmentPath);
         if (partitionFilePath != null) {
           PartitionMapper partitionMapper = readPartitionMap(partitionFilePath);
+          if (partitionMapper.partitionMap.size() == 0) {
+            // There is no partition information, it means all partitions are dropped.
+            // So segment need to be marked as delete.
+            segmentsNeedToBeDeleted.add(segment.getLoadName());
+            continue;
+          }
           DataFileFooterConverter fileFooterConverter = new DataFileFooterConverter();
           SegmentIndexFileStore indexFileStore = new SegmentIndexFileStore();
           indexFileStore.readAllIIndexOfSegment(segmentPath);
@@ -356,7 +368,11 @@ public class PartitionMapFileStore {
             // Delete all old partition files
             for (CarbonFile partitionFile : partitionFiles) {
               if (!currentPartitionFile.getName().equalsIgnoreCase(partitionFile.getName())) {
-                partitionFile.delete();
+                long fileTimeStamp = Long.parseLong(partitionFile.getName().substring(0,
+                    partitionFile.getName().length() - CarbonTablePath.PARTITION_MAP_EXT.length()));
+                if (CarbonUpdateUtil.isMaxQueryTimeoutExceeded(fileTimeStamp) || forceDelete) {
+                  partitionFile.delete();
+                }
               }
             }
           }
@@ -368,6 +384,18 @@ public class PartitionMapFileStore {
             }
           }
         }
+      }
+    }
+    // If any segments that are required to delete
+    if (segmentsNeedToBeDeleted.size() > 0) {
+      try {
+        // Mark the segments as delete.
+        SegmentStatusManager.updateDeletionStatus(
+            table.getAbsoluteTableIdentifier(),
+            segmentsNeedToBeDeleted,
+            table.getMetaDataFilepath());
+      } catch (Exception e) {
+        throw new IOException(e);
       }
     }
   }

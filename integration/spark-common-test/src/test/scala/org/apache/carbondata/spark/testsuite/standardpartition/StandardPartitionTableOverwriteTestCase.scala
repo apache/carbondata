@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.spark.testsuite.standardpartition
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -85,6 +86,75 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
       sql("select empno, empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from originTable where projectenddate=cast('2016-06-29' as Date)"))
   }
 
+  test("dynamic and static partition table with load syntax") {
+    sql(
+      """
+        | CREATE TABLE loadstaticpartitiondynamic (designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (empno int, empname String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE loadstaticpartitiondynamic PARTITION(empno='1', empname) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    checkAnswer(sql(s"select count(*) from loadstaticpartitiondynamic where empno=1"), sql(s"select count(*) from loadstaticpartitiondynamic"))
+  }
+
+  test("dynamic and static partition table with overwrite ") {
+    sql(
+      """
+        | CREATE TABLE insertstaticpartitiondynamic (designation String, doj Timestamp,salary int)
+        | PARTITIONED BY (empno int, empname String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE insertstaticpartitiondynamic PARTITION(empno, empname) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    val rows = sql(s"select count(*) from insertstaticpartitiondynamic").collect()
+    sql("""insert overwrite table insertstaticpartitiondynamic PARTITION(empno='1', empname) select designation, doj, salary, empname from insertstaticpartitiondynamic""")
+
+    checkAnswer(sql(s"select count(*) from insertstaticpartitiondynamic where empno=1"), rows)
+
+    intercept[Exception] {
+      sql("""insert overwrite table insertstaticpartitiondynamic PARTITION(empno, empname='ravi') select designation, doj, salary, empname from insertstaticpartitiondynamic""")
+    }
+
+  }
+
+  test("overwriting all partition on table and do compaction") {
+    sql(
+      """
+        | CREATE TABLE partitionallcompaction (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int,
+        |  projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (deptname String,doj Timestamp,projectcode int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE partitionallcompaction OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE partitionallcompaction PARTITION(deptname='Learning', doj, projectcode) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"') """)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE partitionallcompaction PARTITION(deptname='configManagement', doj, projectcode) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE partitionallcompaction PARTITION(deptname='network', doj, projectcode) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE partitionallcompaction PARTITION(deptname='protocol', doj, projectcode) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' OVERWRITE INTO TABLE partitionallcompaction PARTITION(deptname='security', doj, projectcode) OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql("ALTER TABLE partitionallcompaction COMPACT 'MAJOR'").collect()
+    checkExistence(sql(s"""SHOW segments for table partitionallcompaction"""), true, "Marked for Delete")
+  }
+
+  test("Test overwrite static partition ") {
+    sql(
+      """
+        | CREATE TABLE weather6 (type String)
+        | PARTITIONED BY (year int, month int, day int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql("insert into weather6 partition(year=2014, month=5, day=25) select 'rainy'")
+    sql("insert into weather6 partition(year=2014, month=4, day=23) select 'cloudy'")
+    sql("insert overwrite table weather6 partition(year=2014, month=5, day=25) select 'sunny'")
+    checkExistence(sql("select * from weather6"), true, "sunny")
+    checkAnswer(sql("select count(*) from weather6"), Seq(Row(2)))
+  }
+
 
   override def afterAll = {
     dropTable
@@ -94,6 +164,10 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     sql("drop table if exists originTable")
     sql("drop table if exists partitiondateinsert")
     sql("drop table if exists staticpartitiondateinsert")
+    sql("drop table if exists loadstaticpartitiondynamic")
+    sql("drop table if exists insertstaticpartitiondynamic")
+    sql("drop table if exists partitionallcompaction")
+    sql("drop table if exists weather6")
   }
 
 }

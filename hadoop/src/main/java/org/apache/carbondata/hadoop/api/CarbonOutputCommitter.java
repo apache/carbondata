@@ -83,7 +83,13 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
    * @throws IOException
    */
   @Override public void commitJob(JobContext context) throws IOException {
-    super.commitJob(context);
+    try {
+      super.commitJob(context);
+    } catch (IOException e) {
+      // ignore, in case of concurrent load it try to remove temporary folders by other load may
+      // cause file not found exception. This will not impact carbon load,
+      LOGGER.warn(e.getMessage());
+    }
     boolean overwriteSet = CarbonTableOutputFormat.isOverwriteSet(context.getConfiguration());
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
     LoadMetadataDetails newMetaEntry = loadModel.getCurrentLoadMetadataDetail();

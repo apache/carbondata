@@ -42,6 +42,7 @@ import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.api.{CarbonOutputCommitter, CarbonTableOutputFormat}
 import org.apache.carbondata.hadoop.api.CarbonTableOutputFormat.CarbonRecordWriter
+import org.apache.carbondata.hadoop.util.ObjectSerializationUtil
 import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.util.{CarbonScalaUtil, DataLoadingUtil, Util}
@@ -204,9 +205,14 @@ private class CarbonOutputWriter(path: String,
     fieldTypes: Seq[DataType])
   extends OutputWriter with AbstractCarbonOutputWriter {
   val partitions = getPartitionsFromPath(path, context).map(ExternalCatalogUtils.unescapePathName)
-  val staticPartition = {
+  val staticPartition: util.HashMap[String, Boolean] = {
     val staticPart = context.getConfiguration.get("carbon.staticpartition")
-    staticPart != null && staticPart.toBoolean
+    if (staticPart != null) {
+      ObjectSerializationUtil.convertStringToObject(
+        staticPart).asInstanceOf[util.HashMap[String, Boolean]]
+    } else {
+      null
+    }
   }
   lazy val partitionData = if (partitions.nonEmpty) {
     val updatedPartitions = partitions.map{ p =>
@@ -223,7 +229,7 @@ private class CarbonOutputWriter(path: String,
       }
     }
 
-    if (staticPartition) {
+    if (staticPartition != null) {
       val loadModel = recordWriter.getLoadModel
       val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
       var timeStampformatString = loadModel.getTimestampformat
@@ -237,11 +243,17 @@ private class CarbonOutputWriter(path: String,
       }
       val dateFormat = new SimpleDateFormat(dateFormatString)
       updatedPartitions.map {case (col, value) =>
-        CarbonScalaUtil.convertToCarbonFormat(value,
-          CarbonScalaUtil.convertCarbonToSparkDataType(
-            table.getColumnByName(table.getTableName, col).getDataType),
-          timeFormat,
-          dateFormat)
+        // Only convert the static partitions to the carbon format and use it while loading data
+        // to carbon.
+        if (staticPartition.getOrDefault(col, false)) {
+          CarbonScalaUtil.convertToCarbonFormat(value,
+            CarbonScalaUtil.convertCarbonToSparkDataType(
+              table.getColumnByName(table.getTableName, col).getDataType),
+            timeFormat,
+            dateFormat)
+        } else {
+          value
+        }
       }
     } else {
       updatedPartitions.map(_._2)
@@ -309,9 +321,25 @@ private class CarbonOutputWriter(path: String,
       (col, value)
     }.toMap
     val updatedPartitions =
-      if (staticPartition) {
-        splitPartitions
+      if (staticPartition != null) {
+        // There can be scnerio like dynamic and static combination, in that case we should convert
+        // only the dyanamic partition values to the proper format and store to carbon parttion map
+        splitPartitions.map { case (col, value) =>
+          if (!staticPartition.getOrDefault(col, false)) {
+            CarbonScalaUtil.updatePartitions(
+              Seq((col, value)).toMap,
+              table,
+              timeFormat,
+              dateFormat,
+              serializeFormat,
+              badRecordAction,
+              isEmptyBadRecord).toSeq.head
+          } else {
+            (col, value)
+          }
+        }
       } else {
+        // All dynamic partitions need to be converted to proper format
         CarbonScalaUtil.updatePartitions(
           splitPartitions,
           table,
