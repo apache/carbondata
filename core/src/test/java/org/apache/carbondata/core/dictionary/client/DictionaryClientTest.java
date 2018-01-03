@@ -28,6 +28,8 @@ import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessageType
 import org.apache.carbondata.core.dictionary.server.DictionaryServer;
 import org.apache.carbondata.core.dictionary.server.NonSecureDictionaryServer;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.datatype.DataType;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -68,11 +70,13 @@ public class DictionaryClientTest {
     empColumnSchema.setColumnName("empNameCol");
     empColumnSchema.setColumnUniqueId("empNameCol");
     empColumnSchema.setDimensionColumn(true);
+    empColumnSchema.setDataType(DataTypes.STRING);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
     empDimension = new CarbonDimension(empColumnSchema, 0, 0, 0, 0, 0);
 
     ageColumnSchema = new ColumnSchema();
     ageColumnSchema.setColumnName("ageNameCol");
+    ageColumnSchema.setDataType(DataTypes.SHORT_INT);
     ageColumnSchema.setColumnUniqueId("ageNameCol");
     ageColumnSchema.setDimensionColumn(true);
     ageColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));

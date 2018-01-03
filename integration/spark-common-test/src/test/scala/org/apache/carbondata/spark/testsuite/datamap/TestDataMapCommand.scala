@@ -17,6 +17,7 @@
 
 package org.apache.carbondata.spark.testsuite.datamap
 
+import org.apache.spark.sql.Row
 import org.apache.spark.sql.test.util.QueryTest
 import org.scalatest.BeforeAndAfterAll
 
@@ -25,6 +26,8 @@ import org.apache.carbondata.core.metadata.CarbonMetadata
 import org.apache.carbondata.core.util.CarbonProperties
 
 class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
+
+  val testData = s"$resourcesPath/sample.csv"
 
   override def beforeAll {
     sql("drop table if exists datamaptest")
@@ -188,8 +191,27 @@ class TestDataMapCommand extends QueryTest with BeforeAndAfterAll {
     checkExistence(frame, true, "datamap2", "(NA)", "new.class")
   }
 
+  test("test if preaggregate load is successfull for hivemetastore") {
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE, "true")
+    sql("DROP TABLE IF EXISTS maintable")
+    sql(
+      """
+        | CREATE TABLE maintable(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(
+      s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id,sum(age) from maintable group by id"""
+        .stripMargin)
+    sql(s"LOAD DATA LOCAL INPATH '$testData' into table maintable")
+    checkAnswer(sql(s"select * from maintable_preagg_sum"),
+      Seq(Row(1, 31), Row(2, 27), Row(3, 70), Row(4, 55)))
+  }
+
 
   override def afterAll {
+    sql("DROP TABLE IF EXISTS maintable")
+    CarbonProperties.getInstance().addProperty(CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE,
+      CarbonCommonConstants.ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT)
     sql("drop table if exists datamaptest")
     sql("drop table if exists datamapshowtest")
   }

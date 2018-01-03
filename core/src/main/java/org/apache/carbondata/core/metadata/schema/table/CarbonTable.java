@@ -34,6 +34,7 @@ import org.apache.carbondata.core.metadata.schema.table.column.CarbonImplicitDim
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 import org.apache.carbondata.core.util.CarbonUtil;
+import org.apache.carbondata.core.util.DataTypeUtil;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
@@ -133,10 +134,41 @@ public class CarbonTable implements Serializable {
   }
 
   /**
+   * During creation of TableInfo from hivemetastore the DataMapSchemas and the columns
+   * DataTypes are not converted to the appropriate child classes.
+   *
+   * This method will cast the same to the appropriate classes
+   *
+   * @param tableInfo
+   */
+  private static void updateTableInfo(TableInfo tableInfo) {
+    List<DataMapSchema> dataMapSchemas = new ArrayList<>();
+    for (DataMapSchema dataMapSchema : tableInfo.getDataMapSchemaList()) {
+      DataMapSchema newDataMapSchema = DataMapSchemaFactory.INSTANCE
+          .getDataMapSchema(dataMapSchema.getDataMapName(), dataMapSchema.getClassName());
+      newDataMapSchema.setChildSchema(dataMapSchema.getChildSchema());
+      newDataMapSchema.setProperties(dataMapSchema.getProperties());
+      newDataMapSchema.setRelationIdentifier(dataMapSchema.getRelationIdentifier());
+      dataMapSchemas.add(newDataMapSchema);
+    }
+    tableInfo.setDataMapSchemaList(dataMapSchemas);
+    for (ColumnSchema columnSchema : tableInfo.getFactTable().getListOfColumns()) {
+      columnSchema.setDataType(DataTypeUtil.valueOf(columnSchema.getDataType().getName()));
+    }
+    if (tableInfo.getFactTable().getBucketingInfo() != null) {
+      for (ColumnSchema columnSchema : tableInfo.getFactTable()
+          .getBucketingInfo().getListOfColumns()) {
+        columnSchema.setDataType(DataTypeUtil.valueOf(columnSchema.getDataType().getName()));
+      }
+    }
+  }
+
+  /**
    * @param tableInfo
    */
   public static CarbonTable buildFromTableInfo(TableInfo tableInfo) {
     CarbonTable table = new CarbonTable();
+    updateTableInfo(tableInfo);
     table.tableInfo = tableInfo;
     table.blockSize = tableInfo.getTableBlockSizeInMB();
     table.tableLastUpdatedTime = tableInfo.getLastUpdatedTime();

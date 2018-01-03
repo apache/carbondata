@@ -770,6 +770,14 @@ public final class DataTypeUtil {
       return DataTypes.BYTE_ARRAY;
     } else if (DataTypes.BYTE_ARRAY.getName().equalsIgnoreCase(name)) {
       return DataTypes.BYTE_ARRAY;
+    } else if (name.equalsIgnoreCase("decimal")) {
+      return DataTypes.createDefaultDecimalType();
+    } else if (name.equalsIgnoreCase("array")) {
+      return DataTypes.createDefaultArrayType();
+    } else if (name.equalsIgnoreCase("struct")) {
+      return DataTypes.createDefaultStructType();
+    } else if (name.equalsIgnoreCase("map")) {
+      return DataTypes.createDefaultMapType();
     } else {
       throw new RuntimeException("create DataType with invalid name: " + name);
     }
