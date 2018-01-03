@@ -23,6 +23,7 @@ import java.util.Arrays;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.dictionary.generator.key.DictionaryMessage;
 import org.apache.carbondata.core.metadata.CarbonMetadata;
+import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.encoder.Encoding;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.TableInfo;
@@ -60,6 +61,7 @@ public class ServerDictionaryGeneratorTest {
     // Create two column schemas and dimensions for the table
     empColumnSchema = new ColumnSchema();
     empColumnSchema.setColumnName("empNameCol");
+    empColumnSchema.setDataType(DataTypes.STRING);
     empColumnSchema.setColumnUniqueId("empNameCol");
     empColumnSchema.setDimensionColumn(true);
     empColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
@@ -68,6 +70,7 @@ public class ServerDictionaryGeneratorTest {
     ageColumnSchema = new ColumnSchema();
     ageColumnSchema.setColumnName("empNameCol");
     ageColumnSchema.setColumnUniqueId("empNameCol");
+    ageColumnSchema.setDataType(DataTypes.SHORT_INT);
     ageColumnSchema.setDimensionColumn(true);
     ageColumnSchema.setEncodingList(Arrays.asList(Encoding.DICTIONARY));
     ageDimension = new CarbonDimension(ageColumnSchema, 0, 0, 0, 0, 0);
