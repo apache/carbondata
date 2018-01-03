@@ -112,10 +112,7 @@ public class CarbonRowDataWriterProcessorStepImpl extends AbstractDataLoadProces
       isNoDictionaryDimensionColumn =
           CarbonDataProcessorUtil.getNoDictionaryMapping(configuration.getDataFields());
       measureDataType = configuration.getMeasureDataType();
-      CarbonFactDataHandlerModel dataHandlerModel = CarbonFactDataHandlerModel
-          .createCarbonFactDataHandlerModel(configuration,
-              getStoreLocation(tableIdentifier, String.valueOf(0)), 0, 0);
-      measureCount = dataHandlerModel.getMeasureCount();
+      measureCount = configuration.getMeasureCount();
       outputLength = measureCount + (this.noDictWithComplextCount > 0 ? 1 : 0) + 1;
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
           .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
