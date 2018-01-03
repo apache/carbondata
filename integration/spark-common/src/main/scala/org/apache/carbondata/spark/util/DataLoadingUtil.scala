@@ -209,7 +209,8 @@ object DataLoadingUtil {
     val optionsFinal = getDataLoadingOptions(carbonProperty, options.asScala.toMap)
     optionsFinal.put("sort_scope", "no_sort")
     if (!options.containsKey("fileheader")) {
-      val csvHeader = table.getCreateOrderColumn(table.getTableName).asScala.map(_.getColName).mkString(",")
+      val csvHeader = table.getCreateOrderColumn(table.getTableName)
+        .asScala.map(_.getColName).mkString(",")
       optionsFinal.put("fileheader", csvHeader)
     }
     val model = new CarbonLoadModel()
