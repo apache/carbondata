@@ -517,7 +517,7 @@ public class BlockletDataMap implements DataMap, Cacheable {
             CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
         boolean isValid =
             addBlockBasedOnMinMaxValue(filterExecuter, getMinMaxValue(unsafeRow, MAX_VALUES_INDEX),
-                getMinMaxValue(unsafeRow, MIN_VALUES_INDEX), filePath);
+                getMinMaxValue(unsafeRow, MIN_VALUES_INDEX), filePath, startIndex);
         if (isValid) {
           blocklets.add(createBlocklet(unsafeRow, startIndex));
         }
@@ -557,13 +557,15 @@ public class BlockletDataMap implements DataMap, Cacheable {
    * @param maxValue
    * @param minValue
    * @param filePath
+   * @param blockletId
    * @return
    */
   private boolean addBlockBasedOnMinMaxValue(FilterExecuter filterExecuter, byte[][] maxValue,
-      byte[][] minValue, String filePath) {
+      byte[][] minValue, String filePath, int blockletId) {
     BitSet bitSet = null;
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
-      String uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
+      String uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1)
+          + CarbonCommonConstants.FILE_SEPARATOR + blockletId;
       bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
           .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath);
     } else {
