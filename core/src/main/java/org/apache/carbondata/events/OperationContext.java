@@ -16,6 +16,7 @@
  */
 package org.apache.carbondata.events;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,7 +24,9 @@ import java.util.Map;
  * One OperationContext per one operation.
  * OperationContext active till operation execution completes
  */
-public class OperationContext {
+public class OperationContext implements Serializable {
+
+  private static final long serialVersionUID = -8808813829717624986L;
 
   private Map<String, Object> operationProperties = new HashMap<String, Object>();
 

@@ -58,10 +58,11 @@ import org.apache.carbondata.core.scan.partition.PartitionUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{ByteUtil, CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.events.{LoadTablePostExecutionEvent, LoadTablePreStatusUpdateEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.FailureCauses
 import org.apache.carbondata.processing.loading.csvinput.{BlockDetails, CSVInputFormat, StringArrayWritable}
+import org.apache.carbondata.processing.loading.events.LoadEvents.LoadTablePreStatusUpdateEvent
 import org.apache.carbondata.processing.loading.exception.{CarbonDataLoadingException, NoRetryException}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.loading.sort.SortScopeOptions
@@ -527,11 +528,9 @@ object CarbonDataRDDFactory {
 
       writeDictionary(carbonLoadModel, result, writeAll = false)
       val loadTablePreStatusUpdateEvent: LoadTablePreStatusUpdateEvent =
-        LoadTablePreStatusUpdateEvent(
-        sqlContext.sparkSession,
+        new LoadTablePreStatusUpdateEvent(
         carbonTable.getCarbonTableIdentifier,
         carbonLoadModel)
-      operationContext.setProperty("isOverwrite", overwriteTable)
       OperationListenerBus.getInstance().fireEvent(loadTablePreStatusUpdateEvent, operationContext)
       val done =
         updateTableStatus(
