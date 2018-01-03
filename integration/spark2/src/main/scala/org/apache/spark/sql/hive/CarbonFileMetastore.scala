@@ -80,8 +80,6 @@ class CarbonFileMetastore extends CarbonMetaStore {
   tableModifiedTimeStore
     .put(CarbonCommonConstants.DATABASE_DEFAULT_NAME, System.currentTimeMillis())
 
-  private val nextId = new AtomicLong(0)
-
   def nextQueryId: String = {
     System.nanoTime() + ""
   }
@@ -201,7 +199,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
     try {
       lookupRelation(tableIdentifier)(sparkSession)
     } catch {
-      case e: Exception =>
+      case _: Exception =>
         return false
     }
     true
@@ -418,7 +416,7 @@ class CarbonFileMetastore extends CarbonMetaStore {
       val fileType = FileFactory.getFileType(tablePath)
       FileFactory.isFileExist(tablePath, fileType)
     } catch {
-      case e: Exception =>
+      case _: Exception =>
        false
     }
   }

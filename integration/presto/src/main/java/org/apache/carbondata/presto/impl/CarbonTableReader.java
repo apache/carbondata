@@ -227,9 +227,7 @@ public class CarbonTableReader {
     }
 
     requireNonNull(schemaTableName, "schemaTableName is null");
-    CarbonTable table = loadTableMetadata(schemaTableName);
-
-    return table;
+    return loadTableMetadata(schemaTableName);
   }
 
   /**

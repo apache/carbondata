@@ -321,12 +321,4 @@ object DeleteExecution {
     FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getTablePath))
     (carbonInputFormat, job)
   }
-
-  private def createCarbonInputFormat[V: ClassTag](absoluteTableIdentifier: AbsoluteTableIdentifier,
-      conf: Configuration) : CarbonTableInputFormat[V] = {
-    val carbonInputFormat = new CarbonTableInputFormat[V]()
-    val job: Job = new Job(conf)
-    FileInputFormat.addInputPath(job, new Path(absoluteTableIdentifier.getTablePath))
-    carbonInputFormat
-  }
 }

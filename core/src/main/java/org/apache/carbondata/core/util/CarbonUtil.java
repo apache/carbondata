@@ -1998,8 +1998,7 @@ public final class CarbonUtil {
    * @return
    */
   public static Map<String, String> removeSchemaFromMap(Map<String, String> properties) {
-    Map<String, String> newMap = new HashMap<>();
-    newMap.putAll(properties);
+    Map<String, String> newMap = new HashMap<>(properties);
     String partsNo = newMap.get("carbonSchemaPartsNo");
     if (partsNo == null) {
       return newMap;

@@ -98,7 +98,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
           try {
             compactionType = CompactionType.valueOf(altertablemodel.compactionType.toUpperCase)
           } catch {
-            case _ =>
+            case _: Exception =>
               throw new MalformedCarbonCommandException(
                 "Unsupported alter operation on carbon table")
           }

@@ -369,7 +369,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     // map to maintain attribute reference present in the filter to timeseries function
     // if applied this is added to avoid duplicate column
     val mapOfColumnSeriesFun = scala.collection.mutable.HashMap.empty[AttributeReference, String]
-    var isValidPlan = true
+    val isValidPlan = true
     filterExp.transform {
       case attr: AttributeReference =>
         if (!mapOfColumnSeriesFun.get(attr).isDefined) {

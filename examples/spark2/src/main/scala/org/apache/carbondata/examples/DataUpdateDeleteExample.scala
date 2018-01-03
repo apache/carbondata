@@ -36,9 +36,8 @@ object DataUpdateDeleteExample {
     // for hdfs files
     // var rootPath = "hdfs://hdfs-host/carbon"
 
-    var storeLocation = s"$rootPath/examples/spark2/target/store"
-    var warehouse = s"$rootPath/examples/spark2/target/warehouse"
-    var metastoredb = s"$rootPath/examples/spark2/target"
+    val storeLocation = s"$rootPath/examples/spark2/target/store"
+    val warehouse = s"$rootPath/examples/spark2/target/warehouse"
 
     import org.apache.spark.sql.CarbonSession._
     val spark = SparkSession
@@ -61,7 +60,7 @@ object DataUpdateDeleteExample {
     spark.sql("DROP TABLE IF EXISTS t5")
 
      // Simulate data and write to table t3
-    var sdf = new SimpleDateFormat("yyyy-MM-dd")
+    val sdf = new SimpleDateFormat("yyyy-MM-dd")
     var df = spark.sparkContext.parallelize(1 to 10)
       .map(x => (x, new java.sql.Date(sdf.parse("2015-07-" + (x % 10 + 10)).getTime),
         "china", "aaa" + x, "phone" + 555 * x, "ASD" + (60000 + x), 14999 + x))
@@ -153,7 +152,7 @@ object DataUpdateDeleteExample {
            """).show()
 
     // 5.Delete data WHERE id in (1, 2, $key)
-    var key = 3
+    val key = 3
     spark.sql(s"""
            DELETE FROM t3 WHERE t3_id in (1, 2, $key)
            """).show()

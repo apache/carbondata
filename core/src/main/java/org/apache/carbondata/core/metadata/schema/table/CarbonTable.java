@@ -164,18 +164,11 @@ public class CarbonTable implements Serializable {
     List<CarbonColumn> columns = new ArrayList<CarbonColumn>();
     List<CarbonDimension> dimensions = this.tableDimensionsMap.get(tableName);
     List<CarbonMeasure> measures = this.tableMeasuresMap.get(tableName);
-    Iterator<CarbonDimension> dimItr = dimensions.iterator();
-    while (dimItr.hasNext()) {
-      columns.add(dimItr.next());
-    }
-    Iterator<CarbonMeasure> msrItr = measures.iterator();
-    while (msrItr.hasNext()) {
-      columns.add(msrItr.next());
-    }
+    columns.addAll(dimensions);
+    columns.addAll(measures);
     Collections.sort(columns, new Comparator<CarbonColumn>() {
 
       @Override public int compare(CarbonColumn o1, CarbonColumn o2) {
-
         return Integer.compare(o1.getSchemaOrdinal(), o2.getSchemaOrdinal());
       }
 

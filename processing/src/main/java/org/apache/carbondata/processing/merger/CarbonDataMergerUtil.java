@@ -978,9 +978,7 @@ public final class CarbonDataMergerUtil {
         for (String segName : deleteSegments) {
           List<String> tempSegments = getDeleteDeltaFilesInSeg(segName, segmentUpdateStatusManager,
               numberDeleteDeltaFilesThreshold);
-          for (String tempSeg : tempSegments) {
-            validSegments.add(tempSeg);
-          }
+          validSegments.addAll(tempSegments);
         }
       }
     } else if (CompactionType.IUD_UPDDEL_DELTA == compactionTypeIUD) {

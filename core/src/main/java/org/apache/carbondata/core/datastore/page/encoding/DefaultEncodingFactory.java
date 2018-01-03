@@ -86,8 +86,7 @@ public class DefaultEncodingFactory extends EncodingFactory {
     }
   }
 
-  private ColumnPageEncoder createEncoderForDimensionLegacy(TableSpec.DimensionSpec columnSpec) {
-    TableSpec.DimensionSpec dimensionSpec = columnSpec;
+  private ColumnPageEncoder createEncoderForDimensionLegacy(TableSpec.DimensionSpec dimensionSpec) {
     Compressor compressor = CompressorFactory.getInstance().getCompressor();
     switch (dimensionSpec.getColumnType()) {
       case GLOBAL_DICTIONARY:

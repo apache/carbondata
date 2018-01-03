@@ -287,7 +287,6 @@ object StreamHandoffRDD {
       sparkSession: SparkSession,
       handoffSegmenId: String
   ): Unit = {
-    val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     var loadStatus = SegmentStatus.SUCCESS
     var errorMessage: String = "Handoff failure"
     try {
@@ -313,7 +312,7 @@ object StreamHandoffRDD {
         }
       }
     } catch {
-      case ex =>
+      case ex: Exception =>
         loadStatus = SegmentStatus.LOAD_FAILURE
         errorMessage = errorMessage + ": " + ex.getCause.getMessage
         LOGGER.error(errorMessage)
