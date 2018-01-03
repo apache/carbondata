@@ -203,8 +203,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   private static DataMapJob getDataMapJob(Configuration configuration) throws IOException {
     String jobString = configuration.get(DATA_MAP_DSTR);
     if (jobString != null) {
-      DataMapJob dataMapJob = (DataMapJob) ObjectSerializationUtil.convertStringToObject(jobString);
-      return dataMapJob;
+      return (DataMapJob) ObjectSerializationUtil.convertStringToObject(jobString);
     }
     return null;
   }
@@ -450,8 +449,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
    */
   private List<String> getFilteredSegment(JobContext job, List<String> validSegments) {
     String[] segmentsToAccess = getSegmentsToAccess(job);
-    Set<String> segmentToAccessSet = new HashSet<>();
-    segmentToAccessSet.addAll(Arrays.asList(segmentsToAccess));
+    Set<String> segmentToAccessSet = new HashSet<>(Arrays.asList(segmentsToAccess));
     List<String> filteredSegmentToAccess = new ArrayList<>();
     if (segmentsToAccess.length == 0 || segmentsToAccess[0].equalsIgnoreCase("*")) {
       filteredSegmentToAccess.addAll(validSegments);
@@ -462,8 +460,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
         }
       }
       if (!filteredSegmentToAccess.containsAll(segmentToAccessSet)) {
-        List<String> filteredSegmentToAccessTemp = new ArrayList<>();
-        filteredSegmentToAccessTemp.addAll(filteredSegmentToAccess);
+        List<String> filteredSegmentToAccessTemp = new ArrayList<>(filteredSegmentToAccess);
         filteredSegmentToAccessTemp.removeAll(segmentToAccessSet);
         LOG.info(
             "Segments ignored are : " + Arrays.toString(filteredSegmentToAccessTemp.toArray()));

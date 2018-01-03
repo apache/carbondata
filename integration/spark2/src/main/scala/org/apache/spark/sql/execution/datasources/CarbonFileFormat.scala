@@ -73,7 +73,7 @@ with Serializable {
       "spark.sql.sources.commitProtocolClass",
       "org.apache.spark.sql.execution.datasources.CarbonSQLHadoopMapReduceCommitProtocol")
     job.setOutputFormatClass(classOf[CarbonTableOutputFormat])
-    var table = CarbonEnv.getCarbonTable(
+    val table = CarbonEnv.getCarbonTable(
       TableIdentifier(options("tableName"), options.get("dbName")))(sparkSession)
     val model = new CarbonLoadModel
     val carbonProperty = CarbonProperties.getInstance()

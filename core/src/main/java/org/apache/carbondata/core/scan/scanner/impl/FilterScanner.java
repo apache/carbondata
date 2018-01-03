@@ -96,8 +96,7 @@ public class FilterScanner extends AbstractBlockletScanner {
    */
   @Override public AbstractScannedResult scanBlocklet(BlocksChunkHolder blocksChunkHolder)
       throws IOException, FilterUnsupportedException {
-    AbstractScannedResult result = fillScannedResult(blocksChunkHolder);
-    return result;
+    return fillScannedResult(blocksChunkHolder);
   }
 
   @Override public boolean isScanRequired(BlocksChunkHolder blocksChunkHolder) throws IOException {

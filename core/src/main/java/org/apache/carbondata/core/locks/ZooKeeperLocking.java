@@ -127,20 +127,11 @@ public class ZooKeeperLocking extends AbstractCarbonLock {
    * @throws InterruptedException
    */
   private void createRecursivly(String path) throws KeeperException, InterruptedException {
-    try {
-      if (zk.exists(path, true) == null && path.length() > 0) {
-        String temp = path.substring(0, path.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
-        createRecursivly(temp);
-        zk.create(path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
-      } else {
-        return;
-      }
-    } catch (KeeperException e) {
-      throw e;
-    } catch (InterruptedException e) {
-      throw e;
+    if (zk.exists(path, true) == null && path.length() > 0) {
+      String temp = path.substring(0, path.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
+      createRecursivly(temp);
+      zk.create(path, null, Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
     }
-
   }
   /**
    * Handling of the locking mechanism using zoo keeper.

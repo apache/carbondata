@@ -335,7 +335,7 @@ object AlterTableUtil {
     LOGGER.audit(s"Alter table properties request has been received for $dbName.$tableName")
     val locksToBeAcquired = List(LockUsage.METADATA_LOCK, LockUsage.COMPACTION_LOCK)
     var locks = List.empty[ICarbonLock]
-    var timeStamp = 0L
+    val timeStamp = 0L
     var carbonTable: CarbonTable = null
     try {
       locks = AlterTableUtil

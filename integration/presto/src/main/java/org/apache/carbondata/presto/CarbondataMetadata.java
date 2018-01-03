@@ -55,8 +55,7 @@ public class CarbondataMetadata implements ConnectorMetadata {
   }
 
   public List<String> listSchemaNamesInternal() {
-    List<String> schemaNameList = carbonTableReader.getSchemaNames();;
-    return schemaNameList;
+    return carbonTableReader.getSchemaNames();
   }
 
   @Override

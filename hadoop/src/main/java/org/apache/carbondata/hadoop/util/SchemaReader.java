@@ -75,9 +75,10 @@ public class SchemaReader {
         new ThriftWrapperSchemaConverterImpl();
     CarbonTableIdentifier carbonTableIdentifier =
         absoluteTableIdentifier.getCarbonTableIdentifier();
-    TableInfo tableInfo = thriftWrapperSchemaConverter
-        .fromExternalToWrapperTableInfo(thriftTableInfo, carbonTableIdentifier.getDatabaseName(),
-            carbonTableIdentifier.getTableName(), absoluteTableIdentifier.getTablePath());
-    return tableInfo;
+    return thriftWrapperSchemaConverter.fromExternalToWrapperTableInfo(
+        thriftTableInfo,
+        carbonTableIdentifier.getDatabaseName(),
+        carbonTableIdentifier.getTableName(),
+        absoluteTableIdentifier.getTablePath());
   }
 }

@@ -40,9 +40,6 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
  */
 
 object CarbonReflectionUtils {
-
-  private val LOGGER = LogServiceFactory.getLogService(this.getClass.getCanonicalName)
-
   private val rm = universe.runtimeMirror(getClass.getClassLoader)
 
   /**

@@ -60,7 +60,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
         relation
       } else if (SPARK_VERSION.startsWith("2.2")) {
         alias match {
-          case Some(a) =>
+          case Some(_) =>
             CarbonReflectionUtils.getSubqueryAlias(
               sparkSession,
               alias,
@@ -92,13 +92,13 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
           attr match {
             case UnresolvedAlias(child22, _) =>
               UnresolvedAlias(Alias(child22, col + "-updatedColumn")())
-            case UnresolvedAttribute(param) =>
+            case UnresolvedAttribute(_) =>
               UnresolvedAlias(Alias(attr, col + "-updatedColumn")())
             case _ => attr
           }
         }
         val tableName: Option[Seq[String]] = alias match {
-          case Some(a) => Some(alias.toSeq)
+          case Some(_) => Some(alias.toSeq)
           case _ => Some(Seq(child.asInstanceOf[UnresolvedRelation].tableIdentifier.table.toString))
         }
         val list = Seq(
@@ -175,7 +175,7 @@ case class CarbonIUDAnalysisRule(sparkSession: SparkSession) extends Rule[Logica
           Project(projList, relation)
         } else if (SPARK_VERSION.startsWith("2.2")) {
           alias match {
-            case Some(a) =>
+            case Some(_) =>
               val subqueryAlias = CarbonReflectionUtils.getSubqueryAlias(
                 sparkSession,
                 alias,

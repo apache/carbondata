@@ -212,8 +212,8 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
             val relation : UnresolvedRelation = tab._1 match {
               case r@CarbonUnresolvedRelation(tableIdentifier) =>
                 tab._3 match {
-                  case Some(a) => (updateRelation(r, tableIdentifier, tab._4, Some(tab._3.get)))
-                  case None => (updateRelation(r, tableIdentifier, tab._4, None))
+                  case Some(a) => updateRelation(r, tableIdentifier, tab._4, Some(tab._3.get))
+                  case None => updateRelation(r, tableIdentifier, tab._4, None)
                 }
               case _ => tab._1
             }

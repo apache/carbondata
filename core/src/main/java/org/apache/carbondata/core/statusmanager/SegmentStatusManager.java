@@ -165,14 +165,7 @@ public class SegmentStatusManager {
       LOG.error(e);
       throw e;
     } finally {
-      try {
-        if (null != dataInputStream) {
-          dataInputStream.close();
-        }
-      } catch (Exception e) {
-        LOG.error(e);
-        throw e;
-      }
+      CarbonUtil.closeStreams(dataInputStream);
     }
     return new ValidAndInvalidSegmentsInfo(listOfValidSegments, listOfValidUpdatedSegments,
             listOfInvalidSegments, listOfStreamSegments);

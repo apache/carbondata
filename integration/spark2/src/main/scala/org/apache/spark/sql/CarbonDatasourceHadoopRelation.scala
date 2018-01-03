@@ -45,7 +45,7 @@ case class CarbonDatasourceHadoopRelation(
     isSubquery: ArrayBuffer[Boolean] = new ArrayBuffer[Boolean]())
   extends BaseRelation with InsertableRelation {
 
-  var caseInsensitiveMap = parameters.map(f => (f._1.toLowerCase, f._2))
+  val caseInsensitiveMap: Map[String, String] = parameters.map(f => (f._1.toLowerCase, f._2))
   lazy val identifier: AbsoluteTableIdentifier = AbsoluteTableIdentifier.from(
     paths.head,
     CarbonEnv.getDatabaseName(caseInsensitiveMap.get("dbname"))(sparkSession),

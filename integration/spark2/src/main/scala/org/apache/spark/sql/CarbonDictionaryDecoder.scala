@@ -454,7 +454,7 @@ object CarbonDictionaryDecoder {
 
   def isRequiredToDecode(colIdents: Array[(String, ColumnIdentifier, CarbonDimension)]): Boolean = {
     colIdents.find(p => p._1 != null) match {
-      case Some(value) => true
+      case Some(_) => true
       case _ => false
     }
   }
