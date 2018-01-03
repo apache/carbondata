@@ -17,6 +17,8 @@
 
 package org.apache.spark.sql.optimizer
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.expressions._
 import org.apache.spark.sql.execution.CastExpressionOptimization
@@ -26,12 +28,14 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.hive.CarbonSessionCatalog
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.PartitionMapFileStore
 import org.apache.carbondata.core.metadata.datatype.{DataTypes => CarbonDataTypes}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.scan.expression.{ColumnExpression => CarbonColumnExpression, Expression => CarbonExpression, LiteralExpression => CarbonLiteralExpression}
 import org.apache.carbondata.core.scan.expression.conditional._
 import org.apache.carbondata.core.scan.expression.logical.{AndExpression, FalseExpression, OrExpression}
-import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.core.util.{CarbonProperties, ThreadLocalSessionInfo}
+import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.spark.CarbonAliasDecoderRelation
 import org.apache.carbondata.spark.util.CarbonScalaUtil
 
@@ -418,6 +422,11 @@ object CarbonFilters {
   def getPartitions(partitionFilters: Seq[Expression],
       sparkSession: SparkSession,
       identifier: TableIdentifier): Seq[String] = {
+    // first try to read partitions in case if the trigger comes from the aggregation table load.
+    val partitionsForAggTable = getPartitionsForAggTable(sparkSession, identifier)
+    if (partitionsForAggTable.isDefined) {
+      return partitionsForAggTable.get
+    }
     val partitions = {
       try {
         if (CarbonProperties.getInstance().
@@ -446,6 +455,38 @@ object CarbonFilters {
     partitions.toList.flatMap { partition =>
       partition.spec.seq.map{case (column, value) => column + "=" + value}
     }.toSet.toSeq
+  }
+
+  /**
+   * In case of loading aggregate tables it needs to be get only from the main table load in
+   * progress segment. So we should read from the partition map file of that segment.
+   */
+  def getPartitionsForAggTable(sparkSession: SparkSession,
+      identifier: TableIdentifier): Option[Seq[String]] = {
+    // when validate segments is disabled then only read from partitionmap
+    val carbonSessionInfo = ThreadLocalSessionInfo.getCarbonSessionInfo
+    if (carbonSessionInfo != null) {
+      val validateSegments = carbonSessionInfo.getSessionParams
+        .getProperty(CarbonCommonConstants.VALIDATE_CARBON_INPUT_SEGMENTS +
+                     CarbonEnv.getDatabaseName(identifier.database)(sparkSession) + "." +
+                     identifier.table, "true").toBoolean
+      if (!validateSegments) {
+        val segmentNumbersFromProperty = CarbonProperties.getInstance
+          .getProperty(CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
+                       CarbonEnv.getDatabaseName(identifier.database)(sparkSession)
+                       + "." + identifier.table)
+        val carbonTable = CarbonEnv.getCarbonTable(identifier)(sparkSession)
+        val segmentPath =
+          CarbonTablePath.getSegmentPath(carbonTable.getTablePath, segmentNumbersFromProperty)
+        val partitionMapper = new PartitionMapFileStore()
+        partitionMapper.readAllPartitionsOfSegment(segmentPath)
+        Some(partitionMapper.getPartitionMap.asScala.map(_._2).flatMap(_.asScala).toSet.toSeq)
+      } else {
+        None
+      }
+    } else {
+      None
+    }
   }
 
 

@@ -32,6 +32,10 @@ import org.apache.carbondata.core.statusmanager.SegmentStatusManager;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.core.writer.CarbonIndexFileMergeWriter;
+import org.apache.carbondata.events.OperationContext;
+import org.apache.carbondata.events.OperationListenerBus;
+import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
+import org.apache.carbondata.processing.loading.events.LoadEvents;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 import org.apache.carbondata.processing.util.CarbonLoaderUtil;
 
@@ -94,6 +98,22 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     long segmentSize = CarbonLoaderUtil
         .addDataIndexSizeIntoMetaEntry(newMetaEntry, loadModel.getSegmentId(), carbonTable);
     if (segmentSize > 0) {
+      String operationContextStr =
+          context.getConfiguration().get(
+              CarbonTableOutputFormat.OPERATION_CONTEXT,
+              null);
+      if (operationContextStr != null) {
+        OperationContext operationContext =
+            (OperationContext) ObjectSerializationUtil.convertStringToObject(operationContextStr);
+        LoadEvents.LoadTablePreStatusUpdateEvent event =
+            new LoadEvents.LoadTablePreStatusUpdateEvent(carbonTable.getCarbonTableIdentifier(),
+                loadModel);
+        try {
+          OperationListenerBus.getInstance().fireEvent(event, operationContext);
+        } catch (Exception e) {
+          throw new IOException(e);
+        }
+      }
       CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, overwriteSet);
       mergeCarbonIndexFiles(segmentPath);
       String updateTime =

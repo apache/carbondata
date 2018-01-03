@@ -21,6 +21,7 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 
 import org.apache.spark.sql.CarbonEnv
+import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.AlterTableModel
 import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompactionCommand
@@ -28,6 +29,7 @@ import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompact
 import org.apache.carbondata.core.metadata.schema.table.AggregationDataMapSchema
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 
 object LoadPostAggregateListener extends OperationEventListener {
   /**
@@ -37,8 +39,8 @@ object LoadPostAggregateListener extends OperationEventListener {
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     val loadEvent = event.asInstanceOf[LoadTablePreStatusUpdateEvent]
-    val sparkSession = loadEvent.sparkSession
-    val carbonLoadModel = loadEvent.carbonLoadModel
+    val sparkSession = SparkSession.getActiveSession.get
+    val carbonLoadModel = loadEvent.getCarbonLoadModel
     val table = CarbonEnv.getCarbonTable(Option(carbonLoadModel.getDatabaseName),
       carbonLoadModel.getTableName)(sparkSession)
     if (CarbonUtil.hasAggregationDataMap(table)) {
@@ -126,7 +128,7 @@ object LoadPreAggregateTablePreListener extends OperationEventListener {
    */
   override def onEvent(event: Event, operationContext: OperationContext): Unit = {
     val loadEvent = event.asInstanceOf[LoadTablePreExecutionEvent]
-    val carbonLoadModel = loadEvent.carbonLoadModel
+    val carbonLoadModel = loadEvent.getCarbonLoadModel
     val table = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     val isInternalLoadCall = carbonLoadModel.isAggLoadRequest
     if (table.isChildDataMap && !isInternalLoadCall) {
