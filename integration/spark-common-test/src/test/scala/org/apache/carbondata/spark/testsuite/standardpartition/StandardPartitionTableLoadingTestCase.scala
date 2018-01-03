@@ -16,6 +16,9 @@
  */
 package org.apache.carbondata.spark.testsuite.standardpartition
 
+import java.io.{File, IOException}
+
+import org.apache.commons.io.FileUtils
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{AnalysisException, Row}
 import org.scalatest.BeforeAndAfterAll
@@ -325,6 +328,71 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     checkAnswer(sql(s"select count(*) from emp1"), rows)
   }
 
+  test("test restore partition table") {
+    sql(
+      """
+        | CREATE TABLE restorepartition (doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (empno int, empname String, designation String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE restorepartition""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE restorepartition PARTITION(empno='99', empname='ravi', designation='xx')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE restorepartition PARTITION(empno='100', empname='indra', designation='yy')""")
+    val rows = sql("select count(*) from restorepartition").collect()
+    val partitions = sql("show partitions restorepartition").collect()
+    val table = CarbonMetadata.getInstance().getCarbonTable("default_restorepartition")
+    val dblocation = table.getTablePath.substring(0, table.getTablePath.lastIndexOf("/"))
+    backUpData(dblocation, "restorepartition")
+    sql("drop table restorepartition")
+    restoreData(dblocation, "restorepartition")
+    sql("refresh table restorepartition")
+    checkAnswer(sql("select count(*) from restorepartition"), rows)
+    checkAnswer(sql("show partitions restorepartition"), partitions)
+  }
+
+  test("test case sensitive on partition columns") {
+    sql(
+      """
+        | CREATE TABLE casesensitivepartition (doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (empNo int, empName String, designation String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE casesensitivepartition""")
+    checkAnswer(sql("select * from  casesensitivepartition where empNo=17"),
+      sql("select * from  casesensitivepartition where empno=17"))
+  }
+
+  def restoreData(dblocation: String, tableName: String) = {
+    val destination = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    val source = dblocation+ "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    try {
+      FileUtils.copyDirectory(new File(source), new File(destination))
+      FileUtils.deleteDirectory(new File(source))
+    } catch {
+      case e : Exception =>
+        throw new IOException("carbon table data restore failed.")
+    } finally {
+
+    }
+  }
+  def backUpData(dblocation: String, tableName: String) = {
+    val source = dblocation + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    val destination = dblocation+ "_back" + CarbonCommonConstants.FILE_SEPARATOR + tableName
+    try {
+      FileUtils.copyDirectory(new File(source), new File(destination))
+    } catch {
+      case e : Exception =>
+        throw new IOException("carbon table data backup failed.", e)
+    }
+  }
+
 
   override def afterAll = {
     dropTable
@@ -347,6 +415,8 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table if exists loadstaticpartitiononeissue")
     sql("drop table if exists loadpartitionwithspecialchar")
     sql("drop table if exists emp1")
+    sql("drop table if exists restorepartition")
+    sql("drop table if exists casesensitivepartition")
   }
 
 }

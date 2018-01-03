@@ -22,16 +22,20 @@ import java.util
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql._
-import org.apache.spark.sql.execution.command.MetadataCommand
+import org.apache.spark.sql.catalyst.TableIdentifier
+import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
+import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, MetadataCommand}
 import org.apache.spark.sql.execution.command.table.CarbonCreateTableCommand
 import org.apache.spark.sql.util.CarbonException
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
+import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier, PartitionMapFileStore}
+import org.apache.carbondata.core.metadata.schema.partition.PartitionType
 import org.apache.carbondata.core.metadata.schema.table.{DataMapSchema, TableInfo}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.events.{OperationContext, OperationListenerBus, RefreshTablePostExecutionEvent, RefreshTablePreExecutionEvent}
 import org.apache.carbondata.hadoop.util.SchemaReader
 
@@ -91,6 +95,11 @@ case class RefreshCarbonTableCommand(
           registerAggregates(databaseName, dataMapSchemaList)(sparkSession)
         }
         registerTableWithHive(databaseName, tableName, tableInfo)(sparkSession)
+        // Register partitions to hive metastore in case of hive partitioning carbon table
+        if (tableInfo.getFactTable.getPartitionInfo != null &&
+            tableInfo.getFactTable.getPartitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
+          registerAllPartitionsToHive(tablePath, databaseName, tableName, sparkSession)
+        }
       } else {
         LOGGER.audit(
           s"Table registration with Database name [$databaseName] and Table name [$tableName] " +
@@ -204,5 +213,42 @@ case class RefreshCarbonTableCommand(
         registerTableWithHive(dbName, tableName, tableInfo)(sparkSession)
       }
     })
+  }
+
+  /**
+   * Read all the partition information which is stored in each segment and add to
+   * the hive metastore
+   */
+  private def registerAllPartitionsToHive(
+      tablePath: String,
+      dbName: String,
+      tableName: String,
+      sparkSession: SparkSession): Unit = {
+    val metadataDetails =
+      SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath))
+    // First read all partition information from each segment.
+    val allpartitions = metadataDetails.map{ metadata =>
+      if (metadata.getSegmentStatus == SegmentStatus.SUCCESS ||
+          metadata.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
+        val mapper = new PartitionMapFileStore()
+        mapper.readAllPartitionsOfSegment(
+          CarbonTablePath.getSegmentPath(tablePath, metadata.getLoadName))
+        Some(mapper.getPartitionMap.values().asScala)
+      } else {
+        None
+      }
+    }.filter(_.isDefined).map(_.get)
+    val identifier = TableIdentifier(tableName, Some(dbName))
+    // Register the partition information to the hive metastore
+    allpartitions.foreach { segPartitions =>
+      val specs: Seq[TablePartitionSpec] = segPartitions.map { indexPartitions =>
+        indexPartitions.asScala.map{ p =>
+          val spec = p.split("=")
+          (spec(0), spec(1))
+        }.toMap
+      }.toSeq
+      // Add partition information
+      AlterTableAddPartitionCommand(identifier, specs.map((_, None)), true).run(sparkSession)
+    }
   }
 }
