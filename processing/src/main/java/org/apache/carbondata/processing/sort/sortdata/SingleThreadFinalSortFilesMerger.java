@@ -36,7 +36,6 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
 import org.apache.carbondata.core.datastore.exception.CarbonDataWriterException;
-import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
@@ -74,39 +73,10 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   private String tableName;
 
   /**
-   * measureCount
-   */
-  private int measureCount;
-
-  /**
-   * dimensionCount
-   */
-  private int dimensionCount;
-
-  /**
-   * measure count
-   */
-  private int noDictionaryCount;
-
-  /**
-   * complexDimensionCount
-   */
-  private int complexDimensionCount;
-
-  /**
    * tempFileLocation
    */
   private String[] tempFileLocation;
-
-  private DataType[] measureDataType;
-
-  /**
-   * below code is to check whether dimension
-   * is of no dictionary type or not
-   */
-  private boolean[] isNoDictionaryColumn;
-
-  private boolean[] isNoDictionarySortColumn;
+  private SortParameters sortParameters;
 
   private int maxThreadForSorting;
 
@@ -115,17 +85,10 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
   private List<Future<Void>> mergerTask;
 
   public SingleThreadFinalSortFilesMerger(String[] tempFileLocation, String tableName,
-      int dimensionCount, int complexDimensionCount, int measureCount, int noDictionaryCount,
-      DataType[] type, boolean[] isNoDictionaryColumn, boolean[] isNoDictionarySortColumn) {
+      SortParameters sortParameters) {
     this.tempFileLocation = tempFileLocation;
     this.tableName = tableName;
-    this.dimensionCount = dimensionCount;
-    this.complexDimensionCount = complexDimensionCount;
-    this.measureCount = measureCount;
-    this.measureDataType = type;
-    this.noDictionaryCount = noDictionaryCount;
-    this.isNoDictionaryColumn = isNoDictionaryColumn;
-    this.isNoDictionarySortColumn = isNoDictionarySortColumn;
+    this.sortParameters = sortParameters;
     try {
       maxThreadForSorting = Integer.parseInt(CarbonProperties.getInstance()
           .getProperty(CarbonCommonConstants.CARBON_MERGE_SORT_READER_THREAD,
@@ -211,9 +174,7 @@ public class SingleThreadFinalSortFilesMerger extends CarbonIterator<Object[]> {
         @Override public Void call() throws CarbonSortKeyAndGroupByException {
             // create chunk holder
             SortTempFileChunkHolder sortTempFileChunkHolder =
-                new SortTempFileChunkHolder(tempFile, dimensionCount, complexDimensionCount,
-                    measureCount, fileBufferSize, noDictionaryCount, measureDataType,
-                    isNoDictionaryColumn, isNoDictionarySortColumn, tableName);
+                new SortTempFileChunkHolder(tempFile, sortParameters, tableName);
           try {
             // initialize
             sortTempFileChunkHolder.initialize();

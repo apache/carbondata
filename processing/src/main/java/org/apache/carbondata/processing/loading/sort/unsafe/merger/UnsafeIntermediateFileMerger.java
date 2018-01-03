@@ -17,11 +17,9 @@
 
 package org.apache.carbondata.processing.loading.sort.unsafe.merger;
 
-import java.io.BufferedOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.ByteBuffer;
@@ -32,6 +30,7 @@ import java.util.concurrent.Callable;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.CarbonUtil;
@@ -41,8 +40,6 @@ import org.apache.carbondata.processing.loading.sort.unsafe.holder.SortTempChunk
 import org.apache.carbondata.processing.loading.sort.unsafe.holder.UnsafeSortTempFileChunkHolder;
 import org.apache.carbondata.processing.sort.exception.CarbonSortKeyAndGroupByException;
 import org.apache.carbondata.processing.sort.sortdata.SortParameters;
-import org.apache.carbondata.processing.sort.sortdata.TempSortFileWriter;
-import org.apache.carbondata.processing.sort.sortdata.TempSortFileWriterFactory;
 
 public class UnsafeIntermediateFileMerger implements Callable<Void> {
   /**
@@ -71,18 +68,19 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    */
   private int totalNumberOfRecords;
 
-  /**
-   * writer
-   */
-  private TempSortFileWriter writer;
-
   private SortParameters mergerParameters;
 
   private File[] intermediateFiles;
 
   private File outPutFile;
 
-  private boolean[] noDictionarycolumnMapping;
+  private int dimCnt;
+  private int complexCnt;
+  private int measureCnt;
+  private boolean[] isNoDictionaryDimensionColumn;
+  private DataType[] measureDataTypes;
+  private int writeBufferSize;
+  private String compressorName;
 
   private long[] nullSetWords;
 
@@ -99,8 +97,14 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     this.fileCounter = intermediateFiles.length;
     this.intermediateFiles = intermediateFiles;
     this.outPutFile = outPutFile;
-    noDictionarycolumnMapping = mergerParameters.getNoDictionaryDimnesionColumn();
-    this.nullSetWords = new long[((mergerParameters.getMeasureColCount() - 1) >> 6) + 1];
+    this.dimCnt = mergerParameters.getDimColCount();
+    this.complexCnt = mergerParameters.getComplexDimColCount();
+    this.measureCnt = mergerParameters.getMeasureColCount();
+    this.isNoDictionaryDimensionColumn = mergerParameters.getNoDictionaryDimnesionColumn();
+    this.measureDataTypes = mergerParameters.getMeasureDataType();
+    this.writeBufferSize = mergerParameters.getBufferSize();
+    this.compressorName = mergerParameters.getSortTempCompressorName();
+    this.nullSetWords = new long[((measureCnt - 1) >> 6) + 1];
     // Take size of 2 MB for each row. I think it is high enough to use
     rowData = ByteBuffer.allocate(2 * 1024 * 1024);
   }
@@ -112,7 +116,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
       startSorting();
       initialize();
       while (hasNext()) {
-        writeDataTofile(next());
+        writeDataToFile(next());
       }
       double intermediateMergeCostTime =
           (System.currentTimeMillis() - intermediateMergeStartTime) / 1000.0;
@@ -124,9 +128,6 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
       throwable = e;
     } finally {
       CarbonUtil.closeStreams(this.stream);
-      if (null != writer) {
-        writer.finish();
-      }
       if (null == throwable) {
         try {
           finish();
@@ -152,24 +153,14 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    * @throws CarbonSortKeyAndGroupByException
    */
   private void initialize() throws CarbonSortKeyAndGroupByException {
-    if (!mergerParameters.isSortFileCompressionEnabled() && !mergerParameters.isPrefetch()) {
-      try {
-        this.stream = new DataOutputStream(
-            new BufferedOutputStream(new FileOutputStream(outPutFile),
-                mergerParameters.getFileWriteBufferSize()));
-        this.stream.writeInt(this.totalNumberOfRecords);
-      } catch (FileNotFoundException e) {
-        throw new CarbonSortKeyAndGroupByException("Problem while getting the file", e);
-      } catch (IOException e) {
-        throw new CarbonSortKeyAndGroupByException("Problem while writing the data to file", e);
-      }
-    } else {
-      writer = TempSortFileWriterFactory.getInstance()
-          .getTempSortFileWriter(mergerParameters.isSortFileCompressionEnabled(),
-              mergerParameters.getDimColCount(), mergerParameters.getComplexDimColCount(),
-              mergerParameters.getMeasureColCount(), mergerParameters.getNoDictionaryCount(),
-              mergerParameters.getFileWriteBufferSize());
-      writer.initiaize(outPutFile, totalNumberOfRecords);
+    try {
+      stream = FileFactory.getDataOutputStream(outPutFile.getPath(), FileFactory.FileType.LOCAL,
+          writeBufferSize, compressorName);
+      this.stream.writeInt(this.totalNumberOfRecords);
+    } catch (FileNotFoundException e) {
+      throw new CarbonSortKeyAndGroupByException("Problem while getting the file", e);
+    } catch (IOException e) {
+      throw new CarbonSortKeyAndGroupByException("Problem while writing the data to file", e);
     }
   }
 
@@ -283,12 +274,11 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
    *
    * @throws CarbonSortKeyAndGroupByException problem while writing
    */
-  private void writeDataTofile(Object[] row) throws CarbonSortKeyAndGroupByException, IOException {
+  private void writeDataToFile(Object[] row) throws CarbonSortKeyAndGroupByException, IOException {
     int dimCount = 0;
     int size = 0;
-    DataType[] type = mergerParameters.getMeasureDataType();
-    for (; dimCount < noDictionarycolumnMapping.length; dimCount++) {
-      if (noDictionarycolumnMapping[dimCount]) {
+    for (; dimCount < isNoDictionaryDimensionColumn.length; dimCount++) {
+      if (isNoDictionaryDimensionColumn[dimCount]) {
         byte[] col = (byte[]) row[dimCount];
         rowData.putShort((short) col.length);
         size += 2;
@@ -301,9 +291,7 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     }
 
     // write complex dimensions here.
-    int dimensionSize =
-        mergerParameters.getDimColCount() + mergerParameters.getComplexDimColCount();
-    int measureSize = mergerParameters.getMeasureColCount();
+    int dimensionSize = dimCnt + complexCnt;
     for (; dimCount < dimensionSize; dimCount++) {
       byte[] col = (byte[]) row[dimCount];
       rowData.putShort((short)col.length);
@@ -315,10 +303,10 @@ public class UnsafeIntermediateFileMerger implements Callable<Void> {
     int nullSetSize = nullSetWords.length * 8;
     int nullLoc = size;
     size += nullSetSize;
-    for (int mesCount = 0; mesCount < measureSize; mesCount++) {
+    for (int mesCount = 0; mesCount < measureCnt; mesCount++) {
       Object value = row[mesCount + dimensionSize];
       if (null != value) {
-        DataType dataType = type[mesCount];
+        DataType dataType = measureDataTypes[mesCount];
         if (dataType == DataTypes.SHORT) {
           rowData.putShort(size, (Short) value);
           size += 2;

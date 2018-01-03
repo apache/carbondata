@@ -80,11 +80,7 @@ public class ParallelReadMergeSorterImpl extends AbstractMergeSorter {
         File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
     finalMerger =
         new SingleThreadFinalSortFilesMerger(dataFolderLocations, sortParameters.getTableName(),
-            sortParameters.getDimColCount(),
-            sortParameters.getComplexDimColCount(), sortParameters.getMeasureColCount(),
-            sortParameters.getNoDictionaryCount(), sortParameters.getMeasureDataType(),
-            sortParameters.getNoDictionaryDimnesionColumn(),
-            sortParameters.getNoDictionarySortColumn());
+            sortParameters);
   }
 
   @Override

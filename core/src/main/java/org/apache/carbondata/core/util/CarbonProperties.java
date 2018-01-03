@@ -1015,6 +1015,23 @@ public final class CarbonProperties {
   }
 
   /**
+   * get compressor name for compressing sort temp files
+   * @return compressor name
+   */
+  public String getSortTempCompressor() {
+    String compressor = getProperty(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR,
+        CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR_DEFAULT).toUpperCase();
+    if (compressor.isEmpty() || "SNAPPY".equals(compressor) || "GZIP".equals(compressor)
+        || "BZIP2".equals(compressor) || "LZ4".equals(compressor)) {
+      return compressor;
+    } else {
+      LOGGER.error("The ".concat(CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR)
+          .concat(" configuration value is invalid. Only snappy,gzip,bip2,lz4 and")
+          .concat(" empty are allowed. It will not compress the sort temp files by default"));
+      return CarbonCommonConstants.CARBON_SORT_TEMP_COMPRESSOR_DEFAULT;
+    }
+  }
+  /**
    * returns true if carbon property
    * @param key
    * @return

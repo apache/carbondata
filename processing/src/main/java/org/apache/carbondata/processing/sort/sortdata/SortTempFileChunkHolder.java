@@ -17,10 +17,8 @@
 
 package org.apache.carbondata.processing.sort.sortdata;
 
-import java.io.BufferedInputStream;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.concurrent.Callable;
@@ -31,6 +29,7 @@ import java.util.concurrent.Future;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.util.ByteUtil.UnsafeComparer;
@@ -73,26 +72,15 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    * return row
    */
   private Object[] returnRow;
-
-  /**
-   * number of measures
-   */
-  private int measureCount;
-
-  /**
-   * number of dimensionCount
-   */
-  private int dimensionCount;
-
-  /**
-   * number of complexDimensionCount
-   */
-  private int complexDimensionCount;
-
-  /**
-   * fileBufferSize for file reader stream size
-   */
-  private int fileBufferSize;
+  private int dimCnt;
+  private int noDictDimCnt;
+  private int complexCnt;
+  private int measureCnt;
+  private boolean[] isNoDictionaryDimensionColumn;
+  private boolean[] isNoDictionarySortColumn;
+  private DataType[] measureDataTypes;
+  private int readBufferSize;
+  private String compressorName;
 
   private Object[][] currentBuffer;
 
@@ -113,67 +101,32 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   private int prefetchRecordsProceesed;
 
   /**
-   * sortTempFileNoOFRecordsInCompression
-   */
-  private int sortTempFileNoOFRecordsInCompression;
-
-  /**
-   * isSortTempFileCompressionEnabled
-   */
-  private boolean isSortTempFileCompressionEnabled;
-
-  /**
    * totalRecordFetch
    */
   private int totalRecordFetch;
-
-  private int noDictionaryCount;
-
-  private DataType[] measureDataTypes;
-
-  /**
-   * to store whether dimension is of dictionary type or not
-   */
-  private boolean[] isNoDictionaryDimensionColumn;
-
-  /**
-   * to store whether sort column is of dictionary type or not
-   */
-  private boolean[] isNoDictionarySortColumn;
 
   /**
    * Constructor to initialize
    *
    * @param tempFile
-   * @param dimensionCount
-   * @param complexDimensionCount
-   * @param measureCount
-   * @param fileBufferSize
-   * @param noDictionaryCount
-   * @param measureDataTypes
-   * @param isNoDictionaryDimensionColumn
+   * @param sortParameters
+   * @param tableName
    */
-  public SortTempFileChunkHolder(File tempFile, int dimensionCount, int complexDimensionCount,
-      int measureCount, int fileBufferSize, int noDictionaryCount, DataType[] measureDataTypes,
-      boolean[] isNoDictionaryDimensionColumn, boolean[] isNoDictionarySortColumn,
-      String tableName) {
+  public SortTempFileChunkHolder(File tempFile, SortParameters sortParameters, String tableName) {
     // set temp file
     this.tempFile = tempFile;
+    this.dimCnt = sortParameters.getDimColCount();
+    this.noDictDimCnt = sortParameters.getNoDictionaryCount();
+    this.complexCnt = sortParameters.getComplexDimColCount();
+    this.measureCnt = sortParameters.getMeasureColCount();
+    this.isNoDictionaryDimensionColumn = sortParameters.getNoDictionaryDimnesionColumn();
+    this.isNoDictionarySortColumn = sortParameters.getNoDictionarySortColumn();
+    this.measureDataTypes = sortParameters.getMeasureDataType();
+    this.readBufferSize = sortParameters.getBufferSize();
+    this.compressorName = sortParameters.getSortTempCompressorName();
 
-    // set measure and dimension count
-    this.measureCount = measureCount;
-    this.dimensionCount = dimensionCount;
-    this.complexDimensionCount = complexDimensionCount;
-
-    this.noDictionaryCount = noDictionaryCount;
-    // set mdkey length
-    this.fileBufferSize = fileBufferSize;
     this.executorService = Executors
         .newFixedThreadPool(1, new CarbonThreadFactory("SafeSortTempChunkHolderPool:" + tableName));
-    this.measureDataTypes = measureDataTypes;
-
-    this.isNoDictionaryDimensionColumn = isNoDictionaryDimensionColumn;
-    this.isNoDictionarySortColumn = isNoDictionarySortColumn;
   }
 
   /**
@@ -188,44 +141,14 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     bufferSize = Integer.parseInt(CarbonProperties.getInstance()
         .getProperty(CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE,
             CarbonCommonConstants.CARBON_PREFETCH_BUFFERSIZE_DEFAULT));
-    this.isSortTempFileCompressionEnabled = Boolean.parseBoolean(CarbonProperties.getInstance()
-        .getProperty(CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED,
-            CarbonCommonConstants.IS_SORT_TEMP_FILE_COMPRESSION_ENABLED_DEFAULTVALUE));
-    if (this.isSortTempFileCompressionEnabled) {
-      LOGGER.info("Compression was used while writing the sortTempFile");
-    }
-
-    try {
-      this.sortTempFileNoOFRecordsInCompression = Integer.parseInt(CarbonProperties.getInstance()
-          .getProperty(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION,
-              CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE));
-      if (this.sortTempFileNoOFRecordsInCompression < 1) {
-        LOGGER.error("Invalid value for: "
-            + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-            + ": Only Positive Integer value(greater than zero) is allowed.Default value will"
-            + " be used");
-
-        this.sortTempFileNoOFRecordsInCompression = Integer.parseInt(
-            CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
-      }
-    } catch (NumberFormatException e) {
-      LOGGER.error(
-          "Invalid value for: " + CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORDS_FOR_COMPRESSION
-              + ", only Positive Integer value is allowed.Default value will be used");
-      this.sortTempFileNoOFRecordsInCompression = Integer
-          .parseInt(CarbonCommonConstants.SORT_TEMP_FILE_NO_OF_RECORD_FOR_COMPRESSION_DEFAULTVALUE);
-    }
 
     initialise();
   }
 
   private void initialise() throws CarbonSortKeyAndGroupByException {
     try {
-      if (isSortTempFileCompressionEnabled) {
-        this.bufferSize = sortTempFileNoOFRecordsInCompression;
-      }
-      stream = new DataInputStream(
-          new BufferedInputStream(new FileInputStream(tempFile), this.fileBufferSize));
+      stream = FileFactory.getDataInputStream(tempFile.getPath(), FileFactory.FileType.LOCAL,
+          readBufferSize, compressorName);
       this.entryCount = stream.readInt();
       if (prefetch) {
         new DataFetcher(false).call();
@@ -233,12 +156,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         if (totalRecordFetch < this.entryCount) {
           submit = executorService.submit(new DataFetcher(true));
         }
-      } else {
-        if (isSortTempFileCompressionEnabled) {
-          new DataFetcher(false).call();
-        }
       }
-
     } catch (FileNotFoundException e) {
       LOGGER.error(e);
       throw new CarbonSortKeyAndGroupByException(tempFile + " No Found", e);
@@ -259,19 +177,6 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
   public void readRow() throws CarbonSortKeyAndGroupByException {
     if (prefetch) {
       fillDataForPrefetch();
-    } else if (isSortTempFileCompressionEnabled) {
-      if (bufferRowCounter >= bufferSize) {
-        try {
-          new DataFetcher(false).call();
-          bufferRowCounter = 0;
-        } catch (Exception e) {
-          LOGGER.error(e);
-          throw new CarbonSortKeyAndGroupByException(tempFile + " Problem while reading", e);
-        }
-
-      }
-      prefetchRecordsProceesed++;
-      returnRow = currentBuffer[bufferRowCounter++];
     } else {
       this.returnRow = getRowFromStream();
     }
@@ -317,9 +222,9 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
     Object[] holder = new Object[3];
     int index = 0;
     int nonDicIndex = 0;
-    int[] dim = new int[this.dimensionCount - this.noDictionaryCount];
-    byte[][] nonDicArray = new byte[this.noDictionaryCount + this.complexDimensionCount][];
-    Object[] measures = new Object[this.measureCount];
+    int[] dim = new int[dimCnt - noDictDimCnt];
+    byte[][] nonDicArray = new byte[noDictDimCnt + complexCnt][];
+    Object[] measures = new Object[measureCnt];
     try {
       // read dimension values
       for (int i = 0; i < isNoDictionaryDimensionColumn.length; i++) {
@@ -333,7 +238,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
         }
       }
 
-      for (int i = 0; i < complexDimensionCount; i++) {
+      for (int i = 0; i < complexCnt; i++) {
         short len = stream.readShort();
         byte[] array = new byte[len];
         stream.readFully(array);
@@ -342,7 +247,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
 
       index = 0;
       // read measure values
-      for (int i = 0; i < this.measureCount; i++) {
+      for (int i = 0; i < measureCnt; i++) {
         if (stream.readByte() == 1) {
           DataType dataType = measureDataTypes[i];
           if (dataType == DataTypes.BOOLEAN) {
@@ -361,7 +266,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
             stream.readFully(buff);
             measures[index++] = DataTypeUtil.byteToBigDecimal(buff);
           } else {
-            throw new IllegalArgumentException("unsupported data type:" + measureDataTypes[i]);
+            throw new IllegalArgumentException("unsupported data type:" + dataType);
           }
         } else {
           measures[index++] = null;
@@ -397,7 +302,7 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
    * @return more row present in file
    */
   public boolean hasNext() {
-    if (prefetch || isSortTempFileCompressionEnabled) {
+    if (prefetch) {
       return this.prefetchRecordsProceesed < this.entryCount;
     }
     return this.numberOfObjectRead < this.entryCount;
@@ -467,10 +372,9 @@ public class SortTempFileChunkHolder implements Comparable<SortTempFileChunkHold
 
   @Override public int hashCode() {
     int hash = 0;
-    hash += 31 * measureCount;
-    hash += 31 * dimensionCount;
-    hash += 31 * complexDimensionCount;
-    hash += 31 * noDictionaryCount;
+    hash += 31 * measureCnt;
+    hash += 31 * dimCnt;
+    hash += 31 * complexCnt;
     hash += tempFile.hashCode();
     return hash;
   }
