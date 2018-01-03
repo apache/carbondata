@@ -136,7 +136,8 @@ class CarbonSessionCatalog(
     sparkSession.sessionState.asInstanceOf[CarbonSessionState].metadataHive
   }
 
-  override def createPartitions(tableName: TableIdentifier,
+  override def createPartitions(
+      tableName: TableIdentifier,
       parts: Seq[CatalogTablePartition],
       ignoreIfExists: Boolean): Unit = {
     try {
@@ -163,7 +164,8 @@ class CarbonSessionCatalog(
    * @param identifier
    * @return
    */
-  def getPartitionsAlternate(partitionFilters: Seq[Expression],
+  def getPartitionsAlternate(
+      partitionFilters: Seq[Expression],
       sparkSession: SparkSession,
       identifier: TableIdentifier) = {
     val allPartitions = sparkSession.sessionState.catalog.listPartitions(identifier)

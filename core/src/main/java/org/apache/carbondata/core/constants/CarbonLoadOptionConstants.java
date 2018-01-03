@@ -100,7 +100,8 @@ public final class CarbonLoadOptionConstants {
       "carbon.options.global.sort.partitions";
 
   /**
-   * specify serialization null format
+   * specify serialization null format, it is used describe which character in side the csv file
+   * is treated as null.
    */
   @CarbonProperty
   public static final String CARBON_OPTIONS_SERIALIZATION_NULL_FORMAT =

@@ -143,7 +143,8 @@ class CarbonSessionCatalog(
       .asInstanceOf[HiveExternalCatalog].client
   }
 
-  override def createPartitions(tableName: TableIdentifier,
+  override def createPartitions(
+      tableName: TableIdentifier,
       parts: Seq[CatalogTablePartition],
       ignoreIfExists: Boolean): Unit = {
     try {

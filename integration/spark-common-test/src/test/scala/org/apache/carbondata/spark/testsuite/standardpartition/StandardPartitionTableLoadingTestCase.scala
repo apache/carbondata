@@ -317,6 +317,14 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     checkExistence(df, true,  "empno=1")
   }
 
+  test("bad record test with null values") {
+    sql(s"""CREATE TABLE IF NOT EXISTS emp1 (emp_no int,ename string,job string,mgr_id int,date_of_joining string,salary int,bonus int) partitioned by (dept_no int) STORED BY 'org.apache.carbondata.format'""")
+    sql(s"""LOAD DATA INPATH '$resourcesPath/emp.csv' overwrite INTO TABLE emp1 OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '\')""")
+    val rows = sql(s"select count(*) from emp1").collect()
+    sql(s"""LOAD DATA INPATH '$resourcesPath/emp.csv' overwrite INTO TABLE emp1 OPTIONS('DELIMITER'=',', 'QUOTECHAR'= '\','BAD_RECORDS_ACTION'='FORCE')""")
+    checkAnswer(sql(s"select count(*) from emp1"), rows)
+  }
+
 
   override def afterAll = {
     dropTable
@@ -338,6 +346,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table if exists mergeindexpartitionthree")
     sql("drop table if exists loadstaticpartitiononeissue")
     sql("drop table if exists loadpartitionwithspecialchar")
+    sql("drop table if exists emp1")
   }
 
 }

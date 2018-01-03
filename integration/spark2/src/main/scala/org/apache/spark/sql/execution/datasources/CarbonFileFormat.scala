@@ -201,11 +201,15 @@ private class CarbonOutputWriter(path: String,
   lazy val partitionData = if (partitions.nonEmpty) {
     val updatedPartitions = partitions.map{ p =>
       val value = p.substring(p.indexOf("=") + 1, p.length)
+      val col = p.substring(0, p.indexOf("="))
       // NUll handling case. For null hive creates with this special name
       if (value.equals("__HIVE_DEFAULT_PARTITION__")) {
-        null
+        (col, null)
+        // we should replace back the special string with empty value.
+      } else if (value.equals(CarbonCommonConstants.MEMBER_DEFAULT_VAL)) {
+        (col, "")
       } else {
-        value
+        (col, value)
       }
     }
 
@@ -289,13 +293,10 @@ private class CarbonOutputWriter(path: String,
     val isEmptyBadRecord = loadModel.getIsEmptyDataBadRecord.split(",")(1).toBoolean
     // write partition info to new file.
     val partitonList = new util.ArrayList[String]()
-    val splitPartitions = partitions.map { p =>
-      val splitData = p.split("=")
-      if (splitData.length > 1) {
-        (splitData(0), splitData(1))
-      } else {
-        (splitData(0), "")
-      }
+    val splitPartitions = partitions.map{ p =>
+      val value = p.substring(p.indexOf("=") + 1, p.length)
+      val col = p.substring(0, p.indexOf("="))
+      (col, value)
     }.toMap
     val updatedPartitions =
       if (staticPartition) {

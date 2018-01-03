@@ -561,6 +561,13 @@ case class CarbonLoadDataCommand(
             case _ => StringType
           }
         }
+        // Find the partition columns from the csv header attributes
+        val partitionColumns = attributes.map { attribute =>
+          catalogTable.partitionSchema.find(_.name.equalsIgnoreCase(attribute.name)) match {
+            case Some(attr) => true
+            case _ => false
+          }
+        }
         val len = rowDataTypes.length
         var rdd =
           new NewHadoopRDD[NullWritable, StringArrayWritable](
@@ -575,6 +582,13 @@ case class CarbonLoadDataCommand(
             val inputLen = Math.min(input.length, len)
             while (i < inputLen) {
               data(i) = UTF8String.fromString(input(i))
+              // If partition column then update empty value with special string otherwise spark
+              // makes it as null so we cannot internally handle badrecords.
+              if (partitionColumns(i)) {
+                if (input(i) != null && input(i).isEmpty) {
+                  data(i) = UTF8String.fromString(CarbonCommonConstants.MEMBER_DEFAULT_VAL)
+                }
+              }
               i = i + 1
             }
             InternalRow.fromSeq(data)
