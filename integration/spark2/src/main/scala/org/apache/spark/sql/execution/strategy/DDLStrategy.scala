@@ -18,7 +18,7 @@ package org.apache.spark.sql.execution.strategy
 
 import org.apache.spark.sql._
 import org.apache.spark.sql.catalyst.TableIdentifier
-import org.apache.spark.sql.catalyst.analysis.UnresolvedRelation
+import org.apache.spark.sql.catalyst.analysis.{NoSuchDatabaseException, UnresolvedRelation}
 import org.apache.spark.sql.catalyst.plans.logical.LogicalPlan
 import org.apache.spark.sql.execution.{SparkPlan, SparkStrategy}
 import org.apache.spark.sql.execution.command._
@@ -85,7 +85,13 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       partition, child: LogicalPlan, overwrite, _) =>
         ExecutedCommandExec(CarbonInsertIntoCommand(relation, child, overwrite, partition)) :: Nil
       case createDb@CreateDatabaseCommand(dbName, ifNotExists, _, _, _) =>
-        FileUtils.createDatabaseDirectory(dbName, CarbonProperties.getStorePath)
+        val dbLocation = try {
+          CarbonEnv.getDatabaseLocation(dbName, sparkSession)
+        } catch {
+          case e: NoSuchDatabaseException =>
+            CarbonProperties.getStorePath
+        }
+        FileUtils.createDatabaseDirectory(dbName, dbLocation)
         ExecutedCommandExec(createDb) :: Nil
       case drop@DropDatabaseCommand(dbName, ifExists, isCascade) =>
         ExecutedCommandExec(CarbonDropDatabaseCommand(drop)) :: Nil

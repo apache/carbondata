@@ -34,6 +34,7 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
   override val output: Seq[Attribute] = command.output
 
   override def run(sparkSession: SparkSession): Seq[Row] = {
+    var rows: Seq[Row] = Seq()
     val dbName = command.databaseName
     var tablesInDB: Seq[TableIdentifier] = null
     if (sparkSession.sessionState.catalog.listDatabases().exists(_.equalsIgnoreCase(dbName))) {
@@ -44,8 +45,10 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
       databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
     } catch {
       case e: NoSuchDatabaseException =>
-        // ignore the exception as exception will be handled by hive command.run
-      databaseLocation = CarbonProperties.getStorePath
+        // if database not found and ifExists true return empty
+        if (command.ifExists) {
+          return rows
+        }
     }
     // DropHiveDB command will fail if cascade is false and one or more table exists in database
     if (command.cascade && tablesInDB != null) {
@@ -53,8 +56,8 @@ case class CarbonDropDatabaseCommand(command: DropDatabaseCommand)
         CarbonDropTableCommand(true, tableName.database, tableName.table).run(sparkSession)
       }
     }
-    CarbonUtil.dropDatabaseDirectory(dbName.toLowerCase, databaseLocation)
-    val rows = command.run(sparkSession)
+    rows = command.run(sparkSession)
+    CarbonUtil.dropDatabaseDirectory(databaseLocation)
     rows
   }
 }

@@ -47,7 +47,17 @@ class TestDeleteTableNewDDL extends QueryTest with BeforeAndAfterAll {
   test("drop table Test with new DDL") {
     sql("drop table table1")
   }
-  
+
+  test("test drop database") {
+    var dbName = "dropdb_test"
+    sql(s"drop database if exists $dbName cascade")
+    sql(s"create database $dbName")
+    sql(s"drop database $dbName")
+    assert(intercept[Exception] {
+      sql(s"use $dbName")
+    }.getMessage.contains("Database 'dropdb_test' not found"))
+  }
+
   test("test drop database cascade command") {
     sql("drop database if exists testdb cascade")
     sql("create database testdb")
