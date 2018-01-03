@@ -602,7 +602,7 @@ case class CarbonLoadDataCommand(
           val lowerCasePartition = partition.map{case(key, value) => (key.toLowerCase, value)}
           catalogTable.schema.map { attr =>
             attributes.find(_.name.equalsIgnoreCase(attr.name)).get
-          }.filter(attr => lowerCasePartition.get(attr.name.toLowerCase).isEmpty)
+          }.filter(attr => lowerCasePartition.getOrElse(attr.name.toLowerCase, None).isEmpty)
         } else {
           catalogTable.schema.map(f => attributes.find(_.name.equalsIgnoreCase(f.name)).get)
         }
@@ -713,7 +713,12 @@ case class CarbonLoadDataCommand(
     options += (("onepass", loadModel.getUseOnePass.toString))
     options += (("dicthost", loadModel.getDictionaryServerHost))
     options += (("dictport", loadModel.getDictionaryServerPort.toString))
-    options += (("staticpartition", partition.nonEmpty.toString))
+    if (partition.nonEmpty) {
+      val staticPartitionStr = ObjectSerializationUtil.convertObjectToString(
+        new util.HashMap[String, Boolean](
+          partition.map{case (col, value) => (col.toLowerCase, value.isDefined)}.asJava))
+      options += (("staticpartition", staticPartitionStr))
+    }
     options += (("operationcontext", operationContextStr))
     options ++= this.options
     if (updateModel.isDefined) {
@@ -745,63 +750,80 @@ case class CarbonLoadDataCommand(
       sparkSession: SparkSession,
       table: CarbonTable,
       logicalPlan: LogicalPlan): Unit = {
-    sparkSession.sessionState.catalog.listPartitions(
-      TableIdentifier(table.getTableName, Some(table.getDatabaseName)),
-      Some(partition.map(f => (f._1, f._2.get))))
-    val partitionNames = partition.map(k => k._1 + "=" + k._2.get).toSet
+    val identifier = TableIdentifier(table.getTableName, Some(table.getDatabaseName))
+    val existingPartitions = sparkSession.sessionState.catalog.listPartitions(
+      identifier,
+      Some(partition.filter(_._2.isDefined).map(f => (f._1, f._2.get))))
+    val partitionNames = existingPartitions.toList.flatMap { partition =>
+      partition.spec.seq.map{case (column, value) => column + "=" + value}
+    }.toSet
     val uniqueId = System.currentTimeMillis().toString
     val segments = new SegmentStatusManager(
       table.getAbsoluteTableIdentifier).getValidAndInvalidSegments.getValidSegments
-    try {
-      // First drop the partitions from partition mapper files of each segment
-      new CarbonDropPartitionRDD(
+    // If any existing partitions need to be overwritten then drop from partitionmap
+    if (partitionNames.nonEmpty) {
+      try {
+        // First drop the partitions from partition mapper files of each segment
+        new CarbonDropPartitionRDD(
+          sparkSession.sparkContext,
+          table.getTablePath,
+          segments.asScala,
+          partitionNames.toSeq,
+          uniqueId,
+          partialMatch = false).collect()
+      } catch {
+        case e: Exception =>
+          // roll back the drop partitions from carbon store
+          new CarbonDropPartitionCommitRDD(
+            sparkSession.sparkContext,
+            table.getTablePath,
+            segments.asScala,
+            success = false,
+            uniqueId).collect()
+          throw e
+      }
+
+      try {
+        Dataset.ofRows(sparkSession, logicalPlan)
+      } catch {
+        case e: Exception =>
+          // roll back the drop partitions from carbon store
+          new CarbonDropPartitionCommitRDD(
+            sparkSession.sparkContext,
+            table.getTablePath,
+            segments.asScala,
+            success = false,
+            uniqueId).collect()
+          throw e
+      }
+      // Commit the removed partitions in carbon store.
+      new CarbonDropPartitionCommitRDD(
         sparkSession.sparkContext,
         table.getTablePath,
         segments.asScala,
-        partitionNames.toSeq,
+        success = true,
         uniqueId).collect()
-    } catch {
-      case e: Exception =>
-        // roll back the drop partitions from carbon store
-        new CarbonDropPartitionCommitRDD(
-          sparkSession.sparkContext,
-          table.getTablePath,
-          segments.asScala,
-          false,
-          uniqueId).collect()
-        throw e
-    }
-
-    try {
+      // get valid segments
+      val validsegments =
+        new SegmentStatusManager(
+          table.getAbsoluteTableIdentifier).getValidAndInvalidSegments.getValidSegments
+      // Update the loadstatus with update time to clear cache from driver.
+      CarbonUpdateUtil.updateTableMetadataStatus(
+        new util.HashSet[String](validsegments),
+        table,
+        uniqueId,
+        true,
+        new util.ArrayList[String])
+      DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
+      // Clean the overwriting segments if any.
+      new PartitionMapFileStore().cleanSegments(
+        table,
+        CarbonFilters.getPartitions(Seq.empty, sparkSession, identifier).asJava,
+        false)
+    } else {
+      // Otherwise its a normal load
       Dataset.ofRows(sparkSession, logicalPlan)
-    } catch {
-      case e: Exception =>
-        // roll back the drop partitions from carbon store
-        new CarbonDropPartitionCommitRDD(
-          sparkSession.sparkContext,
-          table.getTablePath,
-          segments.asScala,
-          false,
-          uniqueId).collect()
-        throw e
     }
-    // Commit the removed partitions in carbon store.
-    new CarbonDropPartitionCommitRDD(
-      sparkSession.sparkContext,
-      table.getTablePath,
-      segments.asScala,
-      true,
-      uniqueId).collect()
-    // Update the loadstatus with update time to clear cache from driver.
-    val segmentSet = new util.HashSet[String](new SegmentStatusManager(table
-      .getAbsoluteTableIdentifier).getValidAndInvalidSegments.getValidSegments)
-    CarbonUpdateUtil.updateTableMetadataStatus(
-      segmentSet,
-      table,
-      uniqueId,
-      true,
-      new util.ArrayList[String])
-    DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
   }
 
   def getDataFrameWithTupleID(): DataFrame = {

@@ -155,6 +155,33 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
 
   }
 
+
+  test("dropping all partition on table and do compaction") {
+    sql(
+      """
+        | CREATE TABLE partitionallcompaction (empno int, empname String, designation String,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int,
+        |  projectjoindate Timestamp, projectenddate Date,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (deptname String,doj Timestamp,projectcode int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionallcompaction OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionallcompaction OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionallcompaction OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE partitionallcompaction OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    sql(s"""ALTER TABLE partitionallcompaction DROP PARTITION(deptname='Learning')""")
+    sql(s"""ALTER TABLE partitionallcompaction DROP PARTITION(deptname='configManagement')""")
+    sql(s"""ALTER TABLE partitionallcompaction DROP PARTITION(deptname='network')""")
+    sql(s"""ALTER TABLE partitionallcompaction DROP PARTITION(deptname='protocol')""")
+    sql(s"""ALTER TABLE partitionallcompaction DROP PARTITION(deptname='security')""")
+    assert(sql(s"""SHOW PARTITIONS partitionallcompaction""").collect().length == 0)
+    sql("ALTER TABLE partitionallcompaction COMPACT 'MAJOR'").collect()
+    checkAnswer(
+      sql(s"""select count (*) from partitionallcompaction"""),
+      Seq(Row(0)))
+  }
+
   override def afterAll = {
     dropTable
   }
@@ -167,6 +194,7 @@ class StandardPartitionTableDropTestCase extends QueryTest with BeforeAndAfterAl
     sql("drop table if exists partitionmany")
     sql("drop table if exists partitionshow")
     sql("drop table if exists staticpartition")
+    sql("drop table if exists partitionallcompaction")
   }
 
 }

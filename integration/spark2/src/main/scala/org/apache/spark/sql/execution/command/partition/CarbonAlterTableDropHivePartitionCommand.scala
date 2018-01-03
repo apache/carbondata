@@ -25,11 +25,13 @@ import org.apache.spark.sql.{CarbonEnv, Row, SparkSession}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.catalog.CatalogTypes.TablePartitionSpec
 import org.apache.spark.sql.execution.command.{AlterTableAddPartitionCommand, AlterTableDropPartitionCommand, AtomicRunnableCommand}
+import org.apache.spark.sql.optimizer.CarbonFilters
 import org.apache.spark.util.AlterTableUtil
 
 import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.locks.{ICarbonLock, LockUsage}
+import org.apache.carbondata.core.metadata.PartitionMapFileStore
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 import org.apache.carbondata.spark.rdd.{CarbonDropPartitionCommitRDD, CarbonDropPartitionRDD}
@@ -73,15 +75,19 @@ case class CarbonAlterTableDropHivePartitionCommand(
       }
 
       // Drop the partitions from hive.
-      AlterTableDropPartitionCommand(tableName, specs, ifExists, purge, retainData)
-        .run(sparkSession)
+      AlterTableDropPartitionCommand(
+        tableName,
+        specs,
+        ifExists,
+        purge,
+        retainData).run(sparkSession)
     }
     Seq.empty[Row]
   }
 
 
   override def undoMetadata(sparkSession: SparkSession, exception: Exception): Seq[Row] = {
-    AlterTableAddPartitionCommand(tableName, specs.map((_, None)), ifExists)
+    AlterTableAddPartitionCommand(tableName, specs.map((_, None)), true)
     val msg = s"Got exception $exception when processing data of drop partition." +
               "Adding back partitions to the metadata"
     LogServiceFactory.getLogService(this.getClass.getCanonicalName).error(msg)
@@ -114,7 +120,8 @@ case class CarbonAlterTableDropHivePartitionCommand(
           table.getTablePath,
           segments.asScala,
           partitionNames.toSeq,
-          uniqueId).collect()
+          uniqueId,
+          partialMatch = true).collect()
       } catch {
         case e: Exception =>
           // roll back the drop partitions from carbon store
@@ -143,6 +150,10 @@ case class CarbonAlterTableDropHivePartitionCommand(
       DataMapStoreManager.getInstance().clearDataMaps(table.getAbsoluteTableIdentifier)
     } finally {
       AlterTableUtil.releaseLocks(locks)
+      new PartitionMapFileStore().cleanSegments(
+        table,
+        new util.ArrayList(CarbonFilters.getPartitions(Seq.empty, sparkSession, tableName).asJava),
+        false)
     }
     Seq.empty[Row]
   }
