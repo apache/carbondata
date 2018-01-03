@@ -646,8 +646,8 @@ public class ThriftWrapperSchemaConverterImpl implements SchemaConverter {
 
   @Override public DataMapSchema fromExternalToWrapperDataMapSchema(
       org.apache.carbondata.format.DataMapSchema thriftDataMapSchema) {
-    DataMapSchema childSchema = DataMapSchemaFactory.INSTANCE
-        .getDataMapSchema(thriftDataMapSchema.getDataMapName(), thriftDataMapSchema.getClassName());
+    DataMapSchema childSchema = new DataMapSchema(thriftDataMapSchema.getDataMapName(),
+        thriftDataMapSchema.getClassName());
     childSchema.setProperties(thriftDataMapSchema.getProperties());
     if (null != thriftDataMapSchema.getRelationIdentifire()) {
       RelationIdentifier relationIdentifier =
