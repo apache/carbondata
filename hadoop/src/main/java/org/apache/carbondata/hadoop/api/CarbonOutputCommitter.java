@@ -18,9 +18,7 @@
 package org.apache.carbondata.hadoop.api;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -100,12 +98,19 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
       mergeCarbonIndexFiles(segmentPath);
       String updateTime =
           context.getConfiguration().get(CarbonTableOutputFormat.UPADTE_TIMESTAMP, null);
+      String segmentsToBeDeleted =
+          context.getConfiguration().get(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, "");
+      List<String> segmentDeleteList = Arrays.asList(segmentsToBeDeleted.split(","));
       if (updateTime != null) {
         Set<String> segmentSet = new HashSet<>(
             new SegmentStatusManager(carbonTable.getAbsoluteTableIdentifier())
                 .getValidAndInvalidSegments().getValidSegments());
-        CarbonUpdateUtil.updateTableMetadataStatus(segmentSet, carbonTable, updateTime, true,
-            new ArrayList<String>());
+        CarbonUpdateUtil.updateTableMetadataStatus(
+            segmentSet,
+            carbonTable,
+            updateTime,
+            true,
+            segmentDeleteList);
       }
     } else {
       CarbonLoaderUtil.updateTableStatusForFailure(loadModel);

@@ -70,28 +70,27 @@ private[sql] case class CarbonProjectForDeleteCommand(
       // handle the clean up of IUD.
       CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
-      if (DeleteExecution.deleteDeltaExecution(
+      DeleteExecution.deleteDeltaExecution(
         databaseNameOp,
         tableName,
         sparkSession,
         dataRdd,
         timestamp,
         isUpdateOperation = false,
-        executorErrors)) {
-        // call IUD Compaction.
-        HorizontalCompaction.tryHorizontalCompaction(sparkSession, carbonTable,
-          isUpdateOperation = false)
+        executorErrors)
+      // call IUD Compaction.
+      HorizontalCompaction.tryHorizontalCompaction(sparkSession, carbonTable,
+        isUpdateOperation = false)
 
 
-        if (executorErrors.failureCauses != FailureCauses.NONE) {
-          throw new Exception(executorErrors.errorMsg)
-        }
-
-        // trigger post event for Delete from table
-        val deleteFromTablePostEvent: DeleteFromTablePostEvent =
-          DeleteFromTablePostEvent(sparkSession, carbonTable)
-        OperationListenerBus.getInstance.fireEvent(deleteFromTablePostEvent, operationContext)
+      if (executorErrors.failureCauses != FailureCauses.NONE) {
+        throw new Exception(executorErrors.errorMsg)
       }
+
+      // trigger post event for Delete from table
+      val deleteFromTablePostEvent: DeleteFromTablePostEvent =
+        DeleteFromTablePostEvent(sparkSession, carbonTable)
+      OperationListenerBus.getInstance.fireEvent(deleteFromTablePostEvent, operationContext)
     } catch {
       case e: HorizontalCompactionException =>
         LOGGER.error("Delete operation passed. Exception in Horizontal Compaction." +

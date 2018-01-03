@@ -711,6 +711,9 @@ case class CarbonLoadDataCommand(
     options ++= this.options
     if (updateModel.isDefined) {
       options += (("updatetimestamp", updateModel.get.updatedTimeStamp.toString))
+      if (updateModel.get.deletedSegments.nonEmpty) {
+        options += (("segmentsToBeDeleted", updateModel.get.deletedSegments.mkString(",")))
+      }
     }
     val hdfsRelation = HadoopFsRelation(
       location = catalog,

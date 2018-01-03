@@ -95,6 +95,14 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
    */
   public static final String UPADTE_TIMESTAMP = "mapreduce.carbontable.update.timestamp";
 
+  /**
+   * During update query we first delete the old data and then add updated data to new segment, so
+   * sometimes there is a chance that complete segments needs to removed during deletion. We should
+   * do 'Mark for delete' for those segments during table status update.
+   */
+  public static final String SEGMENTS_TO_BE_DELETED =
+      "mapreduce.carbontable.segments.to.be.removed";
+
   private static final Log LOG = LogFactory.getLog(CarbonTableOutputFormat.class);
 
   private CarbonOutputCommitter committer;

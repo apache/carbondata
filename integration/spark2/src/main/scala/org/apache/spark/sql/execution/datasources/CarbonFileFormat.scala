@@ -109,14 +109,20 @@ with Serializable {
     CarbonTableOutputFormat.setOverwrite(conf, options("overwrite").toBoolean)
     // Set the update timestamp if user sets in case of update query. It needs to be updated
     // in load status update time
-    val updateTimeStamp = options.getOrElse("updatetimestamp", null)
-    if (updateTimeStamp != null) {
-      conf.set(CarbonTableOutputFormat.UPADTE_TIMESTAMP, updateTimeStamp)
-      model.setFactTimeStamp(updateTimeStamp.toLong)
+    val updateTimeStamp = options.get("updatetimestamp")
+    if (updateTimeStamp.isDefined) {
+      conf.set(CarbonTableOutputFormat.UPADTE_TIMESTAMP, updateTimeStamp.get)
+      model.setFactTimeStamp(updateTimeStamp.get.toLong)
     }
     val staticPartition = options.getOrElse("staticpartition", null)
     if (staticPartition != null) {
       conf.set("carbon.staticpartition", staticPartition)
+    }
+    // In case of update query there is chance to remove the older segments, so here we can set
+    // the to be deleted segments to mark as delete while updating tablestatus
+    val segemntsTobeDeleted = options.get("segmentsToBeDeleted")
+    if (segemntsTobeDeleted.isDefined) {
+      conf.set(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, segemntsTobeDeleted.get)
     }
     CarbonTableOutputFormat.setLoadModel(conf, model)
 

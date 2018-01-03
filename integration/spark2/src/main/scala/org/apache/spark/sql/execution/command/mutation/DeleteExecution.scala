@@ -51,6 +51,10 @@ import org.apache.carbondata.spark.DeleteDelataResultImpl
 object DeleteExecution {
   val LOGGER: LogService = LogServiceFactory.getLogService(this.getClass.getName)
 
+  /**
+   * generate the delete delta files in each segment as per the RDD.
+   * @return it gives the segments which needs to be deleted.
+   */
   def deleteDeltaExecution(
       databaseNameOp: Option[String],
       tableName: String,
@@ -58,7 +62,7 @@ object DeleteExecution {
       dataRdd: RDD[Row],
       timestamp: String,
       isUpdateOperation: Boolean,
-      executorErrors: ExecutionErrors): Boolean = {
+      executorErrors: ExecutionErrors): Seq[String] = {
 
     var res: Array[List[(SegmentStatus, (SegmentUpdateDetails, ExecutionErrors))]] = null
     val database = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
@@ -66,8 +70,8 @@ object DeleteExecution {
     val absoluteTableIdentifier = carbonTable.getAbsoluteTableIdentifier
     val carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier)
     val factPath = carbonTablePath.getFactDir
+    var segmentsTobeDeleted = Seq.empty[String]
 
-    var deleteStatus = true
     val deleteRdd = if (isUpdateOperation) {
       val schema =
         org.apache.spark.sql.types.StructType(Seq(org.apache.spark.sql.types.StructField(
@@ -92,7 +96,7 @@ object DeleteExecution {
 
     // if no loads are present then no need to do anything.
     if (keyRdd.partitions.length == 0) {
-      return true
+      return segmentsTobeDeleted
     }
     val blockMappingVO =
       carbonInputFormat.getBlockRowCount(
@@ -132,7 +136,7 @@ object DeleteExecution {
 
     // if no loads are present then no need to do anything.
     if (res.isEmpty) {
-      return true
+      return segmentsTobeDeleted
     }
 
     // update new status file
@@ -154,7 +158,6 @@ object DeleteExecution {
             }
           }
           else {
-            deleteStatus = false
             // In case of failure , clean all related delete delta files
             CarbonUpdateUtil.cleanStaleDeltaFiles(carbonTable, timestamp)
             LOGGER.audit(s"Delete data operation is failed for ${ database }.${ tableName }")
@@ -179,7 +182,7 @@ object DeleteExecution {
       val listOfSegmentToBeMarkedDeleted = CarbonUpdateUtil
         .getListOfSegmentsToMarkDeleted(blockMappingVO.getSegmentNumberOfBlockMapping)
 
-
+      segmentsTobeDeleted = listOfSegmentToBeMarkedDeleted.asScala
 
       // this is delete flow so no need of putting timestamp in the status file.
       if (CarbonUpdateUtil
@@ -310,7 +313,7 @@ object DeleteExecution {
       resultIter
     }
 
-    true
+    segmentsTobeDeleted
   }
 
   private def createCarbonInputFormat(absoluteTableIdentifier: AbsoluteTableIdentifier) :
