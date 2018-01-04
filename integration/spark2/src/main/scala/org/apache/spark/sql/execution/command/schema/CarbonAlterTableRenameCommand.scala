@@ -80,12 +80,15 @@ private[sql] case class CarbonAlterTableRenameCommand(
     var locks = List.empty[ICarbonLock]
     var timeStamp = 0L
     var carbonTable: CarbonTable = null
+    // lock file path to release locks after operation
+    var carbonTableLockFilePath: String = null
     try {
       locks = AlterTableUtil
         .validateTableAndAcquireLock(oldDatabaseName, oldTableName, locksToBeAcquired)(
           sparkSession)
       carbonTable = metastore.lookupRelation(Some(oldDatabaseName), oldTableName)(sparkSession)
         .asInstanceOf[CarbonRelation].carbonTable
+      carbonTableLockFilePath = carbonTable.getTablePath
       // if any load is in progress for table, do not allow rename table
       if (SegmentStatusManager.checkIfAnyLoadInProgressForTable(carbonTable)) {
         throw new AnalysisException(s"Data loading is in progress for table $oldTableName, alter " +
@@ -151,6 +154,7 @@ private[sql] case class CarbonAlterTableRenameCommand(
 
       sparkSession.catalog.refreshTable(TableIdentifier(newTableName,
         Some(oldDatabaseName)).quotedString)
+      carbonTableLockFilePath = newTablePath
       LOGGER.audit(s"Table $oldTableName has been successfully renamed to $newTableName")
       LOGGER.info(s"Table $oldTableName has been successfully renamed to $newTableName")
     } catch {
@@ -166,20 +170,16 @@ private[sql] case class CarbonAlterTableRenameCommand(
               sparkSession)
           renameBadRecords(newTableName, oldTableName, oldDatabaseName)
         }
-        // release lock from old location in case of any rename failure
-        AlterTableUtil.releaseLocks(locks)
         sys.error(s"Alter table rename table operation failed: ${e.getMessage}")
     } finally {
       // case specific to rename table as after table rename old table path will not be found
       if (carbonTable != null) {
-        val newTablePath = CarbonUtil
-          .getNewTablePath(new Path(carbonTable.getTablePath), newTableName)
         AlterTableUtil
           .releaseLocksManually(locks,
             locksToBeAcquired,
             oldDatabaseName,
             newTableName,
-            newTablePath)
+            carbonTableLockFilePath)
       }
     }
     Seq.empty
