@@ -83,8 +83,6 @@ public class RestructureUtil {
           if (tableDimension.getColumnId().equals(queryDimension.getDimension().getColumnId())) {
             QueryDimension currentBlockDimension = new QueryDimension(tableDimension.getColName());
             tableDimension.getColumnSchema()
-                .setDataType(queryDimension.getDimension().getDataType());
-            tableDimension.getColumnSchema()
                 .setPrecision(queryDimension.getDimension().getColumnSchema().getPrecision());
             tableDimension.getColumnSchema()
                 .setScale(queryDimension.getDimension().getColumnSchema().getScale());

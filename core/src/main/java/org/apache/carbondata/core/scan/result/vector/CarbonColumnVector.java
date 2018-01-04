@@ -67,6 +67,20 @@ public interface CarbonColumnVector {
 
   DataType getType();
 
+  /**
+   * Method to be used for getting the restructured data type. This method will used for
+   * retrieving the data after change in data type restructure operation
+   *
+   * @return
+   */
+  DataType getBlockDataType();
+
+  /**
+   * Method to be used for setting the restructured data type. This method will used for
+   * retrieving the data after change in data type restructure operation
+   */
+  void setBlockDataType(DataType blockDataType);
+
   void setFilteredRowsExist(boolean filteredRowsExist);
 
 }
