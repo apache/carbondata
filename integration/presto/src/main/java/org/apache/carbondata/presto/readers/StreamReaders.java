@@ -61,6 +61,8 @@ public final class StreamReaders {
         } else {
           return new SliceStreamReader(true, dictionarySliceArrayBlock);
         }
+      }else if (javaType == boolean.class) {
+              return new BooleanStreamReader(true,dictionary);
       } else {
         return new ObjectStreamReader();
       }
@@ -85,6 +87,8 @@ public final class StreamReaders {
         } else {
           return new SliceStreamReader();
         }
+      }else if (javaType == boolean.class) {
+        return new BooleanStreamReader();
       } else {
         return new ObjectStreamReader();
       }
