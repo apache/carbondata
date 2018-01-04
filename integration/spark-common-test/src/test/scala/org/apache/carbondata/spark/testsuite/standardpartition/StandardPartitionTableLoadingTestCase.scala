@@ -239,6 +239,24 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     checkAnswer(sql("select count(*) from loadstaticpartitiononeoverwrite"), rows)
   }
 
+  test("test partition column with special characters") {
+    sql(
+      """
+        | CREATE TABLE loadpartitionwithspecialchar (empno int, designation String, doj Timestamp,
+        |  workgroupcategory int, workgroupcategoryname String, deptno int, deptname String,
+        |  projectcode int, projectjoindate Timestamp, projectenddate Timestamp,attendance int,
+        |  utilization int,salary int)
+        | PARTITIONED BY (empname String)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql(s"""LOAD DATA local inpath '$resourcesPath/data_with_special_char.csv' INTO TABLE loadpartitionwithspecialchar OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+
+    checkAnswer(sql("select count(*) from loadpartitionwithspecialchar"), Seq(Row(10)))
+    checkAnswer(sql("select count(*) from loadpartitionwithspecialchar where empname='sibi=56'"), Seq(Row(1)))
+    checkAnswer(sql("select count(*) from loadpartitionwithspecialchar where empname='arvind,ss'"), Seq(Row(1)))
+  }
+
   test("Restrict streaming on partitioned table") {
     intercept[AnalysisException] {
       sql(
@@ -290,6 +308,7 @@ class StandardPartitionTableLoadingTestCase extends QueryTest with BeforeAndAfte
     sql("drop table if exists loadstaticpartitiononeoverwrite")
     sql("drop table if exists streamingpartitionedtable")
     sql("drop table if exists loadstaticpartitiononeissue")
+    sql("drop table if exists loadpartitionwithspecialchar")
   }
 
 }
