@@ -154,15 +154,15 @@ public class AdaptiveFloatingCodec extends AdaptiveCodec {
     @Override
     public void encode(int rowId, double value) {
       if (targetDataType == DataTypes.BYTE) {
-        encodedPage.putByte(rowId, (byte) (value * factor));
+        encodedPage.putByte(rowId, (byte) Math.round(value * factor));
       } else if (targetDataType == DataTypes.SHORT) {
-        encodedPage.putShort(rowId, (short) (value * factor));
+        encodedPage.putShort(rowId, (short) Math.round(value * factor));
       } else if (targetDataType == DataTypes.SHORT_INT) {
-        encodedPage.putShortInt(rowId, (int) (value * factor));
+        encodedPage.putShortInt(rowId, (int) Math.round(value * factor));
       } else if (targetDataType == DataTypes.INT) {
-        encodedPage.putInt(rowId, (int) (value * factor));
+        encodedPage.putInt(rowId, (int) Math.round(value * factor));
       } else if (targetDataType == DataTypes.LONG) {
-        encodedPage.putLong(rowId, (long) (value * factor));
+        encodedPage.putLong(rowId, (long) Math.round(value * factor));
       } else if (targetDataType == DataTypes.DOUBLE) {
         encodedPage.putDouble(rowId, value);
       } else {
