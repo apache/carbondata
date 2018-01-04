@@ -47,6 +47,15 @@ class TestDescribeTable extends QueryTest with BeforeAndAfterAll {
       "Table Block Size")
   }
 
+  test("test describe formatted table desc1") {
+
+    val resultCol = Seq("", "", "##Detailed Column property", "##Detailed Table Information", "ADAPTIVE", "CARBON Store Path", "Comment", "Database Name", "Last Update Time",
+    "SORT_COLUMNS", "SORT_SCOPE", "Streaming", "Table Block Size", "Table Data Size", "Table Index Size", "Table Name", "dec2col1", "dec2col2", "dec2col3", "dec2col4")
+    val resultRow: Seq[Row] = resultCol map(propName => Row(f"$propName%-36s"))
+    checkAnswer(sql("desc formatted DESC1").select("col_name"), resultRow)
+    assert(sql("desc formatted desc1").count() == 20)
+  }
+
   override def afterAll: Unit = {
     sql("DROP TABLE Desc1")
     sql("DROP TABLE Desc2")
