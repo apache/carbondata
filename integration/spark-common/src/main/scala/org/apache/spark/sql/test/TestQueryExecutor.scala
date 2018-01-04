@@ -62,7 +62,13 @@ object TestQueryExecutor {
       property
     }
   }
-
+  val badStorePath = s"$integrationPath/spark-common-test/target/badrecord";
+  try {
+    FileFactory.mkdirs(badStorePath, FileFactory.getFileType(badStorePath))
+  } catch {
+    case e : Exception =>
+      throw e;
+  }
   val hdfsUrl = {
     val property = System.getProperty("hdfs.url")
     if (property == null) {
