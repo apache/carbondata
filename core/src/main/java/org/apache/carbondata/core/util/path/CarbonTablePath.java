@@ -111,6 +111,17 @@ public class CarbonTablePath extends Path {
   }
 
   /**
+   * Return true if the fileNameWithPath ends with partition map file extension name
+   */
+  public static boolean isPartitionMapFile(String fileNameWithPath) {
+    int pos = fileNameWithPath.lastIndexOf('.');
+    if (pos != -1) {
+      return fileNameWithPath.substring(pos).startsWith(PARTITION_MAP_EXT);
+    }
+    return false;
+  }
+
+  /**
    * check if it is carbon index file matching extension
    *
    * @param fileNameWithPath
