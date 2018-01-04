@@ -87,9 +87,11 @@ private[sql] case class CarbonDescribeFormattedCommand(
     results ++= Seq(("Table Name", relation.carbonTable.getTableName, ""))
     results ++= Seq(("CARBON Store Path ", CarbonProperties.getStorePath, ""))
     val carbonTable = relation.carbonTable
+
+    val tblProps = carbonTable.getTableInfo.getFactTable.getTableProperties
+
     // Carbon table support table comment
-    val tableComment = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
-      .getOrElse(CarbonCommonConstants.TABLE_COMMENT, "")
+    val tableComment = tblProps.asScala.getOrElse(CarbonCommonConstants.TABLE_COMMENT, "")
     results ++= Seq(("Comment", tableComment, ""))
     results ++= Seq(("Table Block Size ", carbonTable.getBlockSizeInMB + " MB", ""))
     val dataIndexSize = CarbonUtil.calculateDataIndexSize(carbonTable)
@@ -101,16 +103,12 @@ private[sql] case class CarbonDescribeFormattedCommand(
       results ++= Seq((CarbonCommonConstants.LAST_UPDATE_TIME,
         dataIndexSize.get(CarbonCommonConstants.LAST_UPDATE_TIME).toString, ""))
     }
-    results ++= Seq(("SORT_SCOPE", carbonTable.getTableInfo.getFactTable
-      .getTableProperties.asScala.getOrElse("sort_scope", CarbonCommonConstants
-      .LOAD_SORT_SCOPE_DEFAULT), CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
-    val isStreaming = carbonTable.getTableInfo.getFactTable.getTableProperties.asScala
-      .getOrElse("streaming", "false")
-    results ++= Seq(("Streaming", isStreaming, ""))
 
-    val tblProps = carbonTable.getTableInfo.getFactTable.getTableProperties
     results ++= Seq(("SORT_SCOPE", tblProps.asScala.getOrElse("sort_scope", CarbonCommonConstants
-      .LOAD_SORT_SCOPE_DEFAULT), CarbonCommonConstants.LOAD_SORT_SCOPE_DEFAULT))
+      .LOAD_SORT_SCOPE_DEFAULT), tblProps.asScala.getOrElse("sort_scope", CarbonCommonConstants
+      .LOAD_SORT_SCOPE_DEFAULT)))
+    val isStreaming = tblProps.asScala.getOrElse("streaming", "false")
+    results ++= Seq(("Streaming", isStreaming, ""))
 
     // show table level compaction options
     if (tblProps.containsKey(CarbonCommonConstants.TABLE_MAJOR_COMPACTION_SIZE)) {
