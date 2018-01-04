@@ -98,7 +98,7 @@ case class RefreshCarbonTableCommand(
         // Register partitions to hive metastore in case of hive partitioning carbon table
         if (tableInfo.getFactTable.getPartitionInfo != null &&
             tableInfo.getFactTable.getPartitionInfo.getPartitionType == PartitionType.NATIVE_HIVE) {
-          registerAllPartitionsToHive(tablePath, databaseName, tableName, sparkSession)
+          registerAllPartitionsToHive(absoluteTableIdentifier, sparkSession)
         }
       } else {
         LOGGER.audit(
@@ -220,25 +220,25 @@ case class RefreshCarbonTableCommand(
    * the hive metastore
    */
   private def registerAllPartitionsToHive(
-      tablePath: String,
-      dbName: String,
-      tableName: String,
+      absIdentifier: AbsoluteTableIdentifier,
       sparkSession: SparkSession): Unit = {
     val metadataDetails =
-      SegmentStatusManager.readLoadMetadata(CarbonTablePath.getMetadataPath(tablePath))
+      SegmentStatusManager.readLoadMetadata(
+        CarbonTablePath.getMetadataPath(absIdentifier.getTablePath))
     // First read all partition information from each segment.
     val allpartitions = metadataDetails.map{ metadata =>
       if (metadata.getSegmentStatus == SegmentStatus.SUCCESS ||
           metadata.getSegmentStatus == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
         val mapper = new PartitionMapFileStore()
         mapper.readAllPartitionsOfSegment(
-          CarbonTablePath.getSegmentPath(tablePath, metadata.getLoadName))
+          CarbonTablePath.getSegmentPath(absIdentifier.getTablePath, metadata.getLoadName))
         Some(mapper.getPartitionMap.values().asScala)
       } else {
         None
       }
     }.filter(_.isDefined).map(_.get)
-    val identifier = TableIdentifier(tableName, Some(dbName))
+    val identifier =
+      TableIdentifier(absIdentifier.getTableName, Some(absIdentifier.getDatabaseName))
     // Register the partition information to the hive metastore
     allpartitions.foreach { segPartitions =>
       val specs: Seq[TablePartitionSpec] = segPartitions.map { indexPartitions =>
