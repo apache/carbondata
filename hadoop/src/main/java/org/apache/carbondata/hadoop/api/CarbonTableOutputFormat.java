@@ -103,6 +103,11 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
   public static final String SEGMENTS_TO_BE_DELETED =
       "mapreduce.carbontable.segments.to.be.removed";
 
+  /**
+   * It is used only to fire events in case of any child tables to be loaded.
+   */
+  public static final String OPERATION_CONTEXT = "mapreduce.carbontable.operation.context";
+
   private static final Log LOG = LogFactory.getLog(CarbonTableOutputFormat.class);
 
   private CarbonOutputCommitter committer;

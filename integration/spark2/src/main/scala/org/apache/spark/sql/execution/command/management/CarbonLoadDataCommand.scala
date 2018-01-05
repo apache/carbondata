@@ -62,12 +62,14 @@ import org.apache.carbondata.core.mutate.{CarbonUpdateUtil, TupleIdEnum}
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentStatusManager}
 import org.apache.carbondata.core.util.{CarbonProperties, CarbonUtil}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
-import org.apache.carbondata.events.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events.{OperationContext, OperationListenerBus}
 import org.apache.carbondata.events.exception.PreEventException
 import org.apache.carbondata.format
+import org.apache.carbondata.hadoop.util.ObjectSerializationUtil
 import org.apache.carbondata.processing.exception.DataLoadingException
 import org.apache.carbondata.processing.loading.TableProcessingOperations
 import org.apache.carbondata.processing.loading.csvinput.{CSVInputFormat, StringArrayWritable}
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostExecutionEvent, LoadTablePreExecutionEvent}
 import org.apache.carbondata.processing.loading.exception.{BadRecordFoundException, NoRetryException}
 import org.apache.carbondata.processing.loading.model.{CarbonDataLoadSchema, CarbonLoadModel}
 import org.apache.carbondata.processing.util.CarbonLoaderUtil
@@ -167,14 +169,15 @@ case class CarbonLoadDataCommand(
       try {
         val operationContext = new OperationContext
         val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =
-          LoadTablePreExecutionEvent(sparkSession,
+          new LoadTablePreExecutionEvent(
             table.getCarbonTableIdentifier,
             carbonLoadModel,
             factPath,
             dataFrame.isDefined,
-            optionsFinal,
-            options,
+            optionsFinal.asJava,
+            options.asJava,
             isOverwriteTable)
+        operationContext.setProperty("isOverwrite", isOverwriteTable)
         OperationListenerBus.getInstance.fireEvent(loadTablePreExecutionEvent, operationContext)
         // First system has to partition the data first and then call the load data
         LOGGER.info(s"Initiating Direct Load for the Table : ($dbName.$tableName)")
@@ -232,7 +235,7 @@ case class CarbonLoadDataCommand(
             operationContext)
         }
         val loadTablePostExecutionEvent: LoadTablePostExecutionEvent =
-          new LoadTablePostExecutionEvent(sparkSession,
+          new LoadTablePostExecutionEvent(
             table.getCarbonTableIdentifier,
             carbonLoadModel)
         OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
@@ -614,7 +617,8 @@ case class CarbonLoadDataCommand(
         sizeInBytes,
         isOverwriteTable,
         carbonLoadModel,
-        sparkSession)
+        sparkSession,
+        operationContext)
       val convertedPlan =
         CarbonReflectionUtils.getInsertIntoCommand(
           table = convertRelation,
@@ -679,7 +683,8 @@ case class CarbonLoadDataCommand(
       sizeInBytes: Long,
       overWrite: Boolean,
       loadModel: CarbonLoadModel,
-      sparkSession: SparkSession): LogicalRelation = {
+      sparkSession: SparkSession,
+      operationContext: OperationContext): LogicalRelation = {
     val table = loadModel.getCarbonDataLoadSchema.getCarbonTable
     val metastoreSchema = StructType(catalogTable.schema.fields.map(_.copy(dataType = StringType)))
     val lazyPruningEnabled = sparkSession.sqlContext.conf.manageFilesourcePartitions
@@ -701,6 +706,7 @@ case class CarbonLoadDataCommand(
     val dataSchema =
       StructType(metastoreSchema
         .filterNot(field => partitionSchema.contains(field.name)))
+    val operationContextStr = ObjectSerializationUtil.convertObjectToString(operationContext)
     val options = new mutable.HashMap[String, String]()
     options ++= catalogTable.storage.properties
     options += (("overwrite", overWriteLocal.toString))
@@ -708,6 +714,7 @@ case class CarbonLoadDataCommand(
     options += (("dicthost", loadModel.getDictionaryServerHost))
     options += (("dictport", loadModel.getDictionaryServerPort.toString))
     options += (("staticpartition", partition.nonEmpty.toString))
+    options += (("operationcontext", operationContextStr))
     options ++= this.options
     if (updateModel.isDefined) {
       options += (("updatetimestamp", updateModel.get.updatedTimeStamp.toString))

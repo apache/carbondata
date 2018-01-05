@@ -124,6 +124,10 @@ with Serializable {
     if (segemntsTobeDeleted.isDefined) {
       conf.set(CarbonTableOutputFormat.SEGMENTS_TO_BE_DELETED, segemntsTobeDeleted.get)
     }
+    val operationContextStr = options.get("operationcontext")
+    if (operationContextStr.isDefined) {
+      conf.set(CarbonTableOutputFormat.OPERATION_CONTEXT, operationContextStr.get)
+    }
     CarbonTableOutputFormat.setLoadModel(conf, model)
 
     new OutputWriterFactory {
