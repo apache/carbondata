@@ -114,24 +114,22 @@
     </resources>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-antrun-plugin</artifactId>
-        <version>1.8</version>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
         <executions>
           <execution>
             <phase>generate-resources</phase>
+            <!-- Execute the shell script to generate the CarbonData build information. -->
             <configuration>
-              <!-- Execute the shell script to generate the CarbonData build information. -->
-              <target>
-                <exec executable="bash">
-                  <arg value="${project.basedir}/../build/carbondata-build-info"/>
-                  <arg value="${project.build.directory}/extra-resources"/>
-                  <arg value="${project.version}"/>
-                </exec>
-              </target>
+              <executable>${project.basedir}/../build/carbondata-build-info${script.exetension}</executable>
+              <arguments>
+                <argument>${project.build.directory}/extra-resources</argument>
+                <argument>${project.version}</argument>
+              </arguments>
             </configuration>
             <goals>
-              <goal>run</goal>
+              <goal>exec</goal>
             </goals>
           </execution>
         </executions>

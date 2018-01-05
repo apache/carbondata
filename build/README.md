@@ -31,6 +31,8 @@ mvn -DskipTests -Pspark-2.1 -Dspark.version=2.1.0 clean package
 mvn -DskipTests -Pspark-2.2 -Dspark.version=2.2.1 clean package
 ```
 
+Note: If you are working in Windows environment, remember to add `-Pwindows` while building the project.
+
 ## For contributors : To build the format code after any changes, please follow the below command.
 Note:Need install Apache Thrift 0.9.3
 ```
