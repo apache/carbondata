@@ -91,7 +91,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
       CarbonUpdateUtil.cleanUpDeltaFiles(carbonTable, false)
 
       // do delete operation.
-      DeleteExecution.deleteDeltaExecution(
+      val segmentsToBeDeleted = DeleteExecution.deleteDeltaExecution(
         databaseNameOp,
         tableName,
         sparkSession,
@@ -111,7 +111,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
         plan,
         sparkSession,
         currentTime,
-        executionErrors)
+        executionErrors,
+        segmentsToBeDeleted)
 
       if (executionErrors.failureCauses != FailureCauses.NONE) {
         throw new Exception(executionErrors.errorMsg)
@@ -165,7 +166,8 @@ private[sql] case class CarbonProjectForUpdateCommand(
       plan: LogicalPlan,
       sparkSession: SparkSession,
       currentTime: Long,
-      executorErrors: ExecutionErrors): Unit = {
+      executorErrors: ExecutionErrors,
+      deletedSegments: Seq[String]): Unit = {
 
     def isDestinationRelation(relation: CarbonDatasourceHadoopRelation): Boolean = {
       val dbName = CarbonEnv.getDatabaseName(databaseNameOp)(sparkSession)
@@ -209,7 +211,7 @@ private[sql] case class CarbonProjectForUpdateCommand(
       case _ => sys.error("")
     }
 
-    val updateTableModel = UpdateTableModel(true, currentTime, executorErrors)
+    val updateTableModel = UpdateTableModel(true, currentTime, executorErrors, deletedSegments)
 
     val header = getHeader(carbonRelation, plan)
 
