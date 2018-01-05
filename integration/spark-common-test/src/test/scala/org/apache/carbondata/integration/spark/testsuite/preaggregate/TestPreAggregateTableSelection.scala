@@ -230,6 +230,11 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     checkAnswer(df, Row("vishal", 29))
   }
 
+  test("test PreAggregate table selection 29") {
+    val df = sql("select sum(id) from mainTable group by name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg2")
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
     sql("drop table if exists lineitem")

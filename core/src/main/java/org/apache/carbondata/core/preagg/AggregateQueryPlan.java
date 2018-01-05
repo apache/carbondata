@@ -21,7 +21,7 @@ import java.util.List;
 /**
  * class to maintain the query plan to select the data map tables
  */
-public class QueryPlan {
+public class AggregateQueryPlan {
 
   /**
    * List of projection columns
@@ -33,7 +33,7 @@ public class QueryPlan {
    */
   private List<QueryColumn> filterColumns;
 
-  public QueryPlan(List<QueryColumn> projectionColumn, List<QueryColumn> filterColumns) {
+  public AggregateQueryPlan(List<QueryColumn> projectionColumn, List<QueryColumn> filterColumns) {
     this.projectionColumn = projectionColumn;
     this.filterColumns = filterColumns;
   }

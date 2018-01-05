@@ -36,15 +36,15 @@ public class AggregateTableSelector {
   /**
    * current query plan
    */
-  private QueryPlan queryPlan;
+  private AggregateQueryPlan aggregateQueryPlan;
 
   /**
    * parent table
    */
   private CarbonTable parentTable;
 
-  public AggregateTableSelector(QueryPlan queryPlan, CarbonTable parentTable) {
-    this.queryPlan = queryPlan;
+  public AggregateTableSelector(AggregateQueryPlan aggregateQueryPlan, CarbonTable parentTable) {
+    this.aggregateQueryPlan = aggregateQueryPlan;
     this.parentTable = parentTable;
   }
 
@@ -58,8 +58,8 @@ public class AggregateTableSelector {
    * @return selected pre aggregate table schema
    */
   public List<DataMapSchema> selectPreAggDataMapSchema() {
-    List<QueryColumn> projectionColumn = queryPlan.getProjectionColumn();
-    List<QueryColumn> filterColumns = queryPlan.getFilterColumns();
+    List<QueryColumn> projectionColumn = aggregateQueryPlan.getProjectionColumn();
+    List<QueryColumn> filterColumns = aggregateQueryPlan.getFilterColumns();
     List<DataMapSchema> dataMapSchemaList = parentTable.getTableInfo().getDataMapSchemaList();
     List<DataMapSchema> selectedDataMapSchema = new ArrayList<>();
     boolean isMatch;

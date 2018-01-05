@@ -37,23 +37,21 @@ import org.apache.spark.util.CarbonReflectionUtils
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
-import org.apache.carbondata.core.preagg.{AggregateTableSelector, QueryColumn, QueryPlan}
+import org.apache.carbondata.core.preagg.{AggregateQueryPlan, AggregateTableSelector, QueryColumn}
 import org.apache.carbondata.core.util.{CarbonUtil, ThreadLocalSessionInfo}
 
 /**
  * model class to store aggregate expression logical plan
  * and its column schema mapping
- * @param logicalPlan
- * logical plan of aggregate expression
- * @param columnSchema
- * column schema from table
+ * @param expression aggregate expression
+ * @param columnSchema list of column schema from table
  */
 case class AggExpToColumnMappingModel(
-    logicalPlan: LogicalPlan,
+    expression: Expression,
     var columnSchema: Option[Object] = None) {
   override def equals(o: Any) : Boolean = o match {
     case that: AggExpToColumnMappingModel =>
-      that.logicalPlan.sameResult(this.logicalPlan)
+      that.expression==this.expression
     case _ => false
   }
   // TODO need to update the hash code generation code
@@ -92,8 +90,7 @@ case class AggExpToColumnMappingModel(
  *    6.1 validate maintable has timeseries datamap
  *    6.2 timeseries function is valid function or not
  *
- * @param sparkSession
- * spark session
+ * @param sparkSession spark session
  */
 case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule[LogicalPlan] {
 
@@ -110,8 +107,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
 
   /**
    * Below method will be used to validate the logical plan
-   * @param logicalPlan
-   * query logical plan
+   * @param logicalPlan query logical plan
    * @return isvalid or not
    */
   private def isValidPlan(logicalPlan: LogicalPlan) : Boolean = {
@@ -161,8 +157,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * Below method will be used to update the child plan
    * This will be used for updating expression like join condition,
    * order by, project list etc
-   * @param plan
-   * child plan
+   * @param plan child plan
    * @return updated plan
    */
   def updatePlan(plan: LogicalPlan) : LogicalPlan = {
@@ -192,8 +187,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
 
   /**
    * Below method will be used to update the sort expression
-   * @param sortExp
-   * sort order expression in query
+   * @param sortExp sort order expression in query
    * @return updated sort expression
    */
   def updateSortExpression(sortExp : Seq[SortOrder]) : Seq[SortOrder] = {
@@ -216,8 +210,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
 
   /**
    * Below method will be used to update the expression like group by expression
-   * @param expressions
-   * sequence of expression like group by
+   * @param expressions sequence of expression like group by
    * @return updated expressions
    */
   def updateExpression(expressions : Seq[Expression]) : Seq[Expression] = {
@@ -271,11 +264,11 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case agg@Aggregate(
         grExp,
         aggExp,
-        child@CarbonSubqueryAlias(_, logicalRelation: LogicalRelation))
-        if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-           logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+        child@CarbonSubqueryAlias(_, l: LogicalRelation))
+        if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
+           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
              metaData.hasAggregateDataMapSchema =>
-        val carbonTable = getCarbonTable(logicalRelation)
+        val carbonTable = getCarbonTable(l)
         val list = scala.collection.mutable.HashSet.empty[QueryColumn]
         val aggregateExpressions = scala.collection.mutable.HashSet.empty[AggregateExpression]
         val isValidPlan = extractQueryColumnsFromAggExpression(
@@ -288,7 +281,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           val (aggDataMapSchema, childPlan) = getChildDataMapForTransformation(list,
             aggregateExpressions,
             carbonTable,
-            logicalRelation)
+            agg)
           if(null != aggDataMapSchema && null!= childPlan) {
             val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
             val (updatedGroupExp, updatedAggExp, newChild, None) =
@@ -300,7 +293,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                 attributes,
                 childPlan,
                 carbonTable,
-                logicalRelation)
+                agg)
             Aggregate(updatedGroupExp,
               updatedAggExp,
               newChild)
@@ -314,11 +307,11 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case agg@Aggregate(
         grExp,
         aggExp,
-        Filter(expression, child@CarbonSubqueryAlias(_, logicalRelation: LogicalRelation)))
-        if logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
-           logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
+        Filter(expression, child@CarbonSubqueryAlias(_, l: LogicalRelation)))
+        if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
+           l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
              metaData.hasAggregateDataMapSchema =>
-        val carbonTable = getCarbonTable(logicalRelation)
+        val carbonTable = getCarbonTable(l)
         val list = scala.collection.mutable.HashSet.empty[QueryColumn]
         val aggregateExpressions = scala.collection.mutable.HashSet.empty[AggregateExpression]
         var isValidPlan = extractQueryColumnsFromAggExpression(
@@ -330,13 +323,13 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         // getting the columns from filter expression
         isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(expression)
         if (isValidPlan) {
-          extractColumnFromExpression(expression, list, carbonTable)
+          extractColumnFromExpression(expression, list, carbonTable, true)
         }
         if(isValidPlan) {
           val (aggDataMapSchema, childPlan) = getChildDataMapForTransformation(list,
             aggregateExpressions,
             carbonTable,
-            logicalRelation)
+            agg)
           if(null != aggDataMapSchema && null!= childPlan) {
             val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
             val (updatedGroupExp, updatedAggExp, newChild, updatedFilterExpression) =
@@ -348,7 +341,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                 attributes,
                 childPlan,
                 carbonTable,
-                logicalRelation)
+                agg)
             Aggregate(updatedGroupExp,
               updatedAggExp,
               Filter(updatedFilterExpression.get,
@@ -366,20 +359,16 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
   /**
    * Below method will be used to validate query plan and get the proper aggregation data map schema
    * and child relation plan object if plan is valid for transformation
-   * @param queryColumns
-   * list of query columns from projection and filter
-   * @param aggregateExpressions
-   * list of aggregate expression (aggregate function)
-   * @param carbonTable
-   * parent carbon table
-   * @param logicalRelation
-   * parent logical relation
+   * @param queryColumns list of query columns from projection and filter
+   * @param aggregateExpressions list of aggregate expression (aggregate function)
+   * @param carbonTable parent carbon table
+   * @param parentLogicalPlan parent logical relation
    * @return if plan is valid then aggregation data map schema and its relation plan
    */
   def getChildDataMapForTransformation(queryColumns: scala.collection.mutable.HashSet[QueryColumn],
       aggregateExpressions: scala.collection.mutable.HashSet[AggregateExpression],
       carbonTable: CarbonTable,
-      logicalRelation: LogicalRelation): (AggregationDataMapSchema, LogicalPlan) = {
+      parentLogicalPlan: LogicalPlan): (AggregationDataMapSchema, LogicalPlan) = {
     // getting all the projection columns
     val listProjectionColumn = queryColumns
       .filter(queryColumn => !queryColumn.isFilterColumn)
@@ -391,7 +380,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     val isProjectionColumnPresent = (listProjectionColumn.size + listFilterColumn.size) > 0
     // create a query plan object which will be used to select the list of pre aggregate tables
     // matches with this plan
-    val queryPlan = new QueryPlan(listProjectionColumn.asJava, listFilterColumn.asJava)
+    val queryPlan = new AggregateQueryPlan(listProjectionColumn.asJava, listFilterColumn.asJava)
     // create aggregate table selector object
     val aggregateTableSelector = new AggregateTableSelector(queryPlan, carbonTable)
     // select the list of valid child tables
@@ -403,14 +392,6 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     } else {
       carbonTable.getTableInfo.getDataMapSchemaList
     }
-    val aggExpLogicalPlans = aggregateExpressions.map { queryAggExp =>
-      PreAggregateUtil.getLogicalPlanFromAggExp(queryAggExp,
-        carbonTable.getTableName,
-        carbonTable.getDatabaseName,
-        logicalRelation,
-        sparkSession,
-        parser)
-    }.toSeq
     // if it does not match with any pre aggregate table return the same plan
     if (!selectedAggMaps.isEmpty) {
       // filter the selected child schema based on size to select the pre-aggregate tables
@@ -437,9 +418,9 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           relationBuffer.collectFirst {
             case a@(datamapSchema, _, _)
               if validateAggregateExpression(datamapSchema,
-              carbonTable,
-              logicalRelation,
-              aggExpLogicalPlans) =>
+                carbonTable,
+                parentLogicalPlan,
+                aggregateExpressions.toSeq) =>
               a
           }
         } else {
@@ -461,25 +442,22 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
   /**
    * Below method will be used to validate aggregate expression with the data map
    * and will return the selected valid data maps
-   * @param selectedDataMap
-   *                        list of data maps
-   * @param carbonTable
-   *                    parent carbon table
-   * @param logicalRelation
-   *                        parent logical relation
-   * @param queryAggExpLogicalPlans
-   *                                query agg expression logical plan
+   * @param selectedDataMap list of data maps
+   * @param carbonTable parent carbon table
+   * @param parentLogicalPlan parent logical plan
+   * @param queryAggExpLogicalPlans query agg expression logical plan
    * @return valid data map
    */
   def validateAggregateExpression(selectedDataMap: DataMapSchema,
       carbonTable: CarbonTable,
-      logicalRelation: LogicalRelation,
-      queryAggExpLogicalPlans: Seq[LogicalPlan]): Boolean = {
-    val mappingModel = getLogicalPlanForAggregateExpression(selectedDataMap,
+      parentLogicalPlan: LogicalPlan,
+      queryAggExpLogicalPlans: Seq[AggregateExpression]): Boolean = {
+    val mappingModel = getExpressionToColumnMapping(selectedDataMap,
       carbonTable,
-      logicalRelation)
+      parentLogicalPlan)
     queryAggExpLogicalPlans.forall{p =>
-      mappingModel.exists(m => p.sameResult(m.logicalPlan))
+      mappingModel.exists{m =>
+        PreAggregateUtil.normalizeExprId(p, parentLogicalPlan.allAttributes) == m.expression}
     }
   }
 
@@ -487,16 +465,14 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * Below method will be used to to get the logical plan for each aggregate expression in
    * child data map and its column schema mapping if mapping is already present
    * then it will use the same otherwise it will generate and stored in aggregation data map
-   * @param selectedDataMap
-   *                        child data map
-   * @param carbonTable
-   *                    parent table
-   * @param logicalRelation
-   *                        logical relation of actual plan
+   * @param selectedDataMap child data map
+   * @param carbonTable parent table
+   * @param parentLogicalPlan logical relation of actual plan
    * @return map of logical plan for each aggregate expression in child query and its column mapping
    */
-  def getLogicalPlanForAggregateExpression(selectedDataMap: DataMapSchema, carbonTable: CarbonTable,
-      logicalRelation: LogicalRelation): mutable.Set[AggExpToColumnMappingModel] = {
+  def getExpressionToColumnMapping(selectedDataMap: DataMapSchema,
+      carbonTable: CarbonTable,
+      parentLogicalPlan: LogicalPlan): mutable.Set[AggExpToColumnMappingModel] = {
     val aggDataMapSchema = selectedDataMap.asInstanceOf[AggregationDataMapSchema]
     if(null == aggDataMapSchema.getAggExpToColumnMapping) {
       // add preAGG UDF to avoid all the PreAggregate rule
@@ -512,47 +488,35 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       // sorting the columns based on schema ordinal so search will give proper result
       val sortedColumnList = aggDataMapSchema.getChildSchema.getListOfColumns.asScala
         .sortBy(_.getSchemaOrdinal)
-      val logicalPlanToColumnMapping = mutable.HashSet.empty[AggExpToColumnMappingModel]
+      val expressionToColumnMapping = mutable.LinkedHashSet.empty[AggExpToColumnMappingModel]
       dataMapAggExp.foreach { aggExp =>
-        // for each aggregate expression get logical plan
-        val expLogicalPlan = PreAggregateUtil.getLogicalPlanFromAggExp(aggExp,
-          carbonTable.getTableName,
-          carbonTable.getDatabaseName,
-          logicalRelation,
-          sparkSession,
-          parser)
-        val model = AggExpToColumnMappingModel(expLogicalPlan, None)
-        if (!logicalPlanToColumnMapping.contains(model)) {
+        val updatedExp = PreAggregateUtil.normalizeExprId(aggExp, aggPlan.allAttributes)
+        val model = AggExpToColumnMappingModel(updatedExp, None)
+        if (!expressionToColumnMapping.contains(model)) {
           // check if aggregate expression is of type avg
           // get the columns
-          var columnSchema = aggDataMapSchema
+          val columnSchema = aggDataMapSchema
             .getAggColumnBasedOnIndex(counter, sortedColumnList.asJava)
           // increment the counter so when for next expression above code will be
           // executed it will search from that schema ordinal
           counter = columnSchema.getSchemaOrdinal + 1
           model.columnSchema = Some(columnSchema)
-          logicalPlanToColumnMapping += model
+          expressionToColumnMapping += model
         }
       }
-      aggDataMapSchema.setAggExpToColumnMapping(logicalPlanToColumnMapping.asJava)
+      aggDataMapSchema.setAggExpToColumnMapping(expressionToColumnMapping.asJava)
       // return the mapping
-      logicalPlanToColumnMapping
+      expressionToColumnMapping
     } else {
-      val aggExpToColumnMappingModel = aggDataMapSchema.getAggExpToColumnMapping
-        .asInstanceOf[java.util.Set[AggExpToColumnMappingModel]].asScala.map{ mapping =>
-        val newLogicalPlan = PreAggregateUtil.updateLogicalRelation(mapping.logicalPlan,
-          logicalRelation)
-        mapping.copy(logicalPlan = newLogicalPlan)
-      }
-      aggDataMapSchema.setAggExpToColumnMapping(aggExpToColumnMappingModel.asJava)
-      aggExpToColumnMappingModel
+      aggDataMapSchema.getAggExpToColumnMapping
+        .asInstanceOf[java.util.Set[AggExpToColumnMappingModel]].asScala
+        .asInstanceOf[mutable.LinkedHashSet[AggExpToColumnMappingModel]]
     }
   }
 
   /**
    * Below method will be used to get aggregate expression
-   * @param logicalPlan
-   *               logical plan
+   * @param logicalPlan logical plan
    * @return list of aggregate expression
    */
   def getAggregateExpFromChildDataMap(logicalPlan: LogicalPlan): Seq[AggregateExpression] = {
@@ -561,20 +525,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case _@Aggregate(_, aggExp, _) =>
         aggExp map {
           case Alias(attr: AggregateExpression, _) =>
-            attr.aggregateFunction match {
-              case Average(expression: Expression) =>
-                list += AggregateExpression(Sum(expression),
-                  attr.mode, attr.isDistinct)
-                list += AggregateExpression(Count(expression),
-                  attr.mode, attr.isDistinct)
-              case Average(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
-                list += AggregateExpression(Sum(Cast(exp, changeDataType)),
-                  attr.mode, attr.isDistinct)
-                list += AggregateExpression(Count(Cast(exp, changeDataType)),
-                  attr.mode, attr.isDistinct)
-              case _ =>
-                list += attr
-            }
+            list ++= PreAggregateUtil.validateAggregateFunctionAndGetFields(attr)
           case _ =>
         }
     }
@@ -585,8 +536,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * Below method will be used to check whether specific segment is set for maintable
    * if it is present then no need to transform the plan and query will be executed on
    * maintable
-   * @param carbonTable
-   *                    parent table
+   * @param carbonTable parent table
    * @return is specific segment is present in session params
    */
   def isSpecificSegmentPresent(carbonTable: CarbonTable) : Boolean = {
@@ -604,17 +554,15 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
   /**
    * Below method will be used to extract the query columns from
    * filter expression
-   * @param expression
-   *                  filter expression
-   * @param set
-   *             query column list
-   * @param carbonTable
-   *                    parent table
+   * @param expression filter expression
+   * @param queryColumns query column set
+   * @param carbonTable parent table
    * @return isvalid filter expression for aggregate
    */
   def extractColumnFromExpression(expression: Expression,
-      set: scala.collection.mutable.HashSet[QueryColumn],
-      carbonTable: CarbonTable)  {
+      queryColumns: scala.collection.mutable.HashSet[QueryColumn],
+      carbonTable: CarbonTable,
+      isFilterColumn: Boolean = false) {
     // map to maintain attribute reference present in the filter to timeseries function
     // if applied this is added to avoid duplicate column
     val mapOfColumnSeriesFun = scala.collection.mutable.HashMap.empty[AttributeReference, String]
@@ -645,12 +593,12 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     }
     mapOfColumnSeriesFun.foreach { f =>
       if (f._2 == null) {
-        set +=
-        getQueryColumn(f._1.name, carbonTable, isFilterColumn = true)
+        queryColumns +=
+        getQueryColumn(f._1.name, carbonTable, isFilterColumn)
       } else {
-        set += getQueryColumn(f._1.name,
+        queryColumns += getQueryColumn(f._1.name,
           carbonTable,
-          isFilterColumn = true,
+          isFilterColumn,
           timeseriesFunction = f._2)
       }
     }
@@ -660,14 +608,10 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * Below method will be used to get the child attribute reference
    * based on parent name
    *
-   * @param dataMapSchema
-   * child schema
-   * @param attributeReference
-   * parent attribute reference
-   * @param attributes
-   * child logical relation
-   * @param canBeNull
-   * this is added for strict validation in which case child attribute can be
+   * @param dataMapSchema child schema
+   * @param attributeReference parent attribute reference
+   * @param attributes child logical relation
+   * @param canBeNull this is added for strict validation in which case child attribute can be
    * null and when it cannot be null
    * @return child attribute reference
    */
@@ -706,24 +650,17 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * 3. child logical plan
    * 4. filter expression if present
    *
-   * @param groupingExpressions
-   * actual plan grouping expression
-   * @param aggregateExpressions
-   * actual plan aggregate expression
-   * @param child
-   * child logical plan
-   * @param filterExpression
-   * filter expression
-   * @param aggDataMapSchema
-   * pre aggregate table schema
-   * @param attributes
-   * pre aggregate table logical relation
-   * @param aggPlan
-   *                aggregate logical plan
+   * @param groupingExpressions actual plan grouping expression
+   * @param aggregateExpressions actual plan aggregate expression
+   * @param child child logical plan
+   * @param filterExpression filter expression
+   * @param aggDataMapSchema pre aggregate table schema
+   * @param attributes pre aggregate table logical relation
+   * @param aggPlan aggregate logical plan
    * @return tuple of(updated grouping expression,
-   *         updated aggregate expression,
-   *         updated child logical plan,
-   *         updated filter expression if present in actual plan)
+   * updated aggregate expression,
+   * updated child logical plan,
+   * updated filter expression if present in actual plan)
    */
   def getUpdatedExpressions(groupingExpressions: Seq[Expression],
       aggregateExpressions: Seq[NamedExpression],
@@ -732,15 +669,12 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       attributes: Seq[AttributeReference],
       aggPlan: LogicalPlan,
       parentTable: CarbonTable,
-      logicalRelation: LogicalRelation): (Seq[Expression], Seq[NamedExpression], LogicalPlan,
+      parentLogicalPlan: LogicalPlan): (Seq[Expression], Seq[NamedExpression], LogicalPlan,
     Option[Expression]) = {
     val aggExpColumnMapping = if (null != aggDataMapSchema.getAggExpToColumnMapping) {
       Some(aggDataMapSchema.getAggExpToColumnMapping
-        .asInstanceOf[java.util.Set[AggExpToColumnMappingModel]].asScala.map{ mapping =>
-        val newLogicalPlan = PreAggregateUtil.updateLogicalRelation(mapping.logicalPlan,
-          logicalRelation)
-        mapping.copy(logicalPlan = newLogicalPlan)
-      })
+        .asInstanceOf[java.util.Set[AggExpToColumnMappingModel]].asScala
+        .asInstanceOf[mutable.LinkedHashSet[AggExpToColumnMappingModel]])
     } else {
       None
     }
@@ -809,7 +743,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             aggDataMapSchema,
             attributes,
             parentTable,
-            logicalRelation,
+            parentLogicalPlan,
             aggExpColumnMapping.get)
         } else {
           attr
@@ -897,41 +831,30 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
    * table will be created with two columns one for sum(column) and count(column)
    * to support rollup
    *
-   * @param aggExp
-   * aggregate expression
-   * @param dataMapSchema
-   * child data map schema
-   * @param attributes
-   * child logical relation
-   * @param parentTable
-   * parent carbon table
-   * @param logicalRelation
-   * logical relation
+   * @param aggExp aggregate expression
+   * @param dataMapSchema child data map schema
+   * @param attributes child logical relation
+   * @param parentTable parent carbon table
+   * @param parentLogicalPlan logical relation
    * @return updated expression
    */
   def getUpdatedAggregateExpressionForChild(aggExp: AggregateExpression,
       dataMapSchema: AggregationDataMapSchema,
       attributes: Seq[AttributeReference],
       parentTable: CarbonTable,
-      logicalRelation: LogicalRelation,
-      aggExpColumnMapping: mutable.Set[AggExpToColumnMappingModel]):
+      parentLogicalPlan: LogicalPlan,
+      aggExpColumnMapping: mutable.LinkedHashSet[AggExpToColumnMappingModel]):
   Expression = {
     // get the updated aggregate expression, in case of average column
     // it will be divided in two aggergate expression
-    val updatedAggExp = PreAggregateUtil.getUpdateAggregateExpressions(aggExp)
-    // getting the logical plan for each aggregate expression
-    val updatedExpressionLogicalPlan = updatedAggExp map { aggExp =>
-      PreAggregateUtil.getLogicalPlanFromAggExp(aggExp,
-        parentTable.getTableName,
-        parentTable.getDatabaseName,
-        logicalRelation,
-        sparkSession,
-        parser)
-    }
+    val updatedAggExp = PreAggregateUtil.validateAggregateFunctionAndGetFields(aggExp)
     // get the attributes to be updated for child table
     val attrs = aggExpColumnMapping.collect {
       case (schemaAggExpModel)
-        if updatedExpressionLogicalPlan.exists(p => schemaAggExpModel.logicalPlan.sameResult(p)) =>
+        if updatedAggExp
+          .exists(p =>
+            schemaAggExpModel.expression ==
+            PreAggregateUtil.normalizeExprId(p, parentLogicalPlan.allAttributes)) =>
         attributes filter (_.name.equalsIgnoreCase(
           schemaAggExpModel.columnSchema.get.asInstanceOf[ColumnSchema].getColumnName))
     }.flatten
@@ -982,9 +905,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
   }
   /**
    * Method to get the carbon table and table name
-   *
-   * @param parentLogicalRelation
-   * parent table relation
+   * @param parentLogicalRelation parent table relation
    * @return tuple of carbon table
    */
   def getCarbonTable(parentLogicalRelation: LogicalRelation): CarbonTable = {
@@ -996,15 +917,10 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
 
   /**
    * Below method will be used to get the query columns from plan
-   *
-   * @param groupByExpression
-   * group by expression
-   * @param aggregateExpressions
-   * aggregate expression
-   * @param carbonTable
-   * parent carbon table
-   * @param queryColumns
-   * list of attributes
+   * @param groupByExpression group by expression
+   * @param aggregateExpressions aggregate expression
+   * @param carbonTable parent carbon table
+   * @param queryColumns list of attributes
    * @return plan is valid
    */
   def extractQueryColumnsFromAggExpression(groupByExpression: Seq[Expression],
@@ -1026,7 +942,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
         if (attr.isDistinct) {
           return false
         }
-        val aggExp = validateAggregateFunctionAndGetFields(carbonTable, attr)
+        val aggExp = PreAggregateUtil.validateAggregateFunctionAndGetFields(attr)
         if (aggExp.nonEmpty) {
           aggreagteExps ++= aggExp
         } else {
@@ -1055,75 +971,12 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
   }
 
   /**
-   * Below method will be used to validate aggregate function and get the attribute information
-   * which is applied on select query.
-   * Currently sum, max, min, count, avg is supported
-   * in case of any other aggregate function it will return empty sequence
-   * In case of avg it will return two fields one for count
-   * and other of sum of that column to support rollup
-   *
-   * @param carbonTable
-   * parent table
-   * @param aggExp
-   * aggregate expression
-   * @return list of fields
-   */
-  def validateAggregateFunctionAndGetFields(carbonTable: CarbonTable,
-      aggExp: AggregateExpression): Seq[AggregateExpression] = {
-    aggExp.aggregateFunction match {
-      case Sum(MatchCastExpression(_: Expression, changeDataType: DataType)) =>
-        Seq(aggExp)
-      case Sum(_: Expression) =>
-        Seq(aggExp)
-      case Count(MatchCastExpression(_: Seq[Expression], changeDataType: DataType)) =>
-        Seq(aggExp)
-      case Count(_: Seq[Expression]) =>
-        Seq(aggExp)
-      case Min(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
-        Seq(aggExp)
-      case Min(exp: Expression) =>
-        Seq(aggExp)
-      case Max(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
-        Seq(aggExp)
-      case Max(exp: Expression) =>
-        Seq(aggExp)
-      // in case of average need to return two columns
-      // sum and count of the column to added during table creation to support rollup
-      case Average(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
-        Seq(AggregateExpression(Sum(Cast(
-          exp,
-          changeDataType)),
-          aggExp.mode,
-          aggExp.isDistinct),
-          AggregateExpression(Count(Cast(
-            exp,
-            changeDataType)),
-          aggExp.mode,
-          aggExp.isDistinct))
-      // in case of average need to return two columns
-      // sum and count of the column to added during table creation to support rollup
-      case Average(exp: Expression) =>
-        Seq(AggregateExpression(Sum(exp),
-          aggExp.mode,
-          aggExp.isDistinct),
-          AggregateExpression(Count(exp),
-            aggExp.mode,
-            aggExp.isDistinct))
-      case _ =>
-        Seq.empty
-    }
-  }
-
-  /**
    * Below method will be used to get the query column object which
    * will have details of the column and its property
    *
-   * @param columnName
-   * parent column name
-   * @param carbonTable
-   * parent carbon table
-   * @param isFilterColumn
-   * is filter is applied on column
+   * @param columnName parent column name
+   * @param carbonTable parent carbon table
+   * @param isFilterColumn is filter is applied on column
    * @return query column
    */
   def getQueryColumn(columnName: String,
@@ -1146,8 +999,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
  * Validation rule:
  * 1. update the avg aggregate expression with two columns sum and count
  * 2. Remove duplicate sum and count expression if already there in plan
- * @param sparkSession
- * spark session
+ * @param sparkSession spark session
  */
 case class CarbonPreAggregateDataLoadingRules(sparkSession: SparkSession)
   extends Rule[LogicalPlan] {
@@ -1161,8 +1013,6 @@ case class CarbonPreAggregateDataLoadingRules(sparkSession: SparkSession)
       CarbonSubqueryAlias(_, logicalRelation: LogicalRelation))
         if validateAggregateExpressions(aExp) &&
         logicalRelation.relation.isInstanceOf[CarbonDatasourceHadoopRelation] =>
-        val carbonTable = logicalRelation.relation.asInstanceOf[CarbonDatasourceHadoopRelation]
-          .carbonTable
         aExp.foreach {
           case attr: AttributeReference =>
               namedExpressionList += attr
@@ -1171,59 +1021,46 @@ case class CarbonPreAggregateDataLoadingRules(sparkSession: SparkSession)
             case alias@Alias(aggExp: AggregateExpression, name) =>
               // get the updated expression for avg convert it to two expression
               // sum and count
-              val expressions = PreAggregateUtil.getUpdateAggregateExpressions(aggExp)
+              val expressions = PreAggregateUtil.validateAggregateFunctionAndGetFields(aggExp)
               // if size is more than one then it was for average
               if(expressions.size > 1) {
-                // get the logical plan for sum expression
-                val logicalPlan_sum = PreAggregateUtil.getLogicalPlanFromAggExp(
+                val sumExp = PreAggregateUtil.normalizeExprId(
                   expressions.head,
-                  carbonTable.getTableName,
-                  carbonTable.getDatabaseName,
-                  logicalRelation,
-                  sparkSession,
-                  parser)
+                  aggregate.allAttributes)
                 // get the logical plan fro count expression
-                val logicalPlan_count = PreAggregateUtil.getLogicalPlanFromAggExp(
+                val countExp = PreAggregateUtil.normalizeExprId(
                   expressions.last,
-                  carbonTable.getTableName,
-                  carbonTable.getDatabaseName,
-                  logicalRelation,
-                  sparkSession,
-                  parser)
+                  aggregate.allAttributes)
                 // check with same expression already sum is present then do not add to
                 // named expression list otherwise update the list and add it to set
-                if (!validExpressionsMap.contains(AggExpToColumnMappingModel(logicalPlan_sum))) {
+                if (!validExpressionsMap.contains(AggExpToColumnMappingModel(sumExp))) {
                   namedExpressionList +=
                   Alias(expressions.head, name + "_ sum")(NamedExpression.newExprId,
                     alias.qualifier,
                     Some(alias.metadata),
                     alias.isGenerated)
-                  validExpressionsMap += AggExpToColumnMappingModel(logicalPlan_sum)
+                  validExpressionsMap += AggExpToColumnMappingModel(sumExp)
                 }
                 // check with same expression already count is present then do not add to
                 // named expression list otherwise update the list and add it to set
-                if (!validExpressionsMap.contains(AggExpToColumnMappingModel(logicalPlan_count))) {
+                if (!validExpressionsMap.contains(AggExpToColumnMappingModel(countExp))) {
                   namedExpressionList +=
                   Alias(expressions.last, name + "_ count")(NamedExpression.newExprId,
                     alias.qualifier,
                     Some(alias.metadata),
                     alias.isGenerated)
-                  validExpressionsMap += AggExpToColumnMappingModel(logicalPlan_count)
+                  validExpressionsMap += AggExpToColumnMappingModel(countExp)
                 }
               } else {
                 // get the logical plan for expression
-                val logicalPlan = PreAggregateUtil.getLogicalPlanFromAggExp(
+                val exp = PreAggregateUtil.normalizeExprId(
                   expressions.head,
-                  carbonTable.getTableName,
-                  carbonTable.getDatabaseName,
-                  logicalRelation,
-                  sparkSession,
-                  parser)
+                  aggregate.allAttributes)
                 // check with same expression already  present then do not add to
                 // named expression list otherwise update the list and add it to set
-                if (!validExpressionsMap.contains(AggExpToColumnMappingModel(logicalPlan))) {
+                if (!validExpressionsMap.contains(AggExpToColumnMappingModel(exp))) {
                   namedExpressionList+=alias
-                  validExpressionsMap += AggExpToColumnMappingModel(logicalPlan)
+                  validExpressionsMap += AggExpToColumnMappingModel(exp)
                 }
               }
             case alias@Alias(_: Expression, _) =>
