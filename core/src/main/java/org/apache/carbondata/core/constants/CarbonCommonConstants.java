@@ -297,6 +297,10 @@ public final class CarbonCommonConstants {
    * SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE
    */
   public static final String SORT_INTERMEDIATE_FILES_LIMIT_DEFAULT_VALUE = "20";
+
+  public static final int SORT_INTERMEDIATE_FILES_LIMIT_MIN = 2;
+
+  public static final int SORT_INTERMEDIATE_FILES_LIMIT_MAX = 50;
   /**
    * BAD_RECORD_KEY_VALUE
    */
@@ -325,6 +329,8 @@ public final class CarbonCommonConstants {
   @CarbonProperty
   public static final String CARBON_SORT_FILE_WRITE_BUFFER_SIZE =
       "carbon.sort.file.write.buffer.size";
+  public static final int CARBON_SORT_FILE_WRITE_BUFFER_SIZE_MIN = 10240;
+  public static final int CARBON_SORT_FILE_WRITE_BUFFER_SIZE_MAX = 10485760;
   /**
    * SORT_FILE_WRITE_BUFFER_SIZE_DEFAULT_VALUE
    */
