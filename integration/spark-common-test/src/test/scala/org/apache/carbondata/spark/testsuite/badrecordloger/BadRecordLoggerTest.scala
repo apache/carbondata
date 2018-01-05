@@ -24,7 +24,7 @@ import org.apache.spark.sql.Row
 import org.apache.spark.sql.hive.HiveContext
 import org.scalatest.BeforeAndAfterAll
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOptionConstants}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.spark.sql.test.util.QueryTest
 
@@ -324,6 +324,7 @@ class BadRecordLoggerTest extends QueryTest with BeforeAndAfterAll {
     sql("drop table empty_timestamp")
     sql("drop table empty_timestamp_false")
     sql("drop table dataloadOptionTests")
+    sql("drop table IF EXISTS loadIssue")
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "dd-MM-yyyy")
   }

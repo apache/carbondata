@@ -17,28 +17,22 @@
 
 package org.apache.carbondata.processing.loading.steps;
 
-import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
 import org.apache.carbondata.common.CarbonIterator;
-import org.apache.carbondata.common.constants.LoggerAction;
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
-import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.datastore.row.CarbonRow;
-import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
-import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.BadRecordsLogger;
+import org.apache.carbondata.processing.loading.BadRecordsLoggerProvider;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
-import org.apache.carbondata.processing.loading.constants.DataLoadProcessorConstants;
 import org.apache.carbondata.processing.loading.converter.RowConverter;
 import org.apache.carbondata.processing.loading.converter.impl.RowConverterImpl;
 import org.apache.carbondata.processing.loading.row.CarbonRowBatch;
-import org.apache.carbondata.processing.util.CarbonDataProcessorUtil;
+import org.apache.carbondata.processing.util.CarbonBadRecordUtil;
 
 /**
  * Replace row data fields with dictionary values if column is configured dictionary encoded.
@@ -64,7 +58,7 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     super.initialize();
     child.initialize();
     converters = new ArrayList<>();
-    badRecordLogger = createBadRecordLogger(configuration);
+    badRecordLogger = BadRecordsLoggerProvider.createBadRecordLogger(configuration);
     RowConverter converter =
         new RowConverterImpl(child.getOutput(), configuration, badRecordLogger);
     configuration.setCardinalityFinder(converter);
@@ -121,70 +115,12 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
     throw new UnsupportedOperationException();
   }
 
-  public static BadRecordsLogger createBadRecordLogger(CarbonDataLoadConfiguration configuration) {
-    boolean badRecordsLogRedirect = false;
-    boolean badRecordConvertNullDisable = false;
-    boolean isDataLoadFail = false;
-    boolean badRecordsLoggerEnable = Boolean.parseBoolean(
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ENABLE)
-            .toString());
-    Object bad_records_action =
-        configuration.getDataLoadProperty(DataLoadProcessorConstants.BAD_RECORDS_LOGGER_ACTION)
-            .toString();
-    if (null != bad_records_action) {
-      LoggerAction loggerAction = null;
-      try {
-        loggerAction = LoggerAction.valueOf(bad_records_action.toString().toUpperCase());
-      } catch (IllegalArgumentException e) {
-        loggerAction = LoggerAction.FORCE;
-      }
-      switch (loggerAction) {
-        case FORCE:
-          badRecordConvertNullDisable = false;
-          break;
-        case REDIRECT:
-          badRecordsLogRedirect = true;
-          badRecordConvertNullDisable = true;
-          break;
-        case IGNORE:
-          badRecordsLogRedirect = false;
-          badRecordConvertNullDisable = true;
-          break;
-        case FAIL:
-          isDataLoadFail = true;
-          break;
-      }
-    }
-    CarbonTableIdentifier identifier =
-        configuration.getTableIdentifier().getCarbonTableIdentifier();
-    return new BadRecordsLogger(identifier.getBadRecordLoggerKey(),
-        identifier.getTableName() + '_' + System.currentTimeMillis(),
-        getBadLogStoreLocation(configuration,
-            identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-                .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration
-                .getSegmentId() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo()),
-        badRecordsLogRedirect, badRecordsLoggerEnable, badRecordConvertNullDisable, isDataLoadFail);
-  }
-
-  public static String getBadLogStoreLocation(CarbonDataLoadConfiguration configuration,
-      String storeLocation) {
-    String badLogStoreLocation = (String) configuration
-        .getDataLoadProperty(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORD_PATH);
-    if (null == badLogStoreLocation) {
-      badLogStoreLocation =
-          CarbonProperties.getInstance().getProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC);
-    }
-    badLogStoreLocation = badLogStoreLocation + File.separator + storeLocation;
-
-    return badLogStoreLocation;
-  }
-
   @Override
   public void close() {
     if (!closed) {
       if (null != badRecordLogger) {
         badRecordLogger.closeStreams();
-        renameBadRecord(badRecordLogger, configuration);
+        CarbonBadRecordUtil.renameBadRecord(configuration);
       }
       super.close();
       if (converters != null) {
@@ -194,32 +130,6 @@ public class DataConverterProcessorStepImpl extends AbstractDataLoadProcessorSte
           }
         }
       }
-    }
-  }
-
-  public static void close(BadRecordsLogger badRecordLogger, CarbonDataLoadConfiguration
-      configuration, RowConverter converter) {
-    if (badRecordLogger != null) {
-      badRecordLogger.closeStreams();
-      renameBadRecord(badRecordLogger, configuration);
-    }
-    if (converter != null) {
-      converter.finish();
-    }
-  }
-
-  private static void renameBadRecord(BadRecordsLogger badRecordLogger,
-      CarbonDataLoadConfiguration configuration) {
-    // rename operation should be performed only in case either bad reccords loggers is enabled
-    // or bad records redirect is enabled
-    if (badRecordLogger.isBadRecordLoggerEnable() || badRecordLogger.isBadRecordsLogRedirect()) {
-      // rename the bad record in progress to normal
-      CarbonTableIdentifier identifier =
-          configuration.getTableIdentifier().getCarbonTableIdentifier();
-      CarbonDataProcessorUtil.renameBadRecordsFromInProgressToNormal(configuration,
-          identifier.getDatabaseName() + CarbonCommonConstants.FILE_SEPARATOR + identifier
-              .getTableName() + CarbonCommonConstants.FILE_SEPARATOR + configuration.getSegmentId()
-              + CarbonCommonConstants.FILE_SEPARATOR + configuration.getTaskNo());
     }
   }
 
