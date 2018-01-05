@@ -39,9 +39,9 @@ import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverterV3;
 import org.apache.carbondata.format.BlockletInfo3;
 import org.apache.carbondata.format.FileFooter3;
+import org.apache.carbondata.processing.store.CarbonFactDataHandlerModel;
 import org.apache.carbondata.processing.store.TablePage;
 import org.apache.carbondata.processing.store.writer.AbstractFactDataWriter;
-import org.apache.carbondata.processing.store.writer.CarbonDataWriterVo;
 
 /**
  * Below class will be used to write the data in V3 format
@@ -65,8 +65,8 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
    */
   private long blockletSizeThreshold;
 
-  public CarbonFactDataWriterImplV3(CarbonDataWriterVo dataWriterVo) {
-    super(dataWriterVo);
+  public CarbonFactDataWriterImplV3(CarbonFactDataHandlerModel model) {
+    super(model);
     blockletSizeThreshold = Long.parseLong(CarbonProperties.getInstance()
         .getProperty(CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB,
             CarbonV3DataFormatConstants.BLOCKLET_SIZE_IN_MB_DEFAULT_VALUE))
@@ -227,7 +227,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
   private void writeHeaderToFile(FileChannel channel) throws IOException {
     byte[] fileHeader = CarbonUtil.getByteArray(
         CarbonMetadataUtil.getFileHeader(
-            true, thriftColumnSchemaList, dataWriterVo.getSchemaUpdatedTimeStamp()));
+            true, thriftColumnSchemaList, model.getSchemaUpdatedTimeStamp()));
     ByteBuffer buffer = ByteBuffer.wrap(fileHeader);
     channel.write(buffer);
   }
@@ -292,7 +292,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     measureOffset = offset;
     blockletIndex.add(
         CarbonMetadataUtil.getBlockletIndex(
-            encodedTablePages, dataWriterVo.getSegmentProperties().getMeasures()));
+            encodedTablePages, model.getSegmentProperties().getMeasures()));
     BlockletInfo3 blockletInfo3 =
         new BlockletInfo3(numberOfRows, currentDataChunksOffset, currentDataChunksLength,
             dimensionOffset, measureOffset, blockletDataHolder.getEncodedTablePages().size());
@@ -314,7 +314,7 @@ public class CarbonFactDataWriterImplV3 extends AbstractFactDataWriter {
     for (org.apache.carbondata.format.BlockletIndex index : blockletIndex) {
       BlockletInfo3 blockletInfo3 = blockletMetadata.get(i);
       BlockletInfo blockletInfo = converterV3.getBlockletInfo(blockletInfo3,
-          dataWriterVo.getSegmentProperties().getDimensions().size());
+          model.getSegmentProperties().getDimensions().size());
       BlockletBTreeIndex bTreeIndex = new BlockletBTreeIndex(index.b_tree_index.getStart_key(),
           index.b_tree_index.getEnd_key());
       BlockletMinMaxIndex minMaxIndex = new BlockletMinMaxIndex();
