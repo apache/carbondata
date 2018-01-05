@@ -24,8 +24,10 @@ import org.apache.spark.sql.execution.command.{Checker, DataCommand}
 import org.apache.spark.sql.optimizer.CarbonFilters
 
 import org.apache.carbondata.api.CarbonStore
+import org.apache.carbondata.common.logging.LogServiceFactory
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.events.{CleanFilesPostEvent, CleanFilesPreEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.spark.util.CommonUtil
 
 /**
  * Clean data in table
@@ -96,7 +98,19 @@ case class CarbonCleanFilesCommand(
       partitions)
   }
 
+  // Clean garbage data in all tables in all databases
   private def cleanGarbageDataInAllTables(sparkSession: SparkSession): Unit = {
-    // Waiting to implement
+    try {
+      val databases = sparkSession.sessionState.catalog.listDatabases()
+      databases.foreach(dbName => {
+        val databaseLocation = CarbonEnv.getDatabaseLocation(dbName, sparkSession)
+        CommonUtil.cleanInProgressSegments(databaseLocation, dbName)
+      })
+    } catch {
+      case e: Throwable =>
+        // catch all exceptions to avoid failure
+        LogServiceFactory.getLogService(this.getClass.getCanonicalName)
+          .error(e, "Failed to clean in progress segments")
+    }
   }
 }
