@@ -46,8 +46,8 @@ This section provides the details of all the configurations required for CarbonD
 
 | Parameter | Default Value | Description | Range |
 |--------------------------------------|---------------|----------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| carbon.number.of.cores.while.loading | 6 | Number of cores to be used while loading data. |  |
-| carbon.sort.size | 500000 | Record count to sort and write intermediate files to temp. |  |
+| carbon.number.of.cores.while.loading | 2 | Number of cores to be used while loading data. |  |
+| carbon.sort.size | 100000 | Record count to sort and write intermediate files to temp. |  |
 | carbon.max.driver.lru.cache.size | -1 | Max LRU cache size upto which data will be loaded at the driver side. This value is expressed in MB. Default value of -1 means there is no memory limit for caching. Only integer values greater than 0 are accepted. |  |
 | carbon.max.executor.lru.cache.size | -1 | Max LRU cache size upto which data will be loaded at the executor side. This value is expressed in MB. Default value of -1 means there is no memory limit for caching. Only integer values greater than 0 are accepted. If this parameter is not configured, then the carbon.max.driver.lru.cache.size value will be considered. |  |
 | carbon.merge.sort.prefetch | true | Enable prefetch of data during merge sort while reading data from sort temp files in data loading. |  |
@@ -94,7 +94,7 @@ This section provides the details of all the configurations required for CarbonD
   
 | Parameter | Default Value | Description |
 |---------------------------------------------|--------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| carbon.sort.file.write.buffer.size | 10485760 | File write buffer size used during sorting. |
+| carbon.sort.file.write.buffer.size | 16384 | File write buffer size used during sorting. |
 | carbon.lock.type | LOCALLOCK | This configuration specifies the type of lock to be acquired during concurrent operations on table. There are following types of lock implementation: - LOCALLOCK: Lock is created on local file system as file. This lock is useful when only one spark driver (thrift server) runs on a machine and no other CarbonData spark application is launched concurrently. - HDFSLOCK: Lock is created on HDFS file system as file. This lock is useful when multiple CarbonData spark applications are launched and no ZooKeeper is running on cluster and HDFS supports file based locking. |
 | carbon.sort.intermediate.files.limit | 20 | Minimum number of intermediate files after which merged sort can be started. |
 | carbon.block.meta.size.reserved.percentage | 10 | Space reserved in percentage for writing block meta data in CarbonData file. |
