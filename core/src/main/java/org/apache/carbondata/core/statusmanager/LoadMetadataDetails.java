@@ -123,10 +123,12 @@ public class LoadMetadataDetails implements Serializable {
    */
   private FileFormat fileFormat = FileFormat.COLUMNAR_V3;
 
+  @Deprecated
   public String getPartitionCount() {
     return partitionCount;
   }
 
+  @Deprecated
   public void setPartitionCount(String partitionCount) {
     this.partitionCount = partitionCount;
   }

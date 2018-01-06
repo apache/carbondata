@@ -106,7 +106,7 @@ object StreamSinkFactory {
     val segmentId = StreamSegment.open(carbonTable)
     val carbonTablePath = CarbonStorePath
       .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
-    val segmentDir = carbonTablePath.getSegmentDir("0", segmentId)
+    val segmentDir = carbonTablePath.getSegmentDir(segmentId)
     val fileType = FileFactory.getFileType(segmentDir)
     if (FileFactory.isFileExist(segmentDir, fileType)) {
       // recover fault

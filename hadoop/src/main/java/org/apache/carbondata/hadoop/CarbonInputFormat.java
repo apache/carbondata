@@ -591,7 +591,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
     JobContext newJob =
         new JobContextImpl(new Configuration(job.getConfiguration()), job.getJobID());
     newJob.getConfiguration().set(CarbonInputFormat.INPUT_SEGMENT_NUMBERS,
-        tableSegmentUniqueIdentifier.getSegmentId() + "");
+        tableSegmentUniqueIdentifier.getSegmentId());
 
     // identify table blocks
     for (InputSplit inputSplit : getSplitsInternal(newJob)) {
@@ -893,7 +893,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
       for (int j = 0; j < segmentsToConsider.length; ++j) {
         String segmentId = segmentsToConsider[j];
         String dataDirectoryPath = absIdentifier.appendWithLocalPrefix(
-            tablePath.getCarbonDataDirectoryPath(partition, segmentId));
+            tablePath.getCarbonDataDirectoryPath(segmentId));
         if (filesToConsider.length == 0) {
           Path segmentPath = new Path(dataDirectoryPath);
           FileSystem fs = segmentPath.getFileSystem(job.getConfiguration());
@@ -901,7 +901,7 @@ public class CarbonInputFormat<T> extends FileInputFormat<Void, T> {
         } else {
           for (int k = 0; k < filesToConsider.length; ++k) {
             String dataPath = absIdentifier.appendWithLocalPrefix(
-                tablePath.getCarbonDataDirectoryPath(partition, segmentId) + File.separator +
+                tablePath.getCarbonDataDirectoryPath(segmentId) + File.separator +
                     filesToConsider[k]);
             Path filePath = new Path(dataPath);
             FileSystem fs = filePath.getFileSystem(job.getConfiguration());

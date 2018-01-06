@@ -123,13 +123,11 @@ public final class CarbonDataProcessorUtil {
    * @param databaseName
    * @param tableName
    * @param taskId
-   * @param partitionId
    * @param segmentId
    * @return
    */
   public static String[] getLocalDataFolderLocation(String databaseName, String tableName,
-      String taskId, String partitionId, String segmentId, boolean isCompactionFlow,
-      boolean isAltPartitionFlow) {
+      String taskId, String segmentId, boolean isCompactionFlow, boolean isAltPartitionFlow) {
     String tempLocationKey =
         getTempStoreLocationKey(databaseName, tableName, segmentId, taskId, isCompactionFlow,
             isAltPartitionFlow);
@@ -150,8 +148,7 @@ public final class CarbonDataProcessorUtil {
       String tmpStore = baseTmpStorePathArray[i];
       CarbonTablePath carbonTablePath =
           CarbonStorePath.getCarbonTablePath(tmpStore, carbonTable.getCarbonTableIdentifier());
-      String carbonDataDirectoryPath =
-          carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
+      String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(segmentId);
 
       localDataFolderLocArray[i] = carbonDataDirectoryPath + File.separator + taskId;
     }
@@ -378,13 +375,12 @@ public final class CarbonDataProcessorUtil {
    * @return data directory path
    */
   public static String checkAndCreateCarbonStoreLocation(String factStoreLocation,
-      String databaseName, String tableName, String partitionId, String segmentId) {
+      String databaseName, String tableName, String segmentId) {
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier);
-    String carbonDataDirectoryPath =
-        carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
+    String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(segmentId);
     CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
     return carbonDataDirectoryPath;
   }

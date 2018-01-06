@@ -154,7 +154,6 @@ public class StoreCreator {
     loadModel.setCsvHeaderColumns(loadModel.getCsvHeader().split(","));
     loadModel.setTaskNo("0");
     loadModel.setSegmentId("0");
-    loadModel.setPartitionId("0");
     loadModel.setFactTimeStamp(System.currentTimeMillis());
     loadModel.setMaxColumns("10");
     return loadModel;
