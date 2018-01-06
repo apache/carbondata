@@ -119,18 +119,17 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl extends AbstractMerg
 
     Iterator<CarbonRowBatch>[] batchIterator = new Iterator[bucketingInfo.getNumberOfBuckets()];
     for (int i = 0; i < sortDataRows.length; i++) {
-      batchIterator[i] =
-          new MergedDataIterator(String.valueOf(i), batchSize, intermediateFileMergers[i]);
+      batchIterator[i] = new MergedDataIterator(batchSize, intermediateFileMergers[i]);
     }
 
     return batchIterator;
   }
 
-  private UnsafeSingleThreadFinalSortFilesMerger getFinalMerger(String bucketId) {
-    String[] storeLocation = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(sortParameters.getDatabaseName(), sortParameters.getTableName(),
-            String.valueOf(sortParameters.getTaskNo()), bucketId,
-            sortParameters.getSegmentId() + "", false, false);
+  private UnsafeSingleThreadFinalSortFilesMerger getFinalMerger() {
+    String[] storeLocation = CarbonDataProcessorUtil.getLocalDataFolderLocation(
+        sortParameters.getDatabaseName(), sortParameters.getTableName(),
+        String.valueOf(sortParameters.getTaskNo()), sortParameters.getSegmentId(),
+        false, false);
     // Set the data file location
     String[] dataFolderLocation = CarbonDataProcessorUtil.arrayAppend(storeLocation,
         File.separator, CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
@@ -173,7 +172,7 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl extends AbstractMerg
   private void setTempLocation(SortParameters parameters) {
     String[] carbonDataDirectoryPath = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(parameters.getDatabaseName(), parameters.getTableName(),
-            parameters.getTaskNo(), parameters.getPartitionID(), parameters.getSegmentId(),
+            parameters.getTaskNo(), parameters.getSegmentId(),
             false, false);
     String[] tmpLoc = CarbonDataProcessorUtil.arrayAppend(carbonDataDirectoryPath, File.separator,
         CarbonCommonConstants.SORT_TEMP_FILE_LOCATION);
@@ -224,7 +223,6 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl extends AbstractMerg
 
   private class MergedDataIterator extends CarbonIterator<CarbonRowBatch> {
 
-    private String partitionId;
 
     private int batchSize;
 
@@ -232,9 +230,8 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl extends AbstractMerg
 
     private UnsafeIntermediateMerger intermediateMerger;
 
-    public MergedDataIterator(String partitionId, int batchSize,
+    public MergedDataIterator(int batchSize,
         UnsafeIntermediateMerger intermediateMerger) {
-      this.partitionId = partitionId;
       this.batchSize = batchSize;
       this.intermediateMerger = intermediateMerger;
       this.firstRow = true;
@@ -245,7 +242,7 @@ public class UnsafeParallelReadMergeSorterWithBucketingImpl extends AbstractMerg
     @Override public boolean hasNext() {
       if (firstRow) {
         firstRow = false;
-        finalMerger = getFinalMerger(partitionId);
+        finalMerger = getFinalMerger();
         List<UnsafeCarbonRowPage> rowPages = intermediateMerger.getRowPages();
         finalMerger.startFinalMerge(rowPages.toArray(new UnsafeCarbonRowPage[rowPages.size()]),
             intermediateMerger.getMergedPages());

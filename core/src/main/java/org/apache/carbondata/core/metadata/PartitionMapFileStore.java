@@ -363,7 +363,7 @@ public class PartitionMapFileStore {
         List<String> toBeDeletedIndexFiles = new ArrayList<>();
         List<String> toBeDeletedDataFiles = new ArrayList<>();
         // take the list of files from this segment.
-        String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", segment.getLoadName());
+        String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(segment.getLoadName());
         String partitionFilePath = getPartitionFilePath(segmentPath);
         if (partitionFilePath != null) {
           PartitionMapper partitionMapper = readPartitionMap(partitionFilePath);

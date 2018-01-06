@@ -149,12 +149,12 @@ class CarbonAppendableStreamSink(
    * if the directory size of current segment beyond the threshold, hand off new segment
    */
   private def checkOrHandOffSegment(): Unit = {
-    val segmentDir = carbonTablePath.getSegmentDir("0", currentSegmentId)
+    val segmentDir = carbonTablePath.getSegmentDir(currentSegmentId)
     val fileType = FileFactory.getFileType(segmentDir)
     if (segmentMaxSize <= StreamSegment.size(segmentDir)) {
       val newSegmentId = StreamSegment.close(carbonTable, currentSegmentId)
       currentSegmentId = newSegmentId
-      val newSegmentDir = carbonTablePath.getSegmentDir("0", currentSegmentId)
+      val newSegmentDir = carbonTablePath.getSegmentDir(currentSegmentId)
       FileFactory.mkdirs(newSegmentDir, fileType)
 
       // TODO trigger hand off operation
@@ -251,14 +251,14 @@ object CarbonAppendableStreamSink {
 
         // update data file info in index file
         val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
-        StreamSegment.updateIndexFile(tablePath.getSegmentDir("0", segmentId))
+        StreamSegment.updateIndexFile(tablePath.getSegmentDir(segmentId))
 
       } catch {
         // catch fault of executor side
         case t: Throwable =>
           val tablePath =
             CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
-          val segmentDir = tablePath.getSegmentDir("0", segmentId)
+          val segmentDir = tablePath.getSegmentDir(segmentId)
           StreamSegment.recoverSegmentIfRequired(segmentDir)
           LOGGER.error(t, s"Aborting job ${ job.getJobID }.")
           committer.abortJob(job)

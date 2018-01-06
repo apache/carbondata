@@ -480,7 +480,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       long minSize = Math.max(getFormatMinSplitSize(), getMinSplitSize(job));
       long maxSize = getMaxSplitSize(job);
       for (String segmentId : streamSegments) {
-        String segmentDir = tablePath.getSegmentDir("0", segmentId);
+        String segmentDir = tablePath.getSegmentDir(segmentId);
         FileFactory.FileType fileType = FileFactory.getFileType(segmentDir);
         if (FileFactory.isFileExist(segmentDir, fileType)) {
           String indexName = CarbonTablePath.getCarbonStreamIndexFileName();

@@ -190,8 +190,9 @@ object PartitionUtils {
         val batchNo = CarbonTablePath.DataFileUtil.getBatchNoFromTaskNo(taskNo)
         val taskId = CarbonTablePath.DataFileUtil.getTaskIdFromTaskNo(taskNo)
         val bucketNumber = CarbonTablePath.DataFileUtil.getBucketNo(path)
-        val indexFilePath = carbonTablePath.getCarbonIndexFilePath(String.valueOf(taskId), "0",
-          segmentId, batchNo, String.valueOf(bucketNumber), timestamp, version)
+        val indexFilePath = carbonTablePath.getCarbonIndexFilePath(
+          String.valueOf(taskId), segmentId, batchNo, String.valueOf(bucketNumber),
+          timestamp, version)
         // indexFilePath could be duplicated when multiple data file related to one index file
         if (indexFilePath != null && !pathList.contains(indexFilePath)) {
           pathList.add(indexFilePath)
