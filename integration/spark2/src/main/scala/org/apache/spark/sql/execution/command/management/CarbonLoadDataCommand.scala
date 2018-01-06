@@ -166,6 +166,7 @@ case class CarbonLoadDataCommand(
       // the Fact folder
       LOGGER.info(s"Deleting stale folders if present for table $dbName.$tableName")
       TableProcessingOperations.deletePartialLoadDataIfExist(table, false)
+      var isUpdateTableStatusRequired = false
       try {
         val operationContext = new OperationContext
         val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =
@@ -187,6 +188,7 @@ case class CarbonLoadDataCommand(
         // add the start entry for the new load in the table status file
         if (updateModel.isEmpty && !table.isHivePartitionTable) {
           CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, isOverwriteTable)
+          isUpdateTableStatusRequired = true
         }
         if (isOverwriteTable) {
           LOGGER.info(s"Overwrite of carbon table with $dbName.$tableName is in progress")
@@ -242,7 +244,9 @@ case class CarbonLoadDataCommand(
       } catch {
         case CausedBy(ex: NoRetryException) =>
           // update the load entry in table status file for changing the status to marked for delete
-          CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
+          if (isUpdateTableStatusRequired) {
+            CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
+          }
           LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")
           throw new RuntimeException(s"Dataload failure for $dbName.$tableName, ${ex.getMessage}")
         // In case of event related exception
@@ -251,7 +255,9 @@ case class CarbonLoadDataCommand(
         case ex: Exception =>
           LOGGER.error(ex)
           // update the load entry in table status file for changing the status to marked for delete
-          CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
+          if (isUpdateTableStatusRequired) {
+            CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
+          }
           LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
           throw ex
       } finally {
