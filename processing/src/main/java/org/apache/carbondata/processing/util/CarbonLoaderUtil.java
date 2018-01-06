@@ -212,20 +212,12 @@ public final class CarbonLoaderUtil {
           // existing entry needs to be overwritten as the entry will exist with some
           // intermediate status
           int indexToOverwriteNewMetaEntry = 0;
-          Boolean anyLoadInProgress = false;
           for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
-            if (entry.getSegmentStatus().equals(SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS)) {
-              anyLoadInProgress = true;
-            }
             if (entry.getLoadName().equals(newMetaEntry.getLoadName())
                 && entry.getLoadStartTime() == newMetaEntry.getLoadStartTime()) {
               break;
             }
             indexToOverwriteNewMetaEntry++;
-          }
-          if (listOfLoadFolderDetails.get(indexToOverwriteNewMetaEntry).getSegmentStatus() ==
-              SegmentStatus.MARKED_FOR_DELETE && anyLoadInProgress) {
-            throw new RuntimeException("It seems insert overwrite has been issued during load");
           }
           if (insertOverwrite) {
             for (LoadMetadataDetails entry : listOfLoadFolderDetails) {
