@@ -47,9 +47,10 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
-public class CarbonInputMapperTest extends TestCase {
+public class CarbonTableInputMapperTest extends TestCase {
 
   // changed setUp to static init block to avoid un wanted multiple time store creation
   static {
@@ -194,7 +195,7 @@ public class CarbonInputMapperTest extends TestCase {
     Configuration configuration = new Configuration();
     configuration.set("mapreduce.cluster.local.dir", new File(outPath + "1").getCanonicalPath());
     Job job = Job.getInstance(configuration);
-    job.setJarByClass(CarbonInputMapperTest.class);
+    job.setJarByClass(CarbonTableInputMapperTest.class);
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(IntWritable.class);
     job.setMapperClass(Map.class);
@@ -221,6 +222,6 @@ public class CarbonInputMapperTest extends TestCase {
   }
 
   public static void main(String[] args) throws Exception {
-    new CarbonInputMapperTest().runJob("target/output", null, null);
+    new CarbonTableInputMapperTest().runJob("target/output", null, null);
   }
 }

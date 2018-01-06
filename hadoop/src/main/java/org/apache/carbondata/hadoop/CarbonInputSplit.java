@@ -44,7 +44,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 /**
- * Carbon input split to allow distributed read of CarbonInputFormat.
+ * Carbon input split to allow distributed read of CarbonTableInputFormat.
  */
 public class CarbonInputSplit extends FileSplit
     implements Distributable, Serializable, Writable, Block {
