@@ -30,16 +30,6 @@ public class QueryColumn {
   private ColumnSchema columnSchema;
 
   /**
-   * to store the change data type in case of cast
-   */
-  private String changedDataType;
-
-  /**
-   * aggregation function applied
-   */
-  private String aggFunction;
-
-  /**
    * is filter column
    */
   private boolean isFilterColumn;
@@ -49,25 +39,14 @@ public class QueryColumn {
    */
   private String timeseriesFunction;
 
-  public QueryColumn(ColumnSchema columnSchema, String changedDataType, String aggFunction,
-      boolean isFilterColumn, String timeseriesFunction) {
+  public QueryColumn(ColumnSchema columnSchema, boolean isFilterColumn, String timeseriesFunction) {
     this.columnSchema = columnSchema;
-    this.changedDataType = changedDataType;
-    this.aggFunction = aggFunction;
     this.isFilterColumn = isFilterColumn;
     this.timeseriesFunction = timeseriesFunction;
   }
 
   public ColumnSchema getColumnSchema() {
     return columnSchema;
-  }
-
-  public String getChangedDataType() {
-    return changedDataType;
-  }
-
-  public String getAggFunction() {
-    return aggFunction;
   }
 
   public boolean isFilterColumn() {
@@ -92,9 +71,6 @@ public class QueryColumn {
     if (!columnSchema.equals(that.columnSchema)) {
       return false;
     }
-    if (!(aggFunction != null ? aggFunction.equals(that.aggFunction) : that.aggFunction == null)) {
-      return false;
-    }
     return timeseriesFunction != null ?
         timeseriesFunction.equals(that.timeseriesFunction) :
         that.timeseriesFunction == null;
@@ -102,7 +78,6 @@ public class QueryColumn {
 
   @Override public int hashCode() {
     int result = columnSchema.hashCode();
-    result = 31 * result + (aggFunction != null ? aggFunction.hashCode() : 0);
     result = 31 * result + (timeseriesFunction != null ? timeseriesFunction.hashCode() : 0);
     result = 31 * result + (isFilterColumn ? 1 : 0);
     return result;

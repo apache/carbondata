@@ -36,15 +36,15 @@ public class AggregateTableSelector {
   /**
    * current query plan
    */
-  private QueryPlan queryPlan;
+  private AggregateQueryPlan aggregateQueryPlan;
 
   /**
    * parent table
    */
   private CarbonTable parentTable;
 
-  public AggregateTableSelector(QueryPlan queryPlan, CarbonTable parentTable) {
-    this.queryPlan = queryPlan;
+  public AggregateTableSelector(AggregateQueryPlan aggregateQueryPlan, CarbonTable parentTable) {
+    this.aggregateQueryPlan = aggregateQueryPlan;
     this.parentTable = parentTable;
   }
 
@@ -58,9 +58,8 @@ public class AggregateTableSelector {
    * @return selected pre aggregate table schema
    */
   public List<DataMapSchema> selectPreAggDataMapSchema() {
-    List<QueryColumn> projectionColumn = queryPlan.getProjectionColumn();
-    List<QueryColumn> aggColumns = queryPlan.getAggregationColumns();
-    List<QueryColumn> filterColumns = queryPlan.getFilterColumns();
+    List<QueryColumn> projectionColumn = aggregateQueryPlan.getProjectionColumn();
+    List<QueryColumn> filterColumns = aggregateQueryPlan.getFilterColumns();
     List<DataMapSchema> dataMapSchemaList = parentTable.getTableInfo().getDataMapSchemaList();
     List<DataMapSchema> selectedDataMapSchema = new ArrayList<>();
     boolean isMatch;
@@ -74,6 +73,7 @@ public class AggregateTableSelector {
               getColumnSchema(queryColumn, aggregationDataMapSchema);
           if (null == columnSchemaByParentName) {
             isMatch = false;
+            break;
           }
         }
         if (isMatch) {
@@ -99,6 +99,7 @@ public class AggregateTableSelector {
               getColumnSchema(queryColumn, aggregationDataMapSchema);
           if (null == columnSchemaByParentName) {
             isMatch = false;
+            break;
           }
         }
         if (isMatch) {
@@ -108,26 +109,6 @@ public class AggregateTableSelector {
       // if filter column is present and selection size is zero then return
       if (selectedDataMapSchema.size() == 0) {
         return selectedDataMapSchema;
-      }
-    }
-    // match aggregation columns
-    if (null != aggColumns && !aggColumns.isEmpty()) {
-      List<DataMapSchema> dmSchemaToIterate =
-          selectedDataMapSchema.isEmpty() ? dataMapSchemaList : selectedDataMapSchema;
-      selectedDataMapSchema = new ArrayList<>();
-      for (DataMapSchema dmSchema : dmSchemaToIterate) {
-        isMatch = true;
-        for (QueryColumn queryColumn : aggColumns) {
-          AggregationDataMapSchema aggregationDataMapSchema = (AggregationDataMapSchema) dmSchema;
-          if (!aggregationDataMapSchema
-              .isColumnWithAggFunctionExists(queryColumn.getColumnSchema().getColumnName(),
-                  queryColumn.getAggFunction())) {
-            isMatch = false;
-          }
-        }
-        if (isMatch) {
-          selectedDataMapSchema.add(dmSchema);
-        }
       }
     }
     return selectedDataMapSchema;

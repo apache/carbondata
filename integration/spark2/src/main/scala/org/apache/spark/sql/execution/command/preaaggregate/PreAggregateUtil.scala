@@ -20,18 +20,18 @@ import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, CarbonSession, SparkSession}
-import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias, MatchCast => Cast, MatchCastExpression}
+import org.apache.spark.sql.CarbonExpressions.{CarbonSubqueryAlias => SubqueryAlias, MatchCastExpression}
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFunction, UnresolvedRelation}
-import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, Expression, NamedExpression, ScalaUDF}
-import org.apache.spark.sql.catalyst.expressions.aggregate._
+import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSeq, Cast, Expression, ExprId, NamedExpression, ScalaUDF}
+import org.apache.spark.sql.catalyst.expressions.aggregate.{Count, _}
 import org.apache.spark.sql.catalyst.plans.logical._
 import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField, Field}
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
-import org.apache.spark.sql.types.DataType
+import org.apache.spark.sql.types.{DataType, LongType}
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
@@ -85,14 +85,10 @@ object PreAggregateUtil {
 
   /**
    * Below method will be used to get the fields from expressions
-   * @param groupByExp
-   *                  grouping expression
-   * @param aggExp
-   *               aggregate expression
-   * @param logicalRelation
-   *                        logical relation
-   * @param selectStmt
-   *                   select statement
+   * @param groupByExp grouping expression
+   * @param aggExp aggregate expression
+   * @param logicalRelation logical relation
+   * @param selectStmt select statement
    * @return fields from expressions
    */
   def getFieldsFromPlan(groupByExp: Seq[Expression],
@@ -165,16 +161,11 @@ object PreAggregateUtil {
   /**
    * Below method will be used to get the column relation
    * with the parent column which will be used during query and data loading
-   * @param parentColumnName
-   * parent column name
-   * @param parentTableId
-   * parent column id
-   * @param parentTableName
-   * parent table name
-   * @param parentDatabaseName
-   * parent database name
-   * @param carbonTable
-   * carbon table
+   * @param parentColumnName parent column name
+   * @param parentTableId parent column id
+   * @param parentTableName parent table name
+   * @param parentDatabaseName parent database name
+   * @param carbonTable carbon table
    * @return column relation object
    */
   def getColumnRelation(parentColumnName: String,
@@ -280,7 +271,7 @@ object PreAggregateUtil {
           "sum")
         list += createFieldForAggregateExpression(
           exp,
-          changeDataType,
+          LongType,
           carbonTable,
           newColumnName,
           "count")
@@ -293,7 +284,7 @@ object PreAggregateUtil {
           "sum")
         list += createFieldForAggregateExpression(
           exp,
-          avg.dataType,
+          LongType,
           carbonTable,
           newColumnName,
           "count")
@@ -306,16 +297,11 @@ object PreAggregateUtil {
   /**
    * Below method will be used to get the field and its data map field object
    * for aggregate expression
-   * @param expression
-   *                   expression in aggregate function
-   * @param dataType
-   *                 data type
-   * @param carbonTable
-   *                    parent carbon table
-   * @param newColumnName
-   *                      column name of aggregate table
-   * @param aggregationName
-   *                        aggregate function name
+   * @param expression expression in aggregate function
+   * @param dataType data type
+   * @param carbonTable parent carbon table
+   * @param newColumnName column name of aggregate table
+   * @param aggregationName aggregate function name
    * @return field and its metadata tuple
    */
   def createFieldForAggregateExpression(
@@ -552,8 +538,7 @@ object PreAggregateUtil {
    * Below method will be used to update logical plan
    * this is required for creating pre aggregate tables,
    * so @CarbonPreAggregateRules will not be applied during creation
-   * @param logicalPlan
-   *                    actual logical plan
+   * @param logicalPlan actual logical plan
    * @return updated plan
    */
   def updatePreAggQueyPlan(logicalPlan: LogicalPlan): LogicalPlan = {
@@ -654,10 +639,8 @@ object PreAggregateUtil {
   /**
    * Below method will be used to get the select query when rollup policy is
    * applied in case of timeseries table
-   * @param tableSchema
-   *                    main data map schema
-   * @param selectedDataMapSchema
-   *                              selected data map schema for rollup
+   * @param tableSchema main data map schema
+   * @param selectedDataMapSchema selected data map schema for rollup
    * @return select query based on rolloup
    */
   def createTimeseriesSelectQueryForRollup(
@@ -695,10 +678,8 @@ object PreAggregateUtil {
    * Below method will be used to creating select query for timeseries
    * for lowest level for aggergation like second level, in that case it will
    * hit the maintable
-   * @param tableSchema
-   *                    data map schema
-   * @param parentTableName
-   *                        parent schema
+   * @param tableSchema data map schema
+   * @param parentTableName parent schema
    * @return select query for loading
    */
   def createTimeSeriesSelectQueryFromMain(tableSchema: TableSchema,
@@ -728,10 +709,8 @@ object PreAggregateUtil {
     /**
    * Below method will be used to select rollup table in case of
    * timeseries data map loading
-   * @param list
-   *             list of timeseries datamap
-   * @param dataMapSchema
-   *                      datamap schema
+   * @param list list of timeseries datamap
+   * @param dataMapSchema datamap schema
    * @return select table name
    */
   def getRollupDataMapNameForTimeSeries(
@@ -747,5 +726,133 @@ object PreAggregateUtil {
         } }
       rollupDataMapSchema.lastOption
     }
+  }
+
+  /**
+   * Below method will be used to validate aggregate function and get the attribute information
+   * which is applied on select query.
+   * Currently sum, max, min, count, avg is supported
+   * in case of any other aggregate function it will return empty sequence
+   * In case of avg it will return two fields one for count
+   * and other of sum of that column to support rollup
+   *
+   * @param aggExp aggregate expression
+   * @return list of fields
+   */
+  def validateAggregateFunctionAndGetFields(aggExp: AggregateExpression):
+  Seq[AggregateExpression] = {
+    aggExp.aggregateFunction match {
+      case Sum(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
+        Seq(AggregateExpression(Sum(Cast(
+          exp,
+          changeDataType)),
+          aggExp.mode,
+          aggExp.isDistinct))
+      case Sum(_: Expression) =>
+        Seq(aggExp)
+      case Count(MatchCastExpression(exp: Seq[Expression], changeDataType: DataType)) =>
+        Seq(AggregateExpression(Count(Cast(
+          exp,
+          changeDataType)),
+          aggExp.mode,
+          aggExp.isDistinct))
+      case Count(_: Seq[Expression]) =>
+        Seq(aggExp)
+      case Min(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
+        Seq(AggregateExpression(Min(Cast(
+          exp,
+          changeDataType)),
+          aggExp.mode,
+          aggExp.isDistinct))
+      case Min(exp: Expression) =>
+        Seq(aggExp)
+      case Max(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
+        Seq(AggregateExpression(Max(Cast(
+          exp,
+          changeDataType)),
+          aggExp.mode,
+          aggExp.isDistinct))
+      case Max(exp: Expression) =>
+        Seq(aggExp)
+      // in case of average need to return two columns
+      // sum and count of the column to added during table creation to support rollup
+      case Average(MatchCastExpression(exp: Expression, changeDataType: DataType)) =>
+        Seq(AggregateExpression(Sum(Cast(
+          exp,
+          changeDataType)),
+          aggExp.mode,
+          aggExp.isDistinct),
+          AggregateExpression(Count(Cast(
+            exp,
+            changeDataType)),
+            aggExp.mode,
+            aggExp.isDistinct))
+      // in case of average need to return two columns
+      // sum and count of the column to added during table creation to support rollup
+      case Average(exp: Expression) =>
+        Seq(AggregateExpression(Sum(exp),
+          aggExp.mode,
+          aggExp.isDistinct),
+          AggregateExpression(Count(exp),
+            aggExp.mode,
+            aggExp.isDistinct))
+      case _ =>
+        Seq.empty
+    }
+  }
+
+  /**
+   * Below method will be used to get the logical plan from aggregate expression
+   * @param aggExp aggregate expression
+   * @param tableName parent table name
+   * @param databaseName database name
+   * @param logicalRelation logical relation
+   * @return logical plan
+   */
+  def getLogicalPlanFromAggExp(aggExp: AggregateExpression,
+      tableName: String,
+      databaseName: String,
+      logicalRelation: LogicalRelation,
+      sparkSession: SparkSession,
+      parser: CarbonSpark2SqlParser): LogicalPlan = {
+    // adding the preAGG UDF, so pre aggregate data loading rule and query rule will not
+    // be applied
+    val query = parser.addPreAggFunction(s"Select ${ aggExp.sql } from $databaseName.$tableName")
+    // updating the logical relation of logical plan to so when two logical plan
+    // will be compared it will not consider relation
+    updateLogicalRelation(sparkSession.sql(query).logicalPlan, logicalRelation)
+  }
+
+  /**
+   * Below method will be used to update the logical plan of expression
+   * with parent table logical relation
+   * @param logicalPlan logial plan
+   * @param logicalRelation maintable logical relation
+   * @return updated plan
+   */
+  def updateLogicalRelation(logicalPlan: LogicalPlan,
+      logicalRelation: LogicalRelation): LogicalPlan = {
+    logicalPlan transform {
+      case l: LogicalRelation =>
+        l.copy(relation = logicalRelation.relation)
+    }
+  }
+
+  /**
+   * Normalize the exprIds in the given expression, by updating the exprId in `AttributeReference`
+   * with its referenced ordinal from input attributes. It's similar to `BindReferences` but we
+   * do not use `BindReferences` here as the plan may take the expression as a parameter with type
+   * `Attribute`, and replace it with `BoundReference` will cause error.
+   */
+  def normalizeExprId[T <: Expression](e: T, input: AttributeSeq): T = {
+    e.transformUp {
+      case ar: AttributeReference =>
+        val ordinal = input.indexOf(ar.exprId)
+        if (ordinal == -1) {
+          ar
+        } else {
+          ar.withExprId(ExprId(ordinal))
+        }
+    }.canonicalized.asInstanceOf[T]
   }
 }
