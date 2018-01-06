@@ -37,13 +37,16 @@ case class CarbonDropPartition(rddId: Int, val idx: Int, segmentPath: String)
  * @param sc
  * @param tablePath
  * @param segments segments to be merged
+ * @param partialMatch If it is true then even the partial partition spec matches also can be
+ *                      dropped
  */
 class CarbonDropPartitionRDD(
     sc: SparkContext,
     tablePath: String,
     segments: Seq[String],
     partitions: Seq[String],
-    uniqueId: String)
+    uniqueId: String,
+    partialMatch: Boolean)
   extends CarbonRDD[String](sc, Nil) {
 
   override def getPartitions: Array[Partition] = {
@@ -60,7 +63,8 @@ class CarbonDropPartitionRDD(
       new PartitionMapFileStore().dropPartitions(
         split.segmentPath,
         partitions.toList.asJava,
-        uniqueId)
+        uniqueId,
+        partialMatch)
 
       var havePair = false
       var finished = false

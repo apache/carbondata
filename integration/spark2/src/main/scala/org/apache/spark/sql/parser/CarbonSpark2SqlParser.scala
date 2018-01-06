@@ -361,7 +361,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           validateOptions(optionsList)
         }
         val optionsMap = optionsList.getOrElse(List.empty[(String, String)]).toMap
-        val partitionSpec = partitions.getOrElse(List.empty[(String, String)]).toMap
+        val partitionSpec = partitions.getOrElse(List.empty[(String, Option[String])]).toMap
         CarbonLoadDataCommand(
           databaseNameOp = convertDbNameToLowerCase(databaseNameOp),
           tableName = tableName,
@@ -374,7 +374,7 @@ class CarbonSpark2SqlParser extends CarbonDDLSqlParser {
           updateModel = None,
           tableInfoOp = None,
           internalOptions = Map.empty,
-          partition = partitionSpec.map { case (key, value) => (key, Some(value))})
+          partition = partitionSpec)
     }
 
   protected lazy val deleteLoadsByID: Parser[LogicalPlan] =
