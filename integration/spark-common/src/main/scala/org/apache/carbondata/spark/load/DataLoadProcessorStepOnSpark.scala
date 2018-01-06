@@ -248,7 +248,7 @@ object DataLoadProcessorStepOnSpark {
 
       dataWriter = new DataWriterProcessorStepImpl(conf)
 
-      val dataHandlerModel = dataWriter.getDataHandlerModel(0)
+      val dataHandlerModel = dataWriter.getDataHandlerModel
       var dataHandler: CarbonFactHandler = null
       var rowsNotExist = true
       while (rows.hasNext) {

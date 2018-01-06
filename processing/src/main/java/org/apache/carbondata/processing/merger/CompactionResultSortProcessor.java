@@ -371,7 +371,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     return SortParameters
         .createSortParameters(carbonTable, carbonLoadModel.getDatabaseName(), tableName,
             dimensionColumnCount, segmentProperties.getComplexDimensions().size(), measureCount,
-            noDictionaryCount, carbonLoadModel.getPartitionId(), segmentId,
+            noDictionaryCount, segmentId,
             carbonLoadModel.getTaskNo(), noDictionaryColMapping, true);
   }
 
@@ -408,7 +408,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
     } else {
       carbonStoreLocation = CarbonDataProcessorUtil
           .createCarbonStoreLocation(carbonTable.getTablePath(), carbonLoadModel.getDatabaseName(),
-              tableName, carbonLoadModel.getPartitionId(), carbonLoadModel.getSegmentId());
+              tableName, carbonLoadModel.getSegmentId());
     }
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
         .getCarbonFactDataHandlerModel(carbonLoadModel, carbonTable, segmentProperties, tableName,
@@ -430,7 +430,7 @@ public class CompactionResultSortProcessor extends AbstractResultProcessor {
    */
   private void initTempStoreLocation() {
     tempStoreLocation = CarbonDataProcessorUtil
-        .getLocalDataFolderLocation(carbonTable, tableName, carbonLoadModel.getTaskNo(),
-            carbonLoadModel.getPartitionId(), segmentId, true, false);
+        .getLocalDataFolderLocation(carbonTable, carbonLoadModel.getTaskNo(),
+           segmentId, true, false);
   }
 }

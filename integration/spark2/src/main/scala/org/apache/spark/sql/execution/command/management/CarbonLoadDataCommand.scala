@@ -874,7 +874,6 @@ case class CarbonLoadDataCommand(
       model: CarbonLoadModel,
       isDataFrame: Boolean,
       partitionValues: Array[String]): RDD[InternalRow] = {
-    model.setPartitionId("0")
     val sc = sparkSession.sparkContext
     val info =
       model.getCarbonDataLoadSchema.getCarbonTable.getTableInfo.getFactTable.getPartitionInfo

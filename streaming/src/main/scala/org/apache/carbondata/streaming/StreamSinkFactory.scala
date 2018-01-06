@@ -136,7 +136,7 @@ object StreamSinkFactory {
       FileFactory.mkdirs(carbonTablePath.getMetadataDirectoryPath, fileType)
     }
     val segmentId = StreamSegment.open(carbonTable)
-    val segmentDir = carbonTablePath.getSegmentDir("0", segmentId)
+    val segmentDir = carbonTablePath.getSegmentDir(segmentId)
     if (FileFactory.isFileExist(segmentDir, fileType)) {
       // recover fault
       StreamSegment.recoverSegmentIfRequired(segmentDir)
