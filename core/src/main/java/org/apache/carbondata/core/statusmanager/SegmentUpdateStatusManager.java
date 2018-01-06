@@ -216,7 +216,7 @@ public class SegmentUpdateStatusManager {
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
     String endTimeStamp = "";
     String startTimeStamp = "";
-    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
+    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(segmentId);
     CarbonFile segDir =
         FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
     for (LoadMetadataDetails eachSeg : segmentDetails) {
@@ -322,7 +322,7 @@ public class SegmentUpdateStatusManager {
             + CarbonUpdateUtil.getRequiredFieldFromTID(tupleId, TupleIdEnum.PART_ID)
             .replace("#", "/") + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
       } else {
-        String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath("0", segment);
+        String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(segment);
         blockPath =
             carbonDataDirectoryPath + CarbonCommonConstants.FILE_SEPARATOR + completeBlockName;
       }
@@ -451,7 +451,7 @@ public class SegmentUpdateStatusManager {
         .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
             absoluteTableIdentifier.getCarbonTableIdentifier());
 
-    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", segmentId.getSegmentNo());
+    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(segmentId.getSegmentNo());
 
     CarbonFile segDir =
         FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
@@ -888,7 +888,7 @@ public class SegmentUpdateStatusManager {
 
     // filter out the fact files.
 
-    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
+    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(segmentId);
     CarbonFile segDir =
         FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
 

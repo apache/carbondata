@@ -321,7 +321,7 @@ public final class CarbonDataMergerUtil {
 
         // create entry for merged one.
         LoadMetadataDetails loadMetadataDetails = new LoadMetadataDetails();
-        loadMetadataDetails.setPartitionCount(carbonLoadModel.getPartitionId());
+        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID);
         loadMetadataDetails.setSegmentStatus(SegmentStatus.SUCCESS);
         long loadEnddate = CarbonUpdateUtil.readCurrentTime();
         loadMetadataDetails.setLoadEndTime(loadEnddate);
@@ -686,7 +686,7 @@ public final class CarbonDataMergerUtil {
       CarbonTableIdentifier carbonTableIdentifier, String segmentId) {
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(tablePath, carbonTableIdentifier);
-    return carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
+    return carbonTablePath.getCarbonDataDirectoryPath(segmentId);
   }
 
 
@@ -1047,7 +1047,7 @@ public final class CarbonDataMergerUtil {
 
     CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
 
-    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", seg.getSegmentNo());
+    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(seg.getSegmentNo());
     CarbonFile segDir =
         FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
     CarbonFile[] allSegmentFiles = segDir.listFiles();

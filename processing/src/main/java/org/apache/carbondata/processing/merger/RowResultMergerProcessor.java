@@ -78,7 +78,7 @@ public class RowResultMergerProcessor extends AbstractResultProcessor {
     } else {
       carbonStoreLocation = CarbonDataProcessorUtil
           .createCarbonStoreLocation(carbonTable.getTablePath(), loadModel.getDatabaseName(),
-              tableName, loadModel.getPartitionId(), loadModel.getSegmentId());
+              tableName, loadModel.getSegmentId());
     }
     CarbonFactDataHandlerModel carbonFactDataHandlerModel = CarbonFactDataHandlerModel
         .getCarbonFactDataHandlerModel(loadModel, carbonTable, segProp, tableName,

@@ -51,15 +51,14 @@ public final class DeleteLoadFolders {
    * returns segment path
    *
    * @param absoluteTableIdentifier
-   * @param partitionId
    * @param oneLoad
    * @return
    */
   private static String getSegmentPath(AbsoluteTableIdentifier absoluteTableIdentifier,
-      int partitionId, LoadMetadataDetails oneLoad) {
+      LoadMetadataDetails oneLoad) {
     CarbonTablePath carbon = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
     String segmentId = oneLoad.getLoadName();
-    return carbon.getCarbonDataDirectoryPath("" + partitionId, segmentId);
+    return carbon.getCarbonDataDirectoryPath(segmentId);
   }
 
   public static void physicalFactAndMeasureMetadataDeletion(
@@ -74,7 +73,7 @@ public final class DeleteLoadFolders {
                 .deleteSegment(absoluteTableIdentifier.getTablePath(), oneLoad.getSegmentFile(),
                     specs);
           } else {
-            String path = getSegmentPath(absoluteTableIdentifier, 0, oneLoad);
+            String path = getSegmentPath(absoluteTableIdentifier, oneLoad);
             boolean status = false;
             if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
               CarbonFile file = FileFactory.getCarbonFile(path, FileFactory.getFileType(path));

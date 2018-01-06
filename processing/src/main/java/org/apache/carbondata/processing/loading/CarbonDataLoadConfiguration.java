@@ -40,8 +40,6 @@ public class CarbonDataLoadConfiguration {
 
   private String[] header;
 
-  private String partitionId;
-
   private String segmentId;
 
   private String taskNo;
@@ -192,14 +190,6 @@ public class CarbonDataLoadConfiguration {
 
   public void setTableIdentifier(AbsoluteTableIdentifier tableIdentifier) {
     this.tableIdentifier = tableIdentifier;
-  }
-
-  public String getPartitionId() {
-    return partitionId;
-  }
-
-  public void setPartitionId(String partitionId) {
-    this.partitionId = partitionId;
   }
 
   public String getSegmentId() {

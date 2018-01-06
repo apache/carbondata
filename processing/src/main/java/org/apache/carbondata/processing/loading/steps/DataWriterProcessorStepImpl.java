@@ -26,6 +26,7 @@ import org.apache.carbondata.core.datastore.row.CarbonRow;
 import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 import org.apache.carbondata.core.util.CarbonTimeStatisticsFactory;
+import org.apache.carbondata.core.util.path.CarbonTablePath;
 import org.apache.carbondata.processing.loading.AbstractDataLoadProcessorStep;
 import org.apache.carbondata.processing.loading.CarbonDataLoadConfiguration;
 import org.apache.carbondata.processing.loading.DataField;
@@ -65,21 +66,21 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     child.initialize();
   }
 
-  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier, String partitionId) {
+  private String[] getStoreLocation(CarbonTableIdentifier tableIdentifier) {
     String[] storeLocation = CarbonDataProcessorUtil
         .getLocalDataFolderLocation(tableIdentifier.getDatabaseName(),
-            tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()), partitionId,
-            configuration.getSegmentId() + "", false, false);
+            tableIdentifier.getTableName(), String.valueOf(configuration.getTaskNo()),
+            configuration.getSegmentId(), false, false);
     CarbonDataProcessorUtil.createLocations(storeLocation);
     return storeLocation;
   }
 
-  public CarbonFactDataHandlerModel getDataHandlerModel(int partitionId) {
+  public CarbonFactDataHandlerModel getDataHandlerModel() {
     CarbonTableIdentifier tableIdentifier =
         configuration.getTableIdentifier().getCarbonTableIdentifier();
-    String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(partitionId));
+    String[] storeLocation = getStoreLocation(tableIdentifier);
     return CarbonFactDataHandlerModel.createCarbonFactDataHandlerModel(configuration,
-        storeLocation, partitionId, 0);
+        storeLocation, 0, 0);
   }
 
   @Override public Iterator<CarbonRowBatch>[] execute() throws CarbonDataLoadingException {
@@ -89,11 +90,11 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     String tableName = tableIdentifier.getTableName();
     try {
       CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-          .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
+          .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
               System.currentTimeMillis());
       int i = 0;
       for (Iterator<CarbonRowBatch> iterator : iterators) {
-        String[] storeLocation = getStoreLocation(tableIdentifier, String.valueOf(i));
+        String[] storeLocation = getStoreLocation(tableIdentifier);
 
         CarbonFactDataHandlerModel model = CarbonFactDataHandlerModel
             .createCarbonFactDataHandlerModel(configuration, storeLocation, i, 0);
@@ -147,10 +148,11 @@ public class DataWriterProcessorStepImpl extends AbstractDataLoadProcessorStep {
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance().recordTotalRecords(rowCounter.get());
     processingComplete(dataHandler);
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-        .recordDictionaryValue2MdkAdd2FileTime(configuration.getPartitionId(),
+        .recordDictionaryValue2MdkAdd2FileTime(CarbonTablePath.DEPRECATED_PATITION_ID,
             System.currentTimeMillis());
     CarbonTimeStatisticsFactory.getLoadStatisticsInstance()
-        .recordMdkGenerateTotalTime(configuration.getPartitionId(), System.currentTimeMillis());
+        .recordMdkGenerateTotalTime(CarbonTablePath.DEPRECATED_PATITION_ID,
+            System.currentTimeMillis());
   }
 
   private void processingComplete(CarbonFactHandler dataHandler) throws CarbonDataLoadingException {

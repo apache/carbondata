@@ -319,9 +319,7 @@ public class CarbonUpdateUtil {
     CarbonTablePath carbonTablePath = CarbonStorePath
             .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
                     absoluteTableIdentifier.getCarbonTableIdentifier());
-    // as of now considering only partition 0.
-    String partitionId = "0";
-    String partitionDir = carbonTablePath.getPartitionDir(partitionId);
+    String partitionDir = carbonTablePath.getPartitionDir();
     CarbonFile file =
             FileFactory.getCarbonFile(partitionDir, FileFactory.getFileType(partitionDir));
     if (!file.exists()) {
@@ -402,7 +400,7 @@ public class CarbonUpdateUtil {
   }
 
   public static long getLatestTaskIdForSegment(String segmentId, CarbonTablePath tablePath) {
-    String segmentDirPath = tablePath.getCarbonDataDirectoryPath("0", segmentId);
+    String segmentDirPath = tablePath.getCarbonDataDirectoryPath(segmentId);
 
     // scan all the carbondata files and get the latest task ID.
     CarbonFile segment =
@@ -467,7 +465,7 @@ public class CarbonUpdateUtil {
               || segment.getSegmentStatus() == SegmentStatus.LOAD_PARTIAL_SUCCESS) {
 
         // take the list of files from this segment.
-        String segmentPath = carbonTablePath.getCarbonDataDirectoryPath("0", segment.getLoadName());
+        String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(segment.getLoadName());
         CarbonFile segDir =
                 FileFactory.getCarbonFile(segmentPath, FileFactory.getFileType(segmentPath));
         CarbonFile[] allSegmentFiles = segDir.listFiles();

@@ -339,8 +339,7 @@ public class CarbonFactDataHandlerModel {
     AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
     CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
     String carbonDataDirectoryPath = carbonTablePath
-        .getCarbonDataDirectoryPath(configuration.getPartitionId(),
-            configuration.getSegmentId() + "");
+        .getCarbonDataDirectoryPath(configuration.getSegmentId() + "");
     CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
     return carbonDataDirectoryPath;
   }

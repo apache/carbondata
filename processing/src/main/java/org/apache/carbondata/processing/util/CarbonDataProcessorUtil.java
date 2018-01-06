@@ -124,17 +124,15 @@ public final class CarbonDataProcessorUtil {
    *
    * @param carbonTable
    * @param taskId
-   * @param partitionId
    * @param segmentId
    * @param isCompactionFlow
    * @param isAltPartitionFlow
    * @return
    */
-  public static String[] getLocalDataFolderLocation(CarbonTable carbonTable, String tableName,
-      String taskId, String partitionId, String segmentId, boolean isCompactionFlow,
-      boolean isAltPartitionFlow) {
+  public static String[] getLocalDataFolderLocation(CarbonTable carbonTable,
+      String taskId, String segmentId, boolean isCompactionFlow, boolean isAltPartitionFlow) {
     String tempLocationKey =
-        getTempStoreLocationKey(carbonTable.getDatabaseName(), tableName,
+        getTempStoreLocationKey(carbonTable.getDatabaseName(), carbonTable.getTableName(),
             segmentId, taskId, isCompactionFlow, isAltPartitionFlow);
     String baseTempStorePath = CarbonProperties.getInstance()
         .getProperty(tempLocationKey);
@@ -152,8 +150,7 @@ public final class CarbonDataProcessorUtil {
       String tmpStore = baseTmpStorePathArray[i];
       CarbonTablePath carbonTablePath =
           CarbonStorePath.getCarbonTablePath(tmpStore, carbonTable.getCarbonTableIdentifier());
-      String carbonDataDirectoryPath =
-          carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId + "");
+      String carbonDataDirectoryPath = carbonTablePath.getCarbonDataDirectoryPath(segmentId);
 
       localDataFolderLocArray[i] = carbonDataDirectoryPath + File.separator + taskId;
     }
@@ -166,17 +163,16 @@ public final class CarbonDataProcessorUtil {
    * @param databaseName
    * @param tableName
    * @param taskId
-   * @param partitionId
    * @param segmentId
    * @param isCompactionFlow
    * @param isAltPartitionFlow
    * @return
    */
   public static String[] getLocalDataFolderLocation(String databaseName, String tableName,
-      String taskId, String partitionId, String segmentId, boolean isCompactionFlow,
+      String taskId, String segmentId, boolean isCompactionFlow,
       boolean isAltPartitionFlow) {
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
-    return getLocalDataFolderLocation(carbonTable, tableName, taskId, partitionId,
+    return getLocalDataFolderLocation(carbonTable, taskId,
         segmentId, isCompactionFlow, isAltPartitionFlow);
   }
 
@@ -401,13 +397,13 @@ public final class CarbonDataProcessorUtil {
    * @return data directory path
    */
   public static String createCarbonStoreLocation(String factStoreLocation,
-      String databaseName, String tableName, String partitionId, String segmentId) {
+      String databaseName, String tableName, String segmentId) {
     CarbonTable carbonTable = CarbonMetadata.getInstance().getCarbonTable(databaseName, tableName);
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(factStoreLocation, carbonTableIdentifier);
     String carbonDataDirectoryPath =
-        carbonTablePath.getCarbonDataDirectoryPath(partitionId, segmentId);
+        carbonTablePath.getCarbonDataDirectoryPath(segmentId);
     return carbonDataDirectoryPath;
   }
 

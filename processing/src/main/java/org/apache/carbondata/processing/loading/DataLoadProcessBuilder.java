@@ -182,7 +182,6 @@ public final class DataLoadProcessBuilder {
     configuration.setTableIdentifier(identifier);
     configuration.setSchemaUpdatedTimeStamp(carbonTable.getTableLastUpdatedTime());
     configuration.setHeader(loadModel.getCsvHeaderColumns());
-    configuration.setPartitionId(loadModel.getPartitionId());
     configuration.setSegmentId(loadModel.getSegmentId());
     configuration.setTaskNo(loadModel.getTaskNo());
     configuration.setDataLoadProperty(DataLoadProcessorConstants.COMPLEX_DELIMITERS,

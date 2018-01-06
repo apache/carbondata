@@ -132,6 +132,7 @@ public class LoadMetadataDetails implements Serializable {
     return partitionCount;
   }
 
+  @Deprecated
   public void setPartitionCount(String partitionCount) {
     this.partitionCount = partitionCount;
   }
