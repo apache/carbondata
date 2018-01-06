@@ -20,6 +20,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.apache.carbondata.common.logging.LogService;
+import org.apache.carbondata.common.logging.LogServiceFactory;
+import org.apache.carbondata.core.exception.InvalidConfigurationException;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn;
@@ -30,8 +33,8 @@ import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.scan.model.CarbonQueryPlan;
 import org.apache.carbondata.core.scan.model.QueryModel;
 import org.apache.carbondata.core.util.DataTypeConverterImpl;
-import org.apache.carbondata.hadoop.CarbonInputFormat;
 import org.apache.carbondata.hadoop.CarbonInputSplit;
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat;
 import org.apache.carbondata.hadoop.readsupport.CarbonReadSupport;
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
@@ -50,9 +53,11 @@ import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.util.StringUtils;
 
-public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
+public class MapredCarbonInputFormat extends CarbonTableInputFormat<ArrayWritable>
     implements InputFormat<Void, ArrayWritable>, CombineHiveInputFormat.AvoidSplitCombination {
   private static final String CARBON_TABLE = "mapreduce.input.carboninputformat.table";
+
+  private LogService LOGGER = LogServiceFactory.getLogService(this.getClass().getCanonicalName());
 
   /**
    * this method will read the schema from the physical file and populate into CARBON_TABLE
@@ -61,7 +66,7 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
    * @throws IOException
    */
   private static void populateCarbonTable(Configuration configuration, String paths)
-      throws IOException {
+      throws IOException, InvalidConfigurationException {
     String dirs = configuration.get(INPUT_DIR, "");
     String[] inputPaths = StringUtils.split(dirs);
     String validInputPath = null;
@@ -87,7 +92,7 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
   }
 
   private static CarbonTable getCarbonTable(Configuration configuration, String path)
-      throws IOException {
+      throws IOException, InvalidConfigurationException {
     populateCarbonTable(configuration, path);
     // read it from schema file in the store
     String carbonTableStr = configuration.get(CARBON_TABLE);
@@ -115,12 +120,19 @@ public class MapredCarbonInputFormat extends CarbonInputFormat<ArrayWritable>
     if (inputSplit instanceof CarbonHiveInputSplit) {
       path = ((CarbonHiveInputSplit) inputSplit).getPath().toString();
     }
-    QueryModel queryModel = getQueryModel(jobConf, path);
+    QueryModel queryModel = null;
+    try {
+      queryModel = getQueryModel(jobConf, path);
+    } catch (InvalidConfigurationException e) {
+      LOGGER.error("Failed to create record reader: " + e.getMessage());
+      return null;
+    }
     CarbonReadSupport<ArrayWritable> readSupport = new CarbonDictionaryDecodeReadSupport<>();
     return new CarbonHiveRecordReader(queryModel, readSupport, inputSplit, jobConf);
   }
 
-  private QueryModel getQueryModel(Configuration configuration, String path) throws IOException {
+  private QueryModel getQueryModel(Configuration configuration, String path)
+      throws IOException, InvalidConfigurationException {
     CarbonTable carbonTable = getCarbonTable(configuration, path);
     TableProvider tableProvider = new SingleTableProvider(carbonTable);
     // getting the table absoluteTableIdentifier from the carbonTable

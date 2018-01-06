@@ -44,6 +44,24 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("drop database if exists carbon cascade")
   }
 
+  //TODO fix this test case
+  test("Update operation on carbon table with insert into") {
+    sql("drop database if exists carbon2 cascade")
+    sql(s"create database carbon2 location '$dblocation'")
+    sql("use carbon2")
+    sql("""create table carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
+    sql("insert into carbontable select 'a',1,'aa','aaa'")
+    sql("insert into carbontable select 'b',1,'bb','bbb'")
+    // update operation
+    sql("""update carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").show()
+    sql("""update carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'b'""").show()
+    checkAnswer(
+      sql("""select c1,c2,c3,c5 from carbontable"""),
+      Seq(Row("a",2,"aa","aaa"),Row("b",2,"bb","bbb"))
+    )
+    sql("drop database if exists carbon2 cascade")
+  }
+
   test("create and drop database test") {
     sql(s"create database carbon location '$dblocation'")
     sql("drop database if exists carbon cascade")
@@ -87,23 +105,6 @@ class DBLocationCarbonTableTestCase extends QueryTest with BeforeAndAfterAll {
     sql("insert into carbontable select 'b',1,'aa','aaa'")
     checkAnswer(sql("select count(*) from carbontable"), Row(2))
     checkAnswer(sql("select c1 from carbontable"), Seq(Row("a"), Row("b")))
-  }
-
-  //TODO fix this test case
-  test("Update operation on carbon table with insert into") {
-    sql("drop database if exists carbon cascade")
-    sql(s"create database carbon location '$dblocation'")
-    sql("use carbon")
-    sql("""create table carbon.carbontable (c1 string,c2 int,c3 string,c5 string) STORED BY 'org.apache.carbondata.format'""")
-    sql("insert into carbontable select 'a',1,'aa','aaa'")
-    sql("insert into carbontable select 'b',1,'bb','bbb'")
-    // update operation
-    sql("""update carbon.carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'a'""").show()
-    sql("""update carbon.carbontable d  set (d.c2) = (d.c2 + 1) where d.c1 = 'b'""").show()
-    checkAnswer(
-      sql("""select c1,c2,c3,c5 from carbon.carbontable"""),
-      Seq(Row("a",2,"aa","aaa"),Row("b",2,"bb","bbb"))
-    )
   }
 
 

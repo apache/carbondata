@@ -147,7 +147,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Get TableInfo object from `configuration`
    */
-  public static TableInfo getTableInfo(Configuration configuration) throws IOException {
+  private static TableInfo getTableInfo(Configuration configuration) throws IOException {
     String tableInfoStr = configuration.get(TABLE_INFO);
     if (tableInfoStr == null) {
       return null;
@@ -163,7 +163,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   /**
    * Get the cached CarbonTable or create it by TableInfo in `configuration`
    */
-  public CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
+  private CarbonTable getOrCreateCarbonTable(Configuration configuration) throws IOException {
     if (carbonTable == null) {
       // carbon table should be created either from deserialized table info (schema saved in
       // hive metastore) or by reading schema in HDFS (schema saved in HDFS)
@@ -182,8 +182,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     }
   }
 
-  public static void setTablePath(Configuration configuration, String tablePath)
-      throws IOException {
+  public static void setTablePath(Configuration configuration, String tablePath) {
     configuration.set(FileInputFormat.INPUT_DIR, tablePath);
   }
 
@@ -315,12 +314,6 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       return (List<String>) ObjectSerializationUtil.convertStringToObject(partitionString);
     }
     return null;
-  }
-  /**
-   * Set list of files to access
-   */
-  public static void setFilesToAccess(Configuration configuration, List<String> validFiles) {
-    configuration.set(INPUT_FILES, CarbonUtil.convertToString(validFiles));
   }
 
   public AbsoluteTableIdentifier getAbsoluteTableIdentifier(Configuration configuration)
@@ -648,7 +641,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   }
   /**
    * {@inheritDoc}
-   * Configurations FileInputFormat.INPUT_DIR, CarbonInputFormat.INPUT_SEGMENT_NUMBERS
+   * Configurations FileInputFormat.INPUT_DIR, CarbonTableInputFormat.INPUT_SEGMENT_NUMBERS
    * are used to get table path to read.
    *
    * @return
