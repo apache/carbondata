@@ -103,7 +103,6 @@ class StreamHandoffRDD[K, V](
       split: Partition,
       context: TaskContext
   ): Iterator[(K, V)] = {
-    carbonLoadModel.setPartitionId("0")
     carbonLoadModel.setTaskNo("" + split.index)
     val carbonTable = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable
     // the input iterator is using raw row

@@ -255,15 +255,14 @@ public class CarbonTablePath extends Path {
   /**
    * Gets absolute path of data file
    *
-   * @param partitionId         unique partition identifier
    * @param segmentId           unique partition identifier
    * @param filePartNo          data file part number
    * @param factUpdateTimeStamp unique identifier to identify an update
    * @return absolute path of data file stored in carbon data format
    */
-  public String getCarbonDataFilePath(String partitionId, String segmentId, Integer filePartNo,
-      Long taskNo, int batchNo, int bucketNumber, String factUpdateTimeStamp) {
-    return getSegmentDir(partitionId, segmentId) + File.separator + getCarbonDataFileName(
+  public String getCarbonDataFilePath(String segmentId, Integer filePartNo, Long taskNo,
+      int batchNo, int bucketNumber, String factUpdateTimeStamp) {
+    return getSegmentDir(segmentId) + File.separator + getCarbonDataFileName(
         filePartNo, taskNo, bucketNumber, batchNo, factUpdateTimeStamp);
   }
 
@@ -272,13 +271,12 @@ public class CarbonTablePath extends Path {
    * based on task id
    *
    * @param taskId      task id of the file
-   * @param partitionId partition number
    * @param segmentId   segment number
    * @return full qualified carbon index path
    */
-  public String getCarbonIndexFilePath(final String taskId, final String partitionId,
-      final String segmentId, final String bucketNumber) {
-    String segmentDir = getSegmentDir(partitionId, segmentId);
+  public String getCarbonIndexFilePath(final String taskId, final String segmentId,
+      final String bucketNumber) {
+    String segmentDir = getSegmentDir(segmentId);
     CarbonFile carbonFile =
         FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir));
 
@@ -294,9 +292,8 @@ public class CarbonTablePath extends Path {
     if (files.length > 0) {
       return files[0].getAbsolutePath();
     } else {
-      throw new RuntimeException("Missing Carbon index file for partition["
-          + partitionId + "] Segment[" + segmentId + "], taskId[" + taskId
-          + "]");
+      throw new RuntimeException("Missing Carbon index file for Segment[" + segmentId + "], "
+          + "taskId[" + taskId + "]");
     }
   }
 
@@ -304,8 +301,6 @@ public class CarbonTablePath extends Path {
    * Below method will be used to get the carbon index file path
    * @param taskId
    *        task id
-   * @param partitionId
-   *        partition id
    * @param segmentId
    *        segment id
    * @param bucketNumber
@@ -314,28 +309,27 @@ public class CarbonTablePath extends Path {
    *        timestamp
    * @return carbon index file path
    */
-  public String getCarbonIndexFilePath(String taskId, String partitionId, String segmentId,
-      String bucketNumber, String timeStamp, ColumnarFormatVersion columnarFormatVersion) {
+  public String getCarbonIndexFilePath(String taskId, String segmentId, String bucketNumber,
+      String timeStamp, ColumnarFormatVersion columnarFormatVersion) {
     switch (columnarFormatVersion) {
       case V1:
       case V2:
-        return getCarbonIndexFilePath(taskId, partitionId, segmentId, bucketNumber);
+        return getCarbonIndexFilePath(taskId, segmentId, bucketNumber);
       default:
-        String segmentDir = getSegmentDir(partitionId, segmentId);
+        String segmentDir = getSegmentDir(segmentId);
         return segmentDir + File.separator + getCarbonIndexFileName(taskId,
             Integer.parseInt(bucketNumber), timeStamp);
     }
   }
 
-  public String getCarbonIndexFilePath(String taskId, String partitionId, String segmentId,
-      int batchNo, String bucketNumber, String timeStamp,
-      ColumnarFormatVersion columnarFormatVersion) {
+  public String getCarbonIndexFilePath(String taskId, String segmentId, int batchNo,
+      String bucketNumber, String timeStamp, ColumnarFormatVersion columnarFormatVersion) {
     switch (columnarFormatVersion) {
       case V1:
       case V2:
-        return getCarbonIndexFilePath(taskId, partitionId, segmentId, bucketNumber);
+        return getCarbonIndexFilePath(taskId, segmentId, bucketNumber);
       default:
-        String segmentDir = getSegmentDir(partitionId, segmentId);
+        String segmentDir = getSegmentDir(segmentId);
         return segmentDir + File.separator + getCarbonIndexFileName(Long.parseLong(taskId),
             Integer.parseInt(bucketNumber), batchNo, timeStamp);
     }
@@ -349,12 +343,11 @@ public class CarbonTablePath extends Path {
   /**
    * Gets absolute path of data file
    *
-   * @param partitionId unique partition identifier
    * @param segmentId   unique partition identifier
    * @return absolute path of data file stored in carbon data format
    */
-  public String getCarbonDataDirectoryPath(String partitionId, String segmentId) {
-    return getSegmentDir(partitionId, segmentId);
+  public String getCarbonDataDirectoryPath(String segmentId) {
+    return getSegmentDir(segmentId);
   }
 
   /**
@@ -392,12 +385,16 @@ public class CarbonTablePath extends Path {
     return segmentDir + File.separator + getCarbonStreamIndexFileName();
   }
 
-  public String getSegmentDir(String partitionId, String segmentId) {
-    return getPartitionDir(partitionId) + File.separator + SEGMENT_PREFIX + segmentId;
+  public String getSegmentDir(String segmentId) {
+    return getPartitionDir() + File.separator + SEGMENT_PREFIX + segmentId;
   }
 
-  public String getPartitionDir(String partitionId) {
-    return getFactDir() + File.separator + PARTITION_PREFIX + partitionId;
+  // This partition is not used in any code logic, just keep backward compatibility
+  public static final String DEPRECATED_PATITION_ID = "0";
+
+  public String getPartitionDir() {
+    return getFactDir() + File.separator + PARTITION_PREFIX +
+        CarbonTablePath.DEPRECATED_PATITION_ID;
   }
 
   private String getMetaDataDir() {
