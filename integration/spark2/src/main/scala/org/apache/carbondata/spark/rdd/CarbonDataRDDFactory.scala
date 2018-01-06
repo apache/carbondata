@@ -615,7 +615,6 @@ object CarbonDataRDDFactory {
 
         override def getPartition(key: Any): Int = {
           val segId = key.asInstanceOf[String]
-          // partitionId
           segmentIdIndex(segId) * parallelism + Random.nextInt(parallelism)
         }
       }
@@ -649,7 +648,6 @@ object CarbonDataRDDFactory {
     val rddResult = new updateResultImpl()
     val LOGGER = LogServiceFactory.getLogService(this.getClass.getName)
     val resultIter = new Iterator[(String, (LoadMetadataDetails, ExecutionErrors))] {
-      val partitionID = "0"
       val loadMetadataDetails = new LoadMetadataDetails
       val executionErrors = ExecutionErrors(FailureCauses.NONE, "")
       var uniqueLoadStatusId = ""
@@ -660,10 +658,9 @@ object CarbonDataRDDFactory {
                              CarbonCommonConstants.UNDERSCORE +
                              (index + "_0")
 
-        loadMetadataDetails.setPartitionCount(partitionID)
+        loadMetadataDetails.setPartitionCount(CarbonTablePath.DEPRECATED_PATITION_ID)
         loadMetadataDetails.setLoadName(segId)
         loadMetadataDetails.setSegmentStatus(SegmentStatus.LOAD_FAILURE)
-        carbonLoadModel.setPartitionId(partitionID)
         carbonLoadModel.setSegmentId(segId)
         carbonLoadModel.setTaskNo(String.valueOf(index))
         carbonLoadModel.setFactTimeStamp(updateModel.get.updatedTimeStamp)

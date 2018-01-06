@@ -179,16 +179,9 @@ class CarbonMergerRDD[K, V](
             }
         }
 
-        val tempStoreLoc = CarbonDataProcessorUtil.getLocalDataFolderLocation(databaseName,
-          factTableName,
-          carbonLoadModel.getTaskNo,
-          "0",
-          mergeNumber,
-          true,
-          false
-        )
+        val tempStoreLoc = CarbonDataProcessorUtil.getLocalDataFolderLocation(
+          databaseName, factTableName, carbonLoadModel.getTaskNo, mergeNumber, true, false)
 
-        carbonLoadModel.setPartitionId("0")
         var processor: AbstractResultProcessor = null
         if (restructuredBlockExists) {
           LOGGER.info("CompactionResultSortProcessor flow is selected")

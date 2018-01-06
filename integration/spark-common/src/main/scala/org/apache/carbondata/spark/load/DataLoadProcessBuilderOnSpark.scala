@@ -56,7 +56,6 @@ object DataLoadProcessBuilderOnSpark {
         .map(DataLoadProcessorStepOnSpark.toStringArrayRow(_, columnCount))
     }
 
-    model.setPartitionId("0")
     val sc = sparkSession.sparkContext
     val modelBroadcast = sc.broadcast(model)
     val partialSuccessAccum = sc.accumulator(0, "Partial Success Accumulator")

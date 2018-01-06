@@ -77,10 +77,8 @@ public final class CarbonLoaderUtil {
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(loadModel.getTablePath(), carbonTable.getCarbonTableIdentifier());
 
-    for (int i = 0; i < carbonTable.getPartitionCount(); i++) {
-      String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(i + "", currentLoad + "");
-      deleteStorePath(segmentPath);
-    }
+    String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(currentLoad + "");
+    deleteStorePath(segmentPath);
   }
 
   /**
@@ -100,7 +98,7 @@ public final class CarbonLoaderUtil {
     int fileCount = 0;
     int partitionCount = carbonTable.getPartitionCount();
     for (int i = 0; i < partitionCount; i++) {
-      String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(i + "",
+      String segmentPath = carbonTablePath.getCarbonDataDirectoryPath(
           currentLoad + "");
       CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath,
           FileFactory.getFileType(segmentPath));
@@ -295,7 +293,7 @@ public final class CarbonLoaderUtil {
 
   private static void addToStaleFolders(CarbonTablePath carbonTablePath,
       List<CarbonFile> staleFolders, LoadMetadataDetails entry) throws IOException {
-    String path = carbonTablePath.getCarbonDataDirectoryPath("0", entry.getLoadName());
+    String path = carbonTablePath.getCarbonDataDirectoryPath(entry.getLoadName());
     // add to the deletion list only if file exist else HDFS file system will throw
     // exception while deleting the file if file path does not exist
     if (FileFactory.isFileExist(path, FileFactory.getFileType(path))) {
@@ -876,7 +874,7 @@ public final class CarbonLoaderUtil {
     CarbonTableIdentifier carbonTableIdentifier = carbonTable.getCarbonTableIdentifier();
     CarbonTablePath carbonTablePath =
         CarbonStorePath.getCarbonTablePath(carbonTable.getTablePath(), carbonTableIdentifier);
-    String segmentFolder = carbonTablePath.getCarbonDataDirectoryPath("0", segmentId);
+    String segmentFolder = carbonTablePath.getCarbonDataDirectoryPath(segmentId);
     CarbonUtil.checkAndCreateFolder(segmentFolder);
   }
 

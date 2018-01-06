@@ -39,8 +39,6 @@ public class CarbonLoadModel implements Serializable {
 
   private String colDictFilePath;
 
-  private String partitionId;
-
   private CarbonDataLoadSchema carbonDataLoadSchema;
 
   private boolean aggLoadRequest;
@@ -356,55 +354,6 @@ public class CarbonLoadModel implements Serializable {
   }
 
   /**
-   * get copy with partition
-   *
-   * @param uniqueId
-   * @return
-   */
-  public CarbonLoadModel getCopyWithPartition(String uniqueId) {
-    CarbonLoadModel copy = new CarbonLoadModel();
-    copy.tableName = tableName;
-    copy.factFilePath = factFilePath + '/' + uniqueId;
-    copy.databaseName = databaseName;
-    copy.partitionId = uniqueId;
-    copy.aggLoadRequest = aggLoadRequest;
-    copy.loadMetadataDetails = loadMetadataDetails;
-    copy.isRetentionRequest = isRetentionRequest;
-    copy.complexDelimiterLevel1 = complexDelimiterLevel1;
-    copy.complexDelimiterLevel2 = complexDelimiterLevel2;
-    copy.carbonDataLoadSchema = carbonDataLoadSchema;
-    copy.blocksID = blocksID;
-    copy.taskNo = taskNo;
-    copy.factTimeStamp = factTimeStamp;
-    copy.segmentId = segmentId;
-    copy.serializationNullFormat = serializationNullFormat;
-    copy.badRecordsLoggerEnable = badRecordsLoggerEnable;
-    copy.badRecordsAction = badRecordsAction;
-    copy.escapeChar = escapeChar;
-    copy.quoteChar = quoteChar;
-    copy.commentChar = commentChar;
-    copy.timestampformat = timestampformat;
-    copy.dateFormat = dateFormat;
-    copy.defaultTimestampFormat = defaultTimestampFormat;
-    copy.maxColumns = maxColumns;
-    copy.tablePath = tablePath;
-    copy.useOnePass = useOnePass;
-    copy.dictionaryServerHost = dictionaryServerHost;
-    copy.dictionaryServerPort = dictionaryServerPort;
-    copy.dictionaryServerSecretKey = dictionaryServerSecretKey;
-    copy.dictionaryEncryptServerSecure = dictionaryEncryptServerSecure;
-    copy.dictionaryServiceProvider = dictionaryServiceProvider;
-    copy.preFetch = preFetch;
-    copy.isEmptyDataBadRecord = isEmptyDataBadRecord;
-    copy.skipEmptyLine = skipEmptyLine;
-    copy.sortScope = sortScope;
-    copy.batchSortSizeInMb = batchSortSizeInMb;
-    copy.badRecordsLocation = badRecordsLocation;
-    copy.isAggLoadRequest = isAggLoadRequest;
-    return copy;
-  }
-
-  /**
    * Get copy with taskNo.
    * Broadcast value is shared in process, so we need to copy it to make sure the value in each
    * task independently.
@@ -416,7 +365,6 @@ public class CarbonLoadModel implements Serializable {
     copy.tableName = tableName;
     copy.factFilePath = factFilePath;
     copy.databaseName = databaseName;
-    copy.partitionId = partitionId;
     copy.aggLoadRequest = aggLoadRequest;
     copy.loadMetadataDetails = loadMetadataDetails;
     copy.isRetentionRequest = isRetentionRequest;
@@ -460,19 +408,15 @@ public class CarbonLoadModel implements Serializable {
   /**
    * get CarbonLoadModel with partition
    *
-   * @param uniqueId
-   * @param filesForPartition
    * @param header
    * @param delimiter
    * @return
    */
-  public CarbonLoadModel getCopyWithPartition(String uniqueId, List<String> filesForPartition,
-      String header, String delimiter) {
+  public CarbonLoadModel getCopyWithPartition(String header, String delimiter) {
     CarbonLoadModel copyObj = new CarbonLoadModel();
     copyObj.tableName = tableName;
     copyObj.factFilePath = null;
     copyObj.databaseName = databaseName;
-    copyObj.partitionId = uniqueId;
     copyObj.aggLoadRequest = aggLoadRequest;
     copyObj.loadMetadataDetails = loadMetadataDetails;
     copyObj.isRetentionRequest = isRetentionRequest;
@@ -511,20 +455,6 @@ public class CarbonLoadModel implements Serializable {
     copyObj.badRecordsLocation = badRecordsLocation;
     copyObj.isAggLoadRequest = isAggLoadRequest;
     return copyObj;
-  }
-
-  /**
-   * @return the partitionId
-   */
-  public String getPartitionId() {
-    return partitionId;
-  }
-
-  /**
-   * @param partitionId the partitionId to set
-   */
-  public void setPartitionId(String partitionId) {
-    this.partitionId = partitionId;
   }
 
   /**
