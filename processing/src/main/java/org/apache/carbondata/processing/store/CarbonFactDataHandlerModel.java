@@ -309,7 +309,7 @@ public class CarbonFactDataHandlerModel {
     carbonFactDataHandlerModel.setMeasureDataType(measureDataTypes);
     String carbonDataDirectoryPath = CarbonDataProcessorUtil
         .checkAndCreateCarbonStoreLocation(carbonTable.getTablePath(), loadModel.getDatabaseName(),
-            tableName, loadModel.getPartitionId(), loadModel.getSegmentId());
+            tableName, loadModel.getSegmentId());
     carbonFactDataHandlerModel.setCarbonDataDirectoryPath(carbonDataDirectoryPath);
     List<CarbonDimension> dimensionByTableName = carbonTable.getDimensionByTableName(tableName);
     boolean[] isUseInvertedIndexes = new boolean[dimensionByTableName.size()];
@@ -336,9 +336,8 @@ public class CarbonFactDataHandlerModel {
   private static String getCarbonDataFolderLocation(CarbonDataLoadConfiguration configuration) {
     AbsoluteTableIdentifier absoluteTableIdentifier = configuration.getTableIdentifier();
     CarbonTablePath carbonTablePath = CarbonStorePath.getCarbonTablePath(absoluteTableIdentifier);
-    String carbonDataDirectoryPath = carbonTablePath
-        .getCarbonDataDirectoryPath(configuration.getPartitionId(),
-            configuration.getSegmentId() + "");
+    String carbonDataDirectoryPath =
+        carbonTablePath.getCarbonDataDirectoryPath(configuration.getSegmentId());
     CarbonUtil.checkAndCreateFolder(carbonDataDirectoryPath);
     return carbonDataDirectoryPath;
   }
