@@ -188,7 +188,7 @@ public class PartitionMapFileStore {
    * @param partitionMapPath
    * @return
    */
-  private PartitionMapper readPartitionMap(String partitionMapPath) {
+  private PartitionMapper readPartitionMap(String partitionMapPath) throws IOException {
     Gson gsonObjectToRead = new Gson();
     DataInputStream dataInputStream = null;
     BufferedReader buffReader = null;
@@ -206,10 +206,10 @@ public class PartitionMapFileStore {
           Charset.forName(CarbonCommonConstants.DEFAULT_CHARSET));
       buffReader = new BufferedReader(inStream);
       partitionMapper = gsonObjectToRead.fromJson(buffReader, PartitionMapper.class);
-    } catch (IOException e) {
-      return null;
     } finally {
-      CarbonUtil.closeStreams(buffReader, inStream, dataInputStream);
+      if (inStream != null) {
+        CarbonUtil.closeStreams(buffReader, inStream, dataInputStream);
+      }
     }
 
     return partitionMapper;
@@ -219,7 +219,7 @@ public class PartitionMapFileStore {
    * Reads all partitions which existed inside the passed segment path
    * @param segmentPath
    */
-  public void readAllPartitionsOfSegment(String segmentPath) {
+  public void readAllPartitionsOfSegment(String segmentPath) throws IOException {
     String partitionFilePath = getPartitionFilePath(segmentPath);
     if (partitionFilePath != null) {
       partionedSegment = true;
