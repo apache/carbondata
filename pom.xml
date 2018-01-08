@@ -428,7 +428,7 @@
       <!-- This profile only should be used for release prepare to cover all the modules -->
       <id>build-all</id>
       <properties>
-        <spark.version>2.1.0</spark.version>
+        <spark.version>2.2.1</spark.version>
         <maven.test.skip>true</maven.test.skip>
       </properties>
       <modules>
@@ -460,9 +460,6 @@
     </profile>
     <profile>
       <id>spark-2.1</id>
-      <activation>
-        <activeByDefault>true</activeByDefault>
-      </activation>
       <properties>
         <spark.version>2.1.0</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
@@ -513,6 +510,9 @@
     </profile>
     <profile>
       <id>spark-2.2</id>
+      <activation>
+        <activeByDefault>true</activeByDefault>
+      </activation>
       <properties>
         <spark.version>2.2.1</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
