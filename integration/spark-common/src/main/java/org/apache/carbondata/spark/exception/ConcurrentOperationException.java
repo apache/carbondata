@@ -15,6 +15,30 @@
  * limitations under the License.
  */
 
-package org.apache.spark.sql.execution.command.management.exception
+package org.apache.carbondata.spark.exception;
 
-case class ConcurrentOperationException(message: String) extends Exception(message)
+public class ConcurrentOperationException extends Exception {
+
+  /**
+   * The Error message.
+   */
+  private String msg = "";
+
+  /**
+   * Constructor
+   *
+   * @param msg The error message for this exception.
+   */
+  public ConcurrentOperationException(String msg) {
+    super(msg);
+    this.msg = msg;
+  }
+
+  /**
+   * getMessage
+   */
+  public String getMessage() {
+    return this.msg;
+  }
+
+}
