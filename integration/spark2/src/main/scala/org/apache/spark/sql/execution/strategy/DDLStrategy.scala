@@ -223,7 +223,7 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
         if (property.isDefined) {
           if (!property.get._2.trim.equalsIgnoreCase("true")) {
             throw new MalformedCarbonCommandException(
-              "Streaming property can not be changed to 'false' once it is 'true'")
+              "Streaming property can not be changed once it is 'true'")
           }
         }
         ExecutedCommandExec(CarbonAlterTableSetCommand(tableName, properties, isView)) :: Nil
