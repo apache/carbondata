@@ -473,6 +473,7 @@ public class SegmentStatusManager {
    */
   private static List<String> updateDeletionStatus(List<String> loadIds,
       LoadMetadataDetails[] listOfLoadFolderDetailsArray, List<String> invalidLoadIds) {
+    SegmentStatus segmentStatus = null;
     for (String loadId : loadIds) {
       boolean loadFound = false;
       // For each load id loop through data and if the
@@ -481,31 +482,29 @@ public class SegmentStatusManager {
       for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
 
         if (loadId.equalsIgnoreCase(loadMetadata.getLoadName())) {
-          // if the segment is compacted then no need to delete that.
-          if (SegmentStatus.COMPACTED == loadMetadata.getSegmentStatus()) {
+          segmentStatus = loadMetadata.getSegmentStatus();
+          if (SegmentStatus.COMPACTED == segmentStatus) {
+            // if the segment is compacted then no need to delete that.
             LOG.error("Cannot delete the Segment which is compacted. Segment is " + loadId);
             invalidLoadIds.add(loadId);
             return invalidLoadIds;
-          }
-          // if the segment status is in progress then no need to delete that.
-          if (SegmentStatus.INSERT_IN_PROGRESS == loadMetadata.getSegmentStatus()) {
+          } else if (SegmentStatus.INSERT_IN_PROGRESS == segmentStatus) {
+            // if the segment status is in progress then no need to delete that.
             LOG.error("Cannot delete the segment " + loadId + " which is load in progress");
             invalidLoadIds.add(loadId);
             return invalidLoadIds;
-          }
-          // if the segment status is overwrite in progress, then no need to delete that.
-          if (SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == loadMetadata.getSegmentStatus()) {
+          } else if (SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == segmentStatus) {
+            // if the segment status is overwrite in progress, then no need to delete that.
             LOG.error("Cannot delete the segment " + loadId + " which is load overwrite " +
                     "in progress");
             invalidLoadIds.add(loadId);
             return invalidLoadIds;
-          }
-          if (SegmentStatus.STREAMING == loadMetadata.getSegmentStatus()) {
+          } else if (SegmentStatus.STREAMING == segmentStatus) {
+            // if the segment status is streaming, the segment can't be deleted directly.
             LOG.error("Cannot delete the segment " + loadId + " which is streaming in progress");
             invalidLoadIds.add(loadId);
             return invalidLoadIds;
-          }
-          if (SegmentStatus.MARKED_FOR_DELETE != loadMetadata.getSegmentStatus()) {
+          } else if (SegmentStatus.MARKED_FOR_DELETE != segmentStatus) {
             loadFound = true;
             loadMetadata.setSegmentStatus(SegmentStatus.MARKED_FOR_DELETE);
             loadMetadata.setModificationOrdeletionTimesStamp(CarbonUpdateUtil.readCurrentTime());
@@ -540,22 +539,20 @@ public class SegmentStatusManager {
     // the metadata as deleted.
     boolean loadFound = false;
     String loadStartTimeString = "Load Start Time: ";
+    SegmentStatus segmentStatus = null;
     for (LoadMetadataDetails loadMetadata : listOfLoadFolderDetailsArray) {
       Integer result = compareDateValues(loadMetadata.getLoadStartTimeAsLong(), loadStartTime);
       if (result < 0) {
-        if (SegmentStatus.COMPACTED == loadMetadata.getSegmentStatus()) {
+        segmentStatus = loadMetadata.getSegmentStatus();
+        if (SegmentStatus.COMPACTED == segmentStatus) {
           LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
               + "as the segment has been compacted.");
-          continue;
-        }
-        if (SegmentStatus.STREAMING == loadMetadata.getSegmentStatus()) {
+        } else if (SegmentStatus.STREAMING == segmentStatus) {
           LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
               + "as the segment is streaming in progress.");
-          continue;
-        }
-        if (SegmentStatus.MARKED_FOR_DELETE != loadMetadata.getSegmentStatus() &&
-            SegmentStatus.INSERT_IN_PROGRESS != loadMetadata.getSegmentStatus() &&
-            SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS != loadMetadata.getSegmentStatus()) {
+        } else if (SegmentStatus.MARKED_FOR_DELETE != segmentStatus &&
+            SegmentStatus.INSERT_IN_PROGRESS != segmentStatus &&
+            SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS != segmentStatus) {
           loadFound = true;
           updateSegmentMetadataDetails(loadMetadata);
           LOG.info("Info: " +
@@ -563,7 +560,6 @@ public class SegmentStatusManager {
               " Marked for Delete");
         }
       }
-
     }
 
     if (!loadFound) {
