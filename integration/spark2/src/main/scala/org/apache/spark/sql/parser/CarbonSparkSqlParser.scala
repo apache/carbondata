@@ -200,7 +200,11 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
          throw new MalformedCarbonCommandException("Error: Invalid partition definition")
       }
       // partition columns should not be part of the schema
-      val badPartCols = partitionFields.map(_.partitionColumn).toSet.intersect(colNames.toSet)
+      val badPartCols = partitionFields
+        .map(_.partitionColumn.toLowerCase)
+        .toSet
+        .intersect(colNames.map(_.toLowerCase).toSet)
+
       if (badPartCols.nonEmpty) {
         operationNotAllowed(s"Partition columns should not be specified in the schema: " +
                             badPartCols.map("\"" + _ + "\"").mkString("[", ",", "]"),
