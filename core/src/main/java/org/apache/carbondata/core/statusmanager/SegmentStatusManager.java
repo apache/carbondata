@@ -495,8 +495,13 @@ public class SegmentStatusManager {
           }
           // if the segment status is overwrite in progress, then no need to delete that.
           if (SegmentStatus.INSERT_OVERWRITE_IN_PROGRESS == loadMetadata.getSegmentStatus()) {
-            LOG.error("Cannot delete the segemnt " + loadId + " which is load overwrite " +
+            LOG.error("Cannot delete the segment " + loadId + " which is load overwrite " +
                     "in progress");
+            invalidLoadIds.add(loadId);
+            return invalidLoadIds;
+          }
+          if (SegmentStatus.STREAMING == loadMetadata.getSegmentStatus()) {
+            LOG.error("Cannot delete the segment " + loadId + " which is streaming in progress");
             invalidLoadIds.add(loadId);
             return invalidLoadIds;
           }
@@ -541,6 +546,11 @@ public class SegmentStatusManager {
         if (SegmentStatus.COMPACTED == loadMetadata.getSegmentStatus()) {
           LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
               + "as the segment has been compacted.");
+          continue;
+        }
+        if (SegmentStatus.STREAMING == loadMetadata.getSegmentStatus()) {
+          LOG.info("Ignoring the segment : " + loadMetadata.getLoadName()
+              + "as the segment is streaming in progress.");
           continue;
         }
         if (SegmentStatus.MARKED_FOR_DELETE != loadMetadata.getSegmentStatus() &&

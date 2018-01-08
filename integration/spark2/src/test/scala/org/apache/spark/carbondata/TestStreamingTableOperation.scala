@@ -32,7 +32,6 @@ import org.apache.spark.sql.types.StructType
 import org.scalatest.BeforeAndAfterAll
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
-import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.statusmanager.{FileFormat, SegmentStatus}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -105,7 +104,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     createTable(tableName = "stream_table_tolerant", streaming = true, withBatchLoad = true)
 
     // 11. table for delete segment test
-    createTable(tableName = "stream_table_delete", streaming = true, withBatchLoad = false)
+    createTable(tableName = "stream_table_delete_id", streaming = true, withBatchLoad = false)
+    createTable(tableName = "stream_table_delete_date", streaming = true, withBatchLoad = false)
 
     // 12. reject alter streaming properties
     createTable(tableName = "stream_table_alter", streaming = false, withBatchLoad = false)
@@ -126,6 +126,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     // 17. reopen streaming table after close
     createTable(tableName = "stream_table_reopen", streaming = true, withBatchLoad = false)
 
+    // 18. block drop table while streaming is in progress
+    createTable(tableName = "stream_table_drop", streaming = true, withBatchLoad = false)
   }
 
   test("validate streaming property") {
@@ -204,7 +206,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists streaming.stream_table_compact")
     sql("drop table if exists streaming.stream_table_new")
     sql("drop table if exists streaming.stream_table_tolerant")
-    sql("drop table if exists streaming.stream_table_delete")
+    sql("drop table if exists streaming.stream_table_delete_id")
+    sql("drop table if exists streaming.stream_table_delete_date")
     sql("drop table if exists streaming.stream_table_alter")
     sql("drop table if exists streaming.stream_table_handoff")
     sql("drop table if exists streaming.stream_table_finish")
@@ -212,6 +215,7 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists streaming.stream_table_close")
     sql("drop table if exists streaming.stream_table_close_auto_handoff")
     sql("drop table if exists streaming.stream_table_reopen")
+    sql("drop table if exists streaming.stream_table_drop")
   }
 
   // normal table not support streaming ingest
@@ -600,7 +604,6 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     }
 
     sql("alter table streaming.stream_table_compact compact 'minor'")
-    sql("show segments for table streaming.stream_table_compact").show
 
     val result = sql("show segments for table streaming.stream_table_compact").collect()
     result.foreach { row =>
@@ -635,48 +638,55 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
   test("test deleting streaming segment by ID while ingesting") {
     executeStreamingIngest(
-      tableName = "stream_table_delete",
+      tableName = "stream_table_delete_id",
       batchNums = 6,
       rowNumsEachBatch = 10000,
       intervalOfSource = 3,
       intervalOfIngest = 5,
-      continueSeconds = 15,
+      continueSeconds = 20,
       generateBadRecords = false,
       badRecordAction = "force",
       handoffSize = 1024L * 200,
       autoHandoff = false
     )
-    val beforeDelete = sql("show segments for table streaming.stream_table_delete").collect()
-    val segmentId = beforeDelete.map(_.getString(0)).mkString(",")
-    sql(s"delete from table streaming.stream_table_delete where segment.id in ($segmentId) ")
+    Thread.sleep(10000)
+    val beforeDelete = sql("show segments for table streaming.stream_table_delete_id").collect()
+    val segmentIds1 = beforeDelete.filter(_.getString(1).equals("Streaming")).map(_.getString(0)).mkString(",")
+    val msg = intercept[Exception] {
+      sql(s"delete from table streaming.stream_table_delete_id where segment.id in ($segmentIds1) ")
+    }
+    assertResult(s"Delete segment by Id is failed. Invalid ID is: ${beforeDelete.length -1}")(msg.getMessage)
 
-    val rows = sql("show segments for table streaming.stream_table_delete").collect()
-    rows.foreach { row =>
+    val segmentIds2 = beforeDelete.filter(_.getString(1).equals("Streaming Finish"))
+      .map(_.getString(0)).mkString(",")
+    sql(s"delete from table streaming.stream_table_delete_id where segment.id in ($segmentIds2) ")
+    val afterDelete = sql("show segments for table streaming.stream_table_delete_id").collect()
+    afterDelete.filter(!_.getString(1).equals("Streaming")).foreach { row =>
       assertResult(SegmentStatus.MARKED_FOR_DELETE.getMessage)(row.getString(1))
     }
   }
 
   test("test deleting streaming segment by date while ingesting") {
     executeStreamingIngest(
-      tableName = "stream_table_delete",
+      tableName = "stream_table_delete_date",
       batchNums = 6,
       rowNumsEachBatch = 10000,
       intervalOfSource = 3,
       intervalOfIngest = 5,
-      continueSeconds = 15,
+      continueSeconds = 20,
       generateBadRecords = false,
       badRecordAction = "force",
       handoffSize = 1024L * 200,
       autoHandoff = false
     )
-    val beforeDelete = sql("show segments for table streaming.stream_table_delete").collect()
-
-    sql(s"delete from table streaming.stream_table_delete where segment.starttime before " +
+    Thread.sleep(10000)
+    val beforeDelete = sql("show segments for table streaming.stream_table_delete_date").collect()
+    sql(s"delete from table streaming.stream_table_delete_date where segment.starttime before " +
         s"'2999-10-01 01:00:00'")
-
-    val rows = sql("show segments for table streaming.stream_table_delete").collect()
-    assertResult(beforeDelete.length)(rows.length)
-    rows.foreach { row =>
+    val segmentIds = beforeDelete.filter(_.getString(1).equals("Streaming"))
+    assertResult(1)(segmentIds.length)
+    val afterDelete = sql("show segments for table streaming.stream_table_delete_date").collect()
+    afterDelete.filter(!_.getString(1).equals("Streaming")).foreach { row =>
       assertResult(SegmentStatus.MARKED_FOR_DELETE.getMessage)(row.getString(1))
     }
   }
@@ -799,7 +809,6 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       autoHandoff = false
     )
     sql("alter table streaming.stream_table_finish finish streaming")
-    sql("show segments for table streaming.stream_table_finish").show(100, false)
 
     val segments = sql("show segments for table streaming.stream_table_finish").collect()
     assert(segments.length == 4 || segments.length == 5)
@@ -936,6 +945,32 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
       sql("select count(*) from streaming.stream_table_reopen"),
       Seq(Row(6 * 10000 * 2))
     )
+  }
+
+  test("block drop streaming table while streaming is in progress") {
+    val identifier = new TableIdentifier("stream_table_drop", Option("streaming"))
+    val carbonTable = CarbonEnv.getInstance(spark).carbonMetastore.lookupRelation(identifier)(spark)
+      .asInstanceOf[CarbonRelation].metaData.carbonTable
+    val tablePath = CarbonStorePath.getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
+    var server: ServerSocket = null
+    try {
+      server = getServerSocket
+      val thread1 = createWriteSocketThread(server, 2, 10, 5)
+      val thread2 = createSocketStreamingThread(spark, server.getLocalPort, tablePath, identifier, "force", 5, 1024L * 200, false)
+      thread1.start()
+      thread2.start()
+      Thread.sleep(1000)
+      val msg = intercept[Exception] {
+        sql(s"drop table streaming.stream_table_drop")
+      }
+      assertResult("Dropping table streaming.stream_table_drop failed: Acquire table lock failed after retry, please try after some time;")(msg.getMessage)
+      thread1.interrupt()
+      thread2.interrupt()
+    } finally {
+      if (server != null) {
+        server.close()
+      }
+    }
   }
 
   test("do not support creating datamap on streaming table") {

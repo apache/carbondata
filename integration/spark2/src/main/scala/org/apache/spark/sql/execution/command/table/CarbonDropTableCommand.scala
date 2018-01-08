@@ -55,6 +55,10 @@ case class CarbonDropTableCommand(
       }
       LOGGER.audit(s"Deleting table [$tableName] under database [$dbName]")
       carbonTable = CarbonEnv.getCarbonTable(databaseNameOp, tableName)(sparkSession)
+      if (carbonTable.isStreamingTable) {
+        // streaming table should acquire streaming.lock
+        carbonLocks += CarbonLockUtil.getLockObject(identifier, LockUsage.STREAMING_LOCK)
+      }
       val relationIdentifiers = carbonTable.getTableInfo.getParentRelationIdentifiers
       if (relationIdentifiers != null && !relationIdentifiers.isEmpty) {
         if (!dropChildTable) {
