@@ -762,20 +762,20 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
   This command is used to read data from specified segments during CarbonScan.
   
-  #### Steps followed:
-  1. To get the Segment ID:
+  
+  Get the Segment ID:
   
   ```
   SHOW SEGMENTS FOR TABLE [db_name.]table_name LIMIT number_of_segments
   ```
   
-  2. Set the segment IDs
+  Set the segment IDs
   
   ```
   SET cabon.input.segments.<database_name>.<table_name> = <list of segment IDs>;
   ```
   
-  #### Property:
+  **Property:**
   
   cabon.input.segments:  Specifies the segment IDs to be queried. This property allows you to query specified segments of the specified table. The CarbonScan will read data from specified segments only.
   
@@ -789,7 +789,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   CarbonSession.threadSet ("cabon.input.segments.<database_name>.<table_name>","<list of segment IDs>");
   ```
   
-  3. To reset the segment IDs 
+  Reset the segment IDs:
   
   ```
   SET cabon.input.segments.<database_name>.<table_name> = *;
@@ -801,7 +801,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   CarbonSession.threadSet ("cabon.input.segments.<database_name>.<table_name>","*");
   ```
   
-  4. Reset
+  Reset
   
   It will reset all the properties set for carbondata. It is not recommended if you do not want to reset all the properties except cabon.input.segments.
   
@@ -811,7 +811,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   
   **NOTE**: It is not recommended to set this property in carbon.properties file, because all the sessions will take this segments list unless it is overwritten at session or thread level.
   
-  #### Examples:
+  **Examples:**
   
   * Example to show the list of segment IDs,segment status, and other required details and then specify the list of segments to be read.
   
