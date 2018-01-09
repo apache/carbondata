@@ -656,6 +656,19 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("drop table if exists preagg1")
   }
 
+  test("test rename textFileTable") {
+    sql("drop table if exists renameTextFileTable")
+    sql("drop table if exists new_renameTextFileTable")
+    sql("create table renameTextFileTable (id int,time string) row format delimited fields terminated by ',' stored as textfile ")
+    sql("alter table renameTextFileTable rename to new_renameTextFileTable")
+    checkAnswer(sql("DESC new_renameTextFileTable"),Seq(Row("id","int",null),Row("time","string",null)))
+    intercept[Exception] {
+      sql("select * from renameTextFileTable")
+    }
+    sql("drop table if exists new_renameTextFileTable")
+    sql("drop table if exists renameTextFileTable")
+  }
+
   override def afterAll {
     sql("DROP TABLE IF EXISTS addcolumntest")
     sql("DROP TABLE IF EXISTS hivetable")
@@ -670,6 +683,8 @@ class AddColumnTestCases extends Spark2QueryTest with BeforeAndAfterAll {
     sql("DROP TABLE IF EXISTS alter_sort_columns")
     sql("DROP TABLE IF EXISTS alter_no_dict")
     sql("drop table if exists NO_INVERTED_CARBON")
+    sql("drop table if exists new_renameTextFileTable")
+    sql("drop table if exists renameTextFileTable")
     sqlContext.setConf("carbon.enable.vector.reader", "false")
     CarbonProperties.getInstance().addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT,
       CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
