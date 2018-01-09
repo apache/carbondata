@@ -101,10 +101,10 @@ This section provides the details of all the configurations required for CarbonD
 | carbon.csv.read.buffersize.byte | 1048576 | csv reading buffer size. |
 | high.cardinality.value | 100000 | To identify and apply compression for non-high cardinality columns. |
 | carbon.merge.sort.reader.thread | 3 | Maximum no of threads used for reading intermediate files for final merging. |
-| carbon.load.metadata.lock.retries | 3 | Maximum number of retries to get the metadata lock for loading data to table. |
-| carbon.load.metadata.lock.retry.timeout.sec | 5 | Interval between the retries to get the lock. |
 | carbon.concurrent.lock.retries | 100 | Specifies the maximum number of retries to obtain the lock for concurrent operations. This is used for concurrent loading. |
 | carbon.concurrent.lock.retry.timeout.sec | 1 | Specifies the interval between the retries to obtain the lock for concurrent operations. |
+| carbon.lock.retries | 3 | Specifies the maximum number of retries to obtain the lock for any operations other than load. |
+| carbon.lock.retry.timeout.sec | 5 | Specifies the interval between the retries to obtain the lock for any operation other than load. |
 | carbon.tempstore.location | /opt/Carbon/TempStoreLoc | Temporary store location. By default it takes System.getProperty("java.io.tmpdir"). |
 | carbon.load.log.counter | 500000 | Data loading records count logger. |
 | carbon.skip.empty.line | false | Setting this property ignores the empty lines in the CSV file during the data load |
