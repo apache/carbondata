@@ -220,11 +220,14 @@ case class CarbonAlterTableCompactionCommand(
         try {
           if (compactionType == CompactionType.SEGMENT_INDEX) {
             // Just launch job to merge index and return
-            CommonUtil.mergeIndexFiles(sqlContext.sparkContext,
+            CommonUtil.mergeIndexFiles(
+              sqlContext.sparkContext,
               CarbonDataMergerUtil.getValidSegmentList(
                 carbonTable.getAbsoluteTableIdentifier).asScala,
               carbonLoadModel.getTablePath,
-              carbonTable, true)
+              carbonTable,
+              mergeIndexProperty = true,
+              readFileFooterFromCarbonDataFile = true)
 
             val carbonMergerMapping = CarbonMergerMapping(carbonTable.getTablePath,
               carbonTable.getMetaDataFilepath,

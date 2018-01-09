@@ -39,7 +39,8 @@ case class CarbonMergeFilePartition(rddId: Int, idx: Int, segmentPath: String)
 class CarbonMergeFilesRDD(
     sc: SparkContext,
     tablePath: String,
-    segments: Seq[String])
+    segments: Seq[String],
+    readFileFooterFromCarbonDataFile: Boolean)
   extends CarbonRDD[String](sc, Nil) {
 
   override def getPartitions: Array[Partition] = {
@@ -53,7 +54,8 @@ class CarbonMergeFilesRDD(
       val split = theSplit.asInstanceOf[CarbonMergeFilePartition]
       logInfo("Merging carbon index files of segment : " + split.segmentPath)
 
-      new CarbonIndexFileMergeWriter().mergeCarbonIndexFilesOfSegment(split.segmentPath)
+      new CarbonIndexFileMergeWriter()
+        .mergeCarbonIndexFilesOfSegment(split.segmentPath, readFileFooterFromCarbonDataFile)
 
       var havePair = false
       var finished = false
