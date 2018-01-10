@@ -469,7 +469,7 @@ public class SegmentUpdateStatusManager {
    */
   public CarbonFile[] getUpdateDeltaFilesList(String segmentId, final boolean validUpdateFiles,
       final String fileExtension, final boolean excludeOriginalFact,
-      CarbonFile[] allFilesOfSegment) {
+      CarbonFile[] allFilesOfSegment, boolean isAbortedFile) {
 
     CarbonTablePath carbonTablePath = CarbonStorePath
         .getCarbonTablePath(absoluteTableIdentifier.getTablePath(),
@@ -528,7 +528,12 @@ public class SegmentUpdateStatusManager {
           }
         } else {
           // invalid cases.
-          if (Long.compare(timestamp, startTimeStampFinal) < 0) {
+          if (isAbortedFile) {
+            if (Long.compare(timestamp, endTimeStampFinal) > 0) {
+              listOfCarbonFiles.add(eachFile);
+            }
+          } else if (Long.compare(timestamp, startTimeStampFinal) < 0
+              || Long.compare(timestamp, endTimeStampFinal) > 0) {
             listOfCarbonFiles.add(eachFile);
           }
         }
@@ -934,10 +939,13 @@ public class SegmentUpdateStatusManager {
    */
   public CarbonFile[] getDeleteDeltaInvalidFilesList(final String segmentId,
       final SegmentUpdateDetails block, final boolean needCompleteList,
-      CarbonFile[] allSegmentFiles) {
+      CarbonFile[] allSegmentFiles, boolean isAbortedFile) {
 
     final long deltaStartTimestamp =
         getStartTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
+
+    final long deltaEndTimestamp =
+        getEndTimeOfDeltaFile(CarbonCommonConstants.DELETE_DELTA_FILE_EXT, block);
 
     List<CarbonFile> files =
         new ArrayList<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
@@ -956,9 +964,16 @@ public class SegmentUpdateStatusManager {
         long timestamp = CarbonUpdateUtil.getTimeStampAsLong(
             CarbonTablePath.DataFileUtil.getTimeStampFromDeleteDeltaFile(fileName));
 
-        if (block.getBlockName().equalsIgnoreCase(blkName) && (
-            Long.compare(timestamp, deltaStartTimestamp) < 0)) {
-          files.add(eachFile);
+        if (block.getBlockName().equalsIgnoreCase(blkName)) {
+
+          if (isAbortedFile) {
+            if (Long.compare(timestamp, deltaEndTimestamp) > 0) {
+              files.add(eachFile);
+            }
+          } else if (Long.compare(timestamp, deltaStartTimestamp) < 0
+              || Long.compare(timestamp, deltaEndTimestamp) > 0) {
+            files.add(eachFile);
+          }
         }
       }
     }
