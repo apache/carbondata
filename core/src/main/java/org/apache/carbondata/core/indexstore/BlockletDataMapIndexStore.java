@@ -21,7 +21,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -32,6 +36,7 @@ import org.apache.carbondata.core.indexstore.blockletindex.BlockletDataMapModel;
 import org.apache.carbondata.core.indexstore.blockletindex.SegmentIndexFileStore;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.PartitionMapFileStore;
+import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.core.util.path.CarbonTablePath;
 
 /**
@@ -93,6 +98,7 @@ public class BlockletDataMapIndexStore
       List<TableBlockIndexUniqueIdentifier> tableSegmentUniqueIdentifiers) throws IOException {
     List<BlockletDataMap> blockletDataMaps = new ArrayList<>(tableSegmentUniqueIdentifiers.size());
     List<TableBlockIndexUniqueIdentifier> missedIdentifiers = new ArrayList<>();
+    ExecutorService service = null;
     // Get the datamaps for each indexfile from cache.
     try {
       for (TableBlockIndexUniqueIdentifier identifier : tableSegmentUniqueIdentifiers) {
@@ -106,6 +112,11 @@ public class BlockletDataMapIndexStore
       if (missedIdentifiers.size() > 0) {
         Map<String, SegmentIndexFileStore> segmentIndexFileStoreMap = new HashMap<>();
         Map<String, PartitionMapFileStore> partitionFileStoreMap = new HashMap<>();
+        service =
+            Executors.newCachedThreadPool(
+                new CarbonThreadFactory("BlockletDataMapIndexStore:" + missedIdentifiers.get(0)
+                    .getAbsoluteTableIdentifier().getTableName()));
+        List<Future<BlockletDataMap>> futureList = new ArrayList<>();
         for (TableBlockIndexUniqueIdentifier identifier: missedIdentifiers) {
           SegmentIndexFileStore indexFileStore =
               segmentIndexFileStoreMap.get(identifier.getSegmentId());
@@ -124,7 +135,12 @@ public class BlockletDataMapIndexStore
             partitionFileStore.readAllPartitionsOfSegment(segmentPath);
             partitionFileStoreMap.put(identifier.getSegmentId(), partitionFileStore);
           }
-          blockletDataMaps.add(loadAndGetDataMap(identifier, indexFileStore, partitionFileStore));
+          BlockletDataMapLoader blockletDataMapLoader =
+              new BlockletDataMapLoader(identifier, indexFileStore, partitionFileStore);
+          futureList.add(service.submit(blockletDataMapLoader));
+        }
+        for (Future<BlockletDataMap> dataMapFuture : futureList) {
+          blockletDataMaps.add(dataMapFuture.get());
         }
       }
     } catch (Throwable e) {
@@ -132,6 +148,10 @@ public class BlockletDataMapIndexStore
         dataMap.clear();
       }
       throw new IOException("Problem in loading segment blocks.", e);
+    } finally {
+      if (service != null) {
+        service.shutdownNow();
+      }
     }
     return blockletDataMaps;
   }
@@ -157,6 +177,27 @@ public class BlockletDataMapIndexStore
   @Override
   public void invalidate(TableBlockIndexUniqueIdentifier tableSegmentUniqueIdentifier) {
     lruCache.remove(tableSegmentUniqueIdentifier.getUniqueTableSegmentIdentifier());
+  }
+
+  /**
+   * This class is used to parallelize reading of index files.
+   */
+  private class BlockletDataMapLoader implements Callable<BlockletDataMap> {
+
+    private TableBlockIndexUniqueIdentifier identifier;
+    private SegmentIndexFileStore indexFileStore;
+    private PartitionMapFileStore partitionFileStore;
+
+    public BlockletDataMapLoader(TableBlockIndexUniqueIdentifier identifier,
+        SegmentIndexFileStore indexFileStore, PartitionMapFileStore partitionFileStore) {
+      this.identifier = identifier;
+      this.indexFileStore = indexFileStore;
+      this.partitionFileStore = partitionFileStore;
+    }
+
+    @Override public BlockletDataMap call() throws Exception {
+      return loadAndGetDataMap(identifier, indexFileStore, partitionFileStore);
+    }
   }
 
   /**

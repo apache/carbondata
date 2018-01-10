@@ -165,6 +165,25 @@ public class TableBlockInfo implements Distributable, Serializable {
   }
 
   /**
+   * Create copy of TableBlockInfo object
+   */
+  public TableBlockInfo copy() {
+    TableBlockInfo info = new TableBlockInfo();
+    info.filePath = filePath;
+    info.blockOffset = blockOffset;
+    info.blockLength = blockLength;
+    info.segmentId = segmentId;
+    info.blockletId = blockletId;
+    info.locations = locations;
+    info.version = version;
+    info.blockletInfos = blockletInfos;
+    info.blockStorageIdMap = blockStorageIdMap;
+    info.deletedDeltaFilePath = deletedDeltaFilePath;
+    info.detailInfo = detailInfo.copy();
+    return info;
+  }
+
+  /**
    * @return the filePath
    */
   public String getFilePath() {
