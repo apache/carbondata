@@ -50,6 +50,7 @@ import org.apache.carbondata.core.keygenerator.KeyGenException;
 import org.apache.carbondata.core.memory.MemoryException;
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
 import org.apache.carbondata.core.metadata.blocklet.DataFileFooter;
+import org.apache.carbondata.core.metadata.blocklet.index.BlockletIndex;
 import org.apache.carbondata.core.metadata.blocklet.index.BlockletMinMaxIndex;
 import org.apache.carbondata.core.metadata.datatype.DataType;
 import org.apache.carbondata.core.metadata.datatype.DataTypes;
@@ -61,9 +62,10 @@ import org.apache.carbondata.core.scan.filter.executer.FilterExecuter;
 import org.apache.carbondata.core.scan.filter.executer.ImplicitColumnFilterExecutor;
 import org.apache.carbondata.core.scan.filter.resolver.FilterResolverIntf;
 import org.apache.carbondata.core.util.ByteUtil;
-import org.apache.carbondata.core.util.CarbonUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.DataTypeUtil;
+
+import org.xerial.snappy.Snappy;
 
 /**
  * Datamap implementation for blocklet.
@@ -93,9 +95,15 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private static int BLOCK_INFO_INDEX = 8;
 
+  private static int BLOCK_FOOTER_OFFSET = 9;
+
   private static int TASK_MIN_VALUES_INDEX = 0;
 
   private static int TASK_MAX_VALUES_INDEX = 1;
+
+  private static int SCHEMA = 2;
+
+  private static int PARTITION_INFO = 3;
 
   private UnsafeMemoryDMStore unsafeMemoryDMStore;
 
@@ -117,28 +125,36 @@ public class BlockletDataMap implements DataMap, Cacheable {
         .getIndexInfo(blockletDataMapInfo.getFilePath(), blockletDataMapInfo.getFileData());
     isPartitionedSegment = blockletDataMapInfo.isPartitionedSegment();
     DataMapRowImpl summaryRow = null;
+    byte[] schemaBinary = null;
     for (DataFileFooter fileFooter : indexInfo) {
-      List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
       if (segmentProperties == null) {
+        List<ColumnSchema> columnInTable = fileFooter.getColumnInTable();
+        schemaBinary = convertSchemaToBinary(columnInTable);
         columnCardinality = fileFooter.getSegmentInfo().getColumnCardinality();
         segmentProperties = new SegmentProperties(columnInTable, columnCardinality);
         createSchema(segmentProperties);
-        createSummarySchema(segmentProperties, blockletDataMapInfo.getPartitions());
+        createSummarySchema(segmentProperties, blockletDataMapInfo.getPartitions(), schemaBinary);
       }
       TableBlockInfo blockInfo = fileFooter.getBlockInfo().getTableBlockInfo();
-      if (fileFooter.getBlockletList() == null || fileFooter.getBlockletList().size() == 0) {
-        LOGGER
-            .info("Reading carbondata file footer to get blocklet info " + blockInfo.getFilePath());
-        fileFooter = CarbonUtil.readMetadatFile(blockInfo);
+      if (fileFooter.getBlockletList() == null) {
+        // This is old store scenario, here blocklet information is not available in  index file so
+        // load only block info
+        summaryRow =
+            loadToUnsafeBlock(fileFooter, segmentProperties, blockInfo.getFilePath(), summaryRow);
+      } else {
+        // Here it loads info about all blocklets of index
+        summaryRow =
+            loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath(), summaryRow);
       }
-
-      summaryRow = loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath(), summaryRow);
     }
     if (unsafeMemoryDMStore != null) {
       unsafeMemoryDMStore.finishWriting();
     }
     if (null != unsafeMemorySummaryDMStore) {
-      addTaskSummaryRowToUnsafeMemoryStore(summaryRow, blockletDataMapInfo.getPartitions());
+      addTaskSummaryRowToUnsafeMemoryStore(
+          summaryRow,
+          blockletDataMapInfo.getPartitions(),
+          schemaBinary);
       unsafeMemorySummaryDMStore.finishWriting();
     }
     LOGGER.info(
@@ -203,7 +219,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
         DataOutput dataOutput = new DataOutputStream(stream);
         blockletInfo.write(dataOutput);
         serializedData = stream.toByteArray();
-        row.setByteArray(serializedData, ordinal);
+        row.setByteArray(serializedData, ordinal++);
+        // Add block footer offset, it is used if we need to read footer of block
+        row.setLong(fileFooter.getBlockInfo().getTableBlockInfo().getBlockOffset(), ordinal);
         unsafeMemoryDMStore.addIndexRowToUnsafe(row);
       } catch (Exception e) {
         throw new RuntimeException(e);
@@ -213,21 +231,91 @@ public class BlockletDataMap implements DataMap, Cacheable {
     return summaryRow;
   }
 
+  /**
+   * Load information for the block.It is the case can happen only for old stores
+   * where blocklet information is not available in index file. So load only block information
+   * and read blocklet information in executor.
+   */
+  private DataMapRowImpl loadToUnsafeBlock(DataFileFooter fileFooter,
+      SegmentProperties segmentProperties, String filePath, DataMapRowImpl summaryRow) {
+    int[] minMaxLen = segmentProperties.getColumnsValueSize();
+    BlockletIndex blockletIndex = fileFooter.getBlockletIndex();
+    CarbonRowSchema[] schema = unsafeMemoryDMStore.getSchema();
+    // Add one row to maintain task level min max for segment pruning
+    if (summaryRow == null) {
+      summaryRow = new DataMapRowImpl(unsafeMemorySummaryDMStore.getSchema());
+    }
+    DataMapRow row = new DataMapRowImpl(schema);
+    int ordinal = 0;
+    int taskMinMaxOrdinal = 0;
+    // add start key as index key
+    row.setByteArray(blockletIndex.getBtreeIndex().getStartKey(), ordinal++);
+
+    BlockletMinMaxIndex minMaxIndex = blockletIndex.getMinMaxIndex();
+    byte[][] minValues = updateMinValues(minMaxIndex.getMinValues(), minMaxLen);
+    row.setRow(addMinMax(minMaxLen, schema[ordinal], minValues), ordinal);
+    // compute and set task level min values
+    addTaskMinMaxValues(summaryRow, minMaxLen,
+        unsafeMemorySummaryDMStore.getSchema()[taskMinMaxOrdinal], minValues,
+        TASK_MIN_VALUES_INDEX, true);
+    ordinal++;
+    taskMinMaxOrdinal++;
+    byte[][] maxValues = updateMaxValues(minMaxIndex.getMaxValues(), minMaxLen);
+    row.setRow(addMinMax(minMaxLen, schema[ordinal], maxValues), ordinal);
+    // compute and set task level max values
+    addTaskMinMaxValues(summaryRow, minMaxLen,
+        unsafeMemorySummaryDMStore.getSchema()[taskMinMaxOrdinal], maxValues,
+        TASK_MAX_VALUES_INDEX, false);
+    ordinal++;
+
+    row.setInt((int)fileFooter.getNumberOfRows(), ordinal++);
+
+    // add file path
+    byte[] filePathBytes = filePath.getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS);
+    row.setByteArray(filePathBytes, ordinal++);
+
+    // add pages
+    row.setShort((short) 0, ordinal++);
+
+    // add version number
+    row.setShort(fileFooter.getVersionId().number(), ordinal++);
+
+    // add schema updated time
+    row.setLong(fileFooter.getSchemaUpdatedTimeStamp(), ordinal++);
+
+    // add blocklet info
+    row.setByteArray(new byte[0], ordinal++);
+
+    row.setLong(fileFooter.getBlockInfo().getTableBlockInfo().getBlockOffset(), ordinal);
+    try {
+      unsafeMemoryDMStore.addIndexRowToUnsafe(row);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
+
+    return summaryRow;
+  }
+
   private void addTaskSummaryRowToUnsafeMemoryStore(DataMapRow summaryRow,
-      List<String> partitions) {
+      List<String> partitions, byte[] schemaBinary) throws IOException {
     // write the task summary info to unsafe memory store
     if (null != summaryRow) {
+      // Add column schema , it is useful to generate segment properties in executor.
+      // So we no need to read footer again there.
+      if (schemaBinary != null) {
+        summaryRow.setByteArray(schemaBinary, SCHEMA);
+      }
       if (partitions != null && partitions.size() > 0) {
         CarbonRowSchema[] minSchemas =
-            ((CarbonRowSchema.StructCarbonRowSchema) unsafeMemorySummaryDMStore.getSchema()[2])
-                .getChildSchemas();
+            ((CarbonRowSchema.StructCarbonRowSchema) unsafeMemorySummaryDMStore
+                .getSchema()[PARTITION_INFO]).getChildSchemas();
         DataMapRow partitionRow = new DataMapRowImpl(minSchemas);
         for (int i = 0; i < partitions.size(); i++) {
           partitionRow
               .setByteArray(partitions.get(i).getBytes(CarbonCommonConstants.DEFAULT_CHARSET_CLASS),
                   i);
         }
-        summaryRow.setRow(partitionRow, 2);
+        summaryRow.setRow(partitionRow, PARTITION_INFO);
       }
       try {
         unsafeMemorySummaryDMStore.addIndexRowToUnsafe(summaryRow);
@@ -393,6 +481,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
     //for blocklet info
     indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
 
+    // for block footer offset.
+    indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
+
     unsafeMemoryDMStore =
         new UnsafeMemoryDMStore(indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]));
   }
@@ -405,10 +496,14 @@ public class BlockletDataMap implements DataMap, Cacheable {
    * @param partitions
    * @throws MemoryException
    */
-  private void createSummarySchema(SegmentProperties segmentProperties, List<String> partitions)
+  private void createSummarySchema(SegmentProperties segmentProperties, List<String> partitions,
+      byte[] schemaBinary)
       throws MemoryException {
-    List<CarbonRowSchema> taskMinMaxSchemas = new ArrayList<>(2);
+    List<CarbonRowSchema> taskMinMaxSchemas = new ArrayList<>();
     getMinMaxSchema(segmentProperties, taskMinMaxSchemas);
+    // for storing column schema
+    taskMinMaxSchemas.add(
+        new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.BYTE_ARRAY, schemaBinary.length));
     if (partitions != null && partitions.size() > 0) {
       CarbonRowSchema[] mapSchemas = new CarbonRowSchema[partitions.size()];
       for (int i = 0; i < mapSchemas.length; i++) {
@@ -604,18 +699,23 @@ public class BlockletDataMap implements DataMap, Cacheable {
     detailInfo.setBlockletId((short) blockletId);
     detailInfo.setDimLens(columnCardinality);
     detailInfo.setSchemaUpdatedTimeStamp(row.getLong(SCHEMA_UPADATED_TIME_INDEX));
-    BlockletInfo blockletInfo = new BlockletInfo();
-    try {
-      byte[] byteArray = row.getByteArray(BLOCK_INFO_INDEX);
-      ByteArrayInputStream stream = new ByteArrayInputStream(byteArray);
-      DataInputStream inputStream = new DataInputStream(stream);
-      blockletInfo.readFields(inputStream);
-      inputStream.close();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    byte[] byteArray = row.getByteArray(BLOCK_INFO_INDEX);
+    BlockletInfo blockletInfo = null;
+    if (byteArray.length > 0) {
+      try {
+        blockletInfo = new BlockletInfo();
+        ByteArrayInputStream stream = new ByteArrayInputStream(byteArray);
+        DataInputStream inputStream = new DataInputStream(stream);
+        blockletInfo.readFields(inputStream);
+        inputStream.close();
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
     }
     detailInfo.setBlockletInfo(blockletInfo);
     blocklet.setDetailInfo(detailInfo);
+    detailInfo.setBlockFooterOffset(row.getLong(BLOCK_FOOTER_OFFSET));
+    detailInfo.setColumnSchemaBinary(getColumnSchemaBinary());
     return blocklet;
   }
 
@@ -728,9 +828,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
 
   private List<String> getPartitions() {
     DataMapRow unsafeRow = unsafeMemorySummaryDMStore.getUnsafeRow(0);
-    if (unsafeRow.getColumnCount() > 2) {
+    if (unsafeRow.getColumnCount() > PARTITION_INFO) {
       List<String> partitions = new ArrayList<>();
-      DataMapRow row = unsafeRow.getRow(2);
+      DataMapRow row = unsafeRow.getRow(PARTITION_INFO);
       for (int i = 0; i < row.getColumnCount(); i++) {
         partitions.add(
             new String(row.getByteArray(i), CarbonCommonConstants.DEFAULT_CHARSET_CLASS));
@@ -738,6 +838,29 @@ public class BlockletDataMap implements DataMap, Cacheable {
       return partitions;
     }
     return null;
+  }
+
+  private byte[] getColumnSchemaBinary() {
+    DataMapRow unsafeRow = unsafeMemorySummaryDMStore.getUnsafeRow(0);
+    return unsafeRow.getByteArray(SCHEMA);
+  }
+
+  /**
+   * Convert schema to binary
+   */
+  private byte[] convertSchemaToBinary(List<ColumnSchema> columnSchemas) throws IOException {
+    ByteArrayOutputStream stream = new ByteArrayOutputStream();
+    DataOutput dataOutput = new DataOutputStream(stream);
+    dataOutput.writeShort(columnSchemas.size());
+    for (ColumnSchema columnSchema : columnSchemas) {
+      if (columnSchema.getColumnReferenceId() == null) {
+        columnSchema.setColumnReferenceId(columnSchema.getColumnUniqueId());
+      }
+      columnSchema.write(dataOutput);
+    }
+    byte[] byteArray = stream.toByteArray();
+    // Compress with snappy to reduce the size of schema
+    return Snappy.rawCompress(byteArray, byteArray.length);
   }
 
   @Override
