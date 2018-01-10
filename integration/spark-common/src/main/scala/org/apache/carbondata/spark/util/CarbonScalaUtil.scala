@@ -32,7 +32,7 @@ import org.apache.carbondata.core.constants.{CarbonCommonConstants, CarbonLoadOp
 import org.apache.carbondata.core.metadata.datatype.{DataType => CarbonDataType, DataTypes => CarbonDataTypes, StructField => CarbonStructField}
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonColumn
-import org.apache.carbondata.core.util.CarbonSessionInfo
+import org.apache.carbondata.core.util.{ByteUtil, CarbonSessionInfo}
 import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat
 
 object CarbonScalaUtil {
@@ -110,9 +110,9 @@ object CarbonScalaUtil {
       serializationNullFormat
     } else {
       value match {
-        case s: String => if (s.length > CSVInputFormat.MAX_CHARS_PER_COLUMN_DEFAULT) {
+        case s: String => if (s.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
           throw new Exception("Dataload failed, String length cannot exceed " +
-                              CSVInputFormat.MAX_CHARS_PER_COLUMN_DEFAULT + " characters")
+                              CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " characters")
         } else {
           s
         }
