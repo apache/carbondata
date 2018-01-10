@@ -1684,6 +1684,16 @@ public final class CarbonUtil {
               && blockTimeStamp < invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()))) {
         return true;
       }
+      // aborted files case.
+      if (invalidBlockVOForSegmentId.getLatestUpdateTimestamp() != null
+          && blockTimeStamp > invalidBlockVOForSegmentId.getLatestUpdateTimestamp()) {
+        return true;
+      }
+      // for 1st time starttime stamp will be empty so need to consider fact time stamp.
+      if (null == invalidBlockVOForSegmentId.getUpdateDeltaStartTimestamp()
+          && blockTimeStamp > invalidBlockVOForSegmentId.getFactTimestamp()) {
+        return true;
+      }
     }
     return false;
   }

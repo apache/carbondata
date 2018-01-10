@@ -371,8 +371,10 @@ public final class CarbonLoaderUtil {
     }
 
     // reading the start time of data load.
-    long loadStartTime = CarbonUpdateUtil.readCurrentTime();
-    model.setFactTimeStamp(loadStartTime);
+    if (model.getFactTimeStamp() == 0) {
+      long loadStartTime = CarbonUpdateUtil.readCurrentTime();
+      model.setFactTimeStamp(loadStartTime);
+    }
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp(), false);
     boolean entryAdded =
