@@ -313,9 +313,12 @@ public class PartitionMapFileStore {
    * @param uniqueId
    * @param success
    */
-  public void commitPartitions(String segmentPath, final String uniqueId, boolean success) {
+  public void commitPartitions(String segmentPath, final String uniqueId, boolean success,
+      String tablePath, List<String> partitionsToDrop) {
     CarbonFile carbonFile = FileFactory
         .getCarbonFile(segmentPath + "/" + uniqueId + CarbonTablePath.PARTITION_MAP_EXT + ".tmp");
+    CarbonFile carbonPartFile = FileFactory
+        .getCarbonFile(tablePath + "/" + partitionsToDrop.get(0));
     // write partition info to new file.
     if (carbonFile.exists()) {
       if (success) {
@@ -324,6 +327,8 @@ public class PartitionMapFileStore {
         carbonFile.delete();
       }
     }
+    //Remove the partition directory from table path
+    carbonPartFile.delete();
   }
 
   /**

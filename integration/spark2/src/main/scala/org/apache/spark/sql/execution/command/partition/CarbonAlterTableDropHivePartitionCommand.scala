@@ -129,7 +129,8 @@ case class CarbonAlterTableDropHivePartitionCommand(
             table.getTablePath,
             segments.asScala,
             false,
-            uniqueId).collect()
+            uniqueId,
+            partitionNames.toSeq).collect()
           throw e
       }
       // commit the drop partitions from carbon store
@@ -137,7 +138,8 @@ case class CarbonAlterTableDropHivePartitionCommand(
         table.getTablePath,
         segments.asScala,
         true,
-        uniqueId).collect()
+        uniqueId,
+        partitionNames.toSeq).collect()
       // Update the loadstatus with update time to clear cache from driver.
       val segmentSet = new util.HashSet[String](new SegmentStatusManager(table
         .getAbsoluteTableIdentifier).getValidAndInvalidSegments.getValidSegments)
