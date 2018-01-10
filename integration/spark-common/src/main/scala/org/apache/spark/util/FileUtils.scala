@@ -73,7 +73,8 @@ object FileUtils {
       val stringBuild = new StringBuilder()
       val filePaths = inputPath.split(",")
       for (i <- 0 until filePaths.size) {
-        val fileType = FileFactory.getFileType(filePaths(i))
+        val filePath = CarbonUtil.checkAndAppendHDFSUrl(filePaths(i))
+        val fileType = FileFactory.getFileType(filePath)
         val carbonFile = FileFactory.getCarbonFile(filePaths(i), fileType, hadoopConf)
         if (!carbonFile.exists()) {
           throw new DataLoadingException(
