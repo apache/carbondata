@@ -779,7 +779,8 @@ case class CarbonLoadDataCommand(
             table.getTablePath,
             segments.asScala,
             success = false,
-            uniqueId).collect()
+            uniqueId,
+            partitionNames.toSeq).collect()
           throw e
       }
 
@@ -793,7 +794,8 @@ case class CarbonLoadDataCommand(
             table.getTablePath,
             segments.asScala,
             success = false,
-            uniqueId).collect()
+            uniqueId,
+            partitionNames.toSeq).collect()
           throw e
       }
       // Commit the removed partitions in carbon store.
@@ -802,7 +804,8 @@ case class CarbonLoadDataCommand(
         table.getTablePath,
         segments.asScala,
         success = true,
-        uniqueId).collect()
+        uniqueId,
+        partitionNames.toSeq).collect()
       // get valid segments
       val validsegments =
         new SegmentStatusManager(
