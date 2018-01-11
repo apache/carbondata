@@ -240,10 +240,26 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     sql("CREATE TABLE grouptable(id int, name string, city string, age string) STORED BY" +
         " 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='name,age')")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/measureinsertintotest.csv' into table grouptable")
-    sql("create datamap agg9 on table grouptable using 'preaggregate' as select sum(id) from grouptable group by city")
+    sql(
+      "create datamap agg9 on table grouptable using 'preaggregate' as select sum(id) from grouptable group by city")
     val df = sql("select sum(id) from grouptable group by city")
     preAggTableValidator(df.queryExecution.analyzed, "grouptable_agg9")
     checkAnswer(df, Seq(Row(3), Row(3), Row(4), Row(7)))
+  }
+
+  test("test PreAggregate table selection 30") {
+    val df = sql("select a.name from mainTable a group by a.name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
+  }
+
+  test("test PreAggregate table selection 31") {
+    val df = sql("select a.name as newName from mainTable a group by a.name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
+  }
+
+  test("test PreAggregate table selection 32") {
+    val df = sql("select a.name as newName from mainTable a  where a.name='vishal' group by a.name")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
   }
 
   override def afterAll: Unit = {
