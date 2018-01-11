@@ -1322,7 +1322,7 @@ public final class CarbonCommonConstants {
 
   public static final String ENABLE_HIVE_SCHEMA_META_STORE = "spark.carbon.hive.schema.store";
 
-  public static final String ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT = "false";
+  public static final String ENABLE_HIVE_SCHEMA_META_STORE_DEFAULT = "true";
 
   /**
    * There is more often that in production uses different drivers for load and queries. So in case
