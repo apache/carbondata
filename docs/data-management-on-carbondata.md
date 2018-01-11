@@ -271,6 +271,7 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   * Before executing this command the old table schema and data should be copied into the new database location.
   * If the table is aggregate table, then all the aggregate tables should be copied to the new database location.
   * For old store, the time zone of the source and destination cluster should be same.
+  * If Carbon table is stored in carbon HIVE meta store then refresh will not register the Carbon table to HIVE meta store catalogue.
   
 
 ## LOAD DATA
