@@ -37,7 +37,7 @@ import org.apache.hadoop.mapreduce.lib.input.{FileInputFormat, FileSplit}
 import org.apache.spark.{SparkEnv, SparkException, TaskContext}
 import org.apache.spark.deploy.SparkHadoopUtil
 import org.apache.spark.rdd.{DataLoadCoalescedRDD, DataLoadPartitionCoalescer, NewHadoopRDD, RDD}
-import org.apache.spark.sql.{CarbonEnv, DataFrame, Row, SQLContext}
+import org.apache.spark.sql.{AnalysisException, CarbonEnv, DataFrame, Row, SQLContext}
 import org.apache.spark.sql.execution.command.{CompactionModel, ExecutionErrors, UpdateTableModel}
 import org.apache.spark.sql.hive.DistributionUtil
 import org.apache.spark.sql.optimizer.CarbonFilters
@@ -417,6 +417,9 @@ object CarbonDataRDDFactory {
                 .trimErrorMessage(sparkException.getCause.getMessage)
               errorMessage = errorMessage + " : " + executorMessage
             }
+          case aex: AnalysisException =>
+            LOGGER.error(aex.getMessage())
+            throw aex
           case _ =>
             if (ex.getCause != null) {
               executorMessage = ex.getCause.getMessage
