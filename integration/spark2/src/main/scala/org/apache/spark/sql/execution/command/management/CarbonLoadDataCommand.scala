@@ -147,8 +147,7 @@ case class CarbonLoadDataCommand(
       val factPath = if (dataFrame.isDefined) {
         ""
       } else {
-        FileUtils.getPaths(
-          CarbonUtil.checkAndAppendHDFSUrl(factPathFromUser), hadoopConf)
+        FileUtils.getPaths(factPathFromUser, hadoopConf)
       }
       carbonLoadModel.setFactFilePath(factPath)
       carbonLoadModel.setAggLoadRequest(
