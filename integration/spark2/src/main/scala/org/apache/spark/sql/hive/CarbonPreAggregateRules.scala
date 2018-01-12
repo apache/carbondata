@@ -1008,7 +1008,7 @@ case class CarbonPreAggregateDataLoadingRules(sparkSession: SparkSession)
     val validExpressionsMap = scala.collection.mutable.HashSet.empty[AggExpToColumnMappingModel]
     val namedExpressionList = scala.collection.mutable.LinkedHashSet.empty[NamedExpression]
     plan transform {
-      case aggregate@Aggregate(_,
+      case aggregate@Aggregate(groupingExpressions,
       aExp,
       CarbonSubqueryAlias(_, logicalRelation: LogicalRelation))
         if validateAggregateExpressions(aExp) &&
@@ -1065,6 +1065,10 @@ case class CarbonPreAggregateDataLoadingRules(sparkSession: SparkSession)
               }
             case alias@Alias(_: Expression, _) =>
               namedExpressionList += alias
+        }
+        groupingExpressions foreach {
+          case namedExpr: NamedExpression => namedExpressionList += namedExpr
+          case _ => namedExpressionList
         }
         aggregate.copy(aggregateExpressions = namedExpressionList.toSeq)
       case plan: LogicalPlan => plan

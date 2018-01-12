@@ -238,4 +238,20 @@ class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists maintable")
   }
 
+  test("test load into preaggregate table having group by clause") {
+    sql("DROP TABLE IF EXISTS maintable")
+    sql(
+      """
+        | CREATE TABLE maintable(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+    sql(s"insert into maintable values(1, 'xyz', 'bengaluru', 26)")
+    sql(s"insert into maintable values(1, 'xyz', 'bengaluru', 26)")
+    sql("set carbon.input.segments.default.maintable=0")
+    sql(
+      s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id, sum(age) from maintable group by id,name"""
+        .stripMargin)
+    checkAnswer(sql("select * from maintable_preagg_sum"), Row(1, 52, "xyz"))
+  }
+
 }
