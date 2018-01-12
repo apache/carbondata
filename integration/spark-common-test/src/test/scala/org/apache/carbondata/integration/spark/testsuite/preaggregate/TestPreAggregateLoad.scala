@@ -168,6 +168,15 @@ class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
   }
 
   test("test to check if exception is thrown for direct load on pre-aggregate table") {
+    sql("drop table if exists maintable")
+    sql(
+      """
+        | CREATE TABLE maintable(id int, name string, city string, age int)
+        | STORED BY 'org.apache.carbondata.format' TBLPROPERTIES('dictionary_include'='id')
+      """.stripMargin)
+    sql(
+      s"""create datamap preagg_sum on table maintable using 'preaggregate' as select id,sum(age) from maintable group by id"""
+        .stripMargin)
     assert(intercept[RuntimeException] {
       sql(s"insert into maintable_preagg_sum values(1, 30)")
     }.getMessage.equalsIgnoreCase("Cannot insert/load data directly into pre-aggregate table"))
