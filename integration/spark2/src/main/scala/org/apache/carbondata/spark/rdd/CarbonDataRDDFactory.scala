@@ -595,6 +595,8 @@ object CarbonDataRDDFactory {
 
       val loadMetadataDetails = SegmentStatusManager.readLoadMetadata(
         carbonTable.getMetaDataFilepath)
+        .filter(lmd => lmd.getSegmentStatus.equals(SegmentStatus.LOAD_PARTIAL_SUCCESS) ||
+                       lmd.getSegmentStatus.equals(SegmentStatus.SUCCESS))
       val segmentIds = loadMetadataDetails.map(_.getLoadName)
       val segmentIdIndex = segmentIds.zipWithIndex.toMap
       val carbonTablePath = CarbonStorePath.getCarbonTablePath(carbonLoadModel.getTablePath,
