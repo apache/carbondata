@@ -47,9 +47,10 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
-public class CarbonInputMapperTest extends TestCase {
+public class CarbonTableInputMapperTest extends TestCase {
 
   // changed setUp to static init block to avoid un wanted multiple time store creation
   static {
@@ -151,13 +152,6 @@ public class CarbonInputMapperTest extends TestCase {
         .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true");
   }
 
-  @Override public void setUp() throws Exception {
-    super.setUp();
-    CarbonProperties.getInstance()
-        .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false");
-    StoreCreator.createCarbonStore();
-  }
-
  public static class Map extends Mapper<Void, Object[], Text, Text> {
 
     private BufferedWriter fileWriter;
@@ -194,11 +188,10 @@ public class CarbonInputMapperTest extends TestCase {
     Configuration configuration = new Configuration();
     configuration.set("mapreduce.cluster.local.dir", new File(outPath + "1").getCanonicalPath());
     Job job = Job.getInstance(configuration);
-    job.setJarByClass(CarbonInputMapperTest.class);
+    job.setJarByClass(CarbonTableInputMapperTest.class);
     job.setOutputKeyClass(Text.class);
     job.setOutputValueClass(IntWritable.class);
     job.setMapperClass(Map.class);
-    //    job.setReducerClass(WordCountReducer.class);
     job.setInputFormatClass(CarbonTableInputFormat.class);
     job.setOutputFormatClass(TextOutputFormat.class);
     AbsoluteTableIdentifier abs = StoreCreator.getAbsoluteTableIdentifier();
@@ -221,6 +214,6 @@ public class CarbonInputMapperTest extends TestCase {
   }
 
   public static void main(String[] args) throws Exception {
-    new CarbonInputMapperTest().runJob("target/output", null, null);
+    new CarbonTableInputMapperTest().runJob("target/output", null, null);
   }
 }

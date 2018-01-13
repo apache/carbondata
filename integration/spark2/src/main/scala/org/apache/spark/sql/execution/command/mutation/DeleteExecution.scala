@@ -42,7 +42,6 @@ import org.apache.carbondata.core.mutate.data.RowCountDetailsVO
 import org.apache.carbondata.core.statusmanager.{SegmentStatus, SegmentUpdateStatusManager}
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.core.writer.CarbonDeleteDeltaWriterImpl
-import org.apache.carbondata.hadoop.CarbonInputFormat
 import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.processing.exception.MultipleMatchingException
 import org.apache.carbondata.processing.loading.FailureCauses
@@ -86,7 +85,7 @@ object DeleteExecution {
     }
 
     val (carbonInputFormat, job) = createCarbonInputFormat(absoluteTableIdentifier)
-    CarbonInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
+    CarbonTableInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
     val keyRdd = deleteRdd.map({ row =>
       val tupleId: String = row
         .getString(row.fieldIndex(CarbonCommonConstants.CARBON_IMPLICIT_COLUMN_TUPLEID))
