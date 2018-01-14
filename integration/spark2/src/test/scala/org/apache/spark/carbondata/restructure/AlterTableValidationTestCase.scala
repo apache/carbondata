@@ -227,7 +227,7 @@ class AlterTableValidationTestCase extends Spark2QueryTest with BeforeAndAfterAl
   test("test adding complex datatype column") {
     try {
       sql("alter table restructure add columns(arr array<string>)")
-      sys.error("Exception should be thrown for complex column add")
+      assert(false, "Exception should be thrown for complex column add")
     } catch {
       case e: Exception =>
         println(e.getMessage)

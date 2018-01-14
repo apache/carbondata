@@ -26,6 +26,7 @@ import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.execution.command.AlterTableModel
 import org.apache.spark.sql.execution.command.management.CarbonAlterTableCompactionCommand
 
+import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.schema.table.AggregationDataMapSchema
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.events._
@@ -57,7 +58,7 @@ object LoadPostAggregateListener extends OperationEventListener {
         val childTableName = dataMapSchema.getRelationIdentifier.getTableName
         val childDatabaseName = dataMapSchema.getRelationIdentifier.getDatabaseName
         val childSelectQuery = if (!dataMapSchema.isTimeseriesDataMap) {
-          dataMapSchema.getProperties.get("CHILD_SELECT QUERY")
+          PreAggregateUtil.getChildQuery(dataMapSchema)
         } else {
           // for timeseries rollup policy
           val tableSelectedForRollup = PreAggregateUtil.getRollupDataMapNameForTimeSeries(list,

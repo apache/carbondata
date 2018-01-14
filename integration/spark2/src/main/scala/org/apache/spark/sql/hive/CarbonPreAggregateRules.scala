@@ -562,7 +562,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
     if(null == aggDataMapSchema.getAggExpToColumnMapping) {
       // add preAGG UDF to avoid all the PreAggregate rule
       val childDataMapQueryString = parser.addPreAggFunction(
-        aggDataMapSchema.getProperties.get("CHILD_SELECT QUERY"))
+        PreAggregateUtil.getChildQuery(aggDataMapSchema))
       // get the logical plan
       val aggPlan = sparkSession.sql(childDataMapQueryString).logicalPlan
       // getting all aggregate expression from query

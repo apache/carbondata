@@ -118,6 +118,7 @@
     <hdfs.url>local</hdfs.url>
     <suite.name>org.apache.carbondata.cluster.sdv.suite.SDVSuites</suite.name>
     <script.exetension>.sh</script.exetension>
+    <carbon.hive.based.metastore>false</carbon.hive.based.metastore>
   </properties>
 
   <repositories>

@@ -32,9 +32,11 @@ import org.apache.carbondata.core.datastore.block.{SegmentProperties, TableBlock
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema.PartitionInfo
 import org.apache.carbondata.core.metadata.schema.partition.PartitionType
+import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.hadoop.CarbonInputSplit
+import org.apache.carbondata.hadoop.api.CarbonTableInputFormat
 import org.apache.carbondata.hadoop.util.CarbonInputFormatUtil
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.util.CommonUtil
@@ -128,9 +130,16 @@ object PartitionUtils {
    */
   def getSegmentProperties(identifier: AbsoluteTableIdentifier, segmentId: String,
       partitionIds: List[String], oldPartitionIdList: List[Int],
-      partitionInfo: PartitionInfo): SegmentProperties = {
+      partitionInfo: PartitionInfo,
+      carbonTable: CarbonTable): SegmentProperties = {
     val tableBlockInfoList =
-      getPartitionBlockList(identifier, segmentId, partitionIds, oldPartitionIdList, partitionInfo)
+      getPartitionBlockList(
+        identifier,
+        segmentId,
+        partitionIds,
+        oldPartitionIdList,
+        partitionInfo,
+        carbonTable)
     val footer = CarbonUtil.readMetadatFile(tableBlockInfoList.get(0))
     val segmentProperties = new SegmentProperties(footer.getColumnInTable,
       footer.getSegmentInfo.getColumnCardinality)
@@ -139,11 +148,13 @@ object PartitionUtils {
 
   def getPartitionBlockList(identifier: AbsoluteTableIdentifier, segmentId: String,
       partitionIds: List[String], oldPartitionIdList: List[Int],
-      partitionInfo: PartitionInfo): java.util.List[TableBlockInfo] = {
+      partitionInfo: PartitionInfo,
+      carbonTable: CarbonTable): java.util.List[TableBlockInfo] = {
     val jobConf = new JobConf(new Configuration)
     val job = new Job(jobConf)
     val format = CarbonInputFormatUtil
       .createCarbonTableInputFormat(identifier, partitionIds.asJava, job)
+    CarbonTableInputFormat.setTableInfo(job.getConfiguration, carbonTable.getTableInfo)
     val splits = format.getSplitsOfOneSegment(job, segmentId,
       oldPartitionIdList.map(_.asInstanceOf[Integer]).asJava, partitionInfo)
     val blockList = splits.asScala.map(_.asInstanceOf[CarbonInputSplit])
@@ -163,7 +174,7 @@ object PartitionUtils {
     val tablePath = carbonLoadModel.getTablePath
     val tableBlockInfoList =
       getPartitionBlockList(identifier, segmentId, partitionIds, oldPartitionIds,
-        partitionInfo).asScala
+        partitionInfo, carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable).asScala
     val pathList: util.List[String] = new util.ArrayList[String]()
     val carbonTableIdentifier = new CarbonTableIdentifier(dbName, tableName, "")
     val carbonTablePath = new CarbonTablePath(carbonTableIdentifier, tablePath)
