@@ -38,6 +38,7 @@ import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema, TableSchema}
+import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonStorePath
 import org.apache.carbondata.format.TableInfo
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
@@ -871,5 +872,17 @@ object PreAggregateUtil {
           ar.withExprId(ExprId(ordinal))
         }
     }.canonicalized.asInstanceOf[T]
+  }
+
+  /**
+   * Gives child query from schema
+   * @param aggDataMapSchema
+   * @return
+   */
+  def getChildQuery(aggDataMapSchema: AggregationDataMapSchema): String = {
+    new String(
+      CarbonUtil.decodeStringToBytes(
+        aggDataMapSchema.getProperties.get("CHILD_SELECT QUERY").replace("&", "=")),
+      CarbonCommonConstants.DEFAULT_CHARSET)
   }
 }

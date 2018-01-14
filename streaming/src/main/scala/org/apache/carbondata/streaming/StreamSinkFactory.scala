@@ -103,11 +103,16 @@ object StreamSinkFactory {
    * @return
    */
   private def getStreamSegmentId(carbonTable: CarbonTable): String = {
-    val segmentId = StreamSegment.open(carbonTable)
     val carbonTablePath = CarbonStorePath
       .getCarbonTablePath(carbonTable.getAbsoluteTableIdentifier)
+    val fileType = FileFactory.getFileType(carbonTablePath.getMetadataDirectoryPath)
+    if (!FileFactory.isFileExist(carbonTablePath.getMetadataDirectoryPath, fileType)) {
+      // Create table directory path, in case of enabling hive metastore first load may not have
+      // table folder created.
+      FileFactory.mkdirs(carbonTablePath.getMetadataDirectoryPath, fileType)
+    }
+    val segmentId = StreamSegment.open(carbonTable)
     val segmentDir = carbonTablePath.getSegmentDir("0", segmentId)
-    val fileType = FileFactory.getFileType(segmentDir)
     if (FileFactory.isFileExist(segmentDir, fileType)) {
       // recover fault
       StreamSegment.recoverSegmentIfRequired(segmentDir)

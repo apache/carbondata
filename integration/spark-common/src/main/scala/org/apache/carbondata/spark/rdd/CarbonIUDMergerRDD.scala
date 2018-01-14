@@ -64,6 +64,9 @@ class CarbonIUDMergerRDD[K, V](
 
     CarbonTableInputFormat.setSegmentsToAccess(
       job.getConfiguration, carbonMergerMapping.validSegments.toList.asJava)
+    CarbonTableInputFormat.setTableInfo(
+      job.getConfiguration,
+      carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getTableInfo)
 
     // get splits
     val splits = format.getSplits(job)

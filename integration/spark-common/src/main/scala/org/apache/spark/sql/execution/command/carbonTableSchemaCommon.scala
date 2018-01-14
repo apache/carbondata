@@ -275,6 +275,15 @@ class AlterTableColumnSchemaGenerator(
       sys.error(s"Duplicate column found with name: $name")
     })
 
+    if (newCols.exists(_.getDataType.isComplexType)) {
+      LOGGER.error(s"Complex column cannot be added")
+      LOGGER.audit(
+        s"Validation failed for Create/Alter Table Operation " +
+        s"for ${ dbName }.${ alterTableModel.tableName }. " +
+        s"Complex column cannot be added")
+      sys.error(s"Complex column cannot be added")
+    }
+
     val columnValidator = CarbonSparkFactory.getCarbonColumnValidator
     columnValidator.validateColumns(allColumns)
 

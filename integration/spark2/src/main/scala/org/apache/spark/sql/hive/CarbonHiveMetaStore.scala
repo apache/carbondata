@@ -167,8 +167,8 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       newTableIdentifier.getDatabaseName,
       newTableIdentifier.getTableName,
       newTablePath)
-    val dbName = oldTableIdentifier.getDatabaseName
-    val tableName = oldTableIdentifier.getTableName
+    val dbName = newTableIdentifier.getDatabaseName
+    val tableName = newTableIdentifier.getTableName
     val schemaParts = CarbonUtil.convertToMultiGsonStrings(wrapperTableInfo, "=", "'", "")
     val hiveClient = sparkSession.sessionState.catalog.asInstanceOf[CarbonSessionCatalog]
       .getClient()
@@ -177,7 +177,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     sparkSession.catalog.refreshTable(TableIdentifier(tableName, Some(dbName)).quotedString)
     removeTableFromMetadata(dbName, tableName)
     CarbonMetadata.getInstance().loadTableMetadata(wrapperTableInfo)
-    CarbonStorePath.getCarbonTablePath(oldTablePath, newTableIdentifier).getPath
+    newTablePath
   }
 
   /**
