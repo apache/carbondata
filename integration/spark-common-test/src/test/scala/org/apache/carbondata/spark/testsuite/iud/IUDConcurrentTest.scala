@@ -21,6 +21,8 @@ import java.text.SimpleDateFormat
 import java.util
 import java.util.concurrent.{Callable, ExecutorService, Executors, Future}
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.BeforeAndAfterAll
@@ -28,20 +30,14 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TestInsertUpdateConcurrentTest extends QueryTest with BeforeAndAfterAll {
-  var df: DataFrame = _
+class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll {
   private val executorService: ExecutorService = Executors.newFixedThreadPool(10)
+  var df: DataFrame = _
 
   override def beforeAll {
     dropTable()
     buildTestData()
   }
-
-  override def afterAll {
-    executorService.shutdownNow()
-    dropTable()
-  }
-
 
   private def buildTestData(): Unit = {
 
@@ -52,21 +48,17 @@ class TestInsertUpdateConcurrentTest extends QueryTest with BeforeAndAfterAll {
     import sqlContext.implicits._
 
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
-    df = sqlContext.sparkSession.sparkContext.parallelize(1 to 150000)
+    df = sqlContext.sparkSession.sparkContext.parallelize(1 to 1500000)
       .map(value => (value, new java.sql.Date(sdf.parse("2015-07-" + (value % 10 + 10)).getTime),
-        "china", "aaa" + value, "phone" + 555 * value, "ASD" + (60000 + value), 14999 + value,"ordersTable"+value))
+        "china", "aaa" + value, "phone" + 555 * value, "ASD" + (60000 + value), 14999 + value,
+        "ordersTable" + value))
       .toDF("o_id", "o_date", "o_country", "o_name",
-        "o_phonetype", "o_serialname", "o_salary","o_comment")
-      createTable("orders")
-      createTable("orders_overwrite")
+        "o_phonetype", "o_serialname", "o_salary", "o_comment")
+    createTable("orders")
+    createTable("orders_overwrite")
   }
 
- private def dropTable() = {
-    sql("DROP TABLE IF EXISTS orders")
-    sql("DROP TABLE IF EXISTS orders_overwrite")
-  }
-
-  private def createTable(tableName: String): Unit ={
+  private def createTable(tableName: String): Unit = {
     df.write
       .format("carbondata")
       .option("tableName", tableName)
@@ -76,22 +68,41 @@ class TestInsertUpdateConcurrentTest extends QueryTest with BeforeAndAfterAll {
       .save()
   }
 
+  override def afterAll {
+    executorService.shutdownNow()
+    dropTable()
+  }
+
+  private def dropTable() = {
+    sql("DROP TABLE IF EXISTS orders")
+    sql("DROP TABLE IF EXISTS orders_overwrite")
+  }
+
+  test("Concurrency test for Insert-Overwrite and compact") {
+    val tasks = new java.util.ArrayList[Callable[String]]()
+    tasks.add(new QueryTask(s"insert overWrite table orders select * from orders_overwrite"))
+    tasks.add(new QueryTask("alter table orders compact 'MINOR'"))
+    val futures: util.List[Future[String]] = executorService.invokeAll(tasks)
+    val results = futures.asScala.map(_.get)
+    assert(results.contains("PASS"))
+  }
+
   test("Concurrency test for Insert-Overwrite and update") {
     val tasks = new java.util.ArrayList[Callable[String]]()
     tasks.add(new QueryTask(s"insert overWrite table orders select * from orders_overwrite"))
     tasks.add(new QueryTask("update orders set (o_country)=('newCountry') where o_country='china'"))
-    val results: util.List[Future[String]] = executorService.invokeAll(tasks)
-    assert("PASS".equals(results.get(0).get) && "FAIL".equals(results.get(1).get))
+    val futures: util.List[Future[String]] = executorService.invokeAll(tasks)
+    val results = futures.asScala.map(_.get)
+    assert("PASS".equals(results.head) && "FAIL".equals(results(1)))
   }
 
   class QueryTask(query: String) extends Callable[String] {
     override def call(): String = {
       var result = "PASS"
       try {
-        LOGGER.info("Executing :" + query + Thread.currentThread().getName)
         sql(query).show()
       } catch {
-        case _: Exception =>
+        case exception: Exception => LOGGER.error(exception.getMessage)
           result = "FAIL"
       }
       result
