@@ -22,7 +22,6 @@ import org.scalatest.{BeforeAndAfterAll, Ignore}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 
-@Ignore
 class TestPreAggregateMisc extends QueryTest with BeforeAndAfterAll {
   override def beforeAll: Unit = {
     sql("drop table if exists mainTable")

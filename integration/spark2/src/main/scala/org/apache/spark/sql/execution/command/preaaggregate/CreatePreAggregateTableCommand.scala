@@ -208,8 +208,9 @@ case class CreatePreAggregateTableCommand(
         parentTable,
         segmentToLoad = "*",
         validateSegments = true,
-        sparkSession,
-        loadCommand)
+        loadCommand,
+        isOverwrite = false,
+        sparkSession)
     }
     Seq.empty
   }

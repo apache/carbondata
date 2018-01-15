@@ -35,13 +35,16 @@ import org.apache.spark.sql.types.DataType
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema, TableSchema}
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema
 import org.apache.carbondata.core.util.CarbonUtil
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.format.TableInfo
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -584,8 +587,9 @@ object PreAggregateUtil {
       parentCarbonTable: CarbonTable,
       segmentToLoad: String,
       validateSegments: Boolean,
-      sparkSession: SparkSession,
-      loadCommand: CarbonLoadDataCommand): Unit = {
+      loadCommand: CarbonLoadDataCommand,
+      isOverwrite: Boolean,
+      sparkSession: SparkSession): Unit = {
     CarbonSession.threadSet(
       CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
       parentCarbonTable.getDatabaseName + "." +
@@ -904,4 +908,5 @@ object PreAggregateUtil {
   def getDataFrame(sparkSession: SparkSession, child: LogicalPlan): DataFrame = {
     Dataset.ofRows(sparkSession, child)
   }
+
 }

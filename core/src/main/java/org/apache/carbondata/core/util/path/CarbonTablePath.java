@@ -252,6 +252,10 @@ public class CarbonTablePath extends Path {
     return getMetaDataDir() + File.separator + TABLE_STATUS_FILE;
   }
 
+  public String getTableStatusFilePathWithUUID(String uuid) {
+    return getTableStatusFilePath() + CarbonCommonConstants.UNDERSCORE + uuid;
+  }
+
   /**
    * Gets absolute path of data file
    *
