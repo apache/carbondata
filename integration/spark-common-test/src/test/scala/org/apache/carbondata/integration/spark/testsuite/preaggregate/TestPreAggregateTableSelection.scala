@@ -262,6 +262,11 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
   }
 
+  test("Test query with math operation hitting fact table") {
+    val df =  sql("select sum(id)+count(id) from maintable")
+    preAggTableValidator(df.queryExecution.analyzed, "maintable")
+  }
+
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
     sql("drop table if exists lineitem")

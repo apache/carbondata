@@ -1013,6 +1013,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       carbonTable: CarbonTable,
       queryColumns: scala.collection.mutable.HashSet[QueryColumn],
       aggreagteExps: scala.collection.mutable.HashSet[AggregateExpression]): Boolean = {
+    var isValid = true
     groupByExpression foreach  { expression =>
       extractColumnFromExpression(expression, queryColumns, carbonTable)
     }
@@ -1025,13 +1026,13 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           carbonTable);
       case Alias(attr: AggregateExpression, _) =>
         if (attr.isDistinct) {
-          return false
+          isValid = false
         }
         val aggExp = PreAggregateUtil.validateAggregateFunctionAndGetFields(attr)
         if (aggExp.nonEmpty) {
           aggreagteExps ++= aggExp
         } else {
-          return false
+          isValid = false
         }
       case Alias(expression: Expression, _) =>
         if (expression.isInstanceOf[ScalaUDF] &&
@@ -1049,10 +1050,22 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
               queryColumns += getQueryColumn(attr.name,
                 carbonTable)
               attr
+            case attr: AggregateExpression =>
+              if (attr.isDistinct) {
+                isValid = false
+              }
+              val aggExp = PreAggregateUtil.validateAggregateFunctionAndGetFields(attr)
+              if (aggExp.nonEmpty) {
+                aggreagteExps ++= aggExp
+              } else {
+                isValid = false
+              }
+              attr
+
           }
         }
     }
-    true
+    isValid
   }
 
   /**
