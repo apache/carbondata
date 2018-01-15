@@ -34,7 +34,7 @@ class TestUpdateAndDeleteWithLargeData extends QueryTest with BeforeAndAfterAll 
     buildTestData()
   }
 
- private def buildTestData(): Unit = {
+  private def buildTestData(): Unit = {
 
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_DATE_FORMAT, "yyyy-MM-dd")
@@ -45,19 +45,15 @@ class TestUpdateAndDeleteWithLargeData extends QueryTest with BeforeAndAfterAll 
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     df = sqlContext.sparkSession.sparkContext.parallelize(1 to 1500000)
       .map(value => (value, new java.sql.Date(sdf.parse("2015-07-" + (value % 10 + 10)).getTime),
-        "china", "aaa" + value, "phone" + 555 * value, "ASD" + (60000 + value), 14999 + value,"ordersTable"+value))
+        "china", "aaa" + value, "phone" + 555 * value, "ASD" + (60000 + value), 14999 + value,
+        "ordersTable" + value))
       .toDF("o_id", "o_date", "o_country", "o_name",
-        "o_phonetype", "o_serialname", "o_salary","o_comment")
-      createTable()
+        "o_phonetype", "o_serialname", "o_salary", "o_comment")
+    createTable()
 
   }
 
- private def dropTable() = {
-    sql("DROP TABLE IF EXISTS orders")
-
-  }
-
-  private def createTable(): Unit ={
+  private def createTable(): Unit = {
     df.write
       .format("carbondata")
       .option("tableName", "orders")
@@ -67,13 +63,18 @@ class TestUpdateAndDeleteWithLargeData extends QueryTest with BeforeAndAfterAll 
       .save()
   }
 
+  private def dropTable() = {
+    sql("DROP TABLE IF EXISTS orders")
+
+  }
+
   test("test the update and delete delete functionality for large data") {
 
     sql(
       """
             update ORDERS set (o_comment) = ('yyy')""").show()
     checkAnswer(sql(
-      """select o_comment from orders limit 2 """),Seq(Row("yyy"),Row("yyy")))
+      """select o_comment from orders limit 2 """), Seq(Row("yyy"), Row("yyy")))
 
     sql("delete from orders where exists (select 1 from orders)")
 

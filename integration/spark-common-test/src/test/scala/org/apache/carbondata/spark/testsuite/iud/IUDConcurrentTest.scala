@@ -21,6 +21,8 @@ import java.text.SimpleDateFormat
 import java.util
 import java.util.concurrent.{Callable, ExecutorService, Executors, Future}
 
+import scala.collection.JavaConverters._
+
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, SaveMode}
 import org.scalatest.BeforeAndAfterAll
@@ -28,22 +30,14 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-import scala.collection.JavaConverters._
-
 class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll {
-  var df: DataFrame = _
   private val executorService: ExecutorService = Executors.newFixedThreadPool(10)
+  var df: DataFrame = _
 
   override def beforeAll {
     dropTable()
     buildTestData()
   }
-
-  override def afterAll {
-    executorService.shutdownNow()
-    dropTable()
-  }
-
 
   private def buildTestData(): Unit = {
 
@@ -56,19 +50,15 @@ class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll {
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
     df = sqlContext.sparkSession.sparkContext.parallelize(1 to 1500000)
       .map(value => (value, new java.sql.Date(sdf.parse("2015-07-" + (value % 10 + 10)).getTime),
-        "china", "aaa" + value, "phone" + 555 * value, "ASD" + (60000 + value), 14999 + value,"ordersTable"+value))
+        "china", "aaa" + value, "phone" + 555 * value, "ASD" + (60000 + value), 14999 + value,
+        "ordersTable" + value))
       .toDF("o_id", "o_date", "o_country", "o_name",
-        "o_phonetype", "o_serialname", "o_salary","o_comment")
+        "o_phonetype", "o_serialname", "o_salary", "o_comment")
     createTable("orders")
     createTable("orders_overwrite")
   }
 
-  private def dropTable() = {
-    sql("DROP TABLE IF EXISTS orders")
-    sql("DROP TABLE IF EXISTS orders_overwrite")
-  }
-
-  private def createTable(tableName: String): Unit ={
+  private def createTable(tableName: String): Unit = {
     df.write
       .format("carbondata")
       .option("tableName", tableName)
@@ -76,6 +66,16 @@ class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll {
       .option("compress", "true")
       .mode(SaveMode.Overwrite)
       .save()
+  }
+
+  override def afterAll {
+    executorService.shutdownNow()
+    dropTable()
+  }
+
+  private def dropTable() = {
+    sql("DROP TABLE IF EXISTS orders")
+    sql("DROP TABLE IF EXISTS orders_overwrite")
   }
 
   test("Concurrency test for Insert-Overwrite and compact") {
@@ -103,7 +103,7 @@ class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll {
         LOGGER.info("Executing :" + query + Thread.currentThread().getName)
         sql(query).show()
       } catch {
-        case _: Exception =>
+        case exception: Exception => LOGGER.error(exception.getMessage)
           result = "FAIL"
       }
       result
