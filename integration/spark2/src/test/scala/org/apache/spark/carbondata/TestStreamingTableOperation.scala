@@ -128,6 +128,9 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
 
     // 18. block drop table while streaming is in progress
     createTable(tableName = "stream_table_drop", streaming = true, withBatchLoad = false)
+
+    // 19. block streaming on 'preaggregate' main table
+    createTable(tableName = "agg_table_block", streaming = false, withBatchLoad = false)
   }
 
   test("validate streaming property") {
@@ -216,6 +219,8 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     sql("drop table if exists streaming.stream_table_close_auto_handoff")
     sql("drop table if exists streaming.stream_table_reopen")
     sql("drop table if exists streaming.stream_table_drop")
+    sql("drop table if exists streaming.agg_table_block")
+    sql("drop table if exists streaming.agg_table_block_agg0")
   }
 
   // normal table not support streaming ingest
@@ -995,6 +1000,13 @@ class TestStreamingTableOperation extends QueryTest with BeforeAndAfterAll {
     assertResult(1)(resultStreaming.length)
     assertResult("true")(resultStreaming(0).getString(1).trim)
   }
+
+  test("block streaming for 'preaggregate' table") {
+    sql("create datamap agg_table_block_agg0 on table streaming.agg_table_block using 'preaggregate' as select city, count(name) from streaming.agg_table_block group by city")
+    val msg = intercept[MalformedCarbonCommandException](sql("ALTER TABLE streaming.agg_table_block SET TBLPROPERTIES('streaming'='true')"))
+    assertResult("The table has 'preaggregate' DataMap, it doesn't support streaming")(msg.getMessage)
+  }
+
   def createWriteSocketThread(
       serverSocket: ServerSocket,
       writeNums: Int,

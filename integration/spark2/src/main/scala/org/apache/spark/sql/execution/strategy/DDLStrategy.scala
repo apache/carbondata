@@ -218,6 +218,16 @@ class DDLStrategy(sparkSession: SparkSession) extends SparkStrategy {
       case AlterTableSetPropertiesCommand(tableName, properties, isView)
         if CarbonEnv.getInstance(sparkSession).carbonMetastore
           .tableExists(tableName)(sparkSession) => {
+
+        // TODO remove this limiation after streaming table support 'preaggregate' DataMap
+        // if the table has 'preaggregate' DataMap, it doesn't support streaming now
+        val carbonTable = CarbonEnv.getInstance(sparkSession).carbonMetastore
+          .lookupRelation(tableName)(sparkSession).asInstanceOf[CarbonRelation].carbonTable
+        if (carbonTable.hasAggregationDataMap) {
+          throw new MalformedCarbonCommandException(
+            "The table has 'preaggregate' DataMap, it doesn't support streaming")
+        }
+
         // TODO remove this limitation later
         val property = properties.find(_._1.equalsIgnoreCase("streaming"))
         if (property.isDefined) {

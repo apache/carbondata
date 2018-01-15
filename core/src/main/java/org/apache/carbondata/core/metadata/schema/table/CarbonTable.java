@@ -733,6 +733,21 @@ public class CarbonTable implements Serializable {
     return streaming != null && streaming.equalsIgnoreCase("true");
   }
 
+  /**
+   * whether this table has aggregation DataMap or not
+   */
+  public boolean hasAggregationDataMap() {
+    List<DataMapSchema> dataMapSchemaList = tableInfo.getDataMapSchemaList();
+    if (dataMapSchemaList != null && !dataMapSchemaList.isEmpty()) {
+      for (DataMapSchema dataMapSchema : dataMapSchemaList) {
+        if (dataMapSchema instanceof AggregationDataMapSchema) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   public int getDimensionOrdinalMax() {
     return dimensionOrdinalMax;
   }
