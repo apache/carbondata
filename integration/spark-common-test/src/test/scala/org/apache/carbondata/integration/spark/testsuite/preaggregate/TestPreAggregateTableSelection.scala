@@ -262,11 +262,29 @@ class TestPreAggregateTableSelection extends QueryTest with BeforeAndAfterAll {
     preAggTableValidator(df.queryExecution.analyzed, "maintable_agg0")
   }
 
-  test("Test query with math operation hitting fact table") {
+ test("Test query with math operation hitting fact table") {
     val df =  sql("select sum(id)+count(id) from maintable")
     preAggTableValidator(df.queryExecution.analyzed, "maintable")
   }
 
+test("test PreAggregate table selection with timeseries and normal together") {
+    sql("drop table if exists maintabletime")
+    sql(
+      "create table maintabletime(year int,month int,name string,salary int,dob timestamp) stored" +
+      " by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23'," +
+      "'sort_columns'='month,year,name')")
+    sql("insert into maintabletime select 10,11,'babu',12,'2014-01-01 00:00:00'")
+    sql(
+      "create datamap agg0 on table maintabletime using 'preaggregate' as select dob,name from " +
+      "maintabletime group by dob,name")
+    sql(
+      "create datamap agg1 on table maintabletime using 'preaggregate' DMPROPERTIES ('timeseries" +
+      ".eventTime'='dob', 'timeseries.hierarchy'='hour=1,day=1,month=1,year=1') as select dob," +
+      "name from maintabletime group by dob,name")
+    val df = sql("select timeseries(dob,'year') from maintabletime group by timeseries(dob,'year')")
+    preAggTableValidator(df.queryExecution.analyzed, "maintabletime_agg1_year")
+
+  }
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
     sql("drop table if exists lineitem")

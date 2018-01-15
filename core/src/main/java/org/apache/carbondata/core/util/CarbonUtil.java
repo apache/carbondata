@@ -2305,7 +2305,9 @@ public final class CarbonUtil {
     List<DataMapSchema> dataMapSchemaList = carbonTable.getTableInfo().getDataMapSchemaList();
     for (DataMapSchema dataMapSchema : dataMapSchemaList) {
       if (dataMapSchema instanceof AggregationDataMapSchema) {
-        return ((AggregationDataMapSchema) dataMapSchema).isTimeseriesDataMap();
+        if (((AggregationDataMapSchema) dataMapSchema).isTimeseriesDataMap()) {
+          return true;
+        }
       }
     }
     return false;
