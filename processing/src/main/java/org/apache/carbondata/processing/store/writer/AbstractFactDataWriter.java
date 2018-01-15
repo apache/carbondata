@@ -482,7 +482,8 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         .substring(0, this.carbonDataFileTempPath.lastIndexOf('.')));
     File curFile = new File(this.carbonDataFileTempPath);
     if (!curFile.renameTo(origFile)) {
-      throw new CarbonDataWriterException("Problem while renaming the file");
+      throw new CarbonDataWriterException("Problem while renaming the file (" + curFile +
+          "), to file (" + origFile + ")");
     }
   }
 
