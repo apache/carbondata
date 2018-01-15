@@ -32,10 +32,12 @@ import org.apache.carbondata.core.metadata.PartitionMapFileStore.PartitionMapper
 import org.apache.carbondata.core.mutate.CarbonUpdateUtil
 import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatusManager}
 import org.apache.carbondata.core.util.path.CarbonTablePath
-import org.apache.carbondata.events.{AlterTableCompactionPostEvent, AlterTableCompactionPreEvent, AlterTableCompactionPreStatusUpdateEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events._
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePostStatusUpdateEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.processing.merger.{CarbonDataMergerUtil, CompactionType}
 import org.apache.carbondata.spark.MergeResultImpl
+import org.apache.carbondata.spark.rdd.CarbonDataRDDFactory.LOGGER
 import org.apache.carbondata.spark.util.CommonUtil
 
 /**
@@ -245,8 +247,33 @@ class CarbonTableCompactor(carbonLoadModel: CarbonLoadModel,
         CarbonDataMergerUtil
           .updateLoadMetadataWithMergeStatus(loadsToMerge, carbonTable.getMetaDataFilepath,
             mergedLoadNumber, carbonLoadModel, compactionType)
-
-      if (!statusFileUpdation) {
+      val compactionLoadStatusPostEvent = AlterTableCompactionPostStatusUpdateEvent(carbonTable,
+        carbonMergerMapping,
+        carbonLoadModel,
+        mergedLoadName)
+      // Used to inform the commit listener that the commit is fired from compaction flow.
+      operationContext.setProperty("isCompaction", "true")
+      val commitComplete = try {
+        // Once main table compaction is done and 0.1, 4.1, 8.1 is created commit will happen for
+        // all the tables. The commit listener will compact the child tables until no more segments
+        // are left. But 2nd level compaction is yet to happen on the main table therefore again the
+        // compaction flow will try to commit the child tables which is wrong. This check tell the
+        // 2nd level compaction flow that the commit for datamaps is already done.
+        val isCommitDone = operationContext.getProperty("commitComplete")
+        if (isCommitDone != null) {
+          isCommitDone.toString.toBoolean
+        } else {
+          OperationListenerBus.getInstance()
+            .fireEvent(compactionLoadStatusPostEvent, operationContext)
+          true
+        }
+      } catch {
+        case ex: Exception =>
+          LOGGER.error(ex, "Problem while committing data maps")
+          false
+      }
+      operationContext.setProperty("commitComplete", commitComplete)
+      if (!statusFileUpdation && !commitComplete) {
         LOGGER.audit(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +
                      s"${ carbonLoadModel.getTableName }")
         LOGGER.error(s"Compaction request failed for table ${ carbonLoadModel.getDatabaseName }." +

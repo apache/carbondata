@@ -147,6 +147,19 @@ public class LoadEvents {
       return carbonTable;
     }
   }
+
+  public static class LoadTablePostStatusUpdateEvent extends Event {
+    private CarbonLoadModel carbonLoadModel;
+
+    public LoadTablePostStatusUpdateEvent(CarbonLoadModel carbonLoadModel) {
+      this.carbonLoadModel = carbonLoadModel;
+    }
+
+    public CarbonLoadModel getCarbonLoadModel() {
+      return carbonLoadModel;
+    }
+  }
+
   /**
    * Class for handling clean up in case of any failure and abort the operation.
    */
