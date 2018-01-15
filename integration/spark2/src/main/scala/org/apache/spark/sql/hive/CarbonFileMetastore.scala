@@ -17,7 +17,6 @@
 
 package org.apache.spark.sql.hive
 
-import java.io.FileNotFoundException
 import java.net.URI
 import java.util.UUID
 import java.util.concurrent.atomic.AtomicLong
@@ -573,21 +572,4 @@ class CarbonFileMetastore extends CarbonMetaStore {
     }
   }
 
-  override def getTableInfo(identifier: AbsoluteTableIdentifier)
-    (sparkSession: SparkSession): Option[table.TableInfo] = {
-    val path = new CarbonTablePath(identifier.getCarbonTableIdentifier, identifier.getTablePath)
-    try {
-      val thriftTableInfo: TableInfo = getThriftTableInfo(path)(sparkSession)
-      val schemaConverter = new ThriftWrapperSchemaConverterImpl()
-      val tableInfo = schemaConverter.fromExternalToWrapperTableInfo(
-        thriftTableInfo,
-        identifier.getDatabaseName,
-        identifier.getTableName,
-        identifier.getTablePath)
-      Some(tableInfo)
-    } catch {
-      case e: FileNotFoundException =>
-        None
-    }
-  }
 }

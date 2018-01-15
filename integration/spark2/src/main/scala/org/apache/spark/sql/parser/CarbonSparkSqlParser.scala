@@ -33,6 +33,7 @@ import org.apache.spark.sql.util.CarbonException
 import org.apache.spark.util.CarbonReflectionUtils
 
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
+import org.apache.carbondata.hadoop.util.SchemaReader
 import org.apache.carbondata.spark.CarbonOption
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
@@ -247,14 +248,15 @@ class CarbonHelperSqlAstBuilder(conf: SQLConf,
         tablePath.get,
         CarbonEnv.getDatabaseName(tableIdentifier.database)(sparkSession),
         tableIdentifier.table)
-      val table = CarbonEnv.getInstance(sparkSession).carbonMetastore
-        .getTableInfo(identifier)(sparkSession)
-      table.getOrElse(
-        operationNotAllowed(s"Invalid table path provided: ${tablePath.get} ", tableHeader))
-
+      val table = try {
+        SchemaReader.getTableInfo(identifier)
+      } catch {
+        case e: Throwable =>
+          operationNotAllowed(s"Invalid table path provided: ${tablePath.get} ", tableHeader)
+      }
       // set "_external" property, so that DROP TABLE will not delete the data
-      table.get.getFactTable.getTableProperties.put("_external", "true")
-      table.get
+      table.getFactTable.getTableProperties.put("_external", "true")
+      table
     } else {
       // prepare table model of the collected tokens
       val tableModel: TableModel = parser.prepareTableModel(

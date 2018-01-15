@@ -24,7 +24,6 @@ import org.apache.spark.sql.types.StructType
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.schema
-import org.apache.carbondata.core.metadata.schema.table
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
@@ -144,9 +143,6 @@ trait CarbonMetaStore {
   def listAllTables(sparkSession: SparkSession): Seq[CarbonTable]
 
   def getThriftTableInfo(tablePath: CarbonTablePath)(sparkSession: SparkSession): TableInfo
-
-  def getTableInfo(identifier: AbsoluteTableIdentifier)
-    (sparkSession: SparkSession): Option[table.TableInfo]
 
   def getTableFromMetadataCache(database: String, tableName: String): Option[CarbonTable]
 

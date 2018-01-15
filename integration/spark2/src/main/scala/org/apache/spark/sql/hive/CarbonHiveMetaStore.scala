@@ -26,12 +26,11 @@ import org.apache.carbondata.core.cache.dictionary.ManageDictionaryAndBTree
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.{AbsoluteTableIdentifier, CarbonMetadata, CarbonTableIdentifier}
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
-import org.apache.carbondata.core.metadata.schema.table
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.format
-import org.apache.carbondata.format.{SchemaEvolutionEntry, TableInfo}
+import org.apache.carbondata.format.SchemaEvolutionEntry
 import org.apache.carbondata.spark.util.CarbonSparkUtil
 
 /**
@@ -105,13 +104,6 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
     schemaConverter.fromWrapperToExternalTableInfo(carbonTable.getTableInfo,
       carbonTable.getDatabaseName,
       carbonTable.getTableName)
-  }
-
-  override def getTableInfo(identifier: AbsoluteTableIdentifier)
-    (sparkSession: SparkSession): Option[table.TableInfo] = {
-    val tableOp = getTableFromMetadataCache(identifier.getDatabaseName, identifier.getTableName)
-    if (tableOp.isDefined) Some(tableOp.get.getTableInfo)
-    else None
   }
 
   /**
