@@ -68,7 +68,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
     super.setupJob(context);
     boolean overwriteSet = CarbonTableOutputFormat.isOverwriteSet(context.getConfiguration());
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
-    CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, overwriteSet);
+    CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(loadModel, overwriteSet, "");
     CarbonTableOutputFormat.setLoadModel(context.getConfiguration(), loadModel);
   }
 
@@ -120,7 +120,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
           throw new IOException(e);
         }
       }
-      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, overwriteSet);
+      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, loadModel, false, overwriteSet, "");
       mergeCarbonIndexFiles(segmentPath);
       String updateTime =
           context.getConfiguration().get(CarbonTableOutputFormat.UPADTE_TIMESTAMP, null);
@@ -139,7 +139,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
             segmentDeleteList);
       }
     } else {
-      CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
+      CarbonLoaderUtil.updateTableStatusForFailure(loadModel, "");
     }
   }
 
@@ -171,7 +171,7 @@ public class CarbonOutputCommitter extends FileOutputCommitter {
   @Override public void abortJob(JobContext context, JobStatus.State state) throws IOException {
     super.abortJob(context, state);
     CarbonLoadModel loadModel = CarbonTableOutputFormat.getLoadModel(context.getConfiguration());
-    CarbonLoaderUtil.updateTableStatusForFailure(loadModel);
+    CarbonLoaderUtil.updateTableStatusForFailure(loadModel, "");
     LOGGER.error("Loading failed with job status : " + state);
   }
 

@@ -76,13 +76,11 @@ class CarbonSession(@transient val sc: SparkContext,
     new CarbonSession(sparkContext, Some(sharedState))
   }
 
-  if (existingSharedState.isEmpty) {
-    CarbonSession.initListeners()
-  }
-
 }
 
 object CarbonSession {
+
+  private var isInitialized = false
 
   implicit class CarbonBuilder(builder: Builder) {
 
@@ -248,19 +246,24 @@ object CarbonSession {
   }
 
   def initListeners(): Unit = {
-    OperationListenerBus.getInstance()
-      .addListener(classOf[LoadTablePreStatusUpdateEvent], LoadPostAggregateListener)
-      .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
-      .addListener(classOf[DeleteSegmentByDatePreEvent], PreAggregateDeleteSegmentByDatePreListener)
-      .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
-      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
-      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
-      .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
-      .addListener(classOf[AlterTableRenamePreEvent], PreAggregateRenameTablePreListener)
-      .addListener(classOf[AlterTableDataTypeChangePreEvent], PreAggregateDataTypeChangePreListener)
-      .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
-      .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
-      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
-        AlterPreAggregateTableCompactionPostListener)
+    if (!isInitialized) {
+      OperationListenerBus.getInstance()
+        .addListener(classOf[LoadTablePreStatusUpdateEvent], LoadPostAggregateListener)
+        .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
+        .addListener(classOf[DeleteSegmentByDatePreEvent],
+          PreAggregateDeleteSegmentByDatePreListener)
+        .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
+        .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+        .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+        .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
+        .addListener(classOf[AlterTableRenamePreEvent], PreAggregateRenameTablePreListener)
+        .addListener(classOf[AlterTableDataTypeChangePreEvent],
+          PreAggregateDataTypeChangePreListener)
+        .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
+        .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
+        .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
+          AlterPreAggregateTableCompactionPostListener)
+      isInitialized = true
+    }
   }
 }

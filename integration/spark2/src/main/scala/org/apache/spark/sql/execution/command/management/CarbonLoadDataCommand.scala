@@ -19,6 +19,7 @@ package org.apache.spark.sql.execution.command.management
 
 import java.text.SimpleDateFormat
 import java.util
+import java.util.UUID
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -40,6 +41,7 @@ import org.apache.spark.sql.catalyst.plans.logical.{InsertIntoTable, LogicalPlan
 import org.apache.spark.sql.execution.LogicalRDD
 import org.apache.spark.sql.execution.SQLExecution.EXECUTION_ID_KEY
 import org.apache.spark.sql.execution.command.{DataCommand, DataLoadTableFileMapping, UpdateTableModel}
+import org.apache.spark.sql.execution.command.preaaggregate.PreAggregateUtil
 import org.apache.spark.sql.execution.datasources.{CarbonFileFormat, CatalogFileIndex, HadoopFsRelation, LogicalRelation}
 import org.apache.spark.sql.hive.CarbonRelation
 import org.apache.spark.sql.optimizer.CarbonFilters
@@ -166,8 +168,10 @@ case class CarbonLoadDataCommand(
       LOGGER.info(s"Deleting stale folders if present for table $dbName.$tableName")
       TableProcessingOperations.deletePartialLoadDataIfExist(table, false)
       var isUpdateTableStatusRequired = false
+      val uuid = internalOptions.getOrElse("uuid", UUID.randomUUID()).asInstanceOf[String]
       try {
         val operationContext = new OperationContext
+        operationContext.setProperty("uuid", uuid)
         val loadTablePreExecutionEvent: LoadTablePreExecutionEvent =
           new LoadTablePreExecutionEvent(
             table.getCarbonTableIdentifier,
@@ -186,7 +190,10 @@ case class CarbonLoadDataCommand(
         DataLoadingUtil.deleteLoadsAndUpdateMetadata(isForceDeletion = false, table)
         // add the start entry for the new load in the table status file
         if (updateModel.isEmpty && !table.isHivePartitionTable) {
-          CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(carbonLoadModel, isOverwriteTable)
+          CarbonLoaderUtil.readAndUpdateLoadProgressInTableMeta(
+            carbonLoadModel,
+            isOverwriteTable,
+            uuid)
           isUpdateTableStatusRequired = true
         }
         if (isOverwriteTable) {
@@ -240,11 +247,12 @@ case class CarbonLoadDataCommand(
             table.getCarbonTableIdentifier,
             carbonLoadModel)
         OperationListenerBus.getInstance.fireEvent(loadTablePostExecutionEvent, operationContext)
+
       } catch {
         case CausedBy(ex: NoRetryException) =>
           // update the load entry in table status file for changing the status to marked for delete
           if (isUpdateTableStatusRequired) {
-            CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
+            CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)
           }
           LOGGER.error(ex, s"Dataload failure for $dbName.$tableName")
           throw new RuntimeException(s"Dataload failure for $dbName.$tableName, ${ex.getMessage}")
@@ -255,7 +263,7 @@ case class CarbonLoadDataCommand(
           LOGGER.error(ex)
           // update the load entry in table status file for changing the status to marked for delete
           if (isUpdateTableStatusRequired) {
-            CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
+            CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, uuid)
           }
           LOGGER.audit(s"Dataload failure for $dbName.$tableName. Please check the logs")
           throw ex
@@ -270,6 +278,7 @@ case class CarbonLoadDataCommand(
             val file = FileFactory.getCarbonFile(partitionLocation, fileType)
             CarbonUtil.deleteFoldersAndFiles(file)
           }
+          PreAggregateUtil.cleanUpStaleTableStatusFiles(table, uuid)(sparkSession)
         } catch {
           case ex: Exception =>
             LOGGER.error(ex)
