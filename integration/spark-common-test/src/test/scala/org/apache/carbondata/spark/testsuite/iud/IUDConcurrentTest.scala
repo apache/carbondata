@@ -28,7 +28,9 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-class TestInsertUpdateConcurrentTest extends QueryTest with BeforeAndAfterAll {
+import scala.collection.JavaConverters._
+
+class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll {
   var df: DataFrame = _
   private val executorService: ExecutorService = Executors.newFixedThreadPool(10)
 
@@ -52,16 +54,16 @@ class TestInsertUpdateConcurrentTest extends QueryTest with BeforeAndAfterAll {
     import sqlContext.implicits._
 
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
-    df = sqlContext.sparkSession.sparkContext.parallelize(1 to 150000)
+    df = sqlContext.sparkSession.sparkContext.parallelize(1 to 1500000)
       .map(value => (value, new java.sql.Date(sdf.parse("2015-07-" + (value % 10 + 10)).getTime),
         "china", "aaa" + value, "phone" + 555 * value, "ASD" + (60000 + value), 14999 + value,"ordersTable"+value))
       .toDF("o_id", "o_date", "o_country", "o_name",
         "o_phonetype", "o_serialname", "o_salary","o_comment")
-      createTable("orders")
-      createTable("orders_overwrite")
+    createTable("orders")
+    createTable("orders_overwrite")
   }
 
- private def dropTable() = {
+  private def dropTable() = {
     sql("DROP TABLE IF EXISTS orders")
     sql("DROP TABLE IF EXISTS orders_overwrite")
   }
@@ -76,12 +78,22 @@ class TestInsertUpdateConcurrentTest extends QueryTest with BeforeAndAfterAll {
       .save()
   }
 
+  test("Concurrency test for Insert-Overwrite and compact") {
+    val tasks = new java.util.ArrayList[Callable[String]]()
+    tasks.add(new QueryTask(s"insert overWrite table orders select * from orders_overwrite"))
+    tasks.add(new QueryTask("alter table orders compact 'MINOR'"))
+    val futures: util.List[Future[String]] = executorService.invokeAll(tasks)
+    val results = futures.asScala.map(_.get)
+    assert(results.contains("PASS"))
+  }
+
   test("Concurrency test for Insert-Overwrite and update") {
     val tasks = new java.util.ArrayList[Callable[String]]()
     tasks.add(new QueryTask(s"insert overWrite table orders select * from orders_overwrite"))
     tasks.add(new QueryTask("update orders set (o_country)=('newCountry') where o_country='china'"))
-    val results: util.List[Future[String]] = executorService.invokeAll(tasks)
-    assert("PASS".equals(results.get(0).get) && "FAIL".equals(results.get(1).get))
+    val futures: util.List[Future[String]] = executorService.invokeAll(tasks)
+    val results = futures.asScala.map(_.get)
+    assert("PASS".equals(results.head) && "FAIL".equals(results(1)))
   }
 
   class QueryTask(query: String) extends Callable[String] {
