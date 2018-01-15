@@ -100,7 +100,6 @@ class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll {
     override def call(): String = {
       var result = "PASS"
       try {
-        LOGGER.info("Executing :" + query + Thread.currentThread().getName)
         sql(query).show()
       } catch {
         case exception: Exception => LOGGER.error(exception.getMessage)
