@@ -571,5 +571,4 @@ class CarbonFileMetastore extends CarbonMetaStore {
       case _ => throw new NoSuchTableException(tableIdentifier.database.get, tableIdentifier.table)
     }
   }
-
 }

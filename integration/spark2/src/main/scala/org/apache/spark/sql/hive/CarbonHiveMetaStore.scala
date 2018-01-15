@@ -106,6 +106,7 @@ class CarbonHiveMetaStore extends CarbonFileMetastore {
       carbonTable.getTableName)
   }
 
+
   /**
    * This method will overwrite the existing schema and update it with the given details
    *
