@@ -298,7 +298,7 @@ object StreamHandoffRDD {
         SegmentStatus.INSERT_IN_PROGRESS,
         carbonLoadModel.getFactTimeStamp,
         false)
-      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, carbonLoadModel, true, false)
+      CarbonLoaderUtil.recordNewLoadMetadata(newMetaEntry, carbonLoadModel, true, false, "")
       // convert a streaming segment to columnar segment
       val status = new StreamHandoffRDD(
         sparkSession.sparkContext,
@@ -320,7 +320,7 @@ object StreamHandoffRDD {
     }
 
     if (loadStatus == SegmentStatus.LOAD_FAILURE) {
-      CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel)
+      CarbonLoaderUtil.updateTableStatusForFailure(carbonLoadModel, "")
       LOGGER.info("********starting clean up**********")
       CarbonLoaderUtil.deleteSegment(carbonLoadModel, carbonLoadModel.getSegmentId.toInt)
       LOGGER.info("********clean up done**********")

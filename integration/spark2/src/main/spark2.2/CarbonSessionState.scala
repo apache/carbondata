@@ -91,6 +91,8 @@ class CarbonSessionCatalog(
     carbonEnv
   }
 
+  CarbonSession.initListeners()
+
 
   private def refreshRelationFromCache(identifier: TableIdentifier): Boolean = {
     var isRefreshed = false

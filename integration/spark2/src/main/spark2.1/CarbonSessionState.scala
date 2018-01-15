@@ -33,7 +33,7 @@ import org.apache.spark.sql.execution.{SparkOptimizer, SparkSqlAstBuilder}
 import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.optimizer.{CarbonIUDRule, CarbonLateDecodeRule, CarbonUDFTransformRule}
 import org.apache.spark.sql.parser.{CarbonHelperSqlAstBuilder, CarbonSpark2SqlParser, CarbonSparkSqlParser}
-import org.apache.spark.sql.{CarbonDatasourceHadoopRelation, CarbonEnv, ExperimentalMethods, SparkSession, Strategy}
+import org.apache.spark.sql._
 
 import org.apache.carbondata.core.datamap.DataMapStoreManager
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
@@ -74,6 +74,8 @@ class CarbonSessionCatalog(
     env.init(sparkSession)
     env
   }
+
+  CarbonSession.initListeners()
 
   /**
    * This method will invalidate carbonrelation from cache if carbon table is updated in

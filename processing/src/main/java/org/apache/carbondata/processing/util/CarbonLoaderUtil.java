@@ -148,7 +148,7 @@ public final class CarbonLoaderUtil {
    * @throws IOException
    */
   public static boolean recordNewLoadMetadata(LoadMetadataDetails newMetaEntry,
-      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite)
+      CarbonLoadModel loadModel, boolean loadStartEntry, boolean insertOverwrite, String uuid)
       throws IOException {
     boolean status = false;
     AbsoluteTableIdentifier absoluteTableIdentifier =
@@ -159,7 +159,12 @@ public final class CarbonLoaderUtil {
     if (!FileFactory.isFileExist(metadataPath, fileType)) {
       FileFactory.mkdirs(metadataPath, fileType);
     }
-    String tableStatusPath = carbonTablePath.getTableStatusFilePath();
+    String tableStatusPath;
+    if (loadModel.getCarbonDataLoadSchema().getCarbonTable().isChildDataMap()) {
+      tableStatusPath = carbonTablePath.getTableStatusFilePath(uuid);
+    } else {
+      tableStatusPath = carbonTablePath.getTableStatusFilePath();
+    }
     SegmentStatusManager segmentStatusManager = new SegmentStatusManager(absoluteTableIdentifier);
     ICarbonLock carbonLock = segmentStatusManager.getTableStatusLock();
     int retryCount = CarbonLockUtil
@@ -363,7 +368,7 @@ public final class CarbonLoaderUtil {
 
 
   public static void readAndUpdateLoadProgressInTableMeta(CarbonLoadModel model,
-      boolean insertOverwrite) throws IOException {
+      boolean insertOverwrite, String uuid) throws IOException {
     LoadMetadataDetails newLoadMetaEntry = new LoadMetadataDetails();
     SegmentStatus status = SegmentStatus.INSERT_IN_PROGRESS;
     if (insertOverwrite) {
@@ -375,8 +380,8 @@ public final class CarbonLoaderUtil {
     model.setFactTimeStamp(loadStartTime);
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(newLoadMetaEntry, status, model.getFactTimeStamp(), false);
-    boolean entryAdded =
-        CarbonLoaderUtil.recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite);
+    boolean entryAdded = CarbonLoaderUtil
+        .recordNewLoadMetadata(newLoadMetaEntry, model, true, insertOverwrite, uuid);
     if (!entryAdded) {
       throw new IOException("Dataload failed due to failure in table status updation for "
           + model.getTableName());
@@ -386,7 +391,7 @@ public final class CarbonLoaderUtil {
   /**
    * This method will update the load failure entry in the table status file
    */
-  public static void updateTableStatusForFailure(CarbonLoadModel model)
+  public static void updateTableStatusForFailure(CarbonLoadModel model, String uuid)
       throws IOException {
     // in case if failure the load status should be "Marked for delete" so that it will be taken
     // care during clean up
@@ -398,8 +403,8 @@ public final class CarbonLoaderUtil {
     }
     CarbonLoaderUtil
         .populateNewLoadMetaEntry(loadMetaEntry, loadStatus, model.getFactTimeStamp(), true);
-    boolean entryAdded =
-        CarbonLoaderUtil.recordNewLoadMetadata(loadMetaEntry, model, false, false);
+    boolean entryAdded = CarbonLoaderUtil.
+        recordNewLoadMetadata(loadMetaEntry, model, false, false, uuid);
     if (!entryAdded) {
       throw new IOException(
           "Failed to update failure entry in table status for " + model.getTableName());

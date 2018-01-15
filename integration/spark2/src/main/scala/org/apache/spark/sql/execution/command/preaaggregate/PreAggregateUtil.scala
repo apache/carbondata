@@ -26,7 +26,7 @@ import org.apache.spark.sql.catalyst.analysis.{UnresolvedAlias, UnresolvedFuncti
 import org.apache.spark.sql.catalyst.expressions.{Alias, AttributeReference, AttributeSeq, Cast, Expression, ExprId, NamedExpression, ScalaUDF}
 import org.apache.spark.sql.catalyst.expressions.aggregate.{Count, _}
 import org.apache.spark.sql.catalyst.plans.logical._
-import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField, Field}
+import org.apache.spark.sql.execution.command.{ColumnTableRelation, DataMapField, ExecutionErrors, Field}
 import org.apache.spark.sql.execution.command.management.CarbonLoadDataCommand
 import org.apache.spark.sql.execution.datasources.LogicalRelation
 import org.apache.spark.sql.hive.CarbonRelation
@@ -35,11 +35,16 @@ import org.apache.spark.sql.types.{DataType, LongType}
 
 import org.apache.carbondata.common.logging.{LogService, LogServiceFactory}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
+import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.locks.{CarbonLockUtil, ICarbonLock, LockUsage}
+import org.apache.carbondata.core.metadata.CarbonTableIdentifier
 import org.apache.carbondata.core.metadata.converter.ThriftWrapperSchemaConverterImpl
 import org.apache.carbondata.core.metadata.schema.table.{AggregationDataMapSchema, CarbonTable, DataMapSchema, TableSchema}
-import org.apache.carbondata.core.util.path.CarbonStorePath
+import org.apache.carbondata.core.statusmanager.{LoadMetadataDetails, SegmentStatus}
+import org.apache.carbondata.core.util.path.{CarbonStorePath, CarbonTablePath}
 import org.apache.carbondata.format.TableInfo
+import org.apache.carbondata.processing.loading.model.CarbonLoadModel
 import org.apache.carbondata.spark.exception.MalformedCarbonCommandException
 import org.apache.carbondata.spark.util.CommonUtil
 
@@ -586,7 +591,8 @@ object PreAggregateUtil {
       segmentToLoad: String,
       validateSegments: Boolean,
       isOverwrite: Boolean,
-      sparkSession: SparkSession): Unit = {
+      sparkSession: SparkSession,
+      uuid: String): Unit = {
     CarbonSession.threadSet(
       CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
       parentCarbonTable.getDatabaseName + "." +
@@ -620,8 +626,8 @@ object PreAggregateUtil {
         Map("fileheader" -> headers),
         isOverwriteTable = isOverwrite,
         dataFrame = Some(dataFrame),
-        internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true")).
-        run(sparkSession)
+        internalOptions = Map(CarbonCommonConstants.IS_INTERNAL_LOAD_CALL -> "true",
+          "uuid" -> uuid)).run(sparkSession)
     } finally {
       CarbonSession.threadUnset(
         CarbonCommonConstants.CARBON_INPUT_SEGMENTS +
@@ -871,5 +877,74 @@ object PreAggregateUtil {
           ar.withExprId(ExprId(ordinal))
         }
     }.canonicalized.asInstanceOf[T]
+  }
+
+  def commitDataMaps(
+      carbonLoadModel: CarbonLoadModel,
+      uuid: String = "")(sparkSession: SparkSession) {
+    val dataMapSchemas = carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.getTableInfo
+      .getDataMapSchemaList
+    val renamedDataMaps = dataMapSchemas.asScala.flatMap {
+      dataMapSchema =>
+        LOGGER
+          .info(s"Renaming table status file for ${ dataMapSchema.getRelationIdentifier.toString }")
+        val carbonTable = CarbonEnv
+          .getCarbonTable(Option(dataMapSchema.getRelationIdentifier.getDatabaseName),
+            dataMapSchema.getRelationIdentifier.getDatabaseName)(sparkSession)
+        val carbonTablePath = new CarbonTablePath(carbonTable.getCarbonTableIdentifier,
+          carbonTable.getTablePath)
+        val oldTableSchemaPath = carbonTablePath.getTableStatusFilePath(uuid)
+        val newTableSchemaPath = carbonTablePath.getTableStatusFilePath()
+        if (renameDataMapTableStatusFiles(oldTableSchemaPath, newTableSchemaPath)) {
+          Some(carbonTablePath)
+        } else {
+          None
+        }
+    }
+    if (renamedDataMaps.lengthCompare(dataMapSchemas.size()) < 0) {
+      LOGGER.warn("Reverting table status file to original state")
+      renamedDataMaps.foreach {
+        carbonTablePath =>
+          val backupTableSchemaPath = carbonTablePath.getTableStatusFilePath() + "_backup"
+          val tableSchemaPath = carbonTablePath.getTableStatusFilePath()
+          renameDataMapTableStatusFiles(backupTableSchemaPath, tableSchemaPath)
+      }
+      sys.error("Failed to update table status for pre-aggregate table")
+    }
+  }
+
+  private def renameDataMapTableStatusFiles(oldTableSchemaPath: String,
+      newTableSchemaPath: String) = {
+    val oldCarbonFile = FileFactory.getCarbonFile(oldTableSchemaPath)
+    val newCarbonFile = FileFactory.getCarbonFile(newTableSchemaPath)
+    val backupCreated = if (newCarbonFile.exists()) {
+      newCarbonFile.renameForce(newTableSchemaPath + "_backup")
+    } else {
+      true
+    }
+    if (oldCarbonFile.exists() && backupCreated) {
+      oldCarbonFile.renameForce(newTableSchemaPath)
+    } else {
+      false
+    }
+  }
+
+  def cleanUpStaleTableStatusFiles(carbonTable: CarbonTable,
+      uuid: String)(sparkSession: SparkSession): Unit = {
+    val dataMapSchemas = carbonTable.getTableInfo.getDataMapSchemaList.asScala
+    dataMapSchemas.foreach {
+      dataMapSchema =>
+        val childTable = CarbonEnv
+          .getCarbonTable(Option(dataMapSchema.getRelationIdentifier.getDatabaseName),
+            dataMapSchema.getRelationIdentifier.getDatabaseName)(sparkSession)
+        val carbonTablePath = new CarbonTablePath(childTable.getCarbonTableIdentifier,
+          childTable.getTablePath)
+        val metaDataDir = FileFactory.getCarbonFile(carbonTablePath.getMetadataDirectoryPath)
+        val tableStatusFiles = metaDataDir.listFiles(new CarbonFileFilter {
+          override def accept(file: CarbonFile): Boolean =
+            file.getName.contains("_backup") || file.getName.contains(uuid)
+        })
+        tableStatusFiles.foreach(_.delete())
+    }
   }
 }

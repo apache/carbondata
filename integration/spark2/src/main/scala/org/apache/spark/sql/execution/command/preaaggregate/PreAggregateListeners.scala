@@ -43,6 +43,7 @@ object LoadPostAggregateListener extends OperationEventListener {
     val carbonLoadModel = loadEvent.getCarbonLoadModel
     val table = CarbonEnv.getCarbonTable(Option(carbonLoadModel.getDatabaseName),
       carbonLoadModel.getTableName)(sparkSession)
+    val uniqueTableStatusId = operationContext.getProperty("uuid").asInstanceOf[String]
     if (CarbonUtil.hasAggregationDataMap(table)) {
       // getting all the aggergate datamap schema
       val aggregationDataMapList = table.getTableInfo.getDataMapSchemaList.asScala
@@ -83,8 +84,10 @@ object LoadPostAggregateListener extends OperationEventListener {
             carbonLoadModel.getSegmentId,
             validateSegments = false,
             isOverwrite,
-            sparkSession)
+            sparkSession,
+            uniqueTableStatusId)
         }
+      PreAggregateUtil.commitDataMaps(carbonLoadModel, uniqueTableStatusId)(sparkSession)
       }
     }
 }
