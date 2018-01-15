@@ -289,7 +289,7 @@ object PreAggregateUtil {
           "sum")
         list += createFieldForAggregateExpression(
           exp,
-          LongType,
+          changeDataType,
           carbonTable,
           newColumnName,
           "count")
@@ -302,7 +302,7 @@ object PreAggregateUtil {
           "sum")
         list += createFieldForAggregateExpression(
           exp,
-          LongType,
+          avg.dataType,
           carbonTable,
           newColumnName,
           "count")

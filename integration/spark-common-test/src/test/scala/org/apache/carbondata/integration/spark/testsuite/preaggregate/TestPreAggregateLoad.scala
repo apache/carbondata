@@ -262,5 +262,51 @@ class TestPreAggregateLoad extends QueryTest with BeforeAndAfterAll {
         .stripMargin)
     checkAnswer(sql("select * from maintable_preagg_sum"), Row(1, 52, "xyz"))
   }
+test("check load and select for avg double datatype") {
+  sql("drop table if exists maintbl ")
+  sql("create table maintbl(year int,month int,name string,salary double) stored by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23','sort_columns'='month,year,name')")
+  sql("insert into maintbl select 10,11,'babu',12.89")
+  sql("insert into maintbl select 10,11,'babu',12.89")
+  sql("create datamap maintbl_douoble on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
+  checkAnswer(sql("select name,avg(salary) from maintbl group by name"), Row("babu", 12.89))
+}
+
+
+  test("check load and select for avg int datatype") {
+    sql("drop table if exists maintbl ")
+    sql("create table maintbl(year int,month int,name string,salary int) stored by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23','sort_columns'='month,year,name')")
+    sql("insert into maintbl select 10,11,'babu',12")
+    sql("insert into maintbl select 10,11,'babu',12")
+    sql("create datamap maintbl_douoble on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
+    checkAnswer(sql("select name,avg(salary) from maintbl group by name"), Row("babu", 12.0))
+  }
+
+  test("check load and select for avg bigint datatype") {
+    sql("drop table if exists maintbl ")
+    sql("create table maintbl(year int,month int,name string,salary bigint) stored by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23','sort_columns'='month,year,name')")
+    sql("insert into maintbl select 10,11,'babu',12")
+    sql("insert into maintbl select 10,11,'babu',12")
+    sql("create datamap maintbl_douoble on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
+    checkAnswer(sql("select name,avg(salary) from maintbl group by name"), Row("babu", 12.0))
+  }
+
+  test("check load and select for avg short datatype") {
+    sql("drop table if exists maintbl ")
+    sql("create table maintbl(year int,month int,name string,salary short) stored by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23','sort_columns'='month,year,name')")
+    sql("insert into maintbl select 10,11,'babu',12")
+    sql("insert into maintbl select 10,11,'babu',12")
+    sql("create datamap maintbl_douoble on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
+    checkAnswer(sql("select name,avg(salary) from maintbl group by name"), Row("babu", 12.0))
+  }
+
+  test("check load and select for avg float datatype") {
+    sql("drop table if exists maintbl ")
+    sql("create table maintbl(year int,month int,name string,salary float) stored by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23','sort_columns'='month,year,name')")
+    sql("insert into maintbl select 10,11,'babu',12")
+    sql("insert into maintbl select 10,11,'babu',12")
+    sql("create datamap maintbl_douoble on table maintbl using 'preaggregate' as select name,avg(salary) from maintbl group by name")
+    checkAnswer(sql("select name,avg(salary) from maintbl group by name"), Row("babu", 12.89))
+  }
+
 
 }
