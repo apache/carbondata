@@ -149,6 +149,11 @@ public class CarbonDictionaryWriterImpl implements CarbonDictionaryWriter {
       init();
       isFirstTime = false;
     }
+
+    if (value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+      throw new IOException("Dataload failed, String size cannot exceed "
+          + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+    }
     // if one chunk size is equal to list size then write the data to file
     checkAndWriteDictionaryChunkToFile();
     oneDictionaryChunkList.add(ByteBuffer.wrap(value));

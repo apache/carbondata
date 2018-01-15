@@ -1514,6 +1514,10 @@ public final class CarbonCommonConstants {
       "carbon.read.partition.hive.direct";
   public static final String CARBON_READ_PARTITION_HIVE_DIRECT_DEFAULT = "true";
 
+  // As Short data type is used for storing the length of a column during data processing hence
+  // the maximum characters that can be supported should be less than Short max value
+  public static final int MAX_CHARS_PER_COLUMN_DEFAULT = 32000;
+
   private CarbonCommonConstants() {
   }
 }

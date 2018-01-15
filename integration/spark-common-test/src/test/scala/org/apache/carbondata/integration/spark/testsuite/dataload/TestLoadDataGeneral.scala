@@ -187,7 +187,54 @@ class TestLoadDataGeneral extends QueryTest with BeforeAndAfterAll {
     } catch {
       case _:Exception => assert(true)
     }
+  }
 
+  test("test load / insert / update with data more than 32000 bytes - dictionary_exclude") {
+    val testdata = s"$resourcesPath/unicodechar.csv"
+    sql("drop table if exists load32000bytes")
+    sql("create table load32000bytes(name string) stored by 'carbondata'")
+    sql("insert into table load32000bytes select 'aaa'")
+
+    assert(intercept[Exception] {
+      sql(s"load data local inpath '$testdata' into table load32000bytes OPTIONS ('FILEHEADER'='name')")
+    }.getMessage.contains("DataLoad failure: Dataload failed, String size cannot exceed 32000 bytes"))
+
+    val source = scala.io.Source.fromFile(testdata)
+    val data = source.mkString
+
+    intercept[Exception] {
+      sql(s"insert into load32000bytes values('$data')")
+    }
+
+    intercept[Exception] {
+      sql(s"update load32000bytes set(name)= ('$data')").show()
+    }
+
+    sql("drop table if exists load32000bytes")
+  }
+
+  test("test load / insert / update with data more than 32000 bytes - dictionary_include") {
+    val testdata = s"$resourcesPath/unicodechar.csv"
+    sql("drop table if exists load32000bytes")
+    sql("create table load32000bytes(name string) stored by 'carbondata' TBLPROPERTIES('DICTIONARY_INCLUDE'='name')")
+    sql("insert into table load32000bytes select 'aaa'")
+
+    assert(intercept[Exception] {
+      sql(s"load data local inpath '$testdata' into table load32000bytes OPTIONS ('FILEHEADER'='name')")
+    }.getMessage.contains("generate global dictionary failed, Dataload failed, String size cannot exceed 32000 bytes"))
+
+    val source = scala.io.Source.fromFile(testdata)
+    val data = source.mkString
+
+    intercept[Exception] {
+      sql(s"insert into load32000bytes values('$data')")
+    }
+
+    intercept[Exception] {
+      sql(s"update load32000bytes set(name)= ('$data')").show()
+    }
+
+    sql("drop table if exists load32000bytes")
   }
 
   test("test if stale folders are deleting on data load") {
