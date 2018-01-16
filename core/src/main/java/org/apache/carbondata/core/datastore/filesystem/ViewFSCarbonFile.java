@@ -52,7 +52,8 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
    * @param listStatus
    * @return
    */
-  private CarbonFile[] getFiles(FileStatus[] listStatus) {
+  @Override
+  protected CarbonFile[] getFiles(FileStatus[] listStatus) {
     if (listStatus == null) {
       return new CarbonFile[0];
     }
@@ -61,23 +62,6 @@ public class ViewFSCarbonFile extends AbstractDFSCarbonFile {
       files[i] = new ViewFSCarbonFile(listStatus[i]);
     }
     return files;
-  }
-
-  @Override
-  public CarbonFile[] listFiles() {
-    FileStatus[] listStatus = null;
-    try {
-      if (null != fileStatus && fileStatus.isDirectory()) {
-        Path path = fileStatus.getPath();
-        listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
-      } else {
-        return new CarbonFile[0];
-      }
-    } catch (IOException ex) {
-      LOGGER.error("Exception occured" + ex.getMessage());
-      return new CarbonFile[0];
-    }
-    return getFiles(listStatus);
   }
 
   @Override

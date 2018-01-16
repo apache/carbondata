@@ -23,7 +23,6 @@ import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
-import org.apache.carbondata.core.datastore.impl.FileFactory;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
@@ -62,7 +61,8 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
    * @param listStatus
    * @return
    */
-  private CarbonFile[] getFiles(FileStatus[] listStatus) {
+  @Override
+  protected CarbonFile[] getFiles(FileStatus[] listStatus) {
     if (listStatus == null) {
       return new CarbonFile[0];
     }
@@ -71,23 +71,6 @@ public class HDFSCarbonFile extends AbstractDFSCarbonFile {
       files[i] = new HDFSCarbonFile(listStatus[i]);
     }
     return files;
-  }
-
-  @Override
-  public CarbonFile[] listFiles() {
-    FileStatus[] listStatus = null;
-    try {
-      if (null != fileStatus && fileStatus.isDirectory()) {
-        Path path = fileStatus.getPath();
-        listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
-      } else {
-        return new CarbonFile[0];
-      }
-    } catch (IOException e) {
-      LOGGER.error("Exception occured: " + e.getMessage());
-      return new CarbonFile[0];
-    }
-    return getFiles(listStatus);
   }
 
   @Override

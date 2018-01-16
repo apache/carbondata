@@ -423,4 +423,12 @@ public class LocalCarbonFile implements CarbonFile {
   public void setPermission(String directoryPath, FsPermission permission, String username,
       String group) throws IOException {
   }
+
+  @Override public CarbonFile[] locationAwareListFiles() throws IOException {
+    return listFiles();
+  }
+
+  @Override public String[] getLocations() throws IOException {
+    return new String[]{"localhost"};
+  }
 }

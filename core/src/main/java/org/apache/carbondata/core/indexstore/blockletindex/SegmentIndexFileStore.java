@@ -97,6 +97,23 @@ public class SegmentIndexFileStore {
   }
 
   /**
+   * Read all index files and keep the cache in it.
+   *
+   * @param carbonFiles
+   * @throws IOException
+   */
+  public void readAllIIndexOfSegment(CarbonFile[] carbonFiles) throws IOException {
+    CarbonFile[] carbonIndexFiles = getCarbonIndexFiles(carbonFiles);
+    for (int i = 0; i < carbonIndexFiles.length; i++) {
+      if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        readMergeFile(carbonIndexFiles[i].getCanonicalPath());
+      } else if (carbonIndexFiles[i].getName().endsWith(CarbonTablePath.INDEX_FILE_EXT)) {
+        readIndexFile(carbonIndexFiles[i]);
+      }
+    }
+  }
+
+  /**
    * Read all index file names of the segment
    *
    * @param segmentPath
@@ -208,6 +225,23 @@ public class SegmentIndexFileStore {
             .endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT);
       }
     });
+  }
+
+  /**
+   * List all the index files of the segment.
+   *
+   * @param carbonFiles
+   * @return
+   */
+  public static CarbonFile[] getCarbonIndexFiles(CarbonFile[] carbonFiles) {
+    List<CarbonFile> indexFiles = new ArrayList<>();
+    for (CarbonFile file: carbonFiles) {
+      if (file.getName().endsWith(CarbonTablePath.INDEX_FILE_EXT) ||
+          file.getName().endsWith(CarbonTablePath.MERGE_INDEX_FILE_EXT)) {
+        indexFiles.add(file);
+      }
+    }
+    return indexFiles.toArray(new CarbonFile[indexFiles.size()]);
   }
 
   /**

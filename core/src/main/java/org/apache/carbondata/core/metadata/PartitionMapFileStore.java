@@ -170,6 +170,30 @@ public class PartitionMapFileStore {
     return null;
   }
 
+  private String getPartitionFilePath(CarbonFile[] carbonFiles, String segmentPath) {
+
+    List<CarbonFile> partitionFiles = new ArrayList<>();
+    for (CarbonFile file : carbonFiles) {
+      if (file.getName().endsWith(CarbonTablePath.PARTITION_MAP_EXT)) {
+        partitionFiles.add(file);
+      }
+    }
+    if (partitionFiles.size() > 0) {
+      partionedSegment = true;
+      int i = 0;
+      // Get the latest partition map file based on the timestamp of that file.
+      long[] partitionTimestamps = new long[partitionFiles.size()];
+      for (CarbonFile file : partitionFiles) {
+        partitionTimestamps[i++] = Long.parseLong(file.getName()
+            .substring(0, file.getName().length() - CarbonTablePath.PARTITION_MAP_EXT.length()));
+      }
+      Arrays.sort(partitionTimestamps);
+      return segmentPath + "/" + partitionTimestamps[partitionTimestamps.length - 1]
+          + CarbonTablePath.PARTITION_MAP_EXT;
+    }
+    return null;
+  }
+
   private CarbonFile[] getPartitionFiles(String segmentPath) {
     CarbonFile carbonFile = FileFactory.getCarbonFile(segmentPath);
     if (carbonFile.exists()) {
@@ -221,6 +245,20 @@ public class PartitionMapFileStore {
    */
   public void readAllPartitionsOfSegment(String segmentPath) throws IOException {
     String partitionFilePath = getPartitionFilePath(segmentPath);
+    if (partitionFilePath != null) {
+      partionedSegment = true;
+      PartitionMapper partitionMapper = readPartitionMap(partitionFilePath);
+      partitionMap.putAll(partitionMapper.getPartitionMap());
+    }
+  }
+
+  /**
+   * Reads all partitions which existed inside the passed segment path
+   * @param carbonFiles
+   */
+  public void readAllPartitionsOfSegment(CarbonFile[] carbonFiles, String segmentPath)
+      throws IOException {
+    String partitionFilePath = getPartitionFilePath(carbonFiles, segmentPath);
     if (partitionFilePath != null) {
       partionedSegment = true;
       PartitionMapper partitionMapper = readPartitionMap(partitionFilePath);

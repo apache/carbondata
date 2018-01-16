@@ -65,6 +65,7 @@ import org.apache.carbondata.core.util.ByteUtil;
 import org.apache.carbondata.core.util.DataFileFooterConverter;
 import org.apache.carbondata.core.util.DataTypeUtil;
 
+import org.apache.commons.lang3.StringUtils;
 import org.xerial.snappy.Snappy;
 
 /**
@@ -96,6 +97,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
   private static int BLOCK_INFO_INDEX = 8;
 
   private static int BLOCK_FOOTER_OFFSET = 9;
+
+  private static int LOCATIONS = 10;
 
   private static int TASK_MIN_VALUES_INDEX = 0;
 
@@ -143,8 +146,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
             loadToUnsafeBlock(fileFooter, segmentProperties, blockInfo.getFilePath(), summaryRow);
       } else {
         // Here it loads info about all blocklets of index
-        summaryRow =
-            loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath(), summaryRow);
+
+        summaryRow = loadToUnsafe(fileFooter, segmentProperties, blockInfo.getFilePath(), summaryRow,
+            blockletDataMapInfo.getLocationMap().get(blockInfo.getFilePath()));
       }
     }
     if (unsafeMemoryDMStore != null) {
@@ -163,7 +167,8 @@ public class BlockletDataMap implements DataMap, Cacheable {
   }
 
   private DataMapRowImpl loadToUnsafe(DataFileFooter fileFooter,
-      SegmentProperties segmentProperties, String filePath, DataMapRowImpl summaryRow) {
+      SegmentProperties segmentProperties, String filePath, DataMapRowImpl summaryRow,
+      String[] locations) {
     int[] minMaxLen = segmentProperties.getColumnsValueSize();
     List<BlockletInfo> blockletList = fileFooter.getBlockletList();
     CarbonRowSchema[] schema = unsafeMemoryDMStore.getSchema();
@@ -221,7 +226,10 @@ public class BlockletDataMap implements DataMap, Cacheable {
         serializedData = stream.toByteArray();
         row.setByteArray(serializedData, ordinal++);
         // Add block footer offset, it is used if we need to read footer of block
-        row.setLong(fileFooter.getBlockInfo().getTableBlockInfo().getBlockOffset(), ordinal);
+        row.setLong(fileFooter.getBlockInfo().getTableBlockInfo().getBlockOffset(), ordinal++);
+        // Add location info
+        String locationStr = StringUtils.join(locations, ',');
+        row.setByteArray(locationStr.getBytes(CarbonCommonConstants.DEFAULT_CHARSET), ordinal);
         unsafeMemoryDMStore.addIndexRowToUnsafe(row);
       } catch (Exception e) {
         throw new RuntimeException(e);
@@ -484,6 +492,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
     // for block footer offset.
     indexSchemas.add(new CarbonRowSchema.FixedCarbonRowSchema(DataTypes.LONG));
 
+    // for locations
+    indexSchemas.add(new CarbonRowSchema.VariableCarbonRowSchema(DataTypes.BYTE_ARRAY));
+
     unsafeMemoryDMStore =
         new UnsafeMemoryDMStore(indexSchemas.toArray(new CarbonRowSchema[indexSchemas.size()]));
   }
@@ -708,6 +719,9 @@ public class BlockletDataMap implements DataMap, Cacheable {
         DataInputStream inputStream = new DataInputStream(stream);
         blockletInfo.readFields(inputStream);
         inputStream.close();
+        blocklet.setLocation(
+            new String(row.getByteArray(LOCATIONS), CarbonCommonConstants.DEFAULT_CHARSET)
+                .split(","));
       } catch (IOException e) {
         throw new RuntimeException(e);
       }
