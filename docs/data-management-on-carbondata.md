@@ -622,10 +622,10 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
 
   Compaction improves the query performance significantly. 
   
-  There are two types of compaction, Minor and Major compaction.
+  There are several types of compaction.
   
   ```
-  ALTER TABLE [db_name.]table_name COMPACT 'MINOR/MAJOR'
+  ALTER TABLE [db_name.]table_name COMPACT 'MINOR/MAJOR/CUSTOM'
   ```
 
   - **Minor Compaction**
@@ -651,6 +651,17 @@ This tutorial is going to introduce all commands and data operations on CarbonDa
   ```
   ALTER TABLE table_name COMPACT 'MAJOR'
   ```
+  
+  - **Custom Compaction**
+  
+  In Custom compaction, user can directly specify segment ids to be merged into one large segment. 
+  All specified segment ids should exist and be valid, otherwise compaction will fail. 
+  Custom compaction is usually done during the off-peak time. 
+  
+  ```
+  ALTER TABLE table_name COMPACT 'CUSTOM' WHERE SEGMENT.ID IN (2,3,4)
+  ```
+  
 
   - **CLEAN SEGMENTS AFTER Compaction**
   

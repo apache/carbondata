@@ -109,7 +109,8 @@ class AggregateDataMapCompactor(carbonLoadModel: CarbonLoadModel,
         //     because it contains the actual In-Process status for the segments.
         //  3. If we read the tablestatus then 8, 9, 10, 11 will keep getting compacted into 8.1.
         //  4. Therefore tablestatus file will be committed in between multiple commits.
-        if (!compactionModel.compactionType.equals(CompactionType.MAJOR)) {
+        if (!compactionModel.compactionType.equals(CompactionType.MAJOR) &&
+          !compactionModel.compactionType.equals(CompactionType.CUSTOM)) {
           if (!identifySegmentsToBeMerged().isEmpty) {
             val uuidTableStaus = CarbonTablePath.getTableStatusFilePathWithUUID(
               carbonTable.getTablePath, uuid)

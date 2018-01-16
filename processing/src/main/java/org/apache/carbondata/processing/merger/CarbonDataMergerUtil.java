@@ -23,6 +23,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
+import org.apache.carbondata.common.exceptions.sql.MalformedCarbonCommandException;
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
@@ -388,13 +389,19 @@ public final class CarbonDataMergerUtil {
    */
   public static List<LoadMetadataDetails> identifySegmentsToBeMerged(
           CarbonLoadModel carbonLoadModel, long compactionSize,
-          List<LoadMetadataDetails> segments, CompactionType compactionType) throws IOException {
+          List<LoadMetadataDetails> segments, CompactionType compactionType,
+          List<String> customSegmentIds) throws IOException, MalformedCarbonCommandException {
     String tablePath = carbonLoadModel.getTablePath();
     Map<String, String> tableLevelProperties = carbonLoadModel.getCarbonDataLoadSchema()
             .getCarbonTable().getTableInfo().getFactTable().getTableProperties();
     List<LoadMetadataDetails> sortedSegments = new ArrayList<LoadMetadataDetails>(segments);
 
     sortSegments(sortedSegments);
+
+    if (CompactionType.CUSTOM == compactionType) {
+      return identitySegmentsToBeMergedBasedOnSpecifiedSegments(sortedSegments,
+              new HashSet<>(customSegmentIds));
+    }
 
     // Check for segments which are qualified for IUD compaction.
     if (CompactionType.IUD_UPDDEL_DELTA == compactionType) {
@@ -442,6 +449,35 @@ public final class CarbonDataMergerUtil {
         return Double.compare(seg1Id, seg2Id);
       }
     });
+  }
+
+  /**
+   * This method will return the list of loads which are specified by user in SQL.
+   *
+   * @param listOfSegments
+   * @param segmentIds
+   * @return
+   */
+  private static List<LoadMetadataDetails> identitySegmentsToBeMergedBasedOnSpecifiedSegments(
+          List<LoadMetadataDetails> listOfSegments,
+          Set<String> segmentIds) throws MalformedCarbonCommandException {
+    Map<String, LoadMetadataDetails> specifiedSegments =
+            new HashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
+    for (LoadMetadataDetails detail : listOfSegments) {
+      if (segmentIds.contains(detail.getLoadName())) {
+        specifiedSegments.put(detail.getLoadName(), detail);
+      }
+    }
+    // all requested segments should exist and be valid
+    for (String segmentId : segmentIds) {
+      if (!specifiedSegments.containsKey(segmentId) ||
+              !isSegmentValid(specifiedSegments.get(segmentId))) {
+        String errMsg = String.format("Segment %s does not exist or is not valid", segmentId);
+        LOGGER.error(errMsg);
+        throw new MalformedCarbonCommandException(errMsg);
+      }
+    }
+    return new ArrayList<>(specifiedSegments.values());
   }
 
   /**
