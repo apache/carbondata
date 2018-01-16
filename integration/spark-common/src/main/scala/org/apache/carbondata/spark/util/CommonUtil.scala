@@ -893,16 +893,28 @@ object CommonUtil {
 
   /**
    * Merge the carbonindex files with in the segment to carbonindexmerge file inside same segment
+   *
+   * @param sparkContext
+   * @param segmentIds
+   * @param tablePath
+   * @param carbonTable
+   * @param mergeIndexProperty
+   * @param readFileFooterFromCarbonDataFile flag to read file footer information from carbondata
+   *                                         file. This will used in case of upgrade from version
+   *                                         which do not store the blocklet info to current version
    */
   def mergeIndexFiles(sparkContext: SparkContext,
       segmentIds: Seq[String],
       tablePath: String,
       carbonTable: CarbonTable,
-      mergeIndexProperty: Boolean): Unit = {
+      mergeIndexProperty: Boolean,
+      readFileFooterFromCarbonDataFile: Boolean = false): Unit = {
     if (mergeIndexProperty) {
-      new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(tablePath,
-        carbonTable.getDatabaseName, carbonTable.getTableName).getTablePath,
-        segmentIds).collect()
+      new CarbonMergeFilesRDD(
+        sparkContext,
+        carbonTable.getTablePath,
+        segmentIds,
+        readFileFooterFromCarbonDataFile).collect()
     } else {
       try {
         CarbonProperties.getInstance()
@@ -910,16 +922,20 @@ object CommonUtil {
         if (CarbonProperties.getInstance().getProperty(
           CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT,
           CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT).toBoolean) {
-          new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(tablePath,
-            carbonTable.getDatabaseName, carbonTable.getTableName).getTablePath,
-            segmentIds).collect()
+          new CarbonMergeFilesRDD(
+            sparkContext,
+            carbonTable.getTablePath,
+            segmentIds,
+            readFileFooterFromCarbonDataFile).collect()
         }
       } catch {
         case _: Exception =>
           if (CarbonCommonConstants.CARBON_MERGE_INDEX_IN_SEGMENT_DEFAULT.toBoolean) {
-            new CarbonMergeFilesRDD(sparkContext, AbsoluteTableIdentifier.from(tablePath,
-              carbonTable.getDatabaseName, carbonTable.getTableName).getTablePath,
-              segmentIds).collect()
+            new CarbonMergeFilesRDD(
+              sparkContext,
+              carbonTable.getTablePath,
+              segmentIds,
+              readFileFooterFromCarbonDataFile).collect()
           }
       }
     }
