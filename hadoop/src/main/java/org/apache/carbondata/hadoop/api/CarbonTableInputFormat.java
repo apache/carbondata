@@ -20,7 +20,6 @@ package org.apache.carbondata.hadoop.api;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.util.ArrayList;
@@ -780,15 +779,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
     return resultFilterredBlocks;
   }
 
-  private CarbonInputSplit convertToCarbonInputSplit(ExtendedBlocklet blocklet)
-      throws IOException {
-    try {
-      blocklet.updateLocations();
-    } catch (FileNotFoundException e) {
-      // In case of clean files there is a chance of carbondata file is deleted but index file
-      // exist inside merged file. So just return null.
-      return null;
-    }
+  private CarbonInputSplit convertToCarbonInputSplit(ExtendedBlocklet blocklet) throws IOException {
     org.apache.carbondata.hadoop.CarbonInputSplit split =
         org.apache.carbondata.hadoop.CarbonInputSplit.from(blocklet.getSegmentId(),
             blocklet.getBlockletId(), new FileSplit(new Path(blocklet.getPath()), 0,

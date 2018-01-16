@@ -24,6 +24,8 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
@@ -32,11 +34,14 @@ import org.apache.carbondata.core.datastore.impl.FileFactory;
 import org.apache.carbondata.core.util.CarbonUtil;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.BlockLocation;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.RemoteIterator;
 import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.io.compress.BZip2Codec;
 import org.apache.hadoop.io.compress.CompressionCodec;
@@ -458,5 +463,54 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   @Override
   public void setPermission(String directoryPath, FsPermission permission, String username,
       String group) throws IOException {
+  }
+
+  @Override
+  public CarbonFile[] listFiles() {
+    FileStatus[] listStatus = null;
+    try {
+      if (null != fileStatus && fileStatus.isDirectory()) {
+        Path path = fileStatus.getPath();
+        listStatus = path.getFileSystem(FileFactory.getConfiguration()).listStatus(path);
+      } else {
+        return new CarbonFile[0];
+      }
+    } catch (IOException e) {
+      LOGGER.error("Exception occured: " + e.getMessage());
+      return new CarbonFile[0];
+    }
+    return getFiles(listStatus);
+  }
+
+  @Override
+  public CarbonFile[] locationAwareListFiles() throws IOException {
+    if (null != fileStatus && fileStatus.isDirectory()) {
+      List<FileStatus> listStatus = new ArrayList<>();
+      Path path = fileStatus.getPath();
+      RemoteIterator<LocatedFileStatus> iter =
+          path.getFileSystem(FileFactory.getConfiguration()).listLocatedStatus(path);
+      while (iter.hasNext()) {
+        listStatus.add(iter.next());
+      }
+      return getFiles(listStatus.toArray(new FileStatus[listStatus.size()]));
+    }
+    return new CarbonFile[0];
+  }
+
+  /**
+   * Get the CarbonFiles from filestatus array
+   */
+  protected abstract CarbonFile[] getFiles(FileStatus[] listStatus);
+
+  @Override public String[] getLocations() throws IOException {
+    BlockLocation[] blkLocations;
+    if (fileStatus instanceof LocatedFileStatus) {
+      blkLocations = ((LocatedFileStatus)fileStatus).getBlockLocations();
+    } else {
+      FileSystem fs = fileStatus.getPath().getFileSystem(FileFactory.getConfiguration());
+      blkLocations = fs.getFileBlockLocations(fileStatus.getPath(), 0L, fileStatus.getLen());
+    }
+
+    return blkLocations[0].getHosts();
   }
 }

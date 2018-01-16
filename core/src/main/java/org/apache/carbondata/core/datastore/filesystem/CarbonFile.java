@@ -34,6 +34,12 @@ public interface CarbonFile {
 
   CarbonFile[] listFiles();
 
+  /**
+   * It returns list of files with location details.
+   * @return
+   */
+  CarbonFile[] locationAwareListFiles() throws IOException;
+
   String getName();
 
   boolean isDirectory();
@@ -131,5 +137,11 @@ public interface CarbonFile {
 
   void setPermission(String directoryPath, FsPermission permission, String username, String group)
       throws IOException;
+
+  /**
+   * Returns locations of the file
+   * @return
+   */
+  String[] getLocations() throws IOException;
 
 }

@@ -168,7 +168,7 @@ public class UnsafeMemoryDMStore {
     }
   }
 
-  public DataMapRow getUnsafeRow(int index) {
+  public UnsafeDataMapRow getUnsafeRow(int index) {
     assert (index < rowCount);
     return new UnsafeDataMapRow(schema, memoryBlock, pointers[index]);
   }

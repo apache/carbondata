@@ -63,7 +63,7 @@ public class BlockletDMComparator implements Comparator<DataMapRow> {
     int compareResult = 0;
     int processedNoDictionaryColumn = numberOfNoDictSortColumns;
     byte[][] firstBytes = splitKey(first.getByteArray(0));
-    byte[][] secondBytes = splitKey(first.getByteArray(0));
+    byte[][] secondBytes = splitKey(second.getByteArray(0));
     byte[] firstNoDictionaryKeys = firstBytes[1];
     ByteBuffer firstNoDictionaryKeyBuffer = ByteBuffer.wrap(firstNoDictionaryKeys);
     byte[] secondNoDictionaryKeys = secondBytes[1];
