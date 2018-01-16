@@ -17,7 +17,10 @@
 
 package org.apache.carbondata.spark.rdd
 
+import java.util
 import java.util.concurrent.ExecutorService
+
+import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.SQLContext
 import org.apache.spark.sql.execution.command.CompactionModel
@@ -39,11 +42,17 @@ abstract class Compactor(carbonLoadModel: CarbonLoadModel,
   def executeCompaction(): Unit
 
   def identifySegmentsToBeMerged(): java.util.List[LoadMetadataDetails] = {
+    val customSegmentIds: util.List[String] = if (compactionModel.customSegmentIds.isDefined) {
+      compactionModel.customSegmentIds.get.asJava
+    } else {
+      new util.ArrayList[String]()
+    }
     CarbonDataMergerUtil
       .identifySegmentsToBeMerged(carbonLoadModel,
         compactionModel.compactionSize,
         carbonLoadModel.getLoadMetadataDetails,
-        compactionModel.compactionType)
+        compactionModel.compactionType,
+        customSegmentIds)
   }
 
   def deletePartialLoadsInCompaction(): Unit = {

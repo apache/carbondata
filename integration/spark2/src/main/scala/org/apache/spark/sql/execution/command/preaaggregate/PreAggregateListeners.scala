@@ -40,6 +40,7 @@ import org.apache.carbondata.core.util.CarbonUtil
 import org.apache.carbondata.core.util.path.CarbonTablePath
 import org.apache.carbondata.events._
 import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadMetadataEvent, LoadTablePostExecutionEvent, LoadTablePostStatusUpdateEvent, LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
+import org.apache.carbondata.processing.merger.CompactionType
 
 object AlterTableDropPartitionPreStatusListener extends OperationEventListener {
   /**
@@ -564,6 +565,9 @@ object AlterPreAggregateTableCompactionPostListener extends OperationEventListen
     val compactionEvent = event.asInstanceOf[AlterTableCompactionPreStatusUpdateEvent]
     val carbonTable = compactionEvent.carbonTable
     val compactionType = compactionEvent.carbonMergerMapping.campactionType
+    if (compactionType == CompactionType.CUSTOM) {
+      return
+    }
     val carbonLoadModel = compactionEvent.carbonLoadModel
     val sparkSession = compactionEvent.sparkSession
     if (CarbonUtil.hasAggregationDataMap(carbonTable)) {
