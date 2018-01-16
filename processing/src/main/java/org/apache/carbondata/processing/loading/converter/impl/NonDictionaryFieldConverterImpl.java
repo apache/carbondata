@@ -70,13 +70,14 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
       try {
         byte[] value = DataTypeUtil
             .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
-        if (dataType == DataTypes.STRING) {
-          assert value.length <= CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT;
+        if (dataType == DataTypes.STRING
+            && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+          throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
+              + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
         }
         row.update(value, index);
-      } catch (AssertionError ae) {
-        throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
-            + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
+      } catch (CarbonDataLoadingException e) {
+        throw e;
       } catch (Throwable ex) {
         if (dimensionValue.length() > 0 || (dimensionValue.length() == 0 && isEmptyBadRecord)) {
           String message = logHolder.getColumnMessageMap().get(column.getColName());
