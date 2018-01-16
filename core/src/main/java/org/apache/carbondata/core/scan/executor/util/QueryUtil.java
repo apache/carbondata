@@ -281,10 +281,8 @@ public class QueryUtil {
       List<QueryDimension> queryDimensions, Set<CarbonDimension> filterComplexDimensions,
       AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider)
       throws IOException {
-    // to store dimension unique column id list, this is required as
-    // dimension can be present in
-    // query dimension, as well as some aggregation function will be applied
-    // in the same dimension
+    // to store complex dimension and its child id unique column id list, this is required as
+    // dimension can be present in  projection and filter
     // so we need to get only one instance of dictionary
     // direct dictionary skip is done only for the dictionary lookup
     Set<String> dictionaryDimensionFromQuery = new HashSet<String>();
@@ -294,20 +292,19 @@ public class QueryUtil {
       // write encoding dictionary
       if (CarbonUtil.hasEncoding(encodingList, Encoding.DICTIONARY) && !CarbonUtil
           .hasEncoding(encodingList, Encoding.DIRECT_DICTIONARY) && !CarbonUtil
-          .hasEncoding(encodingList, Encoding.IMPLICIT)) {
-
-        if (queryDimensions.get(i).getDimension().getNumberOfChild() == 0) {
-          dictionaryDimensionFromQuery.add(queryDimensions.get(i).getDimension().getColumnId());
-        }
-        if (queryDimensions.get(i).getDimension().getNumberOfChild() > 0) {
-          getChildDimensionDictionaryDetail(queryDimensions.get(i).getDimension(),
-              dictionaryDimensionFromQuery);
-        }
+          .hasEncoding(encodingList, Encoding.IMPLICIT)
+          && queryDimensions.get(i).getDimension().getNumberOfChild() > 0) {
+        getChildDimensionDictionaryDetail(queryDimensions.get(i).getDimension(),
+            dictionaryDimensionFromQuery);
       }
     }
     Iterator<CarbonDimension> iterator = filterComplexDimensions.iterator();
     while (iterator.hasNext()) {
-      getChildDimensionDictionaryDetail(iterator.next(), dictionaryDimensionFromQuery);
+      CarbonDimension filterDim = iterator.next();
+      // only to add complex dimension
+      if (filterDim.getNumberOfChild() > 0) {
+        getChildDimensionDictionaryDetail(filterDim, dictionaryDimensionFromQuery);
+      }
     }
     // converting to list as api exposed needed list which i think
     // is not correct
@@ -348,6 +345,10 @@ public class QueryUtil {
   private static Map<String, Dictionary> getDictionaryMap(List<String> dictionaryColumnIdList,
       AbsoluteTableIdentifier absoluteTableIdentifier, TableProvider tableProvider)
       throws IOException {
+    // if any complex dimension not present in query then return the empty map
+    if (dictionaryColumnIdList.size() == 0) {
+      return new HashMap<>();
+    }
     // this for dictionary unique identifier
     List<DictionaryColumnUniqueIdentifier> dictionaryColumnUniqueIdentifiers =
         getDictionaryColumnUniqueIdentifierList(dictionaryColumnIdList,
