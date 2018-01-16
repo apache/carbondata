@@ -67,17 +67,21 @@ public class NonDictionaryFieldConverterImpl implements FieldConverter {
       } else if (dataType == DataTypes.TIMESTAMP) {
         dateFormat = dataField.getTimestampFormat();
       }
+      boolean exceedStringMaxLength = false;
       try {
         byte[] value = DataTypeUtil
             .getBytesBasedOnDataTypeForNoDictionaryColumn(dimensionValue, dataType, dateFormat);
-        if (dataType == DataTypes.STRING) {
-          assert value.length <= CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT;
+        if (dataType == DataTypes.STRING
+            && value.length > CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT) {
+          exceedStringMaxLength = true;
+          throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
+              + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
         }
         row.update(value, index);
-      } catch (AssertionError ae) {
-        throw new CarbonDataLoadingException("Dataload failed, String size cannot exceed "
-            + CarbonCommonConstants.MAX_CHARS_PER_COLUMN_DEFAULT + " bytes");
       } catch (Throwable ex) {
+        if (exceedStringMaxLength) {
+          throw ex;
+        }
         if (dimensionValue.length() > 0 || (dimensionValue.length() == 0 && isEmptyBadRecord)) {
           String message = logHolder.getColumnMessageMap().get(column.getColName());
           if (null == message) {
