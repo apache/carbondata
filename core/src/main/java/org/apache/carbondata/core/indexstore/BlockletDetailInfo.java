@@ -16,14 +16,20 @@
  */
 package org.apache.carbondata.core.indexstore;
 
+import java.io.ByteArrayInputStream;
 import java.io.DataInput;
+import java.io.DataInputStream;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.carbondata.core.metadata.blocklet.BlockletInfo;
+import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
 import org.apache.hadoop.io.Writable;
+import org.xerial.snappy.Snappy;
 
 /**
  * Blocklet detail information to be sent to each executor
@@ -43,6 +49,12 @@ public class BlockletDetailInfo implements Serializable, Writable {
   private long schemaUpdatedTimeStamp;
 
   private BlockletInfo blockletInfo;
+
+  private long blockFooterOffset;
+
+  private List<ColumnSchema> columnSchemas;
+
+  private byte[] columnSchemaBinary;
 
   public int getRowCount() {
     return rowCount;
@@ -102,7 +114,13 @@ public class BlockletDetailInfo implements Serializable, Writable {
       out.writeInt(dimLens[i]);
     }
     out.writeLong(schemaUpdatedTimeStamp);
-    blockletInfo.write(out);
+    out.writeBoolean(blockletInfo != null);
+    if (blockletInfo != null) {
+      blockletInfo.write(out);
+    }
+    out.writeLong(blockFooterOffset);
+    out.writeInt(columnSchemaBinary.length);
+    out.write(columnSchemaBinary);
   }
 
   @Override public void readFields(DataInput in) throws IOException {
@@ -115,8 +133,51 @@ public class BlockletDetailInfo implements Serializable, Writable {
       dimLens[i] = in.readInt();
     }
     schemaUpdatedTimeStamp = in.readLong();
-    blockletInfo = new BlockletInfo();
-    blockletInfo.readFields(in);
+    if (in.readBoolean()) {
+      blockletInfo = new BlockletInfo();
+      blockletInfo.readFields(in);
+    }
+    blockFooterOffset = in.readLong();
+    int bytesSize = in.readInt();
+    byte[] schemaArray = new byte[bytesSize];
+    in.readFully(schemaArray);
+    readColumnSchema(schemaArray);
+  }
+
+  /**
+   * Read column schema from binary
+   * @param schemaArray
+   * @throws IOException
+   */
+  public void readColumnSchema(byte[] schemaArray) throws IOException {
+    // uncompress it.
+    schemaArray = Snappy.uncompress(schemaArray);
+    ByteArrayInputStream schemaStream = new ByteArrayInputStream(schemaArray);
+    DataInput schemaInput = new DataInputStream(schemaStream);
+    columnSchemas = new ArrayList<>();
+    int size = schemaInput.readShort();
+    for (int i = 0; i < size; i++) {
+      ColumnSchema columnSchema = new ColumnSchema();
+      columnSchema.readFields(schemaInput);
+      columnSchemas.add(columnSchema);
+    }
+  }
+
+  /**
+   * Create copy of BlockletDetailInfo
+   */
+  public BlockletDetailInfo copy() {
+    BlockletDetailInfo detailInfo = new BlockletDetailInfo();
+    detailInfo.rowCount = rowCount;
+    detailInfo.pagesCount = pagesCount;
+    detailInfo.versionNumber = versionNumber;
+    detailInfo.blockletId = blockletId;
+    detailInfo.dimLens = dimLens;
+    detailInfo.schemaUpdatedTimeStamp = schemaUpdatedTimeStamp;
+    detailInfo.blockletInfo = blockletInfo;
+    detailInfo.blockFooterOffset = blockFooterOffset;
+    detailInfo.columnSchemas = columnSchemas;
+    return detailInfo;
   }
 
   public Short getBlockletId() {
@@ -125,5 +186,29 @@ public class BlockletDetailInfo implements Serializable, Writable {
 
   public void setBlockletId(Short blockletId) {
     this.blockletId = blockletId;
+  }
+
+  public long getBlockFooterOffset() {
+    return blockFooterOffset;
+  }
+
+  public void setBlockFooterOffset(long blockFooterOffset) {
+    this.blockFooterOffset = blockFooterOffset;
+  }
+
+  public List<ColumnSchema> getColumnSchemas() {
+    return columnSchemas;
+  }
+
+  public void setColumnSchemas(List<ColumnSchema> columnSchemas) {
+    this.columnSchemas = columnSchemas;
+  }
+
+  public void setColumnSchemaBinary(byte[] columnSchemaBinary) {
+    this.columnSchemaBinary = columnSchemaBinary;
+  }
+
+  public byte[] getColumnSchemaBinary() {
+    return columnSchemaBinary;
   }
 }
