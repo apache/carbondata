@@ -185,8 +185,8 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
       sql(s"""insert into staticpartitioncompaction PARTITION(deptname='software') select empno,doj,workgroupcategoryname,deptno,projectcode,projectjoindate,projectenddate,attendance,utilization,salary,workgroupcategory,empname,designation from originTable""")
     }
     sql("CLEAN FILES FOR TABLE staticpartitioncompaction").show()
-    var segments = sql("SHOW SEGMENTS FOR TABLE staticpartitioncompaction")
-    var segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
+    val segments = sql("SHOW SEGMENTS FOR TABLE staticpartitioncompaction")
+    val segmentSequenceIds = segments.collect().map { each => (each.toSeq) (0) }
     assert(segmentSequenceIds.size==1)
     assert(segmentSequenceIds.contains("0.1"))
     CarbonProperties.getInstance()
