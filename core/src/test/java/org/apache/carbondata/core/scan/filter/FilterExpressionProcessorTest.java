@@ -19,6 +19,7 @@ import org.apache.carbondata.core.scan.expression.LiteralExpression;
 import org.apache.carbondata.core.scan.expression.conditional.InExpression;
 import org.apache.carbondata.core.scan.filter.intf.ExpressionType;
 
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -60,7 +61,7 @@ public class FilterExpressionProcessorTest extends AbstractDictionaryCacheTest {
     Object result = method
         .invoke(filterExpressionProcessor, ExpressionType.EQUALS, false, equalToExpression, null,
             null);
-    assert (result.getClass().getName()
+    Assert.assertTrue(result.getClass().getName()
         .equals("org.apache.carbondata.core.scan.filter.resolver.ConditionalFilterResolverImpl"));
   }
 }

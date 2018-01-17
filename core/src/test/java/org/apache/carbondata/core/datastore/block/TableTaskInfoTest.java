@@ -17,6 +17,8 @@
 package org.apache.carbondata.core.datastore.block;
 
 import org.apache.carbondata.core.metadata.ColumnarFormatVersion;
+
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -44,7 +46,7 @@ public class TableTaskInfoTest {
   @Test public void getLocationsTest() {
     String locations[] = { "loc1", "loc2", "loc3", "loc4", "loc5" };
     String res[] = tableTaskInfo.getLocations();
-    assert (Arrays.equals(locations, res));
+    Assert.assertTrue(Arrays.equals(locations, res));
   }
 
   @Test public void maxNoNodesTest() {
@@ -56,7 +58,7 @@ public class TableTaskInfoTest {
     locs.add("loc5");
 
     List<String> res = TableTaskInfo.maxNoNodes(tableBlockInfoList);
-    assert (res.equals(locs));
+    Assert.assertTrue(res.equals(locs));
   }
 
   @Test public void maxNoNodesTestForElse() {
@@ -73,6 +75,6 @@ public class TableTaskInfoTest {
     tableBlockInfoListTest.add(1, new TableBlockInfo("filePath", 2, "segmentID", locations1, 6, ColumnarFormatVersion.V1, null));
 
     List<String> res = TableTaskInfo.maxNoNodes(tableBlockInfoListTest);
-    assert (res.equals(locs));
+    Assert.assertTrue(res.equals(locs));
   }
 }
