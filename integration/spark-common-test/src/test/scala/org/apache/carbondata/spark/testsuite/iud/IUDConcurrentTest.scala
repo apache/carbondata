@@ -25,18 +25,31 @@ import scala.collection.JavaConverters._
 
 import org.apache.spark.sql.test.util.QueryTest
 import org.apache.spark.sql.{DataFrame, SaveMode}
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.datamap.dev.{DataMap, DataMapFactory, DataMapWriter}
+import org.apache.carbondata.core.datamap.{DataMapDistributable, DataMapMeta, DataMapStoreManager}
+import org.apache.carbondata.core.datastore.page.ColumnPage
+import org.apache.carbondata.core.indexstore.schema.FilterType
+import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.util.CarbonProperties
+import org.apache.carbondata.events.Event
+import org.apache.carbondata.spark.testsuite.datamap.C2DataMapFactory
 
-class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll {
+class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll with BeforeAndAfterEach {
   private val executorService: ExecutorService = Executors.newFixedThreadPool(10)
   var df: DataFrame = _
 
   override def beforeAll {
     dropTable()
     buildTestData()
+
+    // register hook to the table to sleep, thus the other command will be executed
+    DataMapStoreManager.getInstance().createAndRegisterDataMap(
+      AbsoluteTableIdentifier.from(storeLocation + "/orders", "default", "orders"),
+      classOf[WaitingDataMap].getName,
+      "test")
   }
 
   private def buildTestData(): Unit = {
@@ -48,7 +61,7 @@ class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll {
     import sqlContext.implicits._
 
     val sdf = new SimpleDateFormat("yyyy-MM-dd")
-    df = sqlContext.sparkSession.sparkContext.parallelize(1 to 1500000)
+    df = sqlContext.sparkSession.sparkContext.parallelize(1 to 150000)
       .map(value => (value, new java.sql.Date(sdf.parse("2015-07-" + (value % 10 + 10)).getTime),
         "china", "aaa" + value, "phone" + 555 * value, "ASD" + (60000 + value), 14999 + value,
         "ordersTable" + value))
@@ -62,8 +75,7 @@ class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll {
     df.write
       .format("carbondata")
       .option("tableName", tableName)
-      .option("tempCSV", "true")
-      .option("compress", "true")
+      .option("tempCSV", "false")
       .mode(SaveMode.Overwrite)
       .save()
   }
@@ -73,34 +85,50 @@ class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll {
     dropTable()
   }
 
+  override def beforeEach(): Unit = {
+    Global.compactionRunning = false
+  }
+
   private def dropTable() = {
     sql("DROP TABLE IF EXISTS orders")
     sql("DROP TABLE IF EXISTS orders_overwrite")
   }
 
-  test("Concurrency test for Insert-Overwrite and compact") {
-    val tasks = new java.util.ArrayList[Callable[String]]()
-    tasks.add(new QueryTask(s"insert overWrite table orders select * from orders_overwrite"))
-    tasks.add(new QueryTask("alter table orders compact 'MINOR'"))
-    val futures: util.List[Future[String]] = executorService.invokeAll(tasks)
-    val results = futures.asScala.map(_.get)
-    assert(results.contains("PASS"))
+  // run the input SQL and block until it is running
+  private def runSqlAsync(sql: String): Future[String] = {
+    assert(!Global.compactionRunning)
+    val future = executorService.submit(
+      new QueryTask(sql)
+    )
+    while (!Global.compactionRunning) {
+      Thread.sleep(10)
+    }
+    future
   }
 
-  test("Concurrency test for Insert-Overwrite and update") {
-    val tasks = new java.util.ArrayList[Callable[String]]()
-    tasks.add(new QueryTask(s"insert overWrite table orders select * from orders_overwrite"))
-    tasks.add(new QueryTask("update orders set (o_country)=('newCountry') where o_country='china'"))
-    val futures: util.List[Future[String]] = executorService.invokeAll(tasks)
-    val results = futures.asScala.map(_.get)
-    assert("PASS".equals(results.head) && "FAIL".equals(results(1)))
+  test("compaction should fail if insert overwrite is in progress") {
+    val future = runSqlAsync("insert overWrite table orders select * from orders_overwrite")
+    val ex = intercept[Exception]{
+      sql("alter table orders compact 'MINOR'")
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains("Cannot run data loading and compaction on same table concurrently"))
+  }
+
+  test("update should fail if insert overwrite is in progress") {
+    val future = runSqlAsync("insert overWrite table orders select * from orders_overwrite")
+    val ex = intercept[Exception] {
+      sql("update orders set (o_country)=('newCountry') where o_country='china'").show
+    }
+    assert(future.get.contains("PASS"))
+    assert(ex.getMessage.contains("Cannot run data loading and update on same table concurrently"))
   }
 
   class QueryTask(query: String) extends Callable[String] {
     override def call(): String = {
       var result = "PASS"
       try {
-        sql(query).show()
+        sql(query).collect()
       } catch {
         case exception: Exception => LOGGER.error(exception.getMessage)
           result = "FAIL"
@@ -109,4 +137,47 @@ class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll {
     }
   }
 
+}
+
+object Global {
+  var compactionRunning = false
+}
+
+class WaitingDataMap() extends DataMapFactory {
+
+  override def init(identifier: AbsoluteTableIdentifier, dataMapName: String): Unit = { }
+
+  override def fireEvent(event: Event): Unit = ???
+
+  override def clear(segmentId: String): Unit = {}
+
+  override def clear(): Unit = {}
+
+  override def getDataMaps(distributable: DataMapDistributable): java.util.List[DataMap] = ???
+
+  override def getDataMaps(segmentId: String): util.List[DataMap] = ???
+
+  override def createWriter(segmentId: String): DataMapWriter = {
+    new DataMapWriter {
+      override def onPageAdded(blockletId: Int, pageId: Int, pages: Array[ColumnPage]): Unit = { }
+
+      override def onBlockletEnd(blockletId: Int): Unit = { }
+
+      override def onBlockEnd(blockId: String): Unit = { }
+
+      override def onBlockletStart(blockletId: Int): Unit = { }
+
+      override def onBlockStart(blockId: String): Unit = {
+        // trigger the second SQL to execute
+        Global.compactionRunning = true
+
+        // wait for 1 second to let second SQL to finish
+        Thread.sleep(1000)
+      }
+    }
+  }
+
+  override def getMeta: DataMapMeta = new DataMapMeta(List("o_country").asJava, FilterType.EQUALTO)
+
+  override def toDistributable(segmentId: String): util.List[DataMapDistributable] = ???
 }
