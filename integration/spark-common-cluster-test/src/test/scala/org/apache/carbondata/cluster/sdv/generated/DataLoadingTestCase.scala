@@ -731,7 +731,6 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table uniqdata""").collect
   }
 
-
   //Show loads--->Action=Fail--->Logger=False
   test("BadRecord_Dataload_025", Include) {
     dropTable("uniqdata")
@@ -744,7 +743,6 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
     }
      sql(s"""drop table uniqdata""").collect
   }
-
 
   //when insert into null data,query table output NullPointerException
   test("HQ_DEFECT_2016111509706", Include) {
