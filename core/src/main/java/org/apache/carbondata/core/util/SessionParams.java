@@ -26,6 +26,7 @@ import org.apache.carbondata.common.logging.LogService;
 import org.apache.carbondata.common.logging.LogServiceFactory;
 import org.apache.carbondata.core.cache.CacheProvider;
 import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.constants.CarbonLoadOptionConstants;
 import org.apache.carbondata.core.exception.InvalidConfigurationException;
 
 import static org.apache.carbondata.core.constants.CarbonCommonConstants.CARBON_CUSTOM_BLOCK_DISTRIBUTION;
@@ -95,6 +96,9 @@ public class SessionParams implements Serializable {
       throws InvalidConfigurationException {
     boolean isValidConf = validateKeyValue(key, value);
     if (isValidConf) {
+      if (key.equals(CarbonLoadOptionConstants.CARBON_OPTIONS_BAD_RECORDS_ACTION)) {
+        value = value.toUpperCase();
+      }
       if (doAuditing) {
         LOGGER.audit("The key " + key + " with value " + value + " added in the session param");
       }

@@ -731,7 +731,6 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table uniqdata""").collect
   }
 
-
   //Show loads--->Action=Fail--->Logger=False
   test("BadRecord_Dataload_025", Include) {
     dropTable("uniqdata")
@@ -745,6 +744,34 @@ class DataLoadingTestCase extends QueryTest with BeforeAndAfterAll {
      sql(s"""drop table uniqdata""").collect
   }
 
+  test("BadRecord_Dataload_026", Include) {
+    dropTable("sales")
+    sql(
+      """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+    intercept[Exception] {
+      sql(s"LOAD DATA local inpath '${ resourcesPath }/badrecords/datasample.csv' INTO TABLE sales OPTIONS ('bad_records_logger_enable'='true','bad_records_action'='fail', 'DELIMITER'=" +
+        " ',', 'QUOTECHAR'= '\"')")
+    }
+    checkAnswer(s"""select count(*) from sales""",
+      Seq(Row(0)), "BadRecord_Dataload_026")
+    sql("drop table if exists sales")
+  }
+
+  test("BadRecord_Dataload_027", Include) {
+    dropTable("sales")
+    sql(
+      """CREATE TABLE IF NOT EXISTS sales(ID BigInt, date Timestamp, country String,
+          actual_price Double, Quantity int, sold_price Decimal(19,2)) STORED BY 'carbondata'""")
+    CarbonProperties.getInstance()
+      .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, "yyyy/MM/dd")
+      sql(s"LOAD DATA local inpath '${ resourcesPath }/badrecords/datasample.csv' INTO TABLE sales OPTIONS ('bad_records_logger_enable'='true','bad_records_action'='ignore', 'DELIMITER'=" +
+          " ',', 'QUOTECHAR'= '\"')")
+    checkAnswer(s"""select count(*) from sales""", Seq(Row(2)), "BadRecord_Dataload_027")
+    sql("drop table if exists sales")
+  }
 
   //when insert into null data,query table output NullPointerException
   test("HQ_DEFECT_2016111509706", Include) {
