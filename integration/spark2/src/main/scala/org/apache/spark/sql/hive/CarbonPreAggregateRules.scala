@@ -263,7 +263,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case agg@Aggregate(
         grExp,
         aggExp,
-        CarbonSubqueryAlias(_, child@CarbonSubqueryAlias(_, l: LogicalRelation)))
+        CarbonSubqueryAlias(alias1, child@CarbonSubqueryAlias(alias2, l: LogicalRelation)))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
            l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
              metaData.hasAggregateDataMapSchema =>
@@ -295,7 +295,12 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                 agg)
             Aggregate(updatedGroupExp,
               updatedAggExp,
-              newChild)
+              CarbonReflectionUtils
+                .getSubqueryAlias(sparkSession,
+                  Some(alias1),
+                  CarbonReflectionUtils
+                    .getSubqueryAlias(sparkSession, Some(alias2), newChild, None),
+                  None))
           } else {
             agg
           }
@@ -306,7 +311,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case agg@Aggregate(
         grExp,
         aggExp,
-        child@CarbonSubqueryAlias(_, l: LogicalRelation))
+        child@CarbonSubqueryAlias(alias, l: LogicalRelation))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
            l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
              metaData.hasAggregateDataMapSchema =>
@@ -338,7 +343,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                 agg)
             Aggregate(updatedGroupExp,
               updatedAggExp,
-              newChild)
+              CarbonReflectionUtils
+                .getSubqueryAlias(sparkSession, Some(alias), newChild, None))
           } else {
             agg
           }
@@ -349,7 +355,7 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
       case agg@Aggregate(
         grExp,
         aggExp,
-        Filter(expression, child@CarbonSubqueryAlias(_, l: LogicalRelation)))
+        Filter(expression, child@CarbonSubqueryAlias(alias, l: LogicalRelation)))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
            l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
              metaData.hasAggregateDataMapSchema =>
@@ -362,17 +368,21 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           carbonTable,
           list,
           aggregateExpressions)
+
+        if (isValidPlan) {
+          isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(expression)
+        }
+
         // getting the columns from filter expression
-        isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(expression)
         if (isValidPlan) {
           extractColumnFromExpression(expression, list, carbonTable, true)
         }
-        if(isValidPlan) {
+        if (isValidPlan) {
           val (aggDataMapSchema, childPlan) = getChildDataMapForTransformation(list,
             aggregateExpressions,
             carbonTable,
             agg)
-          if(null != aggDataMapSchema && null!= childPlan) {
+          if (null != aggDataMapSchema && null != childPlan) {
             val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
             val (updatedGroupExp, updatedAggExp, newChild, updatedFilterExpression) =
               getUpdatedExpressions(grExp,
@@ -387,7 +397,8 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
             Aggregate(updatedGroupExp,
               updatedAggExp,
               Filter(updatedFilterExpression.get,
-                newChild))
+                CarbonReflectionUtils
+                  .getSubqueryAlias(sparkSession, Some(alias), newChild, None)))
           } else {
             agg
           }
@@ -395,33 +406,44 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
           agg
         }
       case agg@Aggregate(
-      grExp,
-      aggExp,
-      Filter(expression, CarbonSubqueryAlias(_, child@CarbonSubqueryAlias(_, l: LogicalRelation))))
+        grExp,
+        aggExp,
+        Filter(
+          expression,
+          CarbonSubqueryAlias(alias1, child@CarbonSubqueryAlias(alias2, l: LogicalRelation))))
         if l.relation.isInstanceOf[CarbonDatasourceHadoopRelation] &&
            l.relation.asInstanceOf[CarbonDatasourceHadoopRelation].carbonRelation.
              metaData.hasAggregateDataMapSchema =>
         val carbonTable = getCarbonTable(l)
         val list = scala.collection.mutable.HashSet.empty[QueryColumn]
         val aggregateExpressions = scala.collection.mutable.HashSet.empty[AggregateExpression]
-        val isValidPlan = extractQueryColumnsFromAggExpression(
+        var isValidPlan = extractQueryColumnsFromAggExpression(
           grExp,
           aggExp,
           carbonTable,
           list,
           aggregateExpressions)
-        if(isValidPlan) {
+
+        if (isValidPlan) {
+          isValidPlan = !CarbonReflectionUtils.hasPredicateSubquery(expression)
+        }
+
+        // getting the columns from filter expression
+        if (isValidPlan) {
+          extractColumnFromExpression(expression, list, carbonTable, true)
+        }
+        if (isValidPlan) {
           val (aggDataMapSchema, childPlan) = getChildDataMapForTransformation(list,
             aggregateExpressions,
             carbonTable,
             agg)
-          if(null != aggDataMapSchema && null!= childPlan) {
+          if (null != aggDataMapSchema && null != childPlan) {
             val attributes = childPlan.output.asInstanceOf[Seq[AttributeReference]]
-            val (updatedGroupExp, updatedAggExp, newChild, None) =
+            val (updatedGroupExp, updatedAggExp, newChild, updatedFilterExpression) =
               getUpdatedExpressions(grExp,
                 aggExp,
                 child,
-                None,
+                Some(expression),
                 aggDataMapSchema,
                 attributes,
                 childPlan,
@@ -429,7 +451,13 @@ case class CarbonPreAggregateQueryRules(sparkSession: SparkSession) extends Rule
                 agg)
             Aggregate(updatedGroupExp,
               updatedAggExp,
-              newChild)
+              Filter(updatedFilterExpression.get,
+                CarbonReflectionUtils
+                  .getSubqueryAlias(sparkSession,
+                    Some(alias1),
+                    CarbonReflectionUtils
+                      .getSubqueryAlias(sparkSession, Some(alias2), newChild, None),
+                    None)))
           } else {
             agg
           }
