@@ -285,6 +285,20 @@ test("test PreAggregate table selection with timeseries and normal together") {
     preAggTableValidator(df.queryExecution.analyzed, "maintabletime_agg1_year")
 
   }
+
+  test("test table selection when unsupported aggregate function is present") {
+    sql("drop table if exists maintabletime")
+    sql(
+      "create table maintabletime(year int,month int,name string,salary int,dob string) stored" +
+      " by 'carbondata' tblproperties('sort_scope'='Global_sort','table_blocksize'='23'," +
+      "'sort_columns'='month,year,name')")
+    sql("insert into maintabletime select 10,11,'x',12,'2014-01-01 00:00:00'")
+    sql(
+      "create datamap agg0 on table maintabletime using 'preaggregate' as select name,sum(salary) from " +
+      "maintabletime group by name")
+
+    sql("select var_samp(name) from maintabletime  where name='Mikka' ")
+  }
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
     sql("drop table if exists lineitem")
