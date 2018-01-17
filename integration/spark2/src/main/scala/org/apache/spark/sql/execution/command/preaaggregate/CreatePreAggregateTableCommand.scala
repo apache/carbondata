@@ -29,6 +29,7 @@ import org.apache.spark.sql.execution.command.timeseries.TimeSeriesUtil
 import org.apache.spark.sql.parser.CarbonSpark2SqlParser
 
 import org.apache.carbondata.core.constants.CarbonCommonConstants
+import org.apache.carbondata.core.metadata.schema.table.AggregationDataMapSchema
 import org.apache.carbondata.core.statusmanager.SegmentStatusManager
 
 /**
@@ -151,12 +152,23 @@ case class CreatePreAggregateTableCommand(
     val loadAvailable = SegmentStatusManager.readLoadMetadata(parentCarbonTable.getMetaDataFilepath)
       .nonEmpty
     if (loadAvailable) {
+      val updatedQuery = if (timeSeriesFunction.isDefined) {
+        val dataMap = parentCarbonTable.getTableInfo.getDataMapSchemaList.asScala
+          .filter(p => p.getDataMapName
+            .equalsIgnoreCase(dataMapName)).head
+          .asInstanceOf[AggregationDataMapSchema]
+        PreAggregateUtil.createTimeSeriesSelectQueryFromMain(dataMap.getChildSchema,
+          parentCarbonTable.getTableName,
+          parentCarbonTable.getDatabaseName)
+      } else {
+        queryString
+      }
       // Passing segmentToLoad as * because we want to load all the segments into the
       // pre-aggregate table even if the user has set some segments on the parent table.
       PreAggregateUtil.startDataLoadForDataMap(
           parentCarbonTable,
           tableIdentifier,
-          queryString,
+          updatedQuery,
           segmentToLoad = "*",
           validateSegments = true,
           isOverwrite = false,

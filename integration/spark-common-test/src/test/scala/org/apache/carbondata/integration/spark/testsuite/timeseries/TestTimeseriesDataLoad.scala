@@ -25,16 +25,34 @@ import org.scalatest.{BeforeAndAfterAll, Ignore}
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.util.CarbonProperties
 
-@Ignore
 class TestTimeseriesDataLoad extends QueryTest with BeforeAndAfterAll {
 
   override def beforeAll: Unit = {
     CarbonProperties.getInstance()
       .addProperty(CarbonCommonConstants.CARBON_TIMESTAMP_FORMAT, CarbonCommonConstants.CARBON_TIMESTAMP_DEFAULT_FORMAT)
     sql("drop table if exists mainTable")
+    sql("drop table if exists table_03")
     sql("CREATE TABLE mainTable(mytime timestamp, name string, age int) STORED BY 'org.apache.carbondata.format'")
     sql("create datamap agg0 on table mainTable using 'preaggregate' DMPROPERTIES ('timeseries.eventTime'='mytime', 'timeseries.hierarchy'='second=1,minute=1,hour=1,day=1,month=1,year=1') as select mytime, sum(age) from mainTable group by mytime")
     sql(s"LOAD DATA LOCAL INPATH '$resourcesPath/timeseriestest.csv' into table mainTable")
+    sql("CREATE TABLE table_03 (imei string,age int,mac string,productdate timestamp,updatedate timestamp,gamePointId double,contractid double ) STORED BY 'org.apache.carbondata.format'")
+    sql(s"LOAD DATA inpath '$resourcesPath/data_sort.csv' INTO table table_03 options ('DELIMITER'=',', 'QUOTECHAR'='','FILEHEADER'='imei,age,mac,productdate,updatedate,gamePointId,contractid')")
+    sql("create datamap ag1 on table table_03 using 'preaggregate' DMPROPERTIES ( 'timeseries.eventtime'='productdate','timeseries.hierarchy'='second=1,minute=1,hour=1,day=1,month=1,year=1')as select productdate,mac,sum(age) from table_03 group by productdate,mac")
+
+  }
+  test("test Year level timeseries data validation1 ") {
+    checkAnswer( sql("select count(*) from table_03_ag1_year"),
+      Seq(Row(4)))
+  }
+
+  test("test month level timeseries data validation1 ") {
+    checkAnswer( sql("select count(*) from table_03_ag1_month"),
+      Seq(Row(4)))
+  }
+
+  test("test day level timeseries data validation1 ") {
+    checkAnswer( sql("select count(*) from table_03_ag1_day"),
+      Seq(Row(12)))
   }
 
   test("test Year level timeseries data validation") {
@@ -89,5 +107,6 @@ class TestTimeseriesDataLoad extends QueryTest with BeforeAndAfterAll {
 
   override def afterAll: Unit = {
     sql("drop table if exists mainTable")
+    sql("drop table if exists table_03")
   }
 }
