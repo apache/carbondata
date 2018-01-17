@@ -50,6 +50,7 @@ import mockit.Mock;
 import mockit.MockUp;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.junit.AfterClass;
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -1012,36 +1013,36 @@ public class CarbonUtilTest {
   public void testSplitSchemaStringToMapWithLessThanSplitLen() {
     String schema = generateString(399);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
-    assert (map.size() == 2);
+    Assert.assertTrue(map.size() == 2);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
-    assert (schemaString.length() > schema.length());
+    Assert.assertTrue(schemaString.length() > schema.length());
   }
 
   @Test
   public void testSplitSchemaStringToMapWithEqualThanSplitLen() {
     String schema = generateString(4000);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
-    assert (map.size() == 2);
+    Assert.assertTrue(map.size() == 2);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
-    assert (schemaString.length() > schema.length());
+    Assert.assertTrue(schemaString.length() > schema.length());
   }
 
   @Test
   public void testSplitSchemaStringToMapWithMoreThanSplitLen() {
     String schema = generateString(7999);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
-    assert (map.size() == 3);
+    Assert.assertTrue(map.size() == 3);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
-    assert (schemaString.length() > schema.length());
+    Assert.assertTrue(schemaString.length() > schema.length());
   }
 
   @Test
   public void testSplitSchemaStringToMapWithMultiplesOfSplitLen() {
     String schema = generateString(12000);
     Map<String, String> map = CarbonUtil.splitSchemaStringToMap(schema);
-    assert (map.size() == 4);
+    Assert.assertTrue(map.size() == 4);
     String schemaString = CarbonUtil.splitSchemaStringToMultiString(" ", "'", ",", schema);
-    assert (schemaString.length() > schema.length());
+    Assert.assertTrue(schemaString.length() > schema.length());
   }
 
   private String generateString(int length) {

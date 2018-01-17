@@ -62,7 +62,7 @@ public class CarbonTableOutputFormatTest {
     runJob("");
     String segmentPath = CarbonTablePath.getSegmentPath(carbonLoadModel.getTablePath(), "0");
     File file = new File(segmentPath);
-    assert (file.exists());
+    Assert.assertTrue(file.exists());
     File[] listFiles = file.listFiles(new FilenameFilter() {
       @Override public boolean accept(File dir, String name) {
         return name.endsWith(".carbondata") ||
@@ -71,7 +71,7 @@ public class CarbonTableOutputFormatTest {
       }
     });
 
-    assert (listFiles.length == 2);
+    Assert.assertTrue(listFiles.length == 2);
   }
 
   @After
