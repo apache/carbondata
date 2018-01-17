@@ -86,7 +86,7 @@ class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll with BeforeAndA
   }
 
   override def beforeEach(): Unit = {
-    Global.compactionRunning = false
+    Global.overwriteRunning = false
   }
 
   private def dropTable() = {
@@ -96,12 +96,15 @@ class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll with BeforeAndA
 
   // run the input SQL and block until it is running
   private def runSqlAsync(sql: String): Future[String] = {
-    assert(!Global.compactionRunning)
+    assert(!Global.overwriteRunning)
+    var count = 0
     val future = executorService.submit(
       new QueryTask(sql)
     )
-    while (!Global.compactionRunning) {
+    while (!Global.overwriteRunning && count < 1000) {
       Thread.sleep(10)
+      // to avoid dead loop in case WaitingDataMap is not invoked
+      count += 1
     }
     future
   }
@@ -140,7 +143,7 @@ class IUDConcurrentTest extends QueryTest with BeforeAndAfterAll with BeforeAndA
 }
 
 object Global {
-  var compactionRunning = false
+  var overwriteRunning = false
 }
 
 class WaitingDataMap() extends DataMapFactory {
@@ -169,7 +172,7 @@ class WaitingDataMap() extends DataMapFactory {
 
       override def onBlockStart(blockId: String): Unit = {
         // trigger the second SQL to execute
-        Global.compactionRunning = true
+        Global.overwriteRunning = true
 
         // wait for 1 second to let second SQL to finish
         Thread.sleep(1000)
