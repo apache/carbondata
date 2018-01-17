@@ -18,7 +18,11 @@
 package org.apache.carbondata.core.scan.filter;
 
 import java.io.Serializable;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
+
+import org.apache.carbondata.core.constants.CarbonCommonConstants;
 
 public class ColumnFilterInfo implements Serializable {
 
@@ -32,6 +36,7 @@ public class ColumnFilterInfo implements Serializable {
    * Implicit column filter values to be used for block and blocklet pruning
    */
   private List<String> implicitColumnFilterList;
+  private transient Set<String> implicitDriverColumnFilterList;
   private List<Integer> excludeFilterList;
   /**
    * maintain the no dictionary filter values list.
@@ -94,5 +99,24 @@ public class ColumnFilterInfo implements Serializable {
 
   public void setMeasuresFilterValuesList(List<Object> measuresFilterValuesList) {
     this.measuresFilterValuesList = measuresFilterValuesList;
+  }
+
+  public Set<String> getImplicitDriverColumnFilterList() {
+    // this list is required to be populated only n case of driver, so in executor this check will
+    // avoid unnecessary loading of the driver filter list
+    if (null == implicitDriverColumnFilterList) {
+      populateBlockIdListForDriverBlockPruning();
+    }
+    return implicitDriverColumnFilterList;
+  }
+
+  private void populateBlockIdListForDriverBlockPruning() {
+    implicitDriverColumnFilterList = new HashSet<>(implicitColumnFilterList.size());
+    String blockId = null;
+    for (String blockletId : implicitColumnFilterList) {
+      blockId =
+          blockletId.substring(0, blockletId.lastIndexOf(CarbonCommonConstants.FILE_SEPARATOR));
+      implicitDriverColumnFilterList.add(blockId);
+    }
   }
 }
