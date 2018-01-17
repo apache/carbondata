@@ -20,6 +20,7 @@ package org.apache.carbondata.spark.rdd
 import java.io.IOException
 import java.util
 import java.util.{Collections, List}
+import java.util.concurrent.atomic.AtomicInteger
 
 import scala.collection.JavaConverters._
 import scala.collection.mutable
@@ -108,7 +109,7 @@ class CarbonMergerRDD[K, V](
       } else {
         storeLocation = System.getProperty("java.io.tmpdir")
       }
-      storeLocation = storeLocation + '/' + System.nanoTime() + '_' + theSplit.index
+      storeLocation = storeLocation + '/' + "carbon" + System.nanoTime() + '_' + theSplit.index
       var mergeStatus = false
       var mergeNumber = ""
       var exec: CarbonCompactionExecutor = null
@@ -349,8 +350,9 @@ class CarbonMergerRDD[K, V](
 
     val columnToCardinalityMap = new util.HashMap[java.lang.String, Integer]()
     val partitionTaskMap = new util.HashMap[util.List[String], String]()
+    val counter = new AtomicInteger()
     carbonInputSplits.foreach { split =>
-      val taskNo = getTaskNo(split, partitionTaskMap)
+      val taskNo = getTaskNo(split, partitionTaskMap, counter)
       var dataFileFooter: DataFileFooter = null
 
       val splitList = taskIdMapping.get(taskNo)
@@ -473,14 +475,15 @@ class CarbonMergerRDD[K, V](
 
   private def getTaskNo(
       split: CarbonInputSplit,
-      partitionTaskMap: util.Map[List[String], String]): String = {
+      partitionTaskMap: util.Map[List[String], String],
+      counter: AtomicInteger): String = {
     if (carbonLoadModel.getCarbonDataLoadSchema.getCarbonTable.isHivePartitionTable) {
       val partitions =
         carbonMergerMapping.partitionMapper.getPartitionMap.get(
           CarbonTablePath.getCarbonIndexFileName(split.getBlockPath))
       var task = partitionTaskMap.get(partitions)
       if (task == null) {
-        task = split.taskId
+        task = counter.incrementAndGet().toString
         partitionTaskMap.put(partitions, task)
       }
       task

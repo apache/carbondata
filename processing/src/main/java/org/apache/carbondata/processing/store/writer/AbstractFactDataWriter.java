@@ -287,14 +287,10 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
   protected void commitCurrentFile(boolean copyInCurrentThread) {
     notifyDataMapBlockEnd();
     CarbonUtil.closeStreams(this.fileOutputStream, this.fileChannel);
-    // rename carbon data file from in progress status to actual
-    renameCarbonDataFile();
-    String fileName = this.carbonDataFileTempPath.substring(0,
-        this.carbonDataFileTempPath.lastIndexOf('.'));
     if (copyInCurrentThread) {
-      copyCarbonDataFileToCarbonStorePath(fileName);
+      copyCarbonDataFileToCarbonStorePath(carbonDataFileTempPath);
     } else {
-      executorServiceSubmitList.add(executorService.submit(new CopyThread(fileName)));
+      executorServiceSubmitList.add(executorService.submit(new CopyThread(carbonDataFileTempPath)));
     }
   }
 
@@ -317,8 +313,7 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
         .getCarbonDataFileName(fileCount, model.getCarbonDataFileAttributes().getTaskId(),
             model.getBucketId(), model.getTaskExtension(),
             "" + model.getCarbonDataFileAttributes().getFactTimeStamp());
-    this.carbonDataFileTempPath = chosenTempLocation + File.separator
-        + carbonDataFileName + CarbonCommonConstants.FILE_INPROGRESS_STATUS;
+    this.carbonDataFileTempPath = chosenTempLocation + File.separator + carbonDataFileName;
     this.fileCount++;
     try {
       // open channel for new data file
@@ -472,20 +467,6 @@ public abstract class AbstractFactDataWriter implements CarbonFactDataWriter {
     }
   }
 
-  /**
-   * This method will rename carbon data file from in progress status to normal
-   *
-   * @throws CarbonDataWriterException
-   */
-  protected void renameCarbonDataFile() throws CarbonDataWriterException {
-    File origFile = new File(this.carbonDataFileTempPath
-        .substring(0, this.carbonDataFileTempPath.lastIndexOf('.')));
-    File curFile = new File(this.carbonDataFileTempPath);
-    if (!curFile.renameTo(origFile)) {
-      throw new CarbonDataWriterException("Problem while renaming the file (" + curFile +
-          "), to file (" + origFile + ")");
-    }
-  }
 
   /**
    * This method will copy the given file to carbon store location

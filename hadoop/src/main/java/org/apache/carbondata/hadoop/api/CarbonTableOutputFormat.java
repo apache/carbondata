@@ -35,6 +35,7 @@ import org.apache.carbondata.core.util.CarbonProperties;
 import org.apache.carbondata.core.util.CarbonThreadFactory;
 import org.apache.carbondata.hadoop.util.ObjectSerializationUtil;
 import org.apache.carbondata.processing.loading.DataLoadExecutor;
+import org.apache.carbondata.processing.loading.TableProcessingOperations;
 import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable;
 import org.apache.carbondata.processing.loading.iterator.CarbonOutputIteratorWrapper;
 import org.apache.carbondata.processing.loading.model.CarbonDataLoadSchema;
@@ -230,7 +231,9 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
   public RecordWriter<NullWritable, StringArrayWritable> getRecordWriter(
       TaskAttemptContext taskAttemptContext) throws IOException {
     final CarbonLoadModel loadModel = getLoadModel(taskAttemptContext.getConfiguration());
-    loadModel.setTaskNo(System.nanoTime() + "");
+    loadModel.setTaskNo(taskAttemptContext.getConfiguration().get(
+        "carbon.outputformat.taskno",
+        String.valueOf(System.nanoTime())));
     final String[] tempStoreLocations = getTempStoreLocations(taskAttemptContext);
     final CarbonOutputIteratorWrapper iteratorWrapper = new CarbonOutputIteratorWrapper();
     final DataLoadExecutor dataLoadExecutor = new DataLoadExecutor();
@@ -244,6 +247,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
               .execute(loadModel, tempStoreLocations, new CarbonIterator[] { iteratorWrapper });
         } catch (Exception e) {
           dataLoadExecutor.close();
+          // clean up the folders and files created locally for data load operation
+          TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
           throw new RuntimeException(e);
         }
       }
@@ -404,6 +409,8 @@ public class CarbonTableOutputFormat extends FileOutputFormat<NullWritable, Stri
       } finally {
         executorService.shutdownNow();
         dataLoadExecutor.close();
+        // clean up the folders and files created locally for data load operation
+        TableProcessingOperations.deleteLocalDataLoadFolderLocation(loadModel, false, false);
       }
       LOG.info("Closed partition writer task " + taskAttemptContext.getTaskAttemptID());
     }

@@ -22,7 +22,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.apache.carbondata.core.constants.CarbonCommonConstants
 import org.apache.carbondata.core.datastore.filesystem.{CarbonFile, CarbonFileFilter}
 import org.apache.carbondata.core.datastore.impl.FileFactory
-import org.apache.carbondata.core.metadata.CarbonMetadata
+import org.apache.carbondata.core.metadata.{CarbonMetadata, PartitionMapFileStore}
 import org.apache.carbondata.core.util.CarbonProperties
 import org.apache.carbondata.core.util.path.CarbonTablePath
 
@@ -57,10 +57,14 @@ class StandardPartitionTableCompactionTestCase extends QueryTest with BeforeAndA
     val carbonFile = FileFactory.getCarbonFile(segmentDir, FileFactory.getFileType(segmentDir))
     val dataFiles = carbonFile.listFiles(new CarbonFileFilter() {
       override def accept(file: CarbonFile): Boolean = {
-        return file.getName.endsWith(".partitionmap")
+        return CarbonTablePath.isCarbonDataFile(file.getName) ||
+               CarbonTablePath.isCarbonIndexFile(file.getName)
       }
     })
-    assert(dataFiles.length == partitions)
+    assert(dataFiles.length > 1)
+    val pstore = new PartitionMapFileStore()
+    pstore.readAllPartitionsOfSegment(segmentDir)
+    println(pstore.getPartitionMap)
   }
 
   test("data compaction for partition table for one partition column") {
