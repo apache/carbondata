@@ -37,7 +37,7 @@ public class OperationListenerBus {
   /**
    * Event map to hold all listeners corresponding to an event
    */
-  protected Map<String, List<OperationEventListener>> eventMap =
+  protected Map<String, CopyOnWriteArrayList<OperationEventListener>> eventMap =
       new ConcurrentHashMap<>(CarbonCommonConstants.DEFAULT_COLLECTION_SIZE);
 
   /**
@@ -57,12 +57,13 @@ public class OperationListenerBus {
       OperationEventListener operationEventListener) {
 
     String eventType = eventClass.getName();
-    List<OperationEventListener> operationEventListeners = eventMap.get(eventType);
+    CopyOnWriteArrayList<OperationEventListener> operationEventListeners = eventMap.get(eventType);
     if (null == operationEventListeners) {
       operationEventListeners = new CopyOnWriteArrayList<>();
       eventMap.put(eventType, operationEventListeners);
     }
-    operationEventListeners.add(operationEventListener);
+    // addIfAbsent will only add the listener if it is not already present in the List.
+    operationEventListeners.addIfAbsent(operationEventListener);
     return INSTANCE;
   }
 

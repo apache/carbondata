@@ -19,7 +19,7 @@ package org.apache.carbondata.events;
 /**
  * Event listener interface which describes the possible events
  */
-public interface OperationEventListener {
+public abstract class OperationEventListener {
 
   /**
    * Called on a specified event occurrence
@@ -27,5 +27,22 @@ public interface OperationEventListener {
    * @param event
    * @param operationContext
    */
-  void onEvent(Event event, OperationContext operationContext) throws Exception;
+  protected abstract void onEvent(Event event, OperationContext operationContext) throws Exception;
+
+  @Override
+  public boolean equals(Object obj) {
+    if (obj == null || !(obj instanceof OperationEventListener)) {
+      return false;
+    }
+    return getComparisonName().equals(((OperationEventListener) obj).getComparisonName());
+  }
+
+  private String getComparisonName() {
+    return getClass().getName();
+  }
+
+  @Override
+  public int hashCode() {
+    return getClass().hashCode();
+  }
 }

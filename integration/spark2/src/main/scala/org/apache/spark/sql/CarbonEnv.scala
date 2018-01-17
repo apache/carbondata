@@ -21,6 +21,7 @@ import java.util.concurrent.ConcurrentHashMap
 
 import org.apache.spark.sql.catalyst.TableIdentifier
 import org.apache.spark.sql.catalyst.analysis.NoSuchTableException
+import org.apache.spark.sql.execution.command.preaaggregate._
 import org.apache.spark.sql.execution.command.timeseries.TimeSeriesFunction
 import org.apache.spark.sql.hive._
 
@@ -30,7 +31,8 @@ import org.apache.carbondata.core.datastore.impl.FileFactory
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier
 import org.apache.carbondata.core.metadata.schema.table.CarbonTable
 import org.apache.carbondata.core.util._
-import org.apache.carbondata.events.{CarbonEnvInitPreEvent, OperationContext, OperationListenerBus}
+import org.apache.carbondata.events._
+import org.apache.carbondata.processing.loading.events.LoadEvents.{LoadTablePreExecutionEvent, LoadTablePreStatusUpdateEvent}
 import org.apache.carbondata.spark.rdd.SparkReadSupport
 import org.apache.carbondata.spark.readsupport.SparkRowReadSupportImpl
 
@@ -121,6 +123,26 @@ object CarbonEnv {
       }
       carbonEnv
     }
+  }
+
+  /**
+   * Method to initialize Listeners to their respective events in the OperationListenerBus.
+   */
+  def initListeners(): Unit = {
+    OperationListenerBus.getInstance()
+      .addListener(classOf[LoadTablePreStatusUpdateEvent], LoadPostAggregateListener)
+      .addListener(classOf[DeleteSegmentByIdPreEvent], PreAggregateDeleteSegmentByIdPreListener)
+      .addListener(classOf[DeleteSegmentByDatePreEvent], PreAggregateDeleteSegmentByDatePreListener)
+      .addListener(classOf[UpdateTablePreEvent], UpdatePreAggregatePreListener)
+      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+      .addListener(classOf[DeleteFromTablePreEvent], DeletePreAggregatePreListener)
+      .addListener(classOf[AlterTableDropColumnPreEvent], PreAggregateDropColumnPreListener)
+      .addListener(classOf[AlterTableRenamePreEvent], PreAggregateRenameTablePreListener)
+      .addListener(classOf[AlterTableDataTypeChangePreEvent], PreAggregateDataTypeChangePreListener)
+      .addListener(classOf[AlterTableAddColumnPreEvent], PreAggregateAddColumnsPreListener)
+      .addListener(classOf[LoadTablePreExecutionEvent], LoadPreAggregateTablePreListener)
+      .addListener(classOf[AlterTableCompactionPreStatusUpdateEvent],
+        AlterPreAggregateTableCompactionPostListener)
   }
 
   /**
