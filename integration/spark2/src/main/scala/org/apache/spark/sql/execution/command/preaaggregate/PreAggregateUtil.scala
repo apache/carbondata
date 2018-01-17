@@ -669,6 +669,7 @@ object PreAggregateUtil {
     val groupingExpressions = scala.collection.mutable.ArrayBuffer.empty[String]
     val columns = tableSchema.getListOfColumns.asScala
       .filter(f => !f.getColumnName.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE))
+      .sortBy(_.getSchemaOrdinal)
     columns.foreach { a =>
       if (a.getAggFunction.nonEmpty) {
         aggregateColumns += s"${a.getAggFunction match {
@@ -681,13 +682,21 @@ object PreAggregateUtil {
             .getNonAggChildColBasedByParent(a.getParentColumnTableRelations.
               get(0).getColumnName).getColumnName
         } , '${ a.getTimeSeriesFunction }')"
+        aggregateColumns += s"timeseries(${
+          selectedDataMapSchema
+            .getNonAggChildColBasedByParent(a.getParentColumnTableRelations.
+              get(0).getColumnName).getColumnName
+        } , '${ a.getTimeSeriesFunction }')"
       } else {
         groupingExpressions += selectedDataMapSchema
           .getNonAggChildColBasedByParent(a.getParentColumnTableRelations.
             get(0).getColumnName).getColumnName
+        aggregateColumns += selectedDataMapSchema
+          .getNonAggChildColBasedByParent(a.getParentColumnTableRelations.
+            get(0).getColumnName).getColumnName
       }
     }
-    s"select ${ groupingExpressions.mkString(",") },${ aggregateColumns.mkString(",")
+    s"select ${ aggregateColumns.mkString(",")
     } from $databaseName.${selectedDataMapSchema.getChildSchema.getTableName } " +
     s"group by ${ groupingExpressions.mkString(",") }"
   }
@@ -707,6 +716,7 @@ object PreAggregateUtil {
     val groupingExpressions = scala.collection.mutable.ArrayBuffer.empty[String]
     val columns = tableSchema.getListOfColumns.asScala
       .filter(f => !f.getColumnName.equals(CarbonCommonConstants.DEFAULT_INVISIBLE_DUMMY_MEASURE))
+      .sortBy(_.getSchemaOrdinal)
     columns.foreach {a =>
         if (a.getAggFunction.nonEmpty) {
           aggregateColumns +=
@@ -715,11 +725,16 @@ object PreAggregateUtil {
           groupingExpressions +=
           s"timeseries(${ a.getParentColumnTableRelations.get(0).getColumnName },'${
             a.getTimeSeriesFunction}')"
+          aggregateColumns +=
+          s"timeseries(${ a.getParentColumnTableRelations.get(0).getColumnName },'${
+            a.getTimeSeriesFunction
+          }')"
         } else {
           groupingExpressions += a.getParentColumnTableRelations.get(0).getColumnName
+          aggregateColumns += a.getParentColumnTableRelations.get(0).getColumnName
         }
     }
-    s"select ${ groupingExpressions.mkString(",") },${
+    s"select ${
       aggregateColumns.mkString(",")
     } from $databaseName.${ parentTableName } group by ${ groupingExpressions.mkString(",") }"
 
