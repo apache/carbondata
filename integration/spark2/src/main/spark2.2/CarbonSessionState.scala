@@ -91,6 +91,9 @@ class CarbonSessionCatalog(
     carbonEnv
   }
 
+  // Initialize all listeners to the Operation bus.
+  CarbonEnv.initListeners()
+
 
   private def refreshRelationFromCache(identifier: TableIdentifier): Boolean = {
     var isRefreshed = false
