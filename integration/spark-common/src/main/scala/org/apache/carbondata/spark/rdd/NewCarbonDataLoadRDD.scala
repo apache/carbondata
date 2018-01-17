@@ -167,7 +167,7 @@ class SparkPartitionLoader(model: CarbonLoadModel,
     LOGGER.info("Temp location for loading data: " + storeLocation.mkString(","))
   }
 
-  private def tmpLocationSuffix = File.separator + System.nanoTime() + "_" + splitIndex
+  private def tmpLocationSuffix = File.separator + "carbon" + System.nanoTime() + "_" + splitIndex
 }
 
 /**

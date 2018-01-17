@@ -153,7 +153,8 @@ with Serializable {
 
 
         val taskNumber = generateTaskNumber(path, context)
-        val tmpLocationSuffix = File.separator + System.nanoTime() + File.separator + taskNumber
+        val tmpLocationSuffix =
+          File.separator + "carbon" + System.nanoTime() + File.separator + taskNumber
         if (isCarbonUseLocalDir) {
           val yarnStoreLocations = Util.getConfiguredLocalDirs(SparkEnv.get.conf)
           if (!isCarbonUseMultiDir && null != yarnStoreLocations && yarnStoreLocations.nonEmpty) {
@@ -231,7 +232,8 @@ private trait AbstractCarbonOutputWriter {
 
 private class CarbonOutputWriter(path: String,
     context: TaskAttemptContext,
-    fieldTypes: Seq[DataType], taskNo : String)
+    fieldTypes: Seq[DataType],
+    taskNo : String)
   extends OutputWriter with AbstractCarbonOutputWriter {
   val partitions = getPartitionsFromPath(path, context).map(ExternalCatalogUtils.unescapePathName)
   val staticPartition: util.HashMap[String, Boolean] = {
