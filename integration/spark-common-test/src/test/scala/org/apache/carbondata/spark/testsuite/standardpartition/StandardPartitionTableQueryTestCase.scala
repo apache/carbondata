@@ -237,6 +237,9 @@ class StandardPartitionTableQueryTestCase extends QueryTest with BeforeAndAfterA
         | STORED BY 'org.apache.carbondata.format'
       """.stripMargin)
     sql(s"""LOAD DATA local inpath '$resourcesPath/data.csv' INTO TABLE staticpartitionload partition(empname='ravi') OPTIONS('DELIMITER'= ',', 'QUOTECHAR'= '"')""")
+    val frame = sql("select empno,empname,designation,workgroupcategory,workgroupcategoryname,deptno,projectjoindate,attendance,deptname,projectcode,utilization,salary,projectenddate,doj from staticpartitionload")
+    verifyPartitionInfo(frame, Seq("empname=ravi"))
+
   }
 
 test("Creation of partition table should fail if the colname in table schema and partition column is same even if both are case sensitive"){
