@@ -659,8 +659,12 @@ public class BlockletDataMap implements DataMap, Cacheable {
       byte[][] minValue, String filePath, int blockletId) {
     BitSet bitSet = null;
     if (filterExecuter instanceof ImplicitColumnFilterExecutor) {
-      String uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1)
-          + CarbonCommonConstants.FILE_SEPARATOR + blockletId;
+      String uniqueBlockPath = filePath.substring(filePath.lastIndexOf("/Part") + 1);
+      // this case will come in case of old store where index file does not contain the
+      // blocklet information
+      if (blockletId != -1) {
+        uniqueBlockPath = uniqueBlockPath + CarbonCommonConstants.FILE_SEPARATOR + blockletId;
+      }
       bitSet = ((ImplicitColumnFilterExecutor) filterExecuter)
           .isFilterValuesPresentInBlockOrBlocklet(maxValue, minValue, uniqueBlockPath);
     } else {
