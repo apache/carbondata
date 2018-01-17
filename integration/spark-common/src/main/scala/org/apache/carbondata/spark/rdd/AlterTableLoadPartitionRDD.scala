@@ -107,7 +107,7 @@ class AlterTableLoadPartitionRDD[K, V](alterPartitionModel: AlterPartitionModel,
                 true
             } else {
                 val segmentProperties = PartitionUtils.getSegmentProperties(identifier,
-                    segmentId, partitionIds.toList, oldPartitionIds, partitionInfo)
+                    segmentId, partitionIds.toList, oldPartitionIds, partitionInfo, carbonTable)
                 val processor = new RowResultProcessor(
                     carbonTable,
                     carbonLoadModel,

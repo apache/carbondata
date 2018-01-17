@@ -140,7 +140,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
   public static void setTableInfo(Configuration configuration, TableInfo tableInfo)
       throws IOException {
     if (null != tableInfo) {
-      configuration.set(TABLE_INFO, ObjectSerializationUtil.encodeToString(tableInfo.serialize()));
+      configuration.set(TABLE_INFO, CarbonUtil.encodeToString(tableInfo.serialize()));
     }
   }
 
@@ -155,7 +155,7 @@ public class CarbonTableInputFormat<T> extends FileInputFormat<Void, T> {
       TableInfo output = new TableInfo();
       output.readFields(
           new DataInputStream(
-              new ByteArrayInputStream(ObjectSerializationUtil.decodeStringToBytes(tableInfoStr))));
+              new ByteArrayInputStream(CarbonUtil.decodeStringToBytes(tableInfoStr))));
       return output;
     }
   }

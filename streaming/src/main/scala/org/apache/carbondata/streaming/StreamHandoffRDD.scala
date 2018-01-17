@@ -145,6 +145,7 @@ class StreamHandoffRDD[K, V](
       projection.addColumn(dataFields.get(index).getColName)
     }
     CarbonTableInputFormat.setColumnProjection(hadoopConf, projection)
+    CarbonTableInputFormat.setTableInfo(hadoopConf, carbonTable.getTableInfo)
     val attemptContext = new TaskAttemptContextImpl(hadoopConf, attemptId)
     val format = new CarbonTableInputFormat[Array[Object]]()
     val model = format.getQueryModel(inputSplit, attemptContext)

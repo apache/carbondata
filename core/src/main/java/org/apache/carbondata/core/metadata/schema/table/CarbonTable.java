@@ -163,6 +163,14 @@ public class CarbonTable implements Serializable {
             columnSchema.getPrecision(), columnSchema.getScale()));
       }
     }
+    if (tableInfo.getFactTable().getPartitionInfo() != null) {
+      for (ColumnSchema columnSchema : tableInfo.getFactTable().getPartitionInfo()
+          .getColumnSchemaList()) {
+        columnSchema.setDataType(DataTypeUtil
+            .valueOf(columnSchema.getDataType(), columnSchema.getPrecision(),
+                columnSchema.getScale()));
+      }
+    }
   }
 
   /**

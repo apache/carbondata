@@ -16,13 +16,16 @@
  */
 package org.apache.carbondata.hadoop.util;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
-import org.apache.carbondata.core.constants.CarbonCommonConstants;
+import org.apache.carbondata.core.util.CarbonUtil;
 
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -66,13 +69,9 @@ public class ObjectSerializationUtil {
       }
     }
 
-    return encodeToString(baos.toByteArray());
+    return CarbonUtil.encodeToString(baos.toByteArray());
   }
 
-  public static String encodeToString(byte[] bytes) throws UnsupportedEncodingException {
-    return new String(Base64.encodeBase64(bytes),
-            CarbonCommonConstants.DEFAULT_CHARSET);
-  }
 
   /**
    * Converts Base64 string to object.
@@ -86,7 +85,7 @@ public class ObjectSerializationUtil {
       return null;
     }
 
-    byte[] bytes = decodeStringToBytes(objectString);
+    byte[] bytes = CarbonUtil.decodeStringToBytes(objectString);
 
     ByteArrayInputStream bais = null;
     GZIPInputStream gis = null;
@@ -116,8 +115,4 @@ public class ObjectSerializationUtil {
     }
   }
 
-  public static byte[] decodeStringToBytes(String objectString)
-    throws UnsupportedEncodingException {
-    return Base64.decodeBase64(objectString.getBytes(CarbonCommonConstants.DEFAULT_CHARSET));
-  }
 }
