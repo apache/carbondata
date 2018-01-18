@@ -20,6 +20,7 @@ package org.apache.carbondata.core.carbon;
 import org.apache.carbondata.core.metadata.AbsoluteTableIdentifier;
 import org.apache.carbondata.core.metadata.CarbonTableIdentifier;
 
+import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -46,37 +47,37 @@ public class AbsoluteTableIdentifierTest {
 
   @Test public void equalsTestWithSameInstance() {
     Boolean res = absoluteTableIdentifier.equals("wrong data");
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestWithNullObject() {
     Boolean res = absoluteTableIdentifier.equals(null);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestWithotherObject() {
     Boolean res = absoluteTableIdentifier1.equals(absoluteTableIdentifier);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestWithSameObj() {
     Boolean res = absoluteTableIdentifier.equals(absoluteTableIdentifier);
-    assert (res);
+    Assert.assertTrue(res);
   }
 
   @Test public void equalsTestWithNullColumnIdentifier() {
     Boolean res = absoluteTableIdentifier1.equals(absoluteTableIdentifier2);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestWithEqualColumnIdentifier() {
     Boolean res = absoluteTableIdentifier3.equals(absoluteTableIdentifier4);
-    assert (!res);
+    Assert.assertTrue(!res);
   }
 
   @Test public void equalsTestWithEqualAbsoluteTableIdentifier() {
     Boolean res = absoluteTableIdentifier.equals(absoluteTableIdentifier4);
-    assert (res);
+    Assert.assertTrue(res);
   }
 
   @Test public void hashCodeTest() {
@@ -87,13 +88,13 @@ public class AbsoluteTableIdentifierTest {
 
   @Test public void gettablePathTest() {
     String res = absoluteTableIdentifier4.getTablePath();
-    assert (res.equals("storePath/databaseName/tableName"));
+    Assert.assertTrue(res.equals("storePath/databaseName/tableName"));
   }
 
   @Test public void fromTablePathTest() {
     AbsoluteTableIdentifier absoluteTableIdentifierTest =
         AbsoluteTableIdentifier.from("storePath/databaseName/tableName", "databaseName", "tableName");
-    assert (absoluteTableIdentifierTest.getTablePath()
+    Assert.assertTrue(absoluteTableIdentifierTest.getTablePath()
         .equals(absoluteTableIdentifier4.getTablePath()));
   }
 

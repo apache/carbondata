@@ -24,6 +24,7 @@ import org.apache.carbondata.core.metadata.datatype.DataTypes;
 import org.apache.carbondata.core.metadata.schema.table.column.CarbonMeasure;
 import org.apache.carbondata.core.metadata.schema.table.column.ColumnSchema;
 
+import org.junit.Assert;
 import org.junit.Test;
 
 import static junit.framework.TestCase.assertEquals;
@@ -100,19 +101,19 @@ public class DataTypeUtilTest {
   @Test public void testGetDataBasedOnDataTypeForNoDictionaryColumn() {
     Object result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
         DataTypes.INT);
-    assert (result == null);
+    Assert.assertTrue(result == null);
     result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
         DataTypes.SHORT);
-    assert (result == null);
+    Assert.assertTrue(result == null);
     result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
         DataTypes.LONG);
-    assert (result == null);
+    Assert.assertTrue(result == null);
     result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
         DataTypes.TIMESTAMP);
-    assert (result == null);
+    Assert.assertTrue(result == null);
     result = DataTypeUtil.getDataBasedOnDataTypeForNoDictionaryColumn(new byte[0],
         DataTypes.STRING);
-    assert (result != null);
+    Assert.assertTrue(result != null);
   }
 
 }

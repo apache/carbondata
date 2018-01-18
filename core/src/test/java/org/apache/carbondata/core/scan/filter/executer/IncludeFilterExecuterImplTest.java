@@ -21,6 +21,8 @@ import java.util.BitSet;
 import org.apache.carbondata.core.datastore.chunk.DimensionColumnDataChunk;
 import org.apache.carbondata.core.datastore.chunk.impl.FixedLengthDimensionDataChunk;
 import org.apache.carbondata.core.util.CarbonUtil;
+
+import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -200,7 +202,7 @@ public class IncludeFilterExecuterImplTest extends TestCase {
     }
 
     if (filteredValueCnt >= 100) {
-      assert(newTime <= oldTime);
+      Assert.assertTrue(newTime <= oldTime);
     }
 
     System.out.println("old code performance time: " + oldTime + " ms");
