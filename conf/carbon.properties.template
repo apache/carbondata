@@ -17,29 +17,26 @@
 #
 
 #################### System Configuration ##################
-#Mandatory. Carbon Store path
-carbon.storelocation=hdfs://hacluster/Opt/CarbonStore
+##Optional. Location where CarbonData will create the store, and write the data in its own format.
+##If not specified then it takes spark.sql.warehouse.dir path.
+#carbon.storelocation
 #Base directory for Data files
-carbon.ddl.base.hdfs.url=hdfs://hacluster/opt/data
+#carbon.ddl.base.hdfs.url
 #Path where the bad records are stored
-carbon.badRecords.location=/opt/Carbon/Spark/badrecords
+#carbon.badRecords.location
 
 #################### Performance Configuration ##################
 ######## DataLoading Configuration ########
 #File read buffer size used during sorting(in MB) :MIN=1:MAX=100
-carbon.sort.file.buffer.size=20
-#Rowset size exchanged between data load graph steps :MIN=500:MAX=1000000
-carbon.graph.rowset.size=100000
+carbon.sort.file.buffer.size=10
 #Number of cores to be used while data loading
-carbon.number.of.cores.while.loading=6
+carbon.number.of.cores.while.loading=2
 #Record count to sort and write to temp intermediate files
-carbon.sort.size=500000
+carbon.sort.size=100000
 #Algorithm for hashmap for hashkey calculation
 carbon.enableXXHash=true
 #Number of cores to be used for block sort while dataloading
 #carbon.number.of.cores.block.sort=7
-#max level cache size upto which level cache will be loaded in memory
-#carbon.max.level.cache.size=-1
 #enable prefetch of data during merge sort while reading data from sort temp files in data loading
 #carbon.merge.sort.prefetch=true
 ######## Alter Partition Configuration ########
@@ -76,22 +73,15 @@ carbon.enable.quick.filter=false
 #carbon.block.meta.size.reserved.percentage=10
 ##csv reading buffer size.
 #carbon.csv.read.buffersize.byte=1048576
-##To identify and apply compression for non-high cardinality columns
-#high.cardinality.value=100000
 ##maximum no of threads used for reading intermediate files for final merging.
 #carbon.merge.sort.reader.thread=3
 ##Carbon blocklet size. Note: this configuration cannot be change once store is generated
 #carbon.blocklet.size=120000
-##number of retries to get the metadata lock for loading data to table
-#carbon.load.metadata.lock.retries=3
 ##Minimum blocklets needed for distribution.
 #carbon.blockletdistribution.min.blocklet.size=10
 ##Interval between the retries to get the lock
 #carbon.load.metadata.lock.retry.timeout.sec=5
-##Temporary store location, By default it will take System.getProperty("java.io.tmpdir")
-#carbon.tempstore.location=/opt/Carbon/TempStoreLoc
-##data loading records count logger
-#carbon.load.log.counter=500000
+
 ##To dissable/enable carbon block distribution
 #carbon.custom.block.distribution=false
 ######## Compaction Configuration ########
@@ -107,10 +97,8 @@ carbon.enable.quick.filter=false
 ##Min max is feature added to enhance query performance. To disable this feature, make it false.
 #carbon.enableMinMax=true
 ######## Global Dictionary Configurations ########
-##Percentage to identify whether column cardinality is more than configured percent of total row count
-#high.cardinality.row.count.percentage=80
 ##The property to set the date to be considered as start date for calculating the timestamp.
-#carbon.cutOffTimestamp=2000-01-01 00:00:00
+#carbon.cutOffTimestamp
 ##The property to set the timestamp (ie milis) conversion to the SECOND, MINUTE, HOUR or DAY level.
 #carbon.timegranularity=SECOND
 ##the number of prefetched rows in sort step

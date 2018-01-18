@@ -104,7 +104,7 @@ object CarbonDataStoreCreator {
       loadModel.setLoadMetadataDetails(new ArrayList[LoadMetadataDetails]())
       loadModel.setTablePath(absoluteTableIdentifier.getTablePath)
       CarbonProperties.getInstance
-        .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING, "true")
+        .addProperty(CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE, "true")
 
       loadModel.setDefaultTimestampFormat(
         CarbonProperties.getInstance.getProperty(
@@ -463,8 +463,6 @@ object CarbonDataStoreCreator {
     CarbonProperties.getInstance.addProperty("is.int.based.indexer", "true")
     CarbonProperties.getInstance
       .addProperty("aggregate.columnar.keyblock", "true")
-    CarbonProperties.getInstance
-      .addProperty("high.cardinality.value", "100000")
     CarbonProperties.getInstance.addProperty("is.compressed.keyblock", "false")
     CarbonProperties.getInstance.addProperty("carbon.leaf.node.size", "120000")
     CarbonProperties.getInstance

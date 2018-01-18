@@ -33,7 +33,7 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
 
   override def beforeAll {
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
+      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
       "true"
     )
     sql("drop table if exists escapechar1")
@@ -724,8 +724,8 @@ class TestLoadDataWithHiveSyntaxUnsafe extends QueryTest with BeforeAndAfterAll 
     sql("drop table if exists decimal_varlength")
     sql("drop table if exists decimal_varlength_hive")
     CarbonProperties.getInstance().addProperty(
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING,
-      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_LOADING_DEFAULT
+      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE,
+      CarbonCommonConstants.ENABLE_UNSAFE_COLUMN_PAGE_DEFAULT
     )
   }
 }
