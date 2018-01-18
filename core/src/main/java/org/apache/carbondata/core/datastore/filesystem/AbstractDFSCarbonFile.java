@@ -279,7 +279,7 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
 
   @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
       int bufferSize, Configuration hadoopConf) throws IOException {
-    return getDataInputStream(path, fileType, bufferSize,
+    return getDataInputStream(path, fileType, bufferSize, hadoopConf,
         CarbonUtil.inferCompressorFromFileName(path));
   }
 
@@ -304,11 +304,11 @@ public abstract  class AbstractDFSCarbonFile implements CarbonFile {
   }
 
   @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
-      int bufferSize, String compressor) throws IOException {
+      int bufferSize, Configuration configuration, String compressor) throws IOException {
     path = path.replace("\\", "/");
     Path pt = new Path(path);
     InputStream inputStream;
-    FileSystem fs = pt.getFileSystem(FileFactory.getConfiguration());
+    FileSystem fs = pt.getFileSystem(configuration);
     if (bufferSize <= 0) {
       inputStream = fs.open(pt);
     } else {

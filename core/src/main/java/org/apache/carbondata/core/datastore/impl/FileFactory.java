@@ -108,7 +108,9 @@ public final class FileFactory {
   }
 
   /**
-   * get data input stream
+   * get data input stream, this method is always called for FileType.LOCAL so
+   * any configuration could be passed.
+   *
    * @param path
    * @param fileType
    * @param bufferSize
@@ -118,7 +120,8 @@ public final class FileFactory {
    */
   public static DataInputStream getDataInputStream(String path, FileType fileType, int bufferSize,
       String compressorName) throws IOException {
-    return getCarbonFile(path).getDataInputStream(path, fileType, bufferSize, compressorName);
+    return getCarbonFile(path)
+        .getDataInputStream(path, fileType, bufferSize, configuration, compressorName);
   }
   /**
    * return the datainputStream which is seek to the offset of file

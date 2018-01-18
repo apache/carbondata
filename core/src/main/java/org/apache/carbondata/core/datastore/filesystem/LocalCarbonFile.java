@@ -250,12 +250,12 @@ public class LocalCarbonFile implements CarbonFile {
 
   @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
       int bufferSize, Configuration configuration) throws IOException {
-    return getDataInputStream(path, fileType, bufferSize,
+    return getDataInputStream(path, fileType, bufferSize, configuration,
         CarbonUtil.inferCompressorFromFileName(path));
   }
 
   @Override public DataInputStream getDataInputStream(String path, FileFactory.FileType fileType,
-      int bufferSize, String compressor) throws IOException {
+      int bufferSize, Configuration configuration, String compressor) throws IOException {
     path = path.replace("\\", "/");
     path = FileFactory.getUpdatedFilePath(path, fileType);
     InputStream inputStream;
