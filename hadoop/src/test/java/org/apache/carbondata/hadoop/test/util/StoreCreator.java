@@ -163,15 +163,9 @@ public class StoreCreator {
   /**
    * Create store without any restructure
    */
-  public static void createCarbonStore() {
-    try {
-      CarbonLoadModel loadModel = getCarbonLoadModel();
-
-      executeGraph(loadModel, storePath);
-
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
+  public static void createCarbonStore() throws Exception {
+    CarbonLoadModel loadModel = createTableAndLoadModel();
+    loadData(loadModel, storePath);
   }
 
   /**
@@ -181,7 +175,7 @@ public class StoreCreator {
     DataMapStoreManager.getInstance().clearDataMaps(absoluteTableIdentifier);
   }
 
-  public static CarbonLoadModel getCarbonLoadModel() throws Exception {
+  public static CarbonLoadModel createTableAndLoadModel() throws Exception {
     String factFilePath =
         new File("../hadoop/src/test/resources/data.csv").getCanonicalPath();
     File storeDir = new File(storePath);
@@ -387,7 +381,7 @@ public class StoreCreator {
    * @param storeLocation
    * @throws Exception
    */
-  public static void executeGraph(CarbonLoadModel loadModel, String storeLocation)
+  public static void loadData(CarbonLoadModel loadModel, String storeLocation)
       throws Exception {
     new File(storeLocation).mkdirs();
     String outPutLoc = storeLocation + "/etl";
@@ -519,7 +513,7 @@ public class StoreCreator {
     return date;
   }
 
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     StoreCreator.createCarbonStore();
   }
 

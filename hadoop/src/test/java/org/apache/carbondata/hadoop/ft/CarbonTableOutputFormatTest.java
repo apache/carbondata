@@ -30,7 +30,6 @@ import org.apache.carbondata.processing.loading.csvinput.CSVInputFormat;
 import org.apache.carbondata.processing.loading.csvinput.StringArrayWritable;
 import org.apache.carbondata.processing.loading.model.CarbonLoadModel;
 
-import junit.framework.TestCase;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
@@ -38,16 +37,24 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
-public class CarbonOutputMapperTest extends TestCase {
+public class CarbonTableOutputFormatTest {
 
-  CarbonLoadModel carbonLoadModel;
+  static CarbonLoadModel carbonLoadModel;
 
   // changed setUp to static init block to avoid un wanted multiple time store creation
   static {
     CarbonProperties.getInstance().
         addProperty(CarbonCommonConstants.CARBON_BADRECORDS_LOC, "/tmp/carbon/badrecords");
+    try {
+      carbonLoadModel = StoreCreator.createTableAndLoadModel();
+    } catch (Exception e) {
+      Assert.fail("create table failed: " + e.getMessage());
+    }
   }
 
 
@@ -67,18 +74,16 @@ public class CarbonOutputMapperTest extends TestCase {
     assert (listFiles.length == 2);
   }
 
-
-  @Override public void tearDown() throws Exception {
-    super.tearDown();
+  @After
+  public void tearDown() throws Exception {
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "true");
   }
 
-  @Override public void setUp() throws Exception {
-    super.setUp();
+  @Before
+  public void setUp() throws Exception {
     CarbonProperties.getInstance()
         .addProperty(CarbonCommonConstants.ENABLE_QUERY_STATISTICS, "false");
-    carbonLoadModel = StoreCreator.getCarbonLoadModel();
   }
 
  public static class Map extends Mapper<NullWritable, StringArrayWritable, NullWritable, StringArrayWritable> {
@@ -93,7 +98,7 @@ public class CarbonOutputMapperTest extends TestCase {
     Configuration configuration = new Configuration();
     configuration.set("mapreduce.cluster.local.dir", new File(outPath + "1").getCanonicalPath());
     Job job = Job.getInstance(configuration);
-    job.setJarByClass(CarbonOutputMapperTest.class);
+    job.setJarByClass(CarbonTableOutputFormatTest.class);
     job.setOutputKeyClass(NullWritable.class);
     job.setOutputValueClass(StringArrayWritable.class);
     job.setMapperClass(Map.class);
