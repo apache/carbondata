@@ -155,6 +155,25 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     checkAnswer(sql("select count(*) from weather6"), Seq(Row(2)))
   }
 
+  test("Test overwrite static partition with wrong int value") {
+    sql(
+      """
+        | CREATE TABLE weather7 (type String)
+        | PARTITIONED BY (year int, month int, day int)
+        | STORED BY 'org.apache.carbondata.format'
+      """.stripMargin)
+
+    sql("insert into weather7 partition(year=2014, month=05, day=25) select 'rainy'")
+    sql("insert into weather7 partition(year=2014, month=04, day=23) select 'cloudy'")
+    sql("insert overwrite table weather7 partition(year=2014, month=05, day=25) select 'sunny'")
+    checkExistence(sql("select * from weather7"), true, "sunny")
+    checkAnswer(sql("select count(*) from weather7"), Seq(Row(2)))
+    sql("insert into weather7 partition(year=2014, month, day) select 'rainy1',06,25")
+    sql("insert into weather7 partition(year=2014, month=01, day) select 'rainy2',27")
+    sql("insert into weather7 partition(year=2014, month=01, day=02) select 'rainy3'")
+    checkAnswer(sql("select count(*) from weather7 where month=1"), Seq(Row(2)))
+  }
+
 
   override def afterAll = {
     dropTable
@@ -168,6 +187,7 @@ class StandardPartitionTableOverwriteTestCase extends QueryTest with BeforeAndAf
     sql("drop table if exists insertstaticpartitiondynamic")
     sql("drop table if exists partitionallcompaction")
     sql("drop table if exists weather6")
+    sql("drop table if exists weather7")
   }
 
 }

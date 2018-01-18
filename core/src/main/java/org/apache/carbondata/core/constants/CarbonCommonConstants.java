@@ -1299,11 +1299,6 @@ public final class CarbonCommonConstants {
 
   @CarbonProperty
   public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION = "carbon.custom.block.distribution";
-  public static final String CARBON_CUSTOM_BLOCK_DISTRIBUTION_DEFAULT = "false";
-
-  @CarbonProperty
-  public static final String CARBON_COMBINE_SMALL_INPUT_FILES = "carbon.mergeSmallFileRead.enable";
-  public static final String CARBON_COMBINE_SMALL_INPUT_FILES_DEFAULT = "false";
 
   public static final int DICTIONARY_DEFAULT_CARDINALITY = 1;
   @CarbonProperty
@@ -1404,9 +1399,38 @@ public final class CarbonCommonConstants {
 
   public static final String USE_DISTRIBUTED_DATAMAP_DEFAULT = "false";
 
-  public static final String CARBON_USE_BLOCKLET_DISTRIBUTION = "carbon.blocklet.distribution";
+  /**
+   * This property defines how the tasks are splitted/combined and launch spark tasks during query
+   */
+  @CarbonProperty
+  public static final String CARBON_TASK_DISTRIBUTION = "carbon.task.distribution";
 
-  public static final String CARBON_USE_BLOCKLET_DISTRIBUTION_DEFAULT = "true";
+  /**
+   * It combines the available blocks as per the maximum available tasks in the cluster.
+   */
+  public static final String CARBON_TASK_DISTRIBUTION_CUSTOM = "custom";
+
+  /**
+   * It creates the splits as per the number of blocks/carbondata files available for query.
+   */
+  public static final String CARBON_TASK_DISTRIBUTION_BLOCK = "block";
+
+  /**
+   * It creates the splits as per the number of blocklets available for query.
+   */
+  public static final String CARBON_TASK_DISTRIBUTION_BLOCKLET = "blocklet";
+
+  /**
+   * It merges all the small files and create tasks as per the configurable partition size.
+   */
+  public static final String CARBON_TASK_DISTRIBUTION_MERGE_FILES = "merge_small_files";
+
+  /**
+   * Default task distribution.
+   */
+  public static final String CARBON_TASK_DISTRIBUTION_DEFAULT = CARBON_TASK_DISTRIBUTION_BLOCK;
+
+
   /**
    * The property to configure the mdt file folder path, earlier it was pointing to the
    * fixed carbon store path. This is needed in case of the federation setup when user removes

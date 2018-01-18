@@ -245,7 +245,7 @@ private class CarbonOutputWriter(path: String,
       null
     }
   }
-  lazy val partitionData = if (partitions.nonEmpty) {
+  lazy val (updatedPartitions, partitionData) = if (partitions.nonEmpty) {
     val updatedPartitions = partitions.map{ p =>
       val value = p.substring(p.indexOf("=") + 1, p.length)
       val col = p.substring(0, p.indexOf("="))
@@ -273,24 +273,25 @@ private class CarbonOutputWriter(path: String,
         dateFormatString = loadModel.getDefaultDateFormat
       }
       val dateFormat = new SimpleDateFormat(dateFormatString)
-      updatedPartitions.map {case (col, value) =>
+      val formattedPartitions = updatedPartitions.map {case (col, value) =>
         // Only convert the static partitions to the carbon format and use it while loading data
         // to carbon.
         if (staticPartition.getOrDefault(col, false)) {
-          CarbonScalaUtil.convertToCarbonFormat(value,
+          (col, CarbonScalaUtil.convertToCarbonFormat(value,
             CarbonScalaUtil.convertCarbonToSparkDataType(
               table.getColumnByName(table.getTableName, col).getDataType),
             timeFormat,
-            dateFormat)
+            dateFormat))
         } else {
-          value
+          (col, value)
         }
       }
+      (formattedPartitions, formattedPartitions.map(_._2))
     } else {
-      updatedPartitions.map(_._2)
+      (updatedPartitions, updatedPartitions.map(_._2))
     }
   } else {
-    Array.empty
+    (Map.empty[String, String].toArray, Array.empty)
   }
   val writable = new StringArrayWritable()
 
@@ -346,41 +347,17 @@ private class CarbonOutputWriter(path: String,
     val isEmptyBadRecord = loadModel.getIsEmptyDataBadRecord.split(",")(1).toBoolean
     // write partition info to new file.
     val partitonList = new util.ArrayList[String]()
-    val splitPartitions = partitions.map{ p =>
-      val value = p.substring(p.indexOf("=") + 1, p.length)
-      val col = p.substring(0, p.indexOf("="))
-      (col, value)
-    }.toMap
-    val updatedPartitions =
-      if (staticPartition != null) {
-        // There can be scnerio like dynamic and static combination, in that case we should convert
-        // only the dyanamic partition values to the proper format and store to carbon parttion map
-        splitPartitions.map { case (col, value) =>
-          if (!staticPartition.getOrDefault(col, false)) {
-            CarbonScalaUtil.updatePartitions(
-              Seq((col, value)).toMap,
-              table,
-              timeFormat,
-              dateFormat,
-              serializeFormat,
-              badRecordAction,
-              isEmptyBadRecord).toSeq.head
-          } else {
-            (col, value)
-          }
-        }
-      } else {
-        // All dynamic partitions need to be converted to proper format
-        CarbonScalaUtil.updatePartitions(
-          splitPartitions,
-          table,
-          timeFormat,
-          dateFormat,
-          serializeFormat,
-          badRecordAction,
-          isEmptyBadRecord)
-      }
-    updatedPartitions.foreach(p => partitonList.add(p._1 + "=" + p._2))
+    val formattedPartitions =
+    // All dynamic partitions need to be converted to proper format
+      CarbonScalaUtil.updatePartitions(
+        updatedPartitions.toMap,
+        table,
+        timeFormat,
+        dateFormat,
+        serializeFormat,
+        badRecordAction,
+        isEmptyBadRecord)
+    formattedPartitions.foreach(p => partitonList.add(p._1 + "=" + p._2))
     new PartitionMapFileStore().writePartitionMapFile(
       segmentPath,
       loadModel.getTaskNo,
